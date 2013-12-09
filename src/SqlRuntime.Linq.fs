@@ -184,7 +184,7 @@ module internal QueryImplementation =
                             // otherwise, it will be the compiler-generated alias eg _arg2.  this might be the first method called in which case set the 
                             // base entity alias to this name. 
                             let filter = filterExpression ex
-                            let xrmExpression = 
+                            let sqlExpression = 
                                 match source.SqlExpression with
                                 | BaseTable(alias,entity) when alias = "" -> 
                                     // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the filter                                    
@@ -195,7 +195,7 @@ module internal QueryImplementation =
                                     else FilterClause(filter,current)
 
                             let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])                            
-                            ty.GetConstructors().[0].Invoke [| source.ConnectionString; source.Provider; xrmExpression; source.TupleIndex; |] :?> IQueryable<_>
+                            ty.GetConstructors().[0].Invoke [| source.ConnectionString; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         | _ -> failwith "only support lambdas in a where"
 
                     | MethodCall(None, (MethodWithName "Join" as meth), 
@@ -205,7 +205,7 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
                                       OptionalQuote projection ]) ->
                         let (BaseTable(_,destEntity)) = dest.SqlExpression
-                        let xrmExpression = 
+                        let sqlExpression = 
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" -> 
                                 // special case here as above - this is the first call so replace the top of the tree here with the current base table alias and the select many                                                                                                                                        
@@ -228,7 +228,7 @@ module internal QueryImplementation =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
                                 | _ -> failwith "unsupported projection in join"
-                        ty.GetConstructors().[0].Invoke [| source.ConnectionString; source.Provider; xrmExpression; source.TupleIndex; |] :?> IQueryable<_>
+                        ty.GetConstructors().[0].Invoke [| source.ConnectionString; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "SelectMany" as meth),                     
                                     [ SourceWithQueryData source; 
@@ -275,7 +275,7 @@ module internal QueryImplementation =
                                     | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
                                     | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
                                 let data = { PrimaryKey = PK; PrimaryTable = Table.FromFullName PE; ForeignKey = FK; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
-                                let xrmExpression = 
+                                let sqlExpression = 
                                     match outExp with
                                     | BaseTable(alias,entity) when alias = "" -> 
                                         // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the select many                                        
@@ -285,7 +285,7 @@ module internal QueryImplementation =
                                 // add new aliases to the tuple index 
                                 if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)                                
                                 if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
-                                xrmExpression
+                                sqlExpression
                              | _ -> failwith ""
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression 

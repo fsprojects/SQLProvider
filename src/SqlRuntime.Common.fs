@@ -25,7 +25,7 @@ module public QueryEvents =
    let PublishExpression(e) = expressionEvent.Trigger(e)
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
-[<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/xrm/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
+[<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
 type SqlEntity(tableName) =
     
     let propertyChanged = Event<_,_>()

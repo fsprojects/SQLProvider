@@ -25,7 +25,7 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces()
-    let xrmRuntimeInfo = SqlRuntimeInfo(config)
+    let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let ns = "FSharp.Data.Sql"     
     let asm = Assembly.GetExecutingAssembly()
     
@@ -229,7 +229,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun _ -> <@@ obj() @@>) :> MemberInfo
              ] )
 
-        let rootType = ProvidedTypeDefinition(xrmRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
+        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
             [ let meth = 
@@ -265,7 +265,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             ])
         rootType
     
-    let paramXrmType = ProvidedTypeDefinition(xrmRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), HideObjectMethods = true)
+    let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), HideObjectMethods = true)
     
     let conString = ProvidedStaticParameter("ConnectionString",typeof<string>)    
     //let nullables = ProvidedStaticParameter("UseNullableValues",typeof<bool>,false)
@@ -276,16 +276,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='DatabaseVendor'> The target database vendor</param>
                     <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each sql entity type. Default 1000.</param>"
         
-    do paramXrmType.DefineStaticParameters([conString;dbVendor;individualsAmount;], fun typeName args -> 
+    do paramSqlType.DefineStaticParameters([conString;dbVendor;individualsAmount;], fun typeName args -> 
         createTypes(args.[0] :?> string,                  // OrganizationServiceUrl
                     args.[1] :?> DatabaseProviderTypes,   // db vendor
                     args.[2] :?> int,                     // Indivudals Amount
                     typeName))
 
-    do paramXrmType.AddXmlDoc helpText               
+    do paramSqlType.AddXmlDoc helpText               
 
     // add them to the namespace    
-    do this.AddNamespace(ns, [paramXrmType])
+    do this.AddNamespace(ns, [paramSqlType])
                             
 [<assembly:TypeProviderAssembly>] 
 do()
