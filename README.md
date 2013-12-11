@@ -6,4 +6,6 @@ More documentation to come, for now you will have to settle with the post at my 
 
 ## Building
 
-Open solution file. Build.
+Open solution file /src/SqlProvider.sln 
+
+Build.
