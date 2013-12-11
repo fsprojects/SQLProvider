@@ -310,12 +310,12 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | _ -> failwith "Unuspported execution expression" }
 
-type public SqlDataContext (connectionString:string) =   
+type public SqlDataContext (connectionString:string,providerType) =   
     static let mutable conString = ""
     static let mutable provider = None
     do 
         conString <- connectionString  
-        let prov = Common.Utilities.createSqlProvider Common.DatabaseProviderTypes.MSSQLSERVER
+        let prov = Common.Utilities.createSqlProvider providerType
         provider <- Some prov
         use con = prov.CreateConnection(connectionString)
         con.Open()
@@ -324,8 +324,8 @@ type public SqlDataContext (connectionString:string) =
         prov.CreateTypeMappings(con)
         prov.GetTables(con) |> ignore
         con.Close()
-    static member _Create(connectionString) =
-        SqlDataContext(connectionString)    
+    static member _Create(connectionString,dbVendor) =
+        SqlDataContext(connectionString,dbVendor)    
     static member _CreateRelated(inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
         if direction = RelationshipDirection.Children then
             QueryImplementation.SqlQueryable<_>(conString,provider.Value,
@@ -339,7 +339,7 @@ type public SqlDataContext (connectionString:string) =
                      BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_> 
     static member _CreateEntities(table:string) : IQueryable<SqlEntity> =  
         QueryImplementation.SqlQueryable.Create(Table.FromFullName table,conString,provider.Value) 
-    static member _CallSproc(name,parameters,types:SqlDbType array,values:obj array) =
+    static member _CallSproc(name,parameters,types:DbType array,values:obj array) =
         use con = provider.Value.CreateConnection(conString)
         con.Open()
         use com = provider.Value.CreateCommand(con,name)

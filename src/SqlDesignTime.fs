@@ -211,7 +211,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     InvokeCode = fun args -> 
                         let name = sproc.FullName
                         let rawNames = sproc.Params |> List.map(fun p -> p.Name) |> Array.ofList
-                        let rawTypes = sproc.Params |> List.map(fun p -> p.SqlDbType) |> Array.ofList
+                        let rawTypes = sproc.Params |> List.map(fun p -> p.DbType) |> Array.ofList
                         <@@ SqlDataContext._CallSproc(name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
                 )
         sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
@@ -237,7 +237,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 serviceType, IsStaticMethod=true,
                                 InvokeCode = (fun _ -> 
                                     let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                    Expr.Call(meth, [Expr.Value conString;])
+                                    Expr.Call(meth, [Expr.Value conString; Expr.Value dbVendor])
                                     ))
               meth.AddXmlDoc "<summary>Returns an instance of the Sql provider using the static parameters</summary>"
                    
@@ -252,11 +252,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 //                              <param name='connection'>An instance of a datbase connection</param>"
 //              yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>)], 
+              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
                                                                 let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                                                Expr.Call(meth, [args.[0];Expr.Value "";Expr.Value "";Expr.Value ""; Expr.Value false])))
+                                                                Expr.Call(meth, [args.[0];Expr.Value dbVendor;])))
                       
               meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
                               <param name='connectionString'>The database connection string</param>"

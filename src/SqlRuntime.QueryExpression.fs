@@ -3,6 +3,7 @@
     module internal Utilities =
         let createSqlProvider  = function
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+            //| DatabaseProviderTypes.SQLITE -> SqliteProvider() :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =

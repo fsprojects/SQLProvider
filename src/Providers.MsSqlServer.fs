@@ -15,8 +15,8 @@ type internal MSSqlServerProvider() =
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
 
-    let mutable clrToEnum : (string -> SqlDbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> SqlDbType option)  = fun _ -> failwith "!"
+    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
+    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
 
     let createTypeMappings (con:SqlConnection) =
@@ -30,7 +30,16 @@ type internal MSSqlServerProvider() =
             |> List.choose( fun (tn,ev,dt) ->
                 if String.IsNullOrWhiteSpace dt then None else
                 let ty = Type.GetType dt
-                Some ((tn,ty),(tn,ev),(ty.FullName,ev)))
+                // we need to convert the sqldbtype enum value to dbtype.
+                // the sql param will do this for us but it might throw if not mapped -
+                // this is a bit hacky but i don;t want to write a big conversion mapping right now
+                let p = SqlParameter()
+                try
+                    p.SqlDbType <- enum<SqlDbType> ev
+                    Some ((tn,ty),(tn,p.DbType),(ty.FullName,p.DbType))
+                with
+                | ex -> None
+            )
             |> fun x ->  
                 let fst (x,_,_) = x
                 let snd (_,y,_) = y
@@ -41,8 +50,8 @@ type internal MSSqlServerProvider() =
 
         // set lookup functions         
         sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' |> Option.map enum<SqlDbType> )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' |> Option.map enum<SqlDbType> )
+        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
+        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
     
     let executeSql (con:IDbConnection) sql =
         use com = new SqlCommand(sql,con:?>SqlConnection)    
@@ -52,8 +61,8 @@ type internal MSSqlServerProvider() =
         member __.CreateConnection(connectionString) = upcast new SqlConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
         member __.CreateCommandParameter(name,value,dbType) = 
-            let p = SqlParameter(name,value)
-            if dbType.IsSome then p.SqlDbType <- dbType.Value 
+            let p = SqlParameter(name,value)            
+            if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
         member __.ClrToEnum = clrToEnum
@@ -101,7 +110,7 @@ type internal MSSqlServerProvider() =
                          let col =
                             { Column.Name = reader.GetSqlString(0).Value; 
                               ClrType = clr; 
-                              SqlDbType = sql; 
+                              DbType = sql; 
                               IsPrimarKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
                          yield col 
@@ -191,7 +200,7 @@ type internal MSSqlServerProvider() =
                                  Direction = if mode = "IN" then In else Out
                                  MaxLength = maxLen
                                  ClrType = clr
-                                 SqlDbType = sql } )
+                                 DbType = sql } )
                         |> Seq.sortBy( fun p -> p.Ordinal)     
                         |> Seq.toList            
                     {FullName = name
@@ -207,7 +216,9 @@ type internal MSSqlServerProvider() =
                 try // try / catch here as this stuff is still experimental
                   sproc.Params
                   |> List.iter(fun p ->
-                    let p' = SqlParameter(p.Name,p.SqlDbType)           
+                    let p' = SqlParameter()           
+                    p'.ParameterName <- p.Name
+                    p'.DbType <- p.DbType
                     p'.Value <- 
                          if p.ClrType = typeof<string> then box "1"
                          elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
@@ -226,7 +237,7 @@ type internal MSSqlServerProvider() =
                            (clrToEnum (row.["DataType"] :?> Type).FullName ) 
                            |> Option.map( fun sql ->
                                  { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                   SqlDbType = sql; IsPrimarKey = false } ))
+                                   DbType = sql; IsPrimarKey = false } ))
                       |> Seq.toList
                   if schema = null || columns.Length = schema.Rows.Count then
                      Some { sproc with ReturnColumns = columns }
