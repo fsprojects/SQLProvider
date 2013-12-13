@@ -7,10 +7,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4eea1ad8-e8a9-4d54-bc39-d5f536366945</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>XrmProvider</RootNamespace>
+    <RootNamespace>SqlProvider</RootNamespace>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>Samples.Xrm.Provider</Name>
+    <Name>FSharp.Data.SqlProvider</Name>
     <SccProjectName>SAK</SccProjectName>
     <SccProvider>SAK</SccProvider>
     <SccAuxPath>SAK</SccAuxPath>
@@ -25,7 +25,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\XrmProvider.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,7 +34,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\XrmProvider.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
