@@ -24,7 +24,7 @@ type internal MSSqlServerProvider() =
             [for r in con.GetSchema("DataTypes").Rows -> 
                 string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
 
-        // create map from sql name to clr type, and type to SqlDbType enum
+        // create map from sql name to clr type, and type to lDbType enum
         let sqlToClr', sqlToEnum', clrToEnum' =
             clr
             |> List.choose( fun (tn,ev,dt) ->
@@ -32,7 +32,7 @@ type internal MSSqlServerProvider() =
                 let ty = Type.GetType dt
                 // we need to convert the sqldbtype enum value to dbtype.
                 // the sql param will do this for us but it might throw if not mapped -
-                // this is a bit hacky but i don;t want to write a big conversion mapping right now
+                // this is a bit hacky but I don't want to write a big conversion mapping right now
                 let p = SqlParameter()
                 try
                     p.SqlDbType <- enum<SqlDbType> ev
@@ -82,6 +82,8 @@ type internal MSSqlServerProvider() =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
+               // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
+               // we are inerested in on demand
                let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
                                  FROM INFORMATION_SCHEMA.COLUMNS c
@@ -252,21 +254,22 @@ type internal MSSqlServerProvider() =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-            // SQL query ordering syntax is ordered in the following manner
+            // SQL query syntax is ordered in the following manner
             // SELECT [alias].[field] as '[alias].[field]' [, .. ]
             // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
+            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
 
             // to simplfy (ha!) the processing, all tables should be aliased.
             // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
             // if it does not, then we first need to create an alias for the single table
-
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
                 | None -> baseTable
 
             let singleEntity = sqlQuery.Aliases.Count = 0
-            // now we can build the sql query that has been simplified by the above expression converter
+            
+            // build the sql query from the simplified abstract query expression
             // working on the basis that we will alias everything to make my life eaiser
             // first build  the select statment, this is easy ...
             let columns = 
@@ -378,7 +381,7 @@ type internal MSSqlServerProvider() =
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s "  columns)
             else ~~(sprintf "SELECT %s "  columns)
             // FROM
-            ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)         
+            ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
