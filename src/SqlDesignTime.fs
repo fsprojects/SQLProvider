@@ -29,9 +29,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let ns = "FSharp.Data.Sql"     
     let asm = Assembly.GetExecutingAssembly()
     
-    let createTypes(conString,(*nullables,*)dbVendor,individualsAmount,rootTypeName) =       
-        let prov = Common.Utilities.createSqlProvider dbVendor
-        let con = prov.CreateConnection conString
+    let createTypes(conString,(*nullables,*)dbVendor,resolutionPath,individualsAmount,rootTypeName) =       
+        let prov = Common.Utilities.createSqlProvider dbVendor resolutionPath
+        let con = prov.CreateConnection conString 
         con.Open()
         prov.CreateTypeMappings con
         
@@ -72,7 +72,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                match prov.GetPrimaryKey table with
                | Some pk ->
                    let entities =   
-                        use com = prov.CreateCommand(con,(sprintf "select top %i * from %s.%s" individualsAmount table.Schema table.Name))
+                        use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                         use reader = com.ExecuteReader()
                         SqlEntity.FromDataReader(table.FullName,reader)
                    if entities.IsEmpty then [] else
@@ -237,7 +237,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 serviceType, IsStaticMethod=true,
                                 InvokeCode = (fun _ -> 
                                     let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                    Expr.Call(meth, [Expr.Value conString; Expr.Value dbVendor])
+                                    Expr.Call(meth, [Expr.Value conString; Expr.Value dbVendor; Expr.Value resolutionPath])
                                     ))
               meth.AddXmlDoc "<summary>Returns an instance of the Sql provider using the static parameters</summary>"
                    
@@ -256,7 +256,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
                                                                 let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                                                Expr.Call(meth, [args.[0];Expr.Value dbVendor;])))
+                                                                Expr.Call(meth, [args.[0];Expr.Value dbVendor; Expr.Value resolutionPath])))
                       
               meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
                               <param name='connectionString'>The database connection string</param>"
@@ -271,15 +271,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     //let nullables = ProvidedStaticParameter("UseNullableValues",typeof<bool>,false)
     let dbVendor = ProvidedStaticParameter("DatabaseVendor",typeof<DatabaseProviderTypes>,DatabaseProviderTypes.MSSQLSERVER)
     let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)    
+    let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>,"")    
     let helpText = "<summary>Typed representation of a database</summary>
                     <param name='ConnectionString'>The connection string for the sql server</param>
                     <param name='DatabaseVendor'> The target database vendor</param>
-                    <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each sql entity type. Default 1000.</param>"
+                    <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each sql entity type. Default 1000.</param>
+                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specifc connections and custom types.</param>"
         
-    do paramSqlType.DefineStaticParameters([conString;dbVendor;individualsAmount;], fun typeName args -> 
+    do paramSqlType.DefineStaticParameters([conString;dbVendor;resolutionPath;individualsAmount], fun typeName args -> 
         createTypes(args.[0] :?> string,                  // OrganizationServiceUrl
                     args.[1] :?> DatabaseProviderTypes,   // db vendor
-                    args.[2] :?> int,                     // Indivudals Amount
+                    args.[2] :?> string,                  // Assembly resolution path for db connectors and custom types
+                    args.[3] :?> int,                     // Indiduals Amount
+                    
                     typeName))
 
     do paramSqlType.AddXmlDoc helpText               

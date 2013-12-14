@@ -239,6 +239,9 @@ type internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
+    /// Returns the db vendor specific sql query to select the top x amount of rows from 
+    /// the given table
+    abstract GetIndividualsQueryText : Table * int -> string
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection

@@ -14,6 +14,7 @@ type internal MSSqlServerProvider() =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
+    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
@@ -120,6 +121,9 @@ type internal MSSqlServerProvider() =
                columnLookup.Add(table.FullName,columns)
                columns
         member __.GetRelationships(con,table) = 
+            match relationshipLookup.TryGetValue table.FullName with 
+            | true,v -> v
+            | _ -> 
             // mostly stolen from
             // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
             let toSchema schema table = sprintf "[%s].[%s]" schema table
@@ -158,6 +162,7 @@ type internal MSSqlServerProvider() =
                 [ while reader.Read() do 
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
+            relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents)    
         member __.GetSprocs(con) = 
             let con = con:?>SqlConnection
@@ -248,6 +253,8 @@ type internal MSSqlServerProvider() =
                 | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to rerieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
                         None 
          )
+
+        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()

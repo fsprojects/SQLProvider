@@ -310,12 +310,12 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | _ -> failwith "Unuspported execution expression" }
 
-type public SqlDataContext (connectionString:string,providerType) =   
+type public SqlDataContext (connectionString:string,providerType,resolutionPath) =   
     static let mutable conString = ""
     static let mutable provider = None
     do 
         conString <- connectionString  
-        let prov = Common.Utilities.createSqlProvider providerType
+        let prov = Common.Utilities.createSqlProvider providerType resolutionPath
         provider <- Some prov
         use con = prov.CreateConnection(connectionString)
         con.Open()
@@ -324,8 +324,8 @@ type public SqlDataContext (connectionString:string,providerType) =
         prov.CreateTypeMappings(con)
         prov.GetTables(con) |> ignore
         con.Close()
-    static member _Create(connectionString,dbVendor) =
-        SqlDataContext(connectionString,dbVendor)    
+    static member _Create(connectionString,dbVendor,resolutionPath) =
+        SqlDataContext(connectionString,dbVendor,resolutionPath)    
     static member _CreateRelated(inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
         if direction = RelationshipDirection.Children then
             QueryImplementation.SqlQueryable<_>(conString,provider.Value,

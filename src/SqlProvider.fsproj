@@ -61,6 +61,7 @@
     <Compile Include="SqlRuntime.Patterns.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
+    <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlDesignTime.fs" />

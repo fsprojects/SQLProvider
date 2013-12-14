@@ -1,9 +1,12 @@
 ﻿namespace FSharp.Data.Sql.Common
-    open FSharp.Data.Sql.Providers
+    // I don't really like having these in this file..
     module internal Utilities =
-        let createSqlProvider  = function
+        open FSharp.Data.Sql.Providers
+
+        let createSqlProvider vendor resolutionPath =
+            match vendor with
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            //| DatabaseProviderTypes.SQLITE -> SqliteProvider() :> ISqlProvider
+            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
@@ -174,7 +177,7 @@ module internal QueryExpressionTransformer =
                 (a,if data.ForeignTable.Name <> "" then data else { data with ForeignTable = resolved }))
         let sqlQuery = { sqlQuery with Links = Map.map resolveLinks sqlQuery.Links }
         
-        // make sure the provider has cached loaded the columns for the tables within the projection
+        // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
         |> Seq.iter(function KeyValue(k,_) ->  
                                 let table = match sqlQuery.Aliases.TryFind k with
