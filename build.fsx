@@ -20,8 +20,8 @@ let solutionFile  = "SQLProvider"
 
 let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
 let gitHome = "https://github.com/pezipink"
-let gitName = "SQLProvider"
-let cloneUrl = "git@github.com:pezipink/SQLProvider.git"
+let gitName = "SqlProvider"
+let cloneUrl = "git@github.com:pezipink/SqlProvider.git"
 let nugetDir = "./nuget/"
 
 // Read additional information from the release notes document
