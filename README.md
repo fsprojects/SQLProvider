@@ -6,9 +6,7 @@ More documentation to come, for now you will have to settle with the post at my 
 
 ## Building
 
-Open solution file /src/SqlProvider.sln 
-
-Build.
+run build.cmd
 
 ## Known issues
 
