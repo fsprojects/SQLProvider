@@ -11,7 +11,7 @@ let website = "/SQLProvider"
 // Specify more information about your project
 let info =
   [ "project-name", "SQLProvider"
-    "project-author", "Steffen Forkmann"
+    "project-author", "Ross McKinlay"
     "project-summary", "Type providers for SQL server access."
     "project-github", "http://github.com/pezipink/SQLProvider"
     "project-nuget", "http://nuget.com/packages/SQLProvider" ]
