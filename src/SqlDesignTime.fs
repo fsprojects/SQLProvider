@@ -89,22 +89,35 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         individualsTypes.Add ty
                         Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" col.Name,ty, GetterCode = fun _ -> <@@ new obj() @@> ))))
                       |> Map.ofSeq
-                    
+                 
+                   // special case for guids as they are not a supported quotable constant in the TP mechanics,
+                   // but we can deal with them as strings.
+                   let (|FixedType|_|) (o:obj) = 
+                      match o, o.GetType().IsValueType with
+                      // watch out for normal strings
+                      | :? string, _ -> Some o
+                      | :? Guid, _ -> Some (box (o.ToString()))                      
+                      | _, true -> Some o
+                      // can't support any other types
+                      | _, _ -> None
+
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
                       entities
-                      |> List.map(fun e ->  
-                         let pkValue = e.GetColumn pk
-                         let name = table.FullName
-                         // this next bit is just side effect to populate the "As Column" types
-                         e.ColumnValues 
-                         |> Seq.iter(fun kvp -> 
-                            if kvp.Key = pk then () else                         
-                            (fst propertyMap.[kvp.Key]).AddMemberDelayed(
-                               fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (kvp.Value.ToString()) ,et,
-                                         GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(name,pkValue) @@> )))
-                         // return the primary key property
-                         ProvidedProperty(pkValue.ToString(),et,GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(name,pkValue) @@> ))
+                      |> List.choose(fun e ->  
+                         match e.GetColumn pk with
+                         | FixedType pkValue -> 
+                            let name = table.FullName
+                            // this next bit is just side effect to populate the "As Column" types for the supported columns
+                            e.ColumnValues 
+                            |> Seq.iter(fun kvp -> 
+                               if kvp.Key = pk then () else      
+                               (fst propertyMap.[kvp.Key]).AddMemberDelayed(
+                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (kvp.Value.ToString()) ,et,
+                                            GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(rootTypeName,name,pkValue) @@> )))
+                            // return the primary key property
+                            Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(rootTypeName,name,pkValue) @@> )
+                         | _ -> None)
                       |> List.append( propertyMap |> Map.toList |> List.map (snd >> snd))
 
                    propertyMap 
@@ -161,7 +174,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let pk = r.PrimaryKey
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
-                            <@@ SqlDataContext._CreateRelated((%%(args.[0]) : SqlEntity), name,pt,pk,ft,fk,"",RelationshipDirection.Children) @@> )
+                            <@@ SqlDataContext._CreateRelated(rootTypeName,(%%(args.[0]) : SqlEntity), name,pt,pk,ft,fk,"",RelationshipDirection.Children) @@> )
                         prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
                         yield prop ] @
                     [ for r in parents do                       
@@ -174,7 +187,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let pk = r.PrimaryKey
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
-                            <@@ SqlDataContext._CreateRelated((%%(args.[0]) : SqlEntity), name,pt,pk,ft,fk,"",RelationshipDirection.Parents) @@> )
+                            <@@ SqlDataContext._CreateRelated(rootTypeName,(%%(args.[0]) : SqlEntity), name,pt,pk,ft,fk,"",RelationshipDirection.Parents) @@> )
                         prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s" r.PrimaryTable r.PrimaryKey r.ForeignKey)
                         yield prop ]
                 attProps @ relProps)
@@ -212,7 +225,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let name = sproc.FullName
                         let rawNames = sproc.Params |> List.map(fun p -> p.Name) |> Array.ofList
                         let rawTypes = sproc.Params |> List.map(fun p -> p.DbType) |> Array.ofList
-                        <@@ SqlDataContext._CallSproc(name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
+                        <@@ SqlDataContext._CallSproc(rootTypeName,name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
                 )
         sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
 
@@ -220,7 +233,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ yield sprocContainer :> MemberInfo
               for (KeyValue(key,(t,desc,_))) in baseTypes.Force() do
                 let (ct,it) = baseCollectionTypes.Force().[key]
-                let prop = ProvidedProperty(ct.Name.Substring(0,ct.Name.LastIndexOf("]")+1),ct, GetterCode = fun args -> <@@ SqlDataContext._CreateEntities(key) @@> )
+                let prop = ProvidedProperty(ct.Name.Substring(0,ct.Name.LastIndexOf("]")+1),ct, GetterCode = fun args -> <@@ SqlDataContext._CreateEntities(rootTypeName,key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
                 yield t :> MemberInfo
                 yield ct :> MemberInfo
@@ -237,7 +250,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 serviceType, IsStaticMethod=true,
                                 InvokeCode = (fun _ -> 
                                     let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                    Expr.Call(meth, [Expr.Value conString; Expr.Value dbVendor; Expr.Value resolutionPath])
+                                    Expr.Call(meth, [Expr.Value rootTypeName; Expr.Value conString; Expr.Value dbVendor; Expr.Value resolutionPath])
                                     ))
               meth.AddXmlDoc "<summary>Returns an instance of the Sql provider using the static parameters</summary>"
                    
@@ -256,7 +269,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
                                                                 let meth = typeof<SqlDataContext>.GetMethod "_Create"
-                                                                Expr.Call(meth, [args.[0];Expr.Value dbVendor; Expr.Value resolutionPath])))
+                                                                Expr.Call(meth, [Expr.Value rootTypeName;args.[0];Expr.Value dbVendor; Expr.Value resolutionPath])))
                       
               meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
                               <param name='connectionString'>The database connection string</param>"

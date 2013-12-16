@@ -251,7 +251,7 @@ module internal QueryImplementation =
                                 processSelectManys projectionParams.[1].Name inner outExp
                              | MethodCall(None, (MethodWithName "Join"), 
                                 [createRelated
-                                 Convert(MethodCall(_, (MethodWithName "_CreateEntities"), [String destEntity] ))
+                                 Convert(MethodCall(_, (MethodWithName "_CreateEntities"), [_; String destEntity] ))
                                  OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
                                  OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
                                  OptionalQuote (Lambda(projectionParams,_))]) ->
@@ -268,7 +268,7 @@ module internal QueryImplementation =
                                                 ForeignTable = {Schema="";Name="";Type=""}; 
                                                 OuterJoin = false; RelDirection = RelationshipDirection.Parents }                                
                                 SelectMany(sourceAlias,destAlias,data,outExp)  
-                             | OptionalOuterJoin(outerJoin,MethodCall(None,(MethodWithName "_CreateRelated"), [param; _; String PE; String PK; String FE; String FK; String IE; RelDirection dir;])) ->                   
+                             | OptionalOuterJoin(outerJoin,MethodCall(None,(MethodWithName "_CreateRelated"), [_; param; _; String PE; String PK; String FE; String FK; String IE; RelDirection dir;])) ->                   
                                 let fromAlias =
                                     match param with
                                     | ParamName x -> x
@@ -310,68 +310,80 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | _ -> failwith "Unuspported execution expression" }
 
-type public SqlDataContext (connectionString:string,providerType,resolutionPath) =   
-    static let mutable conString = ""
-    static let mutable provider = None
-    do 
-        conString <- connectionString  
-        let prov = Common.Utilities.createSqlProvider providerType resolutionPath
-        provider <- Some prov
-        use con = prov.CreateConnection(connectionString)
-        con.Open()
-        // create type mappings and also trigger the table info read so the provider has 
-        // the minimum base set of data available
-        prov.CreateTypeMappings(con)
-        prov.GetTables(con) |> ignore
-        con.Close()
-    static member _Create(connectionString,dbVendor,resolutionPath) =
-        SqlDataContext(connectionString,dbVendor,resolutionPath)    
-    static member _CreateRelated(inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
-        if direction = RelationshipDirection.Children then
-            QueryImplementation.SqlQueryable<_>(conString,provider.Value,
-               FilterClause(
-                  Condition.And(["__base__",fk,ConditionOperator.Equal, Some(inst.GetColumn pk)],None), 
-                     BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> IQueryable<_> 
-        else
-            QueryImplementation.SqlQueryable<_>(conString,provider.Value,
-               FilterClause(
-                  Condition.And(["__base__",pk,ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None), 
-                     BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_> 
-    static member _CreateEntities(table:string) : IQueryable<SqlEntity> =  
-        QueryImplementation.SqlQueryable.Create(Table.FromFullName table,conString,provider.Value) 
-    static member _CallSproc(name,parameters,types:DbType array,values:obj array) =
-        use con = provider.Value.CreateConnection(conString)
-        con.Open()
-        use com = provider.Value.CreateCommand(con,name)
-        com.CommandType <- CommandType.StoredProcedure
-        parameters
-        |> Array.iteri(fun i name ->
-            let p = provider.Value.CreateCommandParameter(name,values.[i],Some types.[i])
-            com.Parameters.Add p |> ignore)
-        use reader = com.ExecuteReader()
-        let entity = SqlEntity.FromDataReader(name,reader)
-        con.Close()
-        entity
-    static member _GetIndividual(table,id) : SqlEntity =
-        use con = provider.Value.CreateConnection(conString)
-        con.Open()
-        let table = Table.FromFullName table
-        // this line is to ensure the columns for the table have been retrieved and therefore
-        // its primary key exists in the lookup
-        provider.Value.GetColumns (con,table) |> ignore
-        let pk = 
-            match provider.Value.GetPrimaryKey table with
-            | Some v -> v
-            | None -> 
-               // this fail case should not really be possible unless the runime database is different to the design-time one
-               failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName         
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath) =   
+    static let connectionCache = Dictionary<string,string*ISqlProvider>()
+    do  
+        match connectionCache.TryGetValue typeName with
+        | true, _ -> ()
+        | false,_ -> 
+            let prov = Common.Utilities.createSqlProvider providerType resolutionPath
+            use con = prov.CreateConnection(connectionString)
+            con.Open()
+            // create type mappings and also trigger the table info read so the provider has 
+            // the minimum base set of data available
+            prov.CreateTypeMappings(con)
+            prov.GetTables(con) |> ignore
+            con.Close()
+            connectionCache.Add(typeName,(connectionString,prov))
+    static member _Create(typeName,connectionString,dbVendor,resolutionPath) =
+        SqlDataContext(typeName,connectionString,dbVendor,resolutionPath)    
+    static member _CreateRelated(typeName,inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
+        match connectionCache.TryGetValue typeName with
+        | true,(conString,provider) -> 
+           if direction = RelationshipDirection.Children then
+               QueryImplementation.SqlQueryable<_>(conString,provider,
+                  FilterClause(
+                     Condition.And(["__base__",fk,ConditionOperator.Equal, Some(inst.GetColumn pk)],None), 
+                        BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> IQueryable<_> 
+           else
+               QueryImplementation.SqlQueryable<_>(conString,provider,
+                  FilterClause(
+                     Condition.And(["__base__",pk,ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None), 
+                        BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_> 
+         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
+    static member _CreateEntities(typeName,table:string) : IQueryable<SqlEntity> =  
+        match connectionCache.TryGetValue typeName with
+        | true,(conString,provider) -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,conString,provider) 
+        | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
+    static member _CallSproc(typeName,name,parameters,types:DbType array,values:obj array) =
+        match connectionCache.TryGetValue typeName with
+        | true,(conString,provider) -> 
+           use con = provider.CreateConnection(conString)
+           con.Open()
+           use com = provider.CreateCommand(con,name)
+           com.CommandType <- CommandType.StoredProcedure
+           parameters
+           |> Array.iteri(fun i name ->
+               let p = provider.CreateCommandParameter(name,values.[i],Some types.[i])
+               com.Parameters.Add p |> ignore)
+           use reader = com.ExecuteReader()
+           let entity = SqlEntity.FromDataReader(name,reader)
+           con.Close()
+           entity
+        | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
+    static member _GetIndividual(typeName,table,id) : SqlEntity =
+        match connectionCache.TryGetValue typeName with
+        | true,(conString,provider) -> 
+           use con = provider.CreateConnection(conString)
+           con.Open()
+           let table = Table.FromFullName table
+           // this line is to ensure the columns for the table have been retrieved and therefore
+           // its primary key exists in the lookup
+           provider.GetColumns (con,table) |> ignore
+           let pk = 
+               match provider.GetPrimaryKey table with
+               | Some v -> v
+               | None -> 
+                  // this fail case should not really be possible unless the runime database is different to the design-time one
+                  failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName         
         
-        use com = provider.Value.CreateCommand(con,sprintf "SELECT * FROM %s WHERE %s = @id" table.FullName pk)
-        //todo: establish pk sql data type
-        com.Parameters.Add (provider.Value.CreateCommandParameter("@id",id,None)) |> ignore
-        use reader = com.ExecuteReader()
-        let entity = List.head <| SqlEntity.FromDataReader(table.FullName,reader)
-        con.Close()
-        entity
-    member x.ConnectionString with get() = conString
+           use com = provider.CreateCommand(con,sprintf "SELECT * FROM %s WHERE %s = @id" table.FullName pk)
+           //todo: establish pk sql data type
+           com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
+           use reader = com.ExecuteReader()
+           let entity = List.head <| SqlEntity.FromDataReader(table.FullName,reader)
+           con.Close()
+           entity
+        | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
+    
         
