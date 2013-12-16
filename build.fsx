@@ -81,7 +81,7 @@ Target "NuGet" (fun _ ->
     CleanDir nugetDocsDir
     CleanDir nugetlibDir
         
-    CopyDir nugetlibDir @"bin" allFiles
+    CopyDir nugetlibDir "bin" (fun file -> file.Contains "FSharp.Core." |> not)
     CopyDir nugetDocsDir "./docs/output" allFiles
     
     NuGet (fun p -> 
