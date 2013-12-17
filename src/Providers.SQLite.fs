@@ -275,9 +275,9 @@ type internal SQLiteProvider(resolutionPath) as this =
                     ~~ (sprintf "[%s].[%s]%s" alias column (if not desc then "DESC" else "")))
 
             // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s "  columns)
+            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "") columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else ~~(sprintf "SELECT %s "  columns)
+            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
             ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)         
             fromBuilder()

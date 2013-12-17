@@ -315,15 +315,12 @@ module internal QueryImplementation =
                 member provider.Execute(e:Expression) : obj = failwith "Execute not implemented"
                 member provider.Execute<'T>(e:Expression) : 'T = 
                     Common.QueryEvents.PublishExpression e
-                    let (|SqlQueryableParam|_|) = function Constant ((:? SqlQueryable<'T>  as query), _) -> Some query | _ -> None
                     match e with                    
-                    | MethodCall(_, (MethodWithName "Single" as meth), [SqlQueryableParam(query)] ) ->   
-                        match query |> Seq.toList with
+                    | MethodCall(_, (MethodWithName "Single" as meth),  [Constant(query,_)]  ) ->   
+                        match (query :?> seq<_>) |> Seq.toList with
                         | x::[] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query,_)] ) ->  
-                        // for some reason I could not determine,  the above SqlQueryableParam pattern simply refuses to match 
-                        // on this, even though it is identical to the expression tree that happens in Single - very strange.
                         let svc = (query:?>IWithSqlService)                        
                         executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
                     | _ -> failwith "Unuspported execution expression" }
