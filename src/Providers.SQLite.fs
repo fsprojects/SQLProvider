@@ -276,6 +276,7 @@ type internal SQLiteProvider(resolutionPath) as this =
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s "  columns)
+            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else ~~(sprintf "SELECT %s "  columns)
             // FROM
             ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)         

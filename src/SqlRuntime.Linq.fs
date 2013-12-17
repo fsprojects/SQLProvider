@@ -39,6 +39,18 @@ module internal QueryImplementation =
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
        con.Close()
        results
+
+    let executeQueryScalar conString (provider:ISqlProvider) sqlExp ti =        
+       use con = provider.CreateConnection(conString) 
+       con.Open()
+       let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+       Common.QueryEvents.PublishSqlQuery query       
+       use cmd = provider.CreateCommand(con,query)   
+       for p in parameters do cmd.Parameters.Add p |> ignore       
+       // ignore any generated projection and just expect a single integer back
+       let result = cmd.ExecuteScalar()
+       con.Close()
+       result
        
     type SqlQueryable<'T>(conString:string,provider,sqlQuery,tupleIndex) =       
         static member Create(table,conString,provider) = 
@@ -302,12 +314,18 @@ module internal QueryImplementation =
                     
                 member provider.Execute(e:Expression) : obj = failwith "Execute not implemented"
                 member provider.Execute<'T>(e:Expression) : 'T = 
+                    Common.QueryEvents.PublishExpression e
                     let (|SqlQueryableParam|_|) = function Constant ((:? SqlQueryable<'T>  as query), _) -> Some query | _ -> None
-                    match e with
-                    | MethodCall(o, (MethodWithName "Single" as meth), [SqlQueryableParam(query)] ) ->   
+                    match e with                    
+                    | MethodCall(_, (MethodWithName "Single" as meth), [SqlQueryableParam(query)] ) ->   
                         match query |> Seq.toList with
                         | x::[] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
+                    | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query,_)] ) ->  
+                        // for some reason I could not determine,  the above SqlQueryableParam pattern simply refuses to match 
+                        // on this, even though it is identical to the expression tree that happens in Single - very strange.
+                        let svc = (query:?>IWithSqlService)                        
+                        executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
                     | _ -> failwith "Unuspported execution expression" }
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath) =   
