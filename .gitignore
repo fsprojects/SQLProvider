@@ -171,3 +171,6 @@ temp/
 TestResults.xml
 release.cmd
 nuget/
+
+# Nuget outputs
+nuget/*.nupkg
