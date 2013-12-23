@@ -102,8 +102,9 @@ type internal SQLiteProvider(resolutionPath) as this =
                       | Some(clr),Some(sql) ->
                          let col =
                             { Column.Name = reader.GetString(1); 
-                              ClrType = clr; 
-                              DbType = sql; 
+                              ClrType = clr
+                              DbType = sql
+                              IsNullable = reader.GetBoolean(3);
                               IsPrimarKey = if reader.GetBoolean(5) then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
                          yield col 

@@ -66,6 +66,14 @@ let (|OptionalQuote|) (e:Expression) =
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
     | _ -> e
 
+let (|OptionalFSharpOptionValue|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
+        match e.Member with 
+        | :? PropertyInfo as p when p.Name = "Value" && e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> e.Expression
+        | _ -> upcast e 
+    | _ -> e
+
 let (|AndAlso|_|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.AndAlso, ( :? BinaryExpression as be) -> Some(be.Left,be.Right)
@@ -83,10 +91,18 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | _ -> None
 
 let (|SqlColumnGet|_|) = function 
-    | MethodCall(Some(o),(MethodWithName "GetColumn" as meth),[String key]) -> 
+    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
         match o with
         | :? MemberExpression as m  -> Some(m.Member.Name,key,meth.ReturnType) 
         | _ -> Some(String.Empty,key,meth.ReturnType) 
+    | _ -> None
+
+let (|OptionIsSome|_|) = function    
+    | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
+    | _ -> None
+
+let (|OptionIsNone|_|) = function    
+    | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
     | _ -> None
 
 let (|SqlSpecialOpArr|_|) = function

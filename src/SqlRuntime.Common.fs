@@ -46,12 +46,24 @@ type SqlEntity(tableName) =
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
         if data.ContainsKey key then unbox data.[key]
-        else defaultValue()            
+        else defaultValue()
+    
+    member e.GetColumnOption<'T>(key) =        
+       if data.ContainsKey key then Some(unbox<'T> data.[key])
+       else None
 
     member e.SetColumn(key,value) =
         if not (data.ContainsKey key) && value <> null then data.Add(key,value)
         else data.[key] <- value
         e.TriggerPropertyChange key
+    
+    member e.SetColumnOption(key,value) =
+      match value with
+      | Some value -> 
+          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          else data.[key] <- value
+          e.TriggerPropertyChange key
+      | None -> if data.Remove key then e.TriggerPropertyChange key
     
     member e.HasValue(key) = data.ContainsKey key
 

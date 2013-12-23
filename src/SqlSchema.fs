@@ -12,7 +12,7 @@ module internal Patterns =
       then Some (List.tail [ for g in m.Groups -> g.Value ])
       else None
 
-type Column = { Name:string; ClrType: Type; DbType: DbType; IsPrimarKey:bool; }
+type Column = { Name:string; ClrType: Type; DbType: DbType; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 type Direction = In | Out
 type SprocParam = { Name:string; ClrType:Type; DbType:DbType; Direction:Direction; MaxLength:int option; Ordinal:int }

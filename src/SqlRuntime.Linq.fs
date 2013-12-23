@@ -127,7 +127,6 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let paramNames = HashSet<string>()
-
                         let (|Condition|_|) exp =   
                             // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
                             match exp with
@@ -137,32 +136,15 @@ module internal QueryImplementation =
                             | SqlSpecialOp(ti,op,key,value) ->  
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,op,Some value)
-                            // matches column to constant with any operator eg c => c.name = "john", c => c.age > 42
-                            | SqlCondOp(op,(SqlColumnGet(ti,key,_)),ConstantOrNullableConstant(c)) -> 
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,c)
-                            // if the left side is a memberexpression it is likely referencing a column of a table in a join, or the Value / HasValue property of a nullable type.
-                            // when accessing the value checking the column as normal, the Value can be ignored.  HasValue should be translated into
-                            // Null / Not null 
-                            | PropertyGet(Some(SqlColumnGet(ti,key,_)),pi) when pi.Name = "HasValue" -> 
+                            // if using nullable types
+                            | OptionIsSome(SqlColumnGet(ti,key,_)) ->
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,ConditionOperator.NotNull,None)
-                            | SqlCondOp(op,PropertyGet(Some(SqlColumnGet(ti,key,_)),pi),ConstantOrNullableConstant(c)) when pi.Name = "Value" -> 
-                                // this is a special case for nullable enums, which you cannot use the nullable operators with due to restrictions in the type provider
-                                // mechanics meaning there is no way to trick the compiler into treating the provided enum as a value type.
-                                // this is a workaround allowing the nullable enums to be used in the format where  a.code.Value = Enum.Item
+                            | OptionIsNone(SqlColumnGet(ti,key,_)) ->
                                 paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,c)
-                            | SqlCondOp(op,PropertyGet(Some(SqlColumnGet(ti,key,_) ),pi),Bool(c)) when pi.Name = "HasValue"  -> 
-                                paramNames.Add(ti) |> ignore
-                                match c with
-                                | true -> Some(ti,key,ConditionOperator.NotNull,None)
-                                | false -> Some(ti,key,ConditionOperator.IsNull,None)
-                            | SqlCondOp(op,(:? MemberExpression as methL),ConstantOrNullableConstant(c)) -> 
-                                let ti,key =  
-                                  match methL.Expression with
-                                  | SqlColumnGet(ti,key,ty) -> ti,key
-                                  | _ -> failwith "Unsupported member expression on left side"    
+                                Some(ti,key,ConditionOperator.IsNull,None)
+                            // matches column to constant with any operator eg c.name = "john", c.age > 42
+                            | SqlCondOp(op,(SqlColumnGet(ti,key,_)),ConstantOrNullableConstant(c)) -> 
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,op,c)
                             // matches to another property getter, method call or new expression
@@ -262,11 +244,11 @@ module internal QueryImplementation =
                                 let outExp = processSelectManys projectionParams.[0].Name createRelated outExp                                
                                 processSelectManys projectionParams.[1].Name inner outExp
                              | MethodCall(None, (MethodWithName "Join"), 
-                                [createRelated
-                                 Convert(MethodCall(_, (MethodWithName "_CreateEntities"), [_; String destEntity] ))
-                                 OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
-                                 OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
-                                 OptionalQuote (Lambda(projectionParams,_))]) ->
+                                                    [createRelated
+                                                     Convert(MethodCall(_, (MethodWithName "_CreateEntities"), [_; String destEntity] ))
+                                                     OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
+                                                     OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
+                                                     OptionalQuote (Lambda(projectionParams,_))]) ->
                                 // this case happens when the select many also includes one or more joins in the same tree.
                                 // in this situation, the first agrument will either be an additional nested join method call,
                                 // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
