@@ -20,6 +20,8 @@ type Sproc = {FullName:string; Params:SprocParam list; ReturnColumns:Column list
 
 type Table = { Schema: string; Name:string; Type:string }
     with 
+        // Note here the [].[] format is ONLY used internally.  Do not use this in queries; Different vendors have 
+        // different ways to qualify whitespace.
         member x.FullName = sprintf "[%s].[%s]" x.Schema x.Name
         static member FromFullName(fullName:string) = 
             match fullName with

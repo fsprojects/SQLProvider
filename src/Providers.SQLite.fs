@@ -150,6 +150,7 @@ type internal SQLiteProvider(resolutionPath) as this =
         member __.GetSprocs(con) = [] 
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" table.FullName amount 
+        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             // NOTE: presently this is identical to the SQL server code,
@@ -276,9 +277,9 @@ type internal SQLiteProvider(resolutionPath) as this =
                     ~~ (sprintf "[%s].[%s]%s" alias column (if not desc then "DESC" else "")))
 
             // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "") columns)
+            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
+            else  ~~(sprintf "SELECT %s " columns)
             // FROM
             ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)         
             fromBuilder()
@@ -294,6 +295,9 @@ type internal SQLiteProvider(resolutionPath) as this =
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()
+
+            if sqlQuery.Take.IsSome then 
+                ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
 
             let sql = sb.ToString()
             (sql,parameters)

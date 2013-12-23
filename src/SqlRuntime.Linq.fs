@@ -48,9 +48,16 @@ module internal QueryImplementation =
        use cmd = provider.CreateCommand(con,query)   
        for p in parameters do cmd.Parameters.Add p |> ignore       
        // ignore any generated projection and just expect a single integer back
-       let result = cmd.ExecuteScalar()
+       let result = 
+        match cmd.ExecuteScalar() with
+        | :? string as s -> Int32.Parse s
+        | :? int as i -> i
+        | :? int16 as i -> int32 i
+        | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int so its possible to lose data here.
+        | x -> con.Close()
+               failwithf "Count retruned something other than a 32 bit integer : %s " (x.GetType().ToString())
        con.Close()
-       result
+       box result
        
     type SqlQueryable<'T>(conString:string,provider,sqlQuery,tupleIndex) =       
         static member Create(table,conString,provider) = 
@@ -304,7 +311,7 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query,_)] ) ->  
                         let svc = (query:?>IWithSqlService)                        
-                        executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
+                        executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T 
                     | _ -> failwith "Unuspported execution expression" }
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath) =   
@@ -374,7 +381,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                   // this fail case should not really be possible unless the runime database is different to the design-time one
                   failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName         
         
-           use com = provider.CreateCommand(con,sprintf "SELECT * FROM %s WHERE %s = @id" table.FullName pk)
+           use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
            //todo: establish pk sql data type
            com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
            use reader = com.ExecuteReader()

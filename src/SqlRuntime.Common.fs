@@ -12,6 +12,7 @@ open FSharp.Data.Sql.Schema
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
+    | POSTGRESQL = 2
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -86,10 +87,15 @@ type SqlEntity(tableName) =
             // attributes names cannot have a period in them unless they are an alias
             let pred =                 
                 let prefix = "[" + alias + "]."
+                let prefix2 = alias + "."
                 (fun (kvp:KeyValuePair<string,_>) -> 
                     if kvp.Key.StartsWith prefix then 
                         let temp = kvp.Key.Replace(prefix,"")
                         let temp = temp.Substring(1,temp.Length-2)
+                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    // this case is for postgresql and other vendors that use " as whitepsace qualifiers 
+                    elif  kvp.Key.StartsWith prefix2 then  
+                        let temp = kvp.Key.Replace(prefix2,"")
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
                     else None) 
                         
@@ -259,6 +265,8 @@ type internal ISqlProvider =
     /// Returns the db vendor specific sql query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
+    /// Returns the db vendor specific sql query to select a single row based on the table and column name specified
+    abstract GetIndividualQueryText : Table * string -> string
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection

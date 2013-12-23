@@ -68,7 +68,7 @@ type internal MSSqlServerProvider() =
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
         member __.ClrToEnum = clrToEnum
         member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr
+        member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
             use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
             [ while reader.Read() do 
@@ -256,7 +256,8 @@ type internal MSSqlServerProvider() =
          )
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
-
+        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+        
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()

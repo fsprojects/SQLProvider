@@ -63,6 +63,7 @@
     <Compile Include="SqlSchema.fs" />
     <Compile Include="SqlRuntime.Patterns.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
+    <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
