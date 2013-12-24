@@ -1,10 +1,10 @@
-# SqlProvider
+# SQLProvider
 
 A general SQL database type provider, supporting LINQ queries, schema exploration, individuals and much more besides.
 
 More documentation to come, for now you will have to settle with the post at my website [here](http://pinksquirrellabs.com/post/2013/12/09/The-Erasing-SQL-type-provider.aspx)
 
-The provider currently supports MS SQL Server, SQLite and PostgreSQL.  All database vendors except SQL Server will require 3rd party ADO.NET connector objects to function.  These are dynamically loaded at runtime so that the SQL provider project is not dependency on them.  You must supply the location of the assemblies with the "ResolutionPath" static parameter.
+The provider currently supports MS SQL Server, SQLite and PostgreSQL.  All database vendors except SQL Server will require 3rd party ADO.NET connector objects to function.  These are dynamically loaded at runtime so that the SQL provider project is not dependent on them.  You must supply the location of the assemblies with the "ResolutionPath" static parameter.
 
 SQLite is based on the .NET drivers found [here](http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki).  You will need the correct version for your specific architecture and setup.
 
