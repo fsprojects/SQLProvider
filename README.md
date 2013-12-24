@@ -4,6 +4,12 @@ A general SQL database type provider, supporting LINQ queries, schema exploratio
 
 More documentation to come, for now you will have to settle with the post at my website [here](http://pinksquirrellabs.com/post/2013/12/09/The-Erasing-SQL-type-provider.aspx)
 
+The provider currently supports MS SQL Server, SQLite and PostgreSQL.  All database vendors except SQL Server will require 3rd party ADO.NET connector objects to function.  These are dynamically loaded at runtime so that the SQL provider project is not dependency on them.  You must supply the location of the assemblies with the "ResolutionPath" static parameter.
+
+SQLite is based on the .NET drivers found [here]http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki.  You will need the correct version for your specific architecture and setup.
+
+PostgreSQL is based on the .NET drivers found [here]http://npgsql.projects.pgfoundry.org/.  The type provider will make frequent calls to the database.  I found that using the default settings for the PostgreSQL server on my Windows machine would deny the provider constant access - you may need to increase timeouts or set other relevant security settings to enable a frictionless experience.
+
 ## Building
 
 run build.cmd

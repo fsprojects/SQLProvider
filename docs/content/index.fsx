@@ -29,6 +29,35 @@ open System
 open System.Linq
 open FSharp.Data.Sql
 
+// create a type alias with the connection string and database vendor you are using, along with a resolution path for 
+// 3rd party assemblies if you are not using MS SQL Server.  The last two parameters are the amount of individuals 
+// to project into the devleopment einvronment, and finally whether to generate nullable columns as F# option types.
+type sql = SqlDataProvider< @"Data Source=F:\sqlite\northwindEF.db ;Version=3", Common.DatabaseProviderTypes.SQLITE, @"F:\sqlite\3", 1000, true >
+let ctx = sql.GetDataContext()
+
+// pick individual entities from the database 
+let christina = ctx.``[main].[Customers]``.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+
+// directly enumerate an entity's relationships, 
+// this creates and triggers the relevant query in the background
+let christinasOrders = christina.FK_Orders_0_0 |> Seq.toArray
+
+let mattisOrderDetails =
+    query { for c in ctx.``[main].[Customers]`` do
+            // you can directly enumerate relationships with no join information
+            for o in c.FK_Orders_0_0 do
+            // or you can explcitly join on the fields you choose
+            join od in ctx.``[main].[OrderDetails]`` on (o.OrderID = od.OrderID)
+            //  the (!!) operator will perform an outer join on a relationship
+            for prod in (!!) od.FK_OrderDetails_0_0 do 
+            // nullable columns can be represented as option types. The following generates IS NOT NULL
+            where c.CompanyName.IsSome                
+            // standard operators will work as expected; the following shows the like operator and IN operator
+            where (c.ContactName =% ("Matti%") && o.ShipCountry |=| [|"Finland";"England"|] )
+            sortBy o.ShipName
+            // arbitrarily complex projections are supported
+            select (c.ContactName,o.ShipAddress,o.ShipCountry,prod.ProductName,prod.UnitPrice) } 
+    |> Seq.toArray
 
 (**
 
