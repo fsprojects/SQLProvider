@@ -241,7 +241,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                 relationshipLookup.Add(table.FullName,(children,parents))
                 (children,parents)    
         
-        /// SQLite does not support stored procedures.
+        /// Have not attempted stored procs yet
         member __.GetSprocs(con) = [] 
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","\"").Replace("]","\"")) amount 
@@ -249,8 +249,8 @@ type internal PostgresqlProvider(resolutionPath) as this =
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
-            // NOTE: presently this is identical to the SQL server code,
-            // however it is duplicated intentionally so that any SQLite specific
+            // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
+            // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
