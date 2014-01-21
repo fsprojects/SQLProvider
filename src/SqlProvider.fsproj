@@ -61,10 +61,12 @@
     </Compile>
     <Compile Include="Operators.fs" />
     <Compile Include="SqlSchema.fs" />
+    <Compile Include="DataTable.fs" />
     <Compile Include="SqlRuntime.Patterns.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
+    <Compile Include="Providers.Oracle.fs" />
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />

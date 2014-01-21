@@ -13,6 +13,7 @@ type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
     | POSTGRESQL = 2
+    | ORACLE = 3
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()

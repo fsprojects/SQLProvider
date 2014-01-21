@@ -314,13 +314,13 @@ module internal QueryImplementation =
                         executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T 
                     | _ -> failwith "Unuspported execution expression" }
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath) =   
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
     static let connectionCache = Dictionary<string,string*ISqlProvider>()
     do  
         match connectionCache.TryGetValue typeName with
         | true, _ -> ()
         | false,_ -> 
-            let prov = Common.Utilities.createSqlProvider providerType resolutionPath
+            let prov = Common.Utilities.createSqlProvider providerType resolutionPath owner
             use con = prov.CreateConnection(connectionString)
             con.Open()
             // create type mappings and also trigger the table info read so the provider has 
@@ -329,8 +329,8 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             prov.GetTables(con) |> ignore
             con.Close()
             connectionCache.Add(typeName,(connectionString,prov))
-    static member _Create(typeName,connectionString,dbVendor,resolutionPath) =
-        SqlDataContext(typeName,connectionString,dbVendor,resolutionPath)    
+    static member _Create(typeName,connectionString,dbVendor,resolutionPath, owner) =
+        SqlDataContext(typeName,connectionString,dbVendor,resolutionPath, owner)    
     static member _CreateRelated(typeName,inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
         match connectionCache.TryGetValue typeName with
         | true,(conString,provider) -> 
