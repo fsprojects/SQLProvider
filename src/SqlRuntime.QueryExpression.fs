@@ -102,6 +102,12 @@ module internal QueryExpressionTransformer =
     
     let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) =
         // first convert the abstract query tree into a more useful format
+        let legaliseName (alias:alias) = 
+                if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
+
+        let entityIndex = new ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
+            
+                 
         let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
         
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it     

@@ -27,3 +27,5 @@ type Table = { Schema: string; Name:string; Type:string }
             match fullName with
             | Patterns.Match @"\[(.*)\].\[(.*)\]" [schema;name] -> { Schema = schema; Name = name; Type="" } 
             | _ -> failwith ""
+        static member CreateFullName(schema, name) = 
+            sprintf "[%s].[%s]" schema name

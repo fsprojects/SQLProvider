@@ -90,6 +90,9 @@ type internal OracleProvider(resolutionPath, owner) =
     let getSchema name (args:string[]) conn = 
         getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
 
+    let tableFullName (table:Table) = 
+        table.Schema + "." + table.Name
+
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = 
             Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
@@ -133,25 +136,25 @@ type internal OracleProvider(resolutionPath, owner) =
                 | a -> a
 
         member __.GetPrimaryKey(table) = 
-            match primaryKeyCache.TryGetValue table.FullName with 
+            match primaryKeyCache.TryGetValue table.Name with 
             | true, v -> Some v.Column
             | _ -> None
         member __.GetColumns(con,table) = 
-            match columnCache.TryGetValue(table.FullName) with
+            match columnCache.TryGetValue table.FullName  with
             | true, cols -> cols
             | false, _ ->
                 let cols = 
-                    getSchema "Columns" [|owner|] con
+                    getSchema "Columns" [|owner; table.Name|] con
                     |> DataTable.choose (fun row -> 
                             let typ = unbox row.[4]
                             let nullable = unbox row.[8] = "Y"
-                            let tableName, colName = unbox row.[1], unbox row.[2]
+                            let colName =  unbox row.[2]
                             match sqlToClr typ, sqlToEnum typ with
                             | Some(clrTyp), Some(dbType) -> 
                                     { Name = colName; 
                                       ClrType = clrTyp
                                       DbType = dbType 
-                                      IsPrimarKey = primaryKeyCache.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = colName)
+                                      IsPrimarKey = primaryKeyCache.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = colName)
                                       IsNullable = nullable } |> Some
                             | _, _ -> None)
                 columnCache.Add(table.FullName, cols)
@@ -161,23 +164,22 @@ type internal OracleProvider(resolutionPath, owner) =
                 | true, rels -> rels
                 | false, _ ->
                     let foreignKeyCols = 
-                        getSchema "ForeignKeyColumns" [|owner;table.FullName|] con
+                        getSchema "ForeignKeyColumns" [|owner;table.Name|] con
                         |> DataTable.map (fun row -> (row.[1] :?> string, row.[3] :?> string)) 
                         |> Map.ofList
                     let rels = 
-                        getSchema "ForeignKeys" [|owner;table.FullName|] con
+                        getSchema "ForeignKeys" [|owner;table.Name|] con
                         |> DataTable.choose (fun row -> 
                             let name = unbox row.[4]
                             let pkName = unbox row.[0]
-                            printfn "%A %A" name pkName
-                            match primaryKeyCache.TryGetValue(pkName) with
+                            match primaryKeyCache.TryGetValue(table.Name) with
                             | true, pk ->
                                 match foreignKeyCols.TryFind name with
                                 | Some(fk) ->
                                      { Name = name 
-                                       PrimaryTable = unbox row.[2] 
+                                       PrimaryTable = Table.CreateFullName(owner,unbox row.[2]) 
                                        PrimaryKey = pk.Column
-                                       ForeignTable = unbox row.[5]
+                                       ForeignTable = Table.CreateFullName(owner,unbox row.[5])
                                        ForeignKey = fk } |> Some
                                 | None -> None
                             | false, _ -> None
@@ -194,23 +196,21 @@ type internal OracleProvider(resolutionPath, owner) =
                     relationshipCache.Add(table.FullName, (children ,  rels))
                     (children ,  rels)
         
-        /// SQLite does not support stored procedures.
+        //TODO: Get SPROC info
         member __.GetSprocs(con) = [] 
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" table.FullName amount 
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+        member this.GetIndividualsQueryText(table,amount) = sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
+        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s.%s WHERE %s.%s.%s = :id" table.Schema table.Name table.Schema table.Name column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
-            // NOTE: presently this is identical to the SQL server code,
-            // however it is duplicated intentionally so that any SQLite specific
-            // optimisations can be applied here.
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+            let tidyAlias (alias:string) = 
+               alias // if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
+
+            let baseAlias = tidyAlias baseAlias
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-            // all tables should be aliased.
-            // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
-            // if it does not, then we first need to create an alias for the single table
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -223,21 +223,22 @@ type internal OracleProvider(resolutionPath, owner) =
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let k = tidyAlias k
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
+                            for col in columnCache.[tableFullName (getTable k)] |> List.map(fun c -> c.Name) do 
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
+                                else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
+                                yield sprintf "%s.%s as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0
             let nextParam() =
                 incr param
-                sprintf "@param%i" !param
+                sprintf ":param%i" !param
 
             let createParam (value:obj) =
                 let paramName = nextParam()
@@ -249,6 +250,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                let alias = tidyAlias alias
                                 let extractData data = 
                                      match data with
                                      | Some(x) when (box x :? string array) -> 
@@ -262,19 +264,19 @@ type internal OracleProvider(resolutionPath, owner) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "[%s].[%s] IS NULL") alias col 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "[%s].[%s] IS NOT NULL") alias col 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias col 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias col 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "[%s].[%s] IN (%s)") alias col text
+                                        (sprintf "%s.%s IN (%s)") alias col text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "[%s].[%s] NOT IN (%s)") alias col text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias col text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "[%s].[%s]%s %s") alias col 
+                                        (sprintf "%s.%s%s %s") alias col 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -308,10 +310,12 @@ type internal OracleProvider(resolutionPath, owner) =
                 sqlQuery.Links
                 |> Map.iter(fun fromAlias (destList) ->
                     destList
-                    |> List.iter(fun (alias,data) -> 
+                    |> List.iter(fun (alias,data) ->
+                        let alias = tidyAlias alias
+                        let fromAlias = tidyAlias fromAlias
                         let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                         let destTable = getTable alias
-                        ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
+                        ~~  (sprintf "%s %s.%s %s on %s.%s = %s.%s " 
                                joinType destTable.Schema destTable.Name alias 
                                (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
                                data.ForeignKey  
@@ -321,15 +325,16 @@ type internal OracleProvider(resolutionPath, owner) =
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
+                    let alias = tidyAlias alias
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "[%s].[%s]%s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s.%s%s" alias column (if not desc then "DESC" else "")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)         
+            ~~(sprintf "FROM %s %s " (tableFullName baseTable) baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -345,7 +350,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 orderByBuilder()
 
             if sqlQuery.Take.IsSome then 
-                ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
+                ~~(sprintf " ROWNUM <= %i;" sqlQuery.Take.Value)
 
             let sql = sb.ToString()
             (sql,parameters)
