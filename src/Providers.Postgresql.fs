@@ -25,7 +25,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                 if String.IsNullOrEmpty resolutionPath then name + ".dll" 
                 else System.IO.Path.Combine(resolutionPath,name+".dll"))
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
-    let assembly =  loadAssembly "NpgSql"
+    let assembly =  loadAssembly "Npgsql"
     let monoSecurity = loadAssembly "Mono.Security"
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
