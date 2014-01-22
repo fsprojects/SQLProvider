@@ -143,8 +143,11 @@ type internal SQLiteProvider(resolutionPath) as this =
                     relationshipLookup.[pTable.FullName] <- (rel::c,p)
                     let (c,p) = relationshipLookup.[fTable.FullName]
                     relationshipLookup.[fTable.FullName] <- (c,rel::p)
-                    
-                relationshipLookup.[table.FullName]
+                
+                match relationshipLookup.TryGetValue table.FullName with 
+                | true,v -> v
+                | _ -> [],[]
+                
         
         /// SQLite does not support stored procedures.
         member __.GetSprocs(con) = [] 
