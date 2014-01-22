@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider", "src\SQLProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}"
 	ProjectSection(SolutionItems) = preProject
