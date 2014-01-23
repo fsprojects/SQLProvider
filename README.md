@@ -12,7 +12,7 @@ PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfo
 
 ## Building
 
-* Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsharp/FAKE.png)](https://travis-ci.org/fsharp/FAKE)
+* Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsprojects/SQLProvider.png)](https://travis-ci.org/fsprojects/SQLProvider)
 * Windows: Run *build.cmd* 
 
 ## Known issues
