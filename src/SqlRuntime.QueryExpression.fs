@@ -4,10 +4,11 @@
         open FSharp.Data.Sql.Providers
 
         let createSqlProvider vendor resolutionPath =
-            match vendor with
+            match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =

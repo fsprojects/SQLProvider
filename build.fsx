@@ -21,9 +21,9 @@ let tags = "F# fsharp typeproviders sql sqlserver"
 let solutionFile  = "SQLProvider"
 
 let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
-let gitHome = "https://github.com/pezipink"
+let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
-let cloneUrl = "git@github.com:pezipink/SQLProvider.git"
+let cloneUrl = "git@github.com:fsprojects/SQLProvider.git"
 let nugetDir = "./nuget/"
 
 // Read additional information from the release notes document
