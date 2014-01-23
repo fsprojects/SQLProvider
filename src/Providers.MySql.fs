@@ -61,7 +61,7 @@ type internal MySqlProvider(resolutionPath) as this =
         dbTypeToMySql <- (fun id -> dbTypeToMySql'.[id] )
         mySqlToDbType <- (fun id -> mySqlToDbType'.[id] )
 
-        // create map from sql name to clr type, and type to lDbType enum
+        // create map from sql name to clr type, and type to DbType enum
         let sqlToClr', sqlToEnum', clrToEnum' =
             clr
             |> List.choose( fun (tn,ev,dt) ->
@@ -158,8 +158,6 @@ type internal MySqlProvider(resolutionPath) as this =
             match relationshipLookup.TryGetValue table.FullName with 
             | true,v -> v
             | _ -> 
-            // mostly stolen from
-            // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
             let toSchema schema table = sprintf "[%s].[%s]" schema table
             let baseQuery = @"SELECT  
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
@@ -202,11 +200,6 @@ type internal MySqlProvider(resolutionPath) as this =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-            // SQL query syntax is ordered in the following manner
-            // SELECT [alias].[field] as '[alias].[field]' [, .. ]
-            // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
-            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
-
             // to simplfy (ha!) the processing, all tables should be aliased.
             // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
             // if it does not, then we first need to create an alias for the single table
