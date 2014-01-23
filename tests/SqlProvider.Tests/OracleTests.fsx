@@ -32,6 +32,14 @@ let employeesJob =
             for emp in ctx.``[HR].[EMPLOYEES]`` do
             for manager in emp.EMP_MANAGER_FK do
             join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
-            where (dept.DEPARTMENT_NAME = "Sales")
+            where ((dept.DEPARTMENT_NAME = "Sales" || dept.DEPARTMENT_NAME = "Executive") && emp.FIRST_NAME = "David")
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
+    } |> Seq.toList
+
+let topSales5ByCommission = 
+    query {
+        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        sortByDescending emp.COMMISSION_PCT
+        select (emp.FIRST_NAME, emp.LAST_NAME, emp.COMMISSION_PCT)
+        take 5
     } |> Seq.toList

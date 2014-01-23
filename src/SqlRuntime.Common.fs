@@ -47,11 +47,20 @@ type SqlEntity(tableName) =
         let defaultValue() =                        
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
-        if data.ContainsKey key then unbox data.[key]
+        if data.ContainsKey key then
+           match data.[key] with
+           | null -> defaultValue()
+           | :? System.DBNull -> defaultValue()
+           //This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...
+           | data -> unbox <| Convert.ChangeType(data, typeof<'T>)
         else defaultValue()
     
     member e.GetColumnOption<'T>(key) =        
-       if data.ContainsKey key then Some(unbox<'T> data.[key])
+       if data.ContainsKey key then
+           match data.[key] with
+           | null -> None
+           | :? System.DBNull -> None
+           | data -> Some(unbox <| Convert.ChangeType(data, typeof<'T>))
        else None
 
     member e.SetColumn(key,value) =

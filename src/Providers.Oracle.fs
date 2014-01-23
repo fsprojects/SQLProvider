@@ -203,10 +203,6 @@ type internal OracleProvider(resolutionPath, owner) =
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s.%s WHERE %s.%s.%s = :id" table.Schema table.Name table.Schema table.Name column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
-            let tidyAlias (alias:string) = 
-               alias // if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
-
-            let baseAlias = tidyAlias baseAlias
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -223,7 +219,6 @@ type internal OracleProvider(resolutionPath, owner) =
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
-                        let k = tidyAlias k
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnCache.[tableFullName (getTable k)] |> List.map(fun c -> c.Name) do 
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
@@ -250,7 +245,6 @@ type internal OracleProvider(resolutionPath, owner) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let alias = tidyAlias alias
                                 let extractData data = 
                                      match data with
                                      | Some(x) when (box x :? string array) -> 
@@ -311,8 +305,6 @@ type internal OracleProvider(resolutionPath, owner) =
                 |> Map.iter(fun fromAlias (destList) ->
                     destList
                     |> List.iter(fun (alias,data) ->
-                        let alias = tidyAlias alias
-                        let fromAlias = tidyAlias fromAlias
                         let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                         let destTable = getTable alias
                         ~~  (sprintf "%s %s.%s %s on %s.%s = %s.%s " 
@@ -325,9 +317,8 @@ type internal OracleProvider(resolutionPath, owner) =
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
-                    let alias = tidyAlias alias
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s.%s%s" alias column (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
@@ -349,8 +340,13 @@ type internal OracleProvider(resolutionPath, owner) =
                 ~~"ORDER BY "
                 orderByBuilder()
 
-            if sqlQuery.Take.IsSome then 
-                ~~(sprintf " ROWNUM <= %i;" sqlQuery.Take.Value)
-
-            let sql = sb.ToString()
-            (sql,parameters)
+            //I think on oracle this will potentially impact the ordering as the row num is generated before any 
+            //filters or ordering is applied hance why this produces a nested query. something like 
+            //select * from (select ....) where ROWNUM <= 5.
+            if sqlQuery.Take.IsSome 
+            then 
+                let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) sqlQuery.Take.Value
+                (sql, parameters)
+            else
+                let sql = sb.ToString()
+                (sql,parameters)
