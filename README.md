@@ -8,7 +8,7 @@ The provider currently supports MS SQL Server, SQLite and PostgreSQL.  All datab
 
 SQLite is based on the .NET drivers found [here](http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki).  You will need the correct version for your specific architecture and setup.
 
-PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfoundry.org/).  The type provider will make frequent calls to the database.  I found that using the default settings for the PostgreSQL server on my Windows machine would deny the provider constant access - you may need to increase timeouts or set other relevant security settings to enable a frictionless experience.
+PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfoundry.org/).  The type provider will make frequent calls to the database.  I found that using the default settings for the PostgreSQL server on my Windows machine would deny the provider constant access - you may need to try setting  `Pooling=false` in the connection string, increasing timeouts or setting other relevant security settings to enable a frictionless experience.
 
 ## Building
 
