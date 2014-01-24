@@ -73,8 +73,9 @@ type SqlEntity(tableName) =
         [ while reader.Read() = true do
           let e = SqlEntity(name)          
           for i = 0 to reader.FieldCount - 1 do 
-              let value = reader.GetValue(i)
-              if value <> null then e.SetColumn(reader.GetName(i),value)
+              match reader.GetValue(i) with
+              | null | :? DBNull -> ()
+              | value -> e.SetColumn(reader.GetName(i),value)
           yield e ]
 
     /// creates a new sql entity from alias data in this entity
