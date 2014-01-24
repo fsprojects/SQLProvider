@@ -214,7 +214,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     let dataType = unbox row.["DATA_TYPE"]
                     let name = 
                             if String.IsNullOrEmpty(packageName)
-                            then procName else (packageName + "." + procName)
+                            then procName else (owner + "." + packageName + "." + procName)
                     match sqlToEnum dataType, sqlToClr dataType with
                     | Some(dbType), Some(clrType) ->
                         let direction = 
@@ -228,14 +228,18 @@ type internal OracleProvider(resolutionPath, owner) =
             |> Seq.choose (fun (name, parameters) -> 
                 if parameters |> Seq.forall (fun x -> x.IsSome)
                 then 
-                    let parameters = 
+                    let inParams, outParams = 
                         parameters
                         |> Seq.map (function
                                      | Some (pName, (dbType, clrType, direction, position, length)) -> 
                                             { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = position }
                                      | None -> failwith "How the hell did we get here??")
                         |> Seq.toList
-                    Some { FullName = name; Params = parameters; ReturnColumns = []}
+                        |> List.partition (fun p -> p.Direction = Direction.In)
+                    let retCols = 
+                        outParams 
+                        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                    Some { FullName = name; Params = inParams; ReturnColumns = retCols }
                 else None
             ) |> Seq.toList
 

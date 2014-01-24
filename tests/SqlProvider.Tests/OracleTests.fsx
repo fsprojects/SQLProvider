@@ -40,8 +40,8 @@ let topSales5ByCommission =
     query {
         for emp in ctx.``[HR].[EMPLOYEES]`` do
         sortByDescending emp.COMMISSION_PCT
-        select (emp.FIRST_NAME, emp.LAST_NAME, emp.COMMISSION_PCT)
+        select (emp.EMPLOYEE_ID, emp.FIRST_NAME, emp.LAST_NAME, emp.COMMISSION_PCT)
         take 5
     } |> Seq.toList
 
-let headCount = ctx.``Stored Procedures``.``HR_API.HEAD_COUNT``
+let headCount = ctx.``Stored Procedures``.``HR.HR_API.FIRE_EMPLOYEE``(145M)
