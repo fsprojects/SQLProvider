@@ -43,3 +43,5 @@ let topSales5ByCommission =
         select (emp.FIRST_NAME, emp.LAST_NAME, emp.COMMISSION_PCT)
         take 5
     } |> Seq.toList
+
+let headCount = ctx.``Stored Procedures``.``HR_API.HEAD_COUNT``

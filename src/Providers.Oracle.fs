@@ -18,14 +18,17 @@ type internal OracleProvider(resolutionPath, owner) =
     let assembly =  
         assemblyNames 
         |> List.pick (fun asm ->
-            let loadedAsm =              
-                Assembly.LoadFrom(
-                    if String.IsNullOrEmpty resolutionPath then asm
-                    else System.IO.Path.Combine(resolutionPath,asm)
-                    ) 
-            if loadedAsm <> null
-            then Some loadedAsm
-            else None)
+            try 
+                let loadedAsm =              
+                    Assembly.LoadFrom(
+                        if String.IsNullOrEmpty resolutionPath then asm
+                        else System.IO.Path.Combine(resolutionPath,asm)
+                        ) 
+                if loadedAsm <> null
+                then Some loadedAsm
+                else None
+            with e ->
+                None)
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "OracleConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "OracleCommand"))
@@ -197,7 +200,44 @@ type internal OracleProvider(resolutionPath, owner) =
                     (children ,  rels)
         
         //TODO: Get SPROC info
-        member __.GetSprocs(con) = [] 
+        member __.GetSprocs(con) =
+            let objToString (v:obj) : string = 
+                if Convert.IsDBNull(v) then null else unbox v
+     
+            let objToDecimal (v:obj) : decimal = 
+                if Convert.IsDBNull(v) then 0M else unbox v
+
+            getSchema "ProcedureParameters" [|owner|] con
+            |> DataTable.groupBy (fun row -> 
+                    let owner = unbox row.["OWNER"]
+                    let (procName, packageName) = (unbox row.["OBJECT_NAME"], objToString row.["PACKAGE_NAME"])
+                    let dataType = unbox row.["DATA_TYPE"]
+                    let name = 
+                            if String.IsNullOrEmpty(packageName)
+                            then procName else (packageName + "." + procName)
+                    match sqlToEnum dataType, sqlToClr dataType with
+                    | Some(dbType), Some(clrType) ->
+                        let direction = 
+                            match objToString row.["IN_OUT"] with
+                            | "IN" -> Direction.In
+                            | "OUT" -> Direction.Out
+                            | a -> failwith "Direction not supported %s" a
+                        let paramName, paramDetails = objToString row.["ARGUMENT_NAME"], (dbType, clrType, direction, int (row.["POSITION"] :?> decimal), int (objToDecimal row.["DATA_LENGTH"]))
+                        (name, Some (paramName, (paramDetails)))
+                    | _,_ -> (name, None))
+            |> Seq.choose (fun (name, parameters) -> 
+                if parameters |> Seq.forall (fun x -> x.IsSome)
+                then 
+                    let parameters = 
+                        parameters
+                        |> Seq.map (function
+                                     | Some (pName, (dbType, clrType, direction, position, length)) -> 
+                                            { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = position }
+                                     | None -> failwith "How the hell did we get here??")
+                        |> Seq.toList
+                    Some { FullName = name; Params = parameters; ReturnColumns = []}
+                else None
+            ) |> Seq.toList
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s.%s WHERE %s.%s.%s = :id" table.Schema table.Name table.Schema table.Name column

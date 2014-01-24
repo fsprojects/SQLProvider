@@ -8,16 +8,21 @@ module DataTable =
     let map f (dt:DataTable) = 
         [
             for row in dt.Rows do
-                yield row.ItemArray |>  f
+                yield row |>  f
         ]
     
     let iter f (dt:DataTable) = 
         for row in dt.Rows do
             f row.ItemArray
+
+    let groupBy f (dt:DataTable) = 
+        map f dt
+        |> Seq.groupBy (fst) 
+        |> Seq.map (fun (k, v) -> k, Seq.map snd v)
     
     let cache (cache:IDictionary<string,'a>) f (dt:DataTable) = 
         for row in dt.Rows do
-            match f row.ItemArray with
+            match f row with
             | Some(key,item) -> cache.Add(key,item)
             | None -> ()
         cache.Values |> Seq.map id |> Seq.toList
@@ -25,7 +30,7 @@ module DataTable =
     let choose f (dt:DataTable) =
         [
             for row in dt.Rows do
-                match row.ItemArray |>  f with
+                match row |>  f with
                 | Some(a) -> yield a
                 | None -> ()
         ]
