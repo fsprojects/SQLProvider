@@ -211,7 +211,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                                          let strings = box x :?> string array
                                          strings |> Array.map createParam
                                      | Some(x) -> [|createParam (box x)|]
-                                     | None ->    [|createParam null|]
+                                     | None ->    [|createParam DBNull.Value|]
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
