@@ -82,9 +82,9 @@ The library is available under Public Domain license, which allows modification 
 redistribution for both commercial and non-commercial purposes. For more information see the 
 [License file][license] in the GitHub repository. 
 
-  [content]: https://github.com/pezipink/SQLProvider/tree/master/docs/content
-  [gh]: https://github.com/pezipink/SQLProvider
-  [issues]: https://github.com/pezipink/SQLProvider/issues
-  [readme]: https://github.com/pezipink/SQLProvider/blob/master/README.md
-  [license]: https://github.com/pezipink/SQLProvider/blob/master/LICENSE.md
+  [content]: https://github.com/fsprojects/SQLProvider/tree/master/docs/content
+  [gh]: https://github.com/fsprojects/SQLProvider
+  [issues]: https://github.com/fsprojects/SQLProvider/issues
+  [readme]: https://github.com/fsprojects/SQLProvider/blob/master/README.md
+  [license]: https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md
 *)

@@ -1,3 +1,9 @@
+#### 0.0.4-alpha - 26.01.2014 
+* MySQL support added!
+* SQLite would only work if all tables had at least one FK constraint - fixed
+* Various option type fixes
+* GraphViz script to help visualize LINQ trees when debugging
+
 #### 0.0.3-alpha - 24.12.2013 
 * PostgreSQL support
 * Option Types for nullable columns
