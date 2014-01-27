@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DataTable - SQLProvider</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Ross McKinlay">
+
+    <script src="http://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="http://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="/SQLProvider/content/style.css" />
+    <script type="text/javascript" src="/SQLProvider/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/SQLProvider/index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>DataTable</h1>
+<div class="xmldoc">
+</div>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Function or value</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '3', 3)" onmouseover="showTip(event, '3', 3)">
+            cache cache f dt
+          </code>
+          <div class="tip" id="3">
+            <strong>Signature:</strong>cache:IDictionary&lt;string,&#39;a&gt; -&gt; f:(DataRow -&gt; (string * &#39;a) option) -&gt; dt:DataTable -&gt; &#39;a list<br />
+                          <strong>Type parameters:</strong> 'a          </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L23-23" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
+            choose f dt
+          </code>
+          <div class="tip" id="12">
+            <strong>Signature:</strong>f:(DataRow -&gt; &#39;?19768 option) -&gt; dt:DataTable -&gt; &#39;?19768 list<br />
+                          <strong>Type parameters:</strong> '?19768          </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L30-30" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
+            groupBy f dt
+          </code>
+          <div class="tip" id="13">
+            <strong>Signature:</strong>f:(DataRow -&gt; &#39;?19763 * &#39;?19764) -&gt; dt:DataTable -&gt; seq&lt;&#39;?19763 * seq&lt;&#39;?19764&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?19763, '?19764          </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L18-18" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '14', 14)" onmouseover="showTip(event, '14', 14)">
+            iter f dt
+          </code>
+          <div class="tip" id="14">
+            <strong>Signature:</strong>f:(obj [] -&gt; unit) -&gt; dt:DataTable -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L14-14" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '15', 15)" onmouseover="showTip(event, '15', 15)">
+            map f dt
+          </code>
+          <div class="tip" id="15">
+            <strong>Signature:</strong>f:(DataRow -&gt; &#39;?19760) -&gt; dt:DataTable -&gt; &#39;?19760 list<br />
+                          <strong>Type parameters:</strong> '?19760          </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L8-8" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '16', 16)" onmouseover="showTip(event, '16', 16)">
+            printDataTable dt
+          </code>
+          <div class="tip" id="16">
+            <strong>Signature:</strong>dt:DataTable -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+        
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L38-38" class="github-link">Go to GitHub source</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="/SQLProvider/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+            <li><a href="/SQLProvider/core/index.html">Core Documentation</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>
