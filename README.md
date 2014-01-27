@@ -14,7 +14,7 @@ Oracle is coming soon!
 
 ## Documentation
 
-Core documentation and samples can be found at the [SQLProvider home page](http://fsprojects.github.io/FSharp.Data.Experimental.SqlCommandProvider/).  This documentation is generated from [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), so please feel free to submit a pull request if you have fixed typos are added additional samples and documentation!
+Core documentation and samples can be found at the [SQLProvider home page](http://fsprojects.github.io/SQLProvider/). This documentation is generated from [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), so please feel free to submit a pull request if you have fixed typos are added additional samples and documentation!
 
 ## Building
 
