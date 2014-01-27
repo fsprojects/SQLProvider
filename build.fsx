@@ -20,7 +20,7 @@ let tags = "F# fsharp typeproviders sql sqlserver"
 
 let solutionFile  = "SQLProvider"
 
-let testAssemblies = "tests/*/bin/*/*Tests*.dll"
+let testAssemblies = "tests/**/*Tests*.dll"
 let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
 let cloneUrl = "git@github.com:fsprojects/SQLProvider.git"
