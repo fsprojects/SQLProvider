@@ -66,7 +66,7 @@ Target "Build" (fun _ ->
     |> MSBuildRelease "" "Rebuild"
     |> ignore
 
-    !! (solutionFile + "Tests.sln")
+    !! (solutionFile + ".Tests.sln")
     |> MSBuildRelease "" "Rebuild"
     |> ignore    
 )
