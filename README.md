@@ -12,7 +12,7 @@ MySQL is based on the .NET drivers found [here](http://dev.mysql.com/downloads/c
 
 ## Documentation
 
-Core documentation and samples can be found at the [SQLProvider home page](http://fsprojects.github.io/FSharp.Data.Experimental.SqlCommandProvider/). This documentation is generated from [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), so please feel free to submit a pull request if you have fixed typos are added additional samples and documentation!
+Core documentation and samples can be found at the [SQLProvider home page](http://fsprojects.github.io/SQLProvider/). This documentation is generated from [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), so please feel free to submit a pull request if you have fixed typos are added additional samples and documentation!
 
 The provider currently supportsMS SQL Server, SQLite, PostgreSQL, Oracle and MySQL.  All database vendors except SQL Server will require 3rd party ADO.NET connector objects to function.  These are dynamically loaded at runtime so that the SQL provider project is not dependency on them.  You must supply the location of the assemblies with the "ResolutionPath" static parameter.
 

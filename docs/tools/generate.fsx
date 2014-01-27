@@ -16,7 +16,7 @@ let info =
     "project-author", "Ross McKinlay"
     "project-summary", "Type providers for SQL server access."
     "project-github", "http://github.com/fsprojects/SQLProvider"
-    "project-nuget", "http://nuget.com/packages/SQLProvider" ]
+    "project-nuget", "http://nuget.org/packages/SQLProvider" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below
