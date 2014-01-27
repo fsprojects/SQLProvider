@@ -2,7 +2,9 @@
 // FAKE build script 
 // --------------------------------------------------------------------------------------
 
-#r @"packages/FAKE/tools/FakeLib.dll"
+#I @"packages/FAKE/tools/"
+
+#r @"FakeLib.dll"
 open Fake 
 open Fake.Git
 open Fake.AssemblyInfoFile
@@ -19,9 +21,9 @@ let tags = "F# fsharp typeproviders sql sqlserver"
 let solutionFile  = "SQLProvider"
 
 let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
-let gitHome = "https://github.com/pezipink"
+let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
-let cloneUrl = "git@github.com:pezipink/SQLProvider.git"
+let cloneUrl = "git@github.com:fsprojects/SQLProvider.git"
 let nugetDir = "./nuget/"
 
 // Read additional information from the release notes document
@@ -42,7 +44,10 @@ Target "AssemblyInfo" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Clean build results & restore NuGet packages
 
-Target "RestorePackages" RestorePackages
+Target "RestorePackages" (fun _ ->
+    !! "./**/packages.config"
+    |> Seq.iter (RestorePackage (fun p -> { p with ToolPath = "./.nuget/NuGet.exe" }))
+)
 
 Target "Clean" (fun _ ->
     CleanDirs ["bin"; "temp"; nugetDir]
@@ -70,11 +75,6 @@ Target "Build" (fun _ ->
 // Build a NuGet package
 
 Target "NuGet" (fun _ ->
-    // Format the description to fit on a single line (remove \r\n and double-spaces)
-    let description = description.Replace("\r", "")
-                                 .Replace("\n", "")
-                                 .Replace("  ", " ")
-
     let nugetDocsDir = nugetDir @@ "docs"
     let nugetlibDir = nugetDir @@ "lib/net40"
 

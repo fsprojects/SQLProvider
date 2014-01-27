@@ -4,10 +4,11 @@
         open FSharp.Data.Sql.Providers
 
         let createSqlProvider vendor resolutionPath owner =
-            match vendor with
+            match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
@@ -64,7 +65,7 @@ module internal QueryExpressionTransformer =
         override x.VisitMethodCall(exp) =
             let(|PropName|) (pi:PropertyInfo) = pi.Name
             match exp with
-            | MethodCall(Some(ParamName name | PropertyGet(_,PropName name)),(MethodWithName "GetColumn"),[FSharp.Data.Sql.Patterns.String key]) ->
+            | MethodCall(Some(ParamName name | PropertyGet(_,PropName name)),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption"),[FSharp.Data.Sql.Patterns.String key]) ->
                 // add this attribute to the select list for the alias
                 let alias = if tupleIndex.Count = 0 then singleEntityName else Utilities.resolveTuplePropertyName name tupleIndex
                 match x.ProjectionMap.TryGetValue alias with

@@ -40,18 +40,12 @@
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'">
+    <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' != '11.0'">
+    <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+  </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="ProvidedTypes-head.fsi" />
@@ -60,13 +54,15 @@
       <Link>ProvidedTypes-head.fs</Link>
     </Compile>
     <Compile Include="Operators.fs" />
+    <Compile Include="SchemaProjections.fs" />
     <Compile Include="SqlSchema.fs" />
     <Compile Include="DataTable.fs" />
     <Compile Include="SqlRuntime.Patterns.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
-    <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.Oracle.fs" />
+    <Compile Include="Providers.MySql.fs" />
+    <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
