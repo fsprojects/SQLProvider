@@ -20,11 +20,12 @@ let tags = "F# fsharp typeproviders sql sqlserver"
 
 let solutionFile  = "SQLProvider"
 
-let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
+let testAssemblies = "tests/*/bin/*/*Tests*.dll"
 let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
 let cloneUrl = "git@github.com:fsprojects/SQLProvider.git"
 let nugetDir = "./nuget/"
+
 
 // Read additional information from the release notes document
 Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
@@ -70,6 +71,17 @@ Target "Build" (fun _ ->
     |> ignore    
 )
 
+// --------------------------------------------------------------------------------------
+// Run the unit tests using test runner
+
+Target "RunTests" (fun _ ->
+    !! testAssemblies 
+    |> NUnit (fun p ->
+        { p with
+            DisableShadowCopy = true
+            TimeOut = TimeSpan.FromMinutes 20.
+            OutputFile = "TestResults.xml" })
+)
 
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
@@ -134,6 +146,7 @@ Target "All" DoNothing
   ==> "RestorePackages"
   ==> "AssemblyInfo"
   ==> "Build"
+  ==> "RunTests"
   ==> "All"
 
 "All" 
