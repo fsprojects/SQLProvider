@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\bin</OutputPath>
+    <OutputPath>..\..\bin</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
@@ -32,10 +32,10 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>..\..\bin</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -48,8 +48,8 @@
   </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="ProvidedTypes-head.fsi" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ProvidedTypes-head.fsi" />
     <Compile Include="ProvidedTypes-head.fs">
       <Link>ProvidedTypes-head.fs</Link>
     </Compile>
