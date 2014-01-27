@@ -48,8 +48,8 @@
   </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="ProvidedTypes-head.fsi" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ProvidedTypes-head.fsi" />
     <Compile Include="ProvidedTypes-head.fs">
       <Link>ProvidedTypes-head.fs</Link>
     </Compile>
