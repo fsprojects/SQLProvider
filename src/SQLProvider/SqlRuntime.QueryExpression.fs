@@ -4,7 +4,7 @@
         open FSharp.Data.Sql.Providers
 
         let createSqlProvider vendor resolutionPath owner =
-            match vendor with
+            match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
