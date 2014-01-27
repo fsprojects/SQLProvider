@@ -32,7 +32,7 @@ let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
 
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
-  let fileName = "src/AssemblyInfo.fs"
+  let fileName = "src/" + project + "/AssemblyInfo.fs"
   CreateFSharpAssemblyInfo fileName
       [ Attribute.Title project
         Attribute.Product project
@@ -61,11 +61,7 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    !! (solutionFile + ".sln")
-    |> MSBuildRelease "" "Rebuild"
-    |> ignore
-
-    !! (solutionFile + ".Tests.sln")
+    !! (solutionFile + "*.sln")
     |> MSBuildRelease "" "Rebuild"
     |> ignore
 )
@@ -111,17 +107,17 @@ Target "GenerateDocs" (fun _ ->
 // Release Scripts
 
 Target "ReleaseDocs" (fun _ ->
-    let ghPages      = "gh-pages"
-    let ghPagesLocal = "temp/gh-pages"
-    Repository.clone "temp" (cloneUrl) ghPages
-    Branches.checkoutBranch ghPagesLocal ghPages
-    fullclean "temp/gh-pages"
-    CopyRecursive "docs/output" ghPagesLocal true |> printfn "%A"
-    CommandHelper.runSimpleGitCommand ghPagesLocal "add ." |> printfn "%s"
-    let cmd = sprintf """commit -a -m "Update generated documentation for version %s""" release.NugetVersion
-    CommandHelper.runSimpleGitCommand ghPagesLocal cmd |> printfn "%s"
-    Branches.push ghPagesLocal
+    let tempDocsDir = "temp/gh-pages"
+    CleanDir tempDocsDir
+    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
+
+    fullclean tempDocsDir
+    CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
+    StageAll tempDocsDir
+    Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    Branches.push tempDocsDir
 )
+
 
 Target "Release" DoNothing
 
