@@ -13,7 +13,8 @@ type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
     | POSTGRESQL = 2
-    | ORACLE = 3
+    | MYSQL = 3
+    | ORACLE = 4
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -82,8 +83,9 @@ type SqlEntity(tableName) =
         [ while reader.Read() = true do
           let e = SqlEntity(name)          
           for i = 0 to reader.FieldCount - 1 do 
-              let value = reader.GetValue(i)
-              if value <> null then e.SetColumn(reader.GetName(i),value)
+              match reader.GetValue(i) with
+              | null | :? DBNull -> ()
+              | value -> e.SetColumn(reader.GetName(i),value)
           yield e ]
 
     /// creates a new sql entity from alias data in this entity
@@ -98,6 +100,7 @@ type SqlEntity(tableName) =
             let pred =                 
                 let prefix = "[" + alias + "]."
                 let prefix2 = alias + "."
+                let prefix3 = "`" + alias + "`."
                 (fun (kvp:KeyValuePair<string,_>) -> 
                     if kvp.Key.StartsWith prefix then 
                         let temp = kvp.Key.Replace(prefix,"")
@@ -106,6 +109,11 @@ type SqlEntity(tableName) =
                     // this case is for postgresql and other vendors that use " as whitepsace qualifiers 
                     elif  kvp.Key.StartsWith prefix2 then  
                         let temp = kvp.Key.Replace(prefix2,"")
+                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    // this case is for mysql and other vendors that use ` as whitespace qualifiers 
+                    elif  kvp.Key.StartsWith prefix3 then  
+                        let temp = kvp.Key.Replace(prefix3,"")
+                        let temp = temp.Substring(1,temp.Length-2)
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
                     else None) 
                         
