@@ -10,6 +10,7 @@ PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfo
 
 MySQL is based on the .NET drivers found [here](http://dev.mysql.com/downloads/connector/net/1.0.html).  You will need the correct version for your specific architecture and setup.
 
+Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However although the managed version is recommended it should also work with previous versions of the native driver.
 ## Documentation
 
 Core documentation and samples can be found at the [SQLProvider home page](http://fsprojects.github.io/SQLProvider/). This documentation is generated from [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), so please feel free to submit a pull request if you have fixed typos are added additional samples and documentation!
