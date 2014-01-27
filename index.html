@@ -25,7 +25,7 @@
       <div class="masthead">
         <ul class="nav nav-pills pull-right">
           <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/pezipink/SQLProvider">github page</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
         </ul>
         <h3 class="muted"><a href="/SQLProvider/index.html">SQLProvider</a></h3>
       </div>
@@ -49,7 +49,7 @@
 
 <h2>Example</h2>
 
-<p>This example demonstrates the use of the type provider:</p>
+<p>This example demonstrates the use of the SQL type provider:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
 <span class="l"> 1: </span>
@@ -141,14 +141,14 @@ functions.</li>
 
 <h2>Contributing and copyright</h2>
 
-<p>The project is hosted on <a href="https://github.com/pezipink/SQLProvider">GitHub</a> where you can <a href="https://github.com/pezipink/SQLProvider/issues">report issues</a>, fork 
+<p>The project is hosted on <a href="https://github.com/fsprojects/SQLProvider">GitHub</a> where you can <a href="https://github.com/fsprojects/SQLProvider/issues">report issues</a>, fork 
 the project and submit pull requests. If you're adding new public API, please also 
-consider adding <a href="https://github.com/pezipink/SQLProvider/tree/master/docs/content">samples</a> that can be turned into a documentation. You might
-also want to read <a href="https://github.com/pezipink/SQLProvider/blob/master/README.md">library design notes</a> to understand how it works.</p>
+consider adding <a href="https://github.com/fsprojects/SQLProvider/tree/master/docs/content">samples</a> that can be turned into a documentation. You might
+also want to read <a href="https://github.com/fsprojects/SQLProvider/blob/master/README.md">library design notes</a> to understand how it works.</p>
 
 <p>The library is available under Public Domain license, which allows modification and 
 redistribution for both commercial and non-commercial purposes. For more information see the 
-<a href="https://github.com/pezipink/SQLProvider/blob/master/LICENSE.md">License file</a> in the GitHub repository.</p>
+<a href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md">License file</a> in the GitHub repository.</p>
 
 <div class="tip" id="fs1">namespace System</div>
 <div class="tip" id="fs2">namespace System.Linq</div>
@@ -158,7 +158,7 @@ redistribution for both commercial and non-commercial purposes. For more informa
 <div class="tip" id="fs6">type sql = obj<br /><br />Full name: Index.sql</div>
 <div class="tip" id="fs7">type SqlDataProvider<br /><br />Full name: FSharp.Data.Sql.SqlDataProvider<br /><em><br /><br />&lt;summary&gt;Typed representation of a database&lt;/summary&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the sql server&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each sql entity type. Default 1000.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;UseOptionTypes&#39;&gt;If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specifc connections and custom types.&lt;/param&gt;</em></div>
 <div class="tip" id="fs8">namespace FSharp.Data.Sql.Common</div>
-<div class="tip" id="fs9">type DatabaseProviderTypes =<br />&#160;&#160;|  MSSQLSERVER  =  0<br />&#160;&#160;|  SQLITE  =  1<br />&#160;&#160;|  POSTGRESQL  =  2<br /><br />Full name: FSharp.Data.Sql.Common.DatabaseProviderTypes</div>
+<div class="tip" id="fs9">type DatabaseProviderTypes =<br />&#160;&#160;|  MSSQLSERVER  =  0<br />&#160;&#160;|  SQLITE  =  1<br />&#160;&#160;|  POSTGRESQL  =  2<br />&#160;&#160;|  MYSQL  =  3<br /><br />Full name: FSharp.Data.Sql.Common.DatabaseProviderTypes</div>
 <div class="tip" id="fs10">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
 <div class="tip" id="fs11">val ctx : obj<br /><br />Full name: Index.ctx</div>
 <div class="tip" id="fs12">val christina : obj<br /><br />Full name: Index.christina</div>
@@ -183,17 +183,17 @@ redistribution for both commercial and non-commercial purposes. For more informa
             <li><a href="/SQLProvider/index.html">Home page</a></li>
             <li class="divider"></li>
             <li><a href="http://nuget.com/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/pezipink/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/pezipink/SQLProvider/blob/master/LICENSE.md">License</a></li>
-            <li><a href="http://github.com/pezipink/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
             
         
             <li class="nav-header">Documentation</li>
-            <li><a href="/SQLProvider/reference/index.html">API Reference</a></li>
+            <li><a href="/SQLProvider/core/index.html">Core Documentation</a></li>
           </ul>
         </div>
       </div>
     </div>
-    <a href="http://github.com/pezipink/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
   </body>
   </html>
