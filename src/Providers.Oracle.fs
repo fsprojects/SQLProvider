@@ -199,7 +199,6 @@ type internal OracleProvider(resolutionPath, owner) =
                     relationshipCache.Add(table.FullName, (children ,  rels))
                     (children ,  rels)
         
-        //TODO: Get SPROC info
         member __.GetSprocs(con) =
             let objToString (v:obj) : string = 
                 if Convert.IsDBNull(v) then null else unbox v
