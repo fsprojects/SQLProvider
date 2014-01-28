@@ -24,7 +24,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
              Reflection.Assembly.LoadFrom(
                 if String.IsNullOrEmpty resolutionPath then name + ".dll" 
                 else System.IO.Path.Combine(resolutionPath,name+".dll"))
-    // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
+    // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
     let assembly =  loadAssembly "Npgsql"
     let monoSecurity = loadAssembly "Mono.Security"
    
@@ -41,68 +41,84 @@ type internal PostgresqlProvider(resolutionPath) as this =
         // there doesn't seem to be any mapping in the schema
         // so we are stuck doing this the old fashioned way
         let sqlToClr' = function
+            | "bigint"
             | "int8"       -> Some typeof<Int64>
+            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
+            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
+            | "boolean"
             | "bool"       -> Some typeof<Boolean>
-            | "Box"           
-            | "Circle"        
-            | "Line"          
-            | "LSeg"          
-            | "Path"          
-            | "Point"         
+            | "Box"
+            | "Circle"
+            | "Line"
+            | "LSeg"
+            | "Path"
+            | "Point"
             | "Polygon"    -> Some typeof<Object>
-            | "bytea"      -> Some typeof<Byte[]>            
+            | "bytea"      -> Some typeof<Byte[]>
+            | "double"
             | "float8"     -> Some typeof<Double>
             | "integer"
+            | "int"
             | "int4"       -> Some typeof<Int32>
-            | "money"      
+            | "money"
             | "numeric"    -> Some typeof<Decimal>
+            | "real"
             | "float4"     -> Some typeof<Single>
+            | "smallint"
             | "int2"       -> Some typeof<Int16>
             | "text"       -> Some typeof<String>
-            | "date"       
-            | "time"       
-            | "timetz"     
-            | "timestamp"  
+            | "date"
+            | "time"
+            | "timetz"
+            | "timestamp"
             | "timestamptz"-> Some typeof<DateTime>
             | "interval"   -> Some typeof<TimeSpan>
-            | "character"  
+            | "character"
             | "varchar"    -> Some typeof<String>
-            | "inet"       -> Some typeof<System.Net.IPAddress>            
-            | "bit"        -> Some typeof<Boolean>           
+            | "inet"       -> Some typeof<System.Net.IPAddress>
             | "uuid"       -> Some typeof<Guid>
+            | "xml"        -> Some typeof<String>
             | _ -> None
         
         let sqlToEnum' = function
+            | "bigint"
             | "int8"       -> Some DbType.Int64
-            | "bit"        
+            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
+            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
+            | "boolean"
             | "bool"       -> Some DbType.Boolean
-            | "Box"           
-            | "Circle"        
-            | "Line"          
-            | "LSeg"          
-            | "Path"          
-            | "Point"         
-            | "interval"   
-            | "inet"       
+            | "Box"
+            | "Circle"
+            | "Line"
+            | "LSeg"
+            | "Path"
+            | "Point"
+            | "interval"
+            | "inet"
             | "Polygon"    -> Some DbType.Object
-            | "bytea"      -> Some DbType.Binary            
+            | "bytea"      -> Some DbType.Binary
+            | "double"
             | "float8"     -> Some DbType.Double
             | "integer"
+            | "int"
             | "int4"       -> Some DbType.Int32
-            | "money"      
+            | "money"
             | "numeric"    -> Some DbType.Decimal
+            | "real"
             | "float4"     -> Some DbType.Single
-            | "int2"       -> Some DbType.Int16            
+            | "smallint"
+            | "int2"       -> Some DbType.Int16
             | "timestamp" 
             | "timestamptz"
             | "date"       -> Some DbType.DateTime
-            | "time"       
+            | "time"
             | "timetz"     -> Some DbType.Time 
-            | "text"     
-            | "character"    
-            | "varchar"    -> Some DbType.String            
+            | "text"
+            | "character"
+            | "varchar"    -> Some DbType.String
             | "uuid"       -> Some DbType.Guid
-            | _ -> None      
+            | "xml"        -> Some DbType.Xml
+            | _ -> None
         
         let clrToEnum' n = 
             if   n = typeof<Int64>.Name then Some DbType.Int64
