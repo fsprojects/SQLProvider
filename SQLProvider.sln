@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,6 +18,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{D383A6BC-F
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SQLProvider\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-91DA-43CE-B343-C54614949C13}"
+	ProjectSection(SolutionItems) = preProject
+		docs\content\core\general.fsx = docs\content\core\general.fsx
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,5 +36,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
 	EndGlobalSection
 EndGlobal

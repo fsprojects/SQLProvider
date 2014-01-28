@@ -1,3 +1,7 @@
+#### 0.0.5-alpha - 28.01.2014 
+* Oracle support added!
+* Various minor fixes
+
 #### 0.0.4-alpha - 26.01.2014 
 * MySQL support added!
 * SQLite would only work if all tables had at least one FK constraint - fixed
