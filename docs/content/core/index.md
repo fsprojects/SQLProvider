@@ -1,3 +1,0 @@
-# SQLProvider
-
-placeholder

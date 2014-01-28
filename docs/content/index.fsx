@@ -20,7 +20,7 @@ A general SQL database type provider, supporting LINQ queries, schema exploratio
 Example
 -------
 
-This example demonstrates the use of the type provider:
+This example demonstrates the use of the SQL type provider:
 
 *)
 // reference the type provider dll
