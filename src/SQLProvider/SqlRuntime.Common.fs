@@ -14,6 +14,7 @@ type DatabaseProviderTypes =
     | SQLITE = 1
     | POSTGRESQL = 2
     | MYSQL = 3
+    | ORACLE = 4
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -47,11 +48,20 @@ type SqlEntity(tableName) =
         let defaultValue() =                        
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
-        if data.ContainsKey key then unbox data.[key]
+        if data.ContainsKey key then
+           match data.[key] with
+           | null -> defaultValue()
+           | :? System.DBNull -> defaultValue()
+           //This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...
+           | data -> unbox <| Convert.ChangeType(data, typeof<'T>)
         else defaultValue()
     
     member e.GetColumnOption<'T>(key) =        
-       if data.ContainsKey key then Some(unbox<'T> data.[key])
+       if data.ContainsKey key then
+           match data.[key] with
+           | null -> None
+           | :? System.DBNull -> None
+           | data -> Some(unbox <| Convert.ChangeType(data, typeof<'T>))
        else None
 
     member e.SetColumn(key,value) =
@@ -202,6 +212,9 @@ type internal SqlQuery =
                 | None -> map |> Map.add key [item] 
                 | Some(xs) -> map.Remove key |> Map.add key (item::xs)
 
+            let legaliseName (alias:alias) = 
+                if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
+
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(a,e) -> q
@@ -209,16 +222,16 @@ type internal SqlQuery =
                                                 // the check here relates to the special case as descibed in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
-                                                  { q with UltimateChild = Some(entityIndex.[0], e) }
-                                        | None -> { q with UltimateChild = Some(a,e) }
+                                                  { q with UltimateChild = Some(legaliseName entityIndex.[0], e) }
+                                        | None -> { q with UltimateChild = Some(legaliseName a,e) }
                 | SelectMany(a,b,link,rest) as e -> 
                    match link.RelDirection with
                    | RelationshipDirection.Children -> 
-                         convert { q with Aliases = q.Aliases.Add(b,link.ForeignTable).Add(a,link.PrimaryTable);
-                                          Links = q.Links |> add a (b,link) } rest
+                         convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
+                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                    | _ ->
-                        convert { q with Aliases = q.Aliases.Add(a,link.ForeignTable).Add(b,link.PrimaryTable);
-                                         Links = q.Links |> add a (b,link) } rest
+                        convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
+                                         Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  
                     if q.Projection.IsSome then failwith "the type provider only supports a single projection"
@@ -227,7 +240,7 @@ type internal SqlQuery =
                     if q.Distinct then failwith "distinct is applied to the entire query and can only be supplied once"                
                     else convert { q with Distinct = true } rest
                 | OrderBy(alias,key,desc,rest) ->
-                    convert { q with Ordering = (alias,key,desc)::q.Ordering } rest
+                    convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) -> 
                     if q.Skip.IsSome then failwith "skip may only be specified once"
                     else convert { q with Skip = Some(amount) } rest
@@ -237,7 +250,8 @@ type internal SqlQuery =
                 | Count(rest) -> 
                     if q.Take.IsSome then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
-            convert (SqlQuery.Empty) exp
+            let sq = convert (SqlQuery.Empty) exp
+            sq
 
 type internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string

@@ -3,12 +3,13 @@
     module internal Utilities =
         open FSharp.Data.Sql.Providers
 
-        let createSqlProvider vendor resolutionPath =
+        let createSqlProvider vendor resolutionPath owner =
             match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
@@ -102,6 +103,12 @@ module internal QueryExpressionTransformer =
     
     let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) =
         // first convert the abstract query tree into a more useful format
+        let legaliseName (alias:alias) = 
+                if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
+
+        let entityIndex = new ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
+            
+                 
         let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
         
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it     
