@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>SQL Provider
+    <title>SQL Provider Basics
 </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Type providers for SQL server access.">
@@ -33,7 +33,149 @@
       <div class="row">
         <div class="span9" id="main">
           
-<h1>SQL Provider</h1>
+<h1>SQL Provider Basics</h1>
+
+<p>The SQL provider enables you to instantly connect to a variety of database sources and explore them in a type-safe manner, without the inconvenience of a code-generation step.
+After you have installed the nuget package or built the type provider assembly from source, you should reference the assembly either as a project reference or by using an F# interactive script file</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="prep">#r</span> <span class="s">&quot;</span><span class="s">FSharp</span><span class="s">.</span><span class="s">Data</span><span class="s">.</span><span class="s">SqlProvider</span><span class="s">.</span><span class="s">dll</span><span class="s">&quot;</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FSharp</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">Data</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="i">Sql</span></pre>
+</td>
+</tr>
+</table>
+
+<p>To use the type provider you must first create a type alias.<br />
+In this declaration you are able to pass various pieces of information known as static parameters to initialize properties such as the connection string and database vendor type that you are connecting to.
+In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="i">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="i">SqlDataProvider</span><span class="o">&lt;</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="i">connectionString</span>, <span onmouseout="hideTip(event, 'fs7', 7)" onmouseover="showTip(event, 'fs7', 7)" class="i">Common</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs8', 8)" onmouseover="showTip(event, 'fs8', 8)" class="i">DatabaseProviderTypes</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs9', 9)" onmouseover="showTip(event, 'fs9', 9)" class="i">SQLITE</span>, <span onmouseout="hideTip(event, 'fs10', 10)" onmouseover="showTip(event, 'fs10', 10)" class="i">resolutionPath</span> <span class="o">&gt;</span></pre>
+</td>
+</tr>
+</table>
+
+<p>Now we have a type <code>sql</code> that represents the SQLite database provided in the connectionString parameter.<br />
+In order to start exploring the database's schema and reading its data, you create a <em>DataContext</em> value.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 11)" onmouseover="showTip(event, 'fs11', 11)" class="i">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 12)" onmouseover="showTip(event, 'fs4', 12)" class="i">sql</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs12', 13)" onmouseover="showTip(event, 'fs12', 13)" class="i">GetDataContext</span>()</pre>
+</td>
+</tr>
+</table>
+
+<p>When you press . on <code>ctx</code>, intellisense will display a list of properties representing the available tables and views within the database.<br />
+In the simplest case, you can treat these properties as sequences that can be enumerated.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 14)" onmouseover="showTip(event, 'fs13', 14)" class="i">customers</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 16)" onmouseover="showTip(event, 'fs14', 16)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 17)" onmouseover="showTip(event, 'fs15', 17)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
+
+<p>This is the equivalent of executing a query that selects all rows and columns from the <code>[main].[customers]</code> table.<br />
+Notice the resulting type is an array of <code>[Main].[Customers]Entity</code>.  These entities will contain properties relating to each column name from the table.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 18)" onmouseover="showTip(event, 'fs16', 18)" class="i">firstCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="i">customers</span><span class="o">.</span>[<span class="n">0</span>]
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 20)" onmouseover="showTip(event, 'fs17', 20)" class="i">name</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="i">firstCustomer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 22)" onmouseover="showTip(event, 'fs18', 22)" class="i">ContactName</span></pre>
+</td>
+</tr>
+</table>
+
+<p>Each property is correctly typed depending on the database column definitions.  In this example, <code>firstCustomer.ContactName</code> is a string.</p>
+
+<h2>Constraints and Relationships</h2>
+
+<p>A typical relational database will have many connected tables and views through foreign key constraints.<br />
+The SQL provider is able to show you these constraints on entities.  They appear as properties named the same as the constraint in the database.
+You can gain access to these child or parent entities by simply enumerating the property in question.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 23)" onmouseover="showTip(event, 'fs19', 23)" class="i">orders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="i">firstCustomer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 25)" onmouseover="showTip(event, 'fs20', 25)" class="i">FK_Orders_0_0</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 26)" onmouseover="showTip(event, 'fs14', 26)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 27)" onmouseover="showTip(event, 'fs15', 27)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
+
+<p><code>orders</code> now contains all the orders belonging to firstCustomer. You will see the orders type is of <code>[Main].[Orders]Entity</code> indicating the resulting entities are from the <code>[main].[Orders]</code> table in the database.
+If you hover over <code>FK_Orders_0_0</code> intellisense will display information about the constraint in question including the names of the tables involved and the key names.
+Behind the scenes the SQL provider has automatically constructed and executed a relevant query using the entity's primary key.</p>
+
+<h2>Basic Querying</h2>
+
+<p>The SQL provider supports LINQ queries using F#'s <em>query expression</em> syntax.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="i">customersQuery</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 31)" onmouseover="showTip(event, 'fs11', 31)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="k">select</span> <span onmouseout="hideTip(event, 'fs23', 33)" onmouseover="showTip(event, 'fs23', 33)" class="i">customer</span> } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 34)" onmouseover="showTip(event, 'fs14', 34)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 35)" onmouseover="showTip(event, 'fs15', 35)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
+
+<p>The above example is identical to the query that was executed when <code>ctx.</code>[main].[Customers] |> Seq.toArray<code></code> was evaluated.
+You can extend this basic query include to filter criteria by introducing one or more <em>where</em> clauses</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 36)" onmouseover="showTip(event, 'fs25', 36)" class="i">filteredQuery</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs22', 37)" onmouseover="showTip(event, 'fs22', 37)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 38)" onmouseover="showTip(event, 'fs23', 38)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 39)" onmouseover="showTip(event, 'fs11', 39)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs26', 40)" onmouseover="showTip(event, 'fs26', 40)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs23', 41)" onmouseover="showTip(event, 'fs23', 41)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 42)" onmouseover="showTip(event, 'fs18', 42)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span>)
+            <span onmouseout="hideTip(event, 'fs24', 43)" onmouseover="showTip(event, 'fs24', 43)" class="k">select</span> <span onmouseout="hideTip(event, 'fs23', 44)" onmouseover="showTip(event, 'fs23', 44)" class="i">customer</span> } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 45)" onmouseover="showTip(event, 'fs14', 45)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 46)" onmouseover="showTip(event, 'fs15', 46)" class="i">toArray</span>
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 47)" onmouseover="showTip(event, 'fs27', 47)" class="i">multipleFilteredQuery</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs22', 48)" onmouseover="showTip(event, 'fs22', 48)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 49)" onmouseover="showTip(event, 'fs23', 49)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 50)" onmouseover="showTip(event, 'fs11', 50)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs26', 51)" onmouseover="showTip(event, 'fs26', 51)" class="k">where</span> ((<span onmouseout="hideTip(event, 'fs23', 52)" onmouseover="showTip(event, 'fs23', 52)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 53)" onmouseover="showTip(event, 'fs18', 53)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs28', 55)" onmouseover="showTip(event, 'fs28', 55)" class="i">Country</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">England</span><span class="s">&quot;</span>) <span class="o">||</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 57)" onmouseover="showTip(event, 'fs18', 57)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">Joe</span><span class="s"> </span><span class="s">Bloggs</span><span class="s">&quot;</span>)
+            <span onmouseout="hideTip(event, 'fs24', 58)" onmouseover="showTip(event, 'fs24', 58)" class="k">select</span> <span onmouseout="hideTip(event, 'fs23', 59)" onmouseover="showTip(event, 'fs23', 59)" class="i">customer</span> } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 60)" onmouseover="showTip(event, 'fs14', 60)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 61)" onmouseover="showTip(event, 'fs15', 61)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
+
+<p>The SQL provider will accept any level of nested complex conditional logic in the <em>where</em> clause.
+To access related data, you can either enumerate directly over the constraint property of an entity, or you can perform an explicit join.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
 <span class="l"> 1: </span>
@@ -46,19 +188,77 @@
 <span class="l"> 8: </span>
 <span class="l"> 9: </span>
 <span class="l">10: </span>
+<span class="l">11: </span>
 </pre>
 </td>
 <td class="snippet"><pre class="fssnip">
-<span class="prep">#r</span> <span class="s">&quot;</span><span class="s">FSharp</span><span class="s">.</span><span class="s">Data</span><span class="s">.</span><span class="s">SqlProvider</span><span class="s">.</span><span class="s">dll</span><span class="s">&quot;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 62)" onmouseover="showTip(event, 'fs29', 62)" class="i">automaticJoinQuery</span> <span class="o">=</span>
+   <span onmouseout="hideTip(event, 'fs22', 63)" onmouseover="showTip(event, 'fs22', 63)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 64)" onmouseover="showTip(event, 'fs23', 64)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 65)" onmouseover="showTip(event, 'fs11', 65)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+           <span class="k">for</span> <span onmouseout="hideTip(event, 'fs30', 66)" onmouseover="showTip(event, 'fs30', 66)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs23', 67)" onmouseover="showTip(event, 'fs23', 67)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 68)" onmouseover="showTip(event, 'fs20', 68)" class="i">FK_Orders_0_0</span> <span class="k">do</span>
+           <span onmouseout="hideTip(event, 'fs26', 69)" onmouseover="showTip(event, 'fs26', 69)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs23', 70)" onmouseover="showTip(event, 'fs23', 70)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 71)" onmouseover="showTip(event, 'fs18', 71)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span>)
+           <span onmouseout="hideTip(event, 'fs24', 72)" onmouseover="showTip(event, 'fs24', 72)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs23', 73)" onmouseover="showTip(event, 'fs23', 73)" class="i">customer</span>,<span onmouseout="hideTip(event, 'fs30', 74)" onmouseover="showTip(event, 'fs30', 74)" class="i">order</span>) } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 75)" onmouseover="showTip(event, 'fs14', 75)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 76)" onmouseover="showTip(event, 'fs15', 76)" class="i">toArray</span>
 
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FSharp</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">Data</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="i">Sql</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 77)" onmouseover="showTip(event, 'fs31', 77)" class="i">explicitJoinQuery</span> <span class="o">=</span>
+   <span onmouseout="hideTip(event, 'fs22', 78)" onmouseover="showTip(event, 'fs22', 78)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 79)" onmouseover="showTip(event, 'fs23', 79)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 80)" onmouseover="showTip(event, 'fs11', 80)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+           <span onmouseout="hideTip(event, 'fs32', 81)" onmouseover="showTip(event, 'fs32', 81)" class="k">join</span> <span onmouseout="hideTip(event, 'fs33', 82)" onmouseover="showTip(event, 'fs33', 82)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 83)" onmouseover="showTip(event, 'fs11', 83)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="i">on</span> (<span class="i">customer</span><span class="o">.</span><span class="i">CustomerID</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs33', 84)" onmouseover="showTip(event, 'fs33', 84)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs34', 85)" onmouseover="showTip(event, 'fs34', 85)" class="i">CustomerID</span>)
+           <span onmouseout="hideTip(event, 'fs26', 86)" onmouseover="showTip(event, 'fs26', 86)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs23', 87)" onmouseover="showTip(event, 'fs23', 87)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 88)" onmouseover="showTip(event, 'fs18', 88)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span>)
+           <span onmouseout="hideTip(event, 'fs24', 89)" onmouseover="showTip(event, 'fs24', 89)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs23', 90)" onmouseover="showTip(event, 'fs23', 90)" class="i">customer</span>,<span onmouseout="hideTip(event, 'fs33', 91)" onmouseover="showTip(event, 'fs33', 91)" class="i">order</span>) } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 92)" onmouseover="showTip(event, 'fs14', 92)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 93)" onmouseover="showTip(event, 'fs15', 93)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="i">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="i">SqlDataProvider</span><span class="o">&lt;</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="i">connectionString</span>, <span onmouseout="hideTip(event, 'fs7', 7)" onmouseover="showTip(event, 'fs7', 7)" class="i">Common</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs8', 8)" onmouseover="showTip(event, 'fs8', 8)" class="i">DatabaseProviderTypes</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs9', 9)" onmouseover="showTip(event, 'fs9', 9)" class="i">SQLITE</span>, <span onmouseout="hideTip(event, 'fs10', 10)" onmouseover="showTip(event, 'fs10', 10)" class="i">resolutionPath</span> <span class="o">&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 11)" onmouseover="showTip(event, 'fs11', 11)" class="i">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 12)" onmouseover="showTip(event, 'fs4', 12)" class="i">sql</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs12', 13)" onmouseover="showTip(event, 'fs12', 13)" class="i">GetDataContext</span>()
+<p>Both of these queries have identical results, it's just one requires explicit knowledge of what tables join to what and how, and the other doesn't.
+You might have notice the select expression has now changed to (customer,order). 
+As you might expect, this will return an array of tuples where the first item is a <code>[Main].[Orders]Entity</code> and the second a  <code>[Main].[Orders]Entity</code>.
+Often you will not be interested in selecting entire entities from the database.
+Changing the select expression to use the entities' properties will cause the SQL provider to select only the columns you have asked for, which is an important optimization.</p>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 14)" onmouseover="showTip(event, 'fs13', 14)" class="i">customers</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 16)" onmouseover="showTip(event, 'fs14', 16)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 17)" onmouseover="showTip(event, 'fs15', 17)" class="i">toArray</span>
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs35', 94)" onmouseover="showTip(event, 'fs35', 94)" class="i">ordersQuery</span> <span class="o">=</span>
+   <span onmouseout="hideTip(event, 'fs22', 95)" onmouseover="showTip(event, 'fs22', 95)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 96)" onmouseover="showTip(event, 'fs23', 96)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 97)" onmouseover="showTip(event, 'fs11', 97)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
+           <span class="k">for</span> <span onmouseout="hideTip(event, 'fs30', 98)" onmouseover="showTip(event, 'fs30', 98)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs23', 99)" onmouseover="showTip(event, 'fs23', 99)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 100)" onmouseover="showTip(event, 'fs20', 100)" class="i">FK_Orders_0_0</span> <span class="k">do</span>
+           <span onmouseout="hideTip(event, 'fs26', 101)" onmouseover="showTip(event, 'fs26', 101)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs23', 102)" onmouseover="showTip(event, 'fs23', 102)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 103)" onmouseover="showTip(event, 'fs18', 103)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span>)
+           <span onmouseout="hideTip(event, 'fs24', 104)" onmouseover="showTip(event, 'fs24', 104)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs23', 105)" onmouseover="showTip(event, 'fs23', 105)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 106)" onmouseover="showTip(event, 'fs18', 106)" class="i">ContactName</span>, <span onmouseout="hideTip(event, 'fs30', 107)" onmouseover="showTip(event, 'fs30', 107)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs36', 108)" onmouseover="showTip(event, 'fs36', 108)" class="i">OrderDate</span>, <span onmouseout="hideTip(event, 'fs30', 109)" onmouseover="showTip(event, 'fs30', 109)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs37', 110)" onmouseover="showTip(event, 'fs37', 110)" class="i">ShipAddress</span>) } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 111)" onmouseover="showTip(event, 'fs14', 111)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 112)" onmouseover="showTip(event, 'fs15', 112)" class="i">toArray</span></pre>
+</td>
+</tr>
+</table>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 18)" onmouseover="showTip(event, 'fs16', 18)" class="i">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">``As ContactName``</span><span class="o">.</span><span class="i">``BERGS, Christina Berglund``</span></pre>
+<p>The results of this query will return the name, order date and ship address only.  By doing this you no longer have access to entity types.
+The SQL provider supports various other query keywords and features that you can read about elsewhere in this documentation.</p>
+
+<h3>Individuals</h3>
+
+<p>The SQL provider has the ability via intellisense to navigate the actual data held within a table or view. You can then bind that data as an entity to a value.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 113)" onmouseover="showTip(event, 'fs38', 113)" class="i">BERGS</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 114)" onmouseover="showTip(event, 'fs11', 114)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs38', 115)" onmouseover="showTip(event, 'fs38', 115)" class="i">BERGS</span></pre>
+</td>
+</tr>
+</table>
+
+<p>Every table and view has an <code>Individuals</code> property. When you press dot on this property, intellisense will display a list of the data in that table, using whatever the primary key is as the text for each one.
+In this case, the primary key for <code>[main].[Customers]</code> is a string, and I have selected one named BERGS. You will see the resulting type is <code>[main].[Customers]Entity</code>.
+The primary key is not usually very useful for identifying data however, so in addition to this you will see a series of properties named "As X" where X is the name of a column in the table.
+When you press . on one of these properties, the data is re-projected to you using both the primary key and the text of the column you have selected.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs39', 116)" onmouseover="showTip(event, 'fs39', 116)" class="i">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 117)" onmouseover="showTip(event, 'fs11', 117)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">``As ContactName``</span><span class="o">.</span><span class="i">``BERGS, Christina Berglund``</span></pre>
 </td>
 </tr>
 </table>
@@ -78,7 +278,30 @@
 <div class="tip" id="fs13">val customers : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity []<br /><br />Full name: General.customers</div>
 <div class="tip" id="fs14">module Seq<br /><br />from Microsoft.FSharp.Collections</div>
 <div class="tip" id="fs15">val toArray : source:seq&lt;&#39;T&gt; -&gt; &#39;T []<br /><br />Full name: Microsoft.FSharp.Collections.Seq.toArray</div>
-<div class="tip" id="fs16">val christina : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity<br /><br />Full name: General.christina</div>
+<div class="tip" id="fs16">val firstCustomer : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity<br /><br />Full name: General.firstCustomer</div>
+<div class="tip" id="fs17">val name : string<br /><br />Full name: General.name</div>
+<div class="tip" id="fs18">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity.ContactName: string</div>
+<div class="tip" id="fs19">val orders : SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity []<br /><br />Full name: General.orders</div>
+<div class="tip" id="fs20">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity.FK_Orders_0_0: System.Linq.IQueryable&lt;SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity&gt;<br /><em><br /><br />Related [main].[Orders] entities from the foreign side of the relationship, where the primary key is CustomerID and the foreign key is CustomerID</em></div>
+<div class="tip" id="fs21">val customersQuery : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity []<br /><br />Full name: General.customersQuery</div>
+<div class="tip" id="fs22">val query : Linq.QueryBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.query</div>
+<div class="tip" id="fs23">val customer : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity</div>
+<div class="tip" id="fs24">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select </div>
+<div class="tip" id="fs25">val filteredQuery : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity []<br /><br />Full name: General.filteredQuery</div>
+<div class="tip" id="fs26">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where </div>
+<div class="tip" id="fs27">val multipleFilteredQuery : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity []<br /><br />Full name: General.multipleFilteredQuery</div>
+<div class="tip" id="fs28">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity.Country: string</div>
+<div class="tip" id="fs29">val automaticJoinQuery : (SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity * SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity) []<br /><br />Full name: General.automaticJoinQuery</div>
+<div class="tip" id="fs30">val order : SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity</div>
+<div class="tip" id="fs31">val explicitJoinQuery : (SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity * SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity) []<br /><br />Full name: General.explicitJoinQuery</div>
+<div class="tip" id="fs32">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;<br /><br />Calls Linq.QueryBuilder.Join </div>
+<div class="tip" id="fs33">val order : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity</div>
+<div class="tip" id="fs34">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity.CustomerID: string</div>
+<div class="tip" id="fs35">val ordersQuery : (string * System.DateTime * string) []<br /><br />Full name: General.ordersQuery</div>
+<div class="tip" id="fs36">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity.OrderDate: System.DateTime</div>
+<div class="tip" id="fs37">property SqlDataProvider&lt;...&gt;.SqlService.[main].[Orders]Entity.ShipAddress: string</div>
+<div class="tip" id="fs38">val BERGS : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity<br /><br />Full name: General.BERGS</div>
+<div class="tip" id="fs39">val christina : SqlDataProvider&lt;...&gt;.SqlService.[main].[Customers]Entity<br /><br />Full name: General.christina</div>
 
         </div>
         <div class="span3">
@@ -93,9 +316,7 @@
             
         
             <li class="nav-header">Documentation</li>
-              <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
-              <li><a href="/SQLProvider/core/oracle.html">Oracle Documentation</a></li>
-              <li><a href="/SQLProvider/reference/index.html">Internal API Docs</a></li>
+            <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
           </ul>
         </div>
       </div>
