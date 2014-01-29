@@ -21,3 +21,4 @@ open FSharp.Data.Sql
 type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
 let ctx = sql.GetDataContext()
 
+let customers = ctx.``[main].[Customers]`` |> Seq.toArray
