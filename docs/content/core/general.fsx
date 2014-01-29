@@ -1,8 +1,13 @@
 (*** hide ***)
-#I "../../files/sqlite"
+#I @"../../files/sqlite"
 (*** hide ***)
 #I "../../../bin"
-
+(*** hide ***)
+[<Literal>]
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+(*** hide ***)
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite" 
 
 (**
 # SQL Provider
@@ -13,5 +18,6 @@
 
 open FSharp.Data.Sql
 
-type sql = SqlDataProvider< @"Data Source=../../files/sqlite/northwindEF.db;Version=3", Common.DatabaseProviderTypes.SQLITE, "../../files/sqlite" >
+type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
 let ctx = sql.GetDataContext()
+
