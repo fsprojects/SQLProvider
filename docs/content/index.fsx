@@ -60,7 +60,7 @@ let mattisOrderDetails =
     query { for c in ctx.``[main].[Customers]`` do
             // you can directly enumerate relationships with no join information
             for o in c.FK_Orders_0_0 do
-            // or you can explcitly join on the fields you choose
+            // or you can explicitly join on the fields you choose
             join od in ctx.``[main].[OrderDetails]`` on (o.OrderID = od.OrderID)
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.FK_OrderDetails_0_0 do 
