@@ -40,15 +40,13 @@ open System
 open System.Linq
 open FSharp.Data.Sql
 
-// create a type alias with the connection string and database vendor you are using, along with a resolution path for 
-// 3rd party assemblies if you are not using MS SQL Server.  The last two parameters are the amount of individuals 
-// to project into the devleopment einvronment, and finally whether to generate nullable columns as F# option types.
+// create a type alias with the connection string and database vendor settings
 type sql = SqlDataProvider< 
-              @"Data Source=F:\sqlite\northwindEF.db ;Version=3", 
-              Common.DatabaseProviderTypes.SQLITE, 
-              @"F:\sqlite\3", 
-              1000, 
-              true >
+              ConenctionString = @"Data Source=F:\sqlite\northwindEF.db ;Version=3",
+              DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
+              ResolutionPath = @"F:\sqlite\3",
+              IndividualsAmount = 1000,
+              UseOptionTypes = true >
 let ctx = sql.GetDataContext()
 
 // pick individual entities from the database 
