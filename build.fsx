@@ -131,7 +131,7 @@ Target "ReleaseDocs" (fun _ ->
     CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
     StageAll tempDocsDir
     Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
-    Branches.push tempDocsDir
+    Branches.pushBranch tempDocsDir "origin" "gh-pages"
 )
 
 
