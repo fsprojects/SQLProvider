@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.IO
 open System.Collections.Generic
 open System.Data
 
@@ -21,7 +22,7 @@ type internal SQLiteProvider(resolutionPath) as this =
             // we could try and load from the gac here first if no path was specified...            
             Reflection.Assembly.LoadFrom(
                 if String.IsNullOrEmpty resolutionPath then "System.Data.SQLite.dll"
-                else System.IO.Path.Combine(resolutionPath,"System.Data.SQLite.dll"))
+                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,"System.Data.SQLite.dll")))
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteCommand"))
