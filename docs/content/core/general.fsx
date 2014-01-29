@@ -20,7 +20,8 @@ After you have installed the nuget package or built the type provider assembly f
 open FSharp.Data.Sql
 
 (** 
-To use the type provider you must first create a type alias.  
+To use the type provider you must first create a type alias. 
+
 In this declaration you are able to pass various pieces of information known as static parameters to initialize properties such as the connection string and database vendor type that you are connecting to.
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.
 *)
@@ -34,6 +35,7 @@ In order to start exploring the database's schema and reading its data, you crea
 let ctx = sql.GetDataContext()
 (**
 When you press . on ``ctx``, intellisense will display a list of properties representing the available tables and views within the database.  
+
 In the simplest case, you can treat these properties as sequences that can be enumerated.
 *)
 
@@ -57,7 +59,7 @@ You can gain access to these child or parent entities by simply enumerating the 
 
 let orders = firstCustomer.FK_Orders_0_0 |> Seq.toArray
 (**
-``orders`` now contains all the orders belonging to firstCustomer. You will see the orders type is of ``[Main].[Orders]Entity`` indicating the resulting entities are from the ``[main].[Orders]`` table in the database.
+``orders`` now contains all the orders belonging to firstCustomer. You will see the orders type is an array of ``[Main].[Orders]Entity`` indicating the resulting entities are from the ``[main].[Orders]`` table in the database.
 If you hover over ``FK_Orders_0_0`` intellisense will display information about the constraint in question including the names of the tables involved and the key names.
 Behind the scenes the SQL provider has automatically constructed and executed a relevant query using the entity's primary key.
 
@@ -81,7 +83,8 @@ let filteredQuery =
 
 let multipleFilteredQuery =
     query { for customer in ctx.``[main].[Customers]`` do
-            where ((customer.ContactName = "John Smith" && customer.Country = "England") || customer.ContactName = "Joe Bloggs")
+            where ((customer.ContactName = "John Smith" && customer.Country = "England") 
+            		|| customer.ContactName = "Joe Bloggs")
             select customer } |> Seq.toArray
 
 (**
@@ -127,6 +130,7 @@ let BERGS = ctx.``[main].[Customers]``.Individuals.BERGS
 (**
 Every table and view has an ``Individuals`` property. When you press dot on this property, intellisense will display a list of the data in that table, using whatever the primary key is as the text for each one.
 In this case, the primary key for ``[main].[Customers]`` is a string, and I have selected one named BERGS. You will see the resulting type is ``[main].[Customers]Entity``.
+
 The primary key is not usually very useful for identifying data however, so in addition to this you will see a series of properties named "As X" where X is the name of a column in the table.
 When you press . on one of these properties, the data is re-projected to you using both the primary key and the text of the column you have selected.
 *)
