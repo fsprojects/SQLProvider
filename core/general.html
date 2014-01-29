@@ -50,8 +50,9 @@ After you have installed the nuget package or built the type provider assembly f
 </tr>
 </table>
 
-<p>To use the type provider you must first create a type alias.<br />
-In this declaration you are able to pass various pieces of information known as static parameters to initialize properties such as the connection string and database vendor type that you are connecting to.
+<p>To use the type provider you must first create a type alias.</p>
+
+<p>In this declaration you are able to pass various pieces of information known as static parameters to initialize properties such as the connection string and database vendor type that you are connecting to.
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
@@ -77,8 +78,9 @@ In order to start exploring the database's schema and reading its data, you crea
 </tr>
 </table>
 
-<p>When you press . on <code>ctx</code>, intellisense will display a list of properties representing the available tables and views within the database.<br />
-In the simplest case, you can treat these properties as sequences that can be enumerated.</p>
+<p>When you press . on <code>ctx</code>, intellisense will display a list of properties representing the available tables and views within the database.</p>
+
+<p>In the simplest case, you can treat these properties as sequences that can be enumerated.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
 <span class="l">1: </span>
@@ -123,7 +125,7 @@ You can gain access to these child or parent entities by simply enumerating the 
 </tr>
 </table>
 
-<p><code>orders</code> now contains all the orders belonging to firstCustomer. You will see the orders type is of <code>[Main].[Orders]Entity</code> indicating the resulting entities are from the <code>[main].[Orders]</code> table in the database.
+<p><code>orders</code> now contains all the orders belonging to firstCustomer. You will see the orders type is an array of <code>[Main].[Orders]Entity</code> indicating the resulting entities are from the <code>[main].[Orders]</code> table in the database.
 If you hover over <code>FK_Orders_0_0</code> intellisense will display information about the constraint in question including the names of the tables involved and the key names.
 Behind the scenes the SQL provider has automatically constructed and executed a relevant query using the entity's primary key.</p>
 
@@ -145,19 +147,20 @@ Behind the scenes the SQL provider has automatically constructed and executed a 
 </tr>
 </table>
 
-<p>The above example is identical to the query that was executed when <code>ctx.</code>[main].[Customers] |> Seq.toArray<code></code> was evaluated.
+<p>The above example is identical to the query that was executed when <code>ctx.[main].[Customers] |&gt; Seq.toArray</code> was evaluated.
 You can extend this basic query include to filter criteria by introducing one or more <em>where</em> clauses</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
-<span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-<span class="l">7: </span>
-<span class="l">8: </span>
-<span class="l">9: </span>
+<span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
 </pre>
 </td>
 <td class="snippet"><pre class="fssnip">
@@ -168,7 +171,8 @@ You can extend this basic query include to filter criteria by introducing one or
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 47)" onmouseover="showTip(event, 'fs27', 47)" class="i">multipleFilteredQuery</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs22', 48)" onmouseover="showTip(event, 'fs22', 48)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 49)" onmouseover="showTip(event, 'fs23', 49)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 50)" onmouseover="showTip(event, 'fs11', 50)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
-            <span onmouseout="hideTip(event, 'fs26', 51)" onmouseover="showTip(event, 'fs26', 51)" class="k">where</span> ((<span onmouseout="hideTip(event, 'fs23', 52)" onmouseover="showTip(event, 'fs23', 52)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 53)" onmouseover="showTip(event, 'fs18', 53)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs28', 55)" onmouseover="showTip(event, 'fs28', 55)" class="i">Country</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">England</span><span class="s">&quot;</span>) <span class="o">||</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 57)" onmouseover="showTip(event, 'fs18', 57)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">Joe</span><span class="s"> </span><span class="s">Bloggs</span><span class="s">&quot;</span>)
+            <span onmouseout="hideTip(event, 'fs26', 51)" onmouseover="showTip(event, 'fs26', 51)" class="k">where</span> ((<span onmouseout="hideTip(event, 'fs23', 52)" onmouseover="showTip(event, 'fs23', 52)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 53)" onmouseover="showTip(event, 'fs18', 53)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs28', 55)" onmouseover="showTip(event, 'fs28', 55)" class="i">Country</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">England</span><span class="s">&quot;</span>) 
+            		<span class="o">||</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 57)" onmouseover="showTip(event, 'fs18', 57)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">Joe</span><span class="s"> </span><span class="s">Bloggs</span><span class="s">&quot;</span>)
             <span onmouseout="hideTip(event, 'fs24', 58)" onmouseover="showTip(event, 'fs24', 58)" class="k">select</span> <span onmouseout="hideTip(event, 'fs23', 59)" onmouseover="showTip(event, 'fs23', 59)" class="i">customer</span> } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 60)" onmouseover="showTip(event, 'fs14', 60)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 61)" onmouseover="showTip(event, 'fs15', 61)" class="i">toArray</span></pre>
 </td>
 </tr>
@@ -208,8 +212,8 @@ To access related data, you can either enumerate directly over the constraint pr
 </table>
 
 <p>Both of these queries have identical results, it's just one requires explicit knowledge of what tables join to what and how, and the other doesn't.
-You might have notice the select expression has now changed to (customer,order). 
-As you might expect, this will return an array of tuples where the first item is a <code>[Main].[Orders]Entity</code> and the second a  <code>[Main].[Orders]Entity</code>.
+You might have noticed the select expression has now changed to (customer,order). 
+As you may expect, this will return an array of tuples where the first item is a <code>[Main].[Customers]Entity</code> and the second a <code>[Main].[Orders]Entity</code>.
 Often you will not be interested in selecting entire entities from the database.
 Changing the select expression to use the entities' properties will cause the SQL provider to select only the columns you have asked for, which is an important optimization.</p>
 
@@ -249,8 +253,9 @@ The SQL provider supports various other query keywords and features that you can
 </table>
 
 <p>Every table and view has an <code>Individuals</code> property. When you press dot on this property, intellisense will display a list of the data in that table, using whatever the primary key is as the text for each one.
-In this case, the primary key for <code>[main].[Customers]</code> is a string, and I have selected one named BERGS. You will see the resulting type is <code>[main].[Customers]Entity</code>.
-The primary key is not usually very useful for identifying data however, so in addition to this you will see a series of properties named "As X" where X is the name of a column in the table.
+In this case, the primary key for <code>[main].[Customers]</code> is a string, and I have selected one named BERGS. You will see the resulting type is <code>[main].[Customers]Entity</code>.</p>
+
+<p>The primary key is not usually very useful for identifying data however, so in addition to this you will see a series of properties named "As X" where X is the name of a column in the table.
 When you press . on one of these properties, the data is re-projected to you using both the primary key and the text of the column you have selected.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip">
@@ -316,7 +321,9 @@ When you press . on one of these properties, the data is re-projected to you usi
             
         
             <li class="nav-header">Documentation</li>
-            <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
+              <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
+              <li><a href="/SQLProvider/core/oracle.html">Oracle Documentation</a></li>
+              <li><a href="/SQLProvider/reference/index.html">Internal API Docs</a></li>
           </ul>
         </div>
       </div>
