@@ -70,7 +70,7 @@ let customersQuery =
     query { for customer in ctx.``[main].[Customers]`` do
             select customer } |> Seq.toArray
 (**
-The above example is identical to the query that was executed when ``ctx.``[main].[Customers] |> Seq.toArray`` was evaluated.
+The above example is identical to the query that was executed when ``ctx.[main].[Customers] |> Seq.toArray`` was evaluated.
 You can extend this basic query include to filter criteria by introducing one or more *where* clauses
 *)
 
