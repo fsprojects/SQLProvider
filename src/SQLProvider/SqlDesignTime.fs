@@ -142,7 +142,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun _ -> <@@ new obj() @@> )
                         prop.AddXmlDoc(sprintf "A sample of %s individuals from the SQL object" name)
                         ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                        
-                        yield table.FullName,(ct,it) ]  
+                        yield table.FullName,(ct,it) ]
         
         // add the attributes and relationships
         for KeyValue(key,(t,desc,_)) in baseTypes.Force() do 
