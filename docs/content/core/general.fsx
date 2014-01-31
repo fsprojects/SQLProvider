@@ -84,7 +84,7 @@ let filteredQuery =
 let multipleFilteredQuery =
     query { for customer in ctx.``[main].[Customers]`` do
             where ((customer.ContactName = "John Smith" && customer.Country = "England") 
-            		|| customer.ContactName = "Joe Bloggs")
+                    || customer.ContactName = "Joe Bloggs")
             select customer } |> Seq.toArray
 
 (**
