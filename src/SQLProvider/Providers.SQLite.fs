@@ -97,7 +97,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                use reader = com.ExecuteReader()
                let columns =
                   [ while reader.Read() do 
-                      let dt = reader.GetString(2)
+                      let dt = reader.GetString(2).ToLower()
                       let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
                       match sqlToClr dt, sqlToEnum dt with
                       | Some(clr),Some(sql) ->

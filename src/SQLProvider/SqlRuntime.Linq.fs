@@ -305,12 +305,19 @@ module internal QueryImplementation =
                 member provider.Execute<'T>(e:Expression) : 'T = 
                     Common.QueryEvents.PublishExpression e
                     match e with                    
+                    | MethodCall(_, (MethodWithName "First" as meth),  [Constant(query,_)]  ) ->   
+                        let svc = (query:?>IWithSqlService)
+                        let res = executeQuery svc.ConnectionString svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex                        
+                                  |> Seq.cast<SqlEntity>
+                        match (res :?> seq<_>) |> Seq.toList with
+                        | []  ->  raise <| InvalidOperationException("No results were returned")
+                        | x::_ -> x
                     | MethodCall(_, (MethodWithName "Single" as meth),  [Constant(query,_)]  ) ->   
                         match (query :?> seq<_>) |> Seq.toList with
                         | x::[] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query,_)] ) ->  
-                        let svc = (query:?>IWithSqlService)                        
+                        let svc = (query:?>IWithSqlService)
                         executeQueryScalar svc.ConnectionString svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T 
                     | _ -> failwith "Unuspported execution expression" }
 
