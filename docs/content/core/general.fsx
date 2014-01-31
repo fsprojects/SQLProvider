@@ -105,7 +105,7 @@ let explicitJoinQuery =
            select (customer,order) } |> Seq.toArray
 
 (**
-Both of these queries have identical results, it's just one requires explicit knowledge of what tables join to what and how, and the other doesn't.
+Both of these queries have identical results, it's just one requires explicit knowledge of which tables join where and how, and the other doesn't.
 You might have noticed the select expression has now changed to (customer,order). 
 As you may expect, this will return an array of tuples where the first item is a ``[Main].[Customers]Entity`` and the second a ``[Main].[Orders]Entity``.
 Often you will not be interested in selecting entire entities from the database.
@@ -122,7 +122,7 @@ The results of this query will return the name, order date and ship address only
 The SQL provider supports various other query keywords and features that you can read about elsewhere in this documentation.
 
 
-### Individuals
+## Individuals
 The SQL provider has the ability via intellisense to navigate the actual data held within a table or view. You can then bind that data as an entity to a value.
 *)
 
