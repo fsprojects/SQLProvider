@@ -172,7 +172,7 @@ You can extend this basic query include to filter criteria by introducing one or
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 47)" onmouseover="showTip(event, 'fs27', 47)" class="i">multipleFilteredQuery</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs22', 48)" onmouseover="showTip(event, 'fs22', 48)" class="i">query</span> { <span class="k">for</span> <span onmouseout="hideTip(event, 'fs23', 49)" onmouseover="showTip(event, 'fs23', 49)" class="i">customer</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs11', 50)" onmouseover="showTip(event, 'fs11', 50)" class="i">ctx</span><span class="o">.</span><span class="i">``[main].[Customers]``</span> <span class="k">do</span>
             <span onmouseout="hideTip(event, 'fs26', 51)" onmouseover="showTip(event, 'fs26', 51)" class="k">where</span> ((<span onmouseout="hideTip(event, 'fs23', 52)" onmouseover="showTip(event, 'fs23', 52)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 53)" onmouseover="showTip(event, 'fs18', 53)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">John</span><span class="s"> </span><span class="s">Smith</span><span class="s">&quot;</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs28', 55)" onmouseover="showTip(event, 'fs28', 55)" class="i">Country</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">England</span><span class="s">&quot;</span>) 
-            		<span class="o">||</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 57)" onmouseover="showTip(event, 'fs18', 57)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">Joe</span><span class="s"> </span><span class="s">Bloggs</span><span class="s">&quot;</span>)
+                    <span class="o">||</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">customer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 57)" onmouseover="showTip(event, 'fs18', 57)" class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;</span><span class="s">Joe</span><span class="s"> </span><span class="s">Bloggs</span><span class="s">&quot;</span>)
             <span onmouseout="hideTip(event, 'fs24', 58)" onmouseover="showTip(event, 'fs24', 58)" class="k">select</span> <span onmouseout="hideTip(event, 'fs23', 59)" onmouseover="showTip(event, 'fs23', 59)" class="i">customer</span> } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs14', 60)" onmouseover="showTip(event, 'fs14', 60)" class="i">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 61)" onmouseover="showTip(event, 'fs15', 61)" class="i">toArray</span></pre>
 </td>
 </tr>
@@ -211,7 +211,7 @@ To access related data, you can either enumerate directly over the constraint pr
 </tr>
 </table>
 
-<p>Both of these queries have identical results, it's just one requires explicit knowledge of what tables join to what and how, and the other doesn't.
+<p>Both of these queries have identical results, it's just one requires explicit knowledge of which tables join where and how, and the other doesn't.
 You might have noticed the select expression has now changed to (customer,order). 
 As you may expect, this will return an array of tuples where the first item is a <code>[Main].[Customers]Entity</code> and the second a <code>[Main].[Orders]Entity</code>.
 Often you will not be interested in selecting entire entities from the database.
@@ -238,7 +238,7 @@ Changing the select expression to use the entities' properties will cause the SQ
 <p>The results of this query will return the name, order date and ship address only.  By doing this you no longer have access to entity types.
 The SQL provider supports various other query keywords and features that you can read about elsewhere in this documentation.</p>
 
-<h3>Individuals</h3>
+<h2>Individuals</h2>
 
 <p>The SQL provider has the ability via intellisense to navigate the actual data held within a table or view. You can then bind that data as an entity to a value.</p>
 
