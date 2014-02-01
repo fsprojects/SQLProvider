@@ -307,11 +307,9 @@ module internal QueryImplementation =
                     match e with                    
                     | MethodCall(_, (MethodWithName "First" as meth),  [Constant(query,_)]  ) ->   
                         let svc = (query:?>IWithSqlService)
-                        let res = executeQuery svc.ConnectionString svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex                        
-                                  |> Seq.cast<SqlEntity>
-                        match (res :?> seq<_>) |> Seq.toList with
-                        | []  ->  raise <| InvalidOperationException("No results were returned")
-                        | x::_ -> x
+                        executeQuery svc.ConnectionString svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex                        
+                        |> Seq.cast<'T>
+                        |> Seq.head
                     | MethodCall(_, (MethodWithName "Single" as meth),  [Constant(query,_)]  ) ->   
                         match (query :?> seq<_>) |> Seq.toList with
                         | x::[] -> x
