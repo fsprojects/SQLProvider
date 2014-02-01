@@ -23,7 +23,6 @@ let solutionFile  = "SQLProvider"
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
 let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
-let cloneUrl = "git@github.com:pezipink/SQLProvider.git"
 let nugetDir = "./nuget/"
 
 
@@ -125,7 +124,7 @@ Target "GenerateDocs" (fun _ ->
 Target "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
     CleanDir tempDocsDir
-    Repository.cloneSingleBranch "" cloneUrl "gh-pages" tempDocsDir
+    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
 
     fullclean tempDocsDir
     CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
