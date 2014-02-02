@@ -90,8 +90,7 @@ type SqlEntity(tableName) =
           for i = 0 to reader.FieldCount - 1 do 
               match reader.GetValue(i) with
               | null | :? DBNull -> ()
-              | value -> //printfn "name - '%s'; val-%A" (reader.GetName(i)) value
-                         e.SetColumn(reader.GetName(i),value)
+              | value -> e.SetColumn(reader.GetName(i),value)
           yield e ]
 
     /// creates a new sql entity from alias data in this entity
@@ -160,7 +159,7 @@ type SqlEntity(tableName) =
                               { new PropertyDescriptor(k,[||])  with
                                  override __.PropertyType with get() = v.GetType()
                                  override __.SetValue(e,value) = (e :?> SqlEntity).SetColumn(k,value)        
-                                 override __.GetValue(e) =  printfn "ICustomTypeDescriptor.GetValue - %s" k; (e:?>SqlEntity).GetColumn k
+                                 override __.GetValue(e) = (e:?>SqlEntity).GetColumn k
                                  override __.IsReadOnly with get() = false
                                  override __.ComponentType with get () = null
                                  override __.CanResetValue(_) = false
@@ -243,7 +242,7 @@ type internal SqlQuery =
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
                                           Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                    | _ ->
-                        convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
+                         convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  

@@ -366,6 +366,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     static member _GetIndividual(typeName,table,id) : SqlEntity =
+        printfn "_GetIndividuals type=%s table=%s id=%A" typeName table id
         match connectionCache.TryGetValue typeName with
         | true,(conString,provider) -> 
            use con = provider.CreateConnection(conString)

@@ -83,6 +83,7 @@ type internal MSAccessProvider(resolutionPath) as this =
             |> List.ofSeq
 
         member __.GetPrimaryKey(table) = 
+            //printfn "GetPrimaryKey - %s" table.Name
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
             | _ -> None
@@ -107,7 +108,7 @@ type internal MSAccessProvider(resolutionPath) as this =
                                                      IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
                                                  //if (col.IsPrimarKey) && not (pkLookup.ContainsKey table.FullName) then pkLookup.Add(table.FullName,col.Name)
                                                  if (col.IsPrimarKey) then pkLookup.Add(table.Name,col.Name)
-                                                 printfn "col - %s pklup %s" col.Name (pkLookup |> Seq.fold (fun acc kvp -> acc + kvp.Key + "-" + kvp.Value) "")
+                                                 //printfn "col - %s pklup %s" col.Name (pkLookup |> Seq.fold (fun acc kvp -> acc + kvp.Key + "-" + kvp.Value) "")
                                                  col
                                            |_ -> failwith "failed to map datatypes") |> List.ofSeq
                columnLookup.Add(table.FullName,columns)
@@ -116,18 +117,20 @@ type internal MSAccessProvider(resolutionPath) as this =
             let rels = 
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
             let children = rels |> Seq.filter (fun r -> r.["PK_TABLE_NAME"].ToString() = table.Name)
-                                |> Seq.map    (fun r -> {Name=r.["PK_NAME"].ToString();PrimaryTable = table.Name;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=r.["FK_TABLE_NAME"].ToString();ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
+                                |> Seq.map    (fun r -> {Name=r.["FK_NAME"].ToString();PrimaryTable = table.Name;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=r.["FK_TABLE_NAME"].ToString();ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
                                 |> List.ofSeq
             let parents  = rels |> Seq.filter (fun r -> r.["FK_TABLE_NAME"].ToString() = table.Name)
                                 |> Seq.map    (fun r -> {Name=r.["PK_NAME"].ToString();PrimaryTable = r.["PK_TABLE_NAME"].ToString();PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=table.Name;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
                                 |> List.ofSeq
-            printfn "%s children %A parents %A" table.Name children parents
             (children,parents)
         member __.GetSprocs(con) = 
             []
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+        member this.GetIndividualsQueryText(table,amount) = printfn "SELECT TOP %i * FROM %s" amount table.Name
+                                                            sprintf "SELECT TOP %i * FROM %s" amount table.Name
+                                                            
+        member this.GetIndividualQueryText(table,column) = printfn "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
+                                                           sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
