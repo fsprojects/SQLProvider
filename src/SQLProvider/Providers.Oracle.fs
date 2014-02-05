@@ -88,12 +88,15 @@ type internal OracleProvider(resolutionPath, owner) =
         sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
         sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
         clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+
+    let quoteWhiteSpace (str:String) = 
+        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
     
     let getSchema name (args:string[]) conn = 
         getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
 
     let tableFullName (table:Table) = 
-        table.Schema + "." + table.Name
+        table.Schema + "." + (quoteWhiteSpace table.Name)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = 
@@ -242,8 +245,12 @@ type internal OracleProvider(resolutionPath, owner) =
                 else None
             ) |> Seq.toList
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s.%s WHERE %s.%s.%s = :id" table.Schema table.Name table.Schema table.Name column
+        member this.GetIndividualsQueryText(table,amount) = 
+            sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
+
+        member this.GetIndividualQueryText(table,column) = 
+            let tName = tableFullName table
+            sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let sb = System.Text.StringBuilder()
@@ -268,8 +275,8 @@ type internal OracleProvider(resolutionPath, owner) =
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
-                                yield sprintf "%s.%s as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
+                                yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types

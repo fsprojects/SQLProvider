@@ -50,4 +50,10 @@ let topSales5ByCommission =
         take 5
     } |> Seq.toList
 
+let whiteSpace = 
+    query {
+        for ws in ctx.``[HR].[WHITE SPACE]`` do
+        select (ws.``COLUMN 1``)
+    } |> Seq.toList
+
 let headCount = ctx.``Stored Procedures``.``HR.HR_API.FIRE_EMPLOYEE``(145M)
