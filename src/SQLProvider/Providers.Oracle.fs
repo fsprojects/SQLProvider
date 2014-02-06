@@ -308,19 +308,19 @@ type internal OracleProvider(resolutionPath, owner) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias col 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias col 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (quoteWhiteSpace col) 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias col text
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias col text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias col 
+                                        (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col) 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -357,8 +357,8 @@ type internal OracleProvider(resolutionPath, owner) =
                     |> List.iter(fun (alias,data) ->
                         let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                         let destTable = getTable alias
-                        ~~  (sprintf "%s %s.%s %s on %s.%s = %s.%s " 
-                               joinType destTable.Schema destTable.Name alias 
+                        ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
+                               joinType (tableFullName destTable) alias 
                                (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
                                data.ForeignKey  
                                (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
@@ -368,7 +368,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias column (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
+                    ~~ (sprintf "%s.%s%s" alias (quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)

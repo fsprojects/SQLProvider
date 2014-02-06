@@ -9,7 +9,7 @@ let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HO
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
-type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR", UseOptionTypes = true>
+type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
 
@@ -53,6 +53,7 @@ let topSales5ByCommission =
 let whiteSpace = 
     query {
         for ws in ctx.``[HR].[WHITE SPACE]`` do
+        where (ws.``COLUMN 2`` > 3M)
         select (ws.``COLUMN 1``)
     } |> Seq.toList
 
