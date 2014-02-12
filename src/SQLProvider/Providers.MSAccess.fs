@@ -257,7 +257,7 @@ type internal MSAccessProvider(resolutionPath) as this =
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
                             data.PrimaryKey)
-                        if (numLinks > 1 && i = 0) then ~~ ")"))//only enclose the first FROM/join in parens
+                        if (numLinks > 0)  then ~~ ")"))//append close paren after each JOIN
                         
 
             let orderByBuilder() =
@@ -273,9 +273,10 @@ type internal MSAccessProvider(resolutionPath) as this =
             // FROM
             //if sqlQuery.Links.Length > 1, then open paren after FROM
             let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
-            match numLinks with 
-            | 0 | 1 -> ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)
-            | _     -> ~~(sprintf "FROM (%s as %s " baseTable.Name baseAlias)
+            ~~(sprintf "FROM %s%s as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
+//            match numLinks with 
+//            | 0 | 1 -> ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)
+//            | _     -> ~~(sprintf "FROM (%s as %s " baseTable.Name baseAlias)
             fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then
