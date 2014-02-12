@@ -3,7 +3,7 @@ open System
 open System.Linq
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common.QueryEvents
-type mdb = SqlDataProvider< "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= C:\\code_root\\SQLProvider\\docs\\files\\msaccess\\Northwind.mdb", Common.DatabaseProviderTypes.MSACCESS, @"C:\code_root\SQLProvider\docs\files\msaccess" , 100, true >
+type mdb = SqlDataProvider< "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= C:\\code_root\\SQLProvider\\docs\\files\\msaccess\\Northwind.mdb", Common.DatabaseProviderTypes.MSACCESS, @"" , 100, true >
 let ctx = mdb.GetDataContext()
 
 
