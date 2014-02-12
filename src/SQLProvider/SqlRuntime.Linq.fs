@@ -37,7 +37,7 @@ module internal QueryImplementation =
        for p in parameters do cmd.Parameters.Add p |> ignore
        let results = SqlEntity.FromDataReader(baseTable.FullName, cmd.ExecuteReader())       
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       con.Close()
+       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
 
     let executeQueryScalar conString (provider:ISqlProvider) sqlExp ti =        
@@ -56,7 +56,7 @@ module internal QueryImplementation =
         | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int so its possible to lose data here.
         | x -> con.Close()
                failwithf "Count retruned something other than a 32 bit integer : %s " (x.GetType().ToString())
-       con.Close()
+       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        box result
        
     type SqlQueryable<'T>(conString:string,provider,sqlQuery,tupleIndex) =       
@@ -334,7 +334,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             // the minimum base set of data available
             prov.CreateTypeMappings(con)
             prov.GetTables(con) |> ignore
-            con.Close()
+            if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
             connectionCache.Add(typeName,(connectionString,prov))
     static member _Create(typeName,connectionString,dbVendor,resolutionPath, owner) =
         SqlDataContext(typeName,connectionString,dbVendor,resolutionPath, owner)    
@@ -393,7 +393,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
            com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
            use reader = com.ExecuteReader()
            let entity = List.head <| SqlEntity.FromDataReader(table.FullName,reader)
-           con.Close()
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     

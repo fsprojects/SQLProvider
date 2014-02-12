@@ -48,7 +48,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             (cols,rel))] 
 
         let sprocData = lazy prov.GetSprocs con 
-        let getTableColumns name = tableColumns.Force().[name].Force() 
+        let getTableColumns name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "SqlService", Some typeof<SqlDataContext>, HideObjectMethods = true)
         
         // first create all the types so we are able to recursively reference them in each other's definitions
@@ -72,7 +72,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                prov.GetColumns(con,table) |> ignore 
                match prov.GetPrimaryKey table with
                | Some pk ->
-                   let entities =   
+                   let entities = 
                         use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                         use reader = com.ExecuteReader()
                         SqlEntity.FromDataReader(table.FullName,reader)
@@ -105,7 +105,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
                       entities
-                      |> List.choose(fun e ->  
+                      |> List.choose(fun e -> 
                          match e.GetColumn pk with
                          | FixedType pkValue -> 
                             let name = table.FullName
@@ -141,8 +141,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let it = createIndividualsType table 
                         let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun _ -> <@@ new obj() @@> )
                         prop.AddXmlDoc(sprintf "A sample of %s individuals from the SQL object" name)
-                        ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                        
-                        yield table.FullName,(ct,it) ]  
+                        ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                    
+                        yield table.FullName,(ct,it) ]
         
         // add the attributes and relationships
         for KeyValue(key,(t,desc,_)) in baseTypes.Force() do 
@@ -186,7 +186,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             <@@ SqlDataContext._CreateRelated(rootTypeName,(%%(args.[0]) : SqlEntity), name,pt,pk,ft,fk,"",RelationshipDirection.Children) @@> )
                         prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
                         yield prop ] @
-                    [ for r in parents do                       
+                    [ for r in parents do
                         let (tt,_,_) = (baseTypes.Force().[r.PrimaryTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt

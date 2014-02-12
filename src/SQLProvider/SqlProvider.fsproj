@@ -54,6 +54,7 @@
     <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.Oracle.fs" />
     <Compile Include="Providers.SQLite.fs" />
+    <Compile Include="Providers.MSAccess.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlDesignTime.fs" />
@@ -67,6 +68,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
