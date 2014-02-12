@@ -75,16 +75,17 @@ type internal MSAccessProvider(resolutionPath) as this =
         member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
             let con = con:?>OleDbConnection
-            con.GetSchema("Tables").AsEnumerable() 
-            |> Seq.filter (fun row -> row.["TABLE_TYPE"].ToString() = "TABLE")
+            con.GetSchema("Tables").AsEnumerable()
+            |> Seq.filter (fun row -> row.["TABLE_TYPE"].ToString() = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW") // || row.["TABLE_TYPE"].ToString() = "LINK")
+                                                                                                                         // - sadly, cannot get linked tables to work : 
+                                                                                                                         //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.
             |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() } 
                                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
                                    table)
             |> List.ofSeq
 
         member __.GetPrimaryKey(table) = 
-            //printfn "GetPrimaryKey - %s" table.Name
-            match pkLookup.TryGetValue table.FullName with 
+            match pkLookup.TryGetValue table.FullName with
             | true, v -> Some v
             | _ -> None
         member __.GetColumns(con,table) = 
@@ -106,9 +107,7 @@ type internal MSAccessProvider(resolutionPath) as this =
                                                      DbType = sql;
                                                      IsPrimarKey = pks |> Seq.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                                                      IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
-                                                 //if (col.IsPrimarKey) && not (pkLookup.ContainsKey table.FullName) then pkLookup.Add(table.FullName,col.Name)
-                                                 if (col.IsPrimarKey) then pkLookup.Add(table.Name,col.Name)
-                                                 //printfn "col - %s pklup %s" col.Name (pkLookup |> Seq.fold (fun acc kvp -> acc + kvp.Key + "-" + kvp.Value) "")
+                                                 if (col.IsPrimarKey) && not (pkLookup.ContainsKey table.FullName) then (pkLookup.Add(table.FullName,col.Name))
                                                  col
                                            |_ -> failwith "failed to map datatypes") |> List.ofSeq
                columnLookup.Add(table.FullName,columns)
@@ -117,20 +116,25 @@ type internal MSAccessProvider(resolutionPath) as this =
             let rels = 
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
             let children = rels |> Seq.filter (fun r -> r.["PK_TABLE_NAME"].ToString() = table.Name)
-                                |> Seq.map    (fun r -> {Name=r.["FK_NAME"].ToString();PrimaryTable = table.Name;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=r.["FK_TABLE_NAME"].ToString();ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
+                                |> Seq.map    (fun r -> let pktableName = table.FullName
+                                                        let fktableName = sprintf "[%s].[%s]" table.Schema  (r.["FK_TABLE_NAME"].ToString())
+                                                        let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString()) 
+                                                        {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
                                 |> List.ofSeq
             let parents  = rels |> Seq.filter (fun r -> r.["FK_TABLE_NAME"].ToString() = table.Name)
-                                |> Seq.map    (fun r -> {Name=r.["PK_NAME"].ToString();PrimaryTable = r.["PK_TABLE_NAME"].ToString();PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=table.Name;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
+                                |> Seq.map    (fun r -> let pktableName = sprintf "[%s].[%s]" table.Schema  (r.["PK_TABLE_NAME"].ToString())
+                                                        let fktableName = table.FullName
+                                                        let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString()) 
+                                                        {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})    
                                 |> List.ofSeq
+            relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents)
         member __.GetSprocs(con) = 
             []
 
-        member this.GetIndividualsQueryText(table,amount) = printfn "SELECT TOP %i * FROM %s" amount table.Name
-                                                            sprintf "SELECT TOP %i * FROM %s" amount table.Name
+        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name
                                                             
-        member this.GetIndividualQueryText(table,column) = printfn "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
-                                                           sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
+        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
@@ -240,19 +244,21 @@ type internal MSAccessProvider(resolutionPath) as this =
                     filterBuilder conds
                 
             // next up is the FROM statement which includes joins .. 
-            let fromBuilder() = 
+            let fromBuilder(numLinks:int) = 
                 sqlQuery.Links
                 |> Map.iter(fun fromAlias (destList) ->
                     destList
-                    |> List.iter(fun (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    |> List.iteri(fun i (alias,data) -> 
+                        let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
                         let destTable = getTable alias
-                        ~~  (sprintf "%s [%s].[%s] as %s on [%s].[%s] = [%s].[%s] " 
-                               joinType destTable.Schema destTable.Name alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                        ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
+                            joinType destTable.Name alias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
+                            data.PrimaryKey)
+                        if (numLinks > 1 && i = 0) then ~~ ")"))//only enclose the first FROM/join in parens
+                        
 
             let orderByBuilder() =
                 sqlQuery.Ordering
@@ -265,8 +271,12 @@ type internal MSAccessProvider(resolutionPath) as this =
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
-            ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)         
-            fromBuilder()
+            //if sqlQuery.Links.Length > 1, then open paren after FROM
+            let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
+            match numLinks with 
+            | 0 | 1 -> ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)
+            | _     -> ~~(sprintf "FROM (%s as %s " baseTable.Name baseAlias)
+            fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then
                 // each filter is effectively the entire contents of each where clause in the linq query,

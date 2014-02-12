@@ -48,14 +48,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             (cols,rel))] 
 
         let sprocData = lazy prov.GetSprocs con 
-        let getTableColumns name = tableColumns.Force().[name].Force() 
+        let getTableColumns name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "SqlService", Some typeof<SqlDataContext>, HideObjectMethods = true)
         
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
                 dict [ for table in tables.Force() do
-                        //printfn "adding %A to baseTypes" table
                         let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)
                         t.AddMemberDelayed(fun () -> ProvidedConstructor([],InvokeCode = fun _ -> <@@ new SqlEntity(table.FullName) @@>  ))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
@@ -63,25 +62,20 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"") ]
 
         let createIndividualsType (table:Table) =
-            //printfn "table - %A in createIndivtype " table
             let (et,_,_) = baseTypes.Force().[table.FullName]
-            //printfn "entity - %A in createIndivtype " et
             let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", Some typeof<obj>, HideObjectMethods = true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
             
             t.AddXmlDocDelayed(fun _ -> sprintf "A sample of %s individuals from the SQL object as supplied in the static parameters" table.Name)
             t.AddMembersDelayed( fun _ ->
-               printfn "getCols - con %A, table %A" con table
                prov.GetColumns(con,table) |> ignore 
                match prov.GetPrimaryKey table with
                | Some pk ->
                    let entities = 
-                        printfn "ind qry %s" (prov.GetIndividualsQueryText(table,individualsAmount))
                         use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                         use reader = com.ExecuteReader()
                         SqlEntity.FromDataReader(table.FullName,reader)
-                   printfn "adding individuals for %A" entities
                    if entities.IsEmpty then [] else
                    let e = entities.Head
                    // for each column in the entity except the primary key, creaate a new type that will read ``As Column 1`` etc
@@ -110,7 +104,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
-                      printfn "props %A" entities
                       entities
                       |> List.choose(fun e -> 
                          match e.GetColumn pk with
@@ -141,7 +134,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let baseCollectionTypes =
             lazy
                 dict [ for table in tables.Force() do  
-                        //printfn "adding %A in baseCollTypes" table
                         let name = table.FullName
                         let (et,_,_) = baseTypes.Force().[name]
                         let ct = ProvidedTypeDefinition(table.FullName + "Set", None,HideObjectMethods=false)
@@ -181,7 +173,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop
                     List.map createColumnProperty columns
                 let relProps =
-                    //printfn "children in relProps - %A" children
                     [ for r in children do                       
                         let (tt,_,_) = (baseTypes.Force().[r.ForeignTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
@@ -196,7 +187,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
                         yield prop ] @
                     [ for r in parents do
-                        //printfn "parents in relProp - %A" parents               
                         let (tt,_,_) = (baseTypes.Force().[r.PrimaryTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt

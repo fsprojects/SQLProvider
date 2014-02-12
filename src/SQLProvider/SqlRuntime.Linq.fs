@@ -327,7 +327,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             // the minimum base set of data available
             prov.CreateTypeMappings(con)
             prov.GetTables(con) |> ignore
-            con.Close()
+            if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
             connectionCache.Add(typeName,(connectionString,prov))
     static member _Create(typeName,connectionString,dbVendor,resolutionPath, owner) =
         SqlDataContext(typeName,connectionString,dbVendor,resolutionPath, owner)    
@@ -366,7 +366,6 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     static member _GetIndividual(typeName,table,id) : SqlEntity =
-        printfn "_GetIndividuals type=%s table=%s id=%A" typeName table id
         match connectionCache.TryGetValue typeName with
         | true,(conString,provider) -> 
            use con = provider.CreateConnection(conString)
@@ -387,7 +386,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
            com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
            use reader = com.ExecuteReader()
            let entity = List.head <| SqlEntity.FromDataReader(table.FullName,reader)
-           con.Close()
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     

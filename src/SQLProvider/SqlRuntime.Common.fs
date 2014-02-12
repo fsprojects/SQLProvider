@@ -46,7 +46,6 @@ type SqlEntity(tableName) =
     member e.TableName = tableName     
 
     member e.GetColumn<'T>(key) : 'T = 
-        //printfn "getcol - '%s'" key
         let defaultValue() =                       
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
@@ -60,7 +59,6 @@ type SqlEntity(tableName) =
         else defaultValue()
     
     member e.GetColumnOption<'T>(key) : Option<'T> =   
-       //printfn "getcolopt - %s" key
        if data.ContainsKey key then
            match data.[key] with
            | null -> None
@@ -95,7 +93,6 @@ type SqlEntity(tableName) =
 
     /// creates a new sql entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        //printfn "GetSubTable; alias- %s tableName-%s" alias tableName
         match aliasCache.TryGetValue alias with
         | true, entity -> entity
         | false, _ -> 
@@ -109,7 +106,6 @@ type SqlEntity(tableName) =
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
                 (fun (kvp:KeyValuePair<string,_>) -> 
-                    //printfn "kvp in predicate = %A" kvp
                     if kvp.Key.StartsWith prefix then 
                         let temp = kvp.Key.Replace(prefix,"")
                         let temp = temp.Substring(1,temp.Length-2)
@@ -127,7 +123,7 @@ type SqlEntity(tableName) =
                     elif  kvp.Key.StartsWith prefix4 then
                         let temp = kvp.Key.Replace(prefix4,"")
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    else None) 
+                    else None)
                         
             e.ColumnValues
             |> Seq.choose pred
