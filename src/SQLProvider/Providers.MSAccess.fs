@@ -10,7 +10,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MSAccessProvider(resolutionPath) as this =
+type internal MSAccessProvider() as this =
 
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
@@ -59,7 +59,6 @@ type internal MSAccessProvider(resolutionPath) as this =
     
     let executeSql (con:IDbConnection) sql =
         use com = (this:>ISqlProvider).CreateCommand(con,sql)
-        //use com = new OleDbCommand(sql,con:?>OleDbConnection) 
         com.ExecuteReader()
 
     interface ISqlProvider with
@@ -271,12 +270,8 @@ type internal MSAccessProvider(resolutionPath) as this =
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
-            //if sqlQuery.Links.Length > 1, then open paren after FROM
             let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
             ~~(sprintf "FROM %s%s as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
-//            match numLinks with 
-//            | 0 | 1 -> ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)
-//            | _     -> ~~(sprintf "FROM (%s as %s " baseTable.Name baseAlias)
             fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then

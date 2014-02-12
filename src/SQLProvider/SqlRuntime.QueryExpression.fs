@@ -10,7 +10,7 @@
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
-            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
