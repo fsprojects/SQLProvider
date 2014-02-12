@@ -15,6 +15,7 @@ type DatabaseProviderTypes =
     | POSTGRESQL = 2
     | MYSQL = 3
     | ORACLE = 4
+    | MSACCESS = 5
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -45,7 +46,7 @@ type SqlEntity(tableName) =
     member e.TableName = tableName     
 
     member e.GetColumn<'T>(key) : 'T = 
-        let defaultValue() =                        
+        let defaultValue() =                       
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
         if data.ContainsKey key then
@@ -57,7 +58,7 @@ type SqlEntity(tableName) =
            | data -> unbox data
         else defaultValue()
     
-    member e.GetColumnOption<'T>(key) : Option<'T> =        
+    member e.GetColumnOption<'T>(key) : Option<'T> =   
        if data.ContainsKey key then
            match data.[key] with
            | null -> None
@@ -83,7 +84,7 @@ type SqlEntity(tableName) =
 
     static member internal FromDataReader(name,reader:System.Data.IDataReader) =
         [ while reader.Read() = true do
-          let e = SqlEntity(name)          
+          let e = SqlEntity(name)        
           for i = 0 to reader.FieldCount - 1 do 
               match reader.GetValue(i) with
               | null | :? DBNull -> ()
@@ -103,6 +104,7 @@ type SqlEntity(tableName) =
                 let prefix = "[" + alias + "]."
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
+                let prefix4 = alias + "_"
                 (fun (kvp:KeyValuePair<string,_>) -> 
                     if kvp.Key.StartsWith prefix then 
                         let temp = kvp.Key.Replace(prefix,"")
@@ -117,7 +119,11 @@ type SqlEntity(tableName) =
                         let temp = kvp.Key.Replace(prefix3,"")
                         let temp = temp.Substring(1,temp.Length-2)
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    else None) 
+                    //this case for MSAccess, uses _ as whitespace qualifier
+                    elif  kvp.Key.StartsWith prefix4 then
+                        let temp = kvp.Key.Replace(prefix4,"")
+                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    else None)
                         
             e.ColumnValues
             |> Seq.choose pred
@@ -149,7 +155,7 @@ type SqlEntity(tableName) =
                               { new PropertyDescriptor(k,[||])  with
                                  override __.PropertyType with get() = v.GetType()
                                  override __.SetValue(e,value) = (e :?> SqlEntity).SetColumn(k,value)        
-                                 override __.GetValue(e) =  (e:?>SqlEntity).GetColumn k
+                                 override __.GetValue(e) = (e:?>SqlEntity).GetColumn k
                                  override __.IsReadOnly with get() = false
                                  override __.ComponentType with get () = null
                                  override __.CanResetValue(_) = false
@@ -232,7 +238,7 @@ type internal SqlQuery =
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
                                           Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                    | _ ->
-                        convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
+                         convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  

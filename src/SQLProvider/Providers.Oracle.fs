@@ -88,12 +88,15 @@ type internal OracleProvider(resolutionPath, owner) =
         sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
         sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
         clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+
+    let quoteWhiteSpace (str:String) = 
+        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
     
     let getSchema name (args:string[]) conn = 
         getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
 
     let tableFullName (table:Table) = 
-        table.Schema + "." + table.Name
+        table.Schema + "." + (quoteWhiteSpace table.Name)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = 
@@ -242,8 +245,12 @@ type internal OracleProvider(resolutionPath, owner) =
                 else None
             ) |> Seq.toList
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s.%s WHERE %s.%s.%s = :id" table.Schema table.Name table.Schema table.Name column
+        member this.GetIndividualsQueryText(table,amount) = 
+            sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
+
+        member this.GetIndividualQueryText(table,column) = 
+            let tName = tableFullName table
+            sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let sb = System.Text.StringBuilder()
@@ -268,8 +275,8 @@ type internal OracleProvider(resolutionPath, owner) =
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
-                                yield sprintf "%s.%s as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
+                                yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
@@ -301,19 +308,19 @@ type internal OracleProvider(resolutionPath, owner) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias col 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias col 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (quoteWhiteSpace col) 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias col text
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias col text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias col 
+                                        (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col) 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -350,8 +357,8 @@ type internal OracleProvider(resolutionPath, owner) =
                     |> List.iter(fun (alias,data) ->
                         let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                         let destTable = getTable alias
-                        ~~  (sprintf "%s %s.%s %s on %s.%s = %s.%s " 
-                               joinType destTable.Schema destTable.Name alias 
+                        ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
+                               joinType (tableFullName destTable) alias 
                                (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
                                data.ForeignKey  
                                (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
@@ -361,7 +368,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias column (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
+                    ~~ (sprintf "%s.%s%s" alias (quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
