@@ -15,6 +15,7 @@ type DatabaseProviderTypes =
     | POSTGRESQL = 2
     | MYSQL = 3
     | ORACLE = 4
+    | ODBC = 5
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
