@@ -33,20 +33,21 @@ module internal QueryImplementation =
        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
        Common.QueryEvents.PublishSqlQuery query
        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow       
-       use cmd = provider.CreateCommand(con,query)   
+       use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
-       let results = SqlEntity.FromDataReader(baseTable.FullName, cmd.ExecuteReader())       
+       let results = SqlEntity.FromDataReader(baseTable.FullName, cmd.ExecuteReader())
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then 
+            con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
 
-    let executeQueryScalar conString (provider:ISqlProvider) sqlExp ti =        
+    let executeQueryScalar conString (provider:ISqlProvider) sqlExp ti =       
        use con = provider.CreateConnection(conString) 
        con.Open()
        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
        Common.QueryEvents.PublishSqlQuery query       
        use cmd = provider.CreateCommand(con,query)   
-       for p in parameters do cmd.Parameters.Add p |> ignore       
+       for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
        let result = 
         match cmd.ExecuteScalar() with
@@ -54,7 +55,7 @@ module internal QueryImplementation =
         | :? int as i -> i
         | :? int16 as i -> int32 i
         | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int so its possible to lose data here.
-        | x -> con.Close()
+        | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                failwithf "Count retruned something other than a 32 bit integer : %s " (x.GetType().ToString())
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        box result
@@ -362,7 +363,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                com.Parameters.Add p |> ignore)
            use reader = com.ExecuteReader()
            let entity = SqlEntity.FromDataReader(name,reader)
-           con.Close()
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     static member _GetIndividual(typeName,table,id) : SqlEntity =

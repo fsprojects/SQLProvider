@@ -14,14 +14,14 @@ type internal MSAccessProvider(resolutionPath) as this =
 
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
-    let pkLookup =     Dictionary<string,string>()
-    let tableLookup =  Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-
+    static let pkLookup =     new Dictionary<string,string>()
+    static let tableLookup =  new Dictionary<string,Table>()
+    static let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
+    static let columnLookup = new Dictionary<string,Column list>()
+    
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
+    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
 
     let createTypeMappings (con:OleDbConnection) =
         let clr = 
@@ -61,7 +61,7 @@ type internal MSAccessProvider(resolutionPath) as this =
         use com = (this:>ISqlProvider).CreateCommand(con,sql)
         //use com = new OleDbCommand(sql,con:?>OleDbConnection) 
         com.ExecuteReader()
-
+    //static member columnLookup = new Dictionary<string,Column list>()
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
@@ -75,14 +75,14 @@ type internal MSAccessProvider(resolutionPath) as this =
         member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
             let con = con:?>OleDbConnection
-            con.GetSchema("Tables").AsEnumerable()
-            |> Seq.filter (fun row -> row.["TABLE_TYPE"].ToString() = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW") // || row.["TABLE_TYPE"].ToString() = "LINK")
-                                                                                                                         // - sadly, cannot get linked tables to work : 
-                                                                                                                         //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.
-            |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() } 
-                                   if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                                   table)
-            |> List.ofSeq
+            let tables = 
+                con.GetSchema("Tables").AsEnumerable()
+                |> Seq.filter (fun row -> ["TABLE";"VIEW";"LINK"] |> List.exists (fun typ -> typ = row.["TABLE_TYPE"].ToString())) // = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW" || row.["TABLE_TYPE"].ToString() = "LINK")  //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.                                                                                                                       
+                |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
+                                       if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                                       table)
+                |> List.ofSeq
+            tables
 
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with
@@ -92,10 +92,12 @@ type internal MSAccessProvider(resolutionPath) as this =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
-               let pks =  
-                    (con:?>OleDbConnection).GetSchema("Indexes").AsEnumerable()
-                    |> Seq.filter (fun idx ->  idx.["TABLE_NAME"].ToString() = table.Name  && bool.Parse(idx.["PRIMARY_KEY"].ToString()))
-                    |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
+               let pks = 
+                    match table.Type with
+                    |"TABLE" -> (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
+                                |> Seq.filter (fun idx ->  bool.Parse(idx.["PRIMARY_KEY"].ToString()))
+                                |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
+                    |_       -> seq {yield ""} ///LINK/VIEW types. no indexes
                let columns = 
                     (con:?>OleDbConnection).GetSchema("Columns",[|null;null;table.Name;null|]).AsEnumerable()
                     |> Seq.map (fun row -> let dt = row.["DATA_TYPE"].ToString()
@@ -163,7 +165,7 @@ type internal MSAccessProvider(resolutionPath) as this =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
+                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
                         else
