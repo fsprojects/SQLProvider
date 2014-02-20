@@ -85,18 +85,20 @@ type internal OdbcProvider() =
             | (true,data) -> data
             | _ ->
                let con = con :?> OdbcConnection
+               let primaryKey = con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
                let dataTable = con.GetSchema("Columns", [| null; null; table.Name; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
                let columns =
                   [ for i in dataTable do 
                       let dt = i.[5] :?> string
                       match sqlToClr dt, sqlToEnum dt with
                       | Some(clr),Some(sql) ->
+                         let name = i.[3] :?> string
                          let col =
-                            { Column.Name = i.[3] :?> string 
+                            { Column.Name = name 
                               ClrType = clr 
                               DbType = sql
                               IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
-                              IsPrimarKey = false } 
+                              IsPrimarKey = if primaryKey.[0].[8] = box name then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
                          yield col 
                       | _ -> ()]  
@@ -240,8 +242,10 @@ type internal OdbcProvider() =
                         None 
          )
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\"" table.Schema table.Name
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name column
+        member this.GetIndividualsQueryText(table,amount) =
+            sprintf "SELECT * FROM [%s].[%s]" table.Schema table.Name
+        member this.GetIndividualQueryText(table,column) =
+            sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
