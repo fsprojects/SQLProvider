@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal OdbcProvider() =
+type internal OdbcProvider(resolutionPath) =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
@@ -58,9 +58,17 @@ type internal OdbcProvider() =
         use com = new OdbcCommand(sql,con:?>OdbcConnection)    
         com.ExecuteReader()
 
+    let loadColumnNames (con:OdbcConnection) tableName =
+        match resolutionPath with
+        | resolutionPath when not <| String.IsNullOrEmpty resolutionPath ->
+            let dataset = new DataSet()
+            dataset.ReadXml(IO.Path.Combine(resolutionPath, "Columns.xmlschema")) |> ignore
+            dataset.Tables.[0].Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
+        | _ -> con.GetSchema("Columns", [| null; null; tableName; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
+
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
-        member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText,connection:?>OdbcConnection)
+        member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
         member __.CreateCommandParameter(name,value,dbType) = 
             let p = OdbcParameter(name,value)            
             if dbType.IsSome then p.DbType <- dbType.Value 
@@ -86,7 +94,7 @@ type internal OdbcProvider() =
             | _ ->
                let con = con :?> OdbcConnection
                let primaryKey = con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
-               let dataTable = con.GetSchema("Columns", [| null; null; table.Name; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
+               let dataTable = loadColumnNames con table.Name
                let columns =
                   [ for i in dataTable do 
                       let dt = i.[5] :?> string
