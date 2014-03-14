@@ -198,6 +198,18 @@ type SqlExp =
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
+    with member this.HasAutoTupled() = 
+            let rec aux = function
+                | BaseTable(_) -> false
+                | SelectMany(_) -> true
+                | FilterClause(_,rest) 
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Count(rest) -> aux rest
+            aux this
     
 type internal SqlQuery =
     { Filters       : Condition list
@@ -247,7 +259,7 @@ type internal SqlQuery =
                 | Distinct(rest) ->
                     if q.Distinct then failwith "distinct is applied to the entire query and can only be supplied once"                
                     else convert { q with Distinct = true } rest
-                | OrderBy(alias,key,desc,rest) ->
+                | OrderBy(alias,key,desc,rest) ->                    
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) -> 
                     if q.Skip.IsSome then failwith "skip may only be specified once"

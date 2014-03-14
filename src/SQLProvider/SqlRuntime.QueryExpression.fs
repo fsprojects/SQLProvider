@@ -155,12 +155,13 @@ module internal QueryExpressionTransformer =
 
         // the crazy linq infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
-
+                                                          
         // 1.
         // re-map the tuple arg names to their proper aliases in the filters
         // its possible to do this when converting the expression but its
         // much easier at this stage once we have knowledge of the whole query
-        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters}
+        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters 
+                                       Ordering = List.map(function ("",b,c) -> (resolve "",b,c) | x -> x) sqlQuery.Ordering }
         
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking

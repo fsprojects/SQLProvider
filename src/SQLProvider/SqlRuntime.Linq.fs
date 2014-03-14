@@ -113,14 +113,26 @@ module internal QueryImplementation =
                         ty.GetConstructors().[0].Invoke [| source.ConnectionString ; source.Provider; Take(amount,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]) ->
-                        let alias = if entity = "" then param else Utilities.resolveTuplePropertyName entity source.TupleIndex
-                        let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) 
-                        let ascending = meth.Name = "OrderBy"
-                        let x = ty.GetConstructors().[0].Invoke [| source.ConnectionString ; source.Provider; OrderBy(alias,key,ascending,source.SqlExpression) ; source.TupleIndex; |] 
+                        let alias =
+                             match entity with
+                             | "" when source.SqlExpression.HasAutoTupled() -> param
+                             | "" -> ""
+                             | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex                              
+                        let ascending = meth.Name = "OrderBy"               
+                        let sqlExpression = 
+                               match source.SqlExpression with
+                               | BaseTable("",entity)  -> OrderBy("",key,ascending,BaseTable(alias,entity))
+                               | _ ->  OrderBy(alias,key,ascending,source.SqlExpression) 
+                        let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])                         
+                        let x = ty.GetConstructors().[0].Invoke [| source.ConnectionString ; source.Provider; sqlExpression; source.TupleIndex; |] 
                         x :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]) ->
-                        let alias = if entity = "" then param else Utilities.resolveTuplePropertyName entity source.TupleIndex
+                        let alias =
+                            match entity with
+                            | "" when source.SqlExpression.HasAutoTupled() -> param
+                            | "" -> ""
+                            | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex           
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) 
                         let ascending = meth.Name = "ThenBy"
                         match source.SqlExpression with 
