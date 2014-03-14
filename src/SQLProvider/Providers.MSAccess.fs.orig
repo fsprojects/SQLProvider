@@ -60,7 +60,7 @@ type internal MSAccessProvider() as this =
     let executeSql (con:IDbConnection) sql =
         use com = (this:>ISqlProvider).CreateCommand(con,sql)
         com.ExecuteReader()
-
+    //static member columnLookup = new Dictionary<string,Column list>()
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
@@ -272,7 +272,10 @@ type internal MSAccessProvider() as this =
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
+<<<<<<< HEAD
+=======
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
+>>>>>>> 90156fa7eb175a54a755a9bef9255bd22031f512
             let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
             ~~(sprintf "FROM %s%s as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
             fromBuilder(numLinks)

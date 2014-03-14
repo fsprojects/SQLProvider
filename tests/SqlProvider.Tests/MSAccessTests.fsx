@@ -25,3 +25,10 @@ let mattisOrderDetails =
             // arbitrarily complex projections are supported
             select (c.ContactName,o.ShipAddress,o.ShipCountry,prod.ProductName,prod.UnitPrice) } 
     |> Seq.toArray
+
+let stuf =
+    query { for c in ctx.``[Northwind].[Customers]`` do
+            join qo in ctx.``[Northwind].[Quarterly Orders]`` on (c.CustomerID = qo.CustomerID)
+            where (c.City =% ("Lon%"))
+            select (c.ContactName.Value, qo.CompanyName, qo.Country.Value)
+    } |> Seq.toArray

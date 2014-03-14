@@ -32,7 +32,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     
     let createTypes(conString,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
         let prov = Common.Utilities.createSqlProvider dbVendor resolutionPath owner
-        let con = prov.CreateConnection conString 
+        let con = prov.CreateConnection conString
         con.Open()
         prov.CreateTypeMappings con
         
@@ -45,7 +45,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         lazy
                             let cols = prov.GetColumns(con,t)
                             let rel = prov.GetRelationships(con,t)
-                            (cols,rel))] 
+                            (cols,rel))]
 
         let sprocData = lazy prov.GetSprocs con 
         let getTableColumns name = tableColumns.Force().[name].Force()
