@@ -118,6 +118,10 @@ let (|SqlSpecialOp|_|) = function
     // String  methods
     | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "Contains", [right]) when t = typeof<string> -> 
         Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+    | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "StartsWith", [right]) when t = typeof<string> -> 
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+    | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "EndsWith", [right]) when t = typeof<string> -> 
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
     | _ -> None
                 
 let (|SqlCondOp|_|) (e:Expression) = 
