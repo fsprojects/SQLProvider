@@ -94,11 +94,11 @@ type internal MSAccessProvider() as this =
             | _ -> 
                if con.State <> ConnectionState.Open then con.Open()
                let pks = 
-                    match table.Type with
-                    |"TABLE" -> (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
-                                |> Seq.filter (fun idx ->  bool.Parse(idx.["PRIMARY_KEY"].ToString()))
-                                |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
-                    |_       -> seq {yield ""} ///LINK/VIEW types. no indexes
+                    (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
+                    |> Seq.filter (fun idx ->  bool.Parse(idx.["PRIMARY_KEY"].ToString()))
+                    |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
+                    |> Seq.toList
+
                let columns = 
                     (con:?>OleDbConnection).GetSchema("Columns",[|null;null;table.Name;null|]).AsEnumerable()
                     |> Seq.map (fun row -> let dt = row.["DATA_TYPE"].ToString()
@@ -108,11 +108,16 @@ type internal MSAccessProvider() as this =
                                                     {Column.Name = row.["COLUMN_NAME"].ToString();
                                                      ClrType = clr;
                                                      DbType = sql;
-                                                     IsPrimarKey = pks |> Seq.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
+                                                     IsPrimarKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                                                      IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
-                                                 if (col.IsPrimarKey) && not (pkLookup.ContainsKey table.FullName) then (pkLookup.Add(table.FullName,col.Name))
                                                  col
                                            |_ -> failwith "failed to map datatypes") |> List.ofSeq
+              
+              // only add to PK lookup if it's a single pk - no support for composite keys yet
+               match pks with
+               | pk::[] -> pkLookup.Add(table.FullName, pk) 
+               | _ -> ()
+
                columnLookup.Add(table.FullName,columns)
                columns
         member __.GetRelationships(con,table) =
