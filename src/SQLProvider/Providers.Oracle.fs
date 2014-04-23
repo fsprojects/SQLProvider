@@ -108,6 +108,7 @@ type internal OracleProvider(resolutionPath, owner) =
             if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(con) = 
+            if con.State <> ConnectionState.Open then con.Open()
             getSchema "DataTypes" [||] con
             |> createTypeMappings
 
@@ -125,6 +126,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
                     Some(tableName, pk)
                 | None -> None) |> ignore
+            con.Close()
 
         member __.ClrToEnum = clrToEnum
         member __.SqlToEnum = sqlToEnum
@@ -132,12 +134,14 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.GetTables(con) =
                match tableCache with
                | [] ->
+                    if con.State <> ConnectionState.Open then con.Open()
                     let tables = 
                         getSchema "Tables" [|owner|] con
                         |> DataTable.map (fun row -> 
                                               let name = unbox row.[1]
                                               { Schema = unbox row.[0]; Name = name; Type = unbox row.[2] })
                     tableCache <- tables
+                    con.Close()
                     tables
                 | a -> a
 
@@ -149,6 +153,7 @@ type internal OracleProvider(resolutionPath, owner) =
             match columnCache.TryGetValue table.FullName  with
             | true, cols -> cols
             | false, _ ->
+                if con.State <> ConnectionState.Open then con.Open()
                 let cols = 
                     getSchema "Columns" [|owner; table.Name|] con
                     |> DataTable.choose (fun row -> 
@@ -163,12 +168,14 @@ type internal OracleProvider(resolutionPath, owner) =
                                       IsPrimarKey = primaryKeyCache.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = colName)
                                       IsNullable = nullable } |> Some
                             | _, _ -> None)
+                con.Close()
                 columnCache.Add(table.FullName, cols)
                 cols
         member __.GetRelationships(con,table) =
                 match relationshipCache.TryGetValue(table.FullName) with
                 | true, rels -> rels
                 | false, _ ->
+                    if con.State <> ConnectionState.Open then con.Open()
                     let foreignKeyCols = 
                         getSchema "ForeignKeyColumns" [|owner;table.Name|] con
                         |> DataTable.map (fun row -> (row.[1] :?> string, row.[3] :?> string)) 
@@ -200,50 +207,55 @@ type internal OracleProvider(resolutionPath, owner) =
                         )
 
                     relationshipCache.Add(table.FullName, (children ,  rels))
+                    con.Close()
                     (children ,  rels)
         
         member __.GetSprocs(con) =
+            if con.State <> ConnectionState.Open then con.Open()
             let objToString (v:obj) : string = 
                 if Convert.IsDBNull(v) then null else unbox v
      
             let objToDecimal (v:obj) : decimal = 
                 if Convert.IsDBNull(v) then 0M else unbox v
 
-            getSchema "ProcedureParameters" [|owner|] con
-            |> DataTable.groupBy (fun row -> 
-                    let owner = unbox row.["OWNER"]
-                    let (procName, packageName) = (unbox row.["OBJECT_NAME"], objToString row.["PACKAGE_NAME"])
-                    let dataType = unbox row.["DATA_TYPE"]
-                    let name = 
-                            if String.IsNullOrEmpty(packageName)
-                            then procName else (owner + "." + packageName + "." + procName)
-                    match sqlToEnum dataType, sqlToClr dataType with
-                    | Some(dbType), Some(clrType) ->
-                        let direction = 
-                            match objToString row.["IN_OUT"] with
-                            | "IN" -> Direction.In
-                            | "OUT" -> Direction.Out
-                            | a -> failwith "Direction not supported %s" a
-                        let paramName, paramDetails = objToString row.["ARGUMENT_NAME"], (dbType, clrType, direction, int (row.["POSITION"] :?> decimal), int (objToDecimal row.["DATA_LENGTH"]))
-                        (name, Some (paramName, (paramDetails)))
-                    | _,_ -> (name, None))
-            |> Seq.choose (fun (name, parameters) -> 
-                if parameters |> Seq.forall (fun x -> x.IsSome)
-                then 
-                    let inParams, outParams = 
-                        parameters
-                        |> Seq.map (function
-                                     | Some (pName, (dbType, clrType, direction, position, length)) -> 
-                                            { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = position }
-                                     | None -> failwith "How the hell did we get here??")
-                        |> Seq.toList
-                        |> List.partition (fun p -> p.Direction = Direction.In)
-                    let retCols = 
-                        outParams 
-                        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                    Some { FullName = name; Params = inParams; ReturnColumns = retCols }
-                else None
-            ) |> Seq.toList
+            let ret =
+                getSchema "ProcedureParameters" [|owner|] con
+                |> DataTable.groupBy (fun row -> 
+                        let owner = unbox row.["OWNER"]
+                        let (procName, packageName) = (unbox row.["OBJECT_NAME"], objToString row.["PACKAGE_NAME"])
+                        let dataType = unbox row.["DATA_TYPE"]
+                        let name = 
+                                if String.IsNullOrEmpty(packageName)
+                                then procName else (owner + "." + packageName + "." + procName)
+                        match sqlToEnum dataType, sqlToClr dataType with
+                        | Some(dbType), Some(clrType) ->
+                            let direction = 
+                                match objToString row.["IN_OUT"] with
+                                | "IN" -> Direction.In
+                                | "OUT" -> Direction.Out
+                                | a -> failwith "Direction not supported %s" a
+                            let paramName, paramDetails = objToString row.["ARGUMENT_NAME"], (dbType, clrType, direction, int (row.["POSITION"] :?> decimal), int (objToDecimal row.["DATA_LENGTH"]))
+                            (name, Some (paramName, (paramDetails)))
+                        | _,_ -> (name, None))
+                |> Seq.choose (fun (name, parameters) -> 
+                    if parameters |> Seq.forall (fun x -> x.IsSome)
+                    then 
+                        let inParams, outParams = 
+                            parameters
+                            |> Seq.map (function
+                                         | Some (pName, (dbType, clrType, direction, position, length)) -> 
+                                                { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = position }
+                                         | None -> failwith "How the hell did we get here??")
+                            |> Seq.toList
+                            |> List.partition (fun p -> p.Direction = Direction.In)
+                        let retCols = 
+                            outParams 
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                        Some { FullName = name; Params = inParams; ReturnColumns = retCols }
+                    else None
+                ) |> Seq.toList
+            con.Close()
+            ret
 
         member this.GetIndividualsQueryText(table,amount) = 
             sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount 
@@ -352,17 +364,15 @@ type internal OracleProvider(resolutionPath, owner) =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder() = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iter(fun (alias,data) ->
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
-                               joinType (tableFullName destTable) alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
+                            joinType (tableFullName destTable) destAlias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

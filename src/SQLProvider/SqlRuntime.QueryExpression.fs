@@ -171,22 +171,18 @@ module internal QueryExpressionTransformer =
             match sqlQuery.UltimateChild with
             | Some(uc) when alias = fst uc -> snd uc
             | _ -> sqlQuery.Links 
-                    |> Map.pick(fun outerLinkAlias links ->
-                        links 
-                        |> List.tryPick(fun (innerAlias,linkData) -> 
-                            if innerAlias = alias then Some(linkData.PrimaryTable) else None))     
+                   |> List.pick(fun (outerAlias, linkData, innerAlias) -> if innerAlias = alias then Some(linkData.PrimaryTable) else None)     
         let sqlQuery = { sqlQuery with Aliases = Map.map resolveAlias sqlQuery.Aliases }
         
         // 3.
         // Some link data will be missing its foreign table data which needs setting to the resolved table of the 
         // outer alias - this happens depending on the which way the join is around - infromation is "lost" up the tree which
         // able to be resolved now.
-        let resolveLinks outerAlias linkData =
+        let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            linkData 
-            |> List.map(fun (a,data:LinkData) ->
-                (a,if data.ForeignTable.Name <> "" then data else { data with ForeignTable = resolved }))
-        let sqlQuery = { sqlQuery with Links = Map.map resolveLinks sqlQuery.Links }
+            if linkData.ForeignTable.Name <> "" then (outerAlias, linkData, innerAlias) 
+            else (outerAlias, { linkData with ForeignTable = resolved }, innerAlias)
+        let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
         
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns

@@ -12,6 +12,12 @@ open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
+/// This interface exists purely to thread the connection string through
+/// the dummy Indididuals types from the IQeuryable implementations that the entity Set types erase to.
+/// We prefer this over publically surfacing the entire of IWithSqlProvider
+type IWithConnectionString =
+    abstract ConnectionString : string
+
 module internal QueryImplementation = 
     open System.Linq
     open System.Linq.Expressions
@@ -29,13 +35,13 @@ module internal QueryImplementation =
 
     let executeQuery conString (provider:ISqlProvider) sqlExp ti =        
        use con = provider.CreateConnection(conString) 
-       con.Open()
        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
        Common.QueryEvents.PublishSqlQuery query
        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow       
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
-       let results = SqlEntity.FromDataReader(baseTable.FullName, cmd.ExecuteReader())
+       if con.State <> ConnectionState.Open then con.Open()
+       let results = SqlEntity.FromDataReader(conString,baseTable.FullName, cmd.ExecuteReader())
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then 
             con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
@@ -77,6 +83,8 @@ module internal QueryImplementation =
              member x.SqlExpression = sqlQuery
              member x.TupleIndex = tupleIndex
              member x.Provider = provider
+        interface IWithConnectionString with
+             member x.ConnectionString = conString
 
     and SqlOrderedQueryable<'T>(conString:string,provider,sqlQuery,tupleIndex) =       
         static member Create(table,conString,provider) = 
@@ -96,6 +104,8 @@ module internal QueryImplementation =
              member x.SqlExpression = sqlQuery
              member x.TupleIndex = tupleIndex
              member x.Provider = provider
+        interface IWithConnectionString with
+             member x.ConnectionString = conString
 
     and SqlQueryProvider() =
          static member val Provider = 
@@ -265,7 +275,7 @@ module internal QueryImplementation =
                                 processSelectManys projectionParams.[1].Name inner outExp
                              | MethodCall(None, (MethodWithName "Join"), 
                                                     [createRelated
-                                                     Convert(MethodCall(_, (MethodWithName "_CreateEntities"), [_; String destEntity] ))
+                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "_CreateEntities"), [_; _; String destEntity] ))
                                                      OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
                                                      OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
                                                      OptionalQuote (Lambda(projectionParams,_))]) ->
@@ -333,9 +343,9 @@ module internal QueryImplementation =
                     | _ -> failwith "Unuspported execution expression" }
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
-    static let connectionCache = Dictionary<string,string*ISqlProvider>()
+    static let providerCache = Dictionary<string,ISqlProvider>()
     do  
-        match connectionCache.TryGetValue typeName with
+        match providerCache .TryGetValue typeName with
         | true, _ -> ()
         | false,_ -> 
             let prov = Common.Utilities.createSqlProvider providerType resolutionPath owner
@@ -346,30 +356,31 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             prov.CreateTypeMappings(con)
             prov.GetTables(con) |> ignore
             if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-            connectionCache.Add(typeName,(connectionString,prov))
+            providerCache.Add(typeName,prov)
+    member this.ConnectionString with get() = connectionString
     static member _Create(typeName,connectionString,dbVendor,resolutionPath, owner) =
         SqlDataContext(typeName,connectionString,dbVendor,resolutionPath, owner)    
     static member _CreateRelated(typeName,inst:SqlEntity,entity,pe,pk,fe,fk,ie,direction) : IQueryable<SqlEntity> =
-        match connectionCache.TryGetValue typeName with
-        | true,(conString,provider) -> 
+        match providerCache.TryGetValue typeName with
+        | true,provider -> 
            if direction = RelationshipDirection.Children then
-               QueryImplementation.SqlQueryable<_>(conString,provider,
+               QueryImplementation.SqlQueryable<_>(inst.ConnectionString,provider,
                   FilterClause(
                      Condition.And(["__base__",fk,ConditionOperator.Equal, Some(inst.GetColumn pk)],None), 
                         BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> IQueryable<_> 
            else
-               QueryImplementation.SqlQueryable<_>(conString,provider,
+               QueryImplementation.SqlQueryable<_>(inst.ConnectionString,provider,
                   FilterClause(
                      Condition.And(["__base__",pk,ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None), 
                         BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_> 
-         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
-    static member _CreateEntities(typeName,table:string) : IQueryable<SqlEntity> =  
-        match connectionCache.TryGetValue typeName with
-        | true,(conString,provider) -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,conString,provider) 
-        | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
-    static member _CallSproc(typeName,name,parameters,types:DbType array,values:obj array) =
-        match connectionCache.TryGetValue typeName with
-        | true,(conString,provider) -> 
+         | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
+    static member _CreateEntities(typeName,conString,table:string) : IQueryable<SqlEntity> =  
+        match providerCache.TryGetValue typeName with
+        | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,conString,provider) 
+        | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
+    static member _CallSproc(typeName,conString,name,parameters,types:DbType array,values:obj array) =
+        match providerCache.TryGetValue typeName with
+        | true,provider -> 
            use con = provider.CreateConnection(conString)
            con.Open()
            use com = provider.CreateCommand(con,name)
@@ -379,13 +390,13 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                let p = provider.CreateCommandParameter(name,values.[i],Some types.[i])
                com.Parameters.Add p |> ignore)
            use reader = com.ExecuteReader()
-           let entity = SqlEntity.FromDataReader(name,reader)
+           let entity = SqlEntity.FromDataReader(conString,name,reader)
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
            entity
-        | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
-    static member _GetIndividual(typeName,table,id) : SqlEntity =
-        match connectionCache.TryGetValue typeName with
-        | true,(conString,provider) -> 
+        | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
+    static member _GetIndividual(typeName,conString,table,id) : SqlEntity =
+        match providerCache.TryGetValue typeName with
+        | true,provider -> 
            use con = provider.CreateConnection(conString)
            con.Open()
            let table = Table.FromFullName table
@@ -402,8 +413,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
            use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
            //todo: establish pk sql data type
            com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
+           if con.State <> ConnectionState.Open then con.Open()
            use reader = com.ExecuteReader()
-           let entity = List.head <| SqlEntity.FromDataReader(table.FullName,reader)
+           let entity = List.head <| SqlEntity.FromDataReader(conString,table.FullName,reader)
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
            entity
         | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"

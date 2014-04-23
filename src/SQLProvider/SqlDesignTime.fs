@@ -56,26 +56,30 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             lazy
                 dict [ for table in tables.Force() do
                         let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)
-                        t.AddMemberDelayed(fun () -> ProvidedConstructor([],InvokeCode = fun _ -> <@@ new SqlEntity(table.FullName) @@>  ))
+                        t.AddMemberDelayed(fun () -> ProvidedConstructor([ProvidedParameter("connection",typeof<string>)],InvokeCode = fun args -> <@@ new SqlEntity((%%args.[0] : string) ,table.FullName) @@>))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
                         t.AddXmlDoc desc
                         yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"") ]
 
         let createIndividualsType (table:Table) =
             let (et,_,_) = baseTypes.Force().[table.FullName]
-            let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", Some typeof<obj>, HideObjectMethods = true)
+            let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", None, HideObjectMethods = true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
             
             t.AddXmlDocDelayed(fun _ -> sprintf "A sample of %s individuals from the SQL object as supplied in the static parameters" table.Name)
+            t.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<IWithConnectionString>)]))
             t.AddMembersDelayed( fun _ ->
                prov.GetColumns(con,table) |> ignore 
                match prov.GetPrimaryKey table with
                | Some pk ->
                    let entities = 
                         use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
+                        if con.State <> ConnectionState.Open then con.Open()
                         use reader = com.ExecuteReader()
-                        SqlEntity.FromDataReader(table.FullName,reader)
+                        let ret = SqlEntity.FromDataReader(conString,table.FullName,reader)
+                        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                        ret
                    if entities.IsEmpty then [] else
                    let e = entities.Head
                    // for each column in the entity except the primary key, creaate a new type that will read ``As Column 1`` etc
@@ -87,8 +91,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         if col.Name = pk then None else
                         let name = table.Schema + "." + table.Name + "." + col.Name + "Individuals"
                         let ty = ProvidedTypeDefinition(name, None, HideObjectMethods = true )
+                        ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<IWithConnectionString>)]))
                         individualsTypes.Add ty
-                        Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" col.Name,ty, GetterCode = fun _ -> <@@ new obj() @@> ))))
+                        Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" col.Name,ty, GetterCode = fun args -> <@@ %%args.[0] : obj  @@> ))))
                       |> Map.ofSeq
                  
                    // special case for guids as they are not a supported quotable constant in the TP mechanics,
@@ -115,9 +120,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                if kvp.Key = pk then () else      
                                (fst propertyMap.[kvp.Key]).AddMemberDelayed(
                                   fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (kvp.Value.ToString()) ,et,
-                                            GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(rootTypeName,name,pkValue) @@> )))
+                                            GetterCode = fun args -> <@@ SqlDataContext._GetIndividual(rootTypeName,((%%(args.[0]) : obj) :?> IWithConnectionString).ConnectionString,name,pkValue) @@> )))
                             // return the primary key property
-                            Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun _ -> <@@ SqlDataContext._GetIndividual(rootTypeName,name,pkValue) @@> )
+                            Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun args -> <@@ SqlDataContext._GetIndividual(rootTypeName,((%%(args.[0]) : obj ) :?> IWithConnectionString).ConnectionString, name,pkValue) @@> )
                          | _ -> None)
                       |> List.append( propertyMap |> Map.toList |> List.map (snd >> snd))
 
@@ -137,11 +142,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let name = table.FullName
                         let (et,_,_) = baseTypes.Force().[name]
                         let ct = ProvidedTypeDefinition(table.FullName + "Set", None,HideObjectMethods=false)
-                        ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type])])
+                        ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<IWithConnectionString>])
                         let it = createIndividualsType table 
-                        let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun _ -> <@@ new obj() @@> )
-                        prop.AddXmlDoc(sprintf "A sample of %s individuals from the SQL object" name)
-                        ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                    
                         yield table.FullName,(ct,it) ]
         
         // add the attributes and relationships
@@ -168,8 +170,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
                                     else      
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|c.ClrType|])
-                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
-                                    )
+                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])))
                         prop
                     List.map createColumnProperty columns
                 let relProps =
@@ -202,7 +203,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
 
         // add sprocs 
-        let sprocContainer = ProvidedTypeDefinition("SprocContainer",None)
+        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<SqlDataContext>)
+        sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<SqlDataContext>)]))
         let genSprocs() =
             sprocData.Force()
             |> List.map(fun sproc -> 
@@ -234,7 +236,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let name = sproc.FullName
                         let rawNames = sproc.Params |> List.map(fun p -> p.Name) |> Array.ofList
                         let rawTypes = sproc.Params |> List.map(fun p -> p.DbType) |> Array.ofList
-                        <@@ SqlDataContext._CallSproc(rootTypeName,name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
+                        <@@ SqlDataContext._CallSproc(rootTypeName,(%%(args.[0]) : SqlDataContext).ConnectionString, name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
                 )
         sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
 
@@ -242,13 +244,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ yield sprocContainer :> MemberInfo
               for (KeyValue(key,(t,desc,_))) in baseTypes.Force() do
                 let (ct,it) = baseCollectionTypes.Force().[key]
-                let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ SqlDataContext._CreateEntities(rootTypeName,key) @@> )
+                let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ (%%(args.[0]) : obj) @@> )
+                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                    
+                let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ SqlDataContext._CreateEntities(rootTypeName,(%%(args.[0]) : SqlDataContext).ConnectionString,key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
                 yield t :> MemberInfo
                 yield ct :> MemberInfo
                 yield! it |> Seq.map( fun it -> it :> MemberInfo)
                 yield prop :> MemberInfo
-              yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun _ -> <@@ obj() @@>) :> MemberInfo
+              yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun args -> <@@ (%%(args.[0]) : SqlDataContext) @@>) :> MemberInfo
              ] )
 
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
@@ -264,15 +268,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               meth.AddXmlDoc "<summary>Returns an instance of the Sql provider using the static parameters</summary>"
                    
               yield meth
-//                                        
-//              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connection",typeof<IDbConnection>)], 
-//                                                            serviceType, IsStaticMethod=true,
-//                                                            InvokeCode = (fun args ->
-//                                                                let meth = typeof<SqlDataContext>.GetMethod "_CreateWithInstance"
-//                                                                Expr.Call(meth, [args.[0];])));
-//              meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
-//                              <param name='connection'>An instance of a datbase connection</param>"
-//              yield meth
 
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
@@ -283,8 +278,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
                               <param name='connectionString'>The database connection string</param>"
               yield meth                                
-              
             ])
+        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         rootType
     
     let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), HideObjectMethods = true)
@@ -313,7 +308,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     typeName))
 
     do paramSqlType.AddXmlDoc helpText               
-
+    
     // add them to the namespace    
     do this.AddNamespace(ns, [paramSqlType])
                             

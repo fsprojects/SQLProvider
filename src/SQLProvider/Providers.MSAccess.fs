@@ -14,10 +14,10 @@ type internal MSAccessProvider() as this =
 
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
-    static let pkLookup =     new Dictionary<string,string>()
-    static let tableLookup =  new Dictionary<string,Table>()
-    static let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
-    static let columnLookup = new Dictionary<string,Column list>()
+    let pkLookup =     new Dictionary<string,string>()
+    let tableLookup =  new Dictionary<string,Table>()
+    let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
+    let columnLookup = new Dictionary<string,Column list>()
     
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
@@ -73,6 +73,7 @@ type internal MSAccessProvider() as this =
         member __.SqlToEnum = sqlToEnum
         member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
+            if con.State <> ConnectionState.Open then con.Open()
             let con = con:?>OleDbConnection
             let tables = 
                 con.GetSchema("Tables").AsEnumerable()
@@ -91,6 +92,7 @@ type internal MSAccessProvider() as this =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
+               if con.State <> ConnectionState.Open then con.Open()
                let pks = 
                     match table.Type with
                     |"TABLE" -> (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
@@ -113,7 +115,8 @@ type internal MSAccessProvider() as this =
                                            |_ -> failwith "failed to map datatypes") |> List.ofSeq
                columnLookup.Add(table.FullName,columns)
                columns
-        member __.GetRelationships(con,table) = 
+        member __.GetRelationships(con,table) =
+            if con.State <> ConnectionState.Open then con.Open() 
             let rels = 
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
             let children = rels |> Seq.filter (fun r -> r.["PK_TABLE_NAME"].ToString() = table.Name)
@@ -247,18 +250,16 @@ type internal MSAccessProvider() as this =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder(numLinks:int) = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iteri(fun i (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
-                            joinType destTable.Name alias 
-                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                            data.ForeignKey  
-                            (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                            data.PrimaryKey)
-                        if (numLinks > 0)  then ~~ ")"))//append close paren after each JOIN, if necessary
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
+                        joinType destTable.Name destAlias 
+                        (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                        data.ForeignKey  
+                        (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                        data.PrimaryKey)
+                    if (numLinks > 0)  then ~~ ")")//append close paren after each JOIN, if necessary
                         
 
             let orderByBuilder() =
@@ -273,7 +274,7 @@ type internal MSAccessProvider() as this =
             else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
-            let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
+            let numLinks = sqlQuery.Links.Length
             ~~(sprintf "FROM %s%s as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
             fromBuilder(numLinks)
             // WHERE

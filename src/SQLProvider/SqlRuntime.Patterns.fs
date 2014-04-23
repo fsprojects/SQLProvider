@@ -27,9 +27,10 @@ let (|PropertyGet|_|) (e:Expression) =
         | _ -> None
     | _ -> None
 
-let (|Convert|_|) (e:Expression) = 
+let (|ConvertOrTypeAs|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Convert, (:? UnaryExpression as ue ) -> Some ue.Operand
+    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> Some ue.Operand
     | _ -> None
 
 let (|Constant|_|) (e:Expression) = 

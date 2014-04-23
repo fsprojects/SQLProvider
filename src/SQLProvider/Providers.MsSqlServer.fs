@@ -9,8 +9,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal MSSqlServerProvider() =
-    // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -21,9 +19,11 @@ type internal MSSqlServerProvider() =
     let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
 
     let createTypeMappings (con:SqlConnection) =
+        if con.State <> ConnectionState.Open then con.Open()
         let clr = 
             [for r in con.GetSchema("DataTypes").Rows -> 
                 string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+        con.Close()
 
         // create map from sql name to clr type, and type to lDbType enum
         let sqlToClr', sqlToEnum', clrToEnum' =
@@ -70,11 +70,15 @@ type internal MSSqlServerProvider() =
         member __.SqlToEnum = sqlToEnum
         member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
+            if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
-            [ while reader.Read() do 
-                let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
-                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                yield table ]
+            let ret = 
+                [ while reader.Read() do 
+                    let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
+                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                    yield table ]
+            con.Close()
+            ret
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
@@ -104,6 +108,7 @@ type internal MSSqlServerProvider() =
                use com = new SqlCommand(baseQuery,con:?>SqlConnection)
                com.Parameters.AddWithValue("@schema",table.Schema) |> ignore
                com.Parameters.AddWithValue("@table",table.Name) |> ignore
+               if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let columns =
                   [ while reader.Read() do 
@@ -120,6 +125,7 @@ type internal MSSqlServerProvider() =
                          yield col 
                       | _ -> ()]  
                columnLookup.Add(table.FullName,columns)
+               con.Close()
                columns
         member __.GetRelationships(con,table) = 
             match relationshipLookup.TryGetValue table.FullName with 
@@ -152,6 +158,7 @@ type internal MSSqlServerProvider() =
                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
+            if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
             let children =
                 [ while reader.Read() do 
@@ -164,6 +171,7 @@ type internal MSSqlServerProvider() =
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
+            con.Close()
             (children,parents)    
         member __.GetSprocs(con) = 
             let con = con:?>SqlConnection
@@ -178,6 +186,7 @@ type internal MSSqlServerProvider() =
                               ,CHARACTER_MAXIMUM_LENGTH
                             FROM INFORMATION_SCHEMA.PARAMETERS a
                             JOIN sys.procedures b on a.SPECIFIC_NAME = b.name"
+            if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con baseQuery
             let meta =
                 [ while reader.Read() do
@@ -216,45 +225,47 @@ type internal MSSqlServerProvider() =
                      ReturnColumns = [] })
                 |> Seq.toList
             reader.Dispose()
-       
-            meta
-            |> List.choose(fun sproc ->
-                use com = new SqlCommand(sproc.FullName,con)
-                com.CommandType <- CommandType.StoredProcedure
-                try // try / catch here as this stuff is still experimental
-                  sproc.Params
-                  |> List.iter(fun p ->
-                    let p' = SqlParameter()           
-                    p'.ParameterName <- p.Name
-                    p'.DbType <- p.DbType
-                    p'.Value <- 
-                         if p.ClrType = typeof<string> then box "1"
-                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
-                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
-                         // warning: i might have missed cases here and this next call will
-                         // blow if the type doesn't have a parameterless ctor
-                         else Activator.CreateInstance(p.ClrType)
-                    com.Parameters.Add p' |> ignore)
-                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
-                  let schema = reader.GetSchemaTable()
-                  let columns = 
-                      if schema = null then [] else
-                      schema.Rows
-                      |> Seq.cast<DataRow>
-                      |> Seq.choose(fun row -> 
-                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
-                           |> Option.map( fun sql ->
-                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
-                      |> Seq.toList
-                  if schema = null || columns.Length = schema.Rows.Count then
-                     Some { sproc with ReturnColumns = columns }
-                  else None
-                with 
-                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to rerieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
-                        None 
-         )
-
+            let ret =
+                meta
+                |> List.choose(fun sproc ->
+                    use com = new SqlCommand(sproc.FullName,con)
+                    com.CommandType <- CommandType.StoredProcedure
+                    try // try / catch here as this stuff is still experimental
+                      sproc.Params
+                      |> List.iter(fun p ->
+                        let p' = SqlParameter()           
+                        p'.ParameterName <- p.Name
+                        p'.DbType <- p.DbType
+                        p'.Value <- 
+                             if p.ClrType = typeof<string> then box "1"
+                             elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
+                             elif p.ClrType.IsArray then box (Array.zeroCreate 0)
+                             // warning: i might have missed cases here and this next call will
+                             // blow if the type doesn't have a parameterless ctor
+                             else Activator.CreateInstance(p.ClrType)
+                        com.Parameters.Add p' |> ignore)
+                      use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
+                      let schema = reader.GetSchemaTable()
+                      let columns = 
+                          if schema = null then [] else
+                          schema.Rows
+                          |> Seq.cast<DataRow>
+                          |> Seq.choose(fun row -> 
+                               (clrToEnum (row.["DataType"] :?> Type).FullName ) 
+                               |> Option.map( fun sql ->
+                                     { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
+                                       DbType = sql; IsPrimarKey = false; IsNullable=false } ))
+                          |> Seq.toList
+                  
+                      if schema = null || columns.Length = schema.Rows.Count then
+                         Some { sproc with ReturnColumns = columns }
+                      else None
+                    with 
+                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to rerieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                            None )
+            con.Close()
+            ret
+         
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
         
@@ -368,17 +379,15 @@ type internal MSSqlServerProvider() =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder() = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iter(fun (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
-                               joinType destTable.Schema destTable.Name alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
+                            joinType destTable.Schema destTable.Name destAlias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

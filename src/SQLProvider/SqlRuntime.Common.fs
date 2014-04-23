@@ -31,7 +31,7 @@ module public QueryEvents =
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
 [<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
-type SqlEntity(tableName) =
+type SqlEntity(connectionString:string,tableName) =
     
     let propertyChanged = Event<_,_>()
     
@@ -44,6 +44,8 @@ type SqlEntity(tableName) =
     member e.ColumnValues = seq { for kvp in data -> kvp }
 
     member e.TableName = tableName     
+
+    member internal e.ConnectionString with get() = connectionString
 
     member e.GetColumn<'T>(key) : 'T = 
         let defaultValue() =                       
@@ -82,9 +84,9 @@ type SqlEntity(tableName) =
     
     member e.HasValue(key) = data.ContainsKey key
 
-    static member internal FromDataReader(name,reader:System.Data.IDataReader) =
+    static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
         [ while reader.Read() = true do
-          let e = SqlEntity(name)        
+          let e = SqlEntity(con,name)        
           for i = 0 to reader.FieldCount - 1 do 
               match reader.GetValue(i) with
               | null | :? DBNull -> ()
@@ -97,7 +99,7 @@ type SqlEntity(tableName) =
         | true, entity -> entity
         | false, _ -> 
             let tableName = if tableName <> "" then tableName else e.TableName
-            let newEntity = SqlEntity(tableName)
+            let newEntity = SqlEntity(connectionString,tableName)
             let pk = sprintf "%sid" tableName
             // attributes names cannot have a period in them unless they are an alias
             let pred =                 
@@ -211,9 +213,9 @@ type SqlExp =
                 | Count(rest) -> aux rest
             aux this
     
-type internal SqlQuery =
+type SqlQuery =
     { Filters       : Condition list
-      Links         : Map<alias, (alias * LinkData) list>
+      Links         : (alias * LinkData * alias) list // Map<alias, (alias * LinkData) list>
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
       Projection    : Expression option
@@ -223,7 +225,7 @@ type internal SqlQuery =
       Take          : int option
       Count         : bool } 
     with
-        static member Empty = { Filters = []; Links = Map.empty; Aliases = Map.empty; Ordering = []; Count = false
+        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false
                                 Projection = None; Distinct = false; UltimateChild = None; Skip = None; Take = None }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -238,7 +240,7 @@ type internal SqlQuery =
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(a,e) -> q
-                                        | None when q.Links.Count > 0 && q.Links.ContainsKey(a) = false -> 
+                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false -> 
                                                 // the check here relates to the special case as descibed in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
@@ -248,10 +250,10 @@ type internal SqlQuery =
                    match link.RelDirection with
                    | RelationshipDirection.Children -> 
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
-                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                                          Links = (legaliseName a, link, legaliseName b)  :: q.Links } rest
                    | _ ->
                          convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
-                                         Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                                         Links = (legaliseName a, link, legaliseName b) :: q.Links  } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  
                     if q.Projection.IsSome then failwith "the type provider only supports a single projection"
@@ -273,7 +275,7 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+type ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
