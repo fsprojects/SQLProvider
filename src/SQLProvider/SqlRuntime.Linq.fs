@@ -55,6 +55,7 @@ module internal QueryImplementation =
        use cmd = provider.CreateCommand(con,query)   
        for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
+       if con.State <> ConnectionState.Open then con.Open()
        let result = 
         match cmd.ExecuteScalar() with
         | :? string as s -> Int32.Parse s
