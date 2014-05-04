@@ -345,8 +345,12 @@ type internal MySqlProvider(resolutionPath) as this =
                 ~~"ORDER BY "
                 orderByBuilder()
 
-            if sqlQuery.Take.IsSome then 
+            if sqlQuery.Take.IsSome && sqlQuery.Skip.IsSome then 
+                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Skip.Value sqlQuery.Take.Value)
+            else if sqlQuery.Take.IsSome then 
                 ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
+            else if sqlQuery.Skip.IsSome then 
+                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Take.Value System.UInt64.MaxValue)
 
             let sql = sb.ToString()
             (sql,parameters)
