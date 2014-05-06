@@ -277,7 +277,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       
               meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
                               <param name='connectionString'>The database connection string</param>"
-              yield meth                                
+              yield meth
+
+
+              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
+                                                            serviceType, IsStaticMethod=true,
+                                                            InvokeCode = (fun args ->
+                                                                let meth = typeof<SqlDataContext>.GetMethod "_Create"
+                                                                Expr.Call(meth, [Expr.Value rootTypeName;args.[0];Expr.Value dbVendor; args.[1]; Expr.Value owner])))
+
+              meth.AddXmlDoc "<summary>Retuns an instance of the Sql provider</summary>
+                              <param name='connectionString'>The database connection string</param>
+                              <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specifc connections and custom types</param>"
+              yield meth
             ])
         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         rootType
