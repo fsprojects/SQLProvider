@@ -345,16 +345,14 @@ type internal MySqlProvider(resolutionPath) as this =
                 ~~"ORDER BY "
                 orderByBuilder()
 
-            if sqlQuery.Take.IsSome && sqlQuery.Skip.IsSome then 
-                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Skip.Value sqlQuery.Take.Value)
-            else if sqlQuery.Take.IsSome then 
-                ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
-            else if sqlQuery.Skip.IsSome then 
-                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Take.Value System.UInt64.MaxValue)
+            match sqlQuery.Take, sqlQuery.Skip with
+            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
+            | None, Some skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt64.MaxValue skip)
+            | None, None -> ()
 
             let sql = sb.ToString()
-            (sql,parameters)
-        
+            (sql,parameters)        
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
             let (~~) (t:string) = sb.Append t |> ignore
