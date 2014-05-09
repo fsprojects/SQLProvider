@@ -254,12 +254,26 @@ type internal MySqlProvider(resolutionPath) as this =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? System.Array) ->
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
+                                         let elements = box x :?> System.Array
+                                         Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
+
+                                let operatorIn operator (array : IDataParameter[]) =
+                                    if Array.isEmpty array then
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set
+                                        | FSharp.Data.Sql.NotIn -> "TRUE" // anything is not in the empty set
+                                        | _ -> failwith "Should not be called with any other operator"
+                                    else
+                                        let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                        Array.iter parameters.Add array
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> (sprintf "`%s`.`%s` IN (%s)") alias col text
+                                        | FSharp.Data.Sql.NotIn -> (sprintf "`%s`.`%s` NOT IN (%s)") alias col text
+                                        | _ -> failwith "Should not be called with any other operator"
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
@@ -267,14 +281,8 @@ type internal MySqlProvider(resolutionPath) as this =
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col 
                                     | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col 
-                                    | FSharp.Data.Sql.In ->                                     
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` IN (%s)") alias col text
-                                    | FSharp.Data.Sql.NotIn ->                                    
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` NOT IN (%s)") alias col text 
+                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                     | _ -> 
                                         parameters.Add paras.[0]
                                         (sprintf "`%s`.`%s`%s %s") alias col 
