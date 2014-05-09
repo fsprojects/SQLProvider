@@ -48,6 +48,7 @@
     <Compile Include="SoundCheck.fs" />
     <None Include="OracleTests.fsx" />
     <None Include="packages.config" />
+    <None Include="MSAccessTests.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

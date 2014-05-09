@@ -1,3 +1,8 @@
+#### 0.0.6-alpha - 12.02.2014 
+* MS Access support added!
+* Various fixes for SQLite and Oracle
+* Added support for head / First()
+
 #### 0.0.5-alpha - 28.01.2014 
 * Oracle support added!
 * Various minor fixes

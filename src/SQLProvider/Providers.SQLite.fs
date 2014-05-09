@@ -72,18 +72,25 @@ type internal SQLiteProvider(resolutionPath) as this =
             if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(con) = 
+            if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
-            createTypeMappings dt
+            let ret = createTypeMappings dt
+            con.Close()
+            ret
         member __.ClrToEnum = clrToEnum
         member __.SqlToEnum = sqlToEnum
         member __.SqlToClr = sqlToClr
         member __.GetTables(con) =            
-            [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do 
-                let ty = string row.["TABLE_TYPE"]
-                if ty <> "SYSTEM_TABLE" then
-                    let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty } 
-                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                    yield table ]
+            if con.State <> ConnectionState.Open then con.Open()
+            let ret =
+                [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do 
+                    let ty = string row.["TABLE_TYPE"]
+                    if ty <> "SYSTEM_TABLE" then
+                        let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty } 
+                        if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                        yield table ]
+            con.Close()
+            ret
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
@@ -92,6 +99,7 @@ type internal SQLiteProvider(resolutionPath) as this =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
+               if con.State <> ConnectionState.Open then con.Open()
                let query = sprintf "pragma table_info(%s)" table.Name
                use com = (this:>ISqlProvider).CreateCommand(con,query)               
                use reader = com.ExecuteReader()
@@ -111,6 +119,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                          yield col 
                       | _ -> ()]  
                columnLookup.Add(table.FullName,columns)
+               con.Close()
                columns
         member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue(table.FullName) with
@@ -123,6 +132,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                 // huge schemas, but SQLite is not generally used for that purpose so we should be ok.
                 // At least we can perform all the work for all the tables once here
                 // and cache the results for sucessive calls.....
+                if con.State <> ConnectionState.Open then con.Open()
                 let relData = (getSchemaMethod.Invoke(con,[|"ForeignKeys"|]) :?> DataTable)
                 for row in relData.Rows do
                     let pTable = 
@@ -144,7 +154,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     relationshipLookup.[pTable.FullName] <- (rel::c,p)
                     let (c,p) = relationshipLookup.[fTable.FullName]
                     relationshipLookup.[fTable.FullName] <- (c,rel::p)
-                
+                con.Close()
                 match relationshipLookup.TryGetValue table.FullName with 
                 | true,v -> v
                 | _ -> [],[]
@@ -262,17 +272,15 @@ type internal SQLiteProvider(resolutionPath) as this =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder() = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iter(fun (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
-                               joinType destTable.Schema destTable.Name alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
+                            joinType destTable.Schema destTable.Name destAlias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

@@ -9,8 +9,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal PostgresqlProvider(resolutionPath) as this =
-    // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -370,17 +368,15 @@ type internal PostgresqlProvider(resolutionPath) as this =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder() = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iter(fun (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" " 
-                               joinType destTable.Schema destTable.Name alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" " 
+                            joinType destTable.Schema destTable.Name destAlias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

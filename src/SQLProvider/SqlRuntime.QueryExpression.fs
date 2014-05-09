@@ -10,6 +10,7 @@
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
+            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
             | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
@@ -155,12 +156,13 @@ module internal QueryExpressionTransformer =
 
         // the crazy linq infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
-
+                                                          
         // 1.
         // re-map the tuple arg names to their proper aliases in the filters
         // its possible to do this when converting the expression but its
         // much easier at this stage once we have knowledge of the whole query
-        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters}
+        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters 
+                                       Ordering = List.map(function ("",b,c) -> (resolve "",b,c) | x -> x) sqlQuery.Ordering }
         
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking
@@ -170,22 +172,18 @@ module internal QueryExpressionTransformer =
             match sqlQuery.UltimateChild with
             | Some(uc) when alias = fst uc -> snd uc
             | _ -> sqlQuery.Links 
-                    |> Map.pick(fun outerLinkAlias links ->
-                        links 
-                        |> List.tryPick(fun (innerAlias,linkData) -> 
-                            if innerAlias = alias then Some(linkData.PrimaryTable) else None))     
+                   |> List.pick(fun (outerAlias, linkData, innerAlias) -> if innerAlias = alias then Some(linkData.PrimaryTable) else None)     
         let sqlQuery = { sqlQuery with Aliases = Map.map resolveAlias sqlQuery.Aliases }
         
         // 3.
         // Some link data will be missing its foreign table data which needs setting to the resolved table of the 
         // outer alias - this happens depending on the which way the join is around - infromation is "lost" up the tree which
         // able to be resolved now.
-        let resolveLinks outerAlias linkData =
+        let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            linkData 
-            |> List.map(fun (a,data:LinkData) ->
-                (a,if data.ForeignTable.Name <> "" then data else { data with ForeignTable = resolved }))
-        let sqlQuery = { sqlQuery with Links = Map.map resolveLinks sqlQuery.Links }
+            if linkData.ForeignTable.Name <> "" then (outerAlias, linkData, innerAlias) 
+            else (outerAlias, { linkData with ForeignTable = resolved }, innerAlias)
+        let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
         
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns

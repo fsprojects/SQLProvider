@@ -174,3 +174,4 @@ nuget/
 
 # Nuget outputs
 nuget/*.nupkg
+docs/files/msaccess/Northwind.ldb

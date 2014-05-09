@@ -15,7 +15,7 @@ type DatabaseProviderTypes =
     | POSTGRESQL = 2
     | MYSQL = 3
     | ORACLE = 4
-    | ODBC = 5
+    | MSACCESS = 5
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -31,7 +31,7 @@ module public QueryEvents =
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
 [<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
-type SqlEntity(tableName) =
+type SqlEntity(connectionString:string,tableName) =
     
     let propertyChanged = Event<_,_>()
     
@@ -45,8 +45,10 @@ type SqlEntity(tableName) =
 
     member e.TableName = tableName     
 
+    member internal e.ConnectionString with get() = connectionString
+
     member e.GetColumn<'T>(key) : 'T = 
-        let defaultValue() =                        
+        let defaultValue() =                       
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
         if data.ContainsKey key then
@@ -58,7 +60,7 @@ type SqlEntity(tableName) =
            | data -> unbox data
         else defaultValue()
     
-    member e.GetColumnOption<'T>(key) : Option<'T> =        
+    member e.GetColumnOption<'T>(key) : Option<'T> =   
        if data.ContainsKey key then
            match data.[key] with
            | null -> None
@@ -82,9 +84,9 @@ type SqlEntity(tableName) =
     
     member e.HasValue(key) = data.ContainsKey key
 
-    static member internal FromDataReader(name,reader:System.Data.IDataReader) =
+    static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
         [ while reader.Read() = true do
-          let e = SqlEntity(name)          
+          let e = SqlEntity(con,name)        
           for i = 0 to reader.FieldCount - 1 do 
               match reader.GetValue(i) with
               | null | :? DBNull -> ()
@@ -97,13 +99,14 @@ type SqlEntity(tableName) =
         | true, entity -> entity
         | false, _ -> 
             let tableName = if tableName <> "" then tableName else e.TableName
-            let newEntity = SqlEntity(tableName)
+            let newEntity = SqlEntity(connectionString,tableName)
             let pk = sprintf "%sid" tableName
             // attributes names cannot have a period in them unless they are an alias
             let pred =                 
                 let prefix = "[" + alias + "]."
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
+                let prefix4 = alias + "_"
                 (fun (kvp:KeyValuePair<string,_>) -> 
                     if kvp.Key.StartsWith prefix then 
                         let temp = kvp.Key.Replace(prefix,"")
@@ -118,7 +121,11 @@ type SqlEntity(tableName) =
                         let temp = kvp.Key.Replace(prefix3,"")
                         let temp = temp.Substring(1,temp.Length-2)
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    else None) 
+                    //this case for MSAccess, uses _ as whitespace qualifier
+                    elif  kvp.Key.StartsWith prefix4 then
+                        let temp = kvp.Key.Replace(prefix4,"")
+                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    else None)
                         
             e.ColumnValues
             |> Seq.choose pred
@@ -150,7 +157,7 @@ type SqlEntity(tableName) =
                               { new PropertyDescriptor(k,[||])  with
                                  override __.PropertyType with get() = v.GetType()
                                  override __.SetValue(e,value) = (e :?> SqlEntity).SetColumn(k,value)        
-                                 override __.GetValue(e) =  (e:?>SqlEntity).GetColumn k
+                                 override __.GetValue(e) = (e:?>SqlEntity).GetColumn k
                                  override __.IsReadOnly with get() = false
                                  override __.ComponentType with get () = null
                                  override __.CanResetValue(_) = false
@@ -183,7 +190,7 @@ type Condition =
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
 
-type SqlExp =
+type internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
@@ -193,10 +200,22 @@ type SqlExp =
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
+    with member this.HasAutoTupled() = 
+            let rec aux = function
+                | BaseTable(_) -> false
+                | SelectMany(_) -> true
+                | FilterClause(_,rest) 
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Count(rest) -> aux rest
+            aux this
     
 type internal SqlQuery =
     { Filters       : Condition list
-      Links         : Map<alias, (alias * LinkData) list>
+      Links         : (alias * LinkData * alias) list // Map<alias, (alias * LinkData) list>
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
       Projection    : Expression option
@@ -206,7 +225,7 @@ type internal SqlQuery =
       Take          : int option
       Count         : bool } 
     with
-        static member Empty = { Filters = []; Links = Map.empty; Aliases = Map.empty; Ordering = []; Count = false
+        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false
                                 Projection = None; Distinct = false; UltimateChild = None; Skip = None; Take = None }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -221,7 +240,7 @@ type internal SqlQuery =
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(a,e) -> q
-                                        | None when q.Links.Count > 0 && q.Links.ContainsKey(a) = false -> 
+                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false -> 
                                                 // the check here relates to the special case as descibed in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
@@ -231,10 +250,10 @@ type internal SqlQuery =
                    match link.RelDirection with
                    | RelationshipDirection.Children -> 
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
-                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                                          Links = (legaliseName a, link, legaliseName b)  :: q.Links } rest
                    | _ ->
-                        convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
-                                         Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                         convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
+                                         Links = (legaliseName a, link, legaliseName b) :: q.Links  } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  
                     if q.Projection.IsSome then failwith "the type provider only supports a single projection"
@@ -242,7 +261,7 @@ type internal SqlQuery =
                 | Distinct(rest) ->
                     if q.Distinct then failwith "distinct is applied to the entire query and can only be supplied once"                
                     else convert { q with Distinct = true } rest
-                | OrderBy(alias,key,desc,rest) ->
+                | OrderBy(alias,key,desc,rest) ->                    
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) -> 
                     if q.Skip.IsSome then failwith "skip may only be specified once"
