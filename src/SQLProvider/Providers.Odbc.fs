@@ -79,6 +79,7 @@ type internal OdbcProvider(resolutionPath) =
         member __.SqlToClr = sqlToClr        
         member __.GetTables(con) =
             let con = con :?> OdbcConnection
+            if con.State <> ConnectionState.Open then con.Open()
             let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
             [ for dataTable in dataTables do 
                 let table ={ Schema = string dataTable.[1] ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() } 
@@ -93,6 +94,7 @@ type internal OdbcProvider(resolutionPath) =
             | (true,data) -> data
             | _ ->
                let con = con :?> OdbcConnection
+               if con.State <> ConnectionState.Open then con.Open()
                let primaryKey = con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
                let dataTable = loadColumnNames con table.Name
                let columns =
@@ -112,13 +114,14 @@ type internal OdbcProvider(resolutionPath) =
                       | _ -> ()]  
                columnLookup.Add(table.FullName,columns)
                columns
-        member __.GetRelationships(con,table) = 
+        member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue table.FullName with 
             | true,v -> v
             | _ -> 
             // mostly stolen from
             // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
             let con = con :?> OdbcConnection
+            if con.State <> ConnectionState.Open then con.Open()
             let x = con.GetSchema().Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray.[0]) |> Seq.cast<string>
             match x |> Seq.exists (fun i -> i = "ForeignKeys") with
             | false -> ([],[])
@@ -163,6 +166,7 @@ type internal OdbcProvider(resolutionPath) =
             (children,parents)    
         member __.GetSprocs(con) = 
             let con = con:?>OdbcConnection
+            if con.State <> ConnectionState.Open then con.Open()
             //todo: this whole function needs cleaning up
             let baseQuery = @"SELECT 
                               SPECIFIC_SCHEMA
@@ -365,17 +369,15 @@ type internal OdbcProvider(resolutionPath) =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder() = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iter(fun (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] " 
-                               joinType destTable.Schema destTable.Name alias 
-                               (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                               data.ForeignKey  
-                               (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                               data.PrimaryKey)))
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" " 
+                            joinType destTable.Schema destTable.Name destAlias 
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            data.ForeignKey  
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
