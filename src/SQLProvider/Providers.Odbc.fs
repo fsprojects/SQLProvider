@@ -189,7 +189,7 @@ type internal OdbcProvider(resolutionPath) =
                             reader.GetString(4),
                             reader.GetString(5),
                             Some <| reader.GetInt32(6)) ]
-                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "[%s].[%s]" schema name)
+                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "%s.%s" schema name)
                 |> Seq.choose(fun (name,values) ->
                    // don't create procs that have unsupported datatypes
                    let values' = 
@@ -287,12 +287,12 @@ type internal OdbcProvider(resolutionPath) =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "%s.%s" k col
-                                else yield sprintf "%s.%s" k col
+                                if singleEntity then yield sprintf "%s" col
+                                else yield sprintf "%s" col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s" k col
-                                yield sprintf "%s.%s" k col |]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s" col
+                                yield sprintf "%s" col |]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
@@ -337,7 +337,7 @@ type internal OdbcProvider(resolutionPath) =
                                         (sprintf "%s.%s NOT IN (%s)") alias col text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "[%s].[%s]%s %s") alias col 
+                                        (sprintf "%s.%s %s %s") alias col 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -372,7 +372,7 @@ type internal OdbcProvider(resolutionPath) =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" " 
+                    ~~  (sprintf "%s `%s`.`%s` as `%s` on `%s`.`%s` = `%s`.`%s` " 
                             joinType destTable.Schema destTable.Name destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
@@ -383,14 +383,14 @@ type internal OdbcProvider(resolutionPath) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "[%s].[%s]%s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s.%s %s" alias column (if not desc then "DESC" else "")))
 
             // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
+            else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s.%s" baseTable.Schema baseTable.Name)         
+            ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)       
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
