@@ -149,15 +149,7 @@ type internal MSAccessProvider() as this =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
-            
-            // SQL query syntax is ordered in the following manner
-            // SELECT [alias].[field] as '[alias].[field]' [, .. ]
-            // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
-            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
-
-            // to simplfy (ha!) the processing, all tables should be aliased.
-            // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
-            // if it does not, then we first need to create an alias for the single table
+    
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -165,9 +157,7 @@ type internal MSAccessProvider() as this =
 
             let singleEntity = sqlQuery.Aliases.Count = 0
             
-            // build the sql query from the simplified abstract query expression
-            // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
+            // first build  the select statement, this is easy ...
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -182,7 +172,7 @@ type internal MSAccessProvider() as this =
         
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
-            // NOTE: really need to assign the parameters their correct sql types
+            // NOTE: really need to assign the parameters their correct SQL types
             let param = ref 0
             let nextParam() =
                 incr param

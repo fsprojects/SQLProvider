@@ -40,7 +40,7 @@ open FSharp.Data.Sql.Schema
 
 module internal QueryExpressionTransformer =    
     /// Visitor has two uses - 1. extracting the columns the select statement
-    /// 2. transform the projection epxression into something that will work with the SqlEntity runtime object eg it replaces chunks of the 
+    /// 2. transform the projection expression into something that will work with the SqlEntity runtime object e.g. it replaces chunks of the 
     // expression tree where fields are referenced with the relevant calls to GetColumn and GetSubTable
     type private ProjectionTransformer(tupleIndex:string ResizeArray,BaseTableParam:ParameterExpression,baseTableAlias,aliasEntityDict:Map<string,Table>) =
         inherit ExpressionVisitor()
@@ -53,8 +53,8 @@ module internal QueryExpressionTransformer =
 
         override x.VisitLambda(exp) = 
             if exp.Parameters.Count = 1 && exp.Parameters.[0].Type = typeof<SqlEntity> then
-                // this is a speical case when there were no select manys and as a result the projection parameter is just the single entity rather than a tuple
-                // this still includes cases where tuples are created by the user directly, that is fine - it is for avoiding linq auto generated tuples
+                // this is a special case when there were no select manys and as a result the projection parameter is just the single entity rather than a tuple
+                // this still includes cases where tuples are created by the user directly, that is fine - it is for avoiding LINQ auto generated tuples
                 singleEntityName <- exp.Parameters.[0].Name
                 match x.ProjectionMap.TryGetValue singleEntityName with
                 | true, values -> ()
@@ -126,7 +126,7 @@ module internal QueryExpressionTransformer =
                             let newProjection = megatron.Visit(proj) :?> LambdaExpression
                             (Expression.Lambda(newProjection.Body,param).Compile(),megatron.ProjectionMap)
             | none -> 
-                // this case happens when there are only where clauses with a single table and a projection cotaining just the table's entire rows. example:
+                // this case happens when there are only where clauses with a single table and a projection containing just the table's entire rows. example:
                 // for x in dc.john 
                 // where x.y = 1
                 // select x
@@ -144,7 +144,7 @@ module internal QueryExpressionTransformer =
 
         let resolve name =
             // name will be blank when there is only a single table as it never gets
-            // tupled by the linq infrastructure. In this case we know it must be referring
+            // tupled by the LINQ infrastructure. In this case we know it must be referring
             // to the only table in the query, so replace it
             if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
             else Utilities.resolveTuplePropertyName name entityIndex
@@ -153,7 +153,7 @@ module internal QueryExpressionTransformer =
             | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
             | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
 
-        // the crazy linq infrastructure does all kinds of weird things with joins which means some information
+        // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
                                                           
         // 1.
@@ -176,7 +176,7 @@ module internal QueryExpressionTransformer =
         
         // 3.
         // Some link data will be missing its foreign table data which needs setting to the resolved table of the 
-        // outer alias - this happens depending on the which way the join is around - infromation is "lost" up the tree which
+        // outer alias - this happens depending on the which way the join is around - information is "lost" up the tree which
         // able to be resolved now.
         let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]

@@ -16,6 +16,8 @@ type DatabaseProviderTypes =
     | MYSQL = 3
     | ORACLE = 4
     | MSACCESS = 5
+
+type RelationshipDirection = Children = 0 | Parents = 1 
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
@@ -31,7 +33,7 @@ module public QueryEvents =
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
 [<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
-type SqlEntity(connectionString:string,tableName) =
+type SqlEntity(dc:ISqlDataContext,tableName) =
     
     let propertyChanged = Event<_,_>()
     
@@ -45,7 +47,7 @@ type SqlEntity(connectionString:string,tableName) =
 
     member e.TableName = tableName     
 
-    member internal e.ConnectionString with get() = connectionString
+    member e.DataContext with get() = dc
 
     member e.GetColumn<'T>(key) : 'T = 
         let defaultValue() =                       
@@ -93,13 +95,13 @@ type SqlEntity(connectionString:string,tableName) =
               | value -> e.SetColumn(reader.GetName(i),value)
           yield e ]
 
-    /// creates a new sql entity from alias data in this entity
+    /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
         match aliasCache.TryGetValue alias with
         | true, entity -> entity
         | false, _ -> 
             let tableName = if tableName <> "" then tableName else e.TableName
-            let newEntity = SqlEntity(connectionString,tableName)
+            let newEntity = SqlEntity(dc,tableName)
             let pk = sprintf "%sid" tableName
             // attributes names cannot have a period in them unless they are an alias
             let pred =                 
@@ -112,11 +114,11 @@ type SqlEntity(connectionString:string,tableName) =
                         let temp = kvp.Key.Replace(prefix,"")
                         let temp = temp.Substring(1,temp.Length-2)
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    // this case is for postgresql and other vendors that use " as whitepsace qualifiers 
+                    // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers 
                     elif  kvp.Key.StartsWith prefix2 then  
                         let temp = kvp.Key.Replace(prefix2,"")
                         Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    // this case is for mysql and other vendors that use ` as whitespace qualifiers 
+                    // this case is for MySQL and other vendors that use ` as whitespace qualifiers 
                     elif  kvp.Key.StartsWith prefix3 then  
                         let temp = kvp.Key.Replace(prefix3,"")
                         let temp = temp.Substring(1,temp.Length-2)
@@ -164,8 +166,14 @@ type SqlEntity(connectionString:string,tableName) =
                                  override __.ResetValue(_) = ()
                                  override __.ShouldSerializeValue(_) = false }) 
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
+
+and ISqlDataContext =       
+    abstract ConnectionString : string
+    abstract CreateRelated    : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    abstract CreateEntities   : string -> System.Linq.IQueryable<SqlEntity>
+    abstract CallSproc        : string * string [] * DbType [] * obj [] -> SqlEntity list
+    abstract GetIndividual    : string * obj -> SqlEntity
          
-type RelationshipDirection = Children = 0 | Parents = 1 
 
 type LinkData =
     { PrimaryTable       : Table
@@ -184,8 +192,8 @@ type table = string
 type Condition = 
     // this is  (table alias * column name * operator * right hand value ) list  * (the same again list) 
     // basically any AND or OR expression can have N terms and can have N nested condition children
-    // this is largely from my CRM type provider. I dont think in practice for the sql provider 
-    // you will ever have more than what is representable in a traditonal binary expression tree, but 
+    // this is largely from my CRM type provider. I don't think in practice for the SQL provider 
+    // you will ever have more than what is representable in a traditional binary expression tree, but 
     // changing it would be a lot of effort ;) 
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
@@ -194,7 +202,7 @@ type internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
-    | Projection   of Expression * SqlExp                // entire linq projection expression tree
+    | Projection   of Expression * SqlExp                // entire LINQ projection expression tree
     | Distinct     of SqlExp                             // distinct indicator
     | OrderBy      of alias * string * bool * SqlExp     // alias and column name, bool indicates ascending sort
     | Skip         of int * SqlExp
@@ -215,7 +223,7 @@ type internal SqlExp =
     
 type internal SqlQuery =
     { Filters       : Condition list
-      Links         : (alias * LinkData * alias) list // Map<alias, (alias * LinkData) list>
+      Links         : (alias * LinkData * alias) list 
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
       Projection    : Expression option
@@ -241,7 +249,7 @@ type internal SqlQuery =
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(a,e) -> q
                                         | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false -> 
-                                                // the check here relates to the special case as descibed in the FilterClause below.
+                                                // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
                                                   { q with UltimateChild = Some(legaliseName entityIndex.[0], e) }
@@ -280,16 +288,16 @@ type internal ISqlProvider =
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
-    /// return a new command paramter with the provided name, value and optionally type
+    /// return a new command parameter with the provided name, value and optionally type
     abstract CreateCommandParameter : string * obj * DbType option -> IDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
-    /// Accepts a full clr type name and returns the relevant value from the DbType enum
+    /// Accepts a full CLR type name and returns the relevant value from the DbType enum
     abstract ClrToEnum : (string -> DbType option) with get
-    /// Accepts sql datatype name and returns the relevant value from the DbType enum
+    /// Accepts SQL data type name and returns the relevant value from the DbType enum
     abstract SqlToEnum : (string -> DbType option) with get
-    /// Accepts sql datatype name and returns the CLR type
+    /// Accepts SQL data type name and returns the CLR type
     abstract SqlToClr : (string -> Type option)       with get
     /// Queries the information schema and returns a list of table information
     abstract GetTables  : IDbConnection -> Table list
@@ -306,12 +314,13 @@ type internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
-    /// Returns the db vendor specific sql query to select the top x amount of rows from 
+    /// Returns the db vendor specific SQL  query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
-    /// Returns the db vendor specific sql query to select a single row based on the table and column name specified
+    /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDataParameter>
+    

@@ -125,13 +125,13 @@ type internal SQLiteProvider(resolutionPath) as this =
             match relationshipLookup.TryGetValue(table.FullName) with
             | true,v -> v
             | _ ->
-                // SQLite doesn't have great metadata capabilites.
+                // SQLite doesn't have great metadata capabilities.
                 // while we can use PRGAMA FOREIGN_KEY_LIST, it will only show us 
                 // relationships in one direction, the only way to get all the relationships
                 // is to retrieve all the relationships in the entire database.  This is not ideal for
                 // huge schemas, but SQLite is not generally used for that purpose so we should be ok.
                 // At least we can perform all the work for all the tables once here
-                // and cache the results for sucessive calls.....
+                // and cache the results for successive calls.....
                 if con.State <> ConnectionState.Open then con.Open()
                 let relData = (getSchemaMethod.Invoke(con,[|"ForeignKeys"|]) :?> DataTable)
                 for row in relData.Rows do
@@ -167,9 +167,6 @@ type internal SQLiteProvider(resolutionPath) as this =
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
-            // NOTE: presently this is identical to the SQL server code,
-            // however it is duplicated intentionally so that any SQLite specific
-            // optimisations can be applied here.
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -183,9 +180,8 @@ type internal SQLiteProvider(resolutionPath) as this =
                 | None -> baseTable
 
             let singleEntity = sqlQuery.Aliases.Count = 0
-            // now we can build the sql query that has been simplified by the above expression converter
-            // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
+            
+            // first build  the select statement, this is easy ...
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -297,7 +293,7 @@ type internal SQLiteProvider(resolutionPath) as this =
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
-                // each filter is effectively the entire contents of each where clause in the linq query,
+                // each filter is effectively the entire contents of each where clause in the LINQ  query,
                 // of which there can be many. Simply turn them all into one big AND expression as that is the
                 // only logical way to deal with them. 
                 let f = [And([],Some sqlQuery.Filters)]
