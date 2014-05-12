@@ -58,14 +58,6 @@ type internal OdbcProvider(resolutionPath) =
         use com = new OdbcCommand(sql,con:?>OdbcConnection)    
         com.ExecuteReader()
 
-    let loadColumnNames (con:OdbcConnection) tableName =
-        match resolutionPath with
-        | resolutionPath when not <| String.IsNullOrEmpty resolutionPath ->
-            let dataset = new DataSet()
-            dataset.ReadXml(IO.Path.Combine(resolutionPath, "Columns.xmlschema")) |> ignore
-            dataset.Tables.[0].Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
-        | _ -> con.GetSchema("Columns", [| null; null; tableName; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
@@ -96,7 +88,7 @@ type internal OdbcProvider(resolutionPath) =
                let con = con :?> OdbcConnection
                if con.State <> ConnectionState.Open then con.Open()
                let primaryKey = con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
-               let dataTable = loadColumnNames con table.Name
+               let dataTable = con.GetSchema("Columns", [| null; null; table.Name; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
                let columns =
                   [ for i in dataTable do 
                       let dt = i.[5] :?> string
