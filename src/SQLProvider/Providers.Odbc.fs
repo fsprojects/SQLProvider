@@ -100,7 +100,7 @@ type internal OdbcProvider(resolutionPath) =
                               ClrType = clr 
                               DbType = sql
                               IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
-                              IsPrimarKey = if primaryKey.[0].[8] = box name then true else false } 
+                              IsPrimarKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
                          yield col 
                       | _ -> ()]  
