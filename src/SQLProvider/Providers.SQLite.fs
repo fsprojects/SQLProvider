@@ -428,7 +428,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOption(pkLookup.[e.Table.FullName], None)
+                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
             finally
