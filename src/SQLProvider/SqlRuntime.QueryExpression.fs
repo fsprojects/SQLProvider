@@ -11,6 +11,7 @@
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+            | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
