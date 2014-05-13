@@ -11,19 +11,20 @@ open FSharp.Data.Sql.Schema
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
-    do  
-        match providerCache .TryGetValue typeName with
-        | true, _ -> ()
-        | false,_ -> 
-            let prov = Utilities.createSqlProvider providerType resolutionPath owner
-            use con = prov.CreateConnection(connectionString)
-            con.Open()
-            // create type mappings and also trigger the table info read so the provider has 
-            // the minimum base set of data available
-            prov.CreateTypeMappings(con)
-            prov.GetTables(con) |> ignore
-            if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-            providerCache.Add(typeName,prov)
+    do
+        lock providerCache (fun () ->  
+            match providerCache .TryGetValue typeName with
+            | true, _ -> ()
+            | false,_ -> 
+                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                use con = prov.CreateConnection(connectionString)
+                con.Open()
+                // create type mappings and also trigger the table info read so the provider has 
+                // the minimum base set of data available
+                prov.CreateTypeMappings(con)
+                prov.GetTables(con) |> ignore
+                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                providerCache.Add(typeName,prov))
 
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
@@ -78,7 +79,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                let table = Table.FromFullName table
                // this line is to ensure the columns for the table have been retrieved and therefore
                // its primary key exists in the lookup
-               provider.GetColumns (con,table) |> ignore
+               lock provider (fun () -> provider.GetColumns (con,table) |> ignore)
                let pk = 
                    match provider.GetPrimaryKey table with
                    | Some v -> v

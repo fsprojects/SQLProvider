@@ -191,7 +191,7 @@ module internal QueryExpressionTransformer =
                                 let table = match sqlQuery.Aliases.TryFind k with
                                             | Some v -> v
                                             | None -> snd sqlQuery.UltimateChild.Value
-                                provider.GetColumns (con,table) |> ignore )
+                                lock provider (fun () -> provider.GetColumns (con,table) |> ignore ))
 
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns)
 
