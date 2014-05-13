@@ -16,7 +16,7 @@ type DatabaseProviderTypes =
     | MYSQL = 3
     | ORACLE = 4
     | MSACCESS = 5
-
+    | ODBC = 6
 type RelationshipDirection = Children = 0 | Parents = 1 
     
 module public QueryEvents =
