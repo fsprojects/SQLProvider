@@ -9,8 +9,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal OdbcProvider(resolutionPath) =
-    // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -62,7 +60,9 @@ type internal OdbcProvider(resolutionPath) =
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
         member __.CreateCommandParameter(name,value,dbType) = 
-            let p = OdbcParameter(name,value)            
+            let p = OdbcParameter()            
+            p.Value <- value
+            p.ParameterName <- name
             if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)
@@ -242,7 +242,7 @@ type internal OdbcProvider(resolutionPath) =
                      Some { sproc with ReturnColumns = columns }
                   else None
                 with 
-                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to rerieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
                         None 
          )
 
@@ -256,14 +256,7 @@ type internal OdbcProvider(resolutionPath) =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-            // SQL query syntax is ordered in the following manner
-            // SELECT [alias].[field] as '[alias].[field]' [, .. ]
-            // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
-            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
-
-            // to simplfy (ha!) the processing, all tables should be aliased.
-            // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
-            // if it does not, then we first need to create an alias for the single table
+       
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -271,9 +264,6 @@ type internal OdbcProvider(resolutionPath) =
 
             let singleEntity = sqlQuery.Aliases.Count = 0
             
-            // build the sql query from the simplified abstract query expression
-            // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -286,16 +276,11 @@ type internal OdbcProvider(resolutionPath) =
                                 if singleEntity then yield sprintf "%s" col
                                 yield sprintf "%s" col |]) // F# makes this so easy :)
         
-            // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
-            let param = ref 0
-            let nextParam() =
-                incr param
-                sprintf "@param%i" !param
 
             let createParam (value:obj) =
-                let paramName = nextParam()
+                let paramName = "?"
                 OdbcParameter(paramName,value):> IDataParameter
 
             let rec filterBuilder = function 
@@ -317,19 +302,19 @@ type internal OdbcProvider(resolutionPath) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias col 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias col 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias col text
+                                        (sprintf "`%s`.`%s` IN (%s)") alias col text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias col text 
+                                        (sprintf "`%s`.`%s` NOT IN (%s)") alias col text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias col 
+                                        (sprintf "`%s`.%s %s %s") alias col 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -375,14 +360,14 @@ type internal OdbcProvider(resolutionPath) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s %s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "`%s`.`%s` %s" alias column (if not desc then "DESC" else "")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as %s " baseTable.Name baseAlias)       
+            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
