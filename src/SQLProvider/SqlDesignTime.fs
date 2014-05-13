@@ -246,14 +246,23 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               for (KeyValue(key,(t,desc,_))) in baseTypes.Force() do
                 let (ct,it) = baseCollectionTypes.Force().[key]
                 let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> )
-                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )                    
+                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )
+                let prop = ProvidedMethod("Create", [], t, InvokeCode = fun args -> 
+                    <@@ 
+                        let e = new SqlEntity(((%%args.[0] : obj ):?> IWithDataContext ).DataContext,key)
+                        e.State <- Created
+                        ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                        e 
+                    @@> )
+                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
                 yield t :> MemberInfo
                 yield ct :> MemberInfo
                 yield! it |> Seq.map( fun it -> it :> MemberInfo)
                 yield prop :> MemberInfo
-              yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun args -> <@@ (%%(args.[0]) : ISqlDataContext) @@>) :> MemberInfo
+              yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>) :> MemberInfo
+              yield ProvidedMethod("Submit Updates",[],typeof<unit>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitAllChanges() @@>)  :> MemberInfo
              ] )
 
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)

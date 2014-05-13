@@ -32,20 +32,32 @@ module public QueryEvents =
    let PublishExpression(e) = expressionEvent.Trigger(e)
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
+type EntityState =
+    | Unchanged
+    | Created
+    | Modified of string list
+    | Deleted
+
 [<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
-type SqlEntity(dc:ISqlDataContext,tableName) =
-    
+type SqlEntity(dc:ISqlDataContext,tableName:string) =
+    let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()
     
     let data = Dictionary<string,obj>()
     let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
+
+    member val State = Unchanged with get, set
+
+    member e.Delete() = 
+        e.State <- Deleted
+        dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = 
         propertyChanged.Trigger(e,PropertyChangedEventArgs(name))
 
     member e.ColumnValues = seq { for kvp in data -> kvp }
 
-    member e.TableName = tableName     
+    member e.Table= table
 
     member e.DataContext with get() = dc
 
@@ -71,11 +83,34 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
            | data -> Some(unbox data)           
        else None
 
+    member private e.UpdateField key =
+        match e.State with
+        | Modified fields -> 
+            e.State <- Modified (key::fields)
+            e.DataContext.SubmitChangedEntity e
+        | Unchanged -> 
+            e.State <- Modified [key]
+            e.DataContext.SubmitChangedEntity e
+        | Deleted -> failwith "You cannot modify an entity that is pending deletion"
+        | Created -> ()
+
+    member e.SetColumnSilent(key,value) =
+        if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+        else data.[key] <- value                
+
     member e.SetColumn(key,value) =
         if not (data.ContainsKey key) && value <> null then data.Add(key,value)
         else data.[key] <- value
+        e.UpdateField key        
         e.TriggerPropertyChange key
     
+    member e.SetColumnOptionSilent(key,value) =
+      match value with
+      | Some value -> 
+          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          else data.[key] <- value
+      | None -> data.Remove key |> ignore
+
     member e.SetColumnOption(key,value) =
       match value with
       | Some value -> 
@@ -83,6 +118,7 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
           else data.[key] <- value
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
+      e.UpdateField key
     
     member e.HasValue(key) = data.ContainsKey key
 
@@ -92,7 +128,7 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
           for i = 0 to reader.FieldCount - 1 do 
               match reader.GetValue(i) with
               | null | :? DBNull -> ()
-              | value -> e.SetColumn(reader.GetName(i),value)
+              | value -> e.SetColumnSilent(reader.GetName(i),value)
           yield e ]
 
     /// creates a new SQL entity from alias data in this entity
@@ -100,7 +136,7 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
         match aliasCache.TryGetValue alias with
         | true, entity -> entity
         | false, _ -> 
-            let tableName = if tableName <> "" then tableName else e.TableName
+            let tableName = if tableName <> "" then tableName else e.Table.FullName 
             let newEntity = SqlEntity(dc,tableName)
             let pk = sprintf "%sid" tableName
             // attributes names cannot have a period in them unless they are an alias
@@ -131,7 +167,7 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
                         
             e.ColumnValues
             |> Seq.choose pred
-            |> Seq.iter( fun kvp -> newEntity.SetColumn(kvp.Key,kvp.Value)) 
+            |> Seq.iter( fun kvp -> newEntity.SetColumnSilent(kvp.Key,kvp.Value)) 
 
             aliasCache.Add(alias,newEntity)
             newEntity    
@@ -142,7 +178,7 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
     interface System.ComponentModel.ICustomTypeDescriptor with
         member e.GetComponentName() = TypeDescriptor.GetComponentName(e,true)
         member e.GetDefaultEvent() = TypeDescriptor.GetDefaultEvent(e,true)
-        member e.GetClassName() = e.TableName
+        member e.GetClassName() = e.Table.FullName
         member e.GetEvents(attributes) = TypeDescriptor.GetEvents(e,true)
         member e.GetEvents() = TypeDescriptor.GetEvents(e,null,true)
         member e.GetConverter() = TypeDescriptor.GetConverter(e,true)
@@ -168,13 +204,14 @@ type SqlEntity(dc:ISqlDataContext,tableName) =
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
 and ISqlDataContext =       
-    abstract ConnectionString : string
-    abstract CreateRelated    : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
-    abstract CreateEntities   : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc        : string * string [] * DbType [] * obj [] -> SqlEntity list
-    abstract GetIndividual    : string * obj -> SqlEntity
+    abstract ConnectionString       : string
+    abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
+    abstract CallSproc              : string * string [] * DbType [] * obj [] -> SqlEntity list
+    abstract GetIndividual          : string * obj -> SqlEntity
+    abstract SubmitChangedEntity    : SqlEntity -> unit
+    abstract SubmitAllChanges       : unit -> unit
          
-
 type LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : string
@@ -319,6 +356,7 @@ type internal ISqlProvider =
     abstract GetIndividualsQueryText : Table * int -> string
     /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
+    abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection

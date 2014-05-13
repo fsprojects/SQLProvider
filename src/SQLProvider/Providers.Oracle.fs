@@ -410,3 +410,6 @@ type internal OracleProvider(resolutionPath, owner) =
             else
                 let sql = sb.ToString()
                 (sql,parameters)
+
+        member this.ProcessUpdates(con, entities) =
+            failwith "The Oracle type provider does not currently support CRUD operations."

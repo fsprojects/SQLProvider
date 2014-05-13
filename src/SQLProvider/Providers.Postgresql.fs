@@ -410,3 +410,6 @@ type internal PostgresqlProvider(resolutionPath) as this =
 
             let sql = sb.ToString()
             (sql,parameters)
+        
+        member this.ProcessUpdates(con, entities) =
+            failwith "The PostgreSQL type provider does not currently support CRUD operations."

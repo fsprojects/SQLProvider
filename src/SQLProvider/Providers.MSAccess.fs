@@ -11,9 +11,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal MSAccessProvider() as this =
-
-    // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
     let pkLookup =     new Dictionary<string,string>()
     let tableLookup =  new Dictionary<string,Table>()
     let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
@@ -28,7 +25,7 @@ type internal MSAccessProvider() as this =
             [for r in con.GetSchema("DataTypes").AsEnumerable() -> 
                 string r.["NativeDataType"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
         
-        // create map from sql name to clr type, and type to lDbType enum
+        // create map from sql name to clr type, and type to DbType enum
         let sqlToClr', sqlToEnum', clrToEnum' =
             clr
             |> List.choose( fun (tn,ev,dt) ->
@@ -287,3 +284,6 @@ type internal MSAccessProvider() as this =
 
             let sql = sb.ToString()
             (sql,parameters)
+    
+        member this.ProcessUpdates(con, entities) =
+                failwith "The Access type provider does not currently support CRUD operations."

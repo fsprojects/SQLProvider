@@ -16,7 +16,7 @@ type internal MSSqlServerProvider() =
 
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
+    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
 
     let createTypeMappings (con:SqlConnection) =
         if con.State <> ConnectionState.Open then con.Open()
@@ -87,8 +87,9 @@ type internal MSSqlServerProvider() =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
-               // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
-               // we are inerested in on demand
+               // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
+               // pass in to filter by table name etc - we should probably swap this code to use that instead at some point
+               // but hey, this works
                let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
                                  FROM INFORMATION_SCHEMA.COLUMNS c
@@ -241,7 +242,7 @@ type internal MSSqlServerProvider() =
                              elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
                              elif p.ClrType.IsArray then box (Array.zeroCreate 0)
                              // warning: i might have missed cases here and this next call will
-                             // blow if the type doesn't have a parameterless ctor
+                             // blow if the type doesn't have a parameter less ctor
                              else Activator.CreateInstance(p.ClrType)
                         com.Parameters.Add p' |> ignore)
                       use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
@@ -261,7 +262,7 @@ type internal MSSqlServerProvider() =
                          Some { sproc with ReturnColumns = columns }
                       else None
                     with 
-                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to rerieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
                             None )
             con.Close()
             ret
@@ -274,14 +275,6 @@ type internal MSSqlServerProvider() =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-            // SQL query syntax is ordered in the following manner
-            // SELECT [alias].[field] as '[alias].[field]' [, .. ]
-            // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
-            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
-
-            // to simplfy (ha!) the processing, all tables should be aliased.
-            // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
-            // if it does not, then we first need to create an alias for the single table
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -289,9 +282,7 @@ type internal MSSqlServerProvider() =
 
             let singleEntity = sqlQuery.Aliases.Count = 0
             
-            // build the sql query from the simplified abstract query expression
-            // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
+            // first build  the select statement, this is easy ...
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -302,11 +293,10 @@ type internal MSSqlServerProvider() =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) // F# makes this so easy :)
+                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) 
         
             // next up is the filter expressions
-            // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
-            // NOTE: really need to assign the parameters their correct sql types
+            // make this nicer later.. 
             let param = ref 0
             let nextParam() =
                 incr param
@@ -404,7 +394,7 @@ type internal MSSqlServerProvider() =
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
-                // each filter is effectively the entire contents of each where clause in the linq query,
+                // each filter is effectively the entire contents of each where clause in the LINQ query,
                 // of which there can be many. Simply turn them all into one big AND expression as that is the
                 // only logical way to deal with them. 
                 let f = [And([],Some sqlQuery.Filters)]
@@ -417,3 +407,123 @@ type internal MSSqlServerProvider() =
 
             let sql = sb.ToString()
             (sql,parameters)
+
+        member this.ProcessUpdates(con, entities) =            
+            let sb = Text.StringBuilder()
+            let (~~) (t:string) = sb.Append t |> ignore
+
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            con.Open()
+
+            let createInsertCommand (entity:SqlEntity) =     
+                let cmd = new SqlCommand()
+                cmd.Connection <- con :?> SqlConnection
+                let pk = pkLookup.[entity.Table.FullName] 
+                let columnNames, values = 
+                    (([],0),entity.ColumnValues)
+                    ||> Seq.fold(fun (out,i) kvp ->                         
+                        let name = sprintf "@param%i" i
+                        let p = SqlParameter(name,kvp.Value)
+                        (kvp.Key,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    |> Array.unzip
+                
+                sb.Clear() |> ignore
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT SCOPE_IDENTITY();" 
+                    entity.Table.FullName
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+                cmd.Parameters.AddRange(values)
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            let createUpdateCommand (entity:SqlEntity) changedColumns =
+                let cmd = new SqlCommand()
+                cmd.Connection <- con :?> SqlConnection
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+
+                if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+                let data = 
+                    (([],0),changedColumns)
+                    ||> List.fold(fun (out,i) col ->                                                         
+                        let name = sprintf "@param%i" i
+                        let p = 
+                            match entity.GetColumnOption<obj> col with
+                            | Some v -> SqlParameter(name,v)
+                            | None -> SqlParameter(name,DBNull.Value)
+                        (col,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                
+                let pkParam = SqlParameter("@pk", pkValue)
+
+                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
+                    entity.Table.FullName
+                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+                    pk)
+
+                cmd.Parameters.AddRange(data |> Array.map snd)
+                cmd.Parameters.Add pkParam |> ignore
+                cmd.CommandText <- sb.ToString()
+                cmd
+            
+            let createDeleteCommand (entity:SqlEntity) =
+                let cmd = new SqlCommand()
+                cmd.Connection <- con :?> SqlConnection
+                sb.Clear() |> ignore
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+                cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
+                ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            use scope = new Transactions.TransactionScope()
+            try                
+                if con.State <> ConnectionState.Open then con.Open()         
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                entities
+                |> List.iter(fun e -> 
+                    match e.State with
+                    | Created -> 
+                        let cmd = createInsertCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        let id = cmd.ExecuteScalar()
+                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                        | Some v -> () // if the primary key exists, do nothing
+                                       // this is because non-identity columns will have been set 
+                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                    | Modified fields -> 
+                        let cmd = createUpdateCommand e fields
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        e.State <- Unchanged
+                    | Deleted -> 
+                        let cmd = createDeleteCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        // remove the pk to prevent this attempting to be used again
+                        e.SetColumnOption(pkLookup.[e.Table.FullName], None)
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                scope.Complete()
+            finally
+                con.Close()

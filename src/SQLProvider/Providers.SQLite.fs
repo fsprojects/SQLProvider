@@ -309,3 +309,127 @@ type internal SQLiteProvider(resolutionPath) as this =
 
             let sql = sb.ToString()
             (sql,parameters)
+
+        member this.ProcessUpdates(con, entities) =
+            let sb = Text.StringBuilder()
+            let (~~) (t:string) = sb.Append t |> ignore
+
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            con.Open()
+            let createInsertCommand (entity:SqlEntity) =                 
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                let pk = pkLookup.[entity.Table.FullName] 
+                let columnNames, values = 
+                    (([],0),entity.ColumnValues)
+                    ||> Seq.fold(fun (out,i) kvp -> 
+                        // remove the primary key if it exists
+                        if kvp.Key = pk then out,i else 
+                        let name = sprintf "@param%i" i
+                        let p = (this :> ISqlProvider).CreateCommandParameter(name,kvp.Value,None)
+                        (kvp.Key,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    |> Array.unzip
+                
+                sb.Clear() |> ignore
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT SCOPE_IDENTITY();" 
+                    entity.Table.FullName
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+                
+                values |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            let createUpdateCommand (entity:SqlEntity) changedColumns =
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+
+                if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+                let data = 
+                    (([],0),changedColumns)
+                    ||> List.fold(fun (out,i) col ->                                                         
+                        let name = sprintf "@param%i" i
+                        let p = 
+                            match entity.GetColumnOption<obj> col with
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None)
+                        (col,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    
+                
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None)
+
+                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
+                    entity.Table.FullName
+                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+                    pk)
+
+                data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd.Parameters.Add pkParam |> ignore
+                cmd.CommandText <- sb.ToString()
+                cmd
+            
+            let createDeleteCommand (entity:SqlEntity) =
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                sb.Clear() |> ignore
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+                cmd.Parameters.Add("@id",pkValue) |> ignore
+                ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            use scope = new Transactions.TransactionScope()
+            try
+                
+                if con.State <> ConnectionState.Open then con.Open()         
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                entities
+                |> List.iter(fun e -> 
+                    match e.State with
+                    | Created -> 
+                        let cmd = createInsertCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        let id = cmd.ExecuteScalar()
+                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                        | Some v -> () // if the primary key exists, do nothing
+                                       // this is because non-identity columns will have been set 
+                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                    | Modified fields -> 
+                        let cmd = createUpdateCommand e fields
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        e.State <- Unchanged
+                    | Deleted -> 
+                        let cmd = createDeleteCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        // remove the pk to prevent this attempting to be used again
+                        e.SetColumnOption(pkLookup.[e.Table.FullName], None)
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                scope.Complete()
+            finally
+                con.Close()

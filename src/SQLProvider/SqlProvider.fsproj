@@ -57,6 +57,7 @@
     <Compile Include="Providers.MSAccess.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
+    <Compile Include="SqlRuntime.DataContext.fs" />
     <Compile Include="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>

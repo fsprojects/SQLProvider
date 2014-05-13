@@ -354,3 +354,6 @@ type internal MySqlProvider(resolutionPath) as this =
 
             let sql = sb.ToString()
             (sql,parameters)
+        
+        member this.ProcessUpdates(con, entities) =
+            failwith "The MySQL type provider does not currently support CRUD operations."
