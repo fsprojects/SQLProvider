@@ -49,6 +49,7 @@
     <None Include="OracleTests.fsx" />
     <None Include="packages.config" />
     <None Include="MSAccessTests.fsx" />
+    <None Include="OdbcTests.fsx" />
     <None Include="northwindEF.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
