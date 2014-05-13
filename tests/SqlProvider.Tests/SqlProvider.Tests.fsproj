@@ -45,10 +45,13 @@
   </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="SoundCheck.fs" />
+    <Compile Include="General.fs" />
     <None Include="OracleTests.fsx" />
     <None Include="packages.config" />
     <None Include="MSAccessTests.fsx" />
+    <None Include="northwindEF.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -61,7 +64,20 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\..\docs\files\sqlite\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite.Linq">
+      <HintPath>..\..\docs\files\sqlite\System.Data.SQLite.Linq.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SQLProvider\SqlProvider.fsproj">
+      <Name>SqlProvider</Name>
+      <Project>{4eea1ad8-e8a9-4d54-bc39-d5f536366945}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
