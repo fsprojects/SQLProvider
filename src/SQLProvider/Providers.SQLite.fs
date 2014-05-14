@@ -338,7 +338,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     |> Array.unzip
                 
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT SCOPE_IDENTITY();" 
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT last_insert_rowid();" 
                     entity.Table.FullName
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
@@ -418,6 +418,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                                        // this is because non-identity columns will have been set 
                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        e.State <- Unchanged
                     | Modified fields -> 
                         let cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText

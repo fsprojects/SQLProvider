@@ -512,6 +512,7 @@ type internal MSSqlServerProvider() =
                                        // this is because non-identity columns will have been set 
                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        e.State <- Unchanged
                     | Modified fields -> 
                         let cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
