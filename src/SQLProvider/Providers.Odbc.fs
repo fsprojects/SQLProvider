@@ -269,12 +269,12 @@ type internal OdbcProvider(resolutionPath) =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "`%s`.`%s`" k col
-                                else yield sprintf "`%s`.`%s`" k col
+                                if singleEntity then yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
+                                else yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "`%s`.`%s`" k col
-                                yield sprintf "`%s`.`%s`" k col |]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
+                                yield sprintf "`%s`.`%s` as `%s.%s`" k col k col |]) // F# makes this so easy :)
         
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
