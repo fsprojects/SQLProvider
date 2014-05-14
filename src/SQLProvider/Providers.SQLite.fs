@@ -396,7 +396,8 @@ type internal SQLiteProvider(resolutionPath) as this =
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                cmd.Parameters.Add("@id",pkValue) |> ignore
+                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None)
+                cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
