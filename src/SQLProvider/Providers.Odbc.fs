@@ -247,9 +247,9 @@ type internal OdbcProvider(resolutionPath) =
          )
 
         member this.GetIndividualsQueryText(table,amount) =
-            sprintf "SELECT * FROM [%s].[%s]" table.Schema table.Name
+            sprintf "SELECT * FROM `%s`" table.Name
         member this.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = @id" table.Name table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
