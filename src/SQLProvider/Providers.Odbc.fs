@@ -247,9 +247,9 @@ type internal OdbcProvider(resolutionPath) =
          )
 
         member this.GetIndividualsQueryText(table,amount) =
-            sprintf "SELECT * FROM [%s].[%s]" table.Schema table.Name
+            sprintf "SELECT * FROM `%s`" table.Name
         member this.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = @id" table.Name table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
@@ -269,12 +269,12 @@ type internal OdbcProvider(resolutionPath) =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "%s" col
-                                else yield sprintf "%s" col
+                                if singleEntity then yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
+                                else yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s" col
-                                yield sprintf "%s" col |]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "`%s`.`%s` as `%s.%s`" k col k col
+                                yield sprintf "`%s`.`%s` as `%s.%s`" k col k col |]) // F# makes this so easy :)
         
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
@@ -349,8 +349,8 @@ type internal OdbcProvider(resolutionPath) =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s `%s`.`%s` as `%s` on `%s`.`%s` = `%s`.`%s` " 
-                            joinType destTable.Schema destTable.Name destAlias 
+                    ~~  (sprintf "%s `%s` as `%s` on `%s`.`%s` = `%s`.`%s` " 
+                            joinType destTable.Name destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
