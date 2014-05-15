@@ -99,7 +99,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
         else data.[key] <- value                
 
     member e.SetColumn(key,value) =
-        if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+        if not (data.ContainsKey key) && value <> Unchecked.defaultof<_> then data.Add(key,value)
         else data.[key] <- value
         e.UpdateField key        
         e.TriggerPropertyChange key
