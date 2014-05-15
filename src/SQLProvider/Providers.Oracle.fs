@@ -282,7 +282,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[tableFullName (getTable k)] |> List.map(fun c -> c.Name) do 
+                            for col in columnCache.[baseTable.FullName] |> List.map(fun c -> c.Name) do 
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
@@ -412,4 +412,119 @@ type internal OracleProvider(resolutionPath, owner) =
                 (sql,parameters)
 
         member this.ProcessUpdates(con, entities) =
-            failwith "The Oracle type provider does not currently support CRUD operations."
+            let sb = Text.StringBuilder()
+            let provider = this :> ISqlProvider
+            let (~~) (t:string) = sb.Append t |> ignore
+
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+
+            con.Open()
+
+            let createInsertCommand (entity:SqlEntity) =     
+                let pk = primaryKeyCache.[entity.Table.Name] 
+                let columnNames, values = 
+                    (([],0),entity.ColumnValues)
+                    ||> Seq.fold(fun (out,i) kvp ->                         
+                        let name = sprintf ":param%i" i
+                        let p = provider.CreateCommandParameter(name,kvp.Value, None)
+                        (kvp.Key,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    |> Array.unzip
+                
+                sb.Clear() |> ignore
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)" 
+                    (tableFullName entity.Table)
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+                let cmd = provider.CreateCommand(con, sb.ToString())
+                values |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd
+
+            let createUpdateCommand (entity:SqlEntity) changedColumns =
+                let pk = primaryKeyCache.[entity.Table.Name] 
+                sb.Clear() |> ignore
+
+                if changedColumns |> List.exists ((=)pk.Column) then failwith "Error - you cannot change the primary key of an entity."
+
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk.Column with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+                let columns, parameters = 
+                    (([],0),changedColumns)
+                    ||> List.fold(fun (out,i) col ->                                                         
+                        let name = sprintf ":param%i" i
+                        let p = 
+                            match entity.GetColumnOption<obj> col with
+                            | Some v -> provider.CreateCommandParameter(name,v, None)
+                            | None -> provider.CreateCommandParameter(name, DBNull.Value, None)
+                        (col,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray
+                    |> Array.unzip
+                
+                let pkParam = provider.CreateCommandParameter(":pk", pkValue, None)
+
+                ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk" 
+                    (tableFullName entity.Table)
+                    (String.Join(",", columns))
+                    (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
+                    pk.Column)
+                
+                let cmd = provider.CreateCommand(con, sb.ToString())
+                parameters |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd.Parameters.Add pkParam |> ignore
+                cmd
+            
+            let createDeleteCommand (entity:SqlEntity) =
+                let pk = primaryKeyCache.[entity.Table.Name] 
+                sb.Clear() |> ignore
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk.Column with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (tableFullName entity.Table) pk.Column )
+                let cmd = provider.CreateCommand(con, sb.ToString())
+                cmd.CommandType <- CommandType.Text
+                cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, clrToEnum (pkValue.GetType().Name))) |> ignore
+                cmd
+
+            use scope = new Transactions.TransactionScope()
+            try                
+                if con.State <> ConnectionState.Open then con.Open()         
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                entities
+                |> List.iter(fun e -> 
+                    match e.State with
+                    | Created -> 
+                        let cmd = createInsertCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        let id = cmd.ExecuteScalar()
+                        match e.GetColumnOption primaryKeyCache.[e.Table.Name].Column with
+                        | Some v -> () // if the primary key exists, do nothing
+                                       // this is because non-identity columns will have been set 
+                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | None ->  e.SetColumnSilent(primaryKeyCache.[e.Table.Name].Column, id)
+                        e.State <- Unchanged
+                    | Modified fields -> 
+                        let cmd = createUpdateCommand e fields
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        e.State <- Unchanged
+                    | Deleted -> 
+                        let cmd = createDeleteCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        // remove the pk to prevent this attempting to be used again
+                        e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                scope.Complete()
+            finally
+                con.Close()
