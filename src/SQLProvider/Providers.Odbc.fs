@@ -320,10 +320,10 @@ type internal OdbcProvider(resolutionPath) =
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp ->                         
+                    ||> Seq.fold(fun (out,i) (key,value) ->                         
                         let name = sprintf "@param%i" i
-                        let p = OdbcParameter(name,kvp.Value)
-                        (kvp.Key,p)::out,i+1)
+                        let p = OdbcParameter(name,value)
+                        (key,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
