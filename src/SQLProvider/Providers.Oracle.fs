@@ -288,7 +288,7 @@ type internal OracleProvider(resolutionPath, owner) =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
-                                yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
+                                else yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types

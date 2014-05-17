@@ -232,7 +232,7 @@ type internal MySqlProvider(resolutionPath) as this =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
-                                yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col|]) // F# makes this so easy :)
+                                else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
