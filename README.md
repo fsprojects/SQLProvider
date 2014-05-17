@@ -1,6 +1,6 @@
 # SQLProvider
 
-A general SQL database type provider, supporting LINQ queries, schema exploration, individuals and much more besides. The provider currently supports MS SQL Server, SQLite, PostgreSQL, Oracle,  MySQL and MS Access.
+A general SQL database type provider, supporting LINQ queries, schema exploration, individuals, CRUD operations and much more besides. The provider currently supports MS SQL Server, SQLite, PostgreSQL, Oracle, MySQL, ODBC and MS Access.
 
 ## Documentation
 
