@@ -46,10 +46,10 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     let data = Dictionary<string,obj>()
     let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
 
-    member val State = Unchanged with get, set
+    member val _State = Unchanged with get, set
 
     member e.Delete() = 
-        e.State <- Deleted
+        e._State <- Deleted
         dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = 
@@ -84,23 +84,21 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
        else None
 
     member private e.UpdateField key =
-        match e.State with
+        match e._State with
         | Modified fields -> 
-            e.State <- Modified (key::fields)
+            e._State <- Modified (key::fields)
             e.DataContext.SubmitChangedEntity e
         | Unchanged -> 
-            e.State <- Modified [key]
+            e._State <- Modified [key]
             e.DataContext.SubmitChangedEntity e
         | Deleted -> failwith "You cannot modify an entity that is pending deletion"
         | Created -> ()
 
     member e.SetColumnSilent(key,value) =
-        if not (data.ContainsKey key) && value <> null then data.Add(key,value)
-        else data.[key] <- value                
+        data.[key] <- value                
 
-    member e.SetColumn(key,value) =
-        if not (data.ContainsKey key) && value <> Unchecked.defaultof<_> then data.Add(key,value)
-        else data.[key] <- value
+    member e.SetColumn(key,value) =        
+        data.[key] <- value
         e.UpdateField key        
         e.TriggerPropertyChange key
     
@@ -212,7 +210,10 @@ and ISqlDataContext =
     abstract CallSproc              : string * string [] * DbType [] * obj [] -> SqlEntity list
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
-    abstract SubmitAllChanges       : unit -> unit
+    abstract SubmitPendingChanges   : unit -> unit
+    abstract ClearPendingChanges    : unit -> unit
+    abstract GetPendingEntities     : unit -> SqlEntity list
+
          
 type LinkData =
     { PrimaryTable       : Table

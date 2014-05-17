@@ -502,7 +502,7 @@ type internal MSSqlServerProvider() =
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
                 |> List.iter(fun e -> 
-                    match e.State with
+                    match e._State with
                     | Created -> 
                         let cmd = createInsertCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -512,12 +512,12 @@ type internal MSSqlServerProvider() =
                                        // this is because non-identity columns will have been set 
                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Modified fields -> 
                         let cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Deleted -> 
                         let cmd = createDeleteCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
