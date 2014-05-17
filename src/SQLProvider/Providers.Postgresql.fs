@@ -295,7 +295,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
-                                yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
+                                else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types

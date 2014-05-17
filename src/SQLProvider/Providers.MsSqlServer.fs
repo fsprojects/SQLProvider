@@ -293,7 +293,7 @@ type internal MSSqlServerProvider() =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) 
+                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) 
         
             // next up is the filter expressions
             // make this nicer later.. 
