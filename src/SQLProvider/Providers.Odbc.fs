@@ -156,6 +156,7 @@ type internal OdbcProvider(resolutionPath) =
                             ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents)    
+
         member __.GetSprocs(con) =
             failwith "The PostgreSQL type provider does not currently support Stored Procedures operations."
 
@@ -182,11 +183,11 @@ type internal OdbcProvider(resolutionPath) =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
+                                if singleEntity then yield sprintf "`%s`" col
                                 else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
+                                if singleEntity then yield sprintf "`%s`" col
                                 else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col |]) // F# makes this so easy :)
         
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
