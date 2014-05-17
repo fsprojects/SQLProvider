@@ -163,7 +163,7 @@ type internal OdbcProvider(resolutionPath) =
             sprintf "SELECT * FROM `%s`" table.Name
 
         member this.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = @id" table.Name table.Name column
+            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = ?" table.Name table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
@@ -371,9 +371,9 @@ type internal OdbcProvider(resolutionPath) =
                 
                 let pkParam = OdbcParameter(null, pkValue)
 
-                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
+                ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;" 
                     entity.Table.Name
-                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c "?" ) ))
                     pk)
 
                 cmd.Parameters.AddRange(data |> Array.map snd)
@@ -392,7 +392,7 @@ type internal OdbcProvider(resolutionPath) =
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
                 cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
-                ~~(sprintf "DELETE FROM %s WHERE %s = ?" entity.Table.FullName pk )
+                ~~(sprintf "DELETE FROM %s WHERE %s = ?" entity.Table.Name pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
 
