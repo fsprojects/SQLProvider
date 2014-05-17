@@ -71,6 +71,7 @@ module internal QueryExpressionTransformer =
                 // add this attribute to the select list for the alias
                 let alias = if tupleIndex.Count = 0 then singleEntityName else Utilities.resolveTuplePropertyName name tupleIndex
                 match x.ProjectionMap.TryGetValue alias with
+                | true, values when values.Count = 0 -> ()
                 | true, values -> values.Add key
                 | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
             | _ -> ()
@@ -91,8 +92,8 @@ module internal QueryExpressionTransformer =
                     else
                         let alias = Utilities.resolveTuplePropertyName exp.Member.Name tupleIndex
                         match x.ProjectionMap.TryGetValue alias with
-                        | true, values -> ()
-                        | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>())
+                        | true, values -> values.Clear()
+                        | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>()) 
                         (alias,aliasEntityDict.[alias].FullName)
             
                 // convert this expression into a GetSubEntity call with the correct alias
