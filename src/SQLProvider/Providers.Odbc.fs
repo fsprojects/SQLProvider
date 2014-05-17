@@ -362,12 +362,17 @@ type internal OdbcProvider(resolutionPath) =
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "`%s`.`%s` %s" alias column (if not desc then "DESC" else "")))
 
+            // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
+            // or else it will fail
+            let stripSpecialCharacters (s:string) =
+                String(s.ToCharArray() |> Array.filter(fun c -> Char.IsLetterOrDigit c || c = ' ' || c = '_'))
+
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name baseAlias)
+            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name (stripSpecialCharacters baseAlias))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
