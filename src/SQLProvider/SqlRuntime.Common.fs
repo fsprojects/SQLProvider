@@ -46,6 +46,13 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     let data = Dictionary<string,obj>()
     let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
 
+    let replaceFirst (text:string) (oldValue:string) (newValue) =
+        let position = text.IndexOf oldValue
+        if position < 0 then
+            text
+        else
+            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+
     member val _State = Unchanged with get, set
 
     member e.Delete() = 
@@ -146,22 +153,22 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
                 (fun (k:string,v) -> 
-                    if k.StartsWith prefix then 
-                        let temp = k.Replace(prefix,"")
+                    if k.StartsWith prefix then
+                        let temp = replaceFirst k prefix ""
                         let temp = temp.Substring(1,temp.Length-2)
                         Some(temp,v)
                     // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers 
                     elif  k.StartsWith prefix2 then  
-                        let temp = k.Replace(prefix2,"")
+                        let temp = replaceFirst k prefix2 ""
                         Some(temp,v)
                     // this case is for MySQL and other vendors that use ` as whitespace qualifiers 
                     elif  k.StartsWith prefix3 then  
-                        let temp = k.Replace(prefix3,"")
+                        let temp = replaceFirst k prefix3 ""
                         let temp = temp.Substring(1,temp.Length-2)
                         Some(temp,v)
                     //this case for MSAccess, uses _ as whitespace qualifier
                     elif  k.StartsWith prefix4 then
-                        let temp = k.Replace(prefix4,"")
+                        let temp = replaceFirst k prefix4 ""
                         Some(temp,v)
                     else None)
                         
