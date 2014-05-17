@@ -29,7 +29,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
         member this.SubmitChangedEntity e = pendingChanges.Add e |> ignore
-        member this.SubmitAllChanges() = 
+        member this.ClearPendingChanges() = pendingChanges.Clear()
+        member this.GetPendingEntities() = pendingChanges |> Seq.toList
+        member this.SubmitPendingChanges() = 
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                 use con = provider.CreateConnection(connectionString)

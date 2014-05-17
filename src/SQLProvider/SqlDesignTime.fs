@@ -261,7 +261,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
                         <@@ 
                             let e = new SqlEntity(((%%args.[0] : obj ):?> IWithDataContext ).DataContext,key)
-                            e.State <- Created
+                            e._State <- Created
                             ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                             e 
                         @@> )
@@ -278,7 +278,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
                               let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
-                              e.State <- Created                            
+                              e._State <- Created                            
                               e.SetData(%%columns : (string *obj) array)
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
@@ -289,17 +289,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                           let data = args.[1]
                           <@@
                               let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
-                              e.State <- Created                            
+                              e._State <- Created                            
                               e.SetData(%%data : (string * obj) seq)
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
 
                     
-                    [ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> ) :> MemberInfo
-                     create1 :> MemberInfo
-                     create2 :> MemberInfo
-                     create3 :> MemberInfo ]
+                    seq {
+                     yield ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> ) :> MemberInfo
+                     yield create1 :> MemberInfo
+                     if normalParameters.Length > 0 then yield create2 :> MemberInfo
+                     yield create3 :> MemberInfo } |> Seq.toList
                 )
 
    
@@ -311,7 +312,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 yield! Seq.cast<MemberInfo> it
 
               yield ProvidedProperty("Stored Procedures",sprocContainer, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)                     :> MemberInfo
-              yield ProvidedMethod("Submit Updates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitAllChanges() @@>)  :> MemberInfo
+              yield ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)  :> MemberInfo
+              yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
+              yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
              ] )
 
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
