@@ -1,3 +1,8 @@
+#### 0.0.7-alpha - 17.05.2014
+* ODBC support added
+* CRUD operations added
+* Tons of fixes and tweaks 
+
 #### 0.0.6-alpha - 12.02.2014 
 * MS Access support added!
 * Various fixes for SQLite and Oracle
