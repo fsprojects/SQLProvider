@@ -326,12 +326,12 @@ type internal SQLiteProvider(resolutionPath) as this =
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp -> 
+                    ||> Seq.fold(fun (out,i) (k,v) -> 
                         // remove the primary key if it exists
-                        if kvp.Key = pk then out,i else 
+                        if k = pk then out,i else 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,kvp.Value,None)
-                        (kvp.Key,p)::out,i+1)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None)
+                        (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 

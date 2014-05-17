@@ -55,11 +55,11 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     member internal e.TriggerPropertyChange(name) = 
         propertyChanged.Trigger(e,PropertyChangedEventArgs(name))
 
-    member e.ColumnValues = seq { for kvp in data -> kvp }
+    member e.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
 
     member e.Table= table
 
-    member e.DataContext with get() = dc
+    member e.DataContext with get() = dc    
 
     member e.GetColumn<'T>(key) : 'T = 
         let defaultValue() =                       
@@ -104,6 +104,8 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
         e.UpdateField key        
         e.TriggerPropertyChange key
     
+    member e.SetData(data) = data |> Seq.iter e.SetColumnSilent  
+
     member e.SetColumnOptionSilent(key,value) =
       match value with
       | Some value -> 
@@ -145,29 +147,29 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
-                (fun (kvp:KeyValuePair<string,_>) -> 
-                    if kvp.Key.StartsWith prefix then 
-                        let temp = kvp.Key.Replace(prefix,"")
+                (fun (k:string,v) -> 
+                    if k.StartsWith prefix then 
+                        let temp = k.Replace(prefix,"")
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                        Some(temp,v)
                     // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers 
-                    elif  kvp.Key.StartsWith prefix2 then  
-                        let temp = kvp.Key.Replace(prefix2,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    elif  k.StartsWith prefix2 then  
+                        let temp = k.Replace(prefix2,"")
+                        Some(temp,v)
                     // this case is for MySQL and other vendors that use ` as whitespace qualifiers 
-                    elif  kvp.Key.StartsWith prefix3 then  
-                        let temp = kvp.Key.Replace(prefix3,"")
+                    elif  k.StartsWith prefix3 then  
+                        let temp = k.Replace(prefix3,"")
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                        Some(temp,v)
                     //this case for MSAccess, uses _ as whitespace qualifier
-                    elif  kvp.Key.StartsWith prefix4 then
-                        let temp = kvp.Key.Replace(prefix4,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    elif  k.StartsWith prefix4 then
+                        let temp = k.Replace(prefix4,"")
+                        Some(temp,v)
                     else None)
                         
             e.ColumnValues
             |> Seq.choose pred
-            |> Seq.iter( fun kvp -> newEntity.SetColumnSilent(kvp.Key,kvp.Value)) 
+            |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v)) 
 
             aliasCache.Add(alias,newEntity)
             newEntity    

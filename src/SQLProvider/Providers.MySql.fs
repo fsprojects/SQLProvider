@@ -122,7 +122,7 @@ type internal MySqlProvider(resolutionPath) as this =
             | (true,data) -> data
             | _ -> 
                // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
-               // we are inerested in on demand
+               // we are interested in on demand
                let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
                                  FROM INFORMATION_SCHEMA.COLUMNS c

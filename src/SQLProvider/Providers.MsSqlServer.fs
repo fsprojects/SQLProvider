@@ -425,10 +425,10 @@ type internal MSSqlServerProvider() =
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp ->                         
+                    ||> Seq.fold(fun (out,i) (k,v) ->
                         let name = sprintf "@param%i" i
-                        let p = SqlParameter(name,kvp.Value)
-                        (kvp.Key,p)::out,i+1)
+                        let p = SqlParameter(name,v)
+                        (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 

@@ -48,7 +48,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             (cols,rel))]
 
         let sprocData = lazy prov.GetSprocs con 
-        let getTableColumns name = tableColumns.Force().[name].Force()
+        let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
         let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,owner)
         // first create all the types so we are able to recursively reference them in each other's definitions
@@ -117,10 +117,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let name = table.FullName
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
                             e.ColumnValues 
-                            |> Seq.iter(fun kvp -> 
-                               if kvp.Key = pk then () else      
-                               (fst propertyMap.[kvp.Key]).AddMemberDelayed(
-                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (kvp.Value.ToString()) ,et,
+                            |> Seq.iter(fun (k,v) -> 
+                               if k = pk then () else      
+                               (fst propertyMap.[k]).AddMemberDelayed(
+                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (v.ToString()) ,et,
                                             GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )))
                             // return the primary key property
                             Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )
@@ -150,7 +150,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         // add the attributes and relationships
         for KeyValue(key,(t,desc,_)) in baseTypes.Force() do 
             t.AddMembersDelayed(fun () -> 
-                let (columns,(children,parents)) = getTableColumns key
+                let (columns,(children,parents)) = getTableData key
                 let attProps = 
                     let createColumnProperty c =
                         let nullable = useOptionTypes && c.IsNullable                        
@@ -243,26 +243,75 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         serviceType.AddMembersDelayed( fun () ->
             [ yield sprocContainer :> MemberInfo
-              for (KeyValue(key,(t,desc,_))) in baseTypes.Force() do
+              for (KeyValue(key,(entityType,desc,_))) in baseTypes.Force() do
+                // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
-                let prop = ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> )
-                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )
-                let prop = ProvidedMethod("Create", [], t, InvokeCode = fun args -> 
-                    <@@ 
-                        let e = new SqlEntity(((%%args.[0] : obj ):?> IWithDataContext ).DataContext,key)
-                        e.State <- Created
-                        ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                        e 
-                    @@> )
-                ct.AddMemberDelayed( fun () -> prop :> MemberInfo )
+                
+                
+                ct.AddMembersDelayed( fun () -> 
+                    // creation methods.
+                    // we are forced to load the columns here, but this is ok as the user has already 
+                    // pressed . on an IQueryable type so they are obviously interested in using this entity..
+                    let columns,_ = getTableData key 
+                    let (optionalColumns,columns) = columns |> List.partition(fun c->c.IsNullable || c.IsPrimarKey)
+                    let normalParameters = 
+                        columns 
+                        |> List.map(fun c -> ProvidedParameter(c.Name, c.ClrType))
+                        |> List.sortBy(fun p -> p.Name)                 
+                    let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
+                        <@@ 
+                            let e = new SqlEntity(((%%args.[0] : obj ):?> IWithDataContext ).DataContext,key)
+                            e.State <- Created
+                            ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                            e 
+                        @@> )
+                    
+                    let create2 = ProvidedMethod("Create", normalParameters, entityType, InvokeCode = fun args -> 
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
+                              e.State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+
+                    let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, InvokeCode = fun args -> 
+                          let dc = args.[0]
+                          let data = args.[1]
+                          <@@
+                              let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
+                              e.State <- Created                            
+                              e.SetData(%%data : (string * obj) seq)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+
+                    
+                    [ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> ) :> MemberInfo
+                     create1 :> MemberInfo
+                     create2 :> MemberInfo
+                     create3 :> MemberInfo ]
+                )
+
+   
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
-                yield t :> MemberInfo
-                yield ct :> MemberInfo
-                yield! it |> Seq.map( fun it -> it :> MemberInfo)
-                yield prop :> MemberInfo
-              yield ProvidedProperty("Stored Procedures",sprocContainer,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>) :> MemberInfo
-              yield ProvidedMethod("Submit Updates",[],typeof<unit>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitAllChanges() @@>)  :> MemberInfo
+                yield entityType :> MemberInfo
+                yield ct         :> MemberInfo                
+                yield prop       :> MemberInfo
+                yield! Seq.cast<MemberInfo> it
+
+              yield ProvidedProperty("Stored Procedures",sprocContainer, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)                     :> MemberInfo
+              yield ProvidedMethod("Submit Updates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitAllChanges() @@>)  :> MemberInfo
              ] )
 
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)

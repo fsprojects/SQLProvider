@@ -427,10 +427,10 @@ type internal OracleProvider(resolutionPath, owner) =
                 let pk = primaryKeyCache.[entity.Table.Name] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp ->                         
+                    ||> Seq.fold(fun (out,i) (k,v) ->
                         let name = sprintf ":param%i" i
-                        let p = provider.CreateCommandParameter(name,kvp.Value, None)
-                        (kvp.Key,p)::out,i+1)
+                        let p = provider.CreateCommandParameter(name,v, None)
+                        (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
