@@ -1,3 +1,6 @@
+#### 0.0.8-alpha - 20.05.2014
+* Fixes an important bug that was causing all columns to be selected
+
 #### 0.0.7-alpha - 17.05.2014
 * ODBC support added
 * CRUD operations added
