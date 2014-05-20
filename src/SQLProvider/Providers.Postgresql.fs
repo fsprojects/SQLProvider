@@ -438,14 +438,18 @@ type internal PostgresqlProvider(resolutionPath) as this =
                     |> List.rev
                     |> List.toArray 
                     |> Array.unzip
-                
+
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s) RETURNING %s;" 
-                    (entity.Table.FullName.Replace("[","\"").Replace("]","\""))
-                    (String.Join(",",columnNames))
-                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName)))
-                    pk)
-                
+                ~~(sprintf "INSERT INTO %s " (entity.Table.FullName.Replace("[","\"").Replace("]","\"")))
+
+                match columnNames with
+                | [||] -> ~~(sprintf "DEFAULT VALUES")
+                | _ -> ~~(sprintf "(%s) VALUES (%s)"
+                           (String.Join(",",columnNames))
+                           (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+
+                ~~(sprintf " RETURNING %s;" pk)
+
                 values |> Array.iter (cmd.Parameters.Add >> ignore)
                 cmd.CommandText <- sb.ToString()
                 cmd
