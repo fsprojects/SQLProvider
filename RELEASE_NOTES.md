@@ -1,3 +1,9 @@
+#### 0.0.9-alpha - 21.05.2014
+* Fixing a bug with writing tinyints in SQL Server
+* Fixes to MySQL array parameters
+* You can now use any sequence with the in and not in operators, as opposed to just new array expressions
+* Fix in PostgreSQL to allow the creation of entities with no set properties
+
 #### 0.0.8-alpha - 20.05.2014
 * Fixes an important bug that was causing all columns to be selected
 
