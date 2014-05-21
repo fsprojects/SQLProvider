@@ -30,6 +30,14 @@ type internal MSSqlServerProvider() =
             clr
             |> List.choose( fun (tn,ev,dt) ->
                 if String.IsNullOrWhiteSpace dt then None else
+                
+                if tn = "tinyint" then 
+                    // special case for tinyint, as Connection.GetSchema("DataTypes") says it should be an SByte, 
+                    // but really it needs to be a byte http://msdn.microsoft.com/en-us/library/cc716729(v=vs.110).aspx
+                    let ty = typeof<Byte>
+                    Some ((tn,ty),(tn,DbType.Byte),(ty.FullName,DbType.Byte))
+                else
+
                 let ty = Type.GetType dt
                 // we need to convert the sqldbtype enum value to dbtype.
                 // the sql param will do this for us but it might throw if not mapped -
