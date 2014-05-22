@@ -11,7 +11,7 @@ open FSharp.Data.Sql.Common
 
 type internal SQLiteProvider(resolutionPath) as this =
     // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
+    // as the type provider will dictate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
