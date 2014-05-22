@@ -3,15 +3,15 @@
     module internal Utilities =
         open FSharp.Data.Sql.Providers
 
-        let createSqlProvider vendor resolutionPath owner =
+        let createSqlProvider vendor resolutionPath toolPath owner =
             match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
+            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, toolPath) :> ISqlProvider
+            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(toolPath) :> ISqlProvider
+            | DatabaseProviderTypes.MYSQL -> MySqlProvider(toolPath) :> ISqlProvider
+            | DatabaseProviderTypes.ORACLE -> OracleProvider(toolPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-            | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.ODBC -> OdbcProvider(toolPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
         let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
