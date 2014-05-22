@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal PostgresqlProvider(resolutionPath) as this =
+type internal PostgresqlProvider(toolPath) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -20,8 +20,8 @@ type internal PostgresqlProvider(resolutionPath) as this =
         with
         | _ ->
              Reflection.Assembly.LoadFrom(
-                if String.IsNullOrEmpty resolutionPath then name + ".dll" 
-                else System.IO.Path.Combine(resolutionPath,name+".dll"))
+                if String.IsNullOrEmpty toolPath then name + ".dll" 
+                else System.IO.Path.Combine(toolPath,name+".dll"))
     // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
     let assembly =  loadAssembly "Npgsql"
     let monoSecurity = loadAssembly "Mono.Security"
