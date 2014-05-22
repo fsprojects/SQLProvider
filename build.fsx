@@ -76,6 +76,7 @@ Target "RunTests" (fun _ ->
         { p with
             DisableShadowCopy = true
             TimeOut = TimeSpan.FromMinutes 20.
+            ToolName = "nunit-console-x86.exe"
             OutputFile = "TestResults.xml" })
 )
 
