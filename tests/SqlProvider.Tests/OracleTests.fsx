@@ -1,5 +1,6 @@
 ﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
 
+open System
 open FSharp.Data.Sql
 
 [<Literal>]
@@ -12,11 +13,13 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
-
+//***************** Individuals ***********************//
 let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
+
+//*************** QUERY ************************//
 let employeesFirstName = 
     query {
         for emp in ctx.``[HR].[EMPLOYEES]`` do
@@ -49,15 +52,37 @@ let topSales5ByCommission =
         take 5
     } |> Seq.toList
 
+//************************ CRUD *************************//
+
+
 let antartica =
-    let newRegion = ctx.``[HR].[REGIONS]``.Create() 
-    newRegion.REGION_NAME <- "Antartica"
-    newRegion.REGION_ID <- 5M
-    ctx.``Submit Updates``()
-    newRegion
+    let result =
+        query {
+            for reg in ctx.``[HR].[REGIONS]`` do
+            where (reg.REGION_ID = 5M)
+            select reg
+        } |> Seq.toList
+    match result with
+    | [ant] -> ant
+    | _ -> 
+        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
+        newRegion.REGION_NAME <- "Antartica"
+        newRegion.REGION_ID <- 5M
+        ctx.``Submit Updates``()
+        newRegion
+
+antartica.REGION_NAME <- "ant"
+ctx.``Submit Updates``()
 
 antartica.Delete()
 ctx.``Submit Updates``()
 
-antartica.REGION_NAME <- "ant"
-ctx.``Submit Updates``()
+//********************** Procedures **************************//
+
+let result = ctx.``Stored Procedures``.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+
+//********************** Functions ***************************//
+
+//********************** Packaged Procs **********************//
+
+//********************** Packaged Funcs **********************//

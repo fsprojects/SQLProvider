@@ -204,8 +204,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
 
         // add sprocs 
-        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<SqlDataContext>)
-        sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<SqlDataContext>)]))
+        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<ISqlDataContext>)
+        sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
         let genSprocs() =
             sprocData.Force()
             |> List.map(fun sproc -> 
@@ -237,7 +237,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let name = sproc.FullName
                         let rawNames = sproc.Params |> List.map(fun p -> p.Name) |> Array.ofList
                         let rawTypes = sproc.Params |> List.map(fun p -> p.DbType) |> Array.ofList
-                        <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CallSproc(name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
+                        <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
                 )
         sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
 
