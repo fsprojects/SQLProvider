@@ -25,10 +25,8 @@ let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
 let nugetDir = "./nuget/"
 
-
 // Read additional information from the release notes document
-Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
-let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
+let release = ReleaseNotesHelper.LoadReleaseNotes "RELEASE_NOTES.md"
 
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
@@ -45,8 +43,7 @@ Target "AssemblyInfo" (fun _ ->
 // Clean build results & restore NuGet packages
 
 Target "RestorePackages" (fun _ ->
-    !! "./**/packages.config"
-    |> Seq.iter (RestorePackage (fun p -> { p with ToolPath = "./.nuget/NuGet.exe" }))
+    RestorePackages()
 )
 
 Target "Clean" (fun _ ->
