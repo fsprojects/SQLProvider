@@ -36,9 +36,19 @@ module DataTable =
         ]
     
     let printDataTable (dt:System.Data.DataTable) = 
+        let max, rows = 
+            dt
+            |> map (fun r -> r.ItemArray)
+            |> List.fold (fun (maxLen, rows) row ->
+                            let values = row |> Array.map (fun x -> x.ToString()) |> List.ofArray
+                            let rowMax = values |> List.maxBy (fun x -> x.Length)
+                            (max maxLen rowMax.Length), (values :: rows) 
+                        ) (0,[])
         for col in dt.Columns do
-            printf "%s " col.ColumnName
+            printf "%*s" (max+2) col.ColumnName
         printfn ""
-        for row in dt.Rows do
-            printfn "%A" row.ItemArray
+        for row in rows |> List.rev do
+            for (index,value) in row |> List.mapi (fun i x -> i,x) do
+                printf "%*s" (max + 2) value
+            printfn ""
 

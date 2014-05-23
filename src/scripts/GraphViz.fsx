@@ -1,4 +1,4 @@
-﻿#r @"D:\GIT\SqlProvider\bin\FSharp.Data.SqlProvider.dll" 
+﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll" 
 //#r @"F:\dropbox\SqlProvider\bin\Debug\FSharp.Data.SqlProvider.dll"
 module GraphViz  =
 //http://www.graphviz.org/doc/info/attrs.html#d:arrowtail
