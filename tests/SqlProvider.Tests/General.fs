@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 let connectionString = @"Data Source=northwindEF.db;Version=3"
 
 [<Literal>]
-let resolutionPath = "../../docs/files/sqlite/"
+let resolutionPath = "../../docs/files/sqlite"
 
 type sql = SqlDataProvider<connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
 
