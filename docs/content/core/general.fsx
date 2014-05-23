@@ -7,7 +7,7 @@
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite" 
+let toolPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite" 
 
 (**
 # SQL Provider Basics
@@ -26,7 +26,7 @@ In this declaration you are able to pass various pieces of information known as 
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.
 *)
 
-type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
+type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, toolPath >
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in the connectionString parameter.  
 In order to start exploring the database's schema and reading its data, you create a *DataContext* value.

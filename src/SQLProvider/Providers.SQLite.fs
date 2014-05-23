@@ -9,9 +9,9 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal SQLiteProvider(resolutionPath) as this =
+type internal SQLiteProvider(resolutionPath, toolPath) as this =
     // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
+    // as the type provider will dictate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -19,10 +19,18 @@ type internal SQLiteProvider(resolutionPath) as this =
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assembly =  
-            // we could try and load from the gac here first if no path was specified...            
-            Reflection.Assembly.LoadFrom(
-                if String.IsNullOrEmpty resolutionPath then "System.Data.SQLite.dll"
-                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,"System.Data.SQLite.dll")))
+            // we could try and load from the gac here first if no path was specified... 
+            let assemblyFileName =           
+                if String.IsNullOrEmpty toolPath then "System.Data.SQLite.dll"
+                else
+                    let filePath =
+                          if Path.IsPathRooted toolPath then toolPath 
+                          else Path.Combine(resolutionPath, toolPath) 
+                    Path.GetFullPath(System.IO.Path.Combine(filePath,"System.Data.SQLite.dll"))
+            if File.Exists assemblyFileName |> not then
+                raise <| FileNotFoundException(sprintf "SQLLite.dll not found at %s" assemblyFileName)
+
+            Reflection.Assembly.LoadFrom assemblyFileName
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteCommand"))

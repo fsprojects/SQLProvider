@@ -7,7 +7,7 @@
 let connectionString = "Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=MyHost)(PORT=MyPort))(CONNECT_DATA=(SERVICE_NAME=MyOracleSID)));User Id=myUsername;Password=myPassword;"
 (*** hide ***)
 [<Literal>]
-let resolutionPath = "TODO"
+let toolPath = "TODO"
 
 (**
 # SQL Provider for Oracle
@@ -20,7 +20,7 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
 
 open FSharp.Data.Sql
 
-type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.ORACLE, resolutionPath >
+type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.ORACLE, toolPath >
 let ctx = sql.GetDataContext()
 
 let customers = ctx.``[main].[Customers]`` |> Seq.toArray

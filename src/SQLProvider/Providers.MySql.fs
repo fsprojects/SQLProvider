@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MySqlProvider(resolutionPath) as this =
+type internal MySqlProvider(toolPath) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -24,8 +24,8 @@ type internal MySqlProvider(resolutionPath) as this =
     // Dynamically load the MySQL assembly so we don't have a dependency on it in the project
     let assembly =  
         Reflection.Assembly.LoadFrom(
-            if String.IsNullOrEmpty resolutionPath then "MySql.Data.dll"
-            else System.IO.Path.Combine(resolutionPath,"MySql.Data.dll"))
+            if String.IsNullOrEmpty toolPath then "MySql.Data.dll"
+            else System.IO.Path.Combine(toolPath,"MySql.Data.dll"))
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlCommand"))

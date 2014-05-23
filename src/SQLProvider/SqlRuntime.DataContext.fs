@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionFolder,toolPath, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -16,7 +16,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                let prov = Utilities.createSqlProvider providerType resolutionFolder toolPath owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 

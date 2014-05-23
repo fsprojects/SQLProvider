@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal OracleProvider(resolutionPath, owner) =
+type internal OracleProvider(toolPath, owner) =
     let assemblyNames = 
         [
             "Oracle.ManagedDataAccess.dll"
@@ -21,8 +21,8 @@ type internal OracleProvider(resolutionPath, owner) =
             try 
                 let loadedAsm =              
                     Assembly.LoadFrom(
-                        if String.IsNullOrEmpty resolutionPath then asm
-                        else System.IO.Path.Combine(resolutionPath,asm)
+                        if String.IsNullOrEmpty toolPath then asm
+                        else System.IO.Path.Combine(toolPath,asm)
                         ) 
                 if loadedAsm <> null
                 then Some loadedAsm
