@@ -147,8 +147,10 @@ type internal PostgresqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name,value,dbType) = 
-            let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
+        member __.CreateCommandParameter(name,value,dbType) =
+            let p = Activator.CreateInstance(paramterType, [||]) :?> IDbDataParameter
+            p.ParameterName <- name
+            p.Value <- box value
             if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(_) = 
