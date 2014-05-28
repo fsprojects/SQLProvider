@@ -83,6 +83,8 @@ let result = ctx.``Stored Procedures``.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 1
 
 //********************** Functions ***************************//
 
+let fullName = ctx.``Stored Procedures``.EMP_FULLNAME(100M)
+
 //********************** Packaged Procs **********************//
 
 //********************** Packaged Funcs **********************//

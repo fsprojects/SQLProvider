@@ -36,7 +36,7 @@ module DataTable =
         ]
     
     let printDataTable (dt:System.Data.DataTable) = 
-        let max, rows = 
+        let maxLength, rows = 
             dt
             |> map (fun r -> r.ItemArray)
             |> List.fold (fun (maxLen, rows) row ->
@@ -45,10 +45,10 @@ module DataTable =
                             (max maxLen rowMax.Length), (values :: rows) 
                         ) (0,[])
         for col in dt.Columns do
-            printf "%*s" (max+2) col.ColumnName
+            printf "%*s  " (maxLength + 2) col.ColumnName
         printfn ""
         for row in rows |> List.rev do
             for (index,value) in row |> List.mapi (fun i x -> i,x) do
-                printf "%*s" (max + 2) value
+                printf "%*s  " (maxLength + 2) value
             printfn ""
 
