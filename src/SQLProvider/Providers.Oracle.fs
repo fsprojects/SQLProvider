@@ -98,12 +98,9 @@ module internal OracleHelpers =
     let tableFullName (table:Table) = 
         table.Schema + "." + (quoteWhiteSpace table.Name)
 
-    let objToString (v:obj) : string = 
-        if Convert.IsDBNull(v) then null else unbox v
+    let dbUnbox<'a> (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
     
-    let objToDecimal (v:obj) : decimal = 
-        if Convert.IsDBNull(v) then 0M else unbox v
-
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
 
@@ -115,15 +112,15 @@ module internal OracleHelpers =
     let getTables con = 
         getSchema "Tables" [|owner|] con
         |> DataTable.map (fun row -> 
-                              let name = unbox row.[1]
-                              { Schema = unbox row.[0]; Name = name; Type = unbox row.[2] })
+                              let name = dbUnbox row.[1]
+                              { Schema = dbUnbox row.[0]; Name = name; Type = dbUnbox row.[2] })
 
     let getColumns (primaryKeys:IDictionary<_,_>) table con = 
         getSchema "Columns" [|owner; table|] con
         |> DataTable.choose (fun row -> 
-                let typ = unbox row.[4]
-                let nullable = unbox row.[8] = "Y"
-                let colName =  unbox row.[2]
+                let typ = dbUnbox row.[4]
+                let nullable = (dbUnbox row.[8]) = "Y"
+                let colName =  (dbUnbox row.[2])
                 match sqlToClr typ, sqlToEnum typ with
                 | Some(clrTyp), Some(dbType) -> 
                         { Name = colName; 
@@ -136,21 +133,21 @@ module internal OracleHelpers =
     let getRelationships (primaryKeys:IDictionary<_,_>) table con =
         let foreignKeyCols = 
             getSchema "ForeignKeyColumns" [|owner;table|] con
-            |> DataTable.map (fun row -> (row.[1] :?> string, row.[3] :?> string)) 
+            |> DataTable.map (fun row -> (dbUnbox row.[1], dbUnbox row.[3])) 
             |> Map.ofList
         let rels = 
             getSchema "ForeignKeys" [|owner;table|] con
             |> DataTable.choose (fun row -> 
-                let name = unbox row.[4]
-                let pkName = unbox row.[0]
+                let name = dbUnbox row.[4]
+                let pkName = dbUnbox row.[0]
                 match primaryKeys.TryGetValue(table) with
                 | true, pk ->
                     match foreignKeyCols.TryFind name with
                     | Some(fk) ->
                          { Name = name 
-                           PrimaryTable = Table.CreateFullName(owner,unbox row.[2]) 
+                           PrimaryTable = Table.CreateFullName(owner,dbUnbox row.[2]) 
                            PrimaryKey = pk.Column
-                           ForeignTable = Table.CreateFullName(owner,unbox row.[5])
+                           ForeignTable = Table.CreateFullName(owner,dbUnbox row.[5])
                            ForeignKey = fk } |> Some
                     | None -> None
                 | false, _ -> None
@@ -168,20 +165,20 @@ module internal OracleHelpers =
     let getSprocs con =
         getSchema "ProcedureParameters" [|owner|] con
         |> DataTable.groupBy (fun row -> 
-                let owner = unbox row.["OWNER"]
-                let (procName, packageName) = (unbox row.["OBJECT_NAME"], objToString row.["PACKAGE_NAME"])
-                let dataType = unbox row.["DATA_TYPE"]
+                let owner = dbUnbox row.["OWNER"]
+                let (procName, packageName) = (dbUnbox row.["OBJECT_NAME"], dbUnbox row.["PACKAGE_NAME"])
+                let dataType = dbUnbox row.["DATA_TYPE"]
                 let name = 
                         if String.IsNullOrEmpty(packageName)
                         then procName else (owner + "." + packageName + "." + procName)
                 match sqlToEnum dataType, sqlToClr dataType with
                 | Some(dbType), Some(clrType) ->
                     let direction = 
-                        match objToString row.["IN_OUT"] with
+                        match dbUnbox row.["IN_OUT"] with
                         | "IN" -> Direction.In
                         | "OUT" -> Direction.Out
                         | a -> failwith "Direction not supported %s" a
-                    let paramName, paramDetails = objToString row.["ARGUMENT_NAME"], (dbType, clrType, direction, int (row.["POSITION"] :?> decimal), int (objToDecimal row.["DATA_LENGTH"]))
+                    let paramName, paramDetails = dbUnbox row.["ARGUMENT_NAME"], (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
                     (name, Some (paramName, (paramDetails)))
                 | _,_ -> (name, None))
         |> Seq.choose (fun (name, parameters) -> 
@@ -191,9 +188,10 @@ module internal OracleHelpers =
                     parameters
                     |> Seq.map (function
                                  | Some (pName, (dbType, clrType, direction, position, length)) -> 
-                                        { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = position }
+                                        { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = int(position) }
                                  | None -> failwith "How the hell did we get here??")
                     |> Seq.toList
+                    |> List.sortBy (fun x -> x.Ordinal)
                     |> List.partition (fun p -> p.Direction = Direction.In)
                 let retCols = 
                     outParams 
@@ -223,23 +221,24 @@ type internal OracleProvider(resolutionPath, owner) =
             if dbType.IsSome then p.DbType <- dbType.Value 
             upcast p
         member __.CreateTypeMappings(con) = 
-            OracleHelpers.connect con OracleHelpers.createTypeMappings
+            OracleHelpers.connect con (fun con -> 
+                OracleHelpers.createTypeMappings con
 
-            let indexColumns = 
-                OracleHelpers.getSchema "IndexColumns" [|owner|] con
-                |> DataTable.map (fun row -> row.[1] :?> string, row.[4] :?> string)
-                |> Map.ofList
+                let indexColumns = 
+                    OracleHelpers.getSchema "IndexColumns" [|owner|] con
+                    |> DataTable.map (fun row -> OracleHelpers.dbUnbox row.[1], OracleHelpers.dbUnbox row.[4])
+                    |> Map.ofList
 
-            OracleHelpers.getSchema "PrimaryKeys" [|owner|] con
-            |> DataTable.cache primaryKeyCache (fun row ->
-                let indexName = unbox row.[15]
-                let tableName = unbox row.[2]
-                match Map.tryFind indexName indexColumns with
-                | Some(column) -> 
-                    let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
-                    Some(tableName, pk)
-                | None -> None) |> ignore
-            con.Close()
+                OracleHelpers.getSchema "PrimaryKeys" [|owner|] con
+                |> DataTable.cache primaryKeyCache (fun row ->
+                    let indexName = OracleHelpers.dbUnbox row.[15]
+                    let tableName = OracleHelpers.dbUnbox row.[2]
+                    match Map.tryFind indexName indexColumns with
+                    | Some(column) -> 
+                        let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
+                        Some(tableName, pk)
+                    | None -> None) |> ignore
+            )
 
         member __.ClrToEnum = OracleHelpers.clrToEnum
         member __.SqlToEnum = OracleHelpers.sqlToEnum
