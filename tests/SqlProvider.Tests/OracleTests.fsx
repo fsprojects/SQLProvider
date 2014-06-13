@@ -70,14 +70,14 @@ let antartica =
         let newRegion = ctx.``[HR].[REGIONS]``.Create() 
         newRegion.REGION_NAME <- "Antartica"
         newRegion.REGION_ID <- 5M
-        ctx.``Submit Updates``()
+        ctx.SubmitUpdates()
         newRegion
 
 antartica.REGION_NAME <- "ant"
-ctx.``Submit Updates``()
+ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.``Submit Updates``()
+ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 

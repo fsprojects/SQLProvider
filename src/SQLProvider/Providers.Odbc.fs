@@ -158,7 +158,6 @@ type internal OdbcProvider(resolutionPath) =
                             ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents)    
-                     DbName = name
 
         member __.GetSprocs(con) =
             failwith "The ODBC type provider does not currently support Stored Procedures operations."
