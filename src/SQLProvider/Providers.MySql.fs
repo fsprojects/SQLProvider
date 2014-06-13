@@ -122,7 +122,7 @@ type internal MySqlProvider(resolutionPath) as this =
             | (true,data) -> data
             | _ -> 
                // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
-               // we are inerested in on demand
+               // we are interested in on demand
                let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
                                  FROM INFORMATION_SCHEMA.COLUMNS c
@@ -232,7 +232,7 @@ type internal MySqlProvider(resolutionPath) as this =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
-                                yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col|]) // F# makes this so easy :)
+                                else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
@@ -254,12 +254,26 @@ type internal MySqlProvider(resolutionPath) as this =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? System.Array) ->
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
+                                         let elements = box x :?> System.Array
+                                         Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
+
+                                let operatorIn operator (array : IDataParameter[]) =
+                                    if Array.isEmpty array then
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set
+                                        | FSharp.Data.Sql.NotIn -> "TRUE" // anything is not in the empty set
+                                        | _ -> failwith "Should not be called with any other operator"
+                                    else
+                                        let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                        Array.iter parameters.Add array
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> (sprintf "`%s`.`%s` IN (%s)") alias col text
+                                        | FSharp.Data.Sql.NotIn -> (sprintf "`%s`.`%s` NOT IN (%s)") alias col text
+                                        | _ -> failwith "Should not be called with any other operator"
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
@@ -267,14 +281,8 @@ type internal MySqlProvider(resolutionPath) as this =
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col 
                                     | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col 
-                                    | FSharp.Data.Sql.In ->                                     
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` IN (%s)") alias col text
-                                    | FSharp.Data.Sql.NotIn ->                                    
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` NOT IN (%s)") alias col text 
+                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                     | _ -> 
                                         parameters.Add paras.[0]
                                         (sprintf "`%s`.`%s`%s %s") alias col 
@@ -345,15 +353,134 @@ type internal MySqlProvider(resolutionPath) as this =
                 ~~"ORDER BY "
                 orderByBuilder()
 
-            if sqlQuery.Take.IsSome && sqlQuery.Skip.IsSome then 
-                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Skip.Value sqlQuery.Take.Value)
-            else if sqlQuery.Take.IsSome then 
-                ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
-            else if sqlQuery.Skip.IsSome then 
-                ~~(sprintf " LIMIT %i,%i;" sqlQuery.Take.Value System.UInt64.MaxValue)
+            match sqlQuery.Take, sqlQuery.Skip with
+            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
+            | None, Some skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt64.MaxValue skip)
+            | None, None -> ()
 
             let sql = sb.ToString()
-            (sql,parameters)
-        
+            (sql,parameters)        
         member this.ProcessUpdates(con, entities) =
-            failwith "The MySQL type provider does not currently support CRUD operations."
+            let sb = Text.StringBuilder()
+            let (~~) (t:string) = sb.Append t |> ignore
+
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            con.Open()
+            let createInsertCommand (entity:SqlEntity) =                 
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                let pk = pkLookup.[entity.Table.FullName] 
+                let columnNames, values = 
+                    (([],0),entity.ColumnValues)
+                    ||> Seq.fold(fun (out,i) (k,v) -> 
+                        let name = sprintf "@param%i" i
+                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None)
+                        (k,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    |> Array.unzip
+                
+                sb.Clear() |> ignore
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();" 
+                    (entity.Table.FullName.Replace("[","`").Replace("]","`"))
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+                
+                values |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            let createUpdateCommand (entity:SqlEntity) changedColumns =
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+
+                if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+                let data = 
+                    (([],0),changedColumns)
+                    ||> List.fold(fun (out,i) col ->                                                         
+                        let name = sprintf "@param%i" i
+                        let p = 
+                            match entity.GetColumnOption<obj> col with
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None)
+                        (col,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    
+                
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None)
+
+                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
+                    (entity.Table.FullName.Replace("[","`").Replace("]","`"))
+                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+                    pk)
+
+                data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
+                cmd.Parameters.Add pkParam |> ignore
+                cmd.CommandText <- sb.ToString()
+                cmd
+            
+            let createDeleteCommand (entity:SqlEntity) =
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                cmd.Connection <- con 
+                sb.Clear() |> ignore
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None)
+                cmd.Parameters.Add(p) |> ignore
+                ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            use scope = new Transactions.TransactionScope()
+            try
+                
+                if con.State <> ConnectionState.Open then con.Open()         
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                entities
+                |> List.iter(fun e -> 
+                    match e._State with
+                    | Created -> 
+                        let cmd = createInsertCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        let id = cmd.ExecuteScalar()
+                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                        | Some v -> () // if the primary key exists, do nothing
+                                       // this is because non-identity columns will have been set 
+                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        e._State <- Unchanged
+                    | Modified fields -> 
+                        let cmd = createUpdateCommand e fields
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        e._State <- Unchanged
+                    | Deleted -> 
+                        let cmd = createDeleteCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        // remove the pk to prevent this attempting to be used again
+                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                scope.Complete()
+            finally
+                con.Close()

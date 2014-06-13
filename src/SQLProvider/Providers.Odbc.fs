@@ -158,108 +158,22 @@ type internal OdbcProvider(resolutionPath) =
                             ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents)    
-        member __.GetSprocs(con) = 
-            let con = con:?>OdbcConnection
-            if con.State <> ConnectionState.Open then con.Open()
-            //todo: this whole function needs cleaning up
-            let baseQuery = @"SELECT 
-                              SPECIFIC_SCHEMA
-                              ,SPECIFIC_NAME
-                              ,ORDINAL_POSITION
-                              ,PARAMETER_MODE
-                              ,PARAMETER_NAME
-                              ,DATA_TYPE
-                              ,CHARACTER_MAXIMUM_LENGTH
-                            FROM INFORMATION_SCHEMA.PARAMETERS a
-                            JOIN sys.procedures b on a.SPECIFIC_NAME = b.name"
-            use reader = executeSql con baseQuery
-            let meta =
-                [ while reader.Read() do
-                       yield 
-                           (reader.GetString(0),
-                            reader.GetString(1),
-                            reader.GetInt32(2),
-                            reader.GetString(3),
-                            reader.GetString(4),
-                            reader.GetString(5),
-                            Some <| reader.GetInt32(6)) ]
-                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "%s.%s" schema name)
-                |> Seq.choose(fun (name,values) ->
-                   // don't create procs that have unsupported datatypes
-                   let values' = 
-                      values 
-                      |> Seq.choose(fun (_,_,ordinal,mode,name,dt,maxLen)  ->
-                         if mode <> "IN" then None else
-                         match sqlToClr dt, sqlToEnum dt with
-                         |Some(clr), Some(sql) -> Some (ordinal,mode,name,clr,sql,maxLen)
-                         | _ -> None)
-                   if Seq.length values = Seq.length values' then Some (name,values') else None)
-                |> Seq.map(fun (name, values) ->  
-                    let parameters = 
-                        values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
-                               { Name=name; Ordinal=ordinal
-                                 Direction = if mode = "IN" then ParameterDirection.Input else ParameterDirection.Output
-                                 MaxLength = maxLen
-                                 ClrType = clr
-                                 DbType = sql } )
-                        |> Seq.sortBy( fun p -> p.Ordinal)     
-                        |> Seq.toList            
-                    {FullName = name
                      DbName = name
-                     Params = parameters
-                     ReturnColumns = [] })
-                |> Seq.toList
-            reader.Dispose()
-       
-            meta
-            |> List.choose(fun sproc ->
-                use com = new OdbcCommand(sproc.FullName,con)
-                com.CommandType <- CommandType.StoredProcedure
-                try // try / catch here as this stuff is still experimental
-                  sproc.Params
-                  |> List.iter(fun p ->
-                    let p' = OdbcParameter()           
-                    p'.ParameterName <- p.Name
-                    p'.DbType <- p.DbType
-                    p'.Value <- 
-                         if p.ClrType = typeof<string> then box "1"
-                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
-                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
-                         // warning: i might have missed cases here and this next call will
-                         // blow if the type doesn't have a parameterless ctor
-                         else Activator.CreateInstance(p.ClrType)
-                    com.Parameters.Add p' |> ignore)
-                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
-                  let schema = reader.GetSchemaTable()
-                  let columns = 
-                      if schema = null then [] else
-                      schema.Rows
-                      |> Seq.cast<DataRow>
-                      |> Seq.choose(fun row -> 
-                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
-                           |> Option.map( fun sql ->
-                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
-                      |> Seq.toList
-                  if schema = null || columns.Length = schema.Rows.Count then
-                     Some { sproc with ReturnColumns = columns }
-                  else None
-                with 
-                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
-                        None 
-         )
+
+        member __.GetSprocs(con) =
+            failwith "The ODBC type provider does not currently support Stored Procedures operations."
 
         member this.GetIndividualsQueryText(table,amount) =
-            sprintf "SELECT * FROM [%s].[%s]" table.Schema table.Name
+            sprintf "SELECT * FROM `%s`" table.Name
+
         member this.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = ?" table.Name table.Name column
         
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
-       
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -272,12 +186,12 @@ type internal OdbcProvider(resolutionPath) =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
-                                if singleEntity then yield sprintf "%s" col
-                                else yield sprintf "%s" col
+                                if singleEntity then yield sprintf "`%s`" col
+                                else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s" col
-                                yield sprintf "%s" col |]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "`%s`" col
+                                else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col |]) // F# makes this so easy :)
         
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
@@ -352,8 +266,8 @@ type internal OdbcProvider(resolutionPath) =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s `%s`.`%s` as `%s` on `%s`.`%s` = `%s`.`%s` " 
-                            joinType destTable.Schema destTable.Name destAlias 
+                    ~~  (sprintf "%s `%s` as `%s` on `%s`.`%s` = `%s`.`%s` " 
+                            joinType destTable.Name destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
@@ -365,12 +279,17 @@ type internal OdbcProvider(resolutionPath) =
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "`%s`.`%s` %s" alias column (if not desc then "DESC" else "")))
 
+            // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
+            // or else it will fail
+            let stripSpecialCharacters (s:string) =
+                String(s.ToCharArray() |> Array.filter(fun c -> Char.IsLetterOrDigit c || c = ' ' || c = '_'))
+
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name baseAlias)
+            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name (stripSpecialCharacters baseAlias))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -387,5 +306,130 @@ type internal OdbcProvider(resolutionPath) =
 
             let sql = sb.ToString()
             (sql,parameters)
-        member this.ProcessUpdates(con, entities) =
-            failwith "The ODBC type provider does not currently support CRUD operations."
+
+        member this.ProcessUpdates(con, entities) =            
+            let sb = Text.StringBuilder()
+            let (~~) (t:string) = sb.Append t |> ignore
+
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if con.State <> ConnectionState.Open then con.Open()
+
+            let createInsertCommand (entity:SqlEntity) =     
+                let cmd = new OdbcCommand()
+                cmd.Connection <- con :?> OdbcConnection
+                let pk = pkLookup.[entity.Table.FullName] 
+                let columnNames, values = 
+                    (([],0),entity.ColumnValues)
+                    ||> Seq.fold(fun (out,i) (key,value) ->                         
+                        let name = sprintf "@param%i" i
+                        let p = OdbcParameter(name,value)
+                        (key,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                    |> Array.unzip
+                
+                sb.Clear() |> ignore
+                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s);" 
+                    entity.Table.Name
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> "?"))))
+                cmd.Parameters.AddRange(values)
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            let lastInsertId () =
+                let cmd = new OdbcCommand()
+                cmd.Connection <- con :?> OdbcConnection
+                cmd.CommandText <- "SELECT @@IDENTITY AS id;"
+                cmd
+
+            let createUpdateCommand (entity:SqlEntity) changedColumns =
+                let cmd = new OdbcCommand()
+                cmd.Connection <- con :?> OdbcConnection
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+
+                if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+                let data = 
+                    (([],0),changedColumns)
+                    ||> List.fold(fun (out,i) col ->
+                        let p = 
+                            match entity.GetColumnOption<obj> col with
+                            | Some v -> OdbcParameter(null,v)
+                            | None -> OdbcParameter(null,DBNull.Value)
+                        (col,p)::out,i+1)
+                    |> fun (x,_)-> x 
+                    |> List.rev
+                    |> List.toArray 
+                
+                let pkParam = OdbcParameter(null, pkValue)
+
+                ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;" 
+                    entity.Table.Name
+                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c "?" ) ))
+                    pk)
+
+                cmd.Parameters.AddRange(data |> Array.map snd)
+                cmd.Parameters.Add pkParam |> ignore
+                cmd.CommandText <- sb.ToString()
+                cmd
+            
+            let createDeleteCommand (entity:SqlEntity) =
+                let cmd = new OdbcCommand()
+                cmd.Connection <- con :?> OdbcConnection
+                sb.Clear() |> ignore
+                let pk = pkLookup.[entity.Table.FullName] 
+                sb.Clear() |> ignore
+                let pkValue = 
+                    match entity.GetColumnOption<obj> pk with
+                    | Some v -> v
+                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+                cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
+                ~~(sprintf "DELETE FROM %s WHERE %s = ?" entity.Table.Name pk )
+                cmd.CommandText <- sb.ToString()
+                cmd
+
+            use scope = new Transactions.TransactionScope()
+            try                
+                if con.State <> ConnectionState.Open then con.Open()         
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                entities
+                |> List.iter(fun e -> 
+                    match e._State with
+                    | Created -> 
+                        let cmd = createInsertCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        let id = (lastInsertId()).ExecuteScalar()
+                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                        | Some v -> () // if the primary key exists, do nothing
+                                       // this is because non-identity columns will have been set 
+                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        e._State <- Unchanged
+                    | Modified fields -> 
+                        let cmd = createUpdateCommand e fields
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        e._State <- Unchanged
+                    | Deleted -> 
+                        let cmd = createDeleteCommand e
+                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        cmd.ExecuteNonQuery() |> ignore
+                        // remove the pk to prevent this attempting to be used again
+                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                scope.Complete()
+            finally
+                con.Close()

@@ -46,20 +46,27 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     let data = Dictionary<string,obj>()
     let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
 
-    member val State = Unchanged with get, set
+    let replaceFirst (text:string) (oldValue:string) (newValue) =
+        let position = text.IndexOf oldValue
+        if position < 0 then
+            text
+        else
+            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+
+    member val _State = Unchanged with get, set
 
     member e.Delete() = 
-        e.State <- Deleted
+        e._State <- Deleted
         dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = 
         propertyChanged.Trigger(e,PropertyChangedEventArgs(name))
 
-    member e.ColumnValues = seq { for kvp in data -> kvp }
+    member e.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
 
     member e.Table= table
 
-    member e.DataContext with get() = dc
+    member e.DataContext with get() = dc    
 
     member e.GetColumn<'T>(key) : 'T = 
         let defaultValue() =                       
@@ -84,37 +91,37 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
        else None
 
     member private e.UpdateField key =
-        match e.State with
+        match e._State with
         | Modified fields -> 
-            e.State <- Modified (key::fields)
+            e._State <- Modified (key::fields)
             e.DataContext.SubmitChangedEntity e
         | Unchanged -> 
-            e.State <- Modified [key]
+            e._State <- Modified [key]
             e.DataContext.SubmitChangedEntity e
         | Deleted -> failwith "You cannot modify an entity that is pending deletion"
         | Created -> ()
 
     member e.SetColumnSilent(key,value) =
-        if not (data.ContainsKey key) && value <> null then data.Add(key,value)
-        else data.[key] <- value                
+        data.[key] <- value                
 
-    member e.SetColumn(key,value) =
-        if not (data.ContainsKey key) && value <> Unchecked.defaultof<_> then data.Add(key,value)
-        else data.[key] <- value
+    member e.SetColumn(key,value) =        
+        data.[key] <- value
         e.UpdateField key        
         e.TriggerPropertyChange key
     
+    member e.SetData(data) = data |> Seq.iter e.SetColumnSilent  
+
     member e.SetColumnOptionSilent(key,value) =
       match value with
       | Some value -> 
-          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
       | None -> data.Remove key |> ignore
 
     member e.SetColumnOption(key,value) =
       match value with
       | Some value -> 
-          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
@@ -153,29 +160,29 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
-                (fun (kvp:KeyValuePair<string,_>) -> 
-                    if kvp.Key.StartsWith prefix then 
-                        let temp = kvp.Key.Replace(prefix,"")
+                (fun (k:string,v) -> 
+                    if k.StartsWith prefix then
+                        let temp = replaceFirst k prefix ""
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                        Some(temp,v)
                     // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers 
-                    elif  kvp.Key.StartsWith prefix2 then  
-                        let temp = kvp.Key.Replace(prefix2,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    elif  k.StartsWith prefix2 then  
+                        let temp = replaceFirst k prefix2 ""
+                        Some(temp,v)
                     // this case is for MySQL and other vendors that use ` as whitespace qualifiers 
-                    elif  kvp.Key.StartsWith prefix3 then  
-                        let temp = kvp.Key.Replace(prefix3,"")
+                    elif  k.StartsWith prefix3 then  
+                        let temp = replaceFirst k prefix3 ""
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                        Some(temp,v)
                     //this case for MSAccess, uses _ as whitespace qualifier
-                    elif  kvp.Key.StartsWith prefix4 then
-                        let temp = kvp.Key.Replace(prefix4,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    elif  k.StartsWith prefix4 then
+                        let temp = replaceFirst k prefix4 ""
+                        Some(temp,v)
                     else None)
                         
             e.ColumnValues
             |> Seq.choose pred
-            |> Seq.iter( fun kvp -> newEntity.SetColumnSilent(kvp.Key,kvp.Value)) 
+            |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v)) 
 
             aliasCache.Add(alias,newEntity)
             newEntity    
@@ -218,7 +225,10 @@ and ISqlDataContext =
     abstract CallSproc              : string * (string * DbType * ParameterDirection * int option)[]  * obj [] -> SqlEntity list
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
-    abstract SubmitAllChanges       : unit -> unit
+    abstract SubmitPendingChanges   : unit -> unit
+    abstract ClearPendingChanges    : unit -> unit
+    abstract GetPendingEntities     : unit -> SqlEntity list
+
          
 type LinkData =
     { PrimaryTable       : Table

@@ -194,7 +194,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) // F# makes this so easy :)
+                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
@@ -328,12 +328,10 @@ type internal SQLiteProvider(resolutionPath) as this =
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp -> 
-                        // remove the primary key if it exists
-                        if kvp.Key = pk then out,i else 
+                    ||> Seq.fold(fun (out,i) (k,v) -> 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,kvp.Value,None, None, None)
-                        (kvp.Key,p)::out,i+1)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None, None, None)
+                        (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
@@ -411,7 +409,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
                 |> List.iter(fun e -> 
-                    match e.State with
+                    match e._State with
                     | Created -> 
                         let cmd = createInsertCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -421,12 +419,12 @@ type internal SQLiteProvider(resolutionPath) as this =
                                        // this is because non-identity columns will have been set 
                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Modified fields -> 
                         let cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Deleted -> 
                         let cmd = createDeleteCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText

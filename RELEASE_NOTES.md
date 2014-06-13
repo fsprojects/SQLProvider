@@ -1,3 +1,17 @@
+#### 0.0.9-alpha - 21.05.2014
+* Fixing a bug with writing tinyints in SQL Server
+* Fixes to MySQL array parameters
+* You can now use any sequence with the in and not in operators, as opposed to just new array expressions
+* Fix in PostgreSQL to allow the creation of entities with no set properties
+
+#### 0.0.8-alpha - 20.05.2014
+* Fixes an important bug that was causing all columns to be selected
+
+#### 0.0.7-alpha - 17.05.2014
+* ODBC support added
+* CRUD operations added
+* Tons of fixes and tweaks 
+
 #### 0.0.6-alpha - 12.02.2014 
 * MS Access support added!
 * Various fixes for SQLite and Oracle

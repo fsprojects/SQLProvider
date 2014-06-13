@@ -48,6 +48,7 @@ module internal QueryExpressionTransformer =
         static let getSubEntityMi = typeof<SqlEntity>.GetMethod("GetSubTable",BindingFlags.NonPublic ||| BindingFlags.Instance)
 
         let mutable singleEntityName = ""
+        let mutable fromColumnGet = false
 
         /// holds the columns to select for each entity appearing in the projection tree, or a blank list if all columns         
         member val ProjectionMap = Dictionary<string,string ResizeArray>()
@@ -57,9 +58,6 @@ module internal QueryExpressionTransformer =
                 // this is a special case when there were no select manys and as a result the projection parameter is just the single entity rather than a tuple
                 // this still includes cases where tuples are created by the user directly, that is fine - it is for avoiding LINQ auto generated tuples
                 singleEntityName <- exp.Parameters.[0].Name
-                match x.ProjectionMap.TryGetValue singleEntityName with
-                | true, values -> ()
-                | false, _ -> x.ProjectionMap.Add(singleEntityName,new ResizeArray<_>())
                 let body = base.Visit exp.Body
                 upcast Expression.Lambda(body,BaseTableParam) 
             else base.VisitLambda exp
@@ -71,9 +69,11 @@ module internal QueryExpressionTransformer =
                 // add this attribute to the select list for the alias
                 let alias = if tupleIndex.Count = 0 then singleEntityName else Utilities.resolveTuplePropertyName name tupleIndex
                 match x.ProjectionMap.TryGetValue alias with
+                | true, values when values.Count = 0 -> ()
                 | true, values -> values.Add key
                 | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
             | _ -> ()
+            fromColumnGet <- true
             base.VisitMethodCall exp
 
         override __.VisitParameter(exp) = 
@@ -91,10 +91,11 @@ module internal QueryExpressionTransformer =
                     else
                         let alias = Utilities.resolveTuplePropertyName exp.Member.Name tupleIndex
                         match x.ProjectionMap.TryGetValue alias with
-                        | true, values -> ()
-                        | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>())
+                        | true, values when fromColumnGet = false -> values.Clear()
+                        | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>()) 
+                        | _ -> ()
                         (alias,aliasEntityDict.[alias].FullName)
-            
+                fromColumnGet <- false
                 // convert this expression into a GetSubEntity call with the correct alias
                 upcast
                     Expression.Convert(

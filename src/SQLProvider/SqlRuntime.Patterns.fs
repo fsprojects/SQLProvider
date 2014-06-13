@@ -14,10 +14,29 @@ let (|MethodCall|_|) (e:Expression) =
         Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
     | _ -> None
 
-let (|NewArrayValues|_|) (e:Expression) = 
-    match e.NodeType, e with 
-    | ExpressionType.NewArrayInit, (:? NewArrayExpression as e) ->  Some(Expression.Lambda(e).Compile().DynamicInvoke() :?> Array)
-    | _ -> None
+let (|SeqValues|_|) (e:Expression) =
+    let rec isEnumerable (ty : Type) = 
+        ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
+        |> (not << Seq.isEmpty)
+
+    match (isEnumerable e.Type) with
+    | false -> None
+    | true ->
+        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+        // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
+        // Work out the size the sequence
+        let mutable count = 0
+        for obj in values do
+            count <- count + 1
+        // Create and populate the array
+        let array = Array.CreateInstance(typeof<System.Object>, count)
+        let mutable i = 0
+        for obj in values do
+            array.SetValue(obj, i)
+            i <- i + 1
+        // Return the array
+        Some(array)
+
 
 let (|PropertyGet|_|) (e:Expression) = 
     match e.NodeType, e with 
@@ -108,8 +127,8 @@ let (|OptionIsNone|_|) = function
 
 let (|SqlSpecialOpArr|_|) = function
     // for some crazy reason, simply using (|=|) stopped working ??
-    | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); NewArrayValues values] ) -> Some(ti,ConditionOperator.In,   key,values)
-    | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); NewArrayValues values] ) -> Some(ti,ConditionOperator.NotIn,key,values)
+    | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.In, key, values)
+    | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.NotIn, key, values)
     | _ -> None
     
 let (|SqlSpecialOp|_|) = function

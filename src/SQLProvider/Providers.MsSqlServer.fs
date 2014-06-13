@@ -30,6 +30,14 @@ type internal MSSqlServerProvider() =
             clr
             |> List.choose( fun (tn,ev,dt) ->
                 if String.IsNullOrWhiteSpace dt then None else
+                
+                if tn = "tinyint" then 
+                    // special case for tinyint, as Connection.GetSchema("DataTypes") says it should be an SByte, 
+                    // but really it needs to be a byte http://msdn.microsoft.com/en-us/library/cc716729(v=vs.110).aspx
+                    let ty = typeof<Byte>
+                    Some ((tn,ty),(tn,DbType.Byte),(ty.FullName,DbType.Byte))
+                else
+
                 let ty = Type.GetType dt
                 // we need to convert the sqldbtype enum value to dbtype.
                 // the sql param will do this for us but it might throw if not mapped -
@@ -295,7 +303,7 @@ type internal MSSqlServerProvider() =
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) 
+                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|]) 
         
             // next up is the filter expressions
             // make this nicer later.. 
@@ -427,10 +435,10 @@ type internal MSSqlServerProvider() =
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
                     (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) kvp ->                         
+                    ||> Seq.fold(fun (out,i) (k,v) ->
                         let name = sprintf "@param%i" i
-                        let p = SqlParameter(name,kvp.Value)
-                        (kvp.Key,p)::out,i+1)
+                        let p = SqlParameter(name,v)
+                        (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
@@ -504,7 +512,7 @@ type internal MSSqlServerProvider() =
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
                 |> List.iter(fun e -> 
-                    match e.State with
+                    match e._State with
                     | Created -> 
                         let cmd = createInsertCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -514,12 +522,12 @@ type internal MSSqlServerProvider() =
                                        // this is because non-identity columns will have been set 
                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Modified fields -> 
                         let cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
-                        e.State <- Unchanged
+                        e._State <- Unchanged
                     | Deleted -> 
                         let cmd = createDeleteCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
