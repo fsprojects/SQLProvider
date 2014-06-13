@@ -55,19 +55,31 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(name,parameters,types:DbType array,values:obj array) =
+        member this.CallSproc(name,parameters,values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
                use com = provider.CreateCommand(con,name)
                com.CommandType <- CommandType.StoredProcedure
-               parameters
-               |> Array.iteri(fun i name ->
-                   let p = provider.CreateCommandParameter(name,values.[i],Some types.[i])
+               let inputParameters, outputParameters = parameters |> Array.partition (fun (_, _, dir, _) -> dir = ParameterDirection.Input || dir = ParameterDirection.InputOutput)
+               
+               let outps =
+                outputParameters
+                |> Array.mapi(fun i (name, dbtype, dir, length) ->
+                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, length)
+                    com.Parameters.Add p |> ignore; p)
+
+               inputParameters
+               |> Array.iteri(fun i (name, dbtype, dir, length) ->
+                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, length)
                    com.Parameters.Add p |> ignore)
+
                use reader = com.ExecuteReader()
-               let entities = SqlEntity.FromDataReader(this,name,reader)
+               let entities = 
+                if outputParameters.Length > 0
+                then SqlEntity.FromOutputParameters(this, name, outps)
+                else SqlEntity.FromDataReader(this,name,reader)
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
@@ -89,7 +101,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
-               com.Parameters.Add (provider.CreateCommandParameter("@id",id,None)) |> ignore
+               com.Parameters.Add (provider.CreateCommandParameter("@id",id,None, None, None)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)

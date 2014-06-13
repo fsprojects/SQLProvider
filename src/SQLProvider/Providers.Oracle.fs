@@ -171,20 +171,22 @@ module internal OracleHelpers =
                 let name = 
                         if String.IsNullOrEmpty(packageName)
                         then procName else (owner + "." + packageName + "." + procName)
+                let argumentName = dbUnbox row.["ARGUMENT_NAME"]
                 match sqlToEnum dataType, sqlToClr dataType with
                 | Some(dbType), Some(clrType) ->
                     let direction = 
                         match dbUnbox row.["IN_OUT"] with
-                        | "IN" -> Direction.In
-                        | "OUT" -> Direction.Out
+                        | "IN" -> ParameterDirection.Input
+                        | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                        | "OUT" -> ParameterDirection.Output
                         | a -> failwith "Direction not supported %s" a
-                    let paramName, paramDetails = dbUnbox row.["ARGUMENT_NAME"], (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
+                    let paramName, paramDetails = argumentName, (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
                     (name, Some (paramName, (paramDetails)))
                 | _,_ -> (name, None))
         |> Seq.choose (fun (name, parameters) -> 
             if parameters |> Seq.forall (fun x -> x.IsSome)
             then 
-                let inParams, outParams = 
+                let sparams = 
                     parameters
                     |> Seq.map (function
                                  | Some (pName, (dbType, clrType, direction, position, length)) -> 
@@ -192,11 +194,12 @@ module internal OracleHelpers =
                                  | None -> failwith "How the hell did we get here??")
                     |> Seq.toList
                     |> List.sortBy (fun x -> x.Ordinal)
-                    |> List.partition (fun p -> p.Direction = Direction.In)
+                    
                 let retCols = 
-                    outParams 
+                    sparams
+                    |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
                     |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                Some { FullName = name; Params = inParams; ReturnColumns = retCols }
+                Some { FullName = name; Params = sparams; ReturnColumns = retCols }
             else None) 
         |> Seq.toList
 
@@ -215,10 +218,17 @@ type internal OracleProvider(resolutionPath, owner) =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = OracleHelpers.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(OracleHelpers.commandType(),[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name,value,dbType) =
+        member __.CreateCommandParameter(name, value, dbType, direction, maxlength) =
             let value = if value = null then (box System.DBNull.Value) else value
             let p = Activator.CreateInstance(OracleHelpers.paramterType(),[|box name;value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value 
+            if dbType.IsSome then p.DbType <- dbType.Value
+            if direction.IsSome then p.Direction <- direction.Value 
+            match maxlength with
+            | Some(length) -> p.Size <- length
+            | None ->
+                match dbType with
+                | Some(DbType.String) -> p.Size <- 32767
+                | _ -> ()
             upcast p
         member __.CreateTypeMappings(con) = 
             OracleHelpers.connect con (fun con -> 
@@ -313,7 +323,7 @@ type internal OracleProvider(resolutionPath, owner) =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None)
+                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None,None, None)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -443,7 +453,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) kvp ->                         
                         let name = sprintf ":param%i" i
-                        let p = provider.CreateCommandParameter(name,kvp.Value, None)
+                        let p = provider.CreateCommandParameter(name,kvp.Value, None, None, None)
                         (kvp.Key,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -476,15 +486,15 @@ type internal OracleProvider(resolutionPath, owner) =
                         let name = sprintf ":param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> provider.CreateCommandParameter(name,v, None)
-                            | None -> provider.CreateCommandParameter(name, DBNull.Value, None)
+                            | Some v -> provider.CreateCommandParameter(name,v, None, None, None)
+                            | None -> provider.CreateCommandParameter(name, DBNull.Value, None, None, None)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray
                     |> Array.unzip
                 
-                let pkParam = provider.CreateCommandParameter(":pk", pkValue, None)
+                let pkParam = provider.CreateCommandParameter(":pk", pkValue, None, None, None)
 
                 ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk" 
                     (OracleHelpers.tableFullName entity.Table)
@@ -507,7 +517,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 ~~(sprintf "DELETE FROM %s WHERE %s = :id" (OracleHelpers.tableFullName entity.Table) pk.Column )
                 let cmd = provider.CreateCommand(con, sb.ToString())
                 cmd.CommandType <- CommandType.Text
-                cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, OracleHelpers.clrToEnum (pkValue.GetType().Name))) |> ignore
+                cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, OracleHelpers.clrToEnum (pkValue.GetType().Name), None, None)) |> ignore
                 cmd
 
             use scope = new Transactions.TransactionScope()

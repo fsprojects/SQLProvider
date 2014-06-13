@@ -147,9 +147,11 @@ type internal PostgresqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name,value,dbType) = 
+        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
             if dbType.IsSome then p.DbType <- dbType.Value 
+            if direction.IsSome then p.Direction <- direction.Value
+            if length.IsSome then p.Size <- length.Value
             upcast p
         member __.CreateTypeMappings(_) = 
             createTypeMappings()
@@ -187,9 +189,9 @@ type internal PostgresqlProvider(resolutionPath) as this =
                         WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
                         ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
-                let p =  (this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None)
+                let p =  (this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None, None, None)
                 com.Parameters.Add p |> ignore
-                let p =  (this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None)
+                let p =  (this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None, None, None)
                 com.Parameters.Add p |> ignore
                 use reader = com.ExecuteReader()
                 let columns =
@@ -303,7 +305,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None)
+                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
 
             let rec filterBuilder = function 
                 | [] -> ()

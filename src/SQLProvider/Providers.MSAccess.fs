@@ -61,9 +61,11 @@ type internal MSAccessProvider() as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
-        member __.CreateCommandParameter(name,value,dbType) = 
+        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = OleDbParameter(name,value)            
             if dbType.IsSome then p.DbType <- dbType.Value 
+            if direction.IsSome then p.Direction <- direction.Value
+            if length.IsSome then p.Size <- length.Value
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)
         member __.ClrToEnum = clrToEnum

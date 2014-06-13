@@ -90,7 +90,7 @@ type internal MySqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name,value,dbType) = 
+        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             match dbType with
             | Some v -> paramEnumCtor.Invoke([|box name;box(dbTypeToMySql v)|]) :?> IDataParameter
             | None -> paramObjectCtor.Invoke([|box name;box value|]) :?> IDataParameter            
@@ -140,8 +140,8 @@ type internal MySqlProvider(resolutionPath) as this =
                                  WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
                                  ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
                use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)               
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None)) |> ignore
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None)) |> ignore
+               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None, None, None)) |> ignore
+               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None, None, None)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let columns =
@@ -244,7 +244,7 @@ type internal MySqlProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None)
+                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
 
             let rec filterBuilder = function 
                 | [] -> ()
