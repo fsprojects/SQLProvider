@@ -69,9 +69,10 @@ type internal MSSqlServerProvider() =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new SqlConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
-        member __.CreateCommandParameter(name,value,dbType) = 
+        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = SqlParameter(name,value)            
             if dbType.IsSome then p.DbType <- dbType.Value 
+            if length.IsSome then p.Size <- length.Value
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
         member __.ClrToEnum = clrToEnum
@@ -223,13 +224,14 @@ type internal MSSqlServerProvider() =
                     let parameters = 
                         values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
                                { Name=name; Ordinal=ordinal
-                                 Direction = if mode = "IN" then In else Out
+                                 Direction = if mode = "IN" then ParameterDirection.Input else ParameterDirection.Output
                                  MaxLength = maxLen
                                  ClrType = clr
                                  DbType = sql } )
                         |> Seq.sortBy( fun p -> p.Ordinal)     
                         |> Seq.toList            
                     {FullName = name
+                     DbName = name
                      Params = parameters
                      ReturnColumns = [] })
                 |> Seq.toList

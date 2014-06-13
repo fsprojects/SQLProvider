@@ -59,11 +59,13 @@ type internal OdbcProvider(resolutionPath) =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
-        member __.CreateCommandParameter(name,value,dbType) = 
+        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = OdbcParameter()            
             p.Value <- value
             p.ParameterName <- name
             if dbType.IsSome then p.DbType <- dbType.Value 
+            if direction.IsSome then p.Direction <- direction.Value
+            if length.IsSome then p.Size <- length.Value
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)
         member __.ClrToEnum = clrToEnum

@@ -204,8 +204,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
 
         // add sprocs 
-        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<SqlDataContext>)
-        sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<SqlDataContext>)]))
+        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<ISqlDataContext>)
+        sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
         let genSprocs() =
             sprocData.Force()
             |> List.map(fun sproc -> 
@@ -229,15 +229,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 )
                 let parameters = 
                     sproc.Params
+                    |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                     |> List.map(fun p -> ProvidedParameter(p.Name,p.ClrType))
                 let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
                 let ty = ty.MakeGenericType rt
                 ProvidedMethod(sproc.FullName,parameters,ty,
                     InvokeCode = fun args -> 
-                        let name = sproc.FullName
-                        let rawNames = sproc.Params |> List.map(fun p -> p.Name) |> Array.ofList
-                        let rawTypes = sproc.Params |> List.map(fun p -> p.DbType) |> Array.ofList
-                        <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CallSproc(name,rawNames,rawTypes, %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
+                        let name = sproc.DbName
+                        let paramtyp = typeof<string * DbType * ParameterDirection * int option>
+                        let ps = 
+                            sproc.Params 
+                            |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value p.MaxLength])
+
+                        <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
                 )
         sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
 

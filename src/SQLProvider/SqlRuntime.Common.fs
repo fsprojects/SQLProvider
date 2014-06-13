@@ -138,6 +138,14 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
               | value -> e.SetColumnSilent(reader.GetName(i),value)
           yield e ]
 
+    static member internal FromOutputParameters(con, name, parameters:IDataParameter[]) = 
+        let e = SqlEntity(con, name)
+        parameters 
+        |> Array.iteri(fun i p ->
+            e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
+        )
+        [e]
+
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
         match aliasCache.TryGetValue alias with
@@ -214,7 +222,7 @@ and ISqlDataContext =
     abstract ConnectionString       : string
     abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : string * string [] * DbType [] * obj [] -> SqlEntity list
+    abstract CallSproc              : string * (string * DbType * ParameterDirection * int option)[]  * obj [] -> SqlEntity list
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
     abstract SubmitPendingChanges   : unit -> unit
@@ -335,8 +343,8 @@ type internal ISqlProvider =
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
-    /// return a new command parameter with the provided name, value and optionally type
-    abstract CreateCommandParameter : string * obj * DbType option -> IDataParameter
+    /// return a new command parameter with the provided name, value and optionally type, direction and length
+    abstract CreateCommandParameter : string * obj * DbType option * ParameterDirection option * int option -> IDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit

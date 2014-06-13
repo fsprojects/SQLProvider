@@ -1,5 +1,6 @@
 ﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
 
+open System
 open FSharp.Data.Sql
 
 [<Literal>]
@@ -9,14 +10,18 @@ let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HO
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
+let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+
 type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
-
+//***************** Individuals ***********************//
 let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
+
+//*************** QUERY ************************//
 let employeesFirstName = 
     query {
         for emp in ctx.``[HR].[EMPLOYEES]`` do
@@ -49,15 +54,43 @@ let topSales5ByCommission =
         take 5
     } |> Seq.toList
 
-let antartica =
-    let newRegion = ctx.``[HR].[REGIONS]``.Create() 
-    newRegion.REGION_NAME <- "Antartica"
-    newRegion.REGION_ID <- 5M
-    ctx.``Submit Updates``()
-    newRegion
+//************************ CRUD *************************//
 
-antartica.Delete()
-ctx.``Submit Updates``()
+
+let antartica =
+    let result =
+        query {
+            for reg in ctx.``[HR].[REGIONS]`` do
+            where (reg.REGION_ID = 5M)
+            select reg
+        } |> Seq.toList
+    match result with
+    | [ant] -> ant
+    | _ -> 
+        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
+        newRegion.REGION_NAME <- "Antartica"
+        newRegion.REGION_ID <- 5M
+        ctx.SubmitUpdates()
+        newRegion
 
 antartica.REGION_NAME <- "ant"
-ctx.``Submit Updates``()
+ctx.SubmitUpdates()
+
+antartica.Delete()
+ctx.SubmitUpdates()
+
+//********************** Procedures **************************//
+
+let result = ctx.``Stored Procedures``.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+
+//********************** Functions ***************************//
+
+let fullName = ctx.``Stored Procedures``.EMP_FULLNAME(100M).Head.Column_0
+
+//********************** Packaged Procs **********************//
+
+let resultPkg = ctx.``Stored Procedures``.``TEST_PACKAGE INSERT_JOB_HISTORY``(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+
+//********************** Packaged Funcs **********************//
+
+let fullNamPkg = ctx.``Stored Procedures``.``TEST_PACKAGE FULLNAME``("Bull", "Colin").Head.Column_0

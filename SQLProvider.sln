@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -22,6 +22,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 	ProjectSection(SolutionItems) = preProject
 		docs\content\core\general.fsx = docs\content\core\general.fsx
 		docs\content\core\oracle.fsx = docs\content\core\oracle.fsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3C867-4E92-4A85-BE21-5839A66F47E5}"
+	ProjectSection(SolutionItems) = preProject
+		src\scripts\GraphViz.fsx = src\scripts\GraphViz.fsx
+		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 	EndProjectSection
 EndProject
 Global
