@@ -15,7 +15,8 @@ module internal Patterns =
 type Column = { Name:string; ClrType: Type; DbType: DbType; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 type SprocParam = { Name:string; ClrType:Type; DbType:DbType; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
-type Sproc = {FullName:string; Params:SprocParam list; ReturnColumns:Column list }
+type Sproc = { FullName:string; DbName:string; Params:SprocParam list; ReturnColumns:Column list }
+
 type PrimaryKey = { Name : string; Table : string; Column : string; IndexName : string }
 type Table = { Schema: string; Name:string; Type:string }
     with 

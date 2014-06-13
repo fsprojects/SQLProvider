@@ -235,7 +235,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let ty = ty.MakeGenericType rt
                 ProvidedMethod(sproc.FullName,parameters,ty,
                     InvokeCode = fun args -> 
-                        let name = sproc.FullName
+                        let name = sproc.DbName
                         let paramtyp = typeof<string * DbType * ParameterDirection * int option>
                         let ps = 
                             sproc.Params 

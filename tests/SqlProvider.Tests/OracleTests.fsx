@@ -85,8 +85,12 @@ let result = ctx.``Stored Procedures``.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 1
 
 //********************** Functions ***************************//
 
-let fullName = ctx.``Stored Procedures``.EMP_FULLNAME(100M)
+let fullName = ctx.``Stored Procedures``.EMP_FULLNAME(100M).Head.Column_0
 
 //********************** Packaged Procs **********************//
 
+let resultPkg = ctx.``Stored Procedures``.``TEST_PACKAGE INSERT_JOB_HISTORY``(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+
 //********************** Packaged Funcs **********************//
+
+let fullNamPkg = ctx.``Stored Procedures``.``TEST_PACKAGE FULLNAME``("Bull", "Colin").Head.Column_0

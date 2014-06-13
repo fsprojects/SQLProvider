@@ -205,6 +205,7 @@ type internal OdbcProvider(resolutionPath) =
                         |> Seq.sortBy( fun p -> p.Ordinal)     
                         |> Seq.toList            
                     {FullName = name
+                     DbName = name
                      Params = parameters
                      ReturnColumns = [] })
                 |> Seq.toList
