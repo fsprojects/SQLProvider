@@ -163,19 +163,25 @@ module internal OracleHelpers =
         (children, rels)
 
     let getSprocs con =
+        
+
+        let functions = getSchema "Functions" [|owner|] con
+        let procedures = getSchema "Procedures" [|owner|] con
+
         getSchema "ProcedureParameters" [|owner|] con
         |> DataTable.groupBy (fun row -> 
                 let owner = dbUnbox row.["OWNER"]
                 let (procName, packageName) = (dbUnbox row.["OBJECT_NAME"], dbUnbox row.["PACKAGE_NAME"])
                 let dataType = dbUnbox row.["DATA_TYPE"]
-                let name = 
-                        if String.IsNullOrEmpty(packageName)
-                        then (procName) 
-                        else (packageName + " " + procName)
+                let components = 
+                    if String.IsNullOrEmpty(packageName)
+                    then [procName] 
+                    else [packageName;procName]
                 let dbName =
                     if String.IsNullOrEmpty(packageName)
                     then (owner + "." + procName) 
                     else (owner + "." + packageName + "." + procName)
+                let name = String.Join(" ", components)
                 let argumentName = dbUnbox row.["ARGUMENT_NAME"]
                 match sqlToEnum dataType, sqlToClr dataType with
                 | Some(dbType), Some(clrType) ->
@@ -186,9 +192,9 @@ module internal OracleHelpers =
                         | "OUT" -> ParameterDirection.Output
                         | a -> failwith "Direction not supported %s" a
                     let paramName, paramDetails = argumentName, (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
-                    ((name, dbName), Some (paramName, paramDetails))
-                | _,_ -> ((name, dbName), None))
-        |> Seq.choose (fun ((name, dbName), parameters) -> 
+                    ((procName, name, dbName, components), Some (paramName, paramDetails))
+                | _,_ -> ((procName, name, dbName, components), None))
+        |> Seq.choose (fun ((procName, name, dbName, components), parameters) -> 
             if parameters |> Seq.forall (fun x -> x.IsSome)
             then 
                 let sparams = 
@@ -204,7 +210,7 @@ module internal OracleHelpers =
                     sparams
                     |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
                     |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                Some { FullName = name; DbName = dbName; Params = sparams; ReturnColumns = retCols }
+                Some <| Procedure(components, { Name = procName; FullName = name; DbName = dbName; Params = sparams; ReturnColumns = retCols })
             else None) 
         |> Seq.toList
 
