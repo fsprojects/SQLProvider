@@ -114,14 +114,14 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     member e.SetColumnOptionSilent(key,value) =
       match value with
       | Some value -> 
-          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
       | None -> data.Remove key |> ignore
 
     member e.SetColumnOption(key,value) =
       match value with
       | Some value -> 
-          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
