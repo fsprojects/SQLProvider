@@ -81,13 +81,18 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-let result = ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
-ctx.Procedures.SECURE_DML() |> ignore
+//Support for sprocs with no parameters
+ctx.Procedures.SECURE_DML()
 
+//No support yet for ref cursors... something in the pipeline thou
+let employees = ctx.Procedures.GET_EMPLOYEES()
+employees.Head.ColumnValues
+ 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME(100M).Head.Column_0
+let fullName = ctx.Functions.EMP_FULLNAME(100M)
 
 //********************** Packaged Procs **********************//
 
@@ -95,4 +100,4 @@ let resultPkg = ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993
 
 //********************** Packaged Funcs **********************//
 
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin").Head.Column_0
+let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin")

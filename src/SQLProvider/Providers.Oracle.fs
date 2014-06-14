@@ -54,6 +54,7 @@ module internal OracleHelpers =
     let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleCommand"))
     let paramterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleParameter"))
     let oracleDbType() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleDbType"))
+    let oracleReader() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleDataReader"))
     let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
@@ -66,15 +67,20 @@ module internal OracleHelpers =
     let createTypeMappings con =
         let dt = getSchema "DataTypes" [||] con       
         let clr =             
-            [for r in dt.Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+            [for r in dt.Rows do 
+                yield string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]
+                yield "REF CURSOR", 121, "REF CURSOR"
+            ]
 
         // create map from sql name to clr type, and type to SqlDbType enum
         let sqlToClr', sqlToEnum', clrToEnum' =
             clr
             |> List.choose( fun (tn,providerType,dt) ->
                 if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt 
+                let ty =
+                    if dt = "REF CURSOR"
+                    then typeof<list<SqlEntity>>
+                    else Type.GetType dt 
                 if ty = null 
                 then None
                 else
@@ -260,8 +266,20 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(OracleHelpers.commandType(),[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(name, value, dbType, direction, maxlength) =
             let value = if value = null then (box System.DBNull.Value) else value
-            let p = Activator.CreateInstance(OracleHelpers.paramterType(),[|box name;value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value
+            let parameterType = OracleHelpers.paramterType()
+            let oracleDbTypeSetter = 
+                parameterType.GetProperty("OracleDbType").GetSetMethod()
+
+            let oracleRefCursorInstance = 
+                Enum.ToObject(OracleHelpers.oracleDbType(), 121)
+
+            let p = Activator.CreateInstance(parameterType,[|box name;value|]) :?> IDbDataParameter
+            if dbType.IsSome 
+            then 
+                if dbType.Value = DbType.Object
+                then oracleDbTypeSetter.Invoke(p, [|oracleRefCursorInstance|]) |> ignore
+                else p.DbType <- dbType.Value
+
             if direction.IsSome then p.Direction <- direction.Value 
             match maxlength with
             | Some(length) -> p.Size <- length

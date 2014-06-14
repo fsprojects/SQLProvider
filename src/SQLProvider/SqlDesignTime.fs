@@ -204,30 +204,37 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
-            let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
-            rt.AddMember(ProvidedConstructor([]))
-            container.AddMember rt
-            sproc.ReturnColumns
-            |> List.iter(fun col ->
-                let name = col.Name
-                let ty = col.ClrType
-                let prop = 
-                    ProvidedProperty(
-                        name,ty,
-                        GetterCode = (fun args ->
-                            let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                            Expr.Call(args.[0],meth,[Expr.Value name])),
-                        SetterCode = (fun args ->
-                            let meth = typeof<SqlEntity>.GetMethod "SetColumn"
-                            Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
-                rt.AddMember prop
-            )
+            let ty =
+                match sproc.ReturnColumns.Length with
+                | 0 -> typeof<Unit>
+                | 1 -> sproc.ReturnColumns.Head.ClrType
+                | _ ->
+                    let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
+                    rt.AddMember(ProvidedConstructor([]))
+                    container.AddMember rt
+                    sproc.ReturnColumns
+                    |> List.iter(fun col ->
+                        let name = col.Name
+                        let ty = col.ClrType
+                        let prop = 
+                            ProvidedProperty(
+                                name,ty,
+                                GetterCode = (fun args ->
+                                    let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                    Expr.Call(args.[0],meth,[Expr.Value name])),
+                                SetterCode = (fun args ->
+                                    let meth = typeof<SqlEntity>.GetMethod "SetColumn"
+                                    Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
+                        rt.AddMember prop
+                    )
+                    let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
+                    ty.MakeGenericType rt
+
             let parameters = 
                 sproc.Params
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,p.ClrType))
-            let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
-            let ty = ty.MakeGenericType rt
+           
             ProvidedMethod(sproc.Name,parameters,ty,
                 InvokeCode = fun args -> 
                     let name = sproc.DbName

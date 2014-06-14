@@ -22,6 +22,9 @@ OracleHelpers.connect connection OracleHelpers.createTypeMappings
 OracleHelpers.connect connection (OracleHelpers.getSchema "Packages" [|"HR"|])
 |> DataTable.printDataTable
 
+OracleHelpers.connect connection (OracleHelpers.getSchema "DataTypes" [||])
+|> DataTable.printDataTable
+
 OracleHelpers.connect connection (OracleHelpers.getSchema "PackageBodies" [|"HR"|])
 |> DataTable.printDataTable
 
@@ -34,6 +37,16 @@ OracleHelpers.connect connection (OracleHelpers.getSchema "Procedures" [|"HR"|])
 OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"HR"|])
 |> DataTable.printDataTable
 
+OracleHelpers.sqlToEnum "REF CURSOR"
+OracleHelpers.sqlToClr "REF CURSOR"
+
 
 
 let sprocs = OracleHelpers.connect connection OracleHelpers.getSprocs
+
+#r "D:\Oracle\product\12.1.0\client_1\odp.net\managed\common\Oracle.ManagedDataAccess.dll"
+
+open Oracle.ManagedDataAccess.Client
+open Oracle.ManagedDataAccess.Types
+
+typeof<OracleRefCursor>.Name
