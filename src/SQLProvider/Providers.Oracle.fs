@@ -212,9 +212,18 @@ module internal OracleHelpers =
                   Ordinal = int(dbUnbox<decimal> row.["POSITION"]) } |> Some
             | _,_ -> None
 
+        let parameters = 
+            let withParameters = getSchema "ProcedureParameters" [|owner|] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+            (Set.union procedures functions)
+            |> Set.toSeq 
+            |> Seq.choose (fun proc -> 
+                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
+                then None
+                else Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
+                )
+            |> Seq.append withParameters
 
-        getSchema "ProcedureParameters" [|owner|] con
-        |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+        parameters
         |> Seq.map (fun (name, parameters) -> 
                         let sparams = 
                             parameters

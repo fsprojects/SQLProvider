@@ -83,6 +83,8 @@ ctx.SubmitUpdates()
 
 let result = ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
+ctx.Procedures.SECURE_DML() |> ignore
+
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EMP_FULLNAME(100M).Head.Column_0

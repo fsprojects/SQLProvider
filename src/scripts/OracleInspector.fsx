@@ -32,7 +32,7 @@ OracleHelpers.connect connection (OracleHelpers.getSchema "Procedures" [|"HR"|])
 |> DataTable.printDataTable
 
 OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"HR"|])
-|> DataTable.groupBy (fun row -> (row.["OBJECT_NAME"], row.["PACKAGE_NAME"]), row)
+|> DataTable.printDataTable
 
 
 
