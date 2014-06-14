@@ -21,8 +21,9 @@ type SprocParam = { Name:string; ClrType:Type; DbType:DbType; Direction:Paramete
 type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns:Column list }
 
 type Sproc =
-    | Function of pathComponents:string list * SprocDefinition
-    | Procedure of pathComponents:string list * SprocDefinition
+    | Root of pathElement:string * Sproc
+    | SprocPath of pathElement:string * Sproc
+    | Sproc of SprocDefinition
 
 type PrimaryKey = { Name : string; Table : string; Column : string; IndexName : string }
 type Table = { Schema: string; Name:string; Type:string }

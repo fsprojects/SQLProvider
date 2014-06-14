@@ -8,7 +8,23 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-module internal OracleHelpers = 
+module internal OracleHelpers =
+    
+    type StoredObjectName = {
+        ProcName : string
+        Owner : string
+        PackageName : string
+    }
+    with
+        member x.ToList() =  
+               if String.IsNullOrEmpty(x.PackageName)
+               then [x.Owner; x.ProcName] 
+               else [x.Owner; x.PackageName; x.ProcName]
+        member x.DbName with get() = String.Join(".", x.ToList())
+        member x.FriendlyName with get() = String.Join(" ", x.ToList())
+        member x.FullName with get() = String.Join("_", x.ToList())
+
+
     let mutable resolutionPath = String.Empty
     let mutable owner = String.Empty
 
@@ -101,6 +117,9 @@ module internal OracleHelpers =
     let dbUnbox<'a> (v:obj) : 'a = 
         if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
     
+    let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then def else unbox v
+
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
 
@@ -163,55 +182,56 @@ module internal OracleHelpers =
         (children, rels)
 
     let getSprocs con =
-        
 
-        let functions = getSchema "Functions" [|owner|] con
-        let procedures = getSchema "Procedures" [|owner|] con
+        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+
+        let getName (row:DataRow) = 
+            let owner = dbUnbox row.["OWNER"]
+            let (procName, packageName) = (dbUnbox row.["OBJECT_NAME"], dbUnbox row.["PACKAGE_NAME"])
+            { ProcName = procName; Owner = owner; PackageName = packageName }
+
+        let createSprocParameters (row:DataRow) = 
+            let dataType = dbUnbox row.["DATA_TYPE"]
+            let argumentName = dbUnbox row.["ARGUMENT_NAME"]
+            let maxLength = Some(int(dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+
+            match sqlToEnum dataType, sqlToClr dataType with
+            | Some(dbType), Some(clrType) ->
+                let direction = 
+                    match dbUnbox row.["IN_OUT"] with
+                    | "IN" -> ParameterDirection.Input
+                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                    | "OUT" -> ParameterDirection.Output
+                    | a -> failwith "Direction not supported %s" a
+                { Name = dbUnbox row.["ARGUMENT_NAME"]
+                  ClrType = clrType
+                  DbType = dbType 
+                  Direction = direction
+                  MaxLength = maxLength
+                  Ordinal = int(dbUnbox<decimal> row.["POSITION"]) } |> Some
+            | _,_ -> None
+
 
         getSchema "ProcedureParameters" [|owner|] con
-        |> DataTable.groupBy (fun row -> 
-                let owner = dbUnbox row.["OWNER"]
-                let (procName, packageName) = (dbUnbox row.["OBJECT_NAME"], dbUnbox row.["PACKAGE_NAME"])
-                let dataType = dbUnbox row.["DATA_TYPE"]
-                let components = 
-                    if String.IsNullOrEmpty(packageName)
-                    then [procName] 
-                    else [packageName;procName]
-                let dbName =
-                    if String.IsNullOrEmpty(packageName)
-                    then (owner + "." + procName) 
-                    else (owner + "." + packageName + "." + procName)
-                let name = String.Join(" ", components)
-                let argumentName = dbUnbox row.["ARGUMENT_NAME"]
-                match sqlToEnum dataType, sqlToClr dataType with
-                | Some(dbType), Some(clrType) ->
-                    let direction = 
-                        match dbUnbox row.["IN_OUT"] with
-                        | "IN" -> ParameterDirection.Input
-                        | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
-                        | "OUT" -> ParameterDirection.Output
-                        | a -> failwith "Direction not supported %s" a
-                    let paramName, paramDetails = argumentName, (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
-                    ((procName, name, dbName, components), Some (paramName, paramDetails))
-                | _,_ -> ((procName, name, dbName, components), None))
-        |> Seq.choose (fun ((procName, name, dbName, components), parameters) -> 
-            if parameters |> Seq.forall (fun x -> x.IsSome)
-            then 
-                let sparams = 
-                    parameters
-                    |> Seq.map (function
-                                 | Some (pName, (dbType, clrType, direction, position, length)) -> 
-                                        { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = int(position) }
-                                 | None -> failwith "How the hell did we get here??")
-                    |> Seq.toList
-                    |> List.sortBy (fun x -> x.Ordinal)
-                    
-                let retCols = 
-                    sparams
-                    |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                    |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                Some <| Procedure(components, { Name = procName; FullName = name; DbName = dbName; Params = sparams; ReturnColumns = retCols })
-            else None) 
+        |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+        |> Seq.map (fun (name, parameters) -> 
+                        let sparams = 
+                            parameters
+                            |> Seq.choose id
+                            |> Seq.sortBy (fun p -> p.Ordinal)
+                            |> Seq.toList
+                            
+                        let retCols = 
+                            sparams
+                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                        
+                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
+                        | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
+                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols })))
+                      ) 
         |> Seq.toList
 
 

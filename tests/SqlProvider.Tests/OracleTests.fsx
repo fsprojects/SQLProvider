@@ -4,7 +4,7 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=orcl)));User Id=HR;Password=oracle;"
+let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
@@ -89,8 +89,8 @@ let fullName = ctx.Functions.EMP_FULLNAME(100M).Head.Column_0
 
 //********************** Packaged Procs **********************//
 
-let resultPkg = ctx.Procedures.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+let resultPkg = ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //********************** Packaged Funcs **********************//
 
-let fullNamPkg = ctx.Functions.TEST_PACKAGE.FULLNAME("Bull", "Colin").Head.Column_0
+let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin").Head.Column_0

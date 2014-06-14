@@ -22,6 +22,9 @@ OracleHelpers.connect connection OracleHelpers.createTypeMappings
 OracleHelpers.connect connection (OracleHelpers.getSchema "Packages" [|"HR"|])
 |> DataTable.printDataTable
 
+OracleHelpers.connect connection (OracleHelpers.getSchema "PackageBodies" [|"HR"|])
+|> DataTable.printDataTable
+
 OracleHelpers.connect connection (OracleHelpers.getSchema "Functions" [|"HR"|])
 |> DataTable.printDataTable
 
@@ -29,7 +32,8 @@ OracleHelpers.connect connection (OracleHelpers.getSchema "Procedures" [|"HR"|])
 |> DataTable.printDataTable
 
 OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"HR"|])
-|> DataTable.printDataTable
+|> DataTable.groupBy (fun row -> (row.["OBJECT_NAME"], row.["PACKAGE_NAME"]), row)
+
 
 
 let sprocs = OracleHelpers.connect connection OracleHelpers.getSprocs

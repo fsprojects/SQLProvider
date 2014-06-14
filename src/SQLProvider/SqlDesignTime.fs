@@ -202,17 +202,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s" r.PrimaryTable r.PrimaryKey r.ForeignKey)
                         yield prop ]
                 attProps @ relProps)
-
-        // add sprocs 
-        let procedureContainer = ProvidedTypeDefinition("procedureContainer",Some typeof<ISqlDataContext>)
-        procedureContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
-        let functionContainer = ProvidedTypeDefinition("functionContainer",Some typeof<ISqlDataContext>)
-        functionContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
         
-        let generateSprocMethod (sproc:SprocDefinition) = 
+        let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
             let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
             rt.AddMember(ProvidedConstructor([]))
-            serviceType.AddMember rt
+            container.AddMember rt
             sproc.ReturnColumns
             |> List.iter(fun col ->
                 let name = col.Name
@@ -237,49 +231,65 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             ProvidedMethod(sproc.Name,parameters,ty,
                 InvokeCode = fun args -> 
                     let name = sproc.DbName
-                    let paramtyp = typeof<string * DbType * ParameterDirection * int option>
+                    let paramtyp = typeof<string * DbType * ParameterDirection * int>
                     let ps = 
                         sproc.Params 
-                        |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value p.MaxLength])
+                        |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value (defaultArg p.MaxLength -1)])
 
                     <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
             
-        let generateTypeTree (path:Sproc list) = 
-            
-            let rec foldTypes paths (remainder:string list) (lastTypeDef:ProvidedTypeDefinition) (s:Map<string list, ProvidedTypeDefinition>) sproc = 
-                match remainder with
-                | [] -> s
-                | [_] -> 
-                    lastTypeDef.AddMember(generateSprocMethod sproc)
-                    foldTypes paths [] lastTypeDef s sproc
-                | h::rest ->
-                    let newPath = (h :: paths)
-                    let newType = ProvidedTypeDefinition(h, Some typeof<ISqlDataContext>)
-                    newType.AddMember(ProvidedConstructor([]))
-                    serviceType.AddMember(newType)
-                    lastTypeDef.AddMember(ProvidedProperty(h, newType, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
-                    foldTypes newPath rest newType s sproc
-
-            let procedureRoot = ProvidedTypeDefinition("Procedures", Some typeof<ISqlDataContext>)
-            let functionRoot = ProvidedTypeDefinition("Functions", Some typeof<ISqlDataContext>)
-
-            path
-            |> List.fold (fun s p ->
-                            match p with
-                            | Procedure(path, sproc) -> foldTypes [] path procedureRoot s sproc
-                            | Function(path, sproc) -> foldTypes [] path functionRoot s sproc
-                ) (Map.ofList [["Functions"], functionRoot; ["Procedures"], procedureRoot])
-            |> ignore
-
-            procedureRoot, functionRoot
         
-        let proceduresType, functionTypes = generateTypeTree (sprocData.Force())   
-        procedureContainer.AddMember(proceduresType)
-        functionContainer.AddMember(functionTypes)
+        let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
+            match sproc with
+            | Root(typeName, next) -> 
+                let path = (path @ [typeName])
+                match createdTypes.TryFind path with
+                | Some(typ) -> 
+                    walkSproc path (Some typ) (Some typ) createdTypes next 
+                | None ->
+                    let typ = ProvidedTypeDefinition(typeName, Some typeof<ISqlDataContext>)
+                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
+                    walkSproc path (Some typ) (Some typ) (createdTypes.Add(path, typ)) next 
+            | SprocPath(typeName, next) -> 
+                let path = (path @ [typeName])
+                match createdTypes.TryFind path with
+                | Some(typ) ->
+                    match containerType, previousType with
+                    | Some(containerType), Some(previousType) ->
+                        //containerType.AddMember(typ) 
+                        previousType.AddMember(ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                    | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
+                    walkSproc path containerType (Some typ) createdTypes next 
+                | None -> 
+                    let typ = ProvidedTypeDefinition(typeName, Some typeof<ISqlDataContext>)
+                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)])) 
+                    match containerType, previousType with
+                    | Some(containerType), Some(previousType) -> 
+                        containerType.AddMember(typ)
+                        previousType.AddMember(ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                    | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
+                    walkSproc path containerType (Some typ) (createdTypes.Add(path, typ)) next 
+            | Sproc(sproc) ->
+                    match containerType, previousType with
+                    | Some(containerType), Some(previousType) -> previousType.AddMember(generateSprocMethod containerType sproc); createdTypes
+                    | _,_ -> failwithf "Could not generate sproc undefined root or previous type"
 
+        let rec generateTypeTree (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
+            match sprocs with
+            | [] -> 
+                Map.filter (fun (k:string list) _ -> 
+                    match k with
+                    | [k] -> true
+                    | _ -> false
+                ) createdTypes
+                |> Map.toSeq
+                |> Seq.map snd
+            | sproc::rest -> generateTypeTree (walkSproc [] None None createdTypes sproc) rest
+
+        let containers = generateTypeTree Map.empty (sprocData.Force()) 
+        
         serviceType.AddMembersDelayed( fun () ->
-            [ yield procedureContainer :> MemberInfo
-              yield functionContainer :> MemberInfo
+            [ yield! containers |> Seq.cast<MemberInfo>
               for (KeyValue(key,(entityType,desc,_))) in baseTypes.Force() do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
@@ -348,8 +358,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 yield prop       :> MemberInfo
                 yield! Seq.cast<MemberInfo> it
 
-              yield ProvidedProperty("Functions", functionTypes, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)                     :> MemberInfo
-              yield ProvidedProperty("Procedures", proceduresType, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)                     :> MemberInfo
+              yield! containers |> Seq.map(fun p ->  ProvidedProperty(p.Name.Replace("Container",""), p, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
               yield ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo

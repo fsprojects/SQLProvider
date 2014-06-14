@@ -276,7 +276,7 @@ type internal MSSqlServerProvider() =
                     | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
                             None )
             con.Close()
-            ret |> List.map (fun r -> Procedure([r.FullName], r))
+            ret |> List.map (fun r -> Root("Procedures", Sproc r))
          
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
