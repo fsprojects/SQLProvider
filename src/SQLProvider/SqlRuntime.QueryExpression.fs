@@ -3,10 +3,10 @@
     module internal Utilities =
         open FSharp.Data.Sql.Providers
 
-        let createSqlProvider vendor resolutionPath owner =
+        let createSqlProvider vendor resolutionPath dbName owner =
             match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, dbName) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
