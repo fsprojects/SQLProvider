@@ -77,7 +77,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
             //This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...
-           | data when data.GetType() <> typeof<'T> -> unbox <| Convert.ChangeType(data, typeof<'T>)
+           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
         else defaultValue()
     
@@ -86,7 +86,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
            match data.[key] with
            | null -> None
            | :? System.DBNull -> None
-           | data when data.GetType() <> typeof<'T> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))           
+           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))           
            | data -> Some(unbox data)           
        else None
 
