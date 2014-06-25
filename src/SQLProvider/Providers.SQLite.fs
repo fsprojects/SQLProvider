@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal SQLiteProvider(resolutionPath) as this =
+type internal SQLiteProvider(resolutionPath, dbName) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
@@ -65,7 +65,13 @@ type internal SQLiteProvider(resolutionPath) as this =
         com.ExecuteReader()
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+        member __.CreateConnection(connectionString) = 
+          let actualConString = 
+            if String.IsNullOrEmpty connectionString
+            then let path = Path.GetFullPath(Path.Combine(resolutionPath, dbName))
+                 sprintf "Data source=%s;Version=3" path
+            else connectionString
+          Activator.CreateInstance(connectionType,[|box actualConString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
