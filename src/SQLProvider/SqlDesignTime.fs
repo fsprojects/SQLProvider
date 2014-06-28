@@ -204,46 +204,50 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
 
         // add sprocs 
-        let sprocContainer = ProvidedTypeDefinition("SprocContainer",Some typeof<ISqlDataContext>)
+        let sprocContainer = ProvidedTypeDefinition("SprocContainer",None)
         sprocContainer.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
-        let genSprocs() =
+        let sprocs =
             sprocData.Force()
             |> List.map(fun sproc -> 
-                let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
-                rt.AddMember(ProvidedConstructor([]))
-                serviceType.AddMember rt
-                sproc.ReturnColumns
-                |> List.iter(fun col ->
-                    let name = col.Name
-                    let ty = col.ClrType
-                    let prop = 
-                        ProvidedProperty(
-                            name,ty,
-                            GetterCode = (fun args ->
-                                let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                                Expr.Call(args.[0],meth,[Expr.Value name])),
-                            SetterCode = (fun args ->
-                                let meth = typeof<SqlEntity>.GetMethod "SetColumn"
-                                Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
-                    rt.AddMember prop
-                )
-                let parameters = 
-                    sproc.Params
-                    |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
-                    |> List.map(fun p -> ProvidedParameter(p.Name,p.ClrType))
-                let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
-                let ty = ty.MakeGenericType rt
-                ProvidedMethod(sproc.FullName,parameters,ty,
-                    InvokeCode = fun args -> 
-                        let name = sproc.DbName
-                        let paramtyp = typeof<string * DbType * ParameterDirection * int option>
-                        let ps = 
-                            sproc.Params 
-                            |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value p.MaxLength])
+                let containerType = ProvidedTypeDefinition(sproc.FullName,None)
+                containerType.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)]))
+                containerType.AddMemberDelayed(fun () -> 
+                    let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
+                    rt.AddMember(ProvidedConstructor([]))
+                    serviceType.AddMember rt
+                    sproc.ReturnColumns.Force()
+                    |> List.iter(fun col ->
+                        let name = col.Name
+                        let ty = col.ClrType
+                        let prop = 
+                            ProvidedProperty(
+                                name,ty,
+                                GetterCode = (fun args ->
+                                    let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                    Expr.Call(args.[0],meth,[Expr.Value name])),
+                                SetterCode = (fun args ->
+                                    let meth = typeof<SqlEntity>.GetMethod "SetColumn"
+                                    Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
+                        rt.AddMember prop)
+                    let parameters = 
+                        sproc.Params
+                        |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+                        |> List.map(fun p -> ProvidedParameter(p.Name,p.ClrType))
+                    let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
+                    let ty = ty.MakeGenericType rt
+                    ProvidedMethod("Execute",parameters,ty,
+                        InvokeCode = fun args -> 
+                            let name = sproc.DbName
+                            let paramtyp = typeof<string * DbType * ParameterDirection * int option>
+                            let ps = 
+                                sproc.Params 
+                                |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value p.MaxLength])
 
-                        <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
-                )
-        sprocContainer.AddMembersDelayed(fun _ -> genSprocs())
+                            <@@ (((%%args.[0] : obj) :?> ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+                containerType)
+        
+        sprocContainer.AddMembersDelayed(fun _ -> sprocs)
+        sprocContainer.AddMembersDelayed(fun _ -> sprocs |> List.map(fun s -> ProvidedProperty(s.Name,s,GetterCode = fun args -> <@@ (((%%args.[0] : obj) :?> ISqlDataContext)) @@> )))
 
         serviceType.AddMembersDelayed( fun () ->
             [ yield sprocContainer :> MemberInfo

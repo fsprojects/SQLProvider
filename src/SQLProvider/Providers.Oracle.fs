@@ -204,7 +204,7 @@ module internal OracleHelpers =
                     sparams
                     |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
                     |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                Some { FullName = name; DbName = dbName; Params = sparams; ReturnColumns = retCols }
+                Some { FullName = name; DbName = dbName; Params = sparams; ReturnColumns = lazy retCols }
             else None) 
         |> Seq.toList
 
