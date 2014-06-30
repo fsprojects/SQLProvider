@@ -69,12 +69,12 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                let outps =
                 outputParameters
                 |> Array.mapi(fun i (name, dbtype, dir, length) ->
-                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, length)
+                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, if length = -1 then None else Some length)
                     com.Parameters.Add p |> ignore; p)
 
                inputParameters
                |> Array.iteri(fun i (name, dbtype, dir, length) ->
-                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, length)
+                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, if length = -1 then None else Some length)
                    com.Parameters.Add p |> ignore)
 
                use reader = com.ExecuteReader()

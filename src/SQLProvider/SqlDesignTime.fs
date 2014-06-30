@@ -238,10 +238,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     ProvidedMethod("Execute",parameters,ty,
                         InvokeCode = fun args -> 
                             let name = sproc.DbName
-                            let paramtyp = typeof<string * DbType * ParameterDirection * int option>
+                            let paramtyp = typeof<string * DbType * ParameterDirection * int>
                             let ps = 
                                 sproc.Params 
-                                |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value p.MaxLength])
+                                |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value (if p.MaxLength.IsSome then p.MaxLength.Value else -1) ])
 
                             <@@ (((%%args.[0] : obj) :?> ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
                 containerType)
