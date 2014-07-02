@@ -187,25 +187,36 @@ type internal MSSqlServerProvider() =
             let con = con:?>SqlConnection
             //todo: this whole function needs cleaning up
             let baseQuery = @"SELECT 
-                              SPECIFIC_SCHEMA
-                              ,SPECIFIC_NAME
+                              c.name
+                              ,b.name
                               ,ORDINAL_POSITION
                               ,PARAMETER_MODE
                               ,PARAMETER_NAME
                               ,DATA_TYPE
                               ,CHARACTER_MAXIMUM_LENGTH
-                            FROM INFORMATION_SCHEMA.PARAMETERS a
-                            JOIN sys.procedures b on a.SPECIFIC_NAME = b.name"
+                            FROM sys.procedures b
+                            left join INFORMATION_SCHEMA.PARAMETERS a on a.SPECIFIC_NAME = b.name 
+							join sys.schemas c on b.schema_id = c.schema_id"
             if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con baseQuery
             let meta =
                 [ while reader.Read() do
+                    let paramName = reader.GetSqlString(4)
+                    if paramName.IsNull then
+                        yield (reader.GetSqlString(0).Value,
+                               reader.GetSqlString(1).Value,                               
+                               0,
+                               "",
+                               "",
+                               "",
+                               None)
+                    else
                        yield 
                            (reader.GetSqlString(0).Value,
                             reader.GetSqlString(1).Value,
                             reader.GetSqlInt32(2).Value,
                             reader.GetSqlString(3).Value,
-                            reader.GetSqlString(4).Value,
+                            paramName.Value,
                             reader.GetSqlString(5).Value,
                             let len = reader.GetSqlInt32(6)
                             if len.IsNull then None else Some len.Value ) ]
@@ -219,7 +230,7 @@ type internal MSSqlServerProvider() =
                          match sqlToClr dt, sqlToEnum dt with
                          |Some(clr), Some(sql) -> Some (ordinal,mode,name,clr,sql,maxLen)
                          | _ -> None)
-                   if Seq.length values = Seq.length values' then Some (name,values') else None)
+                   if Seq.length (values |> Seq.filter(function (_,_,_,_,"",_,_) -> false | _ -> true) ) = Seq.length values' then Some (name,values') else None)
                 |> Seq.map(fun (name, values) ->  
                     let parameters = 
                         values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
@@ -234,47 +245,51 @@ type internal MSSqlServerProvider() =
                      FullName = name
                      DbName = name
                      Params = parameters
-                     ReturnColumns = [] })
+                     ReturnColumns = lazy [] })
                 |> Seq.toList
             reader.Dispose()
-            let ret =
-                meta
-                |> List.choose(fun sproc ->
-                    use com = new SqlCommand(sproc.FullName,con)
-                    com.CommandType <- CommandType.StoredProcedure
-                    try // try / catch here as this stuff is still experimental
-                      sproc.Params
-                      |> List.iter(fun p ->
-                        let p' = SqlParameter()           
-                        p'.ParameterName <- p.Name
-                        p'.DbType <- p.DbType
-                        p'.Value <- 
-                             if p.ClrType = typeof<string> then box "1"
-                             elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
-                             elif p.ClrType.IsArray then box (Array.zeroCreate 0)
-                             // warning: i might have missed cases here and this next call will
-                             // blow if the type doesn't have a parameter less ctor
-                             else Activator.CreateInstance(p.ClrType)
-                        com.Parameters.Add p' |> ignore)
-                      use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
-                      let schema = reader.GetSchemaTable()
-                      let columns = 
-                          if schema = null then [] else
-                          schema.Rows
-                          |> Seq.cast<DataRow>
-                          |> Seq.choose(fun row -> 
-                               (clrToEnum (row.["DataType"] :?> Type).FullName ) 
-                               |> Option.map( fun sql ->
-                                     { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                       DbType = sql; IsPrimarKey = false; IsNullable=false } ))
-                          |> Seq.toList
-                  
-                      if schema = null || columns.Length = schema.Rows.Count then
-                         Some { sproc with ReturnColumns = columns }
-                      else None
-                    with 
-                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
-                            None )
+            
+            let getColumns sproc = 
+                lazy
+                use com = new SqlCommand(sproc.FullName,con)
+                com.CommandType <- CommandType.StoredProcedure
+                try // try / catch here as this stuff is still experimental
+                  sproc.Params
+                  |> List.iter(fun p ->
+                    let p' = SqlParameter()   
+                    if  String.IsNullOrWhiteSpace p.Name then () else
+                    p'.ParameterName <- p.Name
+                    p'.DbType <- p.DbType
+                    p'.Value <- 
+                         if p.ClrType = typeof<string> then box "1"
+                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
+                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
+                         // warning: i might have missed cases here and this next call will
+                         // blow if the type doesn't have a parameter less ctor
+                         else Activator.CreateInstance(p.ClrType)
+                    com.Parameters.Add p' |> ignore)
+                  if con.State <> ConnectionState.Open then con.Open()
+                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
+                  let schema = reader.GetSchemaTable()
+                  con.Close()
+                  let columns = 
+                      if schema = null then [] else
+                      schema.Rows
+                      |> Seq.cast<DataRow>
+                      |> Seq.choose(fun row -> 
+                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
+                           |> Option.map( fun sql ->
+                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
+                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
+                      |> Seq.toList                  
+                  if schema = null || columns.Length = schema.Rows.Count then columns else []
+                with 
+                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                        con.Close()
+                        failwithf "Fatal error - could not deduce the return values of stored procedure %s" sproc.FullName
+                
+
+            let ret = meta |> List.map(fun sproc -> {sproc with ReturnColumns = getColumns sproc })
             con.Close()
             ret |> List.map (fun r -> Root("Procedures", Sproc r))
          
@@ -325,12 +340,26 @@ type internal MSSqlServerProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? System.Array) ->
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
+                                         let elements = box x :?> System.Array
+                                         Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
+
+                                let operatorIn operator (array : IDataParameter[]) =
+                                    if Array.isEmpty array then
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set
+                                        | FSharp.Data.Sql.NotIn -> "TRUE" // anything is not in the empty set
+                                        | _ -> failwith "Should not be called with any other operator"
+                                    else
+                                        let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                        Array.iter parameters.Add array
+                                        match operator with
+                                        | FSharp.Data.Sql.In -> (sprintf "[%s].[%s] IN (%s)") alias col text
+                                        | FSharp.Data.Sql.NotIn -> (sprintf "[%s].[%s] NOT IN (%s)") alias col text
+                                        | _ -> failwith "Should not be called with any other operator"
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
@@ -338,14 +367,8 @@ type internal MSSqlServerProvider() =
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "[%s].[%s] IS NULL") alias col 
                                     | FSharp.Data.Sql.NotNull -> (sprintf "[%s].[%s] IS NOT NULL") alias col 
-                                    | FSharp.Data.Sql.In ->                                     
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "[%s].[%s] IN (%s)") alias col text
-                                    | FSharp.Data.Sql.NotIn ->                                    
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        (sprintf "[%s].[%s] NOT IN (%s)") alias col text 
+                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                     | _ -> 
                                         parameters.Add paras.[0]
                                         (sprintf "[%s].[%s]%s %s") alias col 

@@ -314,13 +314,13 @@ module internal QueryImplementation =
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
                         
-                    | MethodCall(None, (MethodWithName "Select" as meth), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], e) as lambda) ]) ->
+                    | MethodCall(None, (MethodWithName "Select" as meth), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], e) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
                         if v1.Name.StartsWith "_arg" then
                             // this is the projection from a join - ignore 
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else
-                            ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(lambda,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
+                            ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
                     | _ -> failwith "unrecognised method call"
                     
                 member provider.Execute(e:Expression) : obj = failwith "Execute not implemented"

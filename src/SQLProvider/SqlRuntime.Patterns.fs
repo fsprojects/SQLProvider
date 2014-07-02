@@ -14,6 +14,12 @@ let (|MethodCall|_|) (e:Expression) =
         Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
     | _ -> None
 
+let (|NewExpr|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.New , (:? NewExpression as e) -> 
+        Some (e.Constructor, Seq.toList e.Arguments)
+    | _ -> None
+
 let (|SeqValues|_|) (e:Expression) =
     let rec isEnumerable (ty : Type) = 
         ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
@@ -74,6 +80,11 @@ let (|Int|_|)    = function Constant((:? int    as i),_) -> Some i | _ -> None
 let (|ParamName|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  Some pe.Name
+    | _ -> None    
+
+let (|ParamWithName|_|) (s:String) (e:Expression) = 
+    match e with 
+    | ParamName(n) when s = n -> Some ()
     | _ -> None    
     
 let (|Lambda|_|) (e:Expression) = 
