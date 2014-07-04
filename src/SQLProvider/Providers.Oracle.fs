@@ -209,7 +209,8 @@ module internal OracleHelpers =
                     | "IN" -> ParameterDirection.Input
                     | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
                     | "OUT" -> ParameterDirection.Output
-                    | a -> failwith "Direction not supported %s" a
+                    | "IN/OUT" -> ParameterDirection.InputOutput
+                    | a -> failwithf "Direction not supported %s" a
                 { Name = dbUnbox row.["ARGUMENT_NAME"]
                   ClrType = clrType
                   DbType = dbType 
@@ -237,10 +238,11 @@ module internal OracleHelpers =
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
                             
-                        let retCols = 
-                            sparams
-                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                        let retCols =
+                            lazy 
+                                sparams
+                                |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+                                |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))

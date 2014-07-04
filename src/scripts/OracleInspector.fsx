@@ -13,8 +13,11 @@
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Providers
 
-let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
-OracleHelpers.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
+//let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
+//OracleHelpers.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
+
+let connectionString = "Data Source=fused41;User Id=mopdc;Password=mopdc;"
+OracleHelpers.resolutionPath <- @"C:\Program Files\Oracle\product\11.2.0\client_1\ODP.NET\bin\4"
 OracleHelpers.owner <- "HR"
 let connection = OracleHelpers.createConnection connectionString
 OracleHelpers.connect connection OracleHelpers.createTypeMappings
@@ -34,19 +37,5 @@ OracleHelpers.connect connection (OracleHelpers.getSchema "Functions" [|"HR"|])
 OracleHelpers.connect connection (OracleHelpers.getSchema "Procedures" [|"HR"|])
 |> DataTable.printDataTable
 
-OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"HR"|])
+OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"MOPDC"|])
 |> DataTable.printDataTable
-
-OracleHelpers.sqlToEnum "REF CURSOR"
-OracleHelpers.sqlToClr "REF CURSOR"
-
-
-
-let sprocs = OracleHelpers.connect connection OracleHelpers.getSprocs
-
-#r "D:\Oracle\product\12.1.0\client_1\odp.net\managed\common\Oracle.ManagedDataAccess.dll"
-
-open Oracle.ManagedDataAccess.Client
-open Oracle.ManagedDataAccess.Types
-
-typeof<OracleRefCursor>.Name
