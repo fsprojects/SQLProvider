@@ -204,15 +204,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
+            let retCols = sproc.ReturnColumns.Force()
             let ty =
-                match sproc.ReturnColumns.Length with
+                match retCols.Length with
                 | 0 -> typeof<Unit>
-                | 1 -> sproc.ReturnColumns.Head.ClrType
+                | 1 -> retCols.Head.ClrType
                 | _ ->
                     let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
                     container.AddMember rt
-                    sproc.ReturnColumns
+                    retCols
                     |> List.iter(fun col ->
                         let name = col.Name
                         let ty = col.ClrType

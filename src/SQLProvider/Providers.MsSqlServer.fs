@@ -74,10 +74,7 @@ type internal MSSqlServerProvider() =
             if dbType.IsSome then p.DbType <- dbType.Value 
             if length.IsSome then p.Size <- length.Value
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)     
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"

@@ -79,9 +79,6 @@ type internal SQLiteProvider(resolutionPath) as this =
             let ret = createTypeMappings dt
             con.Close()
             ret
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr
         member __.GetTables(con) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =

@@ -348,12 +348,6 @@ type internal ISqlProvider =
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
-    /// Accepts a full CLR type name and returns the relevant value from the DbType enum
-    abstract ClrToEnum : (string -> DbType option) with get
-    /// Accepts SQL data type name and returns the relevant value from the DbType enum
-    abstract SqlToEnum : (string -> DbType option) with get
-    /// Accepts SQL data type name and returns the CLR type
-    abstract SqlToClr : (string -> Type option)       with get
     /// Queries the information schema and returns a list of table information
     abstract GetTables  : IDbConnection -> Table list
     /// Queries the given table and returns a list of its columns
