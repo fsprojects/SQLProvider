@@ -152,8 +152,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             t.AddMembersDelayed(fun () -> 
                 let (columns,(children,parents)) = getTableData key
                 let attProps = 
-                    let createColumnProperty c =
-                        let nullable = useOptionTypes && c.IsNullable                        
+                    let createColumnProperty (c:Column) =
+                        let nullable = useOptionTypes && c.IsNullable                      
                         let ty = if nullable then typedefof<option<_>>.MakeGenericType(c.ClrType)
                                  else c.ClrType 
                         let name = c.Name
@@ -204,11 +204,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
-            let retCols = sproc.ReturnColumns.Force()
+            let retCols = sproc.ReturnColumns
             let ty =
                 match retCols.Length with
                 | 0 -> typeof<Unit>
-                | 1 -> retCols.Head.ClrType
+                | 1 -> Type.GetType retCols.Head.ClrType
                 | _ ->
                     let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
@@ -216,7 +216,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     retCols
                     |> List.iter(fun col ->
                         let name = col.Name
-                        let ty = col.ClrType
+                        let ty = Type.GetType col.ClrType
                         let prop = 
                             ProvidedProperty(
                                 name,ty,
@@ -234,17 +234,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             let parameters = 
                 sproc.Params
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
-                |> List.map(fun p -> ProvidedParameter(p.Name,p.ClrType))
+                |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.ClrType))
            
-            ProvidedMethod(sproc.Name,parameters,ty,
-                InvokeCode = fun args -> 
-                    let name = sproc.DbName
-                    let paramtyp = typeof<string * DbType * ParameterDirection * int>
-                    let ps = 
-                        sproc.Params 
-                        |> List.map(fun p -> Expr.NewTuple [Expr.Value p.Name; Expr.Value p.DbType; Expr.Value p.Direction; Expr.Value (defaultArg p.MaxLength -1)])
-
-                    <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(name,%%Expr.NewArray(paramtyp, ps), %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)
+            ProvidedMethod(sproc.Name,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
@@ -264,7 +256,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some(typ) ->
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) ->
-                        //containerType.AddMember(typ) 
                         previousType.AddMember(ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc path containerType (Some typ) createdTypes next 
@@ -294,9 +285,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> Seq.map snd
             | sproc::rest -> generateTypeTree (walkSproc [] None None createdTypes sproc) rest
 
-        let containers = generateTypeTree Map.empty (sprocData.Force()) 
-        
         serviceType.AddMembersDelayed( fun () ->
+            let containers = generateTypeTree Map.empty (sprocData.Force())
             [ yield! containers |> Seq.cast<MemberInfo>
               for (KeyValue(key,(entityType,desc,_))) in baseTypes.Force() do
                 // collection type, individuals type

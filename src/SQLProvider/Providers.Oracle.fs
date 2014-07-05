@@ -211,7 +211,7 @@ module internal OracleHelpers =
                     | "OUT" -> ParameterDirection.Output
                     | a -> failwith "Direction not supported %s" a
                 { Name = dbUnbox row.["ARGUMENT_NAME"]
-                  ClrType = clrType
+                  ClrType = clrType.AssemblyQualifiedName
                   DbType = dbType 
                   Direction = direction
                   MaxLength = maxLength
@@ -237,11 +237,10 @@ module internal OracleHelpers =
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
                             
-                        let retCols = 
-                            lazy
+                        let retCols : SprocReturnColumns list = 
                                 sparams
                                 |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                                |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                                |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = DbType(p.DbType); IsNullable = false })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))

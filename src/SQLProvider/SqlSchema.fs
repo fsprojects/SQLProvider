@@ -19,8 +19,9 @@ type DatabaseType =
 type Column = { Name:string; ClrType: Type; DbType: DbType; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 
-type SprocParam = { Name:string; ClrType:Type; DbType:DbType; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
-type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns:Lazy<Column list> }
+type SprocReturnColumns = { Name:string; DbType:DatabaseType; IsNullable:bool; ClrType:String }
+type SprocParam = { Name:string; ClrType:String; DbType:DbType; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
+type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns: SprocReturnColumns list }
 
 type Sproc =
     | Root of pathElement:string * Sproc

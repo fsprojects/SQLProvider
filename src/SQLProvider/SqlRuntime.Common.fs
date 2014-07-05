@@ -222,7 +222,7 @@ and ISqlDataContext =
     abstract ConnectionString       : string
     abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : string * (string * DbType * ParameterDirection * int)[]  * obj [] -> SqlEntity list
+    abstract CallSproc              : SprocDefinition * obj[] -> SqlEntity list
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
     abstract SubmitPendingChanges   : unit -> unit

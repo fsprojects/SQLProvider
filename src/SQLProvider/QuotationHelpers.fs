@@ -9,7 +9,8 @@ module QuotationHelpers =
     let rec coerceValues fieldTypeLookup fields = 
         Array.mapi (fun i v ->
                 let expr = 
-                    if FSharpType.IsUnion (v.GetType()) then unionExpr v |> snd
+                    if v = null then simpleTypeExpr v
+                    elif FSharpType.IsUnion (v.GetType()) then unionExpr v |> snd
                     elif FSharpType.IsRecord (v.GetType()) then recordExpr v |> snd
                     else simpleTypeExpr v
                 Expr.Coerce(expr, fieldTypeLookup i)
