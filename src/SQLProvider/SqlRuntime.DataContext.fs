@@ -57,24 +57,24 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(name,parameters,values:obj array) =
+        member this.CallSproc(definition:SprocDefinition, values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               use com = provider.CreateCommand(con,name)
+               use com = provider.CreateCommand(con,definition.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let inputParameters, outputParameters = parameters |> Array.partition (fun (_, _, dir, _) -> dir = ParameterDirection.Input || dir = ParameterDirection.InputOutput)
+               let inputParameters, outputParameters = definition.Params |> List.partition (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                
                let outps =
                 outputParameters
-                |> Array.mapi(fun i (name, dbtype, dir, length) ->
-                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, if length = -1 then None else Some length)
+                |> List.mapi(fun i p ->
+                    let p = provider.CreateCommandParameter(p.Name,null,Some p.DbType, Some p.Direction, p.MaxLength)
                     com.Parameters.Add p |> ignore; p)
 
                inputParameters
-               |> Array.iteri(fun i (name, dbtype, dir, length) ->
-                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, if length = -1 then None else Some length)
+               |> List.iteri(fun i ip ->
+                   let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.DbType, Some ip.Direction, ip.MaxLength)
                    com.Parameters.Add p |> ignore)
 
                use reader = com.ExecuteReader()

@@ -74,10 +74,7 @@ type internal MSSqlServerProvider() =
             if dbType.IsSome then p.DbType <- dbType.Value 
             if length.IsSome then p.Size <- length.Value
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)     
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
@@ -183,115 +180,115 @@ type internal MSSqlServerProvider() =
             relationshipLookup.Add(table.FullName,(children,parents))
             con.Close()
             (children,parents)    
-        member __.GetSprocs(con) = 
-            let con = con:?>SqlConnection
-            //todo: this whole function needs cleaning up
-            let baseQuery = @"SELECT 
-                              c.name
-                              ,b.name
-                              ,ORDINAL_POSITION
-                              ,PARAMETER_MODE
-                              ,PARAMETER_NAME
-                              ,DATA_TYPE
-                              ,CHARACTER_MAXIMUM_LENGTH
-                            FROM sys.procedures b
-                            left join INFORMATION_SCHEMA.PARAMETERS a on a.SPECIFIC_NAME = b.name 
-							join sys.schemas c on b.schema_id = c.schema_id"
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con baseQuery
-            let meta =
-                [ while reader.Read() do
-                    let paramName = reader.GetSqlString(4)
-                    if paramName.IsNull then
-                        yield (reader.GetSqlString(0).Value,
-                               reader.GetSqlString(1).Value,                               
-                               0,
-                               "",
-                               "",
-                               "",
-                               None)
-                    else
-                       yield 
-                           (reader.GetSqlString(0).Value,
-                            reader.GetSqlString(1).Value,
-                            reader.GetSqlInt32(2).Value,
-                            reader.GetSqlString(3).Value,
-                            paramName.Value,
-                            reader.GetSqlString(5).Value,
-                            let len = reader.GetSqlInt32(6)
-                            if len.IsNull then None else Some len.Value ) ]
-                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "[%s].[%s]" schema name)
-                |> Seq.choose(fun (name,values) ->
-                   // don't create procs that have unsupported datatypes
-                   let values' = 
-                      values 
-                      |> Seq.choose(fun (_,_,ordinal,mode,name,dt,maxLen)  ->
-                         if mode <> "IN" then None else
-                         match sqlToClr dt, sqlToEnum dt with
-                         |Some(clr), Some(sql) -> Some (ordinal,mode,name,clr,sql,maxLen)
-                         | _ -> None)
-                   if Seq.length (values |> Seq.filter(function (_,_,_,_,"",_,_) -> false | _ -> true) ) = Seq.length values' then Some (name,values') else None)
-                |> Seq.map(fun (name, values) ->  
-                    let parameters = 
-                        values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
-                               { Name=name; Ordinal=ordinal
-                                 Direction = if mode = "IN" then ParameterDirection.Input else ParameterDirection.Output
-                                 MaxLength = maxLen
-                                 ClrType = clr
-                                 DbType = sql } )
-                        |> Seq.sortBy( fun p -> p.Ordinal)     
-                        |> Seq.toList            
-                    {Name = name
-                     FullName = name
-                     DbName = name
-                     Params = parameters
-                     ReturnColumns = lazy [] })
-                |> Seq.toList
-            reader.Dispose()
-            
-            let getColumns sproc = 
-                lazy
-                use com = new SqlCommand(sproc.FullName,con)
-                com.CommandType <- CommandType.StoredProcedure
-                try // try / catch here as this stuff is still experimental
-                  sproc.Params
-                  |> List.iter(fun p ->
-                    let p' = SqlParameter()   
-                    if  String.IsNullOrWhiteSpace p.Name then () else
-                    p'.ParameterName <- p.Name
-                    p'.DbType <- p.DbType
-                    p'.Value <- 
-                         if p.ClrType = typeof<string> then box "1"
-                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
-                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
-                         // warning: i might have missed cases here and this next call will
-                         // blow if the type doesn't have a parameter less ctor
-                         else Activator.CreateInstance(p.ClrType)
-                    com.Parameters.Add p' |> ignore)
-                  if con.State <> ConnectionState.Open then con.Open()
-                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
-                  let schema = reader.GetSchemaTable()
-                  con.Close()
-                  let columns = 
-                      if schema = null then [] else
-                      schema.Rows
-                      |> Seq.cast<DataRow>
-                      |> Seq.choose(fun row -> 
-                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
-                           |> Option.map( fun sql ->
-                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
-                      |> Seq.toList                  
-                  if schema = null || columns.Length = schema.Rows.Count then columns else []
-                with 
-                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
-                        con.Close()
-                        failwithf "Fatal error - could not deduce the return values of stored procedure %s" sproc.FullName
-                
-
-            let ret = meta |> List.map(fun sproc -> {sproc with ReturnColumns = getColumns sproc })
-            con.Close()
-            ret |> List.map (fun r -> Root("Procedures", Sproc r))
+        member __.GetSprocs(con) = []
+//            let con = con:?>SqlConnection
+//            //todo: this whole function needs cleaning up
+//            let baseQuery = @"SELECT 
+//                              c.name
+//                              ,b.name
+//                              ,ORDINAL_POSITION
+//                              ,PARAMETER_MODE
+//                              ,PARAMETER_NAME
+//                              ,DATA_TYPE
+//                              ,CHARACTER_MAXIMUM_LENGTH
+//                            FROM sys.procedures b
+//                            left join INFORMATION_SCHEMA.PARAMETERS a on a.SPECIFIC_NAME = b.name 
+//							join sys.schemas c on b.schema_id = c.schema_id"
+//            if con.State <> ConnectionState.Open then con.Open()
+//            use reader = executeSql con baseQuery
+//            let meta =
+//                [ while reader.Read() do
+//                    let paramName = reader.GetSqlString(4)
+//                    if paramName.IsNull then
+//                        yield (reader.GetSqlString(0).Value,
+//                               reader.GetSqlString(1).Value,                               
+//                               0,
+//                               "",
+//                               "",
+//                               "",
+//                               None)
+//                    else
+//                       yield 
+//                           (reader.GetSqlString(0).Value,
+//                            reader.GetSqlString(1).Value,
+//                            reader.GetSqlInt32(2).Value,
+//                            reader.GetSqlString(3).Value,
+//                            paramName.Value,
+//                            reader.GetSqlString(5).Value,
+//                            let len = reader.GetSqlInt32(6)
+//                            if len.IsNull then None else Some len.Value ) ]
+//                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "[%s].[%s]" schema name)
+//                |> Seq.choose(fun (name,values) ->
+//                   // don't create procs that have unsupported datatypes
+//                   let values' = 
+//                      values 
+//                      |> Seq.choose(fun (_,_,ordinal,mode,name,dt,maxLen)  ->
+//                         if mode <> "IN" then None else
+//                         match sqlToClr dt, sqlToEnum dt with
+//                         |Some(clr), Some(sql) -> Some (ordinal,mode,name,clr,sql,maxLen)
+//                         | _ -> None)
+//                   if Seq.length (values |> Seq.filter(function (_,_,_,_,"",_,_) -> false | _ -> true) ) = Seq.length values' then Some (name,values') else None)
+//                |> Seq.map(fun (name, values) ->  
+//                    let parameters = 
+//                        values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
+//                               { Name=name; Ordinal=ordinal
+//                                 Direction = if mode = "IN" then ParameterDirection.Input else ParameterDirection.Output
+//                                 MaxLength = maxLen
+//                                 ClrType = clr
+//                                 DbType = sql } )
+//                        |> Seq.sortBy( fun p -> p.Ordinal)     
+//                        |> Seq.toList            
+//                    {Name = name
+//                     FullName = name
+//                     DbName = name
+//                     Params = parameters
+//                     ReturnColumns = lazy [] })
+//                |> Seq.toList
+//            reader.Dispose()
+//            
+//            let getColumns sproc = 
+//                lazy
+//                use com = new SqlCommand(sproc.FullName,con)
+//                com.CommandType <- CommandType.StoredProcedure
+//                try // try / catch here as this stuff is still experimental
+//                  sproc.Params
+//                  |> List.iter(fun p ->
+//                    let p' = SqlParameter()   
+//                    if  String.IsNullOrWhiteSpace p.Name then () else
+//                    p'.ParameterName <- p.Name
+//                    p'.DbType <- p.DbType
+//                    p'.Value <- 
+//                         if p.ClrType = typeof<string> then box "1"
+//                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
+//                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
+//                         // warning: i might have missed cases here and this next call will
+//                         // blow if the type doesn't have a parameter less ctor
+//                         else Activator.CreateInstance(p.ClrType)
+//                    com.Parameters.Add p' |> ignore)
+//                  if con.State <> ConnectionState.Open then con.Open()
+//                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
+//                  let schema = reader.GetSchemaTable()
+//                  con.Close()
+//                  let columns = 
+//                      if schema = null then [] else
+//                      schema.Rows
+//                      |> Seq.cast<DataRow>
+//                      |> Seq.choose(fun row -> 
+//                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
+//                           |> Option.map( fun sql ->
+//                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
+//                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
+//                      |> Seq.toList                  
+//                  if schema = null || columns.Length = schema.Rows.Count then columns else []
+//                with 
+//                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+//                        con.Close()
+//                        failwithf "Fatal error - could not deduce the return values of stored procedure %s" sproc.FullName
+//                
+//
+//            let ret = meta |> List.map(fun sproc -> {sproc with ReturnColumns = getColumns sproc })
+//            con.Close()
+//            ret |> List.map (fun r -> Root("Procedures", Sproc r))
          
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column

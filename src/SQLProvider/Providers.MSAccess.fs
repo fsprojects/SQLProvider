@@ -67,10 +67,7 @@ type internal MSAccessProvider() as this =
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
             let con = con:?>OleDbConnection

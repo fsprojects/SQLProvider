@@ -212,7 +212,7 @@ module internal OracleHelpers =
                     | "IN/OUT" -> ParameterDirection.InputOutput
                     | a -> failwithf "Direction not supported %s" a
                 { Name = dbUnbox row.["ARGUMENT_NAME"]
-                  ClrType = clrType
+                  ClrType = clrType.AssemblyQualifiedName
                   DbType = dbType 
                   Direction = direction
                   MaxLength = maxLength
@@ -238,11 +238,11 @@ module internal OracleHelpers =
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
                             
-                        let retCols =
+                        let retCols : SprocReturnColumns list = 
                             lazy 
                                 sparams
                                 |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                                |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
+                                |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = DbType(p.DbType); IsNullable = false })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
@@ -310,9 +310,6 @@ type internal OracleProvider(resolutionPath, owner) =
                     | None -> None) |> ignore
             )
 
-        member __.ClrToEnum = OracleHelpers.clrToEnum
-        member __.SqlToEnum = OracleHelpers.sqlToEnum
-        member __.SqlToClr = OracleHelpers.sqlToClr
         member __.GetTables(con) =
                match tableCache with
                | [] ->

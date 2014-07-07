@@ -67,10 +67,7 @@ type internal OdbcProvider(resolutionPath) =
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
             let con = con :?> OdbcConnection
             if con.State <> ConnectionState.Open then con.Open()

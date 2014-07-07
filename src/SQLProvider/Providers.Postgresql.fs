@@ -157,9 +157,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
             upcast p
         member __.CreateTypeMappings(_) = 
             createTypeMappings()
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr
+
         member __.GetTables(con) =            
             use reader = executeSql con "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public'"
             [ while reader.Read() do 

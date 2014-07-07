@@ -99,10 +99,7 @@ type internal MySqlProvider(resolutionPath) as this =
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
             let ret = createTypeMappings dt
             con.Close()
-            ret
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+            ret   
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
             use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
