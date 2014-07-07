@@ -42,7 +42,7 @@ open FSharp.Data.Sql
 
 // create a type alias with the connection string and database vendor settings
 type sql = SqlDataProvider< 
-              ConenctionString = @"Data Source=F:\sqlite\northwindEF.db ;Version=3",
+              ConnectionString = @"Data Source=F:\sqlite\northwindEF.db ;Version=3",
               DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
               ResolutionPath = @"F:\sqlite\3",
               IndividualsAmount = 1000,
