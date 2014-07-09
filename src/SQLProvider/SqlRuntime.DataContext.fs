@@ -80,9 +80,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                use reader = com.ExecuteReader()
                let entities = 
                    match outputParameters.Length with
-                   | 0 -> SqlEntity.FromDataReader(this,name,reader) |> box
+                   | 0 -> SqlEntity.FromDataReader(this,definition.DbName,reader) |> box
                    | 1 -> outps.[0].Value
-                   | _ -> SqlEntity.FromOutputParameters(this, name, outps) |> box
+                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, outps) |> box
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"

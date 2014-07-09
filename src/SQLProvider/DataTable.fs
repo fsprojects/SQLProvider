@@ -15,6 +15,8 @@ module DataTable =
         for row in dt.Rows do
             f row.ItemArray
 
+    let toList(dt:DataTable) = map id dt
+
     let groupBy f (dt:DataTable) = 
         map f dt
         |> Seq.groupBy (fst) 
@@ -27,13 +29,29 @@ module DataTable =
             | None -> ()
         cache.Values |> Seq.map id |> Seq.toList
     
-    let choose f (dt:DataTable) =
+    let mapChoose (f:DataRow -> 'a option) (dt:DataTable) = 
         [
             for row in dt.Rows do
-                match row |>  f with
+                match f row with
                 | Some(a) -> yield a
                 | None -> ()
         ]
+
+    let choose (f : DataRow -> DataRow option) (dt:DataTable) =
+        let copy = dt.Clone()
+        copy.Rows.Clear()
+        for row in dt.Rows do
+            match row |>  f with
+            | Some(a) -> copy.Rows.Add(a.ItemArray) |> ignore
+            | None -> ()
+        copy
+
+    let filter f (dt:DataTable) =
+        choose (fun r -> 
+            if f r 
+            then Some r
+            else None
+        ) dt
     
     let printDataTable (dt:System.Data.DataTable) = 
         let maxLength, rows = 

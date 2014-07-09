@@ -138,10 +138,10 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
               | value -> e.SetColumnSilent(reader.GetName(i),value)
           yield e ]
 
-    static member internal FromOutputParameters(con, name, parameters:IDataParameter[]) = 
+    static member internal FromOutputParameters(con, name, parameters:IDataParameter list) = 
         let e = SqlEntity(con, name)
         parameters 
-        |> Array.iteri(fun i p ->
+        |> List.iteri(fun i p ->
             e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
         )
         [e]
@@ -222,7 +222,7 @@ and ISqlDataContext =
     abstract ConnectionString       : string
     abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : SprocDefinition * obj[] -> SqlEntity list
+    abstract CallSproc              : SprocDefinition * obj[] -> obj
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
     abstract SubmitPendingChanges   : unit -> unit
