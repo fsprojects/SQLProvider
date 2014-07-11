@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Data.Sql.Runtime
 
+open System
 open System.Collections.Generic
 open System.Data
 open System.Linq
@@ -67,22 +68,27 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
                
                let outps =
-                definition.ReturnColumns
-                |> List.mapi(fun i p ->
-                    let p = provider.CreateCommandParameter(p.Name,null,Some p.TypeMapping, Some p.Direction, None)
-                    com.Parameters.Add p |> ignore; p)
-
-               inputParameters
-               |> List.iteri(fun i ip ->
-                   let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.TypeMapping, Some ip.Direction, ip.MaxLength)
-                   com.Parameters.Add p |> ignore)
+                    definition.ReturnColumns
+                    |> List.mapi(fun i ip ->
+                        let p = provider.CreateCommandParameter(ip.Name,null,Some ip.TypeMapping, Some ip.Direction, None)
+                        (ip.Ordinal, p))
+               
+               let inps =
+                    inputParameters
+                    |> List.mapi(fun i ip ->
+                        let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.TypeMapping, Some ip.Direction, ip.MaxLength)
+                        (ip.Ordinal,p))
+               
+               List.append outps inps
+               |> List.sortBy fst
+               |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
                use reader = com.ExecuteReader()
                let entities = 
                    match definition.ReturnColumns.Length with
                    | 0 -> () |> box
-                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, reader, definition.ReturnColumns, outps) |> box
- //              if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, reader, definition.ReturnColumns, outps |> List.map snd) |> box
+               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
         member this.GetIndividual(table,id) : SqlEntity =
@@ -107,7 +113,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]
-     //          if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     

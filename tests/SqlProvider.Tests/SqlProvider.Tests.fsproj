@@ -46,13 +46,14 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="General.fs" />
-    <None Include="OracleTests.fsx" />
+    <None Include="PostgreSQLTests.fsx" />
     <None Include="packages.config" />
     <None Include="MSAccessTests.fsx" />
     <None Include="OdbcTests.fsx" />
     <None Include="northwindEF.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="OracleTests.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

@@ -228,7 +228,7 @@ module internal OracleHelpers =
                         let retCols : SprocReturnColumns list = 
                             sparams
                             |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); TypeMapping = p.TypeMapping; IsNullable = false; Direction = p.Direction })
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); TypeMapping = p.TypeMapping; IsNullable = false; Direction = p.Direction; Ordinal = p.Ordinal })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
@@ -268,7 +268,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 oracleDbTypeSetter.Invoke(p, [|dbType.ProviderType|]) |> ignore
 
                 match maxlength with
-                | Some(length) when dbType.ProviderType = 121 (* Oracle Ref Cursor *) -> p.Size <- length
+                | Some(length) when length >= 0 && dbType.ProviderType = 121 (* Oracle Ref Cursor *) -> p.Size <- length
                 | _ ->
                     match dbType.DbType with
                     | DbType.String -> p.Size <- 32767

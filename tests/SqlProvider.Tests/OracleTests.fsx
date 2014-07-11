@@ -86,12 +86,21 @@ ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24
 //Support for sprocs with no parameters
 ctx.Procedures.SECURE_DML()
 
-//No support yet for ref cursors... something in the pipeline thou
+//Support for sprocs that return ref cursors
 let employees =
     [
       for e in ctx.Procedures.GET_EMPLOYEES() do
         yield e.ColumnValues |> Seq.toList
     ]
+
+//Support for sprocs that return ref cursors and has in parameters
+let getemployees hireDate =
+    [
+      for e in ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate do
+        yield e.ColumnValues |> Seq.toList
+    ]
+
+getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 

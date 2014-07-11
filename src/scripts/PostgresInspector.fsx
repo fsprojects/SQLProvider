@@ -20,8 +20,15 @@ PostgreHelper.resolutionPath <- @"D:\Downloads\Npgsql-2.1.3-net20"
 
 let connection = PostgreHelper.createConnection connectionString
 
-connection.GetType().GetMethods()
-|> Array.iter (fun m -> printfn "%A" (m.Name, m.GetParameters()))
 
 PostgreHelper.connect connection (PostgreHelper.getSchema "MetaDataCollections" [||])
 |> DataTable.printDataTable
+
+PostgreHelper.createTypeMappings()
+
+PostgreHelper.typeMappings             
+PostgreHelper.findDbType "character"
+
+
+
+

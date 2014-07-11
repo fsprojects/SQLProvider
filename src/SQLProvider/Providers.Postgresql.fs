@@ -17,7 +17,6 @@ module PostgreHelper =
         try Reflection.Assembly.Load name
         with
         | _ ->
-             printfn "Trying @ %s" resolutionPath
              Reflection.Assembly.LoadFrom(
                 if String.IsNullOrEmpty resolutionPath then name + ".dll" 
                 else System.IO.Path.Combine(resolutionPath,name+".dll"))
@@ -28,6 +27,7 @@ module PostgreHelper =
     let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
     let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
     let parameterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
+    let dbType() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlDbType"))
     let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>|]))
 
     let createConnection connectionString = 
@@ -41,6 +41,87 @@ module PostgreHelper =
     let getSchema name (args:string[]) conn = 
         getSchemaMethod().Invoke(conn,[|name|]) :?> DataTable
 
+    let mapTypeToClrType (sqlType:string) =
+            match sqlType.ToLower() with
+            | "bigint"
+            | "int8"       -> typeof<Int64>
+            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
+            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
+            | "boolean"
+            | "bool"       -> typeof<Boolean>
+            | "box"
+            | "circle"
+            | "line"
+            | "lseg"
+            | "path"
+            | "point"
+            | "polygon"    -> typeof<Object>
+            | "bytea"      -> typeof<Byte[]>
+            | "double"
+            | "float8"     -> typeof<Double>
+            | "integer"
+            | "int"
+            | "int4"       -> typeof<Int32>
+            | "money"
+            | "numeric"    -> typeof<Decimal>
+            | "real"
+            | "float4"     -> typeof<Single>
+            | "smallint"
+            | "int2"       -> typeof<Int16>
+            | "text"       -> typeof<String>
+            | "date"
+            | "time"
+            | "timetz"
+            | "timestamp"
+            | "timestamptz"-> typeof<DateTime>
+            | "interval"   -> typeof<TimeSpan>
+            | "character"
+            | "varchar"    -> typeof<String>
+            | "inet"       -> typeof<System.Net.IPAddress>
+            | "uuid"       -> typeof<Guid>
+            | "xml"        -> typeof<String>
+            | _ -> typeof<String>
+
+    let getDbType(providerType) =
+        try
+            let parameterType = parameterType() 
+            let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
+            let npgDbTypeSetter = parameterType.GetProperty("NpgsqlDbType").GetSetMethod()
+            let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
+            npgDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
+            dbTypeGetter.Invoke(p, [||]) :?> DbType
+        with _ -> DbType.Object //Weird cant cast Line to any DbType exception
+
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+
+    let createTypeMappings() = 
+        let typ = dbType()
+        let mappings =
+            [
+                for v in Enum.GetValues(typ) do
+                    let name = Enum.GetName(typ, v).ToLower()
+                    let clrType = (mapTypeToClrType name).ToString()
+                    yield { ProviderTypeName = name; ClrType = clrType; DbType = (getDbType v); ProviderType = (v :?> int); UseReaderResults = false }
+            ///    yield { ProviderTypeName = "character"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = 6; UseReaderResults = false }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName.ToLower(), m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind 
+
+
 
 type internal PostgresqlProvider(resolutionPath) as this =
     let pkLookup =     Dictionary<string,string>()
@@ -50,115 +131,6 @@ type internal PostgresqlProvider(resolutionPath) as this =
     
     do 
         PostgreHelper.resolutionPath <- resolutionPath
-
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
-
-    let createTypeMappings () =        
-        // there doesn't seem to be any mapping in the schema
-        // so we are stuck doing this the old fashioned way
-        let sqlToClr' = function
-            | "bigint"
-            | "int8"       -> Some typeof<Int64>
-            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
-            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
-            | "boolean"
-            | "bool"       -> Some typeof<Boolean>
-            | "Box"
-            | "Circle"
-            | "Line"
-            | "LSeg"
-            | "Path"
-            | "Point"
-            | "Polygon"    -> Some typeof<Object>
-            | "bytea"      -> Some typeof<Byte[]>
-            | "double"
-            | "float8"     -> Some typeof<Double>
-            | "integer"
-            | "int"
-            | "int4"       -> Some typeof<Int32>
-            | "money"
-            | "numeric"    -> Some typeof<Decimal>
-            | "real"
-            | "float4"     -> Some typeof<Single>
-            | "smallint"
-            | "int2"       -> Some typeof<Int16>
-            | "text"       -> Some typeof<String>
-            | "date"
-            | "time"
-            | "timetz"
-            | "timestamp"
-            | "timestamptz"-> Some typeof<DateTime>
-            | "interval"   -> Some typeof<TimeSpan>
-            | "character"
-            | "varchar"    -> Some typeof<String>
-            | "inet"       -> Some typeof<System.Net.IPAddress>
-            | "uuid"       -> Some typeof<Guid>
-            | "xml"        -> Some typeof<String>
-            | _ -> None
-        
-        let sqlToEnum' = function
-            | "bigint"
-            | "int8"       -> Some DbType.Int64
-            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
-            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
-            | "boolean"
-            | "bool"       -> Some DbType.Boolean
-            | "Box"
-            | "Circle"
-            | "Line"
-            | "LSeg"
-            | "Path"
-            | "Point"
-            | "interval"
-            | "inet"
-            | "Polygon"    -> Some DbType.Object
-            | "bytea"      -> Some DbType.Binary
-            | "double"
-            | "float8"     -> Some DbType.Double
-            | "integer"
-            | "int"
-            | "int4"       -> Some DbType.Int32
-            | "money"
-            | "numeric"    -> Some DbType.Decimal
-            | "real"
-            | "float4"     -> Some DbType.Single
-            | "smallint"
-            | "int2"       -> Some DbType.Int16
-            | "timestamp" 
-            | "timestamptz"
-            | "date"       -> Some DbType.DateTime
-            | "time"
-            | "timetz"     -> Some DbType.Time 
-            | "text"
-            | "character"
-            | "varchar"    -> Some DbType.String
-            | "uuid"       -> Some DbType.Guid
-            | "xml"        -> Some DbType.Xml
-            | _ -> None
-        
-        let clrToEnum' n = 
-            if   n = typeof<Int64>.Name then Some DbType.Int64
-            elif n = typeof<Int32>.Name then Some DbType.Int32
-            elif n = typeof<Int16>.Name then Some DbType.Int16
-            elif n = typeof<Boolean>.Name then Some DbType.Boolean
-            elif n = typeof<Object>.Name then Some DbType.Object
-            elif n = typeof<Byte[]>.Name then Some DbType.Binary
-            elif n = typeof<Double>.Name then Some DbType.Double
-            elif n = typeof<Decimal>.Name then Some DbType.Decimal
-            elif n = typeof<Single>.Name then Some DbType.Single
-            elif n = typeof<String>.Name then Some DbType.String
-            elif n = typeof<DateTime>.Name then Some DbType.DateTime
-            elif n = typeof<TimeSpan>.Name then Some DbType.Object
-            elif n = typeof<System.Net.IPAddress>.Name then Some DbType.Object
-            elif n = typeof<Guid>.Name then Some DbType.Guid
-            else None
-
-        // set lookup functions         
-        sqlToClr <-  sqlToClr'
-        sqlToEnum <- sqlToEnum' 
-        clrToEnum <- clrToEnum' 
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -175,8 +147,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
-        member __.CreateTypeMappings(_) = 
-            createTypeMappings()
+        member __.CreateTypeMappings(_) = PostgreHelper.createTypeMappings()
 
         member __.GetTables(con) =            
             use reader = executeSql con "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public'"
@@ -222,16 +193,16 @@ type internal PostgresqlProvider(resolutionPath) as this =
                        // this is a simple first implementation, there's also some complex types that i don't think are supported
                        // with this .net connector, but this needs examining in detail (probably by someone else!)
                        let dt = if dt.Contains(" ") then dt.Substring(0,dt.IndexOf(" ")).Trim() else dt
-                       match sqlToClr dt, sqlToEnum dt with
-                       | Some(clr),Some(sql) ->
+                       match PostgreHelper.findDbType (dt.ToLower()) with
+                       | Some m ->
                           let col =
                              { Column.Name = reader.GetString(0)
-                               TypeMapping = Unchecked.defaultof<_>
+                               TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimarKey = if reader.GetString(5) = "PRIMARY KEY" then true else false } 
                           if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
                           yield col 
-                       | _ -> ()]  
+                       | _ -> ()] //failwithf "Cant map type %s" dt]  
                 columnLookup.Add(table.FullName,columns)
                 con.Close()
                 columns

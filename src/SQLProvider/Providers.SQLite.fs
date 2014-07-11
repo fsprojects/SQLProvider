@@ -29,36 +29,40 @@ type internal SQLiteProvider(resolutionPath) as this =
     let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
 
-    let createTypeMappings (dt:DataTable) =        
-        let clr =             
-            [for r in dt.Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+    let getSchema name (args:string[]) conn = 
+        getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
 
-        // create map from sql name to clr type, and type to SqlDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt 
-                // as far as I can see, SQLite maps ProviderDbType straight to DBType
-                let ev = enum<DbType> ev                
-                Some ((tn,ty),(tn,ev),(ty.FullName,ev)))
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+    let createTypeMappings con =
+        let dt = getSchema "DataTypes" [||] con
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = string r.["DataType"]
+                    let oracleType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
+                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let oracleMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- oracleMappings.TryFind 
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -69,7 +73,7 @@ type internal SQLiteProvider(resolutionPath) as this =
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value 
+            if dbType.IsSome then p.DbType <- dbType.Value.DbType 
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
@@ -106,12 +110,11 @@ type internal SQLiteProvider(resolutionPath) as this =
                   [ while reader.Read() do 
                       let dt = reader.GetString(2).ToLower()
                       let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
-                      match sqlToClr dt, sqlToEnum dt with
-                      | Some(clr),Some(sql) ->
+                      match findDbType dt with
+                      | Some(m) ->
                          let col =
                             { Column.Name = reader.GetString(1); 
-                              ClrType = clr
-                              DbType = sql
+                              TypeMapping = m
                               IsNullable = not <| reader.GetBoolean(3); 
                               IsPrimarKey = if reader.GetBoolean(5) then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)

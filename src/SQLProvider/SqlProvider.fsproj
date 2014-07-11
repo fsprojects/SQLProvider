@@ -61,6 +61,7 @@
     <Compile Include="Providers.Odbc.fs" />
     <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.Oracle.fs" />
+    <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlRuntime.DataContext.fs" />

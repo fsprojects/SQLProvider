@@ -23,7 +23,7 @@ type TypeMapping = {
 type Column = { Name:string; TypeMapping : TypeMapping; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 
-type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; IsNullable:bool; Direction:ParameterDirection; }
+type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; IsNullable:bool; Direction:ParameterDirection; Ordinal:int}
 type SprocParam = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
 type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns: SprocReturnColumns list }
 
