@@ -10,60 +10,56 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MSAccessProvider() as this =
+type internal MSAccessProvider() =
     let pkLookup =     new Dictionary<string,string>()
     let tableLookup =  new Dictionary<string,Table>()
     let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
     let columnLookup = new Dictionary<string,Column list>()
-    
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
+     
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings (con:OleDbConnection) =
-        let clr = 
-            [for r in con.GetSchema("DataTypes").AsEnumerable() -> 
-                string r.["NativeDataType"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
-        
-        // create map from sql name to clr type, and type to DbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt
-                // we need to convert the sqldbtype enum value to dbtype.
-                // the sql param will do this for us but it might throw if not mapped -
-                // this is a bit hacky but I don't want to write a big conversion mapping right now
-                let p = OleDbParameter()
-                try
-                    p.OleDbType <- enum<OleDbType> ev
-                    Some ((tn,ty),(tn,p.DbType),(ty.FullName,p.DbType))
-                with
-                | ex -> None
-            )
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+        let dt = con.GetSchema("DataTypes")
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+        let getDbType(providerType:int) =
+            let p = new OleDbParameter()
+            p.OleDbType <- (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
+            p.DbType
+
+        let getClrType (input:string) = Type.GetType(input).ToString()
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["NativeDataType"])
+                    let oleDbType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind 
     
-    let executeSql (con:IDbConnection) sql =
-        use com = (this:>ISqlProvider).CreateCommand(con,sql)
-        com.ExecuteReader()
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = OleDbParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value 
+            if dbType.IsSome then p.DbType <- dbType.Value.DbType
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
@@ -98,12 +94,11 @@ type internal MSAccessProvider() as this =
                let columns = 
                     (con:?>OleDbConnection).GetSchema("Columns",[|null;null;table.Name;null|]).AsEnumerable()
                     |> Seq.map (fun row -> let dt = row.["DATA_TYPE"].ToString()
-                                           match sqlToClr dt, sqlToEnum dt with
-                                           |Some(clr),Some(sql) ->
+                                           match findDbType dt with
+                                           |Some(m) ->
                                                  let col = 
                                                     {Column.Name = row.["COLUMN_NAME"].ToString();
-                                                     ClrType = clr;
-                                                     DbType = sql;
+                                                     TypeMapping = m
                                                      IsPrimarKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                                                      IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
                                                  col

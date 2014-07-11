@@ -81,8 +81,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let ret = SqlEntity.FromDataReader(designTimeDc,table.FullName,reader)
                         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                         ret
-                   if entities.IsEmpty then [] else
-                   let e = entities.Head
+                   if Array.isEmpty entities then [] else
+                   let e = entities.[0]
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
                    // of the property and the primary key e.g. ``1, Dennis The Squirrel``
@@ -111,7 +111,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
                       entities
-                      |> List.choose(fun e -> 
+                      |> Array.choose(fun e -> 
                          match e.GetColumn pk with
                          | FixedType pkValue -> 
                             let name = table.FullName
@@ -125,7 +125,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             // return the primary key property
                             Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )
                          | _ -> None)
-                      |> List.append( propertyMap |> Map.toList |> List.map (snd >> snd))
+                      |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
 
                    propertyMap 
                    |> Map.toSeq
@@ -154,23 +154,23 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let attProps = 
                     let createColumnProperty (c:Column) =
                         let nullable = useOptionTypes && c.IsNullable                      
-                        let ty = if nullable then typedefof<option<_>>.MakeGenericType(c.ClrType)
-                                 else c.ClrType 
+                        let ty = if nullable then typedefof<option<_>>.MakeGenericType(Type.GetType c.TypeMapping.ClrType)
+                                 else Type.GetType c.TypeMapping.ClrType
                         let name = c.Name
                         let prop = 
                             ProvidedProperty(
                                 buildFieldName(name),ty,
                                 GetterCode = (fun args ->
-                                    let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|c.ClrType|])
+                                    let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                     Expr.Call(args.[0],meth,[Expr.Value name])),
                                 SetterCode = (fun args ->
                                     if nullable then 
                                         // setter code is not going to work yet.
-                                        let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|c.ClrType|])
+                                        let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
                                     else      
-                                        let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|c.ClrType|])
+                                        let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])))
                         prop
                     List.map createColumnProperty columns
@@ -208,7 +208,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             let ty =
                 match retCols.Length with
                 | 0 -> typeof<Unit>
-                | 1 -> Type.GetType retCols.Head.ClrType
+                | 1 -> Type.GetType retCols.Head.TypeMapping.ClrType
                 | _ ->
                     let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
@@ -216,7 +216,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     retCols
                     |> List.iter(fun col ->
                         let name = col.Name
-                        let ty = Type.GetType col.ClrType
+                        let ty = Type.GetType col.TypeMapping.ClrType
                         let prop = 
                             ProvidedProperty(
                                 name,ty,
@@ -228,15 +228,17 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                         rt.AddMember prop
                     )
-                    let ty = typedefof<Microsoft.FSharp.Collections.List<_>>
+                    let ty = typedefof<_ array>
                     ty.MakeGenericType rt
 
             let parameters = 
                 sproc.Params
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
-                |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.ClrType))
+                |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
            
-            ProvidedMethod(sproc.Name,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+            ProvidedMethod(sproc.Name,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
+            
+                <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
@@ -301,7 +303,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let (optionalColumns,columns) = columns |> List.partition(fun c->c.IsNullable || c.IsPrimarKey)
                     let normalParameters = 
                         columns 
-                        |> List.map(fun c -> ProvidedParameter(c.Name, c.ClrType))
+                        |> List.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
                         |> List.sortBy(fun p -> p.Name)                 
                     let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
                         <@@ 

@@ -8,13 +8,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type TypeMapping = {
-    ProviderTypeName : string
-    ClrType : Type
-    ProviderType : obj
-    DbType : DbType
-}  
-
 module internal OracleHelpers =
     
     type StoredObjectName = {
@@ -30,9 +23,6 @@ module internal OracleHelpers =
         member x.DbName with get() = String.Join(".", x.ToList())
         member x.FriendlyName with get() = String.Join(" ", x.ToList())
         member x.FullName with get() = String.Join("_", x.ToList())
-
-         
-
 
     let mutable resolutionPath = String.Empty
     let mutable owner = String.Empty
@@ -62,16 +52,14 @@ module internal OracleHelpers =
     let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleConnection"))
     let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleCommand"))
     let parameterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleParameter"))
-    let oracleDbType() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleDbType"))
-    let oracleReader() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleDataReader"))
     let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
-
-    let mutable typeMappings = []
-    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
-    let mutable findOracleType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let getSchema name (args:string[]) conn = 
         getSchemaMethod().Invoke(conn,[|name; args|]) :?> DataTable
+
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings con =
         let dt = getSchema "DataTypes" [||] con
@@ -85,25 +73,24 @@ module internal OracleHelpers =
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 
         let getClrType (input:string) =
-            match input.ToLower() with
+            (match input.ToLower() with
             | "system.long"  -> typeof<System.Int64>
-            | _ -> Type.GetType(input)
-             
+            | _ -> Type.GetType(input)).ToString()
+
         let mappings =             
-            let providerEnum = oracleDbType()
             [
                 for r in dt.Rows do
                     let clrType = getClrType (string r.["DataType"])
                     let oracleType = string r.["TypeName"]
-                    let providerType = Enum.ToObject(oracleDbType(), unbox<int> r.["ProviderDbType"])
+                    let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = string r.["TypeName"]; ClrType = clrType; DbType = dbType; ProviderType = providerType }
-                yield { ProviderTypeName = "REF CURSOR"; ClrType = typeof<SqlEntity list>; DbType = DbType.Object; ProviderType = Enum.ToObject(oracleDbType(), 121) }
+                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+                yield { ProviderTypeName = "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType =  121; UseReaderResults = true }
             ]
 
         let clrMappings =
             mappings
-            |> List.map (fun m -> m.ClrType.FullName, m)
+            |> List.map (fun m -> m.ClrType, m)
             |> Map.ofList
 
         let oracleMappings = 
@@ -113,7 +100,7 @@ module internal OracleHelpers =
             
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
-        findOracleType <- oracleMappings.TryFind 
+        findDbType <- oracleMappings.TryFind 
             
 
     let quoteWhiteSpace (str:String) = 
@@ -148,11 +135,10 @@ module internal OracleHelpers =
                 let typ = dbUnbox row.[4]
                 let nullable = (dbUnbox row.[8]) = "Y"
                 let colName =  (dbUnbox row.[2])
-                match findOracleType typ with
+                match findDbType typ with
                 | Some(m) -> 
-                        { Name = colName; 
-                          ClrType = m.ClrType
-                          DbType = m.DbType
+                        { Name = colName
+                          TypeMapping = m
                           IsPrimarKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table && x.Column = colName)
                           IsNullable = nullable } |> Some
                 | _ -> None)
@@ -204,7 +190,7 @@ module internal OracleHelpers =
             let argumentName = dbUnbox row.["ARGUMENT_NAME"]
             let maxLength = Some(int(dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
 
-            match findOracleType dataType with
+            match findDbType dataType with
             | Some(m) ->
                 let direction = 
                     match dbUnbox row.["IN_OUT"] with
@@ -214,8 +200,7 @@ module internal OracleHelpers =
                     | "IN/OUT" -> ParameterDirection.InputOutput
                     | a -> failwithf "Direction not supported %s" a
                 { Name = dbUnbox row.["ARGUMENT_NAME"]
-                  ClrType = m.ClrType.AssemblyQualifiedName
-                  DbType = m.DbType
+                  TypeMapping = m
                   Direction = direction
                   MaxLength = maxLength
                   Ordinal = int(dbUnbox<decimal> row.["POSITION"]) } |> Some
@@ -243,7 +228,7 @@ module internal OracleHelpers =
                         let retCols : SprocReturnColumns list = 
                             sparams
                             |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = DbType(p.DbType); IsNullable = false })
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); TypeMapping = p.TypeMapping; IsNullable = false; Direction = p.Direction })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
@@ -273,23 +258,23 @@ type internal OracleProvider(resolutionPath, owner) =
             let oracleDbTypeSetter = 
                 parameterType.GetProperty("OracleDbType").GetSetMethod()
 
-            let oracleRefCursorInstance = 
-                Enum.ToObject(OracleHelpers.oracleDbType(), 121)
-
             let p = Activator.CreateInstance(parameterType,[|box name;value|]) :?> IDbDataParameter
-            if dbType.IsSome 
-            then 
-                if dbType.Value = DbType.Object
-                then oracleDbTypeSetter.Invoke(p, [|oracleRefCursorInstance|]) |> ignore
-                else p.DbType <- dbType.Value
-
+            
             if direction.IsSome then p.Direction <- direction.Value 
-            match maxlength with
-            | Some(length) -> p.Size <- length
-            | None ->
-                match dbType with
-                | Some(DbType.String) -> p.Size <- 32767
-                | _ -> ()
+
+            match dbType with
+            | Some(dbType) ->
+                p.DbType <- dbType.DbType
+                oracleDbTypeSetter.Invoke(p, [|dbType.ProviderType|]) |> ignore
+
+                match maxlength with
+                | Some(length) when dbType.ProviderType = 121 (* Oracle Ref Cursor *) -> p.Size <- length
+                | _ ->
+                    match dbType.DbType with
+                    | DbType.String -> p.Size <- 32767
+                    | _ -> ()
+            | None -> ()
+
             upcast p
         member __.CreateTypeMappings(con) = 
             OracleHelpers.connect con (fun con -> 
@@ -575,9 +560,10 @@ type internal OracleProvider(resolutionPath, owner) =
                 ~~(sprintf "DELETE FROM %s WHERE %s = :id" (OracleHelpers.tableFullName entity.Table) pk.Column )
                 let cmd = provider.CreateCommand(con, sb.ToString())
                 cmd.CommandType <- CommandType.Text
-                match OracleHelpers.findClrType (pkValue.GetType().Name) with
+                let pkType = pkValue.GetType().ToString();
+                match OracleHelpers.findClrType pkType with
                 | Some(m) ->
-                    cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, Some <| m.DbType, None, None)) |> ignore
+                    cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, Some <| m, None, None)) |> ignore
                 | None -> ()
                 cmd
 

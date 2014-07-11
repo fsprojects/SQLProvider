@@ -14,53 +14,43 @@ type internal MSSqlServerProvider() =
     let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings (con:SqlConnection) =
-        if con.State <> ConnectionState.Open then con.Open()
-        let clr = 
-            [for r in con.GetSchema("DataTypes").Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
-        con.Close()
+        let dt = con.GetSchema("DataTypes")
 
-        // create map from sql name to clr type, and type to lDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                
-                if tn = "tinyint" then 
-                    // special case for tinyint, as Connection.GetSchema("DataTypes") says it should be an SByte, 
-                    // but really it needs to be a byte http://msdn.microsoft.com/en-us/library/cc716729(v=vs.110).aspx
-                    let ty = typeof<Byte>
-                    Some ((tn,ty),(tn,DbType.Byte),(ty.FullName,DbType.Byte))
-                else
+        let getDbType(providerType:int) =
+            let p = new SqlParameter()
+            p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
+            p.DbType
 
-                let ty = Type.GetType dt
-                // we need to convert the sqldbtype enum value to dbtype.
-                // the sql param will do this for us but it might throw if not mapped -
-                // this is a bit hacky but I don't want to write a big conversion mapping right now
-                let p = SqlParameter()
-                try
-                    p.SqlDbType <- enum<SqlDbType> ev
-                    Some ((tn,ty),(tn,p.DbType),(ty.FullName,p.DbType))
-                with
-                | ex -> None
-            )
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+        let getClrType (input:string) = Type.GetType(input).ToString()
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["DataType"])
+                    let oleDbType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind 
     
     let executeSql (con:IDbConnection) sql =
         use com = new SqlCommand(sql,con:?>SqlConnection)    
@@ -71,7 +61,8 @@ type internal MSSqlServerProvider() =
         member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = SqlParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value 
+            if dbType.IsSome then p.DbType <- dbType.Value.DbType
+            if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)     
@@ -120,12 +111,11 @@ type internal MSSqlServerProvider() =
                let columns =
                   [ while reader.Read() do 
                       let dt = reader.GetSqlString(1).Value
-                      match sqlToClr dt, sqlToEnum dt with
-                      | Some(clr),Some(sql) ->
+                      match findDbType dt with
+                      | Some(m) ->
                          let col =
                             { Column.Name = reader.GetSqlString(0).Value; 
-                              ClrType = clr 
-                              DbType = sql
+                              TypeMapping = m
                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                               IsPrimarKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)

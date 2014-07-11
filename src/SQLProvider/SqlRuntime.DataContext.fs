@@ -23,7 +23,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
                 prov.GetTables(con) |> ignore
-                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+       //         if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 
     interface ISqlDataContext with
@@ -64,26 +64,25 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                con.Open()
                use com = provider.CreateCommand(con,definition.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let inputParameters, outputParameters = definition.Params |> List.partition (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+               let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
                
                let outps =
-                outputParameters
+                definition.ReturnColumns
                 |> List.mapi(fun i p ->
-                    let p = provider.CreateCommandParameter(p.Name,null,Some p.DbType, Some p.Direction, p.MaxLength)
+                    let p = provider.CreateCommandParameter(p.Name,null,Some p.TypeMapping, Some p.Direction, None)
                     com.Parameters.Add p |> ignore; p)
 
                inputParameters
                |> List.iteri(fun i ip ->
-                   let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.DbType, Some ip.Direction, ip.MaxLength)
+                   let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.TypeMapping, Some ip.Direction, ip.MaxLength)
                    com.Parameters.Add p |> ignore)
 
                use reader = com.ExecuteReader()
                let entities = 
-                   match outputParameters.Length with
-                   | 0 -> SqlEntity.FromDataReader(this,definition.DbName,reader) |> box
-                   | 1 -> outps.[0].Value
-                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, outps) |> box
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                   match definition.ReturnColumns.Length with
+                   | 0 -> () |> box
+                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, reader, definition.ReturnColumns, outps) |> box
+ //              if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
         member this.GetIndividual(table,id) : SqlEntity =
@@ -107,8 +106,8 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                com.Parameters.Add (provider.CreateCommandParameter("@id",id,None, None, None)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
-               let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]
+     //          if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     

@@ -8,28 +8,48 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
+module PostgreHelper = 
+    
+    let mutable resolutionPath = String.Empty
+
+    let private loadAssembly (name:string) = 
+        // first try the gac (naively)
+        try Reflection.Assembly.Load name
+        with
+        | _ ->
+             printfn "Trying @ %s" resolutionPath
+             Reflection.Assembly.LoadFrom(
+                if String.IsNullOrEmpty resolutionPath then name + ".dll" 
+                else System.IO.Path.Combine(resolutionPath,name+".dll"))
+    // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
+    let assembly() =  loadAssembly "Npgsql"
+    let monoSecurity() = loadAssembly "Mono.Security"
+   
+    let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
+    let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
+    let parameterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
+    let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>|]))
+
+    let createConnection connectionString = 
+        Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
+
+    let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+
+    let getSchema name (args:string[]) conn = 
+        getSchemaMethod().Invoke(conn,[|name|]) :?> DataTable
+
+
 type internal PostgresqlProvider(resolutionPath) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-
-    let loadAssembly (name:string) = 
-        // first try the gac (naively)
-        try Reflection.Assembly.Load name
-        with
-        | _ ->
-             Reflection.Assembly.LoadFrom(
-                if String.IsNullOrEmpty resolutionPath then name + ".dll" 
-                else System.IO.Path.Combine(resolutionPath,name+".dll"))
-    // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
-    let assembly =  loadAssembly "Npgsql"
-    let monoSecurity = loadAssembly "Mono.Security"
-   
-    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
-    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
-    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
-    let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
+    
+    do 
+        PostgreHelper.resolutionPath <- resolutionPath
 
     let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
     let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
@@ -145,13 +165,13 @@ type internal PostgresqlProvider(resolutionPath) as this =
         com.ExecuteReader()
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateConnection(connectionString) = PostgreHelper.createConnection connectionString
+        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType(),[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = Activator.CreateInstance(paramterType, [||]) :?> IDbDataParameter
+            let p = Activator.CreateInstance(PostgreHelper.parameterType(), [||]) :?> IDbDataParameter
             p.ParameterName <- name
             p.Value <- box value
-            if dbType.IsSome then p.DbType <- dbType.Value 
+            if dbType.IsSome then p.DbType <- dbType.Value.DbType 
             if direction.IsSome then p.Direction <- direction.Value
             if length.IsSome then p.Size <- length.Value
             upcast p
@@ -206,8 +226,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                        | Some(clr),Some(sql) ->
                           let col =
                              { Column.Name = reader.GetString(0)
-                               ClrType = clr; 
-                               DbType = sql; 
+                               TypeMapping = Unchecked.defaultof<_>
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimarKey = if reader.GetString(5) = "PRIMARY KEY" then true else false } 
                           if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)

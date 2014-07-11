@@ -14,10 +14,6 @@ type internal MySqlProvider(resolutionPath) as this =
     let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
-
     let mutable mySqlToDbType : (int -> DbType)  = fun _ -> failwith "!"
     let mutable dbTypeToMySql : (DbType -> int ) = fun _ -> failwith "!"
 
@@ -29,59 +25,54 @@ type internal MySqlProvider(resolutionPath) as this =
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlCommand"))
-    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlParameter"))
+    let parameterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlParameter"))
     let enumType =        (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlDbType"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
-    let paramEnumCtor   = paramterType.GetConstructor([|typeof<string>;enumType|])
-    let paramObjectCtor = paramterType.GetConstructor([|typeof<string>;typeof<obj>|])
+    let paramEnumCtor   = parameterType.GetConstructor([|typeof<string>;enumType|])
+    let paramObjectCtor = parameterType.GetConstructor([|typeof<string>;typeof<obj>|])
 
-    let createTypeMappings (dt:DataTable) =
-        let clr = [for r in dt.Rows -> string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
-        
-        // MySqlParamter only accepts a MySqlDbType, and if you subsequently set DbType it does not 
-        // translate MySqlDbType to the correct value for you. Therefore, we are going to need to store
-        // a list of mappings between MySqlDbType and DbType.  This can be accomplished by creating a param
-        // with the relevant MySqlDbType, then reading the resulting DbType on the object.               
-        let getDbTypeId (mySqlDbType:int) = 
-            let p = paramEnumCtor.Invoke([|box ""; box mySqlDbType|]) :?> IDbDataParameter
-            p.DbType
-                
-        let (dbTypeToMySql',mySqlToDbType') =
-            clr
-            |> List.map(fun (_,mySqlDbType,_) -> 
-                let dbT = getDbTypeId mySqlDbType
-                (dbT,mySqlDbType),(mySqlDbType,dbT)
-                )
-            |> fun x -> 
-                 Map.ofList (List.map fst x),
-                 Map.ofList (List.map snd x)
-       
-        dbTypeToMySql <- (fun id -> dbTypeToMySql'.[id] )
-        mySqlToDbType <- (fun id -> mySqlToDbType'.[id] )
+    let getSchema name (args:string[]) conn = 
+        getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
 
-        // create map from sql name to clr type, and type to DbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt
-                let tn = tn.ToLower()
-                // lookup the DbType version of ProviderDbType (in this case, MySqlDbType)
-                let dbT = mySqlToDbType ev
-                Some ((tn,ty),(tn,dbT),(ty.FullName,dbT))
-            )
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+    let createTypeMappings con =
+        let dt = getSchema "DataTypes" [||] con
+
+        let getDbType(providerType:int) =
+            let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
+            let oracleDbTypeSetter = parameterType.GetProperty("MySqlDbType").GetSetMethod()
+            let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
+            oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
+            dbTypeGetter.Invoke(p, [||]) :?> DbType
+
+        let getClrType (input:string) = Type.GetType(input).ToString()
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["DataType"])
+                    let oleDbType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind 
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -92,7 +83,7 @@ type internal MySqlProvider(resolutionPath) as this =
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             match dbType with
-            | Some v -> paramEnumCtor.Invoke([|box name;box(dbTypeToMySql v)|]) :?> IDataParameter
+            | Some v -> paramEnumCtor.Invoke([|box name;Enum.ToObject(parameterType, v.ProviderType)|]) :?> IDataParameter
             | None -> paramObjectCtor.Invoke([|box name;box value|]) :?> IDataParameter            
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
@@ -144,12 +135,11 @@ type internal MySqlProvider(resolutionPath) as this =
                let columns =
                   [ while reader.Read() do 
                       let dt = reader.GetString(1)
-                      match sqlToClr dt, sqlToEnum dt with
-                      | Some(clr),Some(sql) ->
+                      match findDbType dt with
+                      | Some(m) ->
                          let col =
                             { Column.Name = reader.GetString(0) 
-                              ClrType = clr 
-                              DbType = sql
+                              TypeMapping = m
                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                               IsPrimarKey = if reader.GetString(5) = "PRIMARY KEY" then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)

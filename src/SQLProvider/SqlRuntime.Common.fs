@@ -130,21 +130,28 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     member e.HasValue(key) = data.ContainsKey key
 
     static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
-        [ while reader.Read() = true do
-          let e = SqlEntity(con,name)        
-          for i = 0 to reader.FieldCount - 1 do 
-              match reader.GetValue(i) with
-              | null | :? DBNull -> ()
-              | value -> e.SetColumnSilent(reader.GetName(i),value)
-          yield e ]
+        [| while reader.Read() = true do
+           let e = SqlEntity(con,name)        
+           for i = 0 to reader.FieldCount - 1 do 
+               match reader.GetValue(i) with
+               | null | :? DBNull -> ()
+               | value -> e.SetColumnSilent(reader.GetName(i),value)
+           yield e |]
 
-    static member internal FromOutputParameters(con, name, parameters:IDataParameter list) = 
+    static member internal FromOutputParameters(con, name, reader:IDataReader, cols:SprocReturnColumns list, parameters:IDataParameter list) = 
         let e = SqlEntity(con, name)
-        parameters 
-        |> List.iteri(fun i p ->
-            e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
-        )
-        [e]
+        let readerEntities = new ResizeArray<_>()
+        let otherEntities =
+            parameters 
+            |> List.mapi(fun i p ->
+                match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
+                | Some(col) ->
+                    if col.TypeMapping.UseReaderResults
+                    then readerEntities.AddRange(SqlEntity.FromDataReader(con, name, if p.Value = null then reader else (downcast p.Value)))
+                    else e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
+                | _ -> ()
+            )
+        e :: (readerEntities |> Seq.toList) |> List.toArray
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
@@ -344,7 +351,7 @@ type internal ISqlProvider =
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
     /// return a new command parameter with the provided name, value and optionally type, direction and length
-    abstract CreateCommandParameter : string * obj * DbType option * ParameterDirection option * int option -> IDataParameter
+    abstract CreateCommandParameter : string * obj * TypeMapping option * ParameterDirection option * int option -> IDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit

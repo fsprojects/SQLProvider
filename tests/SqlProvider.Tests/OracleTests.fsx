@@ -87,9 +87,12 @@ ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24
 ctx.Procedures.SECURE_DML()
 
 //No support yet for ref cursors... something in the pipeline thou
-let employees = ctx.Procedures.GET_EMPLOYEES()
-employees.Head.ColumnValues
- 
+let employees =
+    [
+      for e in ctx.Procedures.GET_EMPLOYEES() do
+        yield e.ColumnValues |> Seq.toList
+    ]
+
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EMP_FULLNAME(100M)

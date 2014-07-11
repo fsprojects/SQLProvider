@@ -12,15 +12,19 @@ module internal Patterns =
       then Some (List.tail [ for g in m.Groups -> g.Value ])
       else None
 
-type DatabaseType = 
-    | DbType of DbType
-    | Unknown
+type TypeMapping = {
+    ProviderTypeName : string
+    ClrType : string
+    ProviderType : int
+    DbType : DbType
+    UseReaderResults : bool
+}  
 
-type Column = { Name:string; ClrType: Type; DbType: DbType; IsPrimarKey:bool; IsNullable:bool }
+type Column = { Name:string; TypeMapping : TypeMapping; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 
-type SprocReturnColumns = { Name:string; DbType:DatabaseType; IsNullable:bool; ClrType:String }
-type SprocParam = { Name:string; ClrType:String; DbType:DbType; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
+type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; IsNullable:bool; Direction:ParameterDirection; }
+type SprocParam = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
 type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns: SprocReturnColumns list }
 
 type Sproc =
