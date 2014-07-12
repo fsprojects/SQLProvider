@@ -135,7 +135,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
            let e = SqlEntity(con,name)        
            for i = 0 to reader.FieldCount - 1 do 
                match reader.GetValue(i) with
-               | null | :? DBNull -> ()
+               | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
                | value -> e.SetColumnSilent(reader.GetName(i),value)
            yield e |]
 
@@ -195,19 +195,20 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
             aliasCache.Add(alias,newEntity)
             newEntity
 
-    member x.MapTo<'a>() = 
+    member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) = 
         let typ = typeof<'a>
+        let propertyTypeMapping = defaultArg propertyTypeMapping snd
         let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
         let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
-        let isRecord = FSharpType.IsRecord typ
         if FSharpType.IsRecord typ
         then 
             let ctor = FSharpValue.PreComputeRecordConstructor(typ)
+            let fields = FSharpType.GetRecordFields(typ)
             let values = 
                 [|
-                    for prop in FSharpType.GetRecordFields(typ) do
+                    for prop in fields do
                         match dataMap.TryGetValue(cleanName prop.Name) with
-                        | true, data -> yield data
+                        | true, data -> yield propertyTypeMapping (prop.Name,data)
                         | false, _ -> ()
                 |]
             unbox<'a> (ctor(values))
@@ -215,7 +216,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
             let instance = Activator.CreateInstance<'a>()
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(cleanName prop.Name) with
-                | true, data -> prop.GetSetMethod().Invoke(instance, [|data|]) |> ignore
+                | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
                 | false, _ -> ()
             instance
     

@@ -286,7 +286,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 match OracleHelpers.tryReadValueProperty parameter.Value with
                 | Some(obj) -> Native(obj)
                 | _ -> Native(parameter.Value)
-
+        
         member __.CreateCommandParameter(name, value, dbType, direction, maxlength) =
             let value = if value = null then (box System.DBNull.Value) else value
             let parameterType = OracleHelpers.parameterType.Value

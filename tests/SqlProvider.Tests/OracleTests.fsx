@@ -53,6 +53,7 @@ let employeesJob =
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
     } |> Seq.toList
 
+//Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
         for emp in ctx.``[HR].[EMPLOYEES]`` do
@@ -61,6 +62,38 @@ let topSales5ByCommission =
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
+    |> Seq.toList
+
+#r @"..\..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll"
+
+open Newtonsoft.Json
+
+type OtherCountryInformation = {
+    Id : string
+    Population : int
+}
+
+type Country = {
+    CountryId : string
+    CountryName : string
+    Other : OtherCountryInformation
+}
+
+//Can customise SQLEntity mapping
+let countries = 
+    query {
+        for emp in ctx.``[HR].[COUNTRIES]`` do
+        select emp
+    } 
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+                                               match prop with
+                                               | "Other" -> 
+                                                    if value <> null
+                                                    then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
+                                                    else Unchecked.defaultof<OtherCountryInformation> |> box
+                                               | _ -> value
+                                         )
+               )
     |> Seq.toList
 
 //************************ CRUD *************************//
@@ -102,15 +135,21 @@ let employees =
         yield e.MapTo<Employee>()
     ]
 
+type Region = {
+    RegionId : decimal
+    RegionName : string
+    RegionDescription : string
+}
+
 //Support for MARS procs
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
     [
       for e in results.LOCATIONS do
-        yield e.ColumnValues |> Seq.toList
-
+        yield e.ColumnValues |> Seq.toList |> box
+              
       for e in results.REGIONS do
-        yield e.ColumnValues |> Seq.toList
+        yield e.MapTo<Region>() |> box
     ]
 
 
