@@ -59,5 +59,18 @@ open Oracle.ManagedDataAccess.Types
         yield v :?> int, (Enum.GetName(typeof<OracleDbType>, v))
 |]
 
-let bfile = new OracleBFile(null)
+open System
 
+type MyRecord = {
+    TimeStamp : DateTime
+    Name : string
+    Value : float
+}
+
+
+let e = new Common.SqlEntity(Unchecked.defaultof<_>, "foo")
+e.SetData(["TIME_STAMP", DateTime.Now |>  box; "NAME", "Colin Bull" |> box; "Value", 1. |> box])
+
+e.MapTo<MyRecord>()
+
+typeof<MyRecord>.GetProperties()

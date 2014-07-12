@@ -15,6 +15,13 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
+type Employee = {
+    EmployeeId : int32
+    FirstName : string
+    LastName : string
+    HireDate : DateTime
+}
+
 //***************** Individuals ***********************//
 let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
@@ -50,9 +57,11 @@ let topSales5ByCommission =
     query {
         for emp in ctx.``[HR].[EMPLOYEES]`` do
         sortByDescending emp.COMMISSION_PCT
-        select (emp.EMPLOYEE_ID, emp.FIRST_NAME, emp.LAST_NAME, emp.COMMISSION_PCT)
+        select emp
         take 5
-    } |> Seq.toList
+    } 
+    |> Seq.map (fun e -> e.MapTo<Employee>())
+    |> Seq.toList
 
 //************************ CRUD *************************//
 
@@ -90,7 +99,7 @@ ctx.Procedures.SECURE_DML()
 let employees =
     [
       for e in ctx.Procedures.GET_EMPLOYEES().CATCUR do
-        yield e.ColumnValues |> Seq.toList
+        yield e.MapTo<Employee>()
     ]
 
 //Support for MARS procs
@@ -110,7 +119,7 @@ let getemployees hireDate =
     let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
     [
       for e in results.RESULTS do
-        yield e.ColumnValues |> Seq.toList
+        yield e.MapTo<Employee>()
     ]
 
 getemployees (new System.DateTime(1999,4,1))

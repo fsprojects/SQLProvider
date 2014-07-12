@@ -8,6 +8,7 @@ open System.Linq.Expressions
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
+open Microsoft.FSharp.Reflection
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
@@ -192,7 +193,31 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
             |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v)) 
 
             aliasCache.Add(alias,newEntity)
-            newEntity    
+            newEntity
+
+    member x.MapTo<'a>() = 
+        let typ = typeof<'a>
+        let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
+        let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
+        let isRecord = FSharpType.IsRecord typ
+        if FSharpType.IsRecord typ
+        then 
+            let ctor = FSharpValue.PreComputeRecordConstructor(typ)
+            let values = 
+                [|
+                    for prop in FSharpType.GetRecordFields(typ) do
+                        match dataMap.TryGetValue(cleanName prop.Name) with
+                        | true, data -> yield data
+                        | false, _ -> ()
+                |]
+            unbox<'a> (ctor(values))
+        else
+            let instance = Activator.CreateInstance<'a>()
+            for prop in typ.GetProperties() do
+                match dataMap.TryGetValue(cleanName prop.Name) with
+                | true, data -> prop.GetSetMethod().Invoke(instance, [|data|]) |> ignore
+                | false, _ -> ()
+            instance
     
     interface System.ComponentModel.INotifyPropertyChanged with
         [<CLIEvent>] member x.PropertyChanged = propertyChanged.Publish
