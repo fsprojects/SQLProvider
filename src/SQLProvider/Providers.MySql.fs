@@ -57,7 +57,7 @@ type internal MySqlProvider(resolutionPath) as this =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
             ]
 
         let clrMappings =
@@ -81,6 +81,7 @@ type internal MySqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             match dbType with
             | Some v -> paramEnumCtor.Invoke([|box name;Enum.ToObject(parameterType, v.ProviderType)|]) :?> IDataParameter

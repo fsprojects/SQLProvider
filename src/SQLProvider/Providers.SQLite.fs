@@ -47,7 +47,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     let oracleType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
-                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
             ]
 
         let clrMappings =
@@ -71,6 +71,7 @@ type internal SQLiteProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
             if dbType.IsSome then p.DbType <- dbType.Value.DbType 

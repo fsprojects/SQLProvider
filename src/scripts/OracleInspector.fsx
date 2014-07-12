@@ -45,4 +45,19 @@ OracleHelpers.connect connection (OracleHelpers.getSchema "Procedures" [|"HR"|])
 OracleHelpers.connect connection (OracleHelpers.getSchema "ProcedureParameters" [|"HR"|])
 |> DataTable.printDataTable
 
+OracleHelpers.typeMappings
+
 OracleHelpers.connect connection OracleHelpers.getSprocs
+
+#r  @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common\Oracle.ManagedDataAccess.dll"
+
+open Oracle.ManagedDataAccess.Client
+open Oracle.ManagedDataAccess.Types
+
+[|
+    for v in Enum.GetValues(typeof<OracleDbType>) do
+        yield v :?> int, (Enum.GetName(typeof<OracleDbType>, v))
+|]
+
+let bfile = new OracleBFile(null)
+

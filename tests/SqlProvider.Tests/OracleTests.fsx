@@ -89,14 +89,27 @@ ctx.Procedures.SECURE_DML()
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES() do
+      for e in ctx.Procedures.GET_EMPLOYEES().CATCUR do
         yield e.ColumnValues |> Seq.toList
     ]
 
+//Support for MARS procs
+let locations_and_regions =
+    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
+    [
+      for e in results.LOCATIONS do
+        yield e.ColumnValues |> Seq.toList
+
+      for e in results.REGIONS do
+        yield e.ColumnValues |> Seq.toList
+    ]
+
+
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
+    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
     [
-      for e in ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate do
+      for e in results.RESULTS do
         yield e.ColumnValues |> Seq.toList
     ]
 
@@ -104,11 +117,11 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME(100M)
+let fullName = ctx.Functions.EMP_FULLNAME(100M).ReturnValue
 
 //********************** Packaged Procs **********************//
 
-let resultPkg = ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //********************** Packaged Funcs **********************//
 

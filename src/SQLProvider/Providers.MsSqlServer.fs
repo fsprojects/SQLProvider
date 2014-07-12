@@ -35,7 +35,7 @@ type internal MSSqlServerProvider() =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
             ]
 
         let clrMappings =
@@ -58,6 +58,7 @@ type internal MSSqlServerProvider() =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new SqlConnection(connectionString)
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = SqlParameter(name,value)            

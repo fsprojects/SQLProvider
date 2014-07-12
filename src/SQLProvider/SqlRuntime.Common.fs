@@ -138,20 +138,20 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                | value -> e.SetColumnSilent(reader.GetName(i),value)
            yield e |]
 
-    static member internal FromOutputParameters(con, name, reader:IDataReader, cols:SprocReturnColumns list, parameters:IDataParameter list) = 
+    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:SprocReturnColumns list, parameters:IDataParameter list) = 
         let e = SqlEntity(con, name)
-        let readerEntities = new ResizeArray<_>()
-        let otherEntities =
-            parameters 
-            |> List.mapi(fun i p ->
-                match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
-                | Some(col) ->
-                    if col.TypeMapping.UseReaderResults
-                    then readerEntities.AddRange(SqlEntity.FromDataReader(con, name, if p.Value = null then reader else (downcast p.Value)))
-                    else e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
-                | _ -> ()
-            )
-        e :: (readerEntities |> Seq.toList) |> List.toArray
+        parameters 
+        |> List.iter(fun p ->
+            match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
+            | Some(col) ->
+                         match provider.ReadDatabaseParameter(reader, p :?> IDbDataParameter) with
+                         | ReturnValueType.Reader(r) ->   
+                            let entity = SqlEntity.FromDataReader(con, name, r)
+                            e.SetColumnSilent(col.Name,entity)
+                         | Native(o) -> e.SetColumnSilent(col.Name, o)
+            | _ -> ()
+        )
+        e
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
@@ -237,7 +237,7 @@ and ISqlDataContext =
     abstract GetPendingEntities     : unit -> SqlEntity list
 
          
-type LinkData =
+and LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : string
       ForeignTable       : Table
@@ -248,10 +248,10 @@ type LinkData =
         member x.Rev() = 
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-type alias = string
-type table = string 
+and alias = string
+and table = string 
 
-type Condition = 
+and Condition = 
     // this is  (table alias * column name * operator * right hand value ) list  * (the same again list) 
     // basically any AND or OR expression can have N terms and can have N nested condition children
     // this is largely from my CRM type provider. I don't think in practice for the SQL provider 
@@ -260,7 +260,7 @@ type Condition =
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
 
-type internal SqlExp =
+and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
@@ -283,7 +283,7 @@ type internal SqlExp =
                 | Count(rest) -> aux rest
             aux this
     
-type internal SqlQuery =
+and internal SqlQuery =
     { Filters       : Condition list
       Links         : (alias * LinkData * alias) list 
       Aliases       : Map<string, Table>
@@ -345,7 +345,7 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+and internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
@@ -380,4 +380,6 @@ type internal ISqlProvider =
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDataParameter>
+    ///Get database specifc value
+    abstract ReadDatabaseParameter : IDataReader * IDbDataParameter -> ReturnValueType
     

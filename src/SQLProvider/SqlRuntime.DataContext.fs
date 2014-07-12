@@ -83,11 +83,25 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                |> List.sortBy fst
                |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
-               use reader = com.ExecuteReader()
+               let outParameters = outps |> List.map snd
+
                let entities = 
-                   match definition.ReturnColumns.Length with
-                   | 0 -> () |> box
-                   | _ -> SqlEntity.FromOutputParameters(this, definition.DbName, reader, definition.ReturnColumns, outps |> List.map snd) |> box
+                   if (provider.GetType() = typeof<Providers.OracleProvider>)
+                   then 
+                        match definition.ReturnColumns.Length with
+                        | 0 -> com.ExecuteNonQuery() |> ignore; () |> box
+                        | 1 -> 
+                            use reader = com.ExecuteReader()
+                            SqlEntity.FromOutputParameters(this, definition.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
+                        | _ -> 
+                            com.ExecuteNonQuery() |> ignore
+                            SqlEntity.FromOutputParameters(this, definition.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
+                   else
+                        use reader = com.ExecuteReader()
+                        if definition.ReturnColumns.Length > 0
+                        then SqlEntity.FromOutputParameters(this, definition.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
+                        else SqlEntity.FromDataReader(this,definition.DbName,reader) |> box
+                         
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"

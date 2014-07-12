@@ -21,17 +21,21 @@ module PostgreHelper =
                 if String.IsNullOrEmpty resolutionPath then name + ".dll" 
                 else System.IO.Path.Combine(resolutionPath,name+".dll"))
     // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
-    let assembly() =  loadAssembly "Npgsql"
-    let monoSecurity() = loadAssembly "Mono.Security"
+    let assembly =  
+        lazy
+            loadAssembly "Npgsql"
+    let monoSecurity = 
+        lazy
+            loadAssembly "Mono.Security"
    
-    let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
-    let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
-    let parameterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
-    let dbType() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlDbType"))
-    let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>|]))
+    let connectionType = lazy (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
+    let commandType = lazy    (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
+    let parameterType = lazy   (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
+    let dbType =  lazy (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlDbType"))
+    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
 
     let createConnection connectionString = 
-        Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
+        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
     let connect (con:IDbConnection) f =
         if con.State <> ConnectionState.Open then con.Open()
@@ -39,7 +43,7 @@ module PostgreHelper =
         con.Close(); result
 
     let getSchema name (args:string[]) conn = 
-        getSchemaMethod().Invoke(conn,[|name|]) :?> DataTable
+        getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
 
     let mapTypeToClrType (sqlType:string) =
             match sqlType.ToLower() with
@@ -84,7 +88,7 @@ module PostgreHelper =
 
     let getDbType(providerType) =
         try
-            let parameterType = parameterType() 
+            let parameterType = parameterType.Value
             let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
             let npgDbTypeSetter = parameterType.GetProperty("NpgsqlDbType").GetSetMethod()
             let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
@@ -97,13 +101,13 @@ module PostgreHelper =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings() = 
-        let typ = dbType()
+        let typ = dbType.Value
         let mappings =
             [
                 for v in Enum.GetValues(typ) do
                     let name = Enum.GetName(typ, v).ToLower()
                     let clrType = (mapTypeToClrType name).ToString()
-                    yield { ProviderTypeName = name; ClrType = clrType; DbType = (getDbType v); ProviderType = (v :?> int); UseReaderResults = false }
+                    yield { ProviderTypeName = name; ClrType = clrType; DbType = (getDbType v); ProviderType = (v :?> int);}
             ///    yield { ProviderTypeName = "character"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = 6; UseReaderResults = false }
             ]
 
@@ -138,9 +142,10 @@ type internal PostgresqlProvider(resolutionPath) as this =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreHelper.createConnection connectionString
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType(),[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = Activator.CreateInstance(PostgreHelper.parameterType(), [||]) :?> IDbDataParameter
+            let p = Activator.CreateInstance(PostgreHelper.parameterType.Value, [||]) :?> IDbDataParameter
             p.ParameterName <- name
             p.Value <- box value
             if dbType.IsSome then p.DbType <- dbType.Value.DbType 

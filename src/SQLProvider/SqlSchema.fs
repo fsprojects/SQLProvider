@@ -17,13 +17,12 @@ type TypeMapping = {
     ClrType : string
     ProviderType : int
     DbType : DbType
-    UseReaderResults : bool
 }  
 
 type Column = { Name:string; TypeMapping : TypeMapping; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 
-type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; IsNullable:bool; Direction:ParameterDirection; Ordinal:int}
+type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; Ordinal:int}
 type SprocParam = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
 type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns: SprocReturnColumns list }
 
@@ -31,6 +30,10 @@ type Sproc =
     | Root of pathElement:string * Sproc
     | SprocPath of pathElement:string * Sproc
     | Sproc of SprocDefinition
+
+type ReturnValueType = 
+    | Native of obj
+    | Reader of IDataReader
 
 type PrimaryKey = { Name : string; Table : string; Column : string; IndexName : string }
 type Table = { Schema: string; Name:string; Type:string }

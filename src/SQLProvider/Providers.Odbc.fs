@@ -35,7 +35,7 @@ type internal OdbcProvider(resolutionPath) =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
+                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
             ]
 
         let clrMappings =
@@ -58,6 +58,7 @@ type internal OdbcProvider(resolutionPath) =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
         member __.CreateCommandParameter(name,value,dbType, direction, length) = 
             let p = OdbcParameter()            

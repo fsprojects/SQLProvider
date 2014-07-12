@@ -34,28 +34,34 @@ module internal OracleHelpers =
         ]
 
     let assembly =
-        (fun () ->   
-        assemblyNames 
-        |> List.pick (fun asm ->
-            try 
-                let loadedAsm =              
-                    Assembly.LoadFrom(
-                        if String.IsNullOrEmpty resolutionPath then asm
-                        else System.IO.Path.Combine(resolutionPath,asm)
-                        ) 
-                if loadedAsm <> null
-                then Some loadedAsm
-                else None
-            with e ->
-                None))
-   
-    let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleConnection"))
-    let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleCommand"))
-    let parameterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleParameter"))
-    let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+        lazy 
+            assemblyNames 
+            |> List.pick (fun asm ->
+                try 
+                    let loadedAsm =              
+                        Assembly.LoadFrom(
+                            if String.IsNullOrEmpty resolutionPath then asm
+                            else System.IO.Path.Combine(resolutionPath,asm)
+                            ) 
+                    if loadedAsm <> null
+                    then Some loadedAsm
+                    else None
+                with e ->
+                    None)
+    
+    let findType name = (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = name))
+
+    let connectionType = lazy  (findType "OracleConnection")
+    let commandType =  lazy   (findType "OracleCommand")
+    let parameterType = lazy   (findType "OracleParameter")
+    let oracleRefCursorType = lazy   (findType "OracleRefCursor")
+
+    let getDataReaderForRefCursor = lazy (oracleRefCursorType.Value.GetMethod("GetDataReader",[||]))
+
+    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let getSchema name (args:string[]) conn = 
-        getSchemaMethod().Invoke(conn,[|name; args|]) :?> DataTable
+        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -65,10 +71,9 @@ module internal OracleHelpers =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType) =
-            let parameterType = parameterType() 
-            let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
-            let oracleDbTypeSetter = parameterType.GetProperty("OracleDbType").GetSetMethod()
-            let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
+            let p = Activator.CreateInstance(parameterType.Value,[||]) :?> IDbDataParameter
+            let oracleDbTypeSetter = parameterType.Value.GetProperty("OracleDbType").GetSetMethod()
+            let dbTypeGetter = parameterType.Value.GetProperty("DbType").GetGetMethod()
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 
@@ -84,8 +89,8 @@ module internal OracleHelpers =
                     let oracleType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; UseReaderResults = false }
-                yield { ProviderTypeName = "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType =  121; UseReaderResults = true }
+                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                yield { ProviderTypeName = "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType =  121; }
             ]
 
         let clrMappings =
@@ -101,7 +106,13 @@ module internal OracleHelpers =
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- oracleMappings.TryFind 
-            
+ 
+    let tryReadValueProperty instance = 
+        let typ = instance.GetType()
+        let prop = typ.GetProperty("Value")
+        if prop <> null
+        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+        else None         
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
@@ -116,7 +127,7 @@ module internal OracleHelpers =
         if Convert.IsDBNull(v) then def else unbox v
 
     let createConnection connectionString = 
-        Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
+        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
     let connect (con:IDbConnection) f =
         if con.State <> ConnectionState.Open then con.Open()
@@ -228,7 +239,15 @@ module internal OracleHelpers =
                         let retCols : SprocReturnColumns list = 
                             sparams
                             |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); TypeMapping = p.TypeMapping; IsNullable = false; Direction = p.Direction; Ordinal = p.Ordinal })
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                                               then "ReturnValue" + (string i)
+                                                               elif (String.IsNullOrEmpty p.Name)
+                                                               then "ReturnValue"
+                                                               else p.Name); 
+                                                       TypeMapping = p.TypeMapping; 
+                                                       Direction = p.Direction; 
+                                                       Ordinal = p.Ordinal 
+                                                     })
                         
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name.ProcName; FullName = name.FullName; DbName = name.DbName; Params = sparams; ReturnColumns = retCols }))
@@ -251,10 +270,26 @@ type internal OracleProvider(resolutionPath, owner) =
     
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = OracleHelpers.createConnection connectionString
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(OracleHelpers.commandType(),[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(OracleHelpers.commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+                
+        member __.ReadDatabaseParameter(reader:IDataReader, parameter:IDbDataParameter) =
+            let parameterType = OracleHelpers.parameterType.Value
+            let oracleDbTypeGetter = 
+                parameterType.GetProperty("OracleDbType").GetGetMethod()
+
+            match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
+            | DbType.Object, 121 -> 
+                if parameter.Value = null
+                then ReturnValueType.Reader(reader)
+                else ReturnValueType.Reader(OracleHelpers.getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader)
+            | _, _ ->
+                match OracleHelpers.tryReadValueProperty parameter.Value with
+                | Some(obj) -> Native(obj)
+                | _ -> Native(parameter.Value)
+
         member __.CreateCommandParameter(name, value, dbType, direction, maxlength) =
             let value = if value = null then (box System.DBNull.Value) else value
-            let parameterType = OracleHelpers.parameterType()
+            let parameterType = OracleHelpers.parameterType.Value
             let oracleDbTypeSetter = 
                 parameterType.GetProperty("OracleDbType").GetSetMethod()
 

@@ -208,11 +208,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             let ty =
                 match retCols.Length with
                 | 0 -> typeof<Unit>
-                | 1 -> Type.GetType retCols.Head.TypeMapping.ClrType
                 | _ ->
                     let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
-                    container.AddMember rt
                     retCols
                     |> List.iter(fun col ->
                         let name = col.Name
@@ -228,8 +226,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                         rt.AddMember prop
                     )
-                    let ty = typedefof<_ array>
-                    ty.MakeGenericType rt
+                    container.AddMember rt
+                    rt :> Type
 
             let parameters = 
                 sproc.Params
