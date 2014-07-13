@@ -107,7 +107,7 @@ module PostgreHelper =
                 for v in Enum.GetValues(typ) do
                     let name = Enum.GetName(typ, v).ToLower()
                     let clrType = (mapTypeToClrType name).ToString()
-                    yield { ProviderTypeName = name; ClrType = clrType; DbType = (getDbType v); ProviderType = (v :?> int);}
+                    yield { ProviderTypeName = Some name; ClrType = clrType; DbType = (getDbType v); ProviderType = Some (v :?> int);}
             ///    yield { ProviderTypeName = "character"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = 6; UseReaderResults = false }
             ]
 
@@ -118,7 +118,7 @@ module PostgreHelper =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.ToLower(), m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
@@ -144,14 +144,15 @@ type internal PostgresqlProvider(resolutionPath) as this =
         member __.CreateConnection(connectionString) = PostgreHelper.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
+        member __.CreateCommandParameter(param, value) = 
             let p = Activator.CreateInstance(PostgreHelper.parameterType.Value, [||]) :?> IDbDataParameter
-            p.ParameterName <- name
+            p.ParameterName <- param.Name
             p.Value <- box value
-            if dbType.IsSome then p.DbType <- dbType.Value.DbType 
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
-            upcast p
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
+            p
+
         member __.CreateTypeMappings(_) = PostgreHelper.createTypeMappings()
 
         member __.GetTables(con) =            
@@ -185,9 +186,9 @@ type internal PostgresqlProvider(resolutionPath) as this =
                         WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
                         ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
-                let p =  (this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None, None, None)
+                let p =  (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0),table.Schema)
                 com.Parameters.Add p |> ignore
-                let p =  (this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None, None, None)
+                let p =  (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1),table.Name)
                 com.Parameters.Add p |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
@@ -303,7 +304,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
+                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param),value)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -429,7 +430,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) (k,v) -> 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None,None,None)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
                         (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -470,15 +471,15 @@ type internal PostgresqlProvider(resolutionPath) as this =
                         let name = sprintf "@param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None,None,None)
-                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None,None,None)
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
                     
                 
-                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None,None,None)
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
                 ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
                     (entity.Table.FullName.Replace("[","\"").Replace("]","\""))
@@ -500,7 +501,8 @@ type internal PostgresqlProvider(resolutionPath) as this =
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None,None,None)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
+
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","\"").Replace("]","\"")) pk )
                 cmd.CommandText <- sb.ToString()

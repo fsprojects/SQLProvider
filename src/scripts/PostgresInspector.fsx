@@ -20,6 +20,8 @@ PostgreHelper.resolutionPath <- @"D:\Downloads\Npgsql-2.1.3-net20"
 
 let connection = PostgreHelper.createConnection connectionString
 
+PostgreHelper.connect connection (PostgreHelper.getSchema "Tables" [||])
+|> DataTable.printDataTable
 
 PostgreHelper.connect connection (PostgreHelper.getSchema "MetaDataCollections" [||])
 |> DataTable.printDataTable

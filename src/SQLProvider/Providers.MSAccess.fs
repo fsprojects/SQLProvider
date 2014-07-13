@@ -37,7 +37,7 @@ type internal MSAccessProvider() =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -47,7 +47,7 @@ type internal MSAccessProvider() =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
@@ -58,12 +58,13 @@ type internal MSAccessProvider() =
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = OleDbParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value.DbType
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
+        member __.CreateCommandParameter(param, value) = 
+            let p = OleDbParameter(param.Name,value)            
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
+
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
@@ -172,7 +173,7 @@ type internal MSAccessProvider() =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                OleDbParameter(paramName,value):> IDataParameter
+                OleDbParameter(paramName,value):> IDbDataParameter
 
             let rec filterBuilder = function 
                 | [] -> ()

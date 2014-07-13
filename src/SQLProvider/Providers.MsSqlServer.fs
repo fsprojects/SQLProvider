@@ -8,11 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MSSqlServerProvider() =
-    let pkLookup =     Dictionary<string,string>()
-    let tableLookup =  Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+module MSSqlServer = 
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -35,7 +31,7 @@ type internal MSSqlServerProvider() =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -45,38 +41,56 @@ type internal MSSqlServerProvider() =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
-        findDbType <- dbMappings.TryFind 
-    
-    let executeSql (con:IDbConnection) sql =
+        findDbType <- dbMappings.TryFind
+
+
+    let createConnection connectionString = new SqlConnection(connectionString) :> IDbConnection
+
+    let createCommand commandText (connection:IDbConnection) = new SqlCommand(commandText, downcast connection) :> IDbCommand
+
+
+    let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+        
+    let executeSql sql (con:IDbConnection) =
         use com = new SqlCommand(sql,con:?>SqlConnection)    
         com.ExecuteReader()
 
+
+
+type internal MSSqlServerProvider() =
+    let pkLookup =     Dictionary<string,string>()
+    let tableLookup =  Dictionary<string,Table>()
+    let columnLookup = Dictionary<string,Column list>()
+    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = upcast new SqlConnection(connectionString)
+        member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
-        member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = SqlParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value.DbType
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
+        member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
+        member __.CreateCommandParameter(param, value) = 
+            let p = SqlParameter(param.Name,value)            
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)     
+
+        member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings (con:?>SqlConnection)     
         member __.GetTables(con) =
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
-            let ret = 
-                [ while reader.Read() do 
-                    let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
-                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                    yield table ]
-            con.Close()
-            ret
+            MSSqlServer.connect con (fun con -> 
+            use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
+            [ while reader.Read() do 
+                let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
+                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                yield table ])
+
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
@@ -112,7 +126,7 @@ type internal MSSqlServerProvider() =
                let columns =
                   [ while reader.Read() do 
                       let dt = reader.GetSqlString(1).Value
-                      match findDbType dt with
+                      match MSSqlServer.findDbType dt with
                       | Some(m) ->
                          let col =
                             { Column.Name = reader.GetSqlString(0).Value; 
@@ -156,21 +170,20 @@ type internal MSSqlServerProvider() =
                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
+            MSSqlServer.connect con (fun con ->
+            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let children =
                 [ while reader.Read() do 
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             reader.Dispose()
-            use reader = executeSql con (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name )
+            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
-            con.Close()
-            (children,parents)    
+            (children,parents))
         member __.GetSprocs(con) = []
 //            let con = con:?>SqlConnection
 //            //todo: this whole function needs cleaning up
@@ -318,7 +331,7 @@ type internal MSSqlServerProvider() =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                SqlParameter(paramName,value):> IDataParameter
+                SqlParameter(paramName,value):> IDbDataParameter
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -335,7 +348,7 @@ type internal MSSqlServerProvider() =
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
-                                let operatorIn operator (array : IDataParameter[]) =
+                                let operatorIn operator (array : IDbDataParameter[]) =
                                     if Array.isEmpty array then
                                         match operator with
                                         | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set

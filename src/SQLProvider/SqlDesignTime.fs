@@ -209,7 +209,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 match retCols.Length with
                 | 0 -> typeof<Unit>
                 | _ ->
-                    let rt = ProvidedTypeDefinition(sproc.FullName,Some typeof<SqlEntity>)
+                    let rt = ProvidedTypeDefinition(sproc.Name.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
                     retCols
                     |> List.iter(fun col ->
@@ -234,7 +234,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
            
-            ProvidedMethod(sproc.Name,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
+            ProvidedMethod(sproc.Name.ProcName,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
             
                 <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
             
@@ -286,8 +286,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | sproc::rest -> generateTypeTree (walkSproc [] None None createdTypes sproc) rest
 
         serviceType.AddMembersDelayed( fun () ->
-            let containers = generateTypeTree Map.empty (sprocData.Force())
-            [ yield! containers |> Seq.cast<MemberInfo>
+            [ 
+              let containers = generateTypeTree Map.empty (sprocData.Force())
+              yield! containers |> Seq.cast<MemberInfo>
               for (KeyValue(key,(entityType,desc,_))) in baseTypes.Force() do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]

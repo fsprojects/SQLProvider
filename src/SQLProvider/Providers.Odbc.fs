@@ -35,7 +35,7 @@ type internal OdbcProvider(resolutionPath) =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -45,7 +45,7 @@ type internal OdbcProvider(resolutionPath) =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
@@ -60,14 +60,15 @@ type internal OdbcProvider(resolutionPath) =
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
+        member __.CreateCommandParameter(param, value) = 
             let p = OdbcParameter()            
             p.Value <- value
-            p.ParameterName <- name
-            if dbType.IsSome then p.DbType <- dbType.Value.DbType
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
+            p.ParameterName <- param.Name
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
+
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
             let con = con :?> OdbcConnection
@@ -194,7 +195,7 @@ type internal OdbcProvider(resolutionPath) =
 
             let createParam (value:obj) =
                 let paramName = "?"
-                OdbcParameter(paramName,value):> IDataParameter
+                OdbcParameter(paramName,value):> IDbDataParameter
 
             let rec filterBuilder = function 
                 | [] -> ()

@@ -63,20 +63,20 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               use com = provider.CreateCommand(con,definition.DbName)
+               use com = provider.CreateCommand(con,definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
                let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
                
                let outps =
                     definition.ReturnColumns
-                    |> List.mapi(fun i ip ->
-                        let p = provider.CreateCommandParameter(ip.Name,null,Some ip.TypeMapping, Some ip.Direction, None)
+                    |> List.map(fun ip ->
+                        let p = provider.CreateCommandParameter(ip, null)
                         (ip.Ordinal, p))
                
                let inps =
                     inputParameters
                     |> List.mapi(fun i ip ->
-                        let p = provider.CreateCommandParameter(ip.Name,values.[i],Some ip.TypeMapping, Some ip.Direction, ip.MaxLength)
+                        let p = provider.CreateCommandParameter(ip,values.[i])
                         (ip.Ordinal,p))
                
                List.append outps inps
@@ -92,15 +92,15 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                         | 0 -> com.ExecuteNonQuery() |> ignore; () |> box
                         | 1 -> 
                             use reader = com.ExecuteReader()
-                            SqlEntity.FromOutputParameters(this, definition.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
+                            SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
                         | _ -> 
                             com.ExecuteNonQuery() |> ignore
-                            SqlEntity.FromOutputParameters(this, definition.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
+                            SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
                    else
                         use reader = com.ExecuteReader()
                         if definition.ReturnColumns.Length > 0
-                        then SqlEntity.FromOutputParameters(this, definition.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
-                        else SqlEntity.FromDataReader(this,definition.DbName,reader) |> box
+                        then SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
+                        else SqlEntity.FromDataReader(this,definition.Name.DbName,reader) |> box
                          
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
@@ -123,7 +123,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
-               com.Parameters.Add (provider.CreateCommandParameter("@id",id,None, None, None)) |> ignore
+               com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]

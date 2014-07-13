@@ -44,10 +44,10 @@ type internal SQLiteProvider(resolutionPath) as this =
             [
                 for r in dt.Rows do
                     let clrType = string r.["DataType"]
-                    let oracleType = string r.["TypeName"]
+                    let sqlliteType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
-                    yield { ProviderTypeName = oracleType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                    yield { ProviderTypeName = Some sqlliteType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -55,14 +55,14 @@ type internal SQLiteProvider(resolutionPath) as this =
             |> List.map (fun m -> m.ClrType, m)
             |> Map.ofList
 
-        let oracleMappings = 
+        let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
-        findDbType <- oracleMappings.TryFind 
+        findDbType <- dbMappings.TryFind 
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -72,12 +72,13 @@ type internal SQLiteProvider(resolutionPath) as this =
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value.DbType 
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
-            upcast p
+        member __.CreateCommandParameter(param,value) = 
+            let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
+            p
+
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
@@ -206,7 +207,7 @@ type internal SQLiteProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
+                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -331,7 +332,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) (k,v) -> 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None, None, None)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
                         (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -367,15 +368,15 @@ type internal SQLiteProvider(resolutionPath) as this =
                         let name = sprintf "@param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None, None, None)
-                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None, None, None)
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
                     
                 
-                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None, None, None)
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
                 ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
                     entity.Table.FullName
@@ -397,7 +398,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None, None, None)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
                 cmd.CommandText <- sb.ToString()

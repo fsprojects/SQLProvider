@@ -13,18 +13,50 @@ module internal Patterns =
       else None
 
 type TypeMapping = {
-    ProviderTypeName : string
+    ProviderTypeName : string option
     ClrType : string
-    ProviderType : int
+    ProviderType : int option
     DbType : DbType
-}  
+}
+with 
+    static member Create(?clrType, ?dbType, ?providerTypeName, ?providerType) =
+        {
+            ClrType = defaultArg clrType ((typeof<string>).ToString())
+            DbType = defaultArg dbType (DbType.String)
+            ProviderTypeName = providerTypeName
+            ProviderType = providerType
+        }
+
+type QueryParameter = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; Length:int option; Ordinal:int }
+with
+    static member Create(name, ordinal, ?typeMapping, ?direction, ?length) = 
+        {
+            Name = name; Ordinal = ordinal;
+            TypeMapping = defaultArg typeMapping (TypeMapping.Create()); 
+            Direction = defaultArg direction ParameterDirection.Input; 
+            Length = length 
+        }
 
 type Column = { Name:string; TypeMapping : TypeMapping; IsPrimarKey:bool; IsNullable:bool }
 type Relationship = { Name:string; PrimaryTable:string; PrimaryKey:string; ForeignTable:string; ForeignKey:string }
 
-type SprocReturnColumns = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; Ordinal:int}
-type SprocParam = { Name:string; TypeMapping : TypeMapping; Direction:ParameterDirection; MaxLength:int option; Ordinal:int }
-type SprocDefinition = { Name:string; FullName:string; DbName:string; Params:SprocParam list; ReturnColumns: SprocReturnColumns list }
+type SprocName = {
+    ProcName : string
+    Owner : string
+    PackageName : string
+}
+with
+    member x.ToList() =  
+           if String.IsNullOrEmpty(x.PackageName)
+           then [x.Owner; x.ProcName] 
+           else [x.Owner; x.PackageName; x.ProcName]
+    member x.DbName with get() = String.Join(".", x.ToList())
+    member x.FriendlyName with get() = String.Join(" ", x.ToList())
+    member x.FullName with get() = String.Join("_", x.ToList())
+
+
+
+type SprocDefinition = { Name:SprocName; Params:QueryParameter list; ReturnColumns: QueryParameter list }
 
 type Sproc =
     | Root of pathElement:string * Sproc

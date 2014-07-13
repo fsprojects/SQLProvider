@@ -139,13 +139,13 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                | value -> e.SetColumnSilent(reader.GetName(i),value)
            yield e |]
 
-    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:SprocReturnColumns list, parameters:IDataParameter list) = 
+    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:QueryParameter list, parameters:IDbDataParameter list) = 
         let e = SqlEntity(con, name)
         parameters 
         |> List.iter(fun p ->
             match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
             | Some(col) ->
-                         match provider.ReadDatabaseParameter(reader, p :?> IDbDataParameter) with
+                         match provider.ReadDatabaseParameter(reader, p) with
                          | ReturnValueType.Reader(r) ->   
                             let entity = SqlEntity.FromDataReader(con, name, r)
                             e.SetColumnSilent(col.Name,entity)
@@ -377,7 +377,7 @@ and internal ISqlProvider =
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
     /// return a new command parameter with the provided name, value and optionally type, direction and length
-    abstract CreateCommandParameter : string * obj * TypeMapping option * ParameterDirection option * int option -> IDataParameter
+    abstract CreateCommandParameter : QueryParameter * obj -> IDbDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
@@ -405,7 +405,7 @@ and internal ISqlProvider =
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
-    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDataParameter>
+    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Get database specifc value
     abstract ReadDatabaseParameter : IDataReader * IDbDataParameter -> ReturnValueType
     

@@ -57,7 +57,7 @@ type internal MySqlProvider(resolutionPath) as this =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = oleDbType; ClrType = clrType; DbType = dbType; ProviderType = providerType; }
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -67,7 +67,7 @@ type internal MySqlProvider(resolutionPath) as this =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
             
         typeMappings <- mappings
@@ -82,10 +82,22 @@ type internal MySqlProvider(resolutionPath) as this =
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            match dbType with
-            | Some v -> paramEnumCtor.Invoke([|box name;Enum.ToObject(parameterType, v.ProviderType)|]) :?> IDataParameter
-            | None -> paramObjectCtor.Invoke([|box name;box value|]) :?> IDataParameter            
+        member __.CreateCommandParameter(param, value) = 
+             let value = if value = null then (box System.DBNull.Value) else value
+             let parameterType = parameterType
+             let mySqlDbTypeSetter = 
+                 parameterType.GetProperty("MySqlDbType").GetSetMethod()
+             
+             let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+             
+             p.Direction <-  param.Direction 
+             
+             p.DbType <- param.TypeMapping.DbType
+             mySqlDbTypeSetter.Invoke(p, [|param.TypeMapping.ProviderType|]) |> ignore
+             
+             Option.iter (fun l -> p.Size <- l) param.Length             
+             p    
+               
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
@@ -129,8 +141,8 @@ type internal MySqlProvider(resolutionPath) as this =
                                  WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
                                  ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
                use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)               
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@schema",table.Schema,None, None, None)) |> ignore
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter("@table",table.Name,None, None, None)) |> ignore
+               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
+               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), table.Name)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let columns =
@@ -232,7 +244,7 @@ type internal MySqlProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
+                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -249,7 +261,7 @@ type internal MySqlProvider(resolutionPath) as this =
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
-                                let operatorIn operator (array : IDataParameter[]) =
+                                let operatorIn operator (array : IDbDataParameter[]) =
                                     if Array.isEmpty array then
                                         match operator with
                                         | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set
@@ -367,7 +379,7 @@ type internal MySqlProvider(resolutionPath) as this =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) (k,v) -> 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None,None, None)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i),v)
                         (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -403,15 +415,15 @@ type internal MySqlProvider(resolutionPath) as this =
                         let name = sprintf "@param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None,None,None)
-                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None,None,None)
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i),v)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i), DBNull.Value)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
                     
                 
-                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None,None,None)
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk", 0),pkValue)
 
                 ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
                     (entity.Table.FullName.Replace("[","`").Replace("]","`"))
@@ -433,7 +445,7 @@ type internal MySqlProvider(resolutionPath) as this =
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None,None,None)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk", 0),pkValue)
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
                 cmd.CommandText <- sb.ToString()
