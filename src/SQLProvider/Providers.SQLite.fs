@@ -21,13 +21,11 @@ type internal SQLiteProvider(resolutionPath) as this =
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assembly =  
             Reflection.Assembly.LoadFrom(
-                if isMono then 
-                    if String.IsNullOrEmpty resolutionPath then "Mono.Data.SQLite.dll"
-                    else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,"Mono.Data.SQLite.dll"))
-                else
+                let location = if isMono then "Mono" else "System"
+
                 // we could try and load from the gac here first if no path was specified...            
-                    if String.IsNullOrEmpty resolutionPath then "System.Data.SQLite.dll"
-                    else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,"System.Data.SQLite.dll")))
+                if String.IsNullOrEmpty resolutionPath then location + ".Data.SQLite.dll"
+                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,location + ".Data.SQLite.dll")))
    
     let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
