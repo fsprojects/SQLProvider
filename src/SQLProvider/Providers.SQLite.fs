@@ -16,17 +16,20 @@ type internal SQLiteProvider(resolutionPath) as this =
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+    let isMono = Type.GetType ("Mono.Runtime") <> null
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assembly =  
-            // we could try and load from the gac here first if no path was specified...            
             Reflection.Assembly.LoadFrom(
-                if String.IsNullOrEmpty resolutionPath then "System.Data.SQLite.dll"
-                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,"System.Data.SQLite.dll")))
+                let location = if isMono then "Mono" else "System"
+
+                // we could try and load from the gac here first if no path was specified...            
+                if String.IsNullOrEmpty resolutionPath then location + ".Data.SQLite.dll"
+                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,location + ".Data.SQLite.dll")))
    
-    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteConnection"))
-    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteCommand"))
-    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "SQLiteParameter"))
+    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
 
