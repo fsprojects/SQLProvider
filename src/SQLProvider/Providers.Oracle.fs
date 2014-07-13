@@ -134,8 +134,8 @@ module internal Oracle =
         p.Direction <- param.Direction 
         
         p.DbType <- param.TypeMapping.DbType
-        oracleDbTypeSetter.Invoke(p, [|param.TypeMapping.ProviderType|]) |> ignore
-        
+        param.TypeMapping.ProviderType |> Option.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+
         match param.Length with
         | Some(length) when length >= 0 -> p.Size <- length
         | _ -> 
@@ -308,7 +308,7 @@ module internal Oracle =
 
 type internal OracleProvider(resolutionPath, owner) =
     
-    let mutable primaryKeyCache = new Dictionary<string,PrimaryKey>()
+    let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new Dictionary<string, Relationship list * Relationship list>()
     let columnCache = new Dictionary<string, Column list>()
     let mutable tableCache : Table list = []
@@ -326,8 +326,7 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.CreateTypeMappings(con) = 
             Oracle.connect con (fun con -> 
                 Oracle.createTypeMappings con
-                primaryKeyCache <- downcast (dict (Oracle.getPrimaryKeys con))
-            )
+                primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
         member __.GetTables(con) =
                match tableCache with

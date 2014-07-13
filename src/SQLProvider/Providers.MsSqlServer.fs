@@ -10,19 +10,25 @@ open FSharp.Data.Sql.Common
 
 module MSSqlServer = 
 
+    let getSchema name (args:string[]) (con:IDbConnection) = 
+        let con = (con :?> SqlConnection)
+        con.GetSchema(name, args)
+
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let createTypeMappings (con:SqlConnection) =
-        let dt = con.GetSchema("DataTypes")
+    let createTypeMappings (con:IDbConnection) =
+        let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
             let p = new SqlParameter()
             p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
             p.DbType
 
-        let getClrType (input:string) = Type.GetType(input).ToString()
+        let getClrType (input:string) = 
+            let t = Type.GetType input
+            if t <> null then t.ToString() else typeof<String>.ToString()
 
         let mappings =             
             [
@@ -53,6 +59,11 @@ module MSSqlServer =
 
     let createCommand commandText (connection:IDbConnection) = new SqlCommand(commandText, downcast connection) :> IDbCommand
 
+    let dbUnbox<'a> (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
+    
+    let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then def else unbox v
 
     let connect (con:IDbConnection) f =
         if con.State <> ConnectionState.Open then con.Open()
@@ -62,6 +73,92 @@ module MSSqlServer =
     let executeSql sql (con:IDbConnection) =
         use com = new SqlCommand(sql,con:?>SqlConnection)    
         com.ExecuteReader()
+
+    let readParameter (reader:IDataReader) (parameter:IDbDataParameter) =
+        if(reader <> null) 
+        then 
+            let reader = reader :?> SqlDataReader
+            if (reader.HasRows) 
+            then Reader reader
+            else Native((parameter :?> SqlParameter).Value)
+        else Native((parameter :?> SqlParameter).Value)
+
+    let getSprocs (con:IDbConnection) =
+        let con = (con :?> SqlConnection)
+        let procedures,functions = 
+            getSchema "Procedures" [||] con 
+            |> DataTable.map (fun row -> dbUnbox<string> row.["routine_name"], dbUnbox<string> row.["routine_type"])
+            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+
+        let procedures = procedures |> List.map fst |> Set.ofList
+        let functions = functions |> List.map fst |> Set.ofList
+
+        let getName (row:DataRow) = 
+            let owner = dbUnbox row.["specific_catalog"]
+            let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
+            { ProcName = procName; Owner = owner; PackageName = packageName }
+
+        let createSprocParameters (row:DataRow) = 
+            let dataType = dbUnbox row.["data_type"]
+            let argumentName = dbUnbox row.["parameter_name"]
+            let maxLength = Some(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
+
+            findDbType dataType 
+            |> Option.map (fun m ->
+                let returnValue = dbUnbox<string> row.["is_result"] = "YES"
+                let direction = 
+                    match dbUnbox<string> row.["parameter_mode"] with
+                    | "IN" -> ParameterDirection.Input
+                    | "OUT" when returnValue -> ParameterDirection.ReturnValue
+                    | "OUT" -> ParameterDirection.Output
+                    | "INOUT" -> ParameterDirection.InputOutput
+                    | a -> failwithf "Direction not supported %s" a
+                { Name = dbUnbox row.["parameter_name"]
+                  TypeMapping = m
+                  Direction = direction
+                  Length = maxLength
+                  Ordinal = dbUnbox<int> row.["ordinal_position"] }
+            )
+
+        let parameters = 
+            let withParameters = getSchema "ProcedureParameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+            (Set.union procedures functions)
+            |> Set.toSeq 
+            |> Seq.choose (fun proc -> 
+                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
+                then None
+                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty }, Seq.empty)
+                )
+            |> Seq.append withParameters
+
+        parameters
+        |> Seq.map (fun (name, parameters) -> 
+                        let sparams = 
+                            parameters
+                            |> Seq.choose id
+                            |> Seq.sortBy (fun p -> p.Ordinal)
+                            |> Seq.toList
+                            
+                        let retCols = 
+                            sparams
+                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                                               then "ReturnValue" + (string i)
+                                                               elif (String.IsNullOrEmpty p.Name)
+                                                               then "ReturnValue"
+                                                               else p.Name); 
+                                                       TypeMapping = p.TypeMapping; 
+                                                       Direction = p.Direction; 
+                                                       Ordinal = p.Ordinal;
+                                                       Length = None 
+                                                     })
+                        
+                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | _, _ -> Empty
+                      ) 
+        |> Seq.toList
 
 
 
@@ -73,7 +170,7 @@ type internal MSSqlServerProvider() =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
+        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = MSSqlServer.readParameter reader parameter
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = 
             let p = SqlParameter(param.Name,value)            
@@ -82,7 +179,7 @@ type internal MSSqlServerProvider() =
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
 
-        member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings (con:?>SqlConnection)     
+        member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
         member __.GetTables(con) =
             MSSqlServer.connect con (fun con -> 
             use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
@@ -184,7 +281,7 @@ type internal MSSqlServerProvider() =
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents))
-        member __.GetSprocs(con) = []
+        member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
 //            let con = con:?>SqlConnection
 //            //todo: this whole function needs cleaning up
 //            let baseQuery = @"SELECT 
@@ -198,8 +295,8 @@ type internal MSSqlServerProvider() =
 //                            FROM sys.procedures b
 //                            left join INFORMATION_SCHEMA.PARAMETERS a on a.SPECIFIC_NAME = b.name 
 //							join sys.schemas c on b.schema_id = c.schema_id"
-//            if con.State <> ConnectionState.Open then con.Open()
-//            use reader = executeSql con baseQuery
+//            MSSqlServer.connect con (fun con ->
+//            use reader = MSSqlServer.executeSql baseQuery con
 //            let meta =
 //                [ while reader.Read() do
 //                    let paramName = reader.GetSqlString(4)

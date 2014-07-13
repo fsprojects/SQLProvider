@@ -62,6 +62,7 @@ type Sproc =
     | Root of pathElement:string * Sproc
     | SprocPath of pathElement:string * Sproc
     | Sproc of SprocDefinition
+    | Empty
 
 type ReturnValueType = 
     | Native of obj

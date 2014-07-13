@@ -93,7 +93,7 @@ type internal MySqlProvider(resolutionPath) as this =
              p.Direction <-  param.Direction 
              
              p.DbType <- param.TypeMapping.DbType
-             mySqlDbTypeSetter.Invoke(p, [|param.TypeMapping.ProviderType|]) |> ignore
+             param.TypeMapping.ProviderType |> Option.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
              
              Option.iter (fun l -> p.Size <- l) param.Length             
              p    

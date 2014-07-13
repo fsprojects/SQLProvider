@@ -272,6 +272,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) -> previousType.AddMember(generateSprocMethod containerType sproc); createdTypes
                     | _,_ -> failwithf "Could not generate sproc undefined root or previous type"
+            | Empty -> createdTypes
 
         let rec generateTypeTree (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
             match sprocs with
