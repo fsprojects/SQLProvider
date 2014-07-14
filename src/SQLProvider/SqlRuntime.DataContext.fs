@@ -63,9 +63,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               let outParameters, com = provider.BuildSprocCommand(con, definition, values)
-               use com = provider.CreateCommand(con,definition.Name.DbName)
+               use com = provider.CreateCommand(con, definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
+               let outParameters, com = provider.BuildSprocCommand(com, definition, values)
 
                let entities = 
                    match definition.ReturnColumns.Length with

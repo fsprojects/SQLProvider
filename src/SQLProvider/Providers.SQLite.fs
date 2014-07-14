@@ -81,7 +81,7 @@ type internal SQLiteProvider(resolutionPath) as this =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             p
-        member __.BuildSprocCommand(con,definition,values) =  raise(NotImplementedException())
+        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable

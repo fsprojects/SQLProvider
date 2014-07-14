@@ -203,9 +203,7 @@ module MSSqlServer =
                       ) 
         |> Seq.toList
 
-    let buildSprocCommand con (definition:SprocDefinition) (values:obj[]) = 
-        use com = createCommand definition.Name.DbName con
-        com.CommandType <- CommandType.StoredProcedure
+    let buildSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =

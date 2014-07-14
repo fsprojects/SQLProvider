@@ -409,5 +409,5 @@ and internal ISqlProvider =
     ///Get database specifc value
     abstract ReadDatabaseParameter : IDataReader * IDbDataParameter -> ReturnValueType
     ///Builds a command representing a call to a stored procedure
-    abstract BuildSprocCommand : IDbConnection * SprocDefinition * obj[] -> IDbDataParameter list * IDbCommand
+    abstract BuildSprocCommand : IDbCommand * SprocDefinition * obj[] -> IDbDataParameter list * IDbCommand
     

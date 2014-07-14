@@ -128,7 +128,7 @@ ctx.Procedures.ADD_JOB_HISTORY(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24)
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES().ResultSet0 do
+      for e in ctx.Procedures.GET_EMPLOYEES().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -142,10 +142,10 @@ type Region = {
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
     [
-      for e in results.ResultSet0 do
+      for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
               
-      for e in results.ResultSet1 do
+      for e in results.ResultSet_1 do
         yield e.MapTo<Region>() |> box
     ]
 
@@ -154,7 +154,7 @@ let locations_and_regions =
 let getemployees hireDate =
     let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
     [
-      for e in results.ResultSet0 do
+      for e in results.ResultSet do
         yield e.MapTo<Employee>()
     ]
 
