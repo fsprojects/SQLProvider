@@ -38,6 +38,7 @@ module MSSqlServer =
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =
@@ -83,6 +84,14 @@ module MSSqlServer =
             else Native((parameter :?> SqlParameter).Value)
         else Native((parameter :?> SqlParameter).Value)
 
+    let createCommandParameter (param:QueryParameter) (value:obj) = 
+        let p = SqlParameter(param.Name,value)            
+        p.DbType <- param.TypeMapping.DbType
+        Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
+        p.Direction <- param.Direction
+        Option.iter (fun l -> p.Size <- l) param.Length
+        p :> IDbDataParameter
+
     let getSprocs (con:IDbConnection) =
         let con = (con :?> SqlConnection)
         let procedures,functions = 
@@ -113,7 +122,7 @@ module MSSqlServer =
                     | "OUT" -> ParameterDirection.Output
                     | "INOUT" -> ParameterDirection.InputOutput
                     | a -> failwithf "Direction not supported %s" a
-                { Name = dbUnbox row.["parameter_name"]
+                { Name = argumentName
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
@@ -131,6 +140,52 @@ module MSSqlServer =
                 )
             |> Seq.append withParameters
 
+        let getSprocReturnCols sprocName (parameters:QueryParameter list) = 
+            
+            let parameterStr = 
+                String.Join(", ", parameters |> List.map(fun p -> p.Name + "= null") |> List.toArray)
+
+            let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sprocName parameterStr
+
+            printfn "Executing %s" query
+
+            connect con (fun con -> 
+                    let dr = executeSql query con
+                    [
+                       yield dr.GetSchemaTable()
+                       while dr.NextResult() do
+                            yield dr.GetSchemaTable()
+                    ]
+            ) 
+            |> List.mapi (fun i dt ->
+                             if dt <> null
+                             then
+                                match findDbType "cursor" with
+                                | Some m -> 
+                                   { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i); 
+                                     TypeMapping = m; 
+                                     Direction = ParameterDirection.Output; 
+                                     Ordinal = i;
+                                     Length = None 
+                                    } |> Some
+                                | None -> None
+                             else None
+                         )
+            |> List.choose id
+//                            dt |> DataTable.mapChoose (fun row -> 
+//                                let name = dbUnbox<string> row.["ColumnName"]
+//                                let ordinal = dbUnbox<int> row.["ColumnOrdinal"]
+//                                match findDbType (dbUnbox<string> row.["DataTypeName"]) with
+//                                | Some(m) ->
+//                                    { Name = name; 
+//                                      TypeMapping = m; 
+//                                      Direction = ParameterDirection.Output; 
+//                                      Ordinal = ordinal;
+//                                      Length = None 
+//                                     } |> Some
+//                                | None -> None)
+
+
         parameters
         |> Seq.map (fun (name, parameters) -> 
                         let sparams = 
@@ -139,26 +194,38 @@ module MSSqlServer =
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
                             
-                        let retCols = 
-                            sparams
-                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                                               then "ReturnValue" + (string i)
-                                                               elif (String.IsNullOrEmpty p.Name)
-                                                               then "ReturnValue"
-                                                               else p.Name); 
-                                                       TypeMapping = p.TypeMapping; 
-                                                       Direction = p.Direction; 
-                                                       Ordinal = p.Ordinal;
-                                                       Length = None 
-                                                     })
-                        
+                        let retCols = getSprocReturnCols name.DbName sparams
+
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
                         | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
                         | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
                         | _, _ -> Empty
                       ) 
         |> Seq.toList
+
+    let buildSprocCommand con (definition:SprocDefinition) (values:obj[]) = 
+        use com = createCommand definition.Name.DbName con
+        com.CommandType <- CommandType.StoredProcedure
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             definition.ReturnColumns
+             |> List.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+        
+        inps
+        |> List.sortBy fst
+        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        let outParameters = outps |> List.map snd
+        outParameters, com
 
 
 
@@ -172,12 +239,8 @@ type internal MSSqlServerProvider() =
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = MSSqlServer.readParameter reader parameter
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = 
-            let p = SqlParameter(param.Name,value)            
-            p.DbType <- param.TypeMapping.DbType
-            p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
-            upcast p
+        member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
+        member __.BuildSprocCommand(con, definition:SprocDefinition, values:obj array) = MSSqlServer.buildSprocCommand con definition values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
         member __.GetTables(con) =

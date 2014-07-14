@@ -63,44 +63,19 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
+               let outParameters, com = provider.BuildSprocCommand(con, definition, values)
                use com = provider.CreateCommand(con,definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
-               
-               let outps =
-                    definition.ReturnColumns
-                    |> List.map(fun ip ->
-                        let p = provider.CreateCommandParameter(ip, null)
-                        (ip.Ordinal, p))
-               
-               let inps =
-                    inputParameters
-                    |> List.mapi(fun i ip ->
-                        let p = provider.CreateCommandParameter(ip,values.[i])
-                        (ip.Ordinal,p))
-               
-               List.append outps inps
-               |> List.sortBy fst
-               |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
-
-               let outParameters = outps |> List.map snd
 
                let entities = 
-                   if (provider.GetType() = typeof<Providers.OracleProvider>)
-                   then 
-                        match definition.ReturnColumns.Length with
-                        | 0 -> com.ExecuteNonQuery() |> ignore; () |> box
-                        | 1 -> 
-                            use reader = com.ExecuteReader()
-                            SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
-                        | _ -> 
-                            com.ExecuteNonQuery() |> ignore
-                            SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
-                   else
-                        use reader = com.ExecuteReader()
-                        if definition.ReturnColumns.Length > 0
-                        then SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
-                        else SqlEntity.FromDataReader(this,definition.Name.DbName,reader) |> box
+                   match definition.ReturnColumns.Length with
+                   | 0 -> com.ExecuteNonQuery() |> ignore; () |> box
+                   | 1 -> 
+                       use reader = com.ExecuteReader()
+                       SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
+                   | _ -> 
+                       com.ExecuteNonQuery() |> ignore
+                       SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
                          
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities

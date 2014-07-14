@@ -408,4 +408,6 @@ and internal ISqlProvider =
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Get database specifc value
     abstract ReadDatabaseParameter : IDataReader * IDbDataParameter -> ReturnValueType
+    ///Builds a command representing a call to a stored procedure
+    abstract BuildSprocCommand : IDbConnection * SprocDefinition * obj[] -> IDbDataParameter list * IDbCommand
     

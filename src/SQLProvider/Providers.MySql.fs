@@ -97,6 +97,9 @@ type internal MySqlProvider(resolutionPath) as this =
              
              Option.iter (fun l -> p.Size <- l) param.Length             
              p    
+           
+        member __.BuildSprocCommand(con,definition,values) =  raise(NotImplementedException())
+            
                
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()

@@ -152,7 +152,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             p
-
+        member __.BuildSprocCommand(con,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(_) = PostgreHelper.createTypeMappings()
 
         member __.GetTables(con) =            

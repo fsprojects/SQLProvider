@@ -68,7 +68,7 @@ type internal OdbcProvider(resolutionPath) =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-
+        member __.BuildSprocCommand(con,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
             let con = con :?> OdbcConnection

@@ -19,13 +19,15 @@ open System.Data
 open FSharp.Data.Sql.Schema
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
-let connectionString = "Data Source=.;Initial Catalog=AdventureWorks;Integrated Security=True"
+let connectionString = "Data Source=.;Initial Catalog=HR;Integrated Security=True"
 
 let connection = MSSqlServer.createConnection connectionString
 
 MSSqlServer.connect connection MSSqlServer.createTypeMappings
 
-MSSqlServer.connect connection MSSqlServer.getSprocs
-
 MSSqlServer.connect connection (MSSqlServer.getSchema "DataTypes" [||])
 |> DataTable.printDataTable
+
+MSSqlServer.connect connection (MSSqlServer.getSprocs)
+
+MSSqlServer.typeMappings

@@ -30,12 +30,15 @@ module DataTable =
         cache.Values |> Seq.map id |> Seq.toList
     
     let mapChoose (f:DataRow -> 'a option) (dt:DataTable) = 
-        [
-            for row in dt.Rows do
-                match f row with
-                | Some(a) -> yield a
-                | None -> ()
-        ]
+        if dt <> null
+        then
+            [
+                for row in dt.Rows do
+                    match f row with
+                    | Some(a) -> yield a
+                    | None -> ()
+            ]
+        else []
 
     let choose (f : DataRow -> DataRow option) (dt:DataTable) =
         let copy = dt.Clone()
@@ -54,19 +57,21 @@ module DataTable =
         ) dt
     
     let printDataTable (dt:System.Data.DataTable) = 
-        let maxLength, rows = 
-            dt
-            |> map (fun r -> r.ItemArray)
-            |> List.fold (fun (maxLen, rows) row ->
-                            let values = row |> Array.map (fun x -> x.ToString()) |> List.ofArray
-                            let rowMax = values |> List.maxBy (fun x -> x.Length)
-                            (max maxLen rowMax.Length), (values :: rows) 
-                        ) (0,[])
-        for col in dt.Columns do
-            printf "%*s  " (maxLength + 2) col.ColumnName
-        printfn ""
-        for row in rows |> List.rev do
-            for (index,value) in row |> List.mapi (fun i x -> i,x) do
-                printf "%*s  " (maxLength + 2) value
+        if dt <> null
+        then
+            let maxLength, rows = 
+                dt
+                |> map (fun r -> r.ItemArray)
+                |> List.fold (fun (maxLen, rows) row ->
+                                let values = row |> Array.map (fun x -> x.ToString()) |> List.ofArray
+                                let rowMax = values |> List.maxBy (fun x -> x.Length)
+                                (max maxLen rowMax.Length), (values :: rows) 
+                            ) (0,[])
+            for col in dt.Columns do
+                printf "%*s  " (maxLength + 2) col.ColumnName
             printfn ""
+            for row in rows |> List.rev do
+                for (index,value) in row |> List.mapi (fun i x -> i,x) do
+                    printf "%*s  " (maxLength + 2) value
+                printfn ""
 

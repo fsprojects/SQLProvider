@@ -305,6 +305,30 @@ module internal Oracle =
                       ) 
         |> Seq.toList
 
+    let buildSprocCommand con (definition:SprocDefinition) (values:obj[]) = 
+        use com = createCommand definition.Name.DbName con
+        com.CommandType <- CommandType.StoredProcedure
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             definition.ReturnColumns
+             |> List.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+        
+        List.append outps inps
+        |> List.sortBy fst
+        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        let outParameters = outps |> List.map snd
+        outParameters, com
+
 
 type internal OracleProvider(resolutionPath, owner) =
     
@@ -322,7 +346,7 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.ReadDatabaseParameter(reader:IDataReader, parameter:IDbDataParameter) = Oracle.readParameter reader parameter
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
-
+        member __.BuildSprocCommand(con, definition:SprocDefinition, values:obj array) = Oracle.buildSprocCommand con definition values
         member __.CreateTypeMappings(con) = 
             Oracle.connect con (fun con -> 
                 Oracle.createTypeMappings con
