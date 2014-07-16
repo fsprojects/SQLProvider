@@ -4,7 +4,7 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=.;Initial Catalog=HR;Integrated Security=True"
+let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
@@ -20,6 +20,7 @@ type Employee = {
     LastName : string
     HireDate : DateTime
 }
+
 
 //***************** Individuals ***********************//
 let indv = ctx.``[dbo].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
@@ -141,6 +142,7 @@ type Region = {
 //Support for MARS procs
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
+    printfn "%A" results.ColumnValues
     [
       for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box

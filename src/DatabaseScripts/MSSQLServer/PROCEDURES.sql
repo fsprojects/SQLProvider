@@ -39,13 +39,9 @@ GO
 --  DDL for Procedure GET_LOCATIONS_AND_REGIONS
 --------------------------------------------------------
 CREATE PROCEDURE GET_LOCATIONS_AND_REGIONS 
-(
-  @locations CURSOR VARYING OUTPUT,
-  @regions CURSOR VARYING OUTPUT
-)   
 AS  
 BEGIN   
-    SET @locations = CURSOR FORWARD_ONLY STATIC FOR SELECT * FROM locations;  
-    SET @regions = CURSOR FORWARD_ONLY STATIC FOR SELECT * FROM regions; 
+    SELECT * FROM locations;  
+    SELECT * FROM regions; 
 END
 
