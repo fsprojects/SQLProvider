@@ -30,12 +30,18 @@ module internal Oracle =
                             else System.IO.Path.Combine(resolutionPath,asm)
                             ) 
                     if loadedAsm <> null
-                    then Some loadedAsm
+                    then Some(Choice1Of2 loadedAsm)
                     else None
                 with e ->
-                    None)
+                    Some(Choice2Of2 e))
     
-    let findType name = (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = name))
+    let findType name = 
+        match assembly.Value with
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(exn) -> 
+            match exn with
+            | :? KeyNotFoundException as knf -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+            | exn -> raise exn
 
     let connectionType = lazy  (findType "OracleConnection")
     let commandType =  lazy   (findType "OracleCommand")
