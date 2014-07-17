@@ -134,7 +134,7 @@ let employees =
     ]
 
 type Region = {
-    RegionId : decimal
+    RegionId : int
     RegionName : string
     RegionDescription : string
 }

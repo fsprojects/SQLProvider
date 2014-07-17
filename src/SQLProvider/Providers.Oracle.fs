@@ -150,20 +150,24 @@ module internal Oracle =
                | _ -> ()
         p 
 
-    let readParameter (reader:IDataReader) (parameter:IDbDataParameter) = 
+    let readParameter (parameter:IDbDataParameter) = 
         let parameterType = parameterType.Value
         let oracleDbTypeGetter = 
             parameterType.GetProperty("OracleDbType").GetGetMethod()
-
+        
         match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
-        | DbType.Object, 121 -> 
-            if parameter.Value = null
-            then ReturnValueType.Reader(reader)
-            else ReturnValueType.Reader(getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader)
+        | DbType.Object, 121 ->
+             if parameter.Value = null
+             then null
+             else
+                let data = 
+                    SqlHelpers.dataReaderToArray (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader) 
+                    |> Seq.ofArray
+                data |> box
         | _, _ ->
             match tryReadValueProperty parameter.Value with
-            | Some(obj) -> Native(obj)
-            | _ -> Native(parameter.Value)
+            | Some(obj) -> obj |> box
+            | _ -> parameter.Value |> box
     
     let getPrimaryKeys con =
         let indexColumns = 
@@ -311,7 +315,7 @@ module internal Oracle =
                       ) 
         |> Seq.toList
 
-    let buildSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
@@ -330,8 +334,33 @@ module internal Oracle =
         |> List.sortBy fst
         |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
-        let outParameters = outps |> List.map snd
-        outParameters, com
+        
+        let entities = 
+            match definition.ReturnColumns with
+            | [] -> com.ExecuteNonQuery() |> ignore; Unit
+            | [col] ->
+                use reader = com.ExecuteReader()
+                match col.TypeMapping.ProviderTypeName with
+                | Some "REF CURSOR" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                | _ -> 
+                    match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                    | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+            | cols -> 
+                com.ExecuteNonQuery() |> ignore
+                let returnValues = 
+                    cols 
+                    |> List.map (fun col ->
+                        match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        | Some(_,p) ->
+                            match col.TypeMapping.ProviderTypeName with
+                            | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                            | _ -> ScalarResultSet(col.Name, readParameter p)
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                    )
+                Set(returnValues)
+          
+        entities                 
 
 
 type internal OracleProvider(resolutionPath, owner) =
@@ -348,9 +377,8 @@ type internal OracleProvider(resolutionPath, owner) =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
-        member __.ReadDatabaseParameter(reader:IDataReader, parameter:IDbDataParameter) = Oracle.readParameter reader parameter
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
-        member __.BuildSprocCommand(con, definition:SprocDefinition, values:obj array) = Oracle.buildSprocCommand con definition values
+        member __.ExecuteSprocCommand(con, definition:SprocDefinition, values:obj array) = Oracle.executeSprocCommand con definition values
         member __.CreateTypeMappings(con) = 
             Oracle.connect con (fun con -> 
                 Oracle.createTypeMappings con

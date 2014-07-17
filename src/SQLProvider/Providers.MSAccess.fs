@@ -56,7 +56,6 @@ type internal MSAccessProvider() =
     
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
         member __.CreateCommandParameter(param, value) = 
             let p = OleDbParameter(param.Name,value)            
@@ -64,7 +63,7 @@ type internal MSAccessProvider() =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()

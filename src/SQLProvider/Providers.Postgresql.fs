@@ -143,7 +143,6 @@ type internal PostgresqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreHelper.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(param, value) = 
             let p = Activator.CreateInstance(PostgreHelper.parameterType.Value, [||]) :?> IDbDataParameter
             p.ParameterName <- param.Name
@@ -152,7 +151,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             p
-        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(_) = PostgreHelper.createTypeMappings()
 
         member __.GetTables(con) =            

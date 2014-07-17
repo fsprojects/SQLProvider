@@ -64,10 +64,6 @@ type Sproc =
     | Sproc of SprocDefinition
     | Empty
 
-type ReturnValueType = 
-    | Native of obj
-    | Reader of IDataReader
-
 type PrimaryKey = { Name : string; Table : string; Column : string; IndexName : string }
 type Table = { Schema: string; Name:string; Type:string }
     with 

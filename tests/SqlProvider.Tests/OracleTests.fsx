@@ -138,7 +138,7 @@ let employees =
 type Region = {
     RegionId : decimal
     RegionName : string
-    RegionDescription : string
+  //  RegionDescription : string
 }
 
 //Support for MARS procs
@@ -173,4 +173,4 @@ ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTi
 
 //********************** Packaged Funcs **********************//
 
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin")
+let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin").ReturnValue

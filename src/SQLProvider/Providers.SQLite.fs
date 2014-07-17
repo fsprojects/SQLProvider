@@ -74,14 +74,13 @@ type internal SQLiteProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(param,value) = 
             let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             p
-        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable

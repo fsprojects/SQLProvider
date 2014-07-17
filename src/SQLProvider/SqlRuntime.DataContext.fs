@@ -24,7 +24,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
                 prov.GetTables(con) |> ignore
-       //         if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 
     interface ISqlDataContext with
@@ -65,18 +65,32 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                con.Open()
                use com = provider.CreateCommand(con, definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let outParameters, com = provider.BuildSprocCommand(com, definition, values)
+               
+               let entity = new SqlEntity(this, definition.Name.DbName)
 
-               let entities = 
-                   match definition.ReturnColumns.Length with
-                   | 0 -> com.ExecuteNonQuery() |> ignore; () |> box
-                   | 1 -> 
-                       use reader = com.ExecuteReader()
-                       SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, reader, definition.ReturnColumns, outParameters) |> box
-                   | _ -> 
-                       com.ExecuteNonQuery() |> ignore
-                       SqlEntity.FromOutputParameters(this, definition.Name.DbName, provider, null, definition.ReturnColumns, outParameters) |> box
-                         
+               let toEntityArray rowSet = 
+                   [|
+                       for row in rowSet do
+                           let entity = new SqlEntity(this, definition.Name.DbName)
+                           entity.SetData(row)
+                           yield entity
+                   |]
+
+               let entities =
+                   match provider.ExecuteSprocCommand(com, definition, values) with
+                   | Unit -> () |> box
+                   | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
+                   | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box
+                   | Set(rowSet) ->
+                       for row in rowSet do
+                            match row with
+                            | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                            | ResultSet(name, rs) ->
+                                let data = toEntityArray rs
+                                entity.SetColumnSilent(name, data)
+                       entity |> box
+
+                                  
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"

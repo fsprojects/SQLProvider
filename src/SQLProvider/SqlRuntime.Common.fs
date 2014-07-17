@@ -139,20 +139,26 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                | value -> e.SetColumnSilent(reader.GetName(i),value)
            yield e |]
 
-    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:QueryParameter list, parameters:IDbDataParameter list) = 
-        let e = SqlEntity(con, name)
-        parameters 
-        |> List.iter(fun p ->
-            match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
-            | Some(col) ->
-                         match provider.ReadDatabaseParameter(reader, p) with
-                         | ReturnValueType.Reader(r) ->   
-                            let entity = SqlEntity.FromDataReader(con, name, r)
-                            e.SetColumnSilent(col.Name,entity)
-                         | Native(o) -> e.SetColumnSilent(col.Name, o)
-            | _ -> ()
-        )
-        e
+//    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:QueryParameter list, parameters:IDbDataParameter list) = 
+//        let e = SqlEntity(con, name)
+//        parameters 
+//        |> List.iter(fun p ->
+//            match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
+//            | Some(col) ->
+//                         match provider.ReadDatabaseParameter(reader, p) with
+//                         | SingleResultSet(r) ->   
+//                            let entity = SqlEntity(con, name)
+//                            entity.SetData(r)
+//                            e.SetColumnSilent(col.Name, entity)
+//                         | MultipleResultSets(rs) ->
+//                            for r in rs do
+//                                let entity = SqlEntity(con, name)
+//                                entity.SetData(r)
+//                                e.SetColumnSilent(col.Name, entity)
+//                         | Scalar(o) -> e.SetColumnSilent(col.Name, o)
+//            | _ -> ()
+//        )
+//        e
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
@@ -250,6 +256,16 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                                  override __.ResetValue(_) = ()
                                  override __.ShouldSerializeValue(_) = false }) 
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
+
+and ResultSet = seq<(string * obj)[]>
+and ReturnSetType = 
+    | ScalarResultSet of colName:string * obj
+    | ResultSet of colName:string * ResultSet
+and ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
 
 and ISqlDataContext =       
     abstract ConnectionString       : string
@@ -406,8 +422,6 @@ and internal ISqlProvider =
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
-    ///Get database specifc value
-    abstract ReadDatabaseParameter : IDataReader * IDbDataParameter -> ReturnValueType
     ///Builds a command representing a call to a stored procedure
-    abstract BuildSprocCommand : IDbCommand * SprocDefinition * obj[] -> IDbDataParameter list * IDbCommand
+    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * obj[] -> ReturnValueType
     

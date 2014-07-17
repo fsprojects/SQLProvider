@@ -81,7 +81,6 @@ type internal MySqlProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommandParameter(param, value) = 
              let value = if value = null then (box System.DBNull.Value) else value
              let parameterType = parameterType
@@ -98,7 +97,7 @@ type internal MySqlProvider(resolutionPath) as this =
              Option.iter (fun l -> p.Size <- l) param.Length             
              p    
            
-        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
             
                
         member __.CreateTypeMappings(con) = 

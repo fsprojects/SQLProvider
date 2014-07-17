@@ -58,7 +58,6 @@ type internal OdbcProvider(resolutionPath) =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
-        member __.ReadDatabaseParameter(reader:IDataReader,parameter:IDbDataParameter) = raise(NotImplementedException())
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
         member __.CreateCommandParameter(param, value) = 
             let p = OdbcParameter()            
@@ -68,7 +67,7 @@ type internal OdbcProvider(resolutionPath) =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-        member __.BuildSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
             let con = con :?> OdbcConnection
