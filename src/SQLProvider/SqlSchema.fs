@@ -59,8 +59,8 @@ with
 type SprocDefinition = { Name:SprocName; Params:QueryParameter list; ReturnColumns: QueryParameter list }
 
 type Sproc =
-    | Root of pathElement:string * Sproc
-    | SprocPath of pathElement:string * Sproc
+    | Root of string * Sproc
+    | SprocPath of string * Sproc
     | Sproc of SprocDefinition
     | Empty
 

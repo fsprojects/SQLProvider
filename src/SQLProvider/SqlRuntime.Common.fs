@@ -259,8 +259,8 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
 
 and ResultSet = seq<(string * obj)[]>
 and ReturnSetType = 
-    | ScalarResultSet of colName:string * obj
-    | ResultSet of colName:string * ResultSet
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
 and ReturnValueType =
     | Unit
     | Scalar of string * obj
