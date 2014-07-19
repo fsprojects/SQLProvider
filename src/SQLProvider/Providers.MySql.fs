@@ -8,31 +8,42 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MySqlProvider(resolutionPath) as this =
-    let pkLookup =     Dictionary<string,string>()
-    let tableLookup =  Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-
+module MySql = 
+    
+    let mutable resolutionPath = String.Empty
     let mutable mySqlToDbType : (int -> DbType)  = fun _ -> failwith "!"
     let mutable dbTypeToMySql : (DbType -> int ) = fun _ -> failwith "!"
 
-    // Dynamically load the MySQL assembly so we don't have a dependency on it in the project
-    let assembly =  
-        Reflection.Assembly.LoadFrom(
-            if String.IsNullOrEmpty resolutionPath then "MySql.Data.dll"
-            else System.IO.Path.Combine(resolutionPath,"MySql.Data.dll"))
-   
-    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlConnection"))
-    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlCommand"))
-    let parameterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlParameter"))
-    let enumType =        (assembly.GetTypes() |> Array.find(fun t -> t.Name = "MySqlDbType"))
-    let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
-    let paramEnumCtor   = parameterType.GetConstructor([|typeof<string>;enumType|])
-    let paramObjectCtor = parameterType.GetConstructor([|typeof<string>;typeof<obj>|])
+    let assembly =
+        lazy
+            try
+                let path = 
+                    if String.IsNullOrEmpty resolutionPath then "MySql.Data.dll"
+                    else System.IO.Path.Combine(resolutionPath,"MySql.Data.dll")
+                printfn "Assmebly path %s" path
+                let assembly = Reflection.Assembly.LoadFrom(path)
+                Choice1Of2 assembly
+            with e -> 
+                Choice2Of2 e
 
-    let getSchema name (args:string[]) conn = 
-        getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
+    let findType name = 
+        match assembly.Value with
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(exn) -> 
+            match exn with
+            | :? KeyNotFoundException as knf -> failwith "Unable to resolve MySql connector assemblies."
+            | exn -> raise exn
+   
+    let connectionType =  lazy (findType "MySqlConnection")
+    let commandType =     lazy (findType "MySqlCommand")
+    let parameterType =   lazy (findType "MySqlParameter")
+    let enumType =        lazy (findType "MySqlDbType")
+    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+    let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
+    let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
+
+    let getSchema name (args:string[]) (conn:IDbConnection) = 
+        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -42,6 +53,7 @@ type internal MySqlProvider(resolutionPath) as this =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
+            let parameterType = parameterType.Value
             let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
             let oracleDbTypeSetter = parameterType.GetProperty("MySqlDbType").GetSetMethod()
             let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
@@ -74,41 +86,125 @@ type internal MySqlProvider(resolutionPath) as this =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind 
     
+    let createConnection connectionString =
+        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+
+    let createCommand commandText connection = 
+        Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+
+    let createCommandParameter (param:QueryParameter) value = 
+        let value = if value = null then (box System.DBNull.Value) else value
+        let parameterType = parameterType.Value
+        let mySqlDbTypeSetter = 
+            parameterType.GetProperty("MySqlDbType").GetSetMethod()
+        
+        let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+        
+        p.Direction <-  param.Direction 
+        
+        p.DbType <- param.TypeMapping.DbType
+        param.TypeMapping.ProviderType |> Option.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        
+        Option.iter (fun l -> p.Size <- l) param.Length             
+        p
+
+    let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+
     let executeSql (con:IDbConnection) sql =        
-        use com = (this:>ISqlProvider).CreateCommand(con,sql)    
-        com.ExecuteReader()
+        use com = createCommand sql con   
+        com.ExecuteReader()    
+
+    let getSprocs con =
+
+        let functions = getSchema "Functions" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let procedures = getSchema "Procedures" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+
+        let getName (row:DataRow) = 
+            let (procName, packageName) = (SqlHelpers.dbUnbox row.["ROUTINE_NAME"], SqlHelpers.dbUnbox row.["ROUTINE_CATALOG"])
+            { ProcName = procName; Owner = String.Empty; PackageName = packageName }
+
+        let createSprocParameters (row:DataRow) = 
+            let dataType = SqlHelpers.dbUnbox row.["DATA_TYPE"]
+            let argumentName = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
+            let maxLength = Some(int(SqlHelpers.dbUnboxWithDefault<decimal> -1M row.["CHARACTER_MAXIMUM_LENGTH"]))
+
+            findDbType dataType 
+            |> Option.map (fun m ->
+                let direction = 
+                    match SqlHelpers.dbUnbox row.["PARAMETER_MODE"] with
+                    | "IN" -> ParameterDirection.Input
+                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                    | "OUT" -> ParameterDirection.Output
+                    | "IN/OUT" -> ParameterDirection.InputOutput
+                    | a -> failwithf "Direction not supported %s" a
+                { Name = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
+                  TypeMapping = m
+                  Direction = direction
+                  Length = maxLength
+                  Ordinal = int(SqlHelpers.dbUnbox<decimal> row.["ORDINAL_POSITION"]) }
+            )
+
+        let parameters = 
+            let withParameters = getSchema "Procedure Parameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+            (Set.union procedures functions)
+            |> Set.toSeq 
+            |> Seq.choose (fun proc -> 
+                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
+                then None
+                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty }, Seq.empty)
+                )
+            |> Seq.append withParameters
+
+        parameters
+        |> Seq.map (fun (name, parameters) -> 
+                        let sparams = 
+                            parameters
+                            |> Seq.choose id
+                            |> Seq.sortBy (fun p -> p.Ordinal)
+                            |> Seq.toList
+                            
+                        let retCols = 
+                            sparams
+                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                                               then "ReturnValue" + (string i)
+                                                               elif (String.IsNullOrEmpty p.Name)
+                                                               then "ReturnValue"
+                                                               else p.Name); 
+                                                       TypeMapping = p.TypeMapping; 
+                                                       Direction = p.Direction; 
+                                                       Ordinal = p.Ordinal;
+                                                       Length = None 
+                                                     })
+                        
+                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | _, _ -> failwith "Invalid" //Root("", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; ReturnColumns = retCols })))
+                      ) 
+        |> Seq.toList
+
+type internal MySqlProvider(resolutionPath) as this =
+    let pkLookup =     Dictionary<string,string>()
+    let tableLookup =  Dictionary<string,Table>()
+    let columnLookup = Dictionary<string,Column list>()
+    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
-        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(param, value) = 
-             let value = if value = null then (box System.DBNull.Value) else value
-             let parameterType = parameterType
-             let mySqlDbTypeSetter = 
-                 parameterType.GetProperty("MySqlDbType").GetSetMethod()
-             
-             let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
-             
-             p.Direction <-  param.Direction 
-             
-             p.DbType <- param.TypeMapping.DbType
-             param.TypeMapping.ProviderType |> Option.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
-             
-             Option.iter (fun l -> p.Size <- l) param.Length             
-             p    
-           
+        member __.CreateConnection(connectionString) = MySql.createConnection connectionString
+        member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
+        member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
+
         member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
-            
-               
-        member __.CreateTypeMappings(con) = 
-            if con.State <> ConnectionState.Open then con.Open()
-            let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
-            let ret = createTypeMappings dt
-            con.Close()
-            ret   
+
+        member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
+   
         member __.GetTables(con) =
             if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
+            use reader = MySql.executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
             let ret =
                 [ while reader.Read() do 
                     let table ={ Schema = reader.GetString(0) ; Name = reader.GetString(1) ; Type=reader.GetString(2).ToLower() } 
@@ -150,7 +246,7 @@ type internal MySqlProvider(resolutionPath) as this =
                let columns =
                   [ while reader.Read() do 
                       let dt = reader.GetString(1)
-                      match findDbType dt with
+                      match MySql.findDbType dt with
                       | Some(m) ->
                          let col =
                             { Column.Name = reader.GetString(0) 
@@ -184,13 +280,13 @@ type internal MySqlProvider(resolutionPath) as this =
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
             if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name )
+            use reader = MySql.executeSql con (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name )
             let children =
                 [ while reader.Read() do 
                     yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
                             ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             reader.Dispose()
-            use reader = executeSql con (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name )
+            use reader = MySql.executeSql con (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name )
             let parents =
                 [ while reader.Read() do 
                     yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
@@ -200,8 +296,7 @@ type internal MySqlProvider(resolutionPath) as this =
             (children,parents)    
         
         // todo
-        member __.GetSprocs(con) =             
-           []
+        member __.GetSprocs(con) = MySql.connect con MySql.getSprocs
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","`").Replace("]","`")) amount 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema table.Name table.Schema table.Name column

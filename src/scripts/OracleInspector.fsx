@@ -5,6 +5,7 @@
 #load "Operators.fs"
 #load "SchemaProjections.fs"
 #load "SqlSchema.fs"
+#load "SqlHelpers.fs"
 #load "DataTable.fs"
 #load "SqlRuntime.Patterns.fs"
 #load "SqlRuntime.Common.fs"

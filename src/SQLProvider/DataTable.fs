@@ -55,6 +55,12 @@ module DataTable =
             then Some r
             else None
         ) dt
+
+    let headers (dt:System.Data.DataTable) = 
+        [
+            for col in dt.Columns do
+                yield col.ColumnName
+        ]
     
     let printDataTable (dt:System.Data.DataTable) = 
         if dt <> null

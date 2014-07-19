@@ -16,3 +16,14 @@ module SqlHelpers =
                |]
         |]
 
+    let dbUnbox<'a> (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
+    
+    let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then def else unbox v
+
+    let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+

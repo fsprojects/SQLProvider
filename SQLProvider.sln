@@ -28,6 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 	ProjectSection(SolutionItems) = preProject
 		src\scripts\GraphViz.fsx = src\scripts\GraphViz.fsx
 		src\scripts\MsSqlServerInspector.fsx = src\scripts\MsSqlServerInspector.fsx
+		src\scripts\MySqlInspector.fsx = src\scripts\MySqlInspector.fsx
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
 	EndProjectSection
