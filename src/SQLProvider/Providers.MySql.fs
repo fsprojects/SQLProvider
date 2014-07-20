@@ -20,7 +20,6 @@ module MySql =
                 let path = 
                     if String.IsNullOrEmpty resolutionPath then "MySql.Data.dll"
                     else System.IO.Path.Combine(resolutionPath,"MySql.Data.dll")
-                printfn "Assmebly path %s" path
                 let assembly = Reflection.Assembly.LoadFrom(path)
                 Choice1Of2 assembly
             with e -> 
@@ -128,11 +127,11 @@ module MySql =
             { ProcName = procName; Owner = String.Empty; PackageName = packageName }
 
         let createSprocParameters (row:DataRow) = 
-            let dataType = SqlHelpers.dbUnbox row.["DATA_TYPE"]
+            let dataType = SqlHelpers.dbUnbox<string> row.["DATA_TYPE"]
             let argumentName = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
             let maxLength = Some(SqlHelpers.dbUnboxWithDefault<int> -1 row.["CHARACTER_MAXIMUM_LENGTH"])
 
-            findDbType dataType 
+            findDbType (dataType.ToLower()) 
             |> Option.map (fun m ->
                 let direction = 
                     match SqlHelpers.dbUnbox<string> row.["PARAMETER_MODE"] with
