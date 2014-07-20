@@ -5,14 +5,13 @@ open FSharp.Data.Sql
 
 [<Literal>]
 let connStr = "Server=MYSQL;Database=HR;Uid=admin;Pwd=password;"
-
 [<Literal>]
 let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MYSQL, ResolutionPath = resolutionFolder>
+type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MYSQL, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
 type Employee = {
@@ -23,7 +22,7 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.``[hr].[employees]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
@@ -31,14 +30,14 @@ indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        for emp in ctx.``[hr].[employees]`` do
         select (emp.FIRST_NAME, emp.LAST_NAME)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
-            join d in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
+            for emp in ctx.``[hr].[employees]`` do
+            join d in ctx.``[hr].[departments]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
             where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
             select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
             
@@ -46,9 +45,9 @@ let salesNamedDavid =
 
 let employeesJob = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
-            for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
+            for emp in ctx.``[hr].[employees]`` do
+            for manager in emp.employees_ibfk_3 do
+            join dept in ctx.``[hr].[departments]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
             where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
     } |> Seq.toList
@@ -56,7 +55,7 @@ let employeesJob =
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        for emp in ctx.``[hr].[employees]`` do
         sortByDescending emp.COMMISSION_PCT
         select emp
         take 5
@@ -82,7 +81,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[HR].[COUNTRIES]`` do
+        for emp in ctx.``[hr].[countries]`` do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -102,16 +101,16 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5M)
+            for reg in ctx.``[hr].[regions]`` do
+            where (reg.REGION_ID = 5u)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
+        let newRegion = ctx.``[hr].[regions]``.Create() 
         newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5M
+        newRegion.REGION_ID <- 5u
         ctx.SubmitUpdates()
         newRegion
 

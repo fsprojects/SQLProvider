@@ -33,16 +33,26 @@ MySql.connect connection (MySql.getSchema "DataTypes" [||])
 MySql.connect connection (MySql.getSchema "MetaDataCollections" [||])
 |> DataTable.printDataTable
 
+MySql.connect connection (MySql.getSchema "Restrictions" [||])
+|> DataTable.printDataTable
+
 MySql.connect connection (MySql.getSchema "Functions" [||])
 |> DataTable.printDataTable
 
+MySql.connect connection (MySql.getSchema "Databases" [||])
+|> DataTable.printDataTable
+
 MySql.connect connection (MySql.getSchema "Procedures" [||])
-|> DataTable.headers
-//|> DataTable.printDataTable
+//|> DataTable.headers
+|> DataTable.map(fun r -> r.["SQL_DATA_ACCESS"])
 
 MySql.connect connection (MySql.getSchema "Procedure Parameters" [||])
-|> DataTable.headers
-//|> DataTable.printDataTable
+//|> DataTable.headers
+|> DataTable.printDataTable
+
+MySql.connect connection (MySql.getSchema "Columns" [||])
+//|> DataTable.map (fun r -> r.["COLUMN_NAME"])
+|> DataTable.printDataTable
 
 MySql.connect connection (MySql.getSprocs)
 

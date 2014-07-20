@@ -69,7 +69,7 @@ module DataTable =
                 dt
                 |> map (fun r -> r.ItemArray)
                 |> List.fold (fun (maxLen, rows) row ->
-                                let values = row |> Array.map (fun x -> x.ToString()) |> List.ofArray
+                                let values = row |> Array.map (fun x -> x.ToString().Trim()) |> List.ofArray
                                 let rowMax = values |> List.maxBy (fun x -> x.Length)
                                 (max maxLen rowMax.Length), (values :: rows) 
                             ) (0,[])

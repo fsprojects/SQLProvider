@@ -11,8 +11,8 @@ open FSharp.Data.Sql.Common
 module MySql = 
     
     let mutable resolutionPath = String.Empty
-    let mutable mySqlToDbType : (int -> DbType)  = fun _ -> failwith "!"
-    let mutable dbTypeToMySql : (DbType -> int ) = fun _ -> failwith "!"
+   // let mutable mySqlToDbType : (int -> DbType)  = fun _ -> failwith "!"
+   // let mutable dbTypeToMySql : (DbType -> int ) = fun _ -> failwith "!"
 
     let assembly =
         lazy
@@ -70,6 +70,7 @@ module MySql =
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =
@@ -79,7 +80,7 @@ module MySql =
 
         let dbMappings = 
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.map (fun m -> m.ProviderTypeName.Value.ToLower(), m)
             |> Map.ofList
             
         typeMappings <- mappings
@@ -119,22 +120,22 @@ module MySql =
 
     let getSprocs con =
 
-        let functions = getSchema "Functions" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-        let procedures = getSchema "Procedures" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        //let functions = getSchema "Functions" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let procedures = getSchema "Procedures" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["ROUTINE_NAME"]) |> Set.ofList
 
         let getName (row:DataRow) = 
-            let (procName, packageName) = (SqlHelpers.dbUnbox row.["ROUTINE_NAME"], SqlHelpers.dbUnbox row.["ROUTINE_CATALOG"])
+            let (procName, packageName) = (SqlHelpers.dbUnbox row.["SPECIFIC_NAME"], SqlHelpers.dbUnbox row.["SPECIFIC_CATALOG"])
             { ProcName = procName; Owner = String.Empty; PackageName = packageName }
 
         let createSprocParameters (row:DataRow) = 
             let dataType = SqlHelpers.dbUnbox row.["DATA_TYPE"]
             let argumentName = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
-            let maxLength = Some(int(SqlHelpers.dbUnboxWithDefault<decimal> -1M row.["CHARACTER_MAXIMUM_LENGTH"]))
+            let maxLength = Some(SqlHelpers.dbUnboxWithDefault<int> -1 row.["CHARACTER_MAXIMUM_LENGTH"])
 
             findDbType dataType 
             |> Option.map (fun m ->
                 let direction = 
-                    match SqlHelpers.dbUnbox row.["PARAMETER_MODE"] with
+                    match SqlHelpers.dbUnbox<string> row.["PARAMETER_MODE"] with
                     | "IN" -> ParameterDirection.Input
                     | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
                     | "OUT" -> ParameterDirection.Output
@@ -144,12 +145,12 @@ module MySql =
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
-                  Ordinal = int(SqlHelpers.dbUnbox<decimal> row.["ORDINAL_POSITION"]) }
+                  Ordinal = SqlHelpers.dbUnbox<int> row.["ORDINAL_POSITION"] }
             )
 
         let parameters = 
             let withParameters = getSchema "Procedure Parameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            (Set.union procedures functions)
+            procedures
             |> Set.toSeq 
             |> Seq.choose (fun proc -> 
                 if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
@@ -180,10 +181,7 @@ module MySql =
                                                        Length = None 
                                                      })
                         
-                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-                        | _, _ -> failwith "Invalid" //Root("", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; ReturnColumns = retCols })))
+                        Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
                       ) 
         |> Seq.toList
 
@@ -192,6 +190,9 @@ type internal MySqlProvider(resolutionPath) as this =
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+
+    do
+        MySql.resolutionPath <- resolutionPath
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
