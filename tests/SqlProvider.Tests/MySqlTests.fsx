@@ -122,7 +122,7 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Procedures.ADD_JOB_HISTORY(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
 //Support for sprocs with no parameters
 ctx.Procedures.SECURE_DML()
