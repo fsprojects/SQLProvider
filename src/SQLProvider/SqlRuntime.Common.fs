@@ -253,7 +253,7 @@ type Condition =
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
 
-type internal SqlExp =
+type SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
@@ -276,7 +276,7 @@ type internal SqlExp =
                 | Count(rest) -> aux rest
             aux this
     
-type internal SqlQuery =
+type SqlQuery =
     { Filters       : Condition list
       Links         : (alias * LinkData * alias) list 
       Aliases       : Map<string, Table>
@@ -338,7 +338,7 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+type ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text

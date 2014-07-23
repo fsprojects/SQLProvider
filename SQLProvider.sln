@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "OdbcProvider", "src\OdbcProvider\OdbcProvider.fsproj", "{71AFAC22-202C-47B6-A5D1-D907526443DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71AFAC22-202C-47B6-A5D1-D907526443DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71AFAC22-202C-47B6-A5D1-D907526443DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71AFAC22-202C-47B6-A5D1-D907526443DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71AFAC22-202C-47B6-A5D1-D907526443DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
