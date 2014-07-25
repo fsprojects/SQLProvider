@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
-type public SqlDataContext (typeName,connectionString:string,provider:ISqlProvider, owner) =   
+type public SqlDataContext (typeName,connectionString,providerType,resolutionPath, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -16,16 +16,17 @@ type public SqlDataContext (typeName,connectionString:string,provider:ISqlProvid
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                use con = provider.CreateConnection(connectionString)
+                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 
                 // the minimum base set of data available
-                provider.CreateTypeMappings(con)
-                provider.GetTables(con) |> ignore
+                prov.CreateTypeMappings(con)
+                prov.GetTables(con) |> ignore
                 #if MSACCESS
-                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                con.Close()
                 #endif
-                providerCache.Add(typeName,provider))
+                providerCache.Add(typeName,prov))
 
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
@@ -84,7 +85,7 @@ type public SqlDataContext (typeName,connectionString:string,provider:ISqlProvid
                 then SqlEntity.FromOutputParameters(this, name, outps)
                 else SqlEntity.FromDataReader(this,name,reader)
                #if MSACCESS
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               con.Close()
                #endif
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
@@ -111,7 +112,7 @@ type public SqlDataContext (typeName,connectionString:string,provider:ISqlProvid
                use reader = com.ExecuteReader()
                let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)
                #if MSACCESS
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               then con.Close()
                #endif
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"

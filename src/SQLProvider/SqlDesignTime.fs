@@ -19,19 +19,13 @@ open Samples.FSharp.ProvidedTypes
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.SchemaProjections
 
-type internal SqlRuntimeInfo (config : TypeProviderConfig) =
+type SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    
     member this.RuntimeAssembly = runtimeAssembly   
 
-[<AbstractClass>]
-type SqlTypeProvider(config: TypeProviderConfig) as this =     
-    inherit TypeProviderForNamespaces()
-    let sqlRuntimeInfo = SqlRuntimeInfo(config)
-    let ns = "FSharp.Data.Sql";   
-    let asm = Assembly.GetExecutingAssembly()
-    
-    let createTypes(conString,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
-        let prov = this.CreateSqlProvider ()
+module SqlTypeProvider =
+    let createType (conString,resolutionPath,individualsAmount,useOptionTypes,owner, dbVendor, sqlRuntimeInfo:SqlRuntimeInfo, ns, rootTypeName) =       
+        let prov = Utilities.createSqlProvider dbVendor resolutionPath owner
         let con = prov.CreateConnection conString
         con.Open()
         prov.CreateTypeMappings con
@@ -50,7 +44,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let sprocData = lazy prov.GetSprocs con 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,this.CreateSqlProvider(),owner)
+        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,owner)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -79,7 +73,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         if con.State <> ConnectionState.Open then con.Open()
                         use reader = com.ExecuteReader()
                         let ret = SqlEntity.FromDataReader(designTimeDc,table.FullName,reader)
-                        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                        #if MSACCESS
+                        con.Close()
+                        #endif
                         ret
                    if entities.IsEmpty then [] else
                    let e = entities.Head
@@ -332,7 +328,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 ProvidedMethod ("GetDataContext", [],
                                 serviceType, IsStaticMethod=true,
                                 InvokeCode = (fun _ -> 
-                                    <@@ SqlDataContext(rootTypeName,conString,this.CreateSqlProvider(),owner) :> ISqlDataContext @@>))
+                                    <@@ SqlDataContext(rootTypeName,conString,dbVendor, resolutionPath,owner) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                    
@@ -341,7 +337,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], this.CreateSqlProvider(), owner) :> ISqlDataContext @@> ))
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, owner) :> ISqlDataContext @@> ))
                       
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>"
@@ -350,15 +346,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
                                                             serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],this.CreateSqlProvider(), owner) :> ISqlDataContext  @@>))
+                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor, resolutionPath, owner) :> ISqlDataContext  @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>
                               <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
               yield meth
             ])
-        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+        #if MSACCESS
+        con.Close()
+        #endif
         rootType
-
-    abstract member CreateSqlProvider : unit -> ISqlProvider
-                            

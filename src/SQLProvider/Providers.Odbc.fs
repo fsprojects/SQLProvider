@@ -114,7 +114,7 @@ type OdbcProvider() =
             ([],[])
 
         member __.GetSprocs(con) =
-            failwith "The ODBC type provider does not currently support Stored Procedures operations."
+            []
 
         member this.GetIndividualsQueryText(table,amount) =
             sprintf "SELECT * FROM `%s`" table.Name
