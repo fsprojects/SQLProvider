@@ -16,7 +16,7 @@ type Project = { name:string; summary:string; description:string; dependencies:(
 let projects =
     [{name="OdbcProvider";summary="Type provider for ODBC access";description="Type providers for ODBC access";dependencies=[]}
      {name="MSAccessProvider";summary="Type provider for MSAccess access";description="Type providers for MSAccess access";dependencies=[]}
-     {name="MSSQLProviderProvider";summary="Type provider for MSSQL access";description="Type providers for MSSQL access";dependencies=[]}
+     {name="MSSQLProvider";summary="Type provider for MSSQL access";description="Type providers for MSSQL access";dependencies=[]}
      {name="MySQLProvider";summary="Type provider for MySQL access";description="Type providers for MySQL access";dependencies=[]}
      {name="OracleProvider";summary="Type provider for Oracle access";description="Type providers for Oracle access";dependencies=[]}
      {name="PostgreProvider";summary="Type provider for Postgre access";description="Type providers for Postgre access";dependencies=[]}
