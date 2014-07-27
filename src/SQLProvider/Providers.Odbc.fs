@@ -70,15 +70,18 @@ type OdbcProvider() =
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)
         member __.ClrToEnum = clrToEnum
         member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.SqlToClr = sqlToClr
         member __.GetTables(con) =
-            let con = con :?> OdbcConnection
-            if con.State <> ConnectionState.Open then con.Open()
-            let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
-            [ for dataTable in dataTables do 
-                let table ={ Schema = string dataTable.[1] ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() } 
-                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                yield table ]
+            if tableLookup.Count <> 0 then
+                tableLookup.Values |> List.ofSeq
+            else
+                let con = con :?> OdbcConnection
+                if con.State <> ConnectionState.Open then con.Open()
+                let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
+                [ for dataTable in dataTables do 
+                    let table ={ Schema = string dataTable.[1] ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() } 
+                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                    yield table ]
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
