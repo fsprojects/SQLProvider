@@ -14,7 +14,13 @@ open System
 type Project = { name:string; summary:string; description:string; dependencies:(string * string) list }
 
 let projects =
-    [{name="OdbcProvider";summary="Type provider for ODBC access";description="Type providers for ODBC access";dependencies=[]}]
+    [{name="OdbcProvider";summary="Type provider for ODBC access";description="Type providers for ODBC access";dependencies=[]}
+     {name="MSAccessProvider";summary="Type provider for MSAccess access";description="Type providers for MSAccess access";dependencies=[]}
+     {name="MSSQLProviderProvider";summary="Type provider for MSSQL access";description="Type providers for MSSQL access";dependencies=[]}
+     {name="MySQLProvider";summary="Type provider for MySQL access";description="Type providers for MySQL access";dependencies=[]}
+     {name="OracleProvider";summary="Type provider for Oracle access";description="Type providers for Oracle access";dependencies=[]}
+     {name="PostgreProvider";summary="Type provider for Postgre access";description="Type providers for Postgre access";dependencies=[]}
+     {name="SQLiteProvider";summary="Type provider for SQLite access";description="Type providers for SQLite access";dependencies=[]}]
 
 let authors = ["Ross McKinlay" ]
 let tags = "F# fsharp typeproviders sql sqlserver"
