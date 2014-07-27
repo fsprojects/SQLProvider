@@ -19,11 +19,11 @@ open Samples.FSharp.ProvidedTypes
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.SchemaProjections
 
-type SqlRuntimeInfo (config : TypeProviderConfig) =
+type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    
     member this.RuntimeAssembly = runtimeAssembly   
 
-module SqlTypeProvider =
+module internal SqlTypeProvider =
     let createType (conString,resolutionPath,individualsAmount,useOptionTypes,owner, dbVendor, sqlRuntimeInfo:SqlRuntimeInfo, ns, rootTypeName) =       
         let prov = Utilities.createSqlProvider dbVendor resolutionPath owner
         let con = prov.CreateConnection conString

@@ -249,7 +249,7 @@ type internal ProvidedStaticParameter =
     member AddXmlDocDelayed   : xmlDocFunction: (unit -> string) -> unit   
 
 /// Represents a provided type definition.
-type ProvidedTypeDefinition =
+type internal ProvidedTypeDefinition =
     inherit System.Type
 
     /// Create a new provided type definition in a namespace. 
