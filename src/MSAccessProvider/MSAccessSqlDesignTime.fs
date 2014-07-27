@@ -24,11 +24,11 @@ type MSAccessProvider(config) as this =
                     <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>"
         
-    do paramSqlType.DefineStaticParameters([conString;individualsAmount;optionTypes;resolutionPath], fun typeName args -> 
+    do paramSqlType.DefineStaticParameters([conString;resolutionPath;individualsAmount;optionTypes], fun typeName args -> 
         SqlTypeProvider.createType(args.[0] :?> string,   // OrganizationServiceUrl
-                    args.[3] :?> string,                  // Resolution path
-                    args.[1] :?> int,                     // Individuals Amount
-                    args.[2] :?> bool,                    // Use option types?
+                    args.[1] :?> string,                  // Resolution path
+                    args.[2] :?> int,                     // Individuals Amount
+                    args.[3] :?> bool,                    // Use option types?
                     "",                                   // Schema owner currently only used for oracle
                     DatabaseProviderTypes.MSACCESS,
                     sqlRuntimeInfo,

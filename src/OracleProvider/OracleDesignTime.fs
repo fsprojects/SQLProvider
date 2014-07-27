@@ -26,12 +26,12 @@ type OracleProvider(config) as this =
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>The owner of the schema for this provider to resolve</param>"
         
-    do paramSqlType.DefineStaticParameters([conString;individualsAmount;optionTypes;resolutionPath;owner], fun typeName args -> 
+    do paramSqlType.DefineStaticParameters([conString;resolutionPath;individualsAmount;optionTypes;owner], fun typeName args -> 
         SqlTypeProvider.createType(args.[0] :?> string,   // OrganizationServiceUrl
-                    args.[4] :?> string,                  // Resolution path
-                    args.[1] :?> int,                     // Individuals Amount
-                    args.[2] :?> bool,                    // Use option types?
-                    args.[5] :?> string,                  // Schema owner currently only used for oracle
+                    args.[1] :?> string,                  // Resolution path
+                    args.[2] :?> int,                     // Individuals Amount
+                    args.[3] :?> bool,                    // Use option types?
+                    args.[4] :?> string,                  // Schema owner currently only used for oracle
                     DatabaseProviderTypes.ORACLE,
                     sqlRuntimeInfo,
                     ns,

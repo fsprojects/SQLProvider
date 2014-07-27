@@ -1,4 +1,4 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"..\..\bin\FSharp.Data.OracleProvider.dll"
 
 open System
 open FSharp.Data.Sql
@@ -12,7 +12,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = OracleProvider<ConnectionString = connStr, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
 //***************** Individuals ***********************//
