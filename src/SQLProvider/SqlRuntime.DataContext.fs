@@ -112,7 +112,7 @@ type public SqlDataContext (typeName,connectionString,providerType,resolutionPat
                use reader = com.ExecuteReader()
                let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)
                #if MSACCESS
-               then con.Close()
+               con.Close()
                #endif
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"

@@ -73,13 +73,6 @@
     </Reference>
     <Reference Include="System.Numerics" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\SQLProvider\SqlProvider.fsproj">
-      <Name>SqlProvider</Name>
-      <Project>{4eea1ad8-e8a9-4d54-bc39-d5f536366945}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

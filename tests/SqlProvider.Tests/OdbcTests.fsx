@@ -1,8 +1,8 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"..\..\bin\FSharp.Data.OdbcProvider.dll"
 
 open FSharp.Data.Sql
 
-type database = SqlDataProvider<"Driver={Microsoft Excel Driver (*.xls)};DriverId=790;Dbq=C:\Code\ie_data.xls;DefaultDir=C:\Code;", Common.DatabaseProviderTypes.ODBC>
+type database = OdbcProvider<"Driver={Microsoft Excel Driver (*.xls)};DriverId=790;Dbq=C:\Code\ie_data.xls;DefaultDir=C:\Code;">
 let odbc = database.GetDataContext();
 
 let x =

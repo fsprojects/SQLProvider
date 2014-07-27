@@ -5,13 +5,27 @@
 
         let createSqlProvider vendor resolutionPath owner =
             match vendor with
-//            | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-//            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-//            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-//            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
-//            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
-//            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+            #if MSSQL
+            | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+            #endif
+            #if SQLITE
+            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
+            #endif
+            #if POSTGRE
+            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
+            #endif
+            #if MYSQL
+            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
+            #endif
+            #if ORACLE
+            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
+            #endif
+            #if MSACCESS
+            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+            #endif
+            #if ODBC
             | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
+            #endif
             | _ -> failwith "Unsupported database provider"   
 
         let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
