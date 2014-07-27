@@ -7,7 +7,7 @@
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite" 
+let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 
 (**
 # SQL Provider Basics
@@ -19,29 +19,29 @@ After you have installed the nuget package or built the type provider assembly f
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 
-(** 
-To use the type provider you must first create a type alias. 
+(**
+To use the type provider you must first create a type alias.
 
 In this declaration you are able to pass various pieces of information known as static parameters to initialize properties such as the connection string and database vendor type that you are connecting to.
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.
 *)
 
 type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
-(** 
-Now we have a type ``sql`` that represents the SQLite database provided in the connectionString parameter.  
+(**
+Now we have a type ``sql`` that represents the SQLite database provided in the connectionString parameter.
 In order to start exploring the database's schema and reading its data, you create a *DataContext* value.
 *)
-
+let cx  = sql.
 let ctx = sql.GetDataContext()
 (**
-When you press . on ``ctx``, intellisense will display a list of properties representing the available tables and views within the database.  
+When you press . on ``ctx``, intellisense will display a list of properties representing the available tables and views within the database.
 
 In the simplest case, you can treat these properties as sequences that can be enumerated.
 *)
 
 let customers = ctx.``[main].[Customers]`` |> Seq.toArray
 (**
-This is the equivalent of executing a query that selects all rows and columns from the ``[main].[customers]`` table.  
+This is the equivalent of executing a query that selects all rows and columns from the ``[main].[customers]`` table.
 Notice the resulting type is an array of ``[Main].[Customers]Entity``.  These entities will contain properties relating to each column name from the table.
 *)
 
@@ -50,9 +50,9 @@ let name = firstCustomer.ContactName
 (**
 Each property is correctly typed depending on the database column definitions.  In this example, ``firstCustomer.ContactName`` is a string.
 
-## Constraints and Relationships 
+## Constraints and Relationships
 
-A typical relational database will have many connected tables and views through foreign key constraints.  
+A typical relational database will have many connected tables and views through foreign key constraints.
 The SQL provider is able to show you these constraints on entities.  They appear as properties named the same as the constraint in the database.
 You can gain access to these child or parent entities by simply enumerating the property in question.
 *)
@@ -83,7 +83,7 @@ let filteredQuery =
 
 let multipleFilteredQuery =
     query { for customer in ctx.``[main].[Customers]`` do
-            where ((customer.ContactName = "John Smith" && customer.Country = "England") 
+            where ((customer.ContactName = "John Smith" && customer.Country = "England")
                     || customer.ContactName = "Joe Bloggs")
             select customer } |> Seq.toArray
 
@@ -106,7 +106,7 @@ let explicitJoinQuery =
 
 (**
 Both of these queries have identical results, it's just one requires explicit knowledge of which tables join where and how, and the other doesn't.
-You might have noticed the select expression has now changed to (customer,order). 
+You might have noticed the select expression has now changed to (customer,order).
 As you may expect, this will return an array of tuples where the first item is a ``[Main].[Customers]Entity`` and the second a ``[Main].[Orders]Entity``.
 Often you will not be interested in selecting entire entities from the database.
 Changing the select expression to use the entities' properties will cause the SQL provider to select only the columns you have asked for, which is an important optimization.
