@@ -11,10 +11,11 @@ open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
 open System
 
-let project = "SQLProvider"
+type Project = { name:string; summary:string; description:string; dependencies:(string * string) list }
 
-let summary = "Type providers for SQL Server access."
-let description = "Type providers for SQL Server access."
+let projects =
+    [{name="OdbcProvider";summary="Type provider for ODBC access";description="Type providers for ODBC access";dependencies=[]}]
+
 let authors = ["Ross McKinlay" ]
 let tags = "F# fsharp typeproviders sql sqlserver"
 
@@ -25,20 +26,21 @@ let gitHome = "https://github.com/fsprojects"
 let gitName = "SQLProvider"
 let nugetDir = "./nuget/"
 
-
 // Read additional information from the release notes document
 Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
 
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
-  let fileName = "src/" + project + "/AssemblyInfo.fs"
-  CreateFSharpAssemblyInfo fileName
-      [ Attribute.Title project
-        Attribute.Product project
-        Attribute.Description summary
-        Attribute.Version release.AssemblyVersion
-        Attribute.FileVersion release.AssemblyVersion ] 
+    projects
+    |> Seq.iter (fun project ->
+      let fileName = "src/" + project.name + "/AssemblyInfo.fs"
+      CreateFSharpAssemblyInfo fileName
+          [ Attribute.Title project.name
+            Attribute.Product project.name
+            Attribute.Description project.summary
+            Attribute.Version release.AssemblyVersion
+            Attribute.FileVersion release.AssemblyVersion ])
 )
 
 // --------------------------------------------------------------------------------------
@@ -95,20 +97,22 @@ Target "NuGet" (fun _ ->
     CopyDir nugetlibDir "bin" (fun file -> file.Contains "FSharp.Core." |> not)
     CopyDir nugetDocsDir "./docs/output" allFiles
     
-    NuGet (fun p -> 
-        { p with   
-            Authors = authors
-            Project = project
-            Summary = summary
-            Description = description
-            Version = release.NugetVersion
-            ReleaseNotes = release.Notes |> toLines
-            Tags = tags
-            OutputPath = nugetDir
-            AccessKey = getBuildParamOrDefault "nugetkey" ""
-            Publish = hasBuildParam "nugetkey"
-            Dependencies = [] })
-        (project + ".nuspec")
+    projects
+    |> Seq.iter (fun project -> 
+        NuGet (fun p -> 
+            { p with   
+                Authors = authors
+                Project = project.name
+                Summary = project.summary
+                Description = project.description
+                Version = release.NugetVersion
+                ReleaseNotes = release.Notes |> toLines
+                Tags = tags
+                OutputPath = nugetDir
+                AccessKey = getBuildParamOrDefault "nugetkey" ""
+                Publish = hasBuildParam "nugetkey"
+                Dependencies = project.dependencies })
+            "SqlProvider.nuspec")
 )
 
 // --------------------------------------------------------------------------------------
