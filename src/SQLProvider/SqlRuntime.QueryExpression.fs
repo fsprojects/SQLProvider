@@ -14,19 +14,9 @@
             | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
             | _ -> failwith "Unsupported database provider"        
 
-        let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
-            match name with // could do this by parsing the number from the end of the string...
-            | "Item1" -> tupleIndex.[0] | "Item11" -> tupleIndex.[10]
-            | "Item2" -> tupleIndex.[1] | "Item12" -> tupleIndex.[11]
-            | "Item3" -> tupleIndex.[2] | "Item13" -> tupleIndex.[12]
-            | "Item4" -> tupleIndex.[3] | "Item14" -> tupleIndex.[13]
-            | "Item5" -> tupleIndex.[4] | "Item15" -> tupleIndex.[14]
-            | "Item6" -> tupleIndex.[5] | "Item16" -> tupleIndex.[15]
-            | "Item7" -> tupleIndex.[6] | "Item17" -> tupleIndex.[16]
-            | "Item8" -> tupleIndex.[7] | "Item18" -> tupleIndex.[17]
-            | "Item9" -> tupleIndex.[8] | "Item19" -> tupleIndex.[18]
-            | "Item10"-> tupleIndex.[9] | "Item20" -> tupleIndex.[19]
-            | _ -> failwith "currently only support up to 20 nested entity aliases"
+        let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
+            // eg "Item1" -> tupleIndex.[0]
+            tupleIndex.[(int <| name.Remove(0, 4)) - 1]
 
 namespace FSharp.Data.Sql.QueryExpression
 
