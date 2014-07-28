@@ -8,7 +8,7 @@
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
             | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
             | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider

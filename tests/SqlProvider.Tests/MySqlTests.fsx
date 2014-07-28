@@ -14,6 +14,7 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MYSQL, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
+
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -125,12 +126,12 @@ ctx.SubmitUpdates()
 ctx.Procedures.ADD_JOB_HISTORY(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
 //Support for sprocs with no parameters
-ctx.Procedures.SECURE_DML()
+//ctx.Procedures.SECURE_DML()
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES().CATCUR do
+      for e in ctx.Procedures.GET_EMPLOYEES().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -144,11 +145,8 @@ type Region = {
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
     [
-      for e in results.LOCATIONS do
+      for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
-              
-      for e in results.REGIONS do
-        yield e.MapTo<Region>() |> box
     ]
 
 
@@ -156,7 +154,7 @@ let locations_and_regions =
 let getemployees hireDate =
     let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
     [
-      for e in results.RESULTS do
+      for e in results.ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -164,12 +162,4 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME(100M).ReturnValue
-
-//********************** Packaged Procs **********************//
-
-ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
-
-//********************** Packaged Funcs **********************//
-
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin").ReturnValue
+let fullName = ctx.Functions.EMP_FULLNAME(100u).ReturnValue

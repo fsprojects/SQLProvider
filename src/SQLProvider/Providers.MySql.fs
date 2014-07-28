@@ -11,8 +11,7 @@ open FSharp.Data.Sql.Common
 module MySql = 
     
     let mutable resolutionPath = String.Empty
-   // let mutable mySqlToDbType : (int -> DbType)  = fun _ -> failwith "!"
-   // let mutable dbTypeToMySql : (DbType -> int ) = fun _ -> failwith "!"
+    let mutable owner = String.Empty
 
     let assembly =
         lazy
@@ -113,50 +112,87 @@ module MySql =
         let result = f con
         con.Close(); result
 
-    let executeSql (con:IDbConnection) sql =        
+    let executeSql sql (con:IDbConnection) =        
         use com = createCommand sql con   
         com.ExecuteReader()    
 
-    let getSprocs con =
+    let executeSqlAsDataTable sql con = 
+        executeSql sql con
+        |> (fun r -> 
+             let dt = new DataTable(); 
+             dt.Load(r); 
+             dt)
 
-        //let functions = getSchema "Functions" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-        let procedures = getSchema "Procedures" [||] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["ROUTINE_NAME"]) |> Set.ofList
+    let getSprocs (con:IDbConnection) =
+       
+        let procedures,functions = 
+            getSchema "Procedures" [||] con 
+            |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["routine_name"], SqlHelpers.dbUnbox<string> row.["routine_type"])
+            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+
+        let procedures = procedures |> List.map fst |> Set.ofList
+        let functions = functions |> List.map fst |> Set.ofList
 
         let getName (row:DataRow) = 
-            let (procName, packageName) = (SqlHelpers.dbUnbox row.["SPECIFIC_NAME"], SqlHelpers.dbUnbox row.["SPECIFIC_CATALOG"])
-            { ProcName = procName; Owner = String.Empty; PackageName = packageName }
+            let owner = SqlHelpers.dbUnboxWithDefault<string> owner row.["specific_schema"]
+            let procName = (SqlHelpers.dbUnboxWithDefault<string> "" row.["specific_name"])
+            { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
         let createSprocParameters (row:DataRow) = 
-            let dataType = SqlHelpers.dbUnbox<string> row.["DATA_TYPE"]
-            let argumentName = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
-            let maxLength = Some(SqlHelpers.dbUnboxWithDefault<int> -1 row.["CHARACTER_MAXIMUM_LENGTH"])
+            let dataType = SqlHelpers.dbUnbox row.["data_type"]
+            let argumentName = SqlHelpers.dbUnbox row.["parameter_name"]
+            let maxLength = 
+                let r = SqlHelpers.dbUnboxWithDefault<int> -1 row.["character_maximum_length"]
+                if r = -1 then None else Some r
 
-            findDbType (dataType.ToLower()) 
+            findDbType dataType 
             |> Option.map (fun m ->
+                let ordinal_position = SqlHelpers.dbUnboxWithDefault<int> 0 row.["ORDINAL_POSITION"]
+                let parameter_mode = SqlHelpers.dbUnbox<string> row.["PARAMETER_MODE"]
+                let returnValue = argumentName = null && ordinal_position = 0
                 let direction = 
-                    match SqlHelpers.dbUnbox<string> row.["PARAMETER_MODE"] with
+                    match parameter_mode with
                     | "IN" -> ParameterDirection.Input
-                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
                     | "OUT" -> ParameterDirection.Output
-                    | "IN/OUT" -> ParameterDirection.InputOutput
-                    | a -> failwithf "Direction not supported %s" a
-                { Name = SqlHelpers.dbUnbox row.["PARAMETER_NAME"]
+                    | "INOUT" -> ParameterDirection.InputOutput
+                    | null when returnValue -> ParameterDirection.ReturnValue
+                    | a -> failwithf "Direction not supported %s %s" argumentName a
+                { Name = if argumentName = null then "ReturnValue" else argumentName
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
-                  Ordinal = SqlHelpers.dbUnbox<int> row.["ORDINAL_POSITION"] }
+                  Ordinal = ordinal_position }
             )
 
         let parameters = 
-            let withParameters = getSchema "Procedure Parameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            procedures
+            let withParameters = 
+                connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
+                |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+
+            (Set.union procedures functions)
             |> Set.toSeq 
             |> Seq.choose (fun proc -> 
-                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
-                then None
-                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty }, Seq.empty)
-                )
+                match withParameters |> Seq.tryFind (fun (name,_) -> name.ProcName = proc) with
+                | None -> None
+                | Some (name,_) -> Some(name, Seq.empty))
             |> Seq.append withParameters
+
+        let getSprocReturnCols isFunction (parameters:QueryParameter list) = 
+            match parameters |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
+            | [] when not(isFunction) ->
+                match findDbType "cursor" with
+                | None -> []
+                | Some m -> 
+                    [{
+                        Name = "ResultSet"
+                        TypeMapping = m
+                        Direction = ParameterDirection.Output
+                        Length = None
+                        Ordinal = 0
+                     }]
+            | [] -> []
+            | a -> a
+            
 
         parameters
         |> Seq.map (fun (name, parameters) -> 
@@ -165,26 +201,73 @@ module MySql =
                             |> Seq.choose id
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
-                            
-                        let retCols = 
-                            sparams
-                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                                               then "ReturnValue" + (string i)
-                                                               elif (String.IsNullOrEmpty p.Name)
-                                                               then "ReturnValue"
-                                                               else p.Name); 
-                                                       TypeMapping = p.TypeMapping; 
-                                                       Direction = p.Direction; 
-                                                       Ordinal = p.Ordinal;
-                                                       Length = None 
-                                                     })
                         
-                        Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        let isFunction, isProcedure =  Set.contains name.ProcName functions, Set.contains name.ProcName procedures
+                        let retCols = getSprocReturnCols isFunction sparams
+
+                        match isFunction, isProcedure with
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | _, _ -> Empty
                       ) 
         |> Seq.toList
 
-type internal MySqlProvider(resolutionPath) as this =
+    let readParameter (parameter:IDbDataParameter) =
+        if parameter <> null 
+        then 
+            let par = parameter
+            par.Value
+        else null
+
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             definition.ReturnColumns
+             |> List.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+        
+        inps
+        |> List.sortBy fst
+        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        let processReturnColumn reader (retCol:QueryParameter) =
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" -> 
+                let result = ResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                reader.NextResult() |> ignore
+                result
+            | _ -> 
+                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
+                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+        
+        
+        match definition.ReturnColumns with
+        | [] -> com.ExecuteNonQuery() |> ignore; Unit
+        | [retCol] ->
+            use reader = com.ExecuteReader()
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" -> 
+                let result = SingleResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                reader.NextResult() |> ignore
+                result
+            | _ ->
+                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+        | cols -> 
+            use reader = com.ExecuteReader()
+            Set(cols |> List.map (processReturnColumn reader))
+
+type internal MySqlProvider(resolutionPath, owner) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -192,30 +275,30 @@ type internal MySqlProvider(resolutionPath) as this =
 
     do
         MySql.resolutionPath <- resolutionPath
+        MySql.owner <- owner
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
 
-        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,values) = MySql.executeSprocCommand com definition values
 
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
    
         member __.GetTables(con) =
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = MySql.executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
-            let ret =
+            MySql.connect con (fun con ->
+                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = '%s'" MySql.owner) con
                 [ while reader.Read() do 
-                    let table ={ Schema = reader.GetString(0) ; Name = reader.GetString(1) ; Type=reader.GetString(2).ToLower() } 
+                    let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) } 
                     if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                    yield table ]
-            con.Close()
-            ret
+                    yield table ])
+
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
             | _ -> None
+
         member __.GetColumns(con,table) = 
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
@@ -279,21 +362,21 @@ type internal MySqlProvider(resolutionPath) as this =
                                 AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA 
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = MySql.executeSql con (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name )
+            MySql.connect con (fun con ->
+            use reader = (MySql.executeSql (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
             let children =
                 [ while reader.Read() do 
                     yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
                             ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             reader.Dispose()
-            use reader = MySql.executeSql con (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name )
+            use reader = MySql.executeSql (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
                     yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
                             ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
-            con.Close()
-            (children,parents)    
+            
+            (children,parents))
         
         // todo
         member __.GetSprocs(con) = MySql.connect con MySql.getSprocs

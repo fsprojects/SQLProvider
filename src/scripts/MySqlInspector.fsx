@@ -21,6 +21,7 @@ let connectionString = "Server=MYSQL;Database=HR;Uid=admin;Pwd=password;"
 let resolutionPath = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
 
 MySql.resolutionPath <- resolutionPath
+MySql.owner <- "HR"
 
 let connection = MySql.createConnection connectionString
 MySql.connect connection MySql.createTypeMappings
@@ -44,7 +45,8 @@ MySql.connect connection (MySql.getSchema "Databases" [||])
 
 MySql.connect connection (MySql.getSchema "Procedures" [||])
 //|> DataTable.headers
-|> DataTable.map(fun r -> r.["SQL_DATA_ACCESS"])
+|> DataTable.map (fun r -> r.["ROUTINE_NAME"], r.["ROUTINE_TYPE"])
+//|> DataTable.printDataTable
 
 MySql.connect connection (MySql.getSchema "Procedure Parameters" [||])
 //|> DataTable.headers

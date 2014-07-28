@@ -103,7 +103,7 @@ module MSSqlServer =
         let getName (row:DataRow) = 
             let owner = dbUnbox row.["specific_catalog"]
             let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
-            { ProcName = procName; Owner = owner; PackageName = packageName }
+            { ProcName = procName; Owner = owner; PackageName = packageName; }
 
         let createSprocParameters (row:DataRow) = 
             let dataType = dbUnbox row.["data_type"]
@@ -134,7 +134,7 @@ module MSSqlServer =
             |> Seq.choose (fun proc -> 
                 if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
                 then None
-                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty }, Seq.empty)
+                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty; }, Seq.empty)
                 )
             |> Seq.append withParameters
 
@@ -144,8 +144,6 @@ module MSSqlServer =
                 String.Join(", ", parameters |> List.map(fun p -> p.Name + "= null") |> List.toArray)
 
             let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sprocName parameterStr
-
-            printfn "Executing %s" query
 
             connect con (fun con -> 
                     let dr = executeSql query con
