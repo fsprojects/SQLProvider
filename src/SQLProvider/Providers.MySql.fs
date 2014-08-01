@@ -233,7 +233,7 @@ module MySql =
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
         
-        inps
+        List.append outps inps
         |> List.sortBy fst
         |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
