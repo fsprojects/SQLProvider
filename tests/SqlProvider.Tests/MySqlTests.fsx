@@ -147,6 +147,10 @@ let locations_and_regions =
     [
       for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
+      //This isn't supported as I cannot figure out how to get the information
+      //about how many result sets the sproc returns.
+//      for e in results.ResultSet1 do
+//        yield e.ColumnValues |> Seq.toList |> box
     ]
 
 
@@ -162,4 +166,4 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME(100u).ReturnValue
+let fullName = ctx.Functions.FN_EMP_FULLNAME(100u).ReturnValue

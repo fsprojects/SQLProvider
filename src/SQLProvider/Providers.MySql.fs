@@ -135,7 +135,7 @@ module MySql =
 
         let getName (row:DataRow) = 
             let owner = SqlHelpers.dbUnboxWithDefault<string> owner row.["specific_schema"]
-            let procName = (SqlHelpers.dbUnboxWithDefault<string> "" row.["specific_name"])
+            let procName = (SqlHelpers.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
             { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
         let createSprocParameters (row:DataRow) = 
@@ -173,9 +173,8 @@ module MySql =
             |> Set.toSeq 
             |> Seq.choose (fun proc -> 
                 match withParameters |> Seq.tryFind (fun (name,_) -> name.ProcName = proc) with
-                | None -> None
-                | Some (name,_) -> Some(name, Seq.empty))
-            |> Seq.append withParameters
+                | None -> Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
+                | Some (name,parameters) -> Some(name, parameters))
 
         let getSprocReturnCols isFunction (parameters:QueryParameter list) = 
             match parameters |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with

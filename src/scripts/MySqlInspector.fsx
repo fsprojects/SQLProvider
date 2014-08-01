@@ -57,4 +57,9 @@ MySql.connect connection (MySql.getSchema "Columns" [||])
 |> DataTable.printDataTable
 
 MySql.connect connection (MySql.getSprocs)
+|> List.map (function
+            | Schema.Root("Functions", Schema.Sproc(name)) -> name.Name.FullName
+            | Schema.Root("Procedures", Schema.Sproc(name)) -> name.Name.FullName
+            | _ -> "Zero"
+           )
 
