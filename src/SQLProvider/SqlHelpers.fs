@@ -27,3 +27,14 @@ module SqlHelpers =
         let result = f con
         con.Close(); result
 
+    let executeSql createCommand sql (con:IDbConnection) =        
+        use com : IDbCommand = createCommand sql con   
+        com.ExecuteReader()    
+
+    let executeSqlAsDataTable createCommand sql con = 
+        executeSql createCommand sql con
+        |> (fun r -> 
+             let dt = new DataTable(); 
+             dt.Load(r); 
+             dt)
+

@@ -113,8 +113,7 @@ module MySql =
         con.Close(); result
 
     let executeSql sql (con:IDbConnection) =        
-        use com = createCommand sql con   
-        com.ExecuteReader()    
+        SqlHelpers.executeSql createCommand sql con  
 
     let executeSqlAsDataTable sql con = 
         executeSql sql con

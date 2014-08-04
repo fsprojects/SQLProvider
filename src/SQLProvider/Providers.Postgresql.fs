@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-module PostgreHelper = 
+module PostgreSQL = 
     
     let mutable resolutionPath = String.Empty
 
@@ -108,7 +108,8 @@ module PostgreHelper =
                     let name = Enum.GetName(typ, v).ToLower()
                     let clrType = (mapTypeToClrType name).ToString()
                     yield { ProviderTypeName = Some name; ClrType = clrType; DbType = (getDbType v); ProviderType = Some (v :?> int);}
-            ///    yield { ProviderTypeName = "character"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = 6; UseReaderResults = false }
+                yield { ProviderTypeName = Some "refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[][]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =
@@ -123,9 +124,121 @@ module PostgreHelper =
             
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
-        findDbType <- dbMappings.TryFind 
+        findDbType <- dbMappings.TryFind
 
+    let createCommand commandText connection = 
+        Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
+    let createCommandParameter (param:QueryParameter) value =
+        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
+        p.ParameterName <- param.Name
+        p.Value <- box value
+        p.DbType <- param.TypeMapping.DbType
+        p.Direction <- param.Direction
+        Option.iter (fun l -> p.Size <- l) param.Length
+        p
+
+    let tryReadValueProperty instance = 
+        let typ = instance.GetType()
+        let prop = typ.GetProperty("Value")
+        if prop <> null
+        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+        else None   
+
+    let readParameter (parameter:IDbDataParameter) = 
+        let parameterType = parameterType.Value
+        let dbTypeGetter = 
+            parameterType.GetProperty("NpgsqlDbType").GetGetMethod()
+        
+        match parameter.DbType, (dbTypeGetter.Invoke(parameter, [||]) :?> int) with
+        | DbType.Object, 121 ->
+             if parameter.Value = null
+             then null
+             else
+                let data = 
+                    SqlHelpers.dataReaderToArray (parameter.Value :?> IDataReader) 
+                    |> Seq.ofArray
+                data |> box
+        | _, _ ->
+            match tryReadValueProperty parameter.Value with
+            | Some(obj) -> obj |> box
+            | _ -> parameter.Value |> box
+
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             definition.ReturnColumns
+             |> List.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+        
+        List.append outps inps
+        |> List.sortBy fst
+        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        
+        let entities = 
+            match definition.ReturnColumns with
+            | [] -> com.ExecuteNonQuery() |> ignore; Unit
+            | [col] ->
+                use reader = com.ExecuteReader()
+                match col.TypeMapping.ProviderTypeName with
+                | Some "refcursor" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                | Some "SETOF refcursor" ->
+                    use reader = com.ExecuteReader()
+                    let results = ref [ResultSet("ReturnValue", SqlHelpers.dataReaderToArray reader)]
+                    let i = ref 1
+                    while reader.NextResult() do
+                         results := ResultSet("ReturnValue" + (string !i), SqlHelpers.dataReaderToArray reader) :: !results
+                         incr(i)
+                    Set(!results)
+                | _ -> 
+                    match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                    | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+            | cols -> 
+                com.ExecuteNonQuery() |> ignore
+                let returnValues = 
+                    cols 
+                    |> List.map (fun col ->
+                        match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        | Some(_,p) ->
+                            match col.TypeMapping.ProviderTypeName with
+                            | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                            | _ -> ScalarResultSet(col.Name, readParameter p)
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                    )
+                Set(returnValues)
+          
+        entities 
+
+    let getSprocs con = 
+        let query = 
+             "select
+  cast(p.oid as varchar) as id,
+  current_database() as catalog_name,
+  n.nspname AS schema_name,
+  p.proname as name,
+  pg_get_function_result(p.oid) as returntype,
+  pg_get_function_arguments(p.oid) as args,
+  case 
+	when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
+	else 'PROCEDURE'
+  end as routine_type
+  from pg_proc p
+  left join pg_namespace n
+  on n.oid = p.pronamespace
+  left join pg_type t
+  on p.prorettype = t.oid
+  where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1)"
+        SqlHelpers.executeSqlAsDataTable createCommand query con
 
 type internal PostgresqlProvider(resolutionPath) as this =
     let pkLookup =     Dictionary<string,string>()
@@ -134,25 +247,18 @@ type internal PostgresqlProvider(resolutionPath) as this =
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
     
     do 
-        PostgreHelper.resolutionPath <- resolutionPath
+        PostgreSQL.resolutionPath <- resolutionPath
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
         com.ExecuteReader()
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = PostgreHelper.createConnection connectionString
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(PostgreHelper.commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(param, value) = 
-            let p = Activator.CreateInstance(PostgreHelper.parameterType.Value, [||]) :?> IDbDataParameter
-            p.ParameterName <- param.Name
-            p.Value <- box value
-            p.DbType <- param.TypeMapping.DbType
-            p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
-            p
-        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
-        member __.CreateTypeMappings(_) = PostgreHelper.createTypeMappings()
+        member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
+        member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
+        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
+        member __.ExecuteSprocCommand(com,definition,values) =  PostgreSQL.executeSprocCommand com definition values
+        member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con) =            
             use reader = executeSql con "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public'"
@@ -198,7 +304,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                        // this is a simple first implementation, there's also some complex types that i don't think are supported
                        // with this .net connector, but this needs examining in detail (probably by someone else!)
                        let dt = if dt.Contains(" ") then dt.Substring(0,dt.IndexOf(" ")).Trim() else dt
-                       match PostgreHelper.findDbType (dt.ToLower()) with
+                       match PostgreSQL.findDbType (dt.ToLower()) with
                        | Some m ->
                           let col =
                              { Column.Name = reader.GetString(0)
