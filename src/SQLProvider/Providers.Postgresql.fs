@@ -3,7 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Data
-
+open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
@@ -12,26 +12,38 @@ module PostgreSQL =
     
     let mutable resolutionPath = String.Empty
 
-    let private loadAssembly (name:string) = 
-        // first try the gac (naively)
-        try Reflection.Assembly.Load name
-        with
-        | _ ->
-             Reflection.Assembly.LoadFrom(
-                if String.IsNullOrEmpty resolutionPath then name + ".dll" 
-                else System.IO.Path.Combine(resolutionPath,name+".dll"))
-    // Dynamically load the Npgsql assembly so we don't have a dependency on it in the project
-    let assembly =  
-        lazy
-            loadAssembly "Npgsql"
-    let monoSecurity = 
-        lazy
-            loadAssembly "Mono.Security"
+    let assemblyNames = [
+        "Npgsql"
+    ]
+
+    let assembly =
+        lazy 
+            assemblyNames 
+            |> List.pick (fun asm ->
+                try 
+                    let loadedAsm =              
+                        Assembly.LoadFrom(
+                            if String.IsNullOrEmpty resolutionPath then asm
+                            else System.IO.Path.Combine(resolutionPath,asm)
+                            ) 
+                    if loadedAsm <> null
+                    then Some(Choice1Of2 loadedAsm)
+                    else None
+                with e ->
+                    Some(Choice2Of2 e))
+    
+    let findType name = 
+        match assembly.Value with
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(exn) -> 
+            match exn with
+            | :? KeyNotFoundException as knf -> failwithf "Unable to resolve PostgreSQL assemblies. One of %s must exist in the resolution path or the GAC" (String.Join(", ", assemblyNames |> List.toArray))
+            | exn -> raise exn
    
-    let connectionType = lazy (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlConnection"))
-    let commandType = lazy    (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlCommand"))
-    let parameterType = lazy   (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlParameter"))
-    let dbType =  lazy (assembly.Value.GetTypes() |> Array.find(fun t -> t.Name = "NpgsqlDbType"))
+    let connectionType = lazy (findType "NpgsqlConnection")
+    let commandType = lazy    (findType  "NpgsqlCommand")
+    let parameterType = lazy  (findType "NpgsqlParameter")
+    let dbType =  lazy (findType "NpgsqlDbType")
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
 
     let createConnection connectionString = 
@@ -239,6 +251,68 @@ module PostgreSQL =
   on p.prorettype = t.oid
   where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1)"
         SqlHelpers.executeSqlAsDataTable createCommand query con
+        |> DataTable.map (fun r -> 
+            let name = { ProcName = SqlHelpers.dbUnbox<string> r.["name"]; Owner = SqlHelpers.dbUnbox<string> r.["catalog_name"]; PackageName = String.Empty }
+            let sparams = 
+                (SqlHelpers.dbUnbox<string> r.["args"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.mapi (fun i arg -> 
+                    match arg.Split([|' '|], StringSplitOptions.RemoveEmptyEntries) with
+                    | [|"OUT"; name; typ|] -> 
+                        findDbType typ
+                        |> Option.map (fun m ->
+                            { Name = name; 
+                              TypeMapping = m; 
+                              Direction = ParameterDirection.Output; 
+                              Ordinal = i;
+                              Length = None 
+                            }
+                        )
+                    | [|"INOUT"; name; typ|] -> 
+                        findDbType typ
+                        |> Option.map (fun m ->
+                            { Name = name; 
+                              TypeMapping = m; 
+                              Direction = ParameterDirection.InputOutput; 
+                              Ordinal = i;
+                              Length = None 
+                            }
+                        )
+                    | [|_;name;typ|] | [|name; typ|] -> 
+                        findDbType typ
+                        |> Option.map (fun m ->
+                            { Name = name; 
+                              TypeMapping = m; 
+                              Direction = ParameterDirection.Input; 
+                              Ordinal = i;
+                              Length = None 
+                            }
+                        )
+                    | _ -> None
+                )
+                |> Array.choose id |> Array.toList
+
+            let retCols = 
+                (SqlHelpers.dbUnbox<string> r.["returntype"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.mapi (fun i returnType ->  
+                        findDbType returnType
+                        |> Option.map (fun m ->
+                            { Name = if i = 0 then "ReturnValue" else "ReturnValue" + (string i) 
+                              TypeMapping = m; 
+                              Direction = ParameterDirection.ReturnValue; 
+                              Ordinal = i;
+                              Length = None 
+                            }
+                        )
+                )
+                |> Array.choose id |> Array.toList
+            
+            match SqlHelpers.dbUnbox<string> r.["routine_type"] with
+            | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+            | "PROCEDURE" -> Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+            | _ -> Empty
+        )
+                
+            
 
 type internal PostgresqlProvider(resolutionPath) as this =
     let pkLookup =     Dictionary<string,string>()

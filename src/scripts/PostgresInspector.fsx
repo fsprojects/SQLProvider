@@ -27,7 +27,7 @@ PostgreSQL.connect connection (PostgreSQL.getSchema "Tables" [|"hr";"public"|])
 |> DataTable.printDataTable
 
 PostgreSQL.connect connection PostgreSQL.getSprocs
-|> DataTable.printDataTable
+//|> DataTable.printDataTable
 
 
 
