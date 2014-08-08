@@ -11,9 +11,10 @@ open FSharp.Data.Sql.Common
 module PostgreSQL = 
     
     let mutable resolutionPath = String.Empty
+    let mutable owner = "public"
 
     let assemblyNames = [
-        "Npgsql"
+        "Npgsql.dll"
     ]
 
     let assembly =
@@ -60,43 +61,43 @@ module PostgreSQL =
     let mapTypeToClrType (sqlType:string) =
             match sqlType.ToLower() with
             | "bigint"
-            | "int8"       -> typeof<Int64>
+            | "int8"       -> Some typeof<Int64>
             | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
             | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
             | "boolean"
-            | "bool"       -> typeof<Boolean>
+            | "bool"       -> Some typeof<Boolean>
             | "box"
             | "circle"
             | "line"
             | "lseg"
             | "path"
             | "point"
-            | "polygon"    -> typeof<Object>
-            | "bytea"      -> typeof<Byte[]>
+            | "polygon"    -> Some typeof<Object>
+            | "bytea"      -> Some typeof<Byte[]>
             | "double"
-            | "float8"     -> typeof<Double>
+            | "float8"     -> Some typeof<Double>
             | "integer"
             | "int"
-            | "int4"       -> typeof<Int32>
+            | "int4"       -> Some typeof<Int32>
             | "money"
-            | "numeric"    -> typeof<Decimal>
+            | "numeric"    -> Some typeof<Decimal>
             | "real"
-            | "float4"     -> typeof<Single>
+            | "float4"     -> Some typeof<Single>
             | "smallint"
-            | "int2"       -> typeof<Int16>
-            | "text"       -> typeof<String>
+            | "int2"       -> Some typeof<Int16>
+            | "text"       -> Some typeof<String>
             | "date"
             | "time"
             | "timetz"
             | "timestamp"
-            | "timestamptz"-> typeof<DateTime>
-            | "interval"   -> typeof<TimeSpan>
+            | "timestamptz"-> Some typeof<DateTime>
+            | "interval"   -> Some typeof<TimeSpan>
             | "character"
-            | "varchar"    -> typeof<String>
-            | "inet"       -> typeof<System.Net.IPAddress>
-            | "uuid"       -> typeof<Guid>
-            | "xml"        -> typeof<String>
-            | _ -> typeof<String>
+            | "varchar"    -> Some typeof<String>
+            | "inet"       -> Some typeof<System.Net.IPAddress>
+            | "uuid"       -> Some typeof<Guid>
+            | "xml"        -> Some typeof<String>
+            | _ -> None
 
     let getDbType(providerType) =
         try
@@ -118,8 +119,10 @@ module PostgreSQL =
             [
                 for v in Enum.GetValues(typ) do
                     let name = Enum.GetName(typ, v).ToLower()
-                    let clrType = (mapTypeToClrType name).ToString()
-                    yield { ProviderTypeName = Some name; ClrType = clrType; DbType = (getDbType v); ProviderType = Some (v :?> int);}
+                    match (mapTypeToClrType name) with
+                    | Some(t) -> yield { ProviderTypeName = Some name; ClrType = t.ToString(); DbType = (getDbType v); ProviderType = Some (v :?> int);}
+                    | None -> ()
+                yield { ProviderTypeName = Some "character varying"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = Some 22; }
                 yield { ProviderTypeName = Some "refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
                 yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[][]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
@@ -142,10 +145,11 @@ module PostgreSQL =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
     let createCommandParameter (param:QueryParameter) value =
+        let mapping = if value <> null then (findClrType (value.GetType().ToString())) else None
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         p.Value <- box value
-        p.DbType <- param.TypeMapping.DbType
+        p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         p.Direction <- param.Direction
         Option.iter (fun l -> p.Size <- l) param.Length
         p
@@ -252,9 +256,9 @@ module PostgreSQL =
   where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1)"
         SqlHelpers.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r -> 
-            let name = { ProcName = SqlHelpers.dbUnbox<string> r.["name"]; Owner = SqlHelpers.dbUnbox<string> r.["catalog_name"]; PackageName = String.Empty }
+            let name = { ProcName = (SqlHelpers.dbUnbox<string> r.["name"]); Owner = (SqlHelpers.dbUnbox<string> r.["schema_name"]); PackageName = String.Empty }
             let sparams = 
-                (SqlHelpers.dbUnbox<string> r.["args"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                (SqlHelpers.dbUnbox<string> r.["args"]).Replace("character varying", "varchar").Split([|','|], StringSplitOptions.RemoveEmptyEntries)
                 |> Array.mapi (fun i arg -> 
                     match arg.Split([|' '|], StringSplitOptions.RemoveEmptyEntries) with
                     | [|"OUT"; name; typ|] -> 
@@ -306,6 +310,8 @@ module PostgreSQL =
                 )
                 |> Array.choose id |> Array.toList
             
+            let retCols = retCols @ (sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input))
+
             match SqlHelpers.dbUnbox<string> r.["routine_type"] with
             | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
             | "PROCEDURE" -> Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
@@ -314,7 +320,7 @@ module PostgreSQL =
                 
             
 
-type internal PostgresqlProvider(resolutionPath) as this =
+type internal PostgresqlProvider(resolutionPath, owner) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -322,6 +328,9 @@ type internal PostgresqlProvider(resolutionPath) as this =
     
     do 
         PostgreSQL.resolutionPath <- resolutionPath
+
+        if not(String.IsNullOrEmpty owner) 
+        then PostgreSQL.owner <- owner
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -335,7 +344,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con) =            
-            use reader = executeSql con "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public'"
+            use reader = executeSql con (sprintf "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '%s'" PostgreSQL.owner)
             [ while reader.Read() do 
                 let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2).ToLower() } 
                 if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
@@ -358,7 +367,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                                         ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY' 
                                         AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
                                 )   pk 
-                        ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
+                        ON  c.TABLE_CATALOG = pk.TABLE_CATALOG 
                                     AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
                                     AND c.TABLE_NAME = pk.TABLE_NAME
                                     AND c.COLUMN_NAME = pk.COLUMN_NAME
@@ -373,11 +382,11 @@ type internal PostgresqlProvider(resolutionPath) as this =
                 use reader = com.ExecuteReader()
                 let columns =
                    [ while reader.Read() do 
-                       let dt = reader.GetString(1).ToLower().Replace("\"","")
+                       let dt = reader.GetString(1)//.ToLower().Replace("\"","")
                        // postgre gives some really weird type names here like  "double precision" and  "timestamp with time zone"
                        // this is a simple first implementation, there's also some complex types that i don't think are supported
                        // with this .net connector, but this needs examining in detail (probably by someone else!)
-                       let dt = if dt.Contains(" ") then dt.Substring(0,dt.IndexOf(" ")).Trim() else dt
+                     //  let dt = if dt.Contains(" ") then dt.Substring(0,dt.IndexOf(" ")).Trim() else dt
                        match PostgreSQL.findDbType (dt.ToLower()) with
                        | Some m ->
                           let col =
@@ -436,7 +445,7 @@ type internal PostgresqlProvider(resolutionPath) as this =
                 (children,parents)    
         
         /// Have not attempted stored procs yet
-        member __.GetSprocs(con) = [] 
+        member __.GetSprocs(con) = PostgreSQL.connect con PostgreSQL.getSprocs 
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","\"").Replace("]","\"")) amount 
 

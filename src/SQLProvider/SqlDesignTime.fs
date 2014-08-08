@@ -94,7 +94,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let ty = ProvidedTypeDefinition(name, None, HideObjectMethods = true )
                         ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)]))
                         individualsTypes.Add ty
-                        Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" col.Name,ty, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
+                        Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Name),ty, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
                       |> Map.ofSeq
                  
                    // special case for guids as they are not a supported quotable constant in the TP mechanics,
@@ -234,7 +234,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
            
-            ProvidedMethod(sproc.Name.ProcName,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
+            ProvidedMethod(buildSprocName sproc.Name.ProcName,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
             
                 <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
             

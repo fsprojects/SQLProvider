@@ -7,7 +7,7 @@
             match vendor with                
             | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
             | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
+            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
             | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
