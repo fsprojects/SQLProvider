@@ -26,10 +26,7 @@ PostgreSQL.createTypeMappings()
 PostgreSQL.connect connection (PostgreSQL.getSchema "Tables" [|"hr";"public"|])
 |> DataTable.printDataTable
 
-PostgreSQL.connect connection PostgreSQL.getFunctions
-|> DataTable.printDataTable
-
-PostgreSQL.connect connection PostgreSQL.getProcedures
+PostgreSQL.connect connection PostgreSQL.getSprocs
 |> DataTable.printDataTable
 
 

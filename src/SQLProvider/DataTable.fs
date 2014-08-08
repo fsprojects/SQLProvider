@@ -65,19 +65,36 @@ module DataTable =
     let printDataTable (dt:System.Data.DataTable) = 
         if dt <> null
         then
-            let maxLength, rows = 
+            let widths = new Dictionary<int, int>()
+
+            let computeMaxWidth indx length = 
+                let len =
+                    match widths.TryGetValue(indx) with
+                    | true, len -> max len length
+                    | false, _ -> length
+                widths.[indx] <- len
+            
+            let i = ref 0
+            for col in dt.Columns do
+                computeMaxWidth !i col.ColumnName.Length
+                incr i
+
+            let rows = 
                 dt
                 |> map (fun r -> r.ItemArray)
-                |> List.fold (fun (maxLen, rows) row ->
+                |> List.fold (fun rows row ->
                                 let values = row |> Array.map (fun x -> x.ToString().Trim()) |> List.ofArray
-                                let rowMax = values |> List.maxBy (fun x -> x.Length)
-                                (max maxLen rowMax.Length), (values :: rows) 
-                            ) (0,[])
+                                values |> List.iteri (fun i x -> computeMaxWidth i x.Length)
+                                values :: rows
+                            ) []
+            
+            i := 0
             for col in dt.Columns do
-                printf "%*s  " (maxLength + 2) col.ColumnName
+                printf "%*s  " (widths.[!i] + 2) col.ColumnName
+                incr i            
             printfn ""
             for row in rows |> List.rev do
                 for (index,value) in row |> List.mapi (fun i x -> i,x) do
-                    printf "%*s  " (maxLength + 2) value
+                    printf "%*s  " (widths.[index] + 2) value
                 printfn ""
 
