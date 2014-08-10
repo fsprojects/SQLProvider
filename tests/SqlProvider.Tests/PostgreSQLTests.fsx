@@ -147,7 +147,7 @@ let locations_and_regions =
 //        yield e.ColumnValues |> Seq.toList |> box
 //             
       for e in results.ColumnValues do
-        yield e |> Seq.toList |> box
+        yield e// |> Seq.toList |> box
     ]
 
 
