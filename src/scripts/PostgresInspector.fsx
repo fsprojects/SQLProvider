@@ -24,6 +24,7 @@ let connection = PostgreSQL.createConnection connectionString
 PostgreSQL.createTypeMappings()
 
 PostgreSQL.typeMappings
+|> List.filter (fun m -> m.ClrType = "System.DateTime")
 
 PostgreSQL.findDbType "varchar"
 

@@ -45,7 +45,16 @@ module PostgreSQL =
     let commandType = lazy    (findType  "NpgsqlCommand")
     let parameterType = lazy  (findType "NpgsqlParameter")
     let dbType =  lazy (findType "NpgsqlDbType")
+    let transactionType = lazy (findType "NpgsqlTransaction")
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
+
+    let getBeginTransactionMethod = lazy (connectionType.Value.GetMethod("BeginTransaction",[||]))
+
+    let getEndTransactionMethod = lazy (transactionType.Value.GetMethod("Commit", [||]))
+
+    let beginTransaction conn = getBeginTransactionMethod.Value.Invoke(conn, [||])
+
+    let endTransaction tran = getEndTransactionMethod.Value.Invoke(tran, [||])
 
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
@@ -124,7 +133,7 @@ module PostgreSQL =
                     | None -> ()
                 yield { ProviderTypeName = Some "character varying"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = Some 22; }
                 yield { ProviderTypeName = Some "refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
-                yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[][]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =
@@ -144,8 +153,8 @@ module PostgreSQL =
     let createCommand commandText connection = 
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
-    let createCommandParameter (param:QueryParameter) value =
-        let mapping = if value <> null then (findClrType (value.GetType().ToString())) else None
+    let createCommandParameter sprocCommand (param:QueryParameter) value =
+        let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         p.Value <- box value
@@ -186,53 +195,55 @@ module PostgreSQL =
         let outps =
              definition.ReturnColumns
              |> List.map(fun ip ->
-                 let p = createCommandParameter ip null
+                 let p = createCommandParameter true ip null
                  (ip.Ordinal, p))
         
         let inps =
              inputParameters
              |> List.mapi(fun i ip ->
-                 let p = createCommandParameter ip values.[i]
+                 let p = createCommandParameter true ip values.[i]
                  (ip.Ordinal,p))
         
         List.append outps inps
         |> List.sortBy fst
         |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
-        
+        let tran = com.Connection.BeginTransaction()
         let entities = 
-            match definition.ReturnColumns with
-            | [] -> com.ExecuteNonQuery() |> ignore; Unit
-            | [col] ->
-                use reader = com.ExecuteReader()
-                match col.TypeMapping.ProviderTypeName with
-                | Some "refcursor" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
-                | Some "SETOF refcursor" ->
+            try
+                match definition.ReturnColumns with
+                | [] -> com.ExecuteNonQuery() |> ignore; Unit
+                | [col] ->
                     use reader = com.ExecuteReader()
-                    let results = ref [ResultSet("ReturnValue", SqlHelpers.dataReaderToArray reader)]
-                    let i = ref 1
-                    while reader.NextResult() do
-                         results := ResultSet("ReturnValue" + (string !i), SqlHelpers.dataReaderToArray reader) :: !results
-                         incr(i)
-                    Set(!results)
-                | _ -> 
-                    match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
-                    | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
-                    | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
-            | cols -> 
-                com.ExecuteNonQuery() |> ignore
-                let returnValues = 
-                    cols 
-                    |> List.map (fun col ->
+                    match col.TypeMapping.ProviderTypeName with
+                    | Some "refcursor" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                    | Some "SETOF refcursor" ->
+                        let results = ref [ResultSet("ReturnValue", SqlHelpers.dataReaderToArray reader)]
+                        let i = ref 1
+                        while reader.NextResult() do
+                             results := ResultSet("ReturnValue" + (string !i), SqlHelpers.dataReaderToArray reader) :: !results
+                             incr(i)
+                        Set(!results)
+                    | _ -> 
                         match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
-                        | Some(_,p) ->
-                            match col.TypeMapping.ProviderTypeName with
-                            | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
-                            | _ -> ScalarResultSet(col.Name, readParameter p)
+                        | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
                         | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
-                    )
-                Set(returnValues)
-          
+                | cols -> 
+                    com.ExecuteNonQuery() |> ignore
+                    let returnValues = 
+                        cols 
+                        |> List.map (fun col ->
+                            match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                            | Some(_,p) ->
+                                match col.TypeMapping.ProviderTypeName with
+                                | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                                | _ -> ScalarResultSet(col.Name, readParameter p)
+                            | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                        )
+                    Set(returnValues)
+            finally 
+                tran.Commit()
+
         entities 
 
     let getSprocs con = 
@@ -339,7 +350,7 @@ type internal PostgresqlProvider(resolutionPath, owner) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
+        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
         member __.ExecuteSprocCommand(com,definition,values) =  PostgreSQL.executeSprocCommand com definition values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 

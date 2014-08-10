@@ -7,7 +7,7 @@ open FSharp.Data.Sql
 let connStr = "User ID=postgres;Password=password;Host=POSTGRESQL;Port=9090;Database=hr;"
 
 [<Literal>]
-let resolutionFolder = @"D:\Downloads\Npgsql-2.1.3-net40"
+let resolutionFolder = @"D:\Downloads\Npgsql-2.1.3-net40\"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -143,11 +143,11 @@ type Region = {
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
     [
-      for e in results.ReturnValue.[0] do
-        yield e.ColumnValues |> Seq.toList |> box
-              
-      for e in results.ReturnValue.[1] do
-        yield e.MapTo<Region>() |> box
+//      for e in results.ReturnValue do
+//        yield e.ColumnValues |> Seq.toList |> box
+//             
+      for e in results.ColumnValues do
+        yield e |> Seq.toList |> box
     ]
 
 
