@@ -8,6 +8,7 @@ open System.Linq.Expressions
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
+open Microsoft.FSharp.Reflection
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
@@ -130,21 +131,34 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     member e.HasValue(key) = data.ContainsKey key
 
     static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
-        [ while reader.Read() = true do
-          let e = SqlEntity(con,name)        
-          for i = 0 to reader.FieldCount - 1 do 
-              match reader.GetValue(i) with
-              | null | :? DBNull -> ()
-              | value -> e.SetColumnSilent(reader.GetName(i),value)
-          yield e ]
+        [| while reader.Read() = true do
+           let e = SqlEntity(con,name)        
+           for i = 0 to reader.FieldCount - 1 do 
+               match reader.GetValue(i) with
+               | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+               | value -> e.SetColumnSilent(reader.GetName(i),value)
+           yield e |]
 
-    static member internal FromOutputParameters(con, name, parameters:IDataParameter[]) = 
-        let e = SqlEntity(con, name)
-        parameters 
-        |> Array.iteri(fun i p ->
-            e.SetColumnSilent((if (String.IsNullOrEmpty p.ParameterName) then "Column_" + (string i) else p.ParameterName), p.Value)
-        )
-        [e]
+//    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:QueryParameter list, parameters:IDbDataParameter list) = 
+//        let e = SqlEntity(con, name)
+//        parameters 
+//        |> List.iter(fun p ->
+//            match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
+//            | Some(col) ->
+//                         match provider.ReadDatabaseParameter(reader, p) with
+//                         | SingleResultSet(r) ->   
+//                            let entity = SqlEntity(con, name)
+//                            entity.SetData(r)
+//                            e.SetColumnSilent(col.Name, entity)
+//                         | MultipleResultSets(rs) ->
+//                            for r in rs do
+//                                let entity = SqlEntity(con, name)
+//                                entity.SetData(r)
+//                                e.SetColumnSilent(col.Name, entity)
+//                         | Scalar(o) -> e.SetColumnSilent(col.Name, o)
+//            | _ -> ()
+//        )
+//        e
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
@@ -185,7 +199,32 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
             |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v)) 
 
             aliasCache.Add(alias,newEntity)
-            newEntity    
+            newEntity
+
+    member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) = 
+        let typ = typeof<'a>
+        let propertyTypeMapping = defaultArg propertyTypeMapping snd
+        let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
+        let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
+        if FSharpType.IsRecord typ
+        then 
+            let ctor = FSharpValue.PreComputeRecordConstructor(typ)
+            let fields = FSharpType.GetRecordFields(typ)
+            let values = 
+                [|
+                    for prop in fields do
+                        match dataMap.TryGetValue(cleanName prop.Name) with
+                        | true, data -> yield propertyTypeMapping (prop.Name,data)
+                        | false, _ -> ()
+                |]
+            unbox<'a> (ctor(values))
+        else
+            let instance = Activator.CreateInstance<'a>()
+            for prop in typ.GetProperties() do
+                match dataMap.TryGetValue(cleanName prop.Name) with
+                | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
+                | false, _ -> ()
+            instance
     
     interface System.ComponentModel.INotifyPropertyChanged with
         [<CLIEvent>] member x.PropertyChanged = propertyChanged.Publish
@@ -218,11 +257,21 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                                  override __.ShouldSerializeValue(_) = false }) 
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
+and ResultSet = seq<(string * obj)[]>
+and ReturnSetType = 
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
+and ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
+
 and ISqlDataContext =       
     abstract ConnectionString       : string
     abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : string * (string * DbType * ParameterDirection * int)[]  * obj [] -> SqlEntity list
+    abstract CallSproc              : SprocDefinition * obj[] -> obj
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
     abstract SubmitPendingChanges   : unit -> unit
@@ -230,7 +279,7 @@ and ISqlDataContext =
     abstract GetPendingEntities     : unit -> SqlEntity list
 
          
-type LinkData =
+and LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : string
       ForeignTable       : Table
@@ -241,10 +290,10 @@ type LinkData =
         member x.Rev() = 
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-type alias = string
-type table = string 
+and alias = string
+and table = string 
 
-type Condition = 
+and Condition = 
     // this is  (table alias * column name * operator * right hand value ) list  * (the same again list) 
     // basically any AND or OR expression can have N terms and can have N nested condition children
     // this is largely from my CRM type provider. I don't think in practice for the SQL provider 
@@ -253,7 +302,7 @@ type Condition =
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
 
-type internal SqlExp =
+and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
@@ -276,7 +325,7 @@ type internal SqlExp =
                 | Count(rest) -> aux rest
             aux this
     
-type internal SqlQuery =
+and internal SqlQuery =
     { Filters       : Condition list
       Links         : (alias * LinkData * alias) list 
       Aliases       : Map<string, Table>
@@ -338,22 +387,16 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+and internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
     /// return a new command parameter with the provided name, value and optionally type, direction and length
-    abstract CreateCommandParameter : string * obj * DbType option * ParameterDirection option * int option -> IDataParameter
+    abstract CreateCommandParameter : QueryParameter * obj -> IDbDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
-    /// Accepts a full CLR type name and returns the relevant value from the DbType enum
-    abstract ClrToEnum : (string -> DbType option) with get
-    /// Accepts SQL data type name and returns the relevant value from the DbType enum
-    abstract SqlToEnum : (string -> DbType option) with get
-    /// Accepts SQL data type name and returns the CLR type
-    abstract SqlToClr : (string -> Type option)       with get
     /// Queries the information schema and returns a list of table information
     abstract GetTables  : IDbConnection -> Table list
     /// Queries the given table and returns a list of its columns
@@ -378,5 +421,7 @@ type internal ISqlProvider =
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
-    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDataParameter>
+    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
+    ///Builds a command representing a call to a stored procedure
+    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * obj[] -> ReturnValueType
     

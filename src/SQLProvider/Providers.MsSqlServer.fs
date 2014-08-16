@@ -8,86 +8,266 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
+module MSSqlServer = 
+
+    let getSchema name (args:string[]) (con:IDbConnection) = 
+        let con = (con :?> SqlConnection)
+        con.GetSchema(name, args)
+
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+
+    let createTypeMappings (con:IDbConnection) =
+        let dt = getSchema "DataTypes" [||] con
+
+        let getDbType(providerType:int) =
+            let p = new SqlParameter()
+            p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
+            p.DbType
+
+        let getClrType (input:string) = 
+            let t = Type.GetType input
+            if t <> null then t.ToString() else typeof<String>.ToString()
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["DataType"])
+                    let oleDbType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind
+
+
+    let createConnection connectionString = new SqlConnection(connectionString) :> IDbConnection
+
+    let createCommand commandText (connection:IDbConnection) = new SqlCommand(commandText, downcast connection) :> IDbCommand
+
+    let dbUnbox<'a> (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
+    
+    let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
+        if Convert.IsDBNull(v) then def else unbox v
+
+    let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+        
+    let executeSql sql (con:IDbConnection) =
+        use com = new SqlCommand(sql,con:?>SqlConnection)    
+        com.ExecuteReader()
+
+    let readParameter (parameter:IDbDataParameter) =
+        if parameter <> null 
+        then 
+            let par = parameter :?> SqlParameter
+            par.Value
+        else null
+
+    let createCommandParameter (param:QueryParameter) (value:obj) = 
+        let p = SqlParameter(param.Name,value)            
+        p.DbType <- param.TypeMapping.DbType
+        Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
+        p.Direction <- param.Direction
+        Option.iter (fun l -> p.Size <- l) param.Length
+        p :> IDbDataParameter
+
+    let getSprocs (con:IDbConnection) =
+        let con = (con :?> SqlConnection)
+        let procedures,functions = 
+            getSchema "Procedures" [||] con 
+            |> DataTable.map (fun row -> dbUnbox<string> row.["routine_name"], dbUnbox<string> row.["routine_type"])
+            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+
+        let procedures = procedures |> List.map fst |> Set.ofList
+        let functions = functions |> List.map fst |> Set.ofList
+
+        let getName (row:DataRow) = 
+            let owner = dbUnbox row.["specific_catalog"]
+            let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
+            { ProcName = procName; Owner = owner; PackageName = packageName; }
+
+        let createSprocParameters (row:DataRow) = 
+            let dataType = dbUnbox row.["data_type"]
+            let argumentName = dbUnbox row.["parameter_name"]
+            let maxLength = Some(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
+
+            findDbType dataType 
+            |> Option.map (fun m ->
+                let returnValue = dbUnbox<string> row.["is_result"] = "YES"
+                let direction = 
+                    match dbUnbox<string> row.["parameter_mode"] with
+                    | "IN" -> ParameterDirection.Input
+                    | "OUT" when returnValue -> ParameterDirection.ReturnValue
+                    | "OUT" -> ParameterDirection.Output
+                    | "INOUT" -> ParameterDirection.InputOutput
+                    | a -> failwithf "Direction not supported %s" a
+                { Name = argumentName
+                  TypeMapping = m
+                  Direction = direction
+                  Length = maxLength
+                  Ordinal = dbUnbox<int> row.["ordinal_position"] }
+            )
+
+        let parameters = 
+            let withParameters = getSchema "ProcedureParameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+            (Set.union procedures functions)
+            |> Set.toSeq 
+            |> Seq.choose (fun proc -> 
+                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
+                then None
+                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty; }, Seq.empty)
+                )
+            |> Seq.append withParameters
+
+        let getSprocReturnCols sprocName (parameters:QueryParameter list) = 
+            
+            let parameterStr = 
+                String.Join(", ", parameters |> List.map(fun p -> p.Name + "= null") |> List.toArray)
+
+            let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sprocName parameterStr
+
+            connect con (fun con -> 
+                    let dr = executeSql query con
+                    [
+                       yield dr.GetSchemaTable()
+                       while dr.NextResult() do
+                            yield dr.GetSchemaTable()
+                    ]
+            ) 
+            |> List.mapi (fun i dt ->
+                             if dt <> null
+                             then
+                                match findDbType "cursor" with
+                                | Some m -> 
+                                   { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i); 
+                                     TypeMapping = m; 
+                                     Direction = ParameterDirection.Output; 
+                                     Ordinal = i;
+                                     Length = None 
+                                    } |> Some
+                                | None -> None
+                             else None
+                         )
+            |> List.choose id
+//                            dt |> DataTable.mapChoose (fun row -> 
+//                                let name = dbUnbox<string> row.["ColumnName"]
+//                                let ordinal = dbUnbox<int> row.["ColumnOrdinal"]
+//                                match findDbType (dbUnbox<string> row.["DataTypeName"]) with
+//                                | Some(m) ->
+//                                    { Name = name; 
+//                                      TypeMapping = m; 
+//                                      Direction = ParameterDirection.Output; 
+//                                      Ordinal = ordinal;
+//                                      Length = None 
+//                                     } |> Some
+//                                | None -> None)
+
+
+        parameters
+        |> Seq.map (fun (name, parameters) -> 
+                        let sparams = 
+                            parameters
+                            |> Seq.choose id
+                            |> Seq.sortBy (fun p -> p.Ordinal)
+                            |> Seq.toList
+                            
+                        let retCols = getSprocReturnCols name.DbName sparams
+
+                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | _, _ -> Empty
+                      ) 
+        |> Seq.toList
+
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             definition.ReturnColumns
+             |> List.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+        
+        inps
+        |> List.sortBy fst
+        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        let processReturnColumn reader (retCol:QueryParameter) =
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" -> 
+                let result = ResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                reader.NextResult() |> ignore
+                result
+            | _ -> 
+                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
+                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+        
+        
+        match definition.ReturnColumns with
+        | [] -> com.ExecuteNonQuery() |> ignore; Unit
+        | [retCol] ->
+            use reader = com.ExecuteReader() :?> SqlDataReader
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" -> 
+                let result = SingleResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                reader.NextResult() |> ignore
+                result
+            | _ -> 
+                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+        | cols -> 
+            use reader = com.ExecuteReader() :?> SqlDataReader
+            Set(cols |> List.map (processReturnColumn reader))
+                          
 type internal MSSqlServerProvider() =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)    = fun _ -> failwith "!"
-
-    let createTypeMappings (con:SqlConnection) =
-        if con.State <> ConnectionState.Open then con.Open()
-        let clr = 
-            [for r in con.GetSchema("DataTypes").Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
-        con.Close()
-
-        // create map from sql name to clr type, and type to lDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                
-                if tn = "tinyint" then 
-                    // special case for tinyint, as Connection.GetSchema("DataTypes") says it should be an SByte, 
-                    // but really it needs to be a byte http://msdn.microsoft.com/en-us/library/cc716729(v=vs.110).aspx
-                    let ty = typeof<Byte>
-                    Some ((tn,ty),(tn,DbType.Byte),(ty.FullName,DbType.Byte))
-                else
-
-                let ty = Type.GetType dt
-                // we need to convert the sqldbtype enum value to dbtype.
-                // the sql param will do this for us but it might throw if not mapped -
-                // this is a bit hacky but I don't want to write a big conversion mapping right now
-                let p = SqlParameter()
-                try
-                    p.SqlDbType <- enum<SqlDbType> ev
-                    Some ((tn,ty),(tn,p.DbType),(ty.FullName,p.DbType))
-                with
-                | ex -> None
-            )
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
-
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
-    
-    let executeSql (con:IDbConnection) sql =
-        use com = new SqlCommand(sql,con:?>SqlConnection)    
-        com.ExecuteReader()
-
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = upcast new SqlConnection(connectionString)
-        member __.CreateCommand(connection,commandText) = upcast new SqlCommand(commandText,connection:?>SqlConnection)
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = SqlParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value 
-            if length.IsSome then p.Size <- length.Value
-            upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>SqlConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
+        member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
+        member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
+        member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
+        member __.ExecuteSprocCommand(con, definition:SprocDefinition, values:obj array) = MSSqlServer.executeSprocCommand con definition values
+
+        member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
         member __.GetTables(con) =
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES"
-            let ret = 
-                [ while reader.Read() do 
-                    let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
-                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                    yield table ]
-            con.Close()
-            ret
+            MSSqlServer.connect con (fun con -> 
+            use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
+            [ while reader.Read() do 
+                let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
+                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                yield table ])
+
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with 
             | true, v -> Some v
@@ -123,12 +303,11 @@ type internal MSSqlServerProvider() =
                let columns =
                   [ while reader.Read() do 
                       let dt = reader.GetSqlString(1).Value
-                      match sqlToClr dt, sqlToEnum dt with
-                      | Some(clr),Some(sql) ->
+                      match MSSqlServer.findDbType dt with
+                      | Some(m) ->
                          let col =
                             { Column.Name = reader.GetSqlString(0).Value; 
-                              ClrType = clr 
-                              DbType = sql
+                              TypeMapping = m
                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                               IsPrimarKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
@@ -168,129 +347,21 @@ type internal MSSqlServerProvider() =
                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
+            MSSqlServer.connect con (fun con ->
+            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let children =
                 [ while reader.Read() do 
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             reader.Dispose()
-            use reader = executeSql con (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name )
+            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
                     yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                             ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
-            con.Close()
-            (children,parents)    
-        member __.GetSprocs(con) = 
-            let con = con:?>SqlConnection
-            //todo: this whole function needs cleaning up
-            let baseQuery = @"SELECT 
-                              c.name
-                              ,b.name
-                              ,ORDINAL_POSITION
-                              ,PARAMETER_MODE
-                              ,PARAMETER_NAME
-                              ,DATA_TYPE
-                              ,CHARACTER_MAXIMUM_LENGTH
-                            FROM sys.procedures b
-                            left join INFORMATION_SCHEMA.PARAMETERS a on a.SPECIFIC_NAME = b.name 
-							join sys.schemas c on b.schema_id = c.schema_id"
-            if con.State <> ConnectionState.Open then con.Open()
-            use reader = executeSql con baseQuery
-            let meta =
-                [ while reader.Read() do
-                    let paramName = reader.GetSqlString(4)
-                    if paramName.IsNull then
-                        yield (reader.GetSqlString(0).Value,
-                               reader.GetSqlString(1).Value,                               
-                               0,
-                               "",
-                               "",
-                               "",
-                               None)
-                    else
-                       yield 
-                           (reader.GetSqlString(0).Value,
-                            reader.GetSqlString(1).Value,
-                            reader.GetSqlInt32(2).Value,
-                            reader.GetSqlString(3).Value,
-                            paramName.Value,
-                            reader.GetSqlString(5).Value,
-                            let len = reader.GetSqlInt32(6)
-                            if len.IsNull then None else Some len.Value ) ]
-                |> Seq.groupBy(fun (schema,name,_,_,_,_,_) -> sprintf "[%s].[%s]" schema name)
-                |> Seq.choose(fun (name,values) ->
-                   // don't create procs that have unsupported datatypes
-                   let values' = 
-                      values 
-                      |> Seq.choose(fun (_,_,ordinal,mode,name,dt,maxLen)  ->
-                         if mode <> "IN" then None else
-                         match sqlToClr dt, sqlToEnum dt with
-                         |Some(clr), Some(sql) -> Some (ordinal,mode,name,clr,sql,maxLen)
-                         | _ -> None)
-                   if Seq.length (values |> Seq.filter(function (_,_,_,_,"",_,_) -> false | _ -> true) ) = Seq.length values' then Some (name,values') else None)
-                |> Seq.map(fun (name, values) ->  
-                    let parameters = 
-                        values |> Seq.map(fun (ordinal,mode,name,clr,sql,maxLen) -> 
-                               { Name=name; Ordinal=ordinal
-                                 Direction = if mode = "IN" then ParameterDirection.Input else ParameterDirection.Output
-                                 MaxLength = maxLen
-                                 ClrType = clr
-                                 DbType = sql } )
-                        |> Seq.sortBy( fun p -> p.Ordinal)     
-                        |> Seq.toList            
-                    {FullName = name
-                     DbName = name
-                     Params = parameters
-                     ReturnColumns = lazy [] })
-                |> Seq.toList
-            reader.Dispose()
-            
-            let getColumns sproc = 
-                lazy
-                use com = new SqlCommand(sproc.FullName,con)
-                com.CommandType <- CommandType.StoredProcedure
-                try // try / catch here as this stuff is still experimental
-                  sproc.Params
-                  |> List.iter(fun p ->
-                    let p' = SqlParameter()   
-                    if  String.IsNullOrWhiteSpace p.Name then () else
-                    p'.ParameterName <- p.Name
-                    p'.DbType <- p.DbType
-                    p'.Value <- 
-                         if p.ClrType = typeof<string> then box "1"
-                         elif p.ClrType = typeof<DateTime> then box (DateTime(2000,1,1))
-                         elif p.ClrType.IsArray then box (Array.zeroCreate 0)
-                         // warning: i might have missed cases here and this next call will
-                         // blow if the type doesn't have a parameter less ctor
-                         else Activator.CreateInstance(p.ClrType)
-                    com.Parameters.Add p' |> ignore)
-                  if con.State <> ConnectionState.Open then con.Open()
-                  use reader = com.ExecuteReader(CommandBehavior.SchemaOnly)
-                  let schema = reader.GetSchemaTable()
-                  con.Close()
-                  let columns = 
-                      if schema = null then [] else
-                      schema.Rows
-                      |> Seq.cast<DataRow>
-                      |> Seq.choose(fun row -> 
-                           (clrToEnum (row.["DataType"] :?> Type).FullName ) 
-                           |> Option.map( fun sql ->
-                                 { Name = row.["ColumnName"] :?> string; ClrType = (row.["DataType"] :?> Type ); 
-                                   DbType = sql; IsPrimarKey = false; IsNullable=false } ))
-                      |> Seq.toList                  
-                  if schema = null || columns.Length = schema.Rows.Count then columns else []
-                with 
-                | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata whilst executing sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
-                        con.Close()
-                        failwithf "Fatal error - could not deduce the return values of stored procedure %s" sproc.FullName
-                
-
-            let ret = meta |> List.map(fun sproc -> {sproc with ReturnColumns = getColumns sproc })
-            con.Close()
-            ret
+            (children,parents))
+        member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
          
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
@@ -329,7 +400,7 @@ type internal MSSqlServerProvider() =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                SqlParameter(paramName,value):> IDataParameter
+                SqlParameter(paramName,value):> IDbDataParameter
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -346,7 +417,7 @@ type internal MSSqlServerProvider() =
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
-                                let operatorIn operator (array : IDataParameter[]) =
+                                let operatorIn operator (array : IDbDataParameter[]) =
                                     if Array.isEmpty array then
                                         match operator with
                                         | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set

@@ -4,15 +4,14 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
-
+let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
-let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
+let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
 type Employee = {
@@ -22,8 +21,9 @@ type Employee = {
     HireDate : DateTime
 }
 
+
 //***************** Individuals ***********************//
-let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.``[dbo].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
@@ -31,14 +31,14 @@ indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        for emp in ctx.``[dbo].[EMPLOYEES]`` do
         select (emp.FIRST_NAME, emp.LAST_NAME)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
-            join d in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
+            for emp in ctx.``[dbo].[EMPLOYEES]`` do
+            join d in ctx.``[dbo].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
             where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
             select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
             
@@ -46,9 +46,9 @@ let salesNamedDavid =
 
 let employeesJob = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
+            for emp in ctx.``[dbo].[EMPLOYEES]`` do
             for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
+            join dept in ctx.``[dbo].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
             where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
     } |> Seq.toList
@@ -56,7 +56,7 @@ let employeesJob =
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        for emp in ctx.``[dbo].[EMPLOYEES]`` do
         sortByDescending emp.COMMISSION_PCT
         select emp
         take 5
@@ -82,7 +82,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[HR].[COUNTRIES]`` do
+        for emp in ctx.``[dbo].[COUNTRIES]`` do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -102,16 +102,16 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5M)
+            for reg in ctx.``[dbo].[REGIONS]`` do
+            where (reg.REGION_ID = 5)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
+        let newRegion = ctx.``[dbo].[REGIONS]``.Create() 
         newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5M
+        newRegion.REGION_ID <- 5
         ctx.SubmitUpdates()
         newRegion
 
@@ -123,32 +123,31 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Procedures.ADD_JOB_HISTORY(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
-//Support for sprocs with no parameters
-ctx.Procedures.SECURE_DML()
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES().CATCUR do
+      for e in ctx.Procedures.GET_EMPLOYEES().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
 type Region = {
-    RegionId : decimal
+    RegionId : int
     RegionName : string
-  //  RegionDescription : string
+    RegionDescription : string
 }
 
 //Support for MARS procs
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
+    printfn "%A" results.ColumnValues
     [
-      for e in results.LOCATIONS do
+      for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
               
-      for e in results.REGIONS do
+      for e in results.ResultSet_1 do
         yield e.MapTo<Region>() |> box
     ]
 
@@ -157,7 +156,7 @@ let locations_and_regions =
 let getemployees hireDate =
     let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
     [
-      for e in results.RESULTS do
+      for e in results.ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -166,11 +165,3 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EMP_FULLNAME(100M).ReturnValue
-
-//********************** Packaged Procs **********************//
-
-ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
-
-//********************** Packaged Funcs **********************//
-
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME("Bull", "Colin").ReturnValue
