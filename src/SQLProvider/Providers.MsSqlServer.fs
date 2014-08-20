@@ -155,7 +155,7 @@ module MSSqlServer =
                         ]
                     with
                     | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sprocName (ex.ToString()))
-                            []  
+                            [new DataTable()] //Just assumes the proc / func returns something and let the caller process the result, for now.  
             ) 
             |> List.mapi (fun i dt ->
                              if dt <> null
