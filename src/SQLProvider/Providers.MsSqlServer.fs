@@ -154,7 +154,7 @@ module MSSqlServer =
                                 yield dr.GetSchemaTable()
                         ]
                     with
-                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sprocName (ex.ToString()))
                             []  
             ) 
             |> List.mapi (fun i dt ->
