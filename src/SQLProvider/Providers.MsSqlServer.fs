@@ -146,12 +146,16 @@ module MSSqlServer =
             let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sprocName parameterStr
 
             connect con (fun con -> 
-                    let dr = executeSql query con
-                    [
-                       yield dr.GetSchemaTable()
-                       while dr.NextResult() do
+                    try
+                        let dr = executeSql query con
+                        [
                             yield dr.GetSchemaTable()
-                    ]
+                            while dr.NextResult() do
+                                yield dr.GetSchemaTable()
+                        ]
+                    with
+                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sproc.FullName (ex.ToString()))
+                            [] )  
             ) 
             |> List.mapi (fun i dt ->
                              if dt <> null
