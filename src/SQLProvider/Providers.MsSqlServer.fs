@@ -141,50 +141,49 @@ module MSSqlServer =
         let getSprocReturnCols sprocName (parameters:QueryParameter list) = 
             
             let parameterStr = 
-                String.Join(", ", parameters |> List.map(fun p -> p.Name + "= null") |> List.toArray)
+                String.Join(", ", parameters |> List.filter (fun p -> p.Direction <> ParameterDirection.ReturnValue) |> List.map(fun p -> p.Name + "= null") |> List.toArray)
 
             let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sprocName parameterStr
 
-            connect con (fun con -> 
-                    try
-                        let dr = executeSql query con
-                        [
-                            yield dr.GetSchemaTable()
-                            while dr.NextResult() do
+            let derivedCols = 
+                connect con (fun con -> 
+                        try
+                            let dr = executeSql query con
+                            [
                                 yield dr.GetSchemaTable()
-                        ]
-                    with
-                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sprocName (ex.ToString()))
-                            [new DataTable()] //Just assumes the proc / func returns something and let the caller process the result, for now.  
-            ) 
-            |> List.mapi (fun i dt ->
-                             if dt <> null
-                             then
-                                match findDbType "cursor" with
-                                | Some m -> 
-                                   { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i); 
-                                     TypeMapping = m; 
-                                     Direction = ParameterDirection.Output; 
-                                     Ordinal = i;
-                                     Length = None 
-                                    } |> Some
-                                | None -> None
-                             else None
-                         )
-            |> List.choose id
-//                            dt |> DataTable.mapChoose (fun row -> 
-//                                let name = dbUnbox<string> row.["ColumnName"]
-//                                let ordinal = dbUnbox<int> row.["ColumnOrdinal"]
-//                                match findDbType (dbUnbox<string> row.["DataTypeName"]) with
-//                                | Some(m) ->
-//                                    { Name = name; 
-//                                      TypeMapping = m; 
-//                                      Direction = ParameterDirection.Output; 
-//                                      Ordinal = ordinal;
-//                                      Length = None 
-//                                     } |> Some
-//                                | None -> None)
+                                while dr.NextResult() do
+                                    yield dr.GetSchemaTable()
+                            ]
+                        with
+                        | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sprocName (ex.ToString()))
+                                [] //Just assumes the proc / func returns something and let the caller process the result, for now.  
+                ) 
+                |> List.mapi (fun i dt ->
+                                 if dt <> null
+                                 then
+                                    match findDbType "cursor" with
+                                    | Some m -> 
+                                       { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i); 
+                                         TypeMapping = m; 
+                                         Direction = ParameterDirection.Output; 
+                                         Ordinal = i;
+                                         Length = None 
+                                        } |> Some
+                                    | None -> None
+                                 else None
+                             )
+                |> List.choose id
 
+            let retValueCols = 
+                parameters 
+                |> List.filter (fun x -> x.Direction = ParameterDirection.ReturnValue)
+                |> List.mapi (fun i p -> 
+                    if String.IsNullOrEmpty p.Name
+                    then { p with Name = (if i = 0 then "ReturnValue" else "ReturnValue_" + (string i))}
+                    else p
+                )
+
+            derivedCols @ retValueCols
 
         parameters
         |> Seq.map (fun (name, parameters) -> 
@@ -210,17 +209,25 @@ module MSSqlServer =
              definition.ReturnColumns
              |> List.map(fun ip ->
                  let p = createCommandParameter ip null
-                 (ip.Ordinal, p))
+                 if ip.Direction = ParameterDirection.ReturnValue
+                 then
+                    p.ParameterName <- "@RETURN_VALUE"
+                    (-1, ip.Name, p)
+                 else
+                    (ip.Ordinal, ip.Name, p))
         
         let inps =
              inputParameters
              |> List.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
-                 (ip.Ordinal,p))
+                 (ip.Ordinal, ip.Name, p))
         
-        inps
-        |> List.sortBy fst
-        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        let returnValues =
+            outps |> List.filter (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue)
+
+        returnValues @ inps 
+        |> List.sortBy (fun (x,_,_) -> x)
+        |> List.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
@@ -229,23 +236,24 @@ module MSSqlServer =
                 reader.NextResult() |> ignore
                 result
             | _ -> 
-                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
-                | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
+                match outps |> List.tryFind (fun (_,_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         
         
         match definition.ReturnColumns with
         | [] -> com.ExecuteNonQuery() |> ignore; Unit
         | [retCol] ->
-            use reader = com.ExecuteReader() :?> SqlDataReader
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
+                use reader = com.ExecuteReader() :?> SqlDataReader
                 let result = SingleResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ -> 
-                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
-                | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                let result = com.ExecuteNonQuery()
+                match outps |> List.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
+                | Some(_,name,p) -> Scalar(name, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         | cols -> 
             use reader = com.ExecuteReader() :?> SqlDataReader

@@ -178,4 +178,4 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type AW = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER, ResolutionPath = resolutionFolder>
 let ctx = AW.GetDataContext()
 
-ctx.Functions.UFNGETSTOCK(1).ResultSet
+ctx.Functions.UFNGETSTOCK(1).ReturnValue
