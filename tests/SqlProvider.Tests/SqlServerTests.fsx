@@ -23,7 +23,7 @@ type Employee = {
 
 
 //***************** Individuals ***********************//
-let indv = ctx.``[dbo].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.``[DBO].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
@@ -31,14 +31,14 @@ indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[dbo].[EMPLOYEES]`` do
+        for emp in ctx.``[DBO].[EMPLOYEES]`` do
         select (emp.FIRST_NAME, emp.LAST_NAME)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[dbo].[EMPLOYEES]`` do
-            join d in ctx.``[dbo].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
+            for emp in ctx.``[DBO].[EMPLOYEES]`` do
+            join d in ctx.``[DBO].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
             where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
             select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
             
@@ -46,9 +46,9 @@ let salesNamedDavid =
 
 let employeesJob = 
     query {
-            for emp in ctx.``[dbo].[EMPLOYEES]`` do
+            for emp in ctx.``[DBO].[EMPLOYEES]`` do
             for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.``[dbo].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
+            join dept in ctx.``[DBO].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
             where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
     } |> Seq.toList
@@ -56,7 +56,7 @@ let employeesJob =
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[dbo].[EMPLOYEES]`` do
+        for emp in ctx.``[DBO].[EMPLOYEES]`` do
         sortByDescending emp.COMMISSION_PCT
         select emp
         take 5
@@ -82,7 +82,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[dbo].[COUNTRIES]`` do
+        for emp in ctx.``[DBO].[COUNTRIES]`` do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -102,14 +102,14 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[dbo].[REGIONS]`` do
+            for reg in ctx.``[DBO].[REGIONS]`` do
             where (reg.REGION_ID = 5)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[dbo].[REGIONS]``.Create() 
+        let newRegion = ctx.``[DBO].[REGIONS]``.Create() 
         newRegion.REGION_NAME <- "Antartica"
         newRegion.REGION_ID <- 5
         ctx.SubmitUpdates()
@@ -165,3 +165,17 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EMP_FULLNAME(100M).ReturnValue
+
+
+[<Literal>]
+let connStr = "Data Source=SQLSERVER;Initial Catalog=AdventureWorks;User Id=sa;Password=password"
+[<Literal>]
+let resolutionFolder = __SOURCE_DIRECTORY__
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+
+let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+
+type AW = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER, ResolutionPath = resolutionFolder>
+let ctx = AW.GetDataContext()
+
+ctx.Functions.UFNGETSTOCK(1).ReturnValue
