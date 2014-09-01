@@ -49,7 +49,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let sprocData = lazy prov.GetSprocs con
 
-        let getSprocReturnColumns sprocDefinition = prov.GetSprocReturnColumns(con,sprocDefinition)
+        let getSprocReturnColumns (sprocDefinition:SprocDefinition) = 
+            prov.GetSprocReturnColumns(con,sprocDefinition)
               
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
@@ -140,6 +141,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                | None -> [])
             individualsTypes :> seq<_> 
             
+        ///Interesting this doesn't seem to be used anywhere...
         let baseCollectionTypes =
             lazy
                 dict [ for table in tables.Force() do  
@@ -207,42 +209,50 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
-            let retCols = getSprocReturnColumns sproc |> List.toArray
-            let ty =
-                match retCols.Length with
-                | 0 -> typeof<Unit>
-                | _ ->
-                    let rt = ProvidedTypeDefinition(sproc.Name.FullName,Some typeof<SqlEntity>)
-                    rt.AddMember(ProvidedConstructor([]))
-                    retCols
-                    |> Array.iter(fun col ->
-                        let name = col.Name
-                        let ty = Type.GetType col.TypeMapping.ClrType
-                        let prop = 
-                            ProvidedProperty(
-                                name,ty,
-                                GetterCode = (fun args ->
-                                    let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                                    Expr.Call(args.[0],meth,[Expr.Value name])),
-                                SetterCode = (fun args ->
-                                    let meth = typeof<SqlEntity>.GetMethod "SetColumn"
-                                    Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
-                        rt.AddMember prop
-                    )
-                    container.AddMember rt
-                    rt :> Type
-
             let parameters = 
                 sproc.Params
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
-           
-            let retColsExpr =
-                QuotationHelpers.arrayExpr retCols |> snd
 
-            ProvidedMethod(buildSprocName sproc.Name.ProcName,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
-            
-                <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+            let rt = ProvidedTypeDefinition(buildSprocName(sproc.Name.DbName),Some typeof<ISqlDataContext>, HideObjectMethods = true)
+            let resultType = ProvidedTypeDefinition("Result",Some typeof<ISqlDataContext>, HideObjectMethods = true)
+            resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
+            rt.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
+            rt.AddMember resultType
+            container.AddMember(rt)
+
+
+            resultType.AddMemberDelayed(fun () -> 
+                    let retCols = getSprocReturnColumns sproc |> List.toArray
+                    let returnType = 
+                        match retCols.Length with
+                        | 0 -> typeof<Unit>
+                        | _ -> 
+                              let rt = ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, HideObjectMethods = true)
+                              rt.AddMember(ProvidedConstructor([]))
+                              
+                              retCols
+                              |> Array.iter(fun col ->
+                                  let name = col.Name
+                                  let ty = Type.GetType col.TypeMapping.ClrType
+                                  let prop = 
+                                      ProvidedProperty(
+                                          name,ty,
+                                          GetterCode = (fun args ->
+                                              let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                              Expr.Call(args.[0],meth,[Expr.Value name])),
+                                          SetterCode = (fun args ->
+                                              let meth = typeof<SqlEntity>.GetMethod "SetColumn"
+                                              Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
+                                  rt.AddMember prop)
+                              resultType.AddMember(rt)
+                              rt :> Type
+                    let retColsExpr =
+                        QuotationHelpers.arrayExpr retCols |> snd
+                    ProvidedProperty("Results",returnType, GetterCode = QuotationHelpers.quoteRecord sproc (fun args var ->                      
+                        <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)))
+
+            ProvidedMethod(buildSprocName(sproc.Name.ProcName), parameters, resultType, InvokeCode = (fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>) ) 
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
@@ -262,7 +272,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some(typ) ->
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) ->
-                        previousType.AddMember(ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc path containerType (Some typ) createdTypes next 
                 | None -> 
@@ -270,8 +280,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)])) 
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) -> 
-                        containerType.AddMember(typ)
-                        previousType.AddMember(ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                        containerType.AddMemberDelayed(fun () -> typ)
+                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc path containerType (Some typ) (createdTypes.Add(path, typ)) next 
             | Sproc(sproc) ->
