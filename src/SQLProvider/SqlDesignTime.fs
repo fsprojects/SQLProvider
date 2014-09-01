@@ -47,7 +47,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let rel = prov.GetRelationships(con,t)
                             (cols,rel))]
 
-        let sprocData = lazy prov.GetSprocs con 
+        let sprocData = lazy prov.GetSprocs con
+
+        let getSprocReturnColumns sprocDefinition = prov.GetSprocReturnColumns(con,sprocDefinition)
+              
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
         let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,owner)
@@ -204,7 +207,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (sproc:SprocDefinition) = 
-            let retCols = sproc.ReturnColumns
+            let retCols = getSprocReturnColumns sproc |> List.toArray
             let ty =
                 match retCols.Length with
                 | 0 -> typeof<Unit>
@@ -212,7 +215,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let rt = ProvidedTypeDefinition(sproc.Name.FullName,Some typeof<SqlEntity>)
                     rt.AddMember(ProvidedConstructor([]))
                     retCols
-                    |> List.iter(fun col ->
+                    |> Array.iter(fun col ->
                         let name = col.Name
                         let ty = Type.GetType col.TypeMapping.ClrType
                         let prop = 
@@ -234,9 +237,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
            
+            let retColsExpr =
+                QuotationHelpers.arrayExpr retCols |> snd
+
             ProvidedMethod(buildSprocName sproc.Name.ProcName,parameters,ty, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->  
             
-                <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+                <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
@@ -270,7 +276,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     walkSproc path containerType (Some typ) (createdTypes.Add(path, typ)) next 
             | Sproc(sproc) ->
                     match containerType, previousType with
-                    | Some(containerType), Some(previousType) -> previousType.AddMember(generateSprocMethod containerType sproc); createdTypes
+                    | Some(containerType), Some(previousType) -> previousType.AddMemberDelayed(fun () -> generateSprocMethod containerType sproc); createdTypes
                     | _,_ -> failwithf "Could not generate sproc undefined root or previous type"
             | Empty -> createdTypes
 

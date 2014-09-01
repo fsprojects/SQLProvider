@@ -164,18 +164,15 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME(100M).ReturnValue
-
-
-[<Literal>]
-let connStr = "Data Source=SQLSERVER;Initial Catalog=AdventureWorks;User Id=sa;Password=password"
-[<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
-
-let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-type AW = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER, ResolutionPath = resolutionFolder>
-let ctx = AW.GetDataContext()
-
-ctx.Functions.UFNGETSTOCK(1).ReturnValue
+//[<Literal>]
+//let connStr = "Data Source=SQLSERVER;Initial Catalog=AdventureWorks;User Id=sa;Password=password"
+//[<Literal>]
+//let resolutionFolder = __SOURCE_DIRECTORY__
+//FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+//
+//let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+//
+//type AW = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER, ResolutionPath = resolutionFolder>
+//let ctx = AW.GetDataContext()
+//
+//ctx.Functions.UFNGETSTOCK(1).ReturnValue

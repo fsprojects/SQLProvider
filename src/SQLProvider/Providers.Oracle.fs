@@ -282,34 +282,34 @@ module internal Oracle =
                             |> Seq.choose id
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
-                            
-                        let retCols = 
-                            sparams
-                            |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                            |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                                               then "ReturnValue" + (string i)
-                                                               elif (String.IsNullOrEmpty p.Name)
-                                                               then "ReturnValue"
-                                                               else p.Name); 
-                                                       TypeMapping = p.TypeMapping; 
-                                                       Direction = p.Direction; 
-                                                       Ordinal = p.Ordinal;
-                                                       Length = None 
-                                                     })
-                        
+                                                    
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; ReturnColumns = retCols })))
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
+                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; })))
                       ) 
         |> Seq.toList
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+    let getSprocReturnColumns (con:IDbConnection) (def:SprocDefinition) =
+        def.Params
+        |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                           then "ReturnValue" + (string i)
+                                           elif (String.IsNullOrEmpty p.Name)
+                                           then "ReturnValue"
+                                           else p.Name); 
+                                   TypeMapping = p.TypeMapping; 
+                                   Direction = p.Direction; 
+                                   Ordinal = p.Ordinal;
+                                   Length = None 
+                                 })
+
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
-             definition.ReturnColumns
-             |> List.map(fun ip ->
+             retCols
+             |> Array.map(fun ip ->
                  let p = createCommandParameter ip null
                  (ip.Ordinal, p))
         
@@ -318,29 +318,30 @@ module internal Oracle =
              |> List.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
+             |> List.toArray
         
-        List.append outps inps
-        |> List.sortBy fst
-        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        Array.append outps inps
+        |> Array.sortBy fst
+        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         
         let entities = 
-            match definition.ReturnColumns with
-            | [] -> com.ExecuteNonQuery() |> ignore; Unit
-            | [col] ->
+            match retCols with
+            | [||] -> com.ExecuteNonQuery() |> ignore; Unit
+            | [|col|] ->
                 use reader = com.ExecuteReader()
                 match col.TypeMapping.ProviderTypeName with
                 | Some "REF CURSOR" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
                 | _ -> 
-                    match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                     | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
                     | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
             | cols -> 
                 com.ExecuteNonQuery() |> ignore
                 let returnValues = 
                     cols 
-                    |> List.map (fun col ->
-                        match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    |> Array.map (fun col ->
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                         | Some(_,p) ->
                             match col.TypeMapping.ProviderTypeName with
                             | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
@@ -367,7 +368,9 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, definition:SprocDefinition, values:obj array) = Oracle.executeSprocCommand con definition values
+        member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = Oracle.executeSprocCommand con definition retCols values
+        member __.GetSprocReturnColumns(con, def) = Oracle.getSprocReturnColumns con def
+
         member __.CreateTypeMappings(con) = 
             SqlHelpers.connect con (fun con -> 
                 Oracle.createTypeMappings con

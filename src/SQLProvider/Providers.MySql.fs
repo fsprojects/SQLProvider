@@ -175,23 +175,6 @@ module MySql =
                 | None -> Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
                 | Some (name,parameters) -> Some(name, parameters))
 
-        let getSprocReturnCols isFunction (parameters:QueryParameter list) = 
-            match parameters |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
-            | [] when not(isFunction) ->
-                match findDbType "cursor" with
-                | None -> []
-                | Some m -> 
-                    [{
-                        Name = "ResultSet"
-                        TypeMapping = m
-                        Direction = ParameterDirection.Output
-                        Length = None
-                        Ordinal = 0
-                     }]
-            | [] -> []
-            | a -> a
-            
-
         parameters
         |> Seq.map (fun (name, parameters) -> 
                         let sparams = 
@@ -201,14 +184,28 @@ module MySql =
                             |> Seq.toList
                         
                         let isFunction, isProcedure =  Set.contains name.ProcName functions, Set.contains name.ProcName procedures
-                        let retCols = getSprocReturnCols isFunction sparams
 
                         match isFunction, isProcedure with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
                         | _, _ -> Empty
                       ) 
         |> Seq.toList
+
+    let getSprocReturnCols con (def:SprocDefinition) = 
+        match def.Params |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
+        | [] ->
+            match findDbType "cursor" with
+            | None -> []
+            | Some m -> 
+                [{
+                    Name = "ResultSet"
+                    TypeMapping = m
+                    Direction = ParameterDirection.Output
+                    Length = None
+                    Ordinal = 0
+                 }]
+        | a -> a
 
     let readParameter (parameter:IDbDataParameter) =
         if parameter <> null 
@@ -217,12 +214,12 @@ module MySql =
             par.Value
         else null
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
-             definition.ReturnColumns
-             |> List.map(fun ip ->
+             retCols
+             |> Array.map(fun ip ->
                  let p = createCommandParameter ip null
                  (ip.Ordinal, p))
         
@@ -231,10 +228,11 @@ module MySql =
              |> List.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
+             |> List.toArray
         
-        List.append outps inps
-        |> List.sortBy fst
-        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        Array.append outps inps
+        |> Array.sortBy fst
+        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
@@ -243,14 +241,14 @@ module MySql =
                 reader.NextResult() |> ignore
                 result
             | _ -> 
-                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
                 | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         
         
-        match definition.ReturnColumns with
-        | [] -> com.ExecuteNonQuery() |> ignore; Unit
-        | [retCol] ->
+        match retCols with
+        | [||] -> com.ExecuteNonQuery() |> ignore; Unit
+        | [|retCol|] ->
             use reader = com.ExecuteReader()
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
@@ -258,12 +256,12 @@ module MySql =
                 reader.NextResult() |> ignore
                 result
             | _ ->
-                match outps |> List.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
                 | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         | cols -> 
             use reader = com.ExecuteReader()
-            Set(cols |> List.map (processReturnColumn reader))
+            Set(cols |> Array.map (processReturnColumn reader))
 
 type internal MySqlProvider(resolutionPath, owner) as this =
     let pkLookup =     Dictionary<string,string>()
@@ -280,7 +278,9 @@ type internal MySqlProvider(resolutionPath, owner) as this =
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
 
-        member __.ExecuteSprocCommand(com,definition,values) = MySql.executeSprocCommand com definition values
+        member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
+
+        member __.GetSprocReturnColumns(con, sprocDefinition) = MySql.getSprocReturnCols con sprocDefinition
 
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
    
