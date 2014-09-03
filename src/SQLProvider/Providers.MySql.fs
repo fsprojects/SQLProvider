@@ -113,7 +113,7 @@ module MySql =
         con.Close(); result
 
     let executeSql sql (con:IDbConnection) =        
-        SqlHelpers.executeSql createCommand sql con  
+        Sql.executeSql createCommand sql con  
 
     let executeSqlAsDataTable sql con = 
         executeSql sql con
@@ -126,28 +126,28 @@ module MySql =
        
         let procedures,functions = 
             getSchema "Procedures" [||] con 
-            |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["routine_name"], SqlHelpers.dbUnbox<string> row.["routine_type"])
+            |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["routine_name"], Sql.dbUnbox<string> row.["routine_type"])
             |> List.partition (fun (_,t) -> t = "PROCEDURE")
 
         let procedures = procedures |> List.map fst |> Set.ofList
         let functions = functions |> List.map fst |> Set.ofList
 
         let getName (row:DataRow) = 
-            let owner = SqlHelpers.dbUnboxWithDefault<string> owner row.["specific_schema"]
-            let procName = (SqlHelpers.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
+            let owner = Sql.dbUnboxWithDefault<string> owner row.["specific_schema"]
+            let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
             { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
         let createSprocParameters (row:DataRow) = 
-            let dataType = SqlHelpers.dbUnbox row.["data_type"]
-            let argumentName = SqlHelpers.dbUnbox row.["parameter_name"]
+            let dataType = Sql.dbUnbox row.["data_type"]
+            let argumentName = Sql.dbUnbox row.["parameter_name"]
             let maxLength = 
-                let r = SqlHelpers.dbUnboxWithDefault<int> -1 row.["character_maximum_length"]
+                let r = Sql.dbUnboxWithDefault<int> -1 row.["character_maximum_length"]
                 if r = -1 then None else Some r
 
             findDbType dataType 
             |> Option.map (fun m ->
-                let ordinal_position = SqlHelpers.dbUnboxWithDefault<int> 0 row.["ORDINAL_POSITION"]
-                let parameter_mode = SqlHelpers.dbUnbox<string> row.["PARAMETER_MODE"]
+                let ordinal_position = Sql.dbUnboxWithDefault<int> 0 row.["ORDINAL_POSITION"]
+                let parameter_mode = Sql.dbUnbox<string> row.["PARAMETER_MODE"]
                 let returnValue = argumentName = null && ordinal_position = 0
                 let direction = 
                     match parameter_mode with
@@ -237,7 +237,7 @@ module MySql =
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
-                let result = ResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ -> 
@@ -252,7 +252,7 @@ module MySql =
             use reader = com.ExecuteReader()
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
-                let result = SingleResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ ->

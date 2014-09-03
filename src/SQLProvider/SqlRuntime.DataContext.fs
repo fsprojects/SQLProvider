@@ -9,6 +9,20 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
+module internal ProviderBuilder = 
+    open FSharp.Data.Sql.Providers
+
+    let createProvider vendor resolutionPath owner =
+        match vendor with                
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
+        | _ -> failwith "Unsupported database provider" 
+
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
@@ -17,7 +31,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 

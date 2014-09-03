@@ -150,7 +150,7 @@ module internal Oracle =
              then null
              else
                 let data = 
-                    SqlHelpers.dataReaderToArray (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader) 
+                    Sql.dataReaderToArray (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader) 
                     |> Seq.ofArray
                 data |> box
         | _, _ ->
@@ -161,13 +161,13 @@ module internal Oracle =
     let getPrimaryKeys con =
         let indexColumns = 
             getSchema "IndexColumns" [|owner|] con
-            |> DataTable.map (fun row -> SqlHelpers.dbUnbox row.[1], SqlHelpers.dbUnbox row.[4])
+            |> DataTable.map (fun row -> Sql.dbUnbox row.[1], Sql.dbUnbox row.[4])
             |> Map.ofList
         
         getSchema "PrimaryKeys" [|owner|] con
         |> DataTable.mapChoose (fun row ->
-            let indexName = SqlHelpers.dbUnbox row.[15]
-            let tableName = SqlHelpers.dbUnbox row.[2]
+            let indexName = Sql.dbUnbox row.[15]
+            let tableName = Sql.dbUnbox row.[2]
             match Map.tryFind indexName indexColumns with
             | Some(column) -> 
                 let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
@@ -177,15 +177,15 @@ module internal Oracle =
     let getTables con = 
         getSchema "Tables" [|owner|] con
         |> DataTable.map (fun row -> 
-                              let name = SqlHelpers.dbUnbox row.[1]
-                              { Schema = SqlHelpers.dbUnbox row.[0]; Name = name; Type = SqlHelpers.dbUnbox row.[2] })
+                              let name = Sql.dbUnbox row.[1]
+                              { Schema = Sql.dbUnbox row.[0]; Name = name; Type = Sql.dbUnbox row.[2] })
 
     let getColumns (primaryKeys:IDictionary<_,_>) table con = 
         getSchema "Columns" [|owner; table|] con
         |> DataTable.mapChoose (fun row -> 
-                let typ = SqlHelpers.dbUnbox row.[4]
-                let nullable = (SqlHelpers.dbUnbox row.[8]) = "Y"
-                let colName =  (SqlHelpers.dbUnbox row.[2])
+                let typ = Sql.dbUnbox row.[4]
+                let nullable = (Sql.dbUnbox row.[8]) = "Y"
+                let colName =  (Sql.dbUnbox row.[2])
                 match findDbType typ with
                 | Some(m) -> 
                         { Name = colName
@@ -197,21 +197,21 @@ module internal Oracle =
     let getRelationships (primaryKeys:IDictionary<_,_>) table con =
         let foreignKeyCols = 
             getSchema "ForeignKeyColumns" [|owner;table|] con
-            |> DataTable.map (fun row -> (SqlHelpers.dbUnbox row.[1], SqlHelpers.dbUnbox row.[3])) 
+            |> DataTable.map (fun row -> (Sql.dbUnbox row.[1], Sql.dbUnbox row.[3])) 
             |> Map.ofList
         let rels = 
             getSchema "ForeignKeys" [|owner;table|] con
             |> DataTable.mapChoose (fun row -> 
-                let name = SqlHelpers.dbUnbox row.[4]
-                let pkName = SqlHelpers.dbUnbox row.[0]
+                let name = Sql.dbUnbox row.[4]
+                let pkName = Sql.dbUnbox row.[0]
                 match primaryKeys.TryGetValue(table) with
                 | true, pk ->
                     match foreignKeyCols.TryFind name with
                     | Some(fk) ->
                          { Name = name 
-                           PrimaryTable = Table.CreateFullName(owner,SqlHelpers.dbUnbox row.[2]) 
+                           PrimaryTable = Table.CreateFullName(owner,Sql.dbUnbox row.[2]) 
                            PrimaryKey = pk.Column
-                           ForeignTable = Table.CreateFullName(owner,SqlHelpers.dbUnbox row.[5])
+                           ForeignTable = Table.CreateFullName(owner,Sql.dbUnbox row.[5])
                            ForeignKey = fk } |> Some
                     | None -> None
                 | false, _ -> None
@@ -235,33 +235,33 @@ module internal Oracle =
 
     let getSprocs con =
 
-        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> SqlHelpers.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
 
         let getName (row:DataRow) = 
-            let owner = SqlHelpers.dbUnbox row.["OWNER"]
-            let (procName, packageName) = (SqlHelpers.dbUnbox row.["OBJECT_NAME"], SqlHelpers.dbUnbox row.["PACKAGE_NAME"])
+            let owner = Sql.dbUnbox row.["OWNER"]
+            let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
             { ProcName = procName; Owner = owner; PackageName = packageName }
 
         let createSprocParameters (row:DataRow) = 
-            let dataType = SqlHelpers.dbUnbox row.["DATA_TYPE"]
-            let argumentName = SqlHelpers.dbUnbox row.["ARGUMENT_NAME"]
-            let maxLength = Some(int(SqlHelpers.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
+            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
+            let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
 
             findDbType dataType 
             |> Option.map (fun m ->
                 let direction = 
-                    match SqlHelpers.dbUnbox row.["IN_OUT"] with
+                    match Sql.dbUnbox row.["IN_OUT"] with
                     | "IN" -> ParameterDirection.Input
                     | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
                     | "OUT" -> ParameterDirection.Output
                     | "IN/OUT" -> ParameterDirection.InputOutput
                     | a -> failwithf "Direction not supported %s" a
-                { Name = SqlHelpers.dbUnbox row.["ARGUMENT_NAME"]
+                { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
-                  Ordinal = int(SqlHelpers.dbUnbox<decimal> row.["POSITION"]) }
+                  Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
             )
 
         let parameters = 
@@ -331,7 +331,7 @@ module internal Oracle =
             | [|col|] ->
                 use reader = com.ExecuteReader()
                 match col.TypeMapping.ProviderTypeName with
-                | Some "REF CURSOR" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                | Some "REF CURSOR" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                 | _ -> 
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                     | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
@@ -372,14 +372,14 @@ type internal OracleProvider(resolutionPath, owner) =
         member __.GetSprocReturnColumns(con, def) = Oracle.getSprocReturnColumns con def
 
         member __.CreateTypeMappings(con) = 
-            SqlHelpers.connect con (fun con -> 
+            Sql.connect con (fun con -> 
                 Oracle.createTypeMappings con
                 primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
         member __.GetTables(con) =
                match tableCache with
                | [] ->
-                    let tables = SqlHelpers.connect con Oracle.getTables
+                    let tables = Sql.connect con Oracle.getTables
                     tableCache <- tables
                     tables
                 | a -> a
@@ -393,7 +393,7 @@ type internal OracleProvider(resolutionPath, owner) =
             match columnCache.TryGetValue table.FullName  with
             | true, cols -> cols
             | false, _ ->
-                let cols = SqlHelpers.connect con (Oracle.getColumns primaryKeyCache table.Name)
+                let cols = Sql.connect con (Oracle.getColumns primaryKeyCache table.Name)
                 columnCache.Add(table.FullName, cols)
                 cols
 
@@ -401,11 +401,11 @@ type internal OracleProvider(resolutionPath, owner) =
                 match relationshipCache.TryGetValue(table.FullName) with
                 | true, rels -> rels
                 | false, _ ->
-                    let rels = SqlHelpers.connect con (Oracle.getRelationships primaryKeyCache table.Name)
+                    let rels = Sql.connect con (Oracle.getRelationships primaryKeyCache table.Name)
                     relationshipCache.Add(table.FullName, rels)
                     rels
         
-        member __.GetSprocs(con) = SqlHelpers.connect con Oracle.getSprocs
+        member __.GetSprocs(con) = Sql.connect con Oracle.getSprocs
 
         member __.GetIndividualsQueryText(table,amount) = Oracle.getIndivdualsQueryText amount table
 

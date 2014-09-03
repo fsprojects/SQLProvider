@@ -231,7 +231,7 @@ module MSSqlServer =
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
-                let result = ResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ -> 
@@ -246,7 +246,7 @@ module MSSqlServer =
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" -> 
                 use reader = com.ExecuteReader() :?> SqlDataReader
-                let result = SingleResultSet(retCol.Name, SqlHelpers.dataReaderToArray reader)
+                let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ -> 

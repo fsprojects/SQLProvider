@@ -181,7 +181,7 @@ module PostgreSQL =
              then null
              else
                 let data = 
-                    SqlHelpers.dataReaderToArray (parameter.Value :?> IDataReader) 
+                    Sql.dataReaderToArray (parameter.Value :?> IDataReader) 
                     |> Seq.ofArray
                 data |> box
         | _, _ ->
@@ -217,12 +217,12 @@ module PostgreSQL =
                 | [|col|] ->
                     use reader = com.ExecuteReader()
                     match col.TypeMapping.ProviderTypeName with
-                    | Some "refcursor" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                    | Some "refcursor" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | Some "SETOF refcursor" ->
-                        let results = ref [ResultSet("ReturnValue", SqlHelpers.dataReaderToArray reader)]
+                        let results = ref [ResultSet("ReturnValue", Sql.dataReaderToArray reader)]
                         let i = ref 1
                         while reader.NextResult() do
-                             results := ResultSet("ReturnValue" + (string !i), SqlHelpers.dataReaderToArray reader) :: !results
+                             results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
                              incr(i)
                         Set(!results)
                     | _ -> 
@@ -266,11 +266,11 @@ module PostgreSQL =
   left join pg_type t
   on p.prorettype = t.oid
   where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1)"
-        SqlHelpers.executeSqlAsDataTable createCommand query con
+        Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r -> 
-            let name = { ProcName = (SqlHelpers.dbUnbox<string> r.["name"]); Owner = (SqlHelpers.dbUnbox<string> r.["schema_name"]); PackageName = String.Empty }
+            let name = { ProcName = (Sql.dbUnbox<string> r.["name"]); Owner = (Sql.dbUnbox<string> r.["schema_name"]); PackageName = String.Empty }
             let sparams = 
-                (SqlHelpers.dbUnbox<string> r.["args"]).Replace("character varying", "varchar").Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                (Sql.dbUnbox<string> r.["args"]).Replace("character varying", "varchar").Split([|','|], StringSplitOptions.RemoveEmptyEntries)
                 |> Array.mapi (fun i arg -> 
                     match arg.Split([|' '|], StringSplitOptions.RemoveEmptyEntries) with
                     | [|"OUT"; name; typ|] -> 
@@ -309,7 +309,7 @@ module PostgreSQL =
 
 
 
-            match SqlHelpers.dbUnbox<string> r.["routine_type"] with
+            match Sql.dbUnbox<string> r.["routine_type"] with
             | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
             | "PROCEDURE" -> Root("Procedures", Sproc({ Name = name; Params = sparams; }))
             | _ -> Empty
@@ -334,11 +334,11 @@ module PostgreSQL =
               left join pg_type t
               on p.prorettype = t.oid
               where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1) and p.proname = '%s'" def.Name.ProcName
-        SqlHelpers.executeSqlAsDataTable createCommand query con
+        Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map 
             (fun r -> 
                     let retCols = 
-                        (SqlHelpers.dbUnbox<string> r.["returntype"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                        (Sql.dbUnbox<string> r.["returntype"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
                         |> Array.mapi (fun i returnType ->  
                                 findDbType returnType
                                 |> Option.map (fun m ->
