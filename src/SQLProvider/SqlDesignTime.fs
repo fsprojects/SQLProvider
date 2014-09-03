@@ -25,7 +25,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
      
     let createTypes(conString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
-        let prov = ProviderBuilder.createProvider dbVendor resolutionPath owner
+        let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
         let conString = 
             match ConfigHelpers.tryGetConnectionString config.ResolutionFolder conStringName conString with
             | Some(cs) -> cs
@@ -52,7 +52,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,owner)
+        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -377,7 +377,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
              ] )
-
+        
+        let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
@@ -385,7 +386,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 ProvidedMethod ("GetDataContext", [],
                                 serviceType, IsStaticMethod=true,
                                 InvokeCode = (fun _ -> 
-                                    <@@ SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,owner) :> ISqlDataContext @@>))
+                                    <@@ SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                    
@@ -394,7 +395,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, owner) :> ISqlDataContext @@> ))
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, owner) :> ISqlDataContext @@> ))
                       
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>"
@@ -403,7 +404,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
                                                             serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], owner) :> ISqlDataContext  @@>))
+                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], %%referencedAssemblyExpr, owner) :> ISqlDataContext  @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>

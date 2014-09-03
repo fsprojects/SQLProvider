@@ -12,18 +12,18 @@ open FSharp.Data.Sql.Schema
 module internal ProviderBuilder = 
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath owner =
+    let createProvider vendor resolutionPath referencedAssemblies owner =
         match vendor with                
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner) :> ISqlProvider
-        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner) :> ISqlProvider
-        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
         | _ -> failwith "Unsupported database provider" 
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -31,7 +31,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = ProviderBuilder.createProvider providerType resolutionPath owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 

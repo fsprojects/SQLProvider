@@ -12,17 +12,14 @@ module MySql =
     
     let mutable resolutionPath = String.Empty
     let mutable owner = String.Empty
+    let mutable referencedAssemblies = [||]
+
+    let assemblyNames = [
+        "MySql.Data.dll"
+    ]
 
     let assembly =
-        lazy
-            try
-                let path = 
-                    if String.IsNullOrEmpty resolutionPath then "MySql.Data.dll"
-                    else System.IO.Path.Combine(resolutionPath,"MySql.Data.dll")
-                let assembly = Reflection.Assembly.LoadFrom(path)
-                Choice1Of2 assembly
-            with e -> 
-                Choice2Of2 e
+        lazy Reflection.tryLoadAssembly resolutionPath referencedAssemblies assemblyNames
 
     let findType name = 
         match assembly.Value with
@@ -263,7 +260,7 @@ module MySql =
             use reader = com.ExecuteReader()
             Set(cols |> Array.map (processReturnColumn reader))
 
-type internal MySqlProvider(resolutionPath, owner) as this =
+type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -272,6 +269,7 @@ type internal MySqlProvider(resolutionPath, owner) as this =
     do
         MySql.resolutionPath <- resolutionPath
         MySql.owner <- owner
+        MySql.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString

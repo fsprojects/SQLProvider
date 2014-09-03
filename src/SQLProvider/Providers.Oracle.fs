@@ -11,6 +11,7 @@ open FSharp.Data.Sql.Common
 module internal Oracle =
     
     let mutable resolutionPath = String.Empty
+    let mutable referencedAssemblies : string array = [||]
     let mutable owner = String.Empty
 
     let assemblyNames = 
@@ -20,21 +21,8 @@ module internal Oracle =
         ]
 
     let assembly =
-        lazy 
-            assemblyNames 
-            |> List.pick (fun asm ->
-                try 
-                    let loadedAsm =              
-                        Assembly.LoadFrom(
-                            if String.IsNullOrEmpty resolutionPath then asm
-                            else System.IO.Path.Combine(resolutionPath,asm)
-                            ) 
-                    if loadedAsm <> null
-                    then Some(Choice1Of2 loadedAsm)
-                    else None
-                with e ->
-                    Some(Choice2Of2 e))
-    
+        lazy Reflection.tryLoadAssembly resolutionPath referencedAssemblies assemblyNames
+
     let findType name = 
         match assembly.Value with
         | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
@@ -353,7 +341,7 @@ module internal Oracle =
         entities                 
 
 
-type internal OracleProvider(resolutionPath, owner) =
+type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
     
     let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new Dictionary<string, Relationship list * Relationship list>()
@@ -362,6 +350,7 @@ type internal OracleProvider(resolutionPath, owner) =
 
     do
         Oracle.owner <- owner
+        Oracle.referencedAssemblies <- referencedAssemblies
         Oracle.resolutionPath <- resolutionPath
     
     interface ISqlProvider with

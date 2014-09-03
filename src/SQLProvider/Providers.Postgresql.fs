@@ -12,26 +12,14 @@ module PostgreSQL =
     
     let mutable resolutionPath = String.Empty
     let mutable owner = "public"
+    let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
         "Npgsql.dll"
     ]
 
     let assembly =
-        lazy 
-            assemblyNames 
-            |> List.pick (fun asm ->
-                try 
-                    let loadedAsm =              
-                        Assembly.LoadFrom(
-                            if String.IsNullOrEmpty resolutionPath then asm
-                            else System.IO.Path.Combine(resolutionPath,asm)
-                            ) 
-                    if loadedAsm <> null
-                    then Some(Choice1Of2 loadedAsm)
-                    else None
-                with e ->
-                    Some(Choice2Of2 e))
+        lazy Reflection.tryLoadAssembly resolutionPath referencedAssemblies assemblyNames
     
     let findType name = 
         match assembly.Value with
@@ -357,7 +345,7 @@ module PostgreSQL =
        |> Seq.head          
             
 
-type internal PostgresqlProvider(resolutionPath, owner) as this =
+type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -365,6 +353,7 @@ type internal PostgresqlProvider(resolutionPath, owner) as this =
     
     do 
         PostgreSQL.resolutionPath <- resolutionPath
+        PostgreSQL.referencedAssemblies <- referencedAssemblies
 
         if not(String.IsNullOrEmpty owner) 
         then PostgreSQL.owner <- owner

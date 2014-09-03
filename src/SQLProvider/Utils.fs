@@ -55,6 +55,29 @@ module internal SchemaProjections =
 
     let buildSprocName (sprocName:string) = sprocName.ToUpper()
 
+module internal Reflection = 
+    
+    open System.Reflection
+
+    let tryLoadAssembly resolutionPath (referencedAssemblies:string[]) assemblyNames =
+        let assPaths = 
+            match referencedAssemblies |> Array.tryFind (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a))) with
+            | Some(foundPath) -> [foundPath]
+            | None ->  assemblyNames
+        assPaths
+        |> List.pick (fun asm ->
+            try 
+                let loadedAsm =              
+                    Assembly.LoadFrom(
+                        if String.IsNullOrEmpty resolutionPath then asm
+                        else System.IO.Path.Combine(resolutionPath,asm)
+                        ) 
+                if loadedAsm <> null
+                then Some(Choice1Of2 loadedAsm)
+                else None
+            with e ->
+                Some(Choice2Of2 e))
+
 module internal Sql =
     
     open System
