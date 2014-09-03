@@ -59,24 +59,28 @@ module internal Reflection =
     
     open System.Reflection
 
-    let tryLoadAssembly resolutionPath (referencedAssemblies:string[]) assemblyNames =
-        let assPaths = 
-            match referencedAssemblies |> Array.tryFind (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a))) with
-            | Some(foundPath) -> [foundPath]
-            | None ->  assemblyNames
-        assPaths
-        |> List.pick (fun asm ->
-            try 
-                let loadedAsm =              
-                    Assembly.LoadFrom(
-                        if String.IsNullOrEmpty resolutionPath then asm
-                        else System.IO.Path.Combine(resolutionPath,asm)
-                        ) 
-                if loadedAsm <> null
-                then Some(Choice1Of2 loadedAsm)
-                else None
-            with e ->
-                Some(Choice2Of2 e))
+    let tryLoadAssembly path = 
+         try 
+             let loadedAsm = Assembly.LoadFrom(path) 
+             if loadedAsm <> null
+             then Some(Choice1Of2 loadedAsm)
+             else None
+         with e ->
+             Some(Choice2Of2 e)
+
+    let tryLoadAssemblyFrom resolutionPath (referencedAssemblies:string[]) assemblyNames =
+        let referencedPaths = 
+            referencedAssemblies 
+            |> Array.filter (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a)))
+            |> Array.toList
+        
+        let resolutionPaths =
+            assemblyNames 
+            |> List.map (fun asm ->
+                if String.IsNullOrEmpty resolutionPath then asm
+                else System.IO.Path.Combine(resolutionPath,asm))
+
+        (assemblyNames @ resolutionPaths @ referencedPaths) |> List.pick tryLoadAssembly
 
 module internal Sql =
     

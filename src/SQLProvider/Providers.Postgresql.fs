@@ -19,7 +19,7 @@ module PostgreSQL =
     ]
 
     let assembly =
-        lazy Reflection.tryLoadAssembly resolutionPath referencedAssemblies assemblyNames
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
     
     let findType name = 
         match assembly.Value with

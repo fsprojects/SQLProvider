@@ -25,7 +25,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
         ]
 
     let assembly =
-        lazy Reflection.tryLoadAssembly resolutionPath referencedAssemblies assemblyNames
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
     let findType pred = 
         match assembly.Value with
