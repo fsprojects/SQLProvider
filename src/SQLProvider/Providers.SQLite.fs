@@ -29,11 +29,9 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
 
     let findType pred = 
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find pred
-        | Choice2Of2(exn) -> 
-            match exn with
-            | :? KeyNotFoundException as knf -> failwithf "Unable to resolve SQLLite assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
-            | exn -> raise exn
+        | Some(assembly) -> assembly.GetTypes() |> Array.find pred
+        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
    
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))

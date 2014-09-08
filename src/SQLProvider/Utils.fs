@@ -80,7 +80,12 @@ module internal Reflection =
                 if String.IsNullOrEmpty resolutionPath then asm
                 else System.IO.Path.Combine(resolutionPath,asm))
 
-        (assemblyNames @ resolutionPaths @ referencedPaths) |> List.pick tryLoadAssembly
+        (assemblyNames @ resolutionPaths @ referencedPaths) 
+        |> List.tryPick (fun p -> 
+            match tryLoadAssembly p with
+            | Some(Choice1Of2 ass) -> Some ass
+            | _ -> None
+         )
 
 module internal Sql =
     
