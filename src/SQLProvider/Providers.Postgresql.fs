@@ -12,26 +12,14 @@ module PostgreSQL =
     
     let mutable resolutionPath = String.Empty
     let mutable owner = "public"
+    let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
         "Npgsql.dll"
     ]
 
     let assembly =
-        lazy 
-            assemblyNames 
-            |> List.pick (fun asm ->
-                try 
-                    let loadedAsm =              
-                        Assembly.LoadFrom(
-                            if String.IsNullOrEmpty resolutionPath then asm
-                            else System.IO.Path.Combine(resolutionPath,asm)
-                            ) 
-                    if loadedAsm <> null
-                    then Some(Choice1Of2 loadedAsm)
-                    else None
-                with e ->
-                    Some(Choice2Of2 e))
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
     
     let findType name = 
         match assembly.Value with
@@ -181,7 +169,7 @@ module PostgreSQL =
              then null
              else
                 let data = 
-                    SqlHelpers.dataReaderToArray (parameter.Value :?> IDataReader) 
+                    Sql.dataReaderToArray (parameter.Value :?> IDataReader) 
                     |> Seq.ofArray
                 data |> box
         | _, _ ->
@@ -189,12 +177,12 @@ module PostgreSQL =
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (values:obj[]) = 
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
-             definition.ReturnColumns
-             |> List.map(fun ip ->
+             retCols
+             |> Array.map(fun ip ->
                  let p = createCommandParameter true ip null
                  (ip.Ordinal, p))
         
@@ -203,37 +191,38 @@ module PostgreSQL =
              |> List.mapi(fun i ip ->
                  let p = createCommandParameter true ip values.[i]
                  (ip.Ordinal,p))
+             |> List.toArray
         
-        List.append outps inps
-        |> List.sortBy fst
-        |> List.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        Array.append outps inps
+        |> Array.sortBy fst
+        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         let tran = com.Connection.BeginTransaction()
         let entities = 
             try
-                match definition.ReturnColumns with
-                | [] -> com.ExecuteNonQuery() |> ignore; Unit
-                | [col] ->
+                match retCols with
+                | [||] -> com.ExecuteNonQuery() |> ignore; Unit
+                | [|col|] ->
                     use reader = com.ExecuteReader()
                     match col.TypeMapping.ProviderTypeName with
-                    | Some "refcursor" -> SingleResultSet(col.Name, SqlHelpers.dataReaderToArray reader)
+                    | Some "refcursor" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | Some "SETOF refcursor" ->
-                        let results = ref [ResultSet("ReturnValue", SqlHelpers.dataReaderToArray reader)]
+                        let results = ref [ResultSet("ReturnValue", Sql.dataReaderToArray reader)]
                         let i = ref 1
                         while reader.NextResult() do
-                             results := ResultSet("ReturnValue" + (string !i), SqlHelpers.dataReaderToArray reader) :: !results
+                             results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
                              incr(i)
                         Set(!results)
                     | _ -> 
-                        match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                         | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
                         | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                 | cols -> 
                     com.ExecuteNonQuery() |> ignore
                     let returnValues = 
                         cols 
-                        |> List.map (fun col ->
-                            match outps |> List.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        |> Array.map (fun col ->
+                            match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->
                                 match col.TypeMapping.ProviderTypeName with
                                 | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
@@ -265,11 +254,11 @@ module PostgreSQL =
   left join pg_type t
   on p.prorettype = t.oid
   where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1)"
-        SqlHelpers.executeSqlAsDataTable createCommand query con
+        Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r -> 
-            let name = { ProcName = (SqlHelpers.dbUnbox<string> r.["name"]); Owner = (SqlHelpers.dbUnbox<string> r.["schema_name"]); PackageName = String.Empty }
+            let name = { ProcName = (Sql.dbUnbox<string> r.["name"]); Owner = (Sql.dbUnbox<string> r.["schema_name"]); PackageName = String.Empty }
             let sparams = 
-                (SqlHelpers.dbUnbox<string> r.["args"]).Replace("character varying", "varchar").Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                (Sql.dbUnbox<string> r.["args"]).Replace("character varying", "varchar").Split([|','|], StringSplitOptions.RemoveEmptyEntries)
                 |> Array.mapi (fun i arg -> 
                     match arg.Split([|' '|], StringSplitOptions.RemoveEmptyEntries) with
                     | [|"OUT"; name; typ|] -> 
@@ -306,32 +295,57 @@ module PostgreSQL =
                 )
                 |> Array.choose id |> Array.toList
 
-            let retCols = 
-                (SqlHelpers.dbUnbox<string> r.["returntype"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
-                |> Array.mapi (fun i returnType ->  
-                        findDbType returnType
-                        |> Option.map (fun m ->
-                            { Name = if i = 0 then "ReturnValue" else "ReturnValue" + (string i) 
-                              TypeMapping = m; 
-                              Direction = ParameterDirection.ReturnValue; 
-                              Ordinal = i;
-                              Length = None 
-                            }
-                        )
-                )
-                |> Array.choose id |> Array.toList
-            
-            let retCols = retCols @ (sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input))
 
-            match SqlHelpers.dbUnbox<string> r.["routine_type"] with
-            | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
-            | "PROCEDURE" -> Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = retCols }))
+
+            match Sql.dbUnbox<string> r.["routine_type"] with
+            | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
+            | "PROCEDURE" -> Root("Procedures", Sproc({ Name = name; Params = sparams; }))
             | _ -> Empty
         )
-                
+
+    let getSprocReturnCols con (def:SprocDefinition) = 
+        let query = 
+             sprintf "select
+              cast(p.oid as varchar) as id,
+              current_database() as catalog_name,
+              n.nspname AS schema_name,
+              p.proname as name,
+              pg_get_function_result(p.oid) as returntype,
+              pg_get_function_arguments(p.oid) as args,
+              case 
+            	when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
+            	else 'PROCEDURE'
+              end as routine_type
+              from pg_proc p
+              left join pg_namespace n
+              on n.oid = p.pronamespace
+              left join pg_type t
+              on p.prorettype = t.oid
+              where n.nspname not in ('pg_catalog','information_schema') and p.proname not in (select pg_proc.proname from pg_proc group by pg_proc.proname having count(pg_proc.proname) > 1) and p.proname = '%s'" def.Name.ProcName
+        Sql.executeSqlAsDataTable createCommand query con
+        |> DataTable.map 
+            (fun r -> 
+                    let retCols = 
+                        (Sql.dbUnbox<string> r.["returntype"]).Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+                        |> Array.mapi (fun i returnType ->  
+                                findDbType returnType
+                                |> Option.map (fun m ->
+                                    { Name = if i = 0 then "ReturnValue" else "ReturnValue" + (string i) 
+                                      TypeMapping = m; 
+                                      Direction = ParameterDirection.ReturnValue; 
+                                      Ordinal = i;
+                                      Length = None 
+                                    }
+                                )
+                        )
+                        |> Array.choose id 
+                        |> Array.toList
+            
+                    retCols @ (def.Params |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)) )
+       |> Seq.head          
             
 
-type internal PostgresqlProvider(resolutionPath, owner) as this =
+type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup =     Dictionary<string,string>()
     let tableLookup =  Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()    
@@ -339,6 +353,7 @@ type internal PostgresqlProvider(resolutionPath, owner) as this =
     
     do 
         PostgreSQL.resolutionPath <- resolutionPath
+        PostgreSQL.referencedAssemblies <- referencedAssemblies
 
         if not(String.IsNullOrEmpty owner) 
         then PostgreSQL.owner <- owner
@@ -351,7 +366,8 @@ type internal PostgresqlProvider(resolutionPath, owner) as this =
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
-        member __.ExecuteSprocCommand(com,definition,values) =  PostgreSQL.executeSprocCommand com definition values
+        member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = PostgreSQL.executeSprocCommand con definition retCols values
+        member __.GetSprocReturnColumns(con, def) = PostgreSQL.getSprocReturnCols con def
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con) =            

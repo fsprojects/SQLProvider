@@ -9,7 +9,21 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
+module internal ProviderBuilder = 
+    open FSharp.Data.Sql.Providers
+
+    let createProvider vendor resolutionPath referencedAssemblies owner =
+        match vendor with                
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
+        | _ -> failwith "Unsupported database provider" 
+
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -17,7 +31,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 
@@ -58,7 +72,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(definition:SprocDefinition, values:obj array) =
+        member this.CallSproc(definition:SprocDefinition, retCols:QueryParameter[], values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
@@ -77,7 +91,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                    |]
 
                let entities =
-                   match provider.ExecuteSprocCommand(com, definition, values) with
+                   match provider.ExecuteSprocCommand(com, definition,retCols, values) with
                    | Unit -> () |> box
                    | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
                    | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box
