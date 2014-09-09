@@ -23,11 +23,9 @@ module PostgreSQL =
     
     let findType name = 
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | Choice2Of2(exn) -> 
-            match exn with
-            | :? KeyNotFoundException as knf -> failwithf "Unable to resolve PostgreSQL assemblies. One of %s must exist in the resolution path or the GAC" (String.Join(", ", assemblyNames |> List.toArray))
-            | exn -> raise exn
+        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
    
     let connectionType = lazy (findType "NpgsqlConnection")
     let commandType = lazy    (findType  "NpgsqlCommand")
