@@ -113,8 +113,11 @@ module internal Oracle =
         
         p.Direction <- param.Direction 
         
-        p.DbType <- param.TypeMapping.DbType
-        param.TypeMapping.ProviderType |> Option.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        match param.TypeMapping.ProviderTypeName with
+        | Some _ ->
+            p.DbType <- param.TypeMapping.DbType
+            param.TypeMapping.ProviderType |> Option.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        | None -> ()
 
         match param.Length with
         | Some(length) when length >= 0 -> p.Size <- length
