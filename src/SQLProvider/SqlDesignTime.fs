@@ -247,10 +247,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               rt :> Type
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
-                    ProvidedProperty("Results",returnType, GetterCode = QuotationHelpers.quoteRecord sproc (fun args var ->                      
+                    ProvidedMethod("Invoke", parameters, returnType, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->                      
                         <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)))
 
-            ProvidedMethod(SchemaProjections.buildSprocName(sproc.Name.ProcName), parameters, resultType, InvokeCode = (fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>) ) 
+            ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, GetterCode = (fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>) ) 
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
