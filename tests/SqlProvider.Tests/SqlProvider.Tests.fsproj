@@ -56,7 +56,6 @@
     </None>
     <None Include="OracleTests.fsx" />
     <None Include="SqlServerTests.fsx" />
-    <None Include="Script1.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
