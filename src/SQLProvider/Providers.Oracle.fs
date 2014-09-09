@@ -435,6 +435,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
+
                 (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
 
             let rec filterBuilder = function 
