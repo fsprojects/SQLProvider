@@ -10,8 +10,6 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
 open Samples.FSharp.ProvidedTypes
 open FSharp.Data.Sql.Schema
-   
-
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    

@@ -123,7 +123,7 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
+ctx.Procedures.ADD_JOB_HISTORY.Invoke(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
 //Support for sprocs with no parameters
 //ctx.Procedures.SECURE_DML()
@@ -131,7 +131,7 @@ ctx.Procedures.ADD_JOB_HISTORY(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES().ResultSet do
+      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -143,7 +143,7 @@ type Region = {
 
 //Support for MARS procs
 let locations_and_regions =
-    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS()
+    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
     [
       for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
@@ -156,7 +156,7 @@ let locations_and_regions =
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
-    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER hireDate)
+    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER.Invoke hireDate)
     [
       for e in results.ResultSet do
         yield e.MapTo<Employee>()
@@ -166,4 +166,4 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.FN_EMP_FULLNAME(100u).ReturnValue
+let fullName = ctx.Functions.FN_EMP_FULLNAME.Invoke(100u).ReturnValue
