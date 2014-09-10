@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal SQLiteProvider(resolutionPath) as this =
+type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
@@ -19,17 +19,23 @@ type internal SQLiteProvider(resolutionPath) as this =
     let isMono = Type.GetType ("Mono.Runtime") <> null
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
-    let assembly =  
-            Reflection.Assembly.LoadFrom(
-                let location = if isMono then "Mono" else "System"
+    let assemblyNames =  
+        [
+           (if isMono then "Mono" else "System") + ".Data.SQLite.dll"
+        ]
 
-                // we could try and load from the gac here first if no path was specified...            
-                if String.IsNullOrEmpty resolutionPath then location + ".Data.SQLite.dll"
-                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,location + ".Data.SQLite.dll")))
+    let assembly =
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+
+    let findType pred = 
+        match assembly.Value with
+        | Some(assembly) -> assembly.GetTypes() |> Array.find pred
+        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
    
-    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
+    let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    (findType (fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
 
@@ -80,7 +86,8 @@ type internal SQLiteProvider(resolutionPath) as this =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             p
-        member __.ExecuteSprocCommand(com,definition,values) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
+        member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException()) 
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable

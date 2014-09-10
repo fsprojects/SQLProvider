@@ -139,27 +139,6 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
                | value -> e.SetColumnSilent(reader.GetName(i),value)
            yield e |]
 
-//    static member internal FromOutputParameters(con, name, provider:ISqlProvider, reader:IDataReader, cols:QueryParameter list, parameters:IDbDataParameter list) = 
-//        let e = SqlEntity(con, name)
-//        parameters 
-//        |> List.iter(fun p ->
-//            match cols |> List.tryFind (fun r -> r.Name = p.ParameterName) with
-//            | Some(col) ->
-//                         match provider.ReadDatabaseParameter(reader, p) with
-//                         | SingleResultSet(r) ->   
-//                            let entity = SqlEntity(con, name)
-//                            entity.SetData(r)
-//                            e.SetColumnSilent(col.Name, entity)
-//                         | MultipleResultSets(rs) ->
-//                            for r in rs do
-//                                let entity = SqlEntity(con, name)
-//                                entity.SetData(r)
-//                                e.SetColumnSilent(col.Name, entity)
-//                         | Scalar(o) -> e.SetColumnSilent(col.Name, o)
-//            | _ -> ()
-//        )
-//        e
-
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
         match aliasCache.TryGetValue alias with
@@ -271,7 +250,7 @@ and ISqlDataContext =
     abstract ConnectionString       : string
     abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : SprocDefinition * obj[] -> obj
+    abstract CallSproc              : SprocDefinition * QueryParameter[] * obj[] -> obj
     abstract GetIndividual          : string * obj -> SqlEntity
     abstract SubmitChangedEntity    : SqlEntity -> unit
     abstract SubmitPendingChanges   : unit -> unit
@@ -412,16 +391,19 @@ and internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
+    /// Get Sproc Return Type
+    abstract GetSprocReturnColumns : IDbConnection * SprocDefinition -> QueryParameter list
     /// Returns the db vendor specific SQL  query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
     /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
+
     abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
-    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * obj[] -> ReturnValueType
+    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * QueryParameter[] *  obj[] -> ReturnValueType
     

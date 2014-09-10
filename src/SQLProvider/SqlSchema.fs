@@ -56,7 +56,7 @@ with
 
 
 
-type SprocDefinition = { Name:SprocName; Params:QueryParameter list; ReturnColumns: QueryParameter list }
+type SprocDefinition = { Name:SprocName; Params:QueryParameter list }
 
 type Sproc =
     | Root of string * Sproc
