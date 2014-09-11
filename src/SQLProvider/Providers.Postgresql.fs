@@ -365,7 +365,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
         member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = PostgreSQL.executeSprocCommand con definition retCols values
-        member __.GetSprocReturnColumns(con, def) = PostgreSQL.getSprocReturnCols con def
+        member __.GetSprocReturnColumns(con, def) = PostgreSQL.connect con (fun con -> PostgreSQL.getSprocReturnCols con def)
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con) =            

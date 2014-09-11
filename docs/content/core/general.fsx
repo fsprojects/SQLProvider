@@ -26,7 +26,7 @@ In this declaration you are able to pass various pieces of information known as 
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.
 *)
 
-type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath >
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in the connectionString parameter.  
 In order to start exploring the database's schema and reading its data, you create a *DataContext* value.
@@ -39,14 +39,14 @@ When you press . on ``ctx``, intellisense will display a list of properties repr
 In the simplest case, you can treat these properties as sequences that can be enumerated.
 *)
 
-let customers = ctx.``[main].[Customers]`` |> Seq.toArray
+let customers = ctx.``[MAIN].[CUSTOMERS]`` |> Seq.toArray
 (**
-This is the equivalent of executing a query that selects all rows and columns from the ``[main].[customers]`` table.  
-Notice the resulting type is an array of ``[Main].[Customers]Entity``.  These entities will contain properties relating to each column name from the table.
+This is the equivalent of executing a query that selects all rows and columns from the ``[MAIN].[CUSTOMERS]`` table.  
+Notice the resulting type is an array of ``[MAIN].[CUSTOMERS]Entity``.  These entities will contain properties relating to each column name from the table.
 *)
 
 let firstCustomer = customers.[0]
-let name = firstCustomer.ContactName
+let name = firstCustomer.CONTACTNAME
 (**
 Each property is correctly typed depending on the database column definitions.  In this example, ``firstCustomer.ContactName`` is a string.
 
@@ -69,22 +69,22 @@ The SQL provider supports LINQ queries using F#'s *query expression* syntax.
 *)
 
 let customersQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
+    query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
             select customer } |> Seq.toArray
 (**
-The above example is identical to the query that was executed when ``ctx.[main].[Customers] |> Seq.toArray`` was evaluated.
+The above example is identical to the query that was executed when ``ctx.[MAIN].[CUSTOMERS] |> Seq.toArray`` was evaluated.
 You can extend this basic query include to filter criteria by introducing one or more *where* clauses
 *)
 
 let filteredQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
-            where (customer.ContactName = "John Smith")
+    query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
+            where (customer.CONTACTNAME = "John Smith")
             select customer } |> Seq.toArray
 
 let multipleFilteredQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
-            where ((customer.ContactName = "John Smith" && customer.Country = "England") 
-                    || customer.ContactName = "Joe Bloggs")
+    query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
+            where ((customer.CONTACTNAME = "John Smith" && customer.COUNTRY = "England") 
+                    || customer.CONTACTNAME = "Joe Bloggs")
             select customer } |> Seq.toArray
 
 (**
@@ -93,30 +93,30 @@ To access related data, you can either enumerate directly over the constraint pr
 *)
 
 let automaticJoinQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
+   query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
            for order in customer.FK_Orders_0_0 do
-           where (customer.ContactName = "John Smith")
+           where (customer.CONTACTNAME = "John Smith")
            select (customer,order) } |> Seq.toArray
 
 let explicitJoinQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
-           join order in ctx.``[main].[Customers]`` on (customer.CustomerID = order.CustomerID)
-           where (customer.ContactName = "John Smith")
+   query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
+           join order in ctx.``[MAIN].[CUSTOMERS]`` on (customer.CUSTOMERID = order.CUSTOMERID)
+           where (customer.CONTACTNAME = "John Smith")
            select (customer,order) } |> Seq.toArray
 
 (**
 Both of these queries have identical results, it's just one requires explicit knowledge of which tables join where and how, and the other doesn't.
 You might have noticed the select expression has now changed to (customer,order). 
-As you may expect, this will return an array of tuples where the first item is a ``[Main].[Customers]Entity`` and the second a ``[Main].[Orders]Entity``.
+As you may expect, this will return an array of tuples where the first item is a ``[MAIN].[CUSTOMERS]Entity`` and the second a ``[Main].[Orders]Entity``.
 Often you will not be interested in selecting entire entities from the database.
 Changing the select expression to use the entities' properties will cause the SQL provider to select only the columns you have asked for, which is an important optimization.
 *)
 
 let ordersQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
+   query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
            for order in customer.FK_Orders_0_0 do
-           where (customer.ContactName = "John Smith")
-           select (customer.ContactName, order.OrderDate, order.ShipAddress) } |> Seq.toArray
+           where (customer.CONTACTNAME = "John Smith")
+           select (customer.CONTACTNAME, order.ORDERDATE, order.SHIPADDRESS) } |> Seq.toArray
 (**
 The results of this query will return the name, order date and ship address only.  By doing this you no longer have access to entity types.
 The SQL provider supports various other query keywords and features that you can read about elsewhere in this documentation.
@@ -126,13 +126,13 @@ The SQL provider supports various other query keywords and features that you can
 The SQL provider has the ability via intellisense to navigate the actual data held within a table or view. You can then bind that data as an entity to a value.
 *)
 
-let BERGS = ctx.``[main].[Customers]``.Individuals.BERGS
+let BERGS = ctx.``[MAIN].[CUSTOMERS]``.Individuals.BERGS
 (**
 Every table and view has an ``Individuals`` property. When you press dot on this property, intellisense will display a list of the data in that table, using whatever the primary key is as the text for each one.
-In this case, the primary key for ``[main].[Customers]`` is a string, and I have selected one named BERGS. You will see the resulting type is ``[main].[Customers]Entity``.
+In this case, the primary key for ``[MAIN].[CUSTOMERS]`` is a string, and I have selected one named BERGS. You will see the resulting type is ``[MAIN].[CUSTOMERS]Entity``.
 
 The primary key is not usually very useful for identifying data however, so in addition to this you will see a series of properties named "As X" where X is the name of a column in the table.
 When you press . on one of these properties, the data is re-projected to you using both the primary key and the text of the column you have selected.
 *)
 
-let christina = ctx.``[main].[Customers]``.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.``[MAIN].[CUSTOMERS]``.Individuals.``As CONTACTNAME``.``BERGS, Christina Berglund``

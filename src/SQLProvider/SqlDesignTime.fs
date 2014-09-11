@@ -10,8 +10,6 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
 open Samples.FSharp.ProvidedTypes
 open FSharp.Data.Sql.Schema
-   
-
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    
@@ -432,10 +430,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>The owner of the schema for this provider to resolve (Oracle Only)</param>"
         
-    do paramSqlType.DefineStaticParameters([conString;connStringName;dbVendor;resolutionPath;individualsAmount;optionTypes;owner], fun typeName args -> 
-        createTypes(args.[0] :?> string,                  // ConnectionString URL
-                    args.[1] :?> string,                  // ConnectionString Name
-                    args.[2] :?> DatabaseProviderTypes,   // db vendor
+    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner], fun typeName args -> 
+        createTypes(args.[1] :?> string,                  // ConnectionString URL
+                    args.[2] :?> string,                  // ConnectionString Name
+                    args.[0] :?> DatabaseProviderTypes,   // db vendor
                     args.[3] :?> string,                  // Assembly resolution path for db connectors and custom types
                     args.[4] :?> int,                     // Individuals Amount
                     args.[5] :?> bool,                    // Use option types?

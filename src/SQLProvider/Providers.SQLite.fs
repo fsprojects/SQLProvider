@@ -39,15 +39,15 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
 
-    let getSchema name (args:string[]) conn = 
-        getSchemaMethod.Invoke(conn,[|name; args|]) :?> DataTable
+    let getSchema name conn = 
+        getSchemaMethod.Invoke(conn,[|name|]) :?> DataTable
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings con =
-        let dt = getSchema "DataTypes" [||] con
+        let dt = getSchema "DataTypes" con
 
         let mappings =             
             [
@@ -90,10 +90,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
         member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException()) 
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
-            let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
-            let ret = createTypeMappings dt
+            createTypeMappings con
             con.Close()
-            ret
         member __.GetTables(con) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
