@@ -26,7 +26,7 @@ In this declaration you are able to pass various pieces of information known as 
 In the following examples a SQLite database will be used.  You can read in more detail about the available static parameters in other areas of the documentation.
 *)
 
-type sql = SqlDataProvider<connectionString, DatabaseVendor = Common.DatabaseProviderTypes.SQLITE, ResolutionPath = resolutionPath >
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath >
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in the connectionString parameter.  
 In order to start exploring the database's schema and reading its data, you create a *DataContext* value.

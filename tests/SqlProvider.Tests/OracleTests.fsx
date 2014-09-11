@@ -12,7 +12,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<ConnectionString = connStr, DatabaseVendor = Common.DatabaseProviderTypes.ORACLE, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
 
 type Employee = {

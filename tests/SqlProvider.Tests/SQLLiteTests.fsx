@@ -13,7 +13,7 @@ let resolutionPath = __SOURCE_DIRECTORY__
 open FSharp.Data.Sql
 
 
-type sql = SqlDataProvider<connectionString, DatabaseVendor = Common.DatabaseProviderTypes.SQLITE, ResolutionPath = resolutionPath >
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath >
 
 let ctx = sql.GetDataContext()
 

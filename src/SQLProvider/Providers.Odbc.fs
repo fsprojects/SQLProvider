@@ -67,8 +67,8 @@ type internal OdbcProvider(resolutionPath) =
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-        member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
-        member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com,definition,retCols,values) = ReturnValueType.Unit //  raise(NotImplementedException())
+        member __.GetSprocReturnColumns(con, def) = []//raise(NotImplementedException())
 
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
@@ -112,8 +112,7 @@ type internal OdbcProvider(resolutionPath) =
             // The ODBC type provider does not currently support GetRelationships operations.
             ([],[])
 
-        member __.GetSprocs(con) =
-            failwith "The ODBC type provider does not currently support Stored Procedures operations."
+        member __.GetSprocs(con) = []
 
         member this.GetIndividualsQueryText(table,amount) =
             sprintf "SELECT * FROM `%s`" table.Name
