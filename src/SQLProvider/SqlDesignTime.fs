@@ -25,7 +25,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
         let conString = 
-            match ConfigHelpers.tryGetConnectionString conStringName connnectionString with
+            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
             | Some(cs) -> cs
             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
         let con = prov.CreateConnection conString
@@ -383,9 +383,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ let meth = 
                 ProvidedMethod ("GetDataContext", [],
                                 serviceType, IsStaticMethod=true,
-                                InvokeCode = (fun _ -> 
+                                InvokeCode = (fun _ ->
+                                    let runtimePath = config.ResolutionFolder
                                     let runtimeConStr = 
-                                        <@@ match ConfigHelpers.tryGetConnectionString conStringName connnectionString with
+                                        <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                             | Some(cs) -> cs
                                             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName @@>
                                     <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner) :> ISqlDataContext @@>))

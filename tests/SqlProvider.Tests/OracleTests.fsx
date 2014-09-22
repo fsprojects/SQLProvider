@@ -4,7 +4,7 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
+let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR_TEST;Password=password;"
 
 [<Literal>]
 let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
@@ -12,7 +12,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connStr, ResolutionPath = resolutionFolder, Owner = "HR_TEST">
 let ctx = HR.GetDataContext()
 
 type Employee = {
@@ -23,7 +23,7 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.``[HR_TEST].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
 
 indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 
@@ -31,7 +31,7 @@ indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
+        for emp in ctx.``[HR_TEST].[EMPLOYEES]`` do
         select (emp.FIRST_NAME, emp.LAST_NAME)
     } |> Seq.toList
 

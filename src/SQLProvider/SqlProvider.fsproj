@@ -27,9 +27,8 @@
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
     </DocumentationFile>
-    <StartAction>Project</StartAction>
-    <StartProgram>
-    </StartProgram>
+    <StartAction>Program</StartAction>
+    <StartProgram>D:\Appdev\SqlProvider\tests\SqlProvider.Tests\Test.Console\bin\Debug\Test.Console.exe</StartProgram>
     <StartArguments>
     </StartArguments>
   </PropertyGroup>
