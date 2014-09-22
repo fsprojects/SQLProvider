@@ -42,12 +42,12 @@ module ConfigHelpers =
                 else root, []
                 
             let configFilePath = 
-                [
+                paths @ [
                     Path.Combine(root, "app.config")
                     Path.Combine(root, "web.config")
                     "app.config"
                     "web.config"
-                ] @ paths |> List.tryFind File.Exists
+                ]|> List.tryFind File.Exists
 
             match configFilePath with
             | Some(configFilePath) ->
