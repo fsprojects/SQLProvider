@@ -49,6 +49,16 @@ let regionsEmptyTable =
         select r
     } |> Seq.toList
 
+let tableWithNoKey = 
+    query {
+        for r in ctx.``[DBO].[TABLE_1]`` do
+        select r.COL
+    } |> Seq.toList
+
+let entity = ctx.``[DBO].[TABLE_1]``.Create()
+entity.COL <- 123uy
+ctx.SubmitUpdates()
+
 let salesNamedDavid = 
     query {
             for emp in ctx.``[DBO].[EMPLOYEES]`` do

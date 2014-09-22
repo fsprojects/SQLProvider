@@ -33,8 +33,11 @@ module MSSqlServer =
         let mappings =             
             [
                 for r in dt.Rows do
-                    let clrType = getClrType (string r.["DataType"])
                     let oleDbType = string r.["TypeName"]
+                    let clrType = 
+                        if oleDbType = "tinyint"
+                        then typeof<byte>.ToString()
+                        else getClrType (string r.["DataType"])
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }

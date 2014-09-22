@@ -2,9 +2,9 @@
 
 #r "System.Transactions"
 #r "System.Runtime.Serialization"
+#r "System.Configuration"
 #load "Operators.fs"
-#load "SchemaProjections.fs"
-#load "SqlHelpers.fs"
+#load "Utils.fs"
 #load "SqlSchema.fs"
 #load "DataTable.fs"
 #load "SqlRuntime.Patterns.fs"
