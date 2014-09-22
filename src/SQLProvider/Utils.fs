@@ -24,15 +24,20 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         tupleIndex.[(int <| name.Remove(0, 4)) - 1]
 
-module internal ConfigHelpers = 
+module ConfigHelpers = 
     
     open System
     open System.IO
     open System.Configuration
 
-    let tryGetConnectionString root (connectionStringName:string) (connectionString:string) =
+    let tryGetConnectionString (connectionStringName:string) (connectionString:string) =
         if String.IsNullOrWhiteSpace(connectionString)
         then
+            let root = 
+                let asm = Reflection.Assembly.GetEntryAssembly()
+                if asm <> null
+                then asm.Location
+                else ""
             let configFilePath = 
                 [
                     Path.Combine(root, "app.config")
