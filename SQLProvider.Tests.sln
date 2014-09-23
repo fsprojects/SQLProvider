@@ -10,8 +10,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{1ED3AD
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Test.Console", "tests\SqlProvider.Tests\Test.Console\Test.Console.fsproj", "{6C328DF4-35EB-4B48-A639-E31F6BF56BFD}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
