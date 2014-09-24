@@ -63,11 +63,68 @@ module ConfigHelpers =
 
 module internal SchemaProjections = 
     
-    let buildTableName (tableName:string) = tableName.Substring(0,tableName.LastIndexOf("]")+1).ToUpper()
-
-    let buildFieldName (fieldName:string) = fieldName.ToUpper()
-
-    let buildSprocName (sprocName:string) = sprocName.ToUpper()
+    //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
+    let private tryAt (s:string) i = if i >= s.Length then None else Some s.[i]
+    let private sat f (c:option<char>) = match c with Some c when f c -> Some c | _ -> None
+    let private (|EOF|_|) c = match c with Some _ -> None | _ -> Some ()
+    let private (|LetterDigit|_|) = sat Char.IsLetterOrDigit
+    let private (|Upper|_|) = sat Char.IsUpper
+    let private (|Lower|_|) = sat Char.IsLower
+    
+    // --------------------------------------------------------------------------------------
+    
+    /// Turns a given non-empty string into a nice 'PascalCase' identifier
+    let nicePascalName (s:string) = 
+      if s.Length = 1 then s.ToUpper() else
+      // Starting to parse a new segment 
+      let rec restart i = seq {
+        match tryAt s i with 
+        | EOF -> ()
+        | LetterDigit _ & Upper _ -> yield! upperStart i (i + 1)
+        | LetterDigit _ -> yield! consume i false (i + 1)
+        | _ -> yield! restart (i + 1) }
+      // Parsed first upper case letter, continue either all lower or all upper
+      and upperStart from i = seq {
+        match tryAt s i with 
+        | Upper _ -> yield! consume from true (i + 1) 
+        | Lower _ -> yield! consume from false (i + 1) 
+        | _ ->
+            yield from, i
+            yield! restart (i + 1) }
+      // Consume are letters of the same kind (either all lower or all upper)
+      and consume from takeUpper i = seq {
+        match tryAt s i with
+        | Lower _ when not takeUpper -> yield! consume from takeUpper (i + 1)
+        | Upper _ when takeUpper -> yield! consume from takeUpper (i + 1)
+        | Lower _ when takeUpper ->
+            yield from, (i - 1)
+            yield! restart (i - 1)
+        | _ -> 
+            yield from, i
+            yield! restart i }
+        
+      // Split string into segments and turn them to PascalCase
+      seq { for i1, i2 in restart 0 do 
+              let sub = s.Substring(i1, i2 - i1) 
+              if Array.forall Char.IsLetterOrDigit (sub.ToCharArray()) then
+                yield sub.[0].ToString().ToUpper() + sub.ToLower().Substring(1) }
+      |> String.concat ""
+    
+    /// Turns a given non-empty string into a nice 'camelCase' identifier
+    let niceCamelName (s:string) = 
+      let name = nicePascalName s
+      if name.Length > 0 then
+        name.[0].ToString().ToLowerInvariant() + name.Substring(1)
+      else name
+    
+    let buildTableName (tableName:string) = 
+        //Current Name = [SCHEMA].[TABLE_NAME]
+        let startIndex = tableName.IndexOf(".") + 2
+        nicePascalName (tableName.Substring(startIndex, tableName.LastIndexOf("]") - startIndex))
+    
+    let buildFieldName (fieldName:string) = nicePascalName fieldName
+    
+    let buildSprocName (sprocName:string) = nicePascalName sprocName
 
 module internal Reflection = 
     
