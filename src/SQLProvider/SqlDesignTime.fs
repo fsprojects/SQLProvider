@@ -363,7 +363,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 )
 
    
-                let prop = ProvidedProperty(SchemaProjections.buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
+                let prop = ProvidedProperty(SchemaProjections.buildTableName(key),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
                 yield entityType :> MemberInfo
                 yield ct         :> MemberInfo                

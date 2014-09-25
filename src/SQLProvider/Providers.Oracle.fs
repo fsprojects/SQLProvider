@@ -28,6 +28,11 @@ module internal Oracle =
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
         | None -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
 
+    let systemNames = 
+        [
+            "SYSTEM"; "SYS"; "XDB"
+        ]
+
     let connectionType = lazy  (findType "OracleConnection")
     let commandType =  lazy   (findType "OracleCommand")
     let parameterType = lazy   (findType "OracleParameter")
@@ -94,8 +99,10 @@ module internal Oracle =
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
     
-    let tableFullName (table:Table) = 
-        table.Schema + "." + (quoteWhiteSpace table.Name)
+    let tableFullName (table:Table) =
+        if (String.IsNullOrWhiteSpace(table.Schema))
+        then (quoteWhiteSpace table.Name)
+        else table.Schema + "." + (quoteWhiteSpace table.Name)
 
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
@@ -149,24 +156,37 @@ module internal Oracle =
     let getPrimaryKeys con =
         let indexColumns = 
             getSchema "IndexColumns" [|owner|] con
-            |> DataTable.map (fun row -> Sql.dbUnbox row.[1], Sql.dbUnbox row.[4])
+            |> DataTable.mapChoose (fun row -> 
+                let tableOwner = Sql.dbUnbox<string> row.[2]
+                if List.exists ((=) tableOwner) systemNames
+                then None 
+                else Some(Sql.dbUnbox row.[1], Sql.dbUnbox row.[4]))
             |> Map.ofList
         
         getSchema "PrimaryKeys" [|owner|] con
         |> DataTable.mapChoose (fun row ->
             let indexName = Sql.dbUnbox row.[15]
-            let tableName = Sql.dbUnbox row.[2]
-            match Map.tryFind indexName indexColumns with
-            | Some(column) -> 
-                let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
-                Some(tableName, pk)
-            | None -> None)
+            let tableName = Sql.dbUnbox<string> row.[2]
+            if tableName.StartsWith("BIN$")
+            then None
+            else
+                match Map.tryFind indexName indexColumns with
+                | Some(column) -> 
+                    let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
+                    Some(tableName, pk)
+                | None -> None)
 
     let getTables con = 
         getSchema "Tables" [|owner|] con
-        |> DataTable.map (fun row -> 
-                              let name = Sql.dbUnbox row.[1]
-                              { Schema = Sql.dbUnbox row.[0]; Name = name; Type = Sql.dbUnbox row.[2] })
+        |> DataTable.mapChoose (fun row -> 
+              let name = Sql.dbUnbox row.[1]
+              let typ = Sql.dbUnbox<string> row.[2]
+              if typ = "System"
+              then None
+              else
+                Some { Schema = Sql.dbUnbox row.[0]; 
+                       Name = name;
+                       Type = Sql.dbUnbox row.[2] })
 
     let getColumns (primaryKeys:IDictionary<_,_>) table con = 
         getSchema "Columns" [|owner; table|] con

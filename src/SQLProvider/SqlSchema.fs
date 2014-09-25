@@ -69,11 +69,10 @@ type Table = { Schema: string; Name:string; Type:string }
     with 
         // Note here the [].[] format is ONLY used internally.  Do not use this in queries; Different vendors have 
         // different ways to qualify whitespace.
-        member x.FullName = sprintf "[%s].[%s]" x.Schema x.Name
-        member x.FriendlyName = sprintf "[%s].[%s]" (x.Schema.ToUpper()) (x.Name.ToUpper())
+        member x.FullName = sprintf "%s" x.Name //x.Schema x.Name
         static member FromFullName(fullName:string) = 
             match fullName with
             | Patterns.Match @"\[(.*)\].\[(.*)\]" [schema;name] -> { Schema = schema; Name = name; Type="" } 
             | _ -> { Schema = ""; Name = fullName; Type="" }//failwith ""
         static member CreateFullName(schema, name) = 
-            sprintf "[%s].[%s]" schema name
+            sprintf "%s" name

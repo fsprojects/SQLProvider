@@ -119,9 +119,13 @@ module internal SchemaProjections =
     
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
-        let startIndex = tableName.IndexOf(".") + 2
-        nicePascalName (tableName.Substring(startIndex, tableName.LastIndexOf("]") - startIndex))
-    
+        if(tableName.Contains("."))
+        then 
+            let tableName = tableName.Replace("[", "").Replace("]", "")
+            let startIndex = tableName.IndexOf(".")
+            nicePascalName (tableName.Substring(startIndex))
+        else nicePascalName tableName
+
     let buildFieldName (fieldName:string) = nicePascalName fieldName
     
     let buildSprocName (sprocName:string) = nicePascalName sprocName
