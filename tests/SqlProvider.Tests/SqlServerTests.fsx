@@ -32,8 +32,32 @@ indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
 let employeesFirstName = 
     query {
         for emp in ctx.``[DBO].[EMPLOYEES]`` do
-        select (emp.FIRST_NAME, emp.LAST_NAME)
+        select emp
     } |> Seq.toList
+
+//Ref issue #92
+let employeesFirstNameEmptyList = 
+    query {
+        for emp in ctx.``[DBO].[EMPLOYEES]`` do
+        where (emp.EMPLOYEE_ID > 10000)
+        select emp
+    } |> Seq.toList
+
+let regionsEmptyTable = 
+    query {
+        for r in ctx.``[DBO].[REGIONS]`` do
+        select r
+    } |> Seq.toList
+
+let tableWithNoKey = 
+    query {
+        for r in ctx.``[DBO].[TABLE_1]`` do
+        select r.COL
+    } |> Seq.toList
+
+let entity = ctx.``[DBO].[TABLE_1]``.Create()
+entity.COL <- 123uy
+ctx.SubmitUpdates()
 
 let salesNamedDavid = 
     query {

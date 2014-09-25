@@ -24,27 +24,41 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         tupleIndex.[(int <| name.Remove(0, 4)) - 1]
 
-module internal ConfigHelpers = 
+module ConfigHelpers = 
     
     open System
     open System.IO
     open System.Configuration
 
-    let tryGetConnectionString root (connectionStringName:string) (connectionString:string) =
+    let tryGetConnectionString isRuntime root (connectionStringName:string) (connectionString:string) =
         if String.IsNullOrWhiteSpace(connectionString)
         then
+            let entryAssembly = 
+                Reflection.Assembly.GetEntryAssembly()
+
+            let root, paths =
+                if isRuntime
+                then entryAssembly.Location, [entryAssembly.GetName().Name + ".exe.config"]
+                else root, []
+                
             let configFilePath = 
-                [
+                paths @ [
                     Path.Combine(root, "app.config")
                     Path.Combine(root, "web.config")
-                ] |> List.find File.Exists
-            use tempFile = Utilities.tempFile "config"
-            File.Copy(configFilePath, tempFile.Path)
-            let fileMap = new ExeConfigurationFileMap(ExeConfigFilename = tempFile.Path)
-            let config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None)
-            match config.ConnectionStrings.ConnectionStrings.[connectionStringName] with
-            | null -> None
-            | a -> Some(a.ConnectionString)
+                    "app.config"
+                    "web.config"
+                ]|> List.tryFind File.Exists
+
+            match configFilePath with
+            | Some(configFilePath) ->
+                use tempFile = Utilities.tempFile "config"
+                File.Copy(configFilePath, tempFile.Path)
+                let fileMap = new ExeConfigurationFileMap(ExeConfigFilename = tempFile.Path)
+                let config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None)
+                match config.ConnectionStrings.ConnectionStrings.[connectionStringName] with
+                | null -> None
+                | a -> Some(a.ConnectionString)
+            | None -> None
         else Some(connectionString)
 
 module internal SchemaProjections = 

@@ -22,10 +22,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let ns = "FSharp.Data.Sql";   
     let asm = Assembly.GetExecutingAssembly()
      
-    let createTypes(conString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
+    let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
         let conString = 
-            match ConfigHelpers.tryGetConnectionString config.ResolutionFolder conStringName conString with
+            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
             | Some(cs) -> cs
             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
         let con = prov.CreateConnection conString
@@ -383,8 +383,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ let meth = 
                 ProvidedMethod ("GetDataContext", [],
                                 serviceType, IsStaticMethod=true,
-                                InvokeCode = (fun _ -> 
-                                    <@@ SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner) :> ISqlDataContext @@>))
+                                InvokeCode = (fun _ ->
+                                    let runtimePath = config.ResolutionFolder
+                                    let runtimeConStr = 
+                                        <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                            | Some(cs) -> cs
+                                            | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName @@>
+                                    <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                    
