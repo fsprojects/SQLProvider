@@ -268,7 +268,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some(typ) ->
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) ->
-                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc path containerType (Some typ) createdTypes next 
                 | None -> 
@@ -277,7 +277,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) -> 
                         containerType.AddMemberDelayed(fun () -> typ)
-                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
+                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc path containerType (Some typ) (createdTypes.Add(path, typ)) next 
             | Sproc(sproc) ->

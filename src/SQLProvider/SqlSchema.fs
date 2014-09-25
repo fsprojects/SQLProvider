@@ -48,8 +48,8 @@ type SprocName = {
 with
     member x.ToList() =  
            if String.IsNullOrEmpty(x.PackageName)
-           then [x.Owner; x.ProcName] 
-           else [x.Owner; x.PackageName; x.ProcName]
+           then [x.ProcName] 
+           else [x.PackageName; x.ProcName]
     member x.DbName with get() = String.Join(".", x.ToList())
     member x.FriendlyName with get() = String.Join(" ", x.ToList())
     member x.FullName with get() = String.Join("_", x.ToList())
