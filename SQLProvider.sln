@@ -25,7 +25,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3C867-4E92-4A85-BE21-5839A66F47E5}"
 	ProjectSection(SolutionItems) = preProject
 		src\scripts\GraphViz.fsx = src\scripts\GraphViz.fsx
+		src\scripts\MsSqlServerInspector.fsx = src\scripts\MsSqlServerInspector.fsx
+		src\scripts\MySqlInspector.fsx = src\scripts\MySqlInspector.fsx
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
+		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "OdbcProvider", "src\OdbcProvider\OdbcProvider.fsproj", "{71AFAC22-202C-47B6-A5D1-D907526443DC}"

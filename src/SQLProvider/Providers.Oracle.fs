@@ -8,8 +8,10 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-module internal OracleHelpers = 
+module internal Oracle =
+    
     let mutable resolutionPath = String.Empty
+    let mutable referencedAssemblies : string array = [||]
     let mutable owner = String.Empty
 
     let assemblyNames = 
@@ -19,78 +21,75 @@ module internal OracleHelpers =
         ]
 
     let assembly =
-        (fun () ->   
-        assemblyNames 
-        |> List.pick (fun asm ->
-            try 
-                let loadedAsm =              
-                    Assembly.LoadFrom(
-                        if String.IsNullOrEmpty resolutionPath then asm
-                        else System.IO.Path.Combine(resolutionPath,asm)
-                        ) 
-                if loadedAsm <> null
-                then Some loadedAsm
-                else None
-            with e ->
-                None))
-   
-    let connectionType() =  (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleConnection"))
-    let commandType() =     (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleCommand"))
-    let paramterType() =    (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleParameter"))
-    let oracleDbType() = (assembly().GetTypes() |> Array.find(fun t -> t.Name = "OracleDbType"))
-    let getSchemaMethod() = (connectionType().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
+    let findType name = 
+        match assembly.Value with
+        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | None -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
+    let connectionType = lazy  (findType "OracleConnection")
+    let commandType =  lazy   (findType "OracleCommand")
+    let parameterType = lazy   (findType "OracleParameter")
+    let oracleRefCursorType = lazy   (findType "OracleRefCursor")
+
+    let getDataReaderForRefCursor = lazy (oracleRefCursorType.Value.GetMethod("GetDataReader",[||]))
+
+    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let getSchema name (args:string[]) conn = 
-        getSchemaMethod().Invoke(conn,[|name; args|]) :?> DataTable
+        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
+
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings con =
-        let dt = getSchema "DataTypes" [||] con       
-        let clr =             
-            [for r in dt.Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+        let dt = getSchema "DataTypes" [||] con
 
-        // create map from sql name to clr type, and type to SqlDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,providerType,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt 
-                if ty = null 
-                then None
-                else
-                    match Enum.GetName(oracleDbType(), providerType) with
-                    | "Raw" | "LongRaw" -> Some DbType.Binary
-                    | "RefCursor" | "BFile" | "Blob" | "NClob" -> Some DbType.Object
-                    | "Byte" -> Some DbType.Byte
-                    | "Varchar2" | "NVarchar2" | "Long" | "XmlType" -> Some DbType.String
-                    | "Char" | "NChar" -> Some DbType.StringFixedLength
-                    | "Date" -> Some DbType.Date
-                    | "TimeStamp" | "TimeStampLTZ" | "TimeStampTZ" -> Some DbType.DateTime
-                    | "Decimal" -> Some DbType.Decimal
-                    | "Double" -> Some DbType.Double
-                    | "Int16" -> Some DbType.Int16
-                    | "Int32" -> Some DbType.Int32
-                    | "Int64" | "IntervalYM" -> Some DbType.Int64
-                    | "IntervalDS" -> Some DbType.Time
-                    | "Single" -> Some DbType.Single
-                    | _ -> None
-                    |> Option.map (fun ev -> ((tn,ty),(tn,ev),(ty.FullName,ev))))
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+        let getDbType(providerType) =
+            let p = Activator.CreateInstance(parameterType.Value,[||]) :?> IDbDataParameter
+            let oracleDbTypeSetter = parameterType.Value.GetProperty("OracleDbType").GetSetMethod()
+            let dbTypeGetter = parameterType.Value.GetProperty("DbType").GetGetMethod()
+            oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
+            dbTypeGetter.Invoke(p, [||]) :?> DbType
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+        let getClrType (input:string) =
+            (match input.ToLower() with
+            | "system.long"  -> typeof<System.Int64>
+            | _ -> Type.GetType(input)).ToString()
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["DataType"])
+                    let oracleType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = Some oracleType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = Some 121; }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let oracleMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- oracleMappings.TryFind 
+ 
+    let tryReadValueProperty instance = 
+        let typ = instance.GetType()
+        let prop = typ.GetProperty("Value")
+        if prop <> null
+        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+        else None         
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
@@ -98,56 +97,109 @@ module internal OracleHelpers =
     let tableFullName (table:Table) = 
         table.Schema + "." + (quoteWhiteSpace table.Name)
 
-    let dbUnbox<'a> (v:obj) : 'a = 
-        if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
-    
     let createConnection connectionString = 
-        Activator.CreateInstance(connectionType(),[|box connectionString|]) :?> IDbConnection
+        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
-    let connect (con:IDbConnection) f =
-        if con.State <> ConnectionState.Open then con.Open()
-        let result = f con
-        con.Close(); result
+    let createCommand commandText connection = 
+        Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+
+    let createCommandParameter (param:QueryParameter) value = 
+        let value = if value = null then (box System.DBNull.Value) else value
+        let parameterType = parameterType.Value
+        let oracleDbTypeSetter = 
+            parameterType.GetProperty("OracleDbType").GetSetMethod()
+        
+        let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+        
+        p.Direction <- param.Direction 
+        
+        match param.TypeMapping.ProviderTypeName with
+        | Some _ ->
+            p.DbType <- param.TypeMapping.DbType
+            param.TypeMapping.ProviderType |> Option.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        | None -> ()
+
+        match param.Length with
+        | Some(length) when length >= 0 -> p.Size <- length
+        | _ -> 
+               match param.TypeMapping.DbType with
+               | DbType.String -> p.Size <- 32767
+               | _ -> ()
+        p 
+
+    let readParameter (parameter:IDbDataParameter) = 
+        let parameterType = parameterType.Value
+        let oracleDbTypeGetter = 
+            parameterType.GetProperty("OracleDbType").GetGetMethod()
+        
+        match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
+        | DbType.Object, 121 ->
+             if parameter.Value = null
+             then null
+             else
+                let data = 
+                    Sql.dataReaderToArray (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader) 
+                    |> Seq.ofArray
+                data |> box
+        | _, _ ->
+            match tryReadValueProperty parameter.Value with
+            | Some(obj) -> obj |> box
+            | _ -> parameter.Value |> box
     
+    let getPrimaryKeys con =
+        let indexColumns = 
+            getSchema "IndexColumns" [|owner|] con
+            |> DataTable.map (fun row -> Sql.dbUnbox row.[1], Sql.dbUnbox row.[4])
+            |> Map.ofList
+        
+        getSchema "PrimaryKeys" [|owner|] con
+        |> DataTable.mapChoose (fun row ->
+            let indexName = Sql.dbUnbox row.[15]
+            let tableName = Sql.dbUnbox row.[2]
+            match Map.tryFind indexName indexColumns with
+            | Some(column) -> 
+                let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
+                Some(tableName, pk)
+            | None -> None)
+
     let getTables con = 
         getSchema "Tables" [|owner|] con
         |> DataTable.map (fun row -> 
-                              let name = dbUnbox row.[1]
-                              { Schema = dbUnbox row.[0]; Name = name; Type = dbUnbox row.[2] })
+                              let name = Sql.dbUnbox row.[1]
+                              { Schema = Sql.dbUnbox row.[0]; Name = name; Type = Sql.dbUnbox row.[2] })
 
     let getColumns (primaryKeys:IDictionary<_,_>) table con = 
         getSchema "Columns" [|owner; table|] con
-        |> DataTable.choose (fun row -> 
-                let typ = dbUnbox row.[4]
-                let nullable = (dbUnbox row.[8]) = "Y"
-                let colName =  (dbUnbox row.[2])
-                match sqlToClr typ, sqlToEnum typ with
-                | Some(clrTyp), Some(dbType) -> 
-                        { Name = colName; 
-                          ClrType = clrTyp
-                          DbType = dbType 
+        |> DataTable.mapChoose (fun row -> 
+                let typ = Sql.dbUnbox row.[4]
+                let nullable = (Sql.dbUnbox row.[8]) = "Y"
+                let colName =  (Sql.dbUnbox row.[2])
+                match findDbType typ with
+                | Some(m) -> 
+                        { Name = colName
+                          TypeMapping = m
                           IsPrimarKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table && x.Column = colName)
                           IsNullable = nullable } |> Some
-                | _, _ -> None)
+                | _ -> None)
 
     let getRelationships (primaryKeys:IDictionary<_,_>) table con =
         let foreignKeyCols = 
             getSchema "ForeignKeyColumns" [|owner;table|] con
-            |> DataTable.map (fun row -> (dbUnbox row.[1], dbUnbox row.[3])) 
+            |> DataTable.map (fun row -> (Sql.dbUnbox row.[1], Sql.dbUnbox row.[3])) 
             |> Map.ofList
         let rels = 
             getSchema "ForeignKeys" [|owner;table|] con
-            |> DataTable.choose (fun row -> 
-                let name = dbUnbox row.[4]
-                let pkName = dbUnbox row.[0]
+            |> DataTable.mapChoose (fun row -> 
+                let name = Sql.dbUnbox row.[4]
+                let pkName = Sql.dbUnbox row.[0]
                 match primaryKeys.TryGetValue(table) with
                 | true, pk ->
                     match foreignKeyCols.TryFind name with
                     | Some(fk) ->
                          { Name = name 
-                           PrimaryTable = Table.CreateFullName(owner,dbUnbox row.[2]) 
+                           PrimaryTable = Table.CreateFullName(owner,Sql.dbUnbox row.[2]) 
                            PrimaryKey = pk.Column
-                           ForeignTable = Table.CreateFullName(owner,dbUnbox row.[5])
+                           ForeignTable = Table.CreateFullName(owner,Sql.dbUnbox row.[5])
                            ForeignKey = fk } |> Some
                     | None -> None
                 | false, _ -> None
@@ -162,136 +214,191 @@ module internal OracleHelpers =
             )
         (children, rels)
 
+    let getIndivdualsQueryText amount table = 
+        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount
+
+    let getIndivdualQueryText table column = 
+        let tName = tableFullName table
+        sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
+
     let getSprocs con =
-        getSchema "ProcedureParameters" [|owner|] con
-        |> DataTable.groupBy (fun row -> 
-                let owner = dbUnbox row.["OWNER"]
-                let (procName, packageName) = (dbUnbox row.["OBJECT_NAME"], dbUnbox row.["PACKAGE_NAME"])
-                let dataType = dbUnbox row.["DATA_TYPE"]
-                let name = 
-                        if String.IsNullOrEmpty(packageName)
-                        then (procName) 
-                        else (packageName + " " + procName)
-                let dbName =
-                    if String.IsNullOrEmpty(packageName)
-                    then (owner + "." + procName) 
-                    else (owner + "." + packageName + "." + procName)
-                let argumentName = dbUnbox row.["ARGUMENT_NAME"]
-                match sqlToEnum dataType, sqlToClr dataType with
-                | Some(dbType), Some(clrType) ->
-                    let direction = 
-                        match dbUnbox row.["IN_OUT"] with
-                        | "IN" -> ParameterDirection.Input
-                        | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
-                        | "OUT" -> ParameterDirection.Output
-                        | a -> failwith "Direction not supported %s" a
-                    let paramName, paramDetails = argumentName, (dbType, clrType, direction, dbUnbox<decimal> row.["POSITION"], dbUnbox<decimal> row.["DATA_LENGTH"])
-                    ((name, dbName), Some (paramName, paramDetails))
-                | _,_ -> ((name, dbName), None))
-        |> Seq.choose (fun ((name, dbName), parameters) -> 
-            if parameters |> Seq.forall (fun x -> x.IsSome)
-            then 
-                let sparams = 
-                    parameters
-                    |> Seq.map (function
-                                 | Some (pName, (dbType, clrType, direction, position, length)) -> 
-                                        { Name = pName; ClrType = clrType; DbType = dbType;  Direction = direction; MaxLength = None; Ordinal = int(position) }
-                                 | None -> failwith "How the hell did we get here??")
-                    |> Seq.toList
-                    |> List.sortBy (fun x -> x.Ordinal)
-                    
-                let retCols = 
-                    sparams
-                    |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-                    |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) then "Column_" + (string i) else p.Name); ClrType = p.ClrType; DbType = p.DbType; IsPrimarKey = false; IsNullable = true })
-                Some { FullName = name; DbName = dbName; Params = sparams; ReturnColumns = lazy retCols }
-            else None) 
+
+        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
+
+        let getName (row:DataRow) = 
+            let owner = Sql.dbUnbox row.["OWNER"]
+            let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
+            { ProcName = procName; Owner = owner; PackageName = packageName }
+
+        let createSprocParameters (row:DataRow) = 
+            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
+            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
+            let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+
+            findDbType dataType 
+            |> Option.map (fun m ->
+                let direction = 
+                    match Sql.dbUnbox row.["IN_OUT"] with
+                    | "IN" -> ParameterDirection.Input
+                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                    | "OUT" -> ParameterDirection.Output
+                    | "IN/OUT" -> ParameterDirection.InputOutput
+                    | a -> failwithf "Direction not supported %s" a
+                { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
+                  TypeMapping = m
+                  Direction = direction
+                  Length = maxLength
+                  Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
+            )
+
+        let parameters = 
+            let withParameters = getSchema "ProcedureParameters" [|owner|] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+            (Set.union procedures functions)
+            |> Set.toSeq 
+            |> Seq.choose (fun proc -> 
+                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
+                then None
+                else Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
+                )
+            |> Seq.append withParameters
+
+        parameters
+        |> Seq.map (fun (name, parameters) -> 
+                        let sparams = 
+                            parameters
+                            |> Seq.choose id
+                            |> Seq.sortBy (fun p -> p.Ordinal)
+                            |> Seq.toList
+                                                    
+                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
+                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; })))
+                      ) 
         |> Seq.toList
 
+    let getSprocReturnColumns (con:IDbConnection) (def:SprocDefinition) =
+        def.Params
+        |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                           then "ReturnValue" + (string i)
+                                           elif (String.IsNullOrEmpty p.Name)
+                                           then "ReturnValue"
+                                           else p.Name); 
+                                   TypeMapping = p.TypeMapping; 
+                                   Direction = p.Direction; 
+                                   Ordinal = p.Ordinal;
+                                   Length = None 
+                                 })
 
-type internal OracleProvider(resolutionPath, owner) =
+    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+        
+        let outps =
+             retCols
+             |> Array.map(fun ip ->
+                 let p = createCommandParameter ip null
+                 (ip.Ordinal, p))
+        
+        let inps =
+             inputParameters
+             |> List.mapi(fun i ip ->
+                 let p = createCommandParameter ip values.[i]
+                 (ip.Ordinal,p))
+             |> List.toArray
+        
+        Array.append outps inps
+        |> Array.sortBy fst
+        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+        
+        let entities = 
+            match retCols with
+            | [||] -> com.ExecuteNonQuery() |> ignore; Unit
+            | [|col|] ->
+                use reader = com.ExecuteReader()
+                match col.TypeMapping.ProviderTypeName with
+                | Some "REF CURSOR" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                | _ -> 
+                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                    | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+            | cols -> 
+                com.ExecuteNonQuery() |> ignore
+                let returnValues = 
+                    cols 
+                    |> Array.map (fun col ->
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        | Some(_,p) ->
+                            match col.TypeMapping.ProviderTypeName with
+                            | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                            | _ -> ScalarResultSet(col.Name, readParameter p)
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                    )
+                Set(returnValues)
+          
+        entities                 
+
+
+type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
     
-    let primaryKeyCache = new Dictionary<string, PrimaryKey>()
+    let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new Dictionary<string, Relationship list * Relationship list>()
     let columnCache = new Dictionary<string, Column list>()
     let mutable tableCache : Table list = []
 
     do
-        OracleHelpers.owner <- owner
-        OracleHelpers.resolutionPath <- resolutionPath
+        Oracle.owner <- owner
+        Oracle.referencedAssemblies <- referencedAssemblies
+        Oracle.resolutionPath <- resolutionPath
     
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = OracleHelpers.createConnection connectionString
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(OracleHelpers.commandType(),[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name, value, dbType, direction, maxlength) =
-            let value = if value = null then (box System.DBNull.Value) else value
-            let p = Activator.CreateInstance(OracleHelpers.paramterType(),[|box name;value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value
-            if direction.IsSome then p.Direction <- direction.Value 
-            match maxlength with
-            | Some(length) -> p.Size <- length
-            | None ->
-                match dbType with
-                | Some(DbType.String) -> p.Size <- 32767
-                | _ -> ()
-            upcast p
+        member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
+        member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
+        member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
+        member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = Oracle.executeSprocCommand con definition retCols values
+        member __.GetSprocReturnColumns(con, def) = Oracle.getSprocReturnColumns con def
+
         member __.CreateTypeMappings(con) = 
-            OracleHelpers.connect con (fun con -> 
-                OracleHelpers.createTypeMappings con
+            Sql.connect con (fun con -> 
+                Oracle.createTypeMappings con
+                primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
-                let indexColumns = 
-                    OracleHelpers.getSchema "IndexColumns" [|owner|] con
-                    |> DataTable.map (fun row -> OracleHelpers.dbUnbox row.[1], OracleHelpers.dbUnbox row.[4])
-                    |> Map.ofList
-
-                OracleHelpers.getSchema "PrimaryKeys" [|owner|] con
-                |> DataTable.cache primaryKeyCache (fun row ->
-                    let indexName = OracleHelpers.dbUnbox row.[15]
-                    let tableName = OracleHelpers.dbUnbox row.[2]
-                    match Map.tryFind indexName indexColumns with
-                    | Some(column) -> 
-                        let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
-                        Some(tableName, pk)
-                    | None -> None) |> ignore
-            )
-
-        member __.ClrToEnum = OracleHelpers.clrToEnum
-        member __.SqlToEnum = OracleHelpers.sqlToEnum
-        member __.SqlToClr = OracleHelpers.sqlToClr
         member __.GetTables(con) =
                match tableCache with
                | [] ->
-                    let tables = OracleHelpers.connect con OracleHelpers.getTables
+                    let tables = Sql.connect con Oracle.getTables
                     tableCache <- tables
                     tables
                 | a -> a
+
         member __.GetPrimaryKey(table) = 
             match primaryKeyCache.TryGetValue table.Name with 
             | true, v -> Some v.Column
             | _ -> None
+
         member __.GetColumns(con,table) = 
             match columnCache.TryGetValue table.FullName  with
             | true, cols -> cols
             | false, _ ->
-                let cols = OracleHelpers.connect con (OracleHelpers.getColumns primaryKeyCache table.Name)
+                let cols = Sql.connect con (Oracle.getColumns primaryKeyCache table.Name)
                 columnCache.Add(table.FullName, cols)
                 cols
+
         member __.GetRelationships(con,table) =
                 match relationshipCache.TryGetValue(table.FullName) with
                 | true, rels -> rels
                 | false, _ ->
-                    let rels = OracleHelpers.connect con (OracleHelpers.getRelationships primaryKeyCache table.Name)
+                    let rels = Sql.connect con (Oracle.getRelationships primaryKeyCache table.Name)
                     relationshipCache.Add(table.FullName, rels)
                     rels
         
-        member __.GetSprocs(con) = OracleHelpers.connect con OracleHelpers.getSprocs
+        member __.GetSprocs(con) = Sql.connect con Oracle.getSprocs
 
-        member this.GetIndividualsQueryText(table,amount) = 
-            sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (OracleHelpers.tableFullName table) amount 
+        member __.GetIndividualsQueryText(table,amount) = Oracle.getIndivdualsQueryText amount table
 
-        member this.GetIndividualQueryText(table,column) = 
-            let tName = OracleHelpers.tableFullName table
-            sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (OracleHelpers.quoteWhiteSpace column)
+        member __.GetIndividualQueryText(table,column) = Oracle.getIndivdualQueryText table column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let sb = System.Text.StringBuilder()
@@ -316,8 +423,8 @@ type internal OracleProvider(resolutionPath, owner) =
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (OracleHelpers.quoteWhiteSpace col) col
-                                else yield sprintf "%s.%s as \"%s.%s\"" k (OracleHelpers.quoteWhiteSpace col) k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (Oracle.quoteWhiteSpace col) col
+                                else yield sprintf "%s.%s as \"%s.%s\"" k (Oracle.quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
@@ -328,7 +435,8 @@ type internal OracleProvider(resolutionPath, owner) =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None,None, None)
+
+                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -349,19 +457,19 @@ type internal OracleProvider(resolutionPath, owner) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (OracleHelpers.quoteWhiteSpace col) 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (OracleHelpers.quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (Oracle.quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (Oracle.quoteWhiteSpace col) 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias (OracleHelpers.quoteWhiteSpace col) text
+                                        (sprintf "%s.%s IN (%s)") alias (Oracle.quoteWhiteSpace col) text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias (OracleHelpers.quoteWhiteSpace col) text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias (Oracle.quoteWhiteSpace col) text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias (OracleHelpers.quoteWhiteSpace col) 
+                                        (sprintf "%s.%s %s %s") alias (Oracle.quoteWhiteSpace col) 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -397,7 +505,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
-                            joinType (OracleHelpers.tableFullName destTable) destAlias 
+                            joinType (Oracle.tableFullName destTable) destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
@@ -407,14 +515,14 @@ type internal OracleProvider(resolutionPath, owner) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias (OracleHelpers.quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
+                    ~~ (sprintf "%s.%s%s" alias (Oracle.quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s %s " (OracleHelpers.tableFullName baseTable) baseAlias)         
+            ~~(sprintf "FROM %s %s " (Oracle.tableFullName baseTable) baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -458,7 +566,7 @@ type internal OracleProvider(resolutionPath, owner) =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) (k,v) ->
                         let name = sprintf ":param%i" i
-                        let p = provider.CreateCommandParameter(name,v, None, None, None)
+                        let p = provider.CreateCommandParameter(QueryParameter.Create(name,i), v)
                         (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -467,7 +575,7 @@ type internal OracleProvider(resolutionPath, owner) =
                 
                 sb.Clear() |> ignore
                 ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)" 
-                    (OracleHelpers.tableFullName entity.Table)
+                    (Oracle.tableFullName entity.Table)
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
                 let cmd = provider.CreateCommand(con, sb.ToString())
@@ -491,18 +599,18 @@ type internal OracleProvider(resolutionPath, owner) =
                         let name = sprintf ":param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> provider.CreateCommandParameter(name,v, None, None, None)
-                            | None -> provider.CreateCommandParameter(name, DBNull.Value, None, None, None)
+                            | Some v -> provider.CreateCommandParameter(QueryParameter.Create(name,i), v)
+                            | None -> provider.CreateCommandParameter(QueryParameter.Create(name,i), DBNull.Value)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray
                     |> Array.unzip
                 
-                let pkParam = provider.CreateCommandParameter(":pk", pkValue, None, None, None)
+                let pkParam = provider.CreateCommandParameter(QueryParameter.Create(":pk",0), pkValue)
 
                 ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk" 
-                    (OracleHelpers.tableFullName entity.Table)
+                    (Oracle.tableFullName entity.Table)
                     (String.Join(",", columns))
                     (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
                     pk.Column)
@@ -519,10 +627,14 @@ type internal OracleProvider(resolutionPath, owner) =
                     match entity.GetColumnOption<obj> pk.Column with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (OracleHelpers.tableFullName entity.Table) pk.Column )
+                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (Oracle.tableFullName entity.Table) pk.Column )
                 let cmd = provider.CreateCommand(con, sb.ToString())
                 cmd.CommandType <- CommandType.Text
-                cmd.Parameters.Add(provider.CreateCommandParameter("id", pkValue, OracleHelpers.clrToEnum (pkValue.GetType().Name), None, None)) |> ignore
+                let pkType = pkValue.GetType().ToString();
+                match Oracle.findClrType pkType with
+                | Some(m) ->
+                    cmd.Parameters.Add(provider.CreateCommandParameter(QueryParameter.Create(":id",0, m), pkValue)) |> ignore
+                | None -> ()
                 cmd
 
             use scope = new Transactions.TransactionScope()

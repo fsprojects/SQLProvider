@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Data.Sql.Runtime
 
+open System
 open System.Collections.Generic
 open System.Data
 open System.Linq
@@ -8,7 +9,21 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
-type public SqlDataContext (typeName,connectionString,providerType,resolutionPath, owner) =   
+module internal ProviderBuilder = 
+    open FSharp.Data.Sql.Providers
+
+    let createProvider vendor resolutionPath referencedAssemblies owner =
+        match vendor with                
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
+        | _ -> failwith "Unsupported database provider" 
+
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -16,7 +31,7 @@ type public SqlDataContext (typeName,connectionString,providerType,resolutionPat
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 
@@ -59,12 +74,12 @@ type public SqlDataContext (typeName,connectionString,providerType,resolutionPat
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(name,parameters,values:obj array) =
+        member this.CallSproc(definition:SprocDefinition, retCols:QueryParameter[], values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               use com = provider.CreateCommand(con,name)
+:               use com = provider.CreateCommand(con,name)
                com.CommandType <- CommandType.StoredProcedure
                let inputParameters, outputParameters = parameters |> Array.partition (fun (_, _, dir, _) -> dir = ParameterDirection.Input || dir = ParameterDirection.InputOutput)
                
@@ -107,7 +122,7 @@ type public SqlDataContext (typeName,connectionString,providerType,resolutionPat
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
-               com.Parameters.Add (provider.CreateCommandParameter("@id",id,None, None, None)) |> ignore
+               com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)

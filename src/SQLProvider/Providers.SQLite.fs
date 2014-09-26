@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal SQLiteProvider(resolutionPath) as this =
+type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles 
     let pkLookup =     Dictionary<string,string>()
@@ -19,49 +19,59 @@ type internal SQLiteProvider(resolutionPath) as this =
     let isMono = Type.GetType ("Mono.Runtime") <> null
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
-    let assembly =  
-            Reflection.Assembly.LoadFrom(
-                let location = if isMono then "Mono" else "System"
+    let assemblyNames =  
+        [
+           (if isMono then "Mono" else "System") + ".Data.SQLite.dll"
+        ]
 
-                // we could try and load from the gac here first if no path was specified...            
-                if String.IsNullOrEmpty resolutionPath then location + ".Data.SQLite.dll"
-                else Path.GetFullPath(System.IO.Path.Combine(resolutionPath,location + ".Data.SQLite.dll")))
+    let assembly =
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+
+    let findType pred = 
+        match assembly.Value with
+        | Some(assembly) -> assembly.GetTypes() |> Array.find pred
+        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
    
-    let connectionType =  (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (assembly.GetTypes() |> Array.find(fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
+    let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    (findType (fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
 
-    let createTypeMappings (dt:DataTable) =        
-        let clr =             
-            [for r in dt.Rows -> 
-                string r.["TypeName"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+    let getSchema name conn = 
+        getSchemaMethod.Invoke(conn,[|name|]) :?> DataTable
 
-        // create map from sql name to clr type, and type to SqlDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt 
-                // as far as I can see, SQLite maps ProviderDbType straight to DBType
-                let ev = enum<DbType> ev                
-                Some ((tn,ty),(tn,ev),(ty.FullName,ev)))
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+    let createTypeMappings con =
+        let dt = getSchema "DataTypes" con
+
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = string r.["DataType"]
+                    let sqlliteType = string r.["TypeName"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
+                    yield { ProviderTypeName = Some sqlliteType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+            ]
+
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
+
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> Map.ofList
+            
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind 
     
     let executeSql (con:IDbConnection) sql =        
         use com = (this:>ISqlProvider).CreateCommand(con,sql)    
@@ -70,21 +80,18 @@ type internal SQLiteProvider(resolutionPath) as this =
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
-        member __.CreateCommandParameter(name,value,dbType, direction, length) = 
-            let p = Activator.CreateInstance(paramterType,[|box name;box value|]) :?> IDbDataParameter
-            if dbType.IsSome then p.DbType <- dbType.Value 
-            if direction.IsSome then p.Direction <- direction.Value
-            if length.IsSome then p.Size <- length.Value
-            upcast p
+        member __.CreateCommandParameter(param,value) = 
+            let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
+            p
+        member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
+        member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException()) 
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
-            let dt = getSchemaMethod.Invoke(con,[|"DataTypes"|]) :?> DataTable
-            let ret = createTypeMappings dt
+            createTypeMappings con
             con.Close()
-            ret
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr
         member __.GetTables(con) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
@@ -112,12 +119,11 @@ type internal SQLiteProvider(resolutionPath) as this =
                   [ while reader.Read() do 
                       let dt = reader.GetString(2).ToLower()
                       let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
-                      match sqlToClr dt, sqlToEnum dt with
-                      | Some(clr),Some(sql) ->
+                      match findDbType dt with
+                      | Some(m) ->
                          let col =
                             { Column.Name = reader.GetString(1); 
-                              ClrType = clr
-                              DbType = sql
+                              TypeMapping = m
                               IsNullable = not <| reader.GetBoolean(3); 
                               IsPrimarKey = if reader.GetBoolean(5) then true else false } 
                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
@@ -208,7 +214,7 @@ type internal SQLiteProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(paramName,value,None, None, None)
+                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -333,7 +339,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     (([],0),entity.ColumnValues)
                     ||> Seq.fold(fun (out,i) (k,v) -> 
                         let name = sprintf "@param%i" i
-                        let p = (this :> ISqlProvider).CreateCommandParameter(name,v,None, None, None)
+                        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
                         (k,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
@@ -369,15 +375,15 @@ type internal SQLiteProvider(resolutionPath) as this =
                         let name = sprintf "@param%i" i
                         let p = 
                             match entity.GetColumnOption<obj> col with
-                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(name,v,None, None, None)
-                            | None -> (this :> ISqlProvider).CreateCommandParameter(name,DBNull.Value, None, None, None)
+                            | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                            | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                         (col,p)::out,i+1)
                     |> fun (x,_)-> x 
                     |> List.rev
                     |> List.toArray 
                     
                 
-                let pkParam = (this :> ISqlProvider).CreateCommandParameter("@pk", pkValue, None, None, None)
+                let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
                 ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
                     entity.Table.FullName
@@ -399,7 +405,7 @@ type internal SQLiteProvider(resolutionPath) as this =
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter("@id",pkValue,None, None, None)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
                 cmd.CommandText <- sb.ToString()
