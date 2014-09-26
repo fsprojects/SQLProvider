@@ -25,11 +25,14 @@ type PostgreProvider(config) as this =
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>"
         
     do paramSqlType.DefineStaticParameters([conString;resolutionPath;individualsAmount;optionTypes], fun typeName args -> 
-        SqlTypeProvider.createType(args.[0] :?> string,   // OrganizationServiceUrl
-                    args.[1] :?> string,                  // Resolution path
-                    args.[2] :?> int,                     // Individuals Amount
-                    args.[3] :?> bool,                    // Use option types?
-                    "",                                   // Schema owner currently only used for oracle
+        SqlTypeProvider.createType(
+                    args.[0] :?> string,   // OrganizationServiceUrl
+                    args.[1] :?> string,   // Config name
+                    args.[2] :?> string,   // Resolution path
+                    config,
+                    args.[3] :?> int,      // Individuals Amount
+                    args.[4] :?> bool,     // Use option types?
+                    "",                    // Schema owner currently only used for oracle
                     DatabaseProviderTypes.POSTGRESQL,
                     sqlRuntimeInfo,
                     ns,

@@ -27,11 +27,14 @@ type OracleProvider(config) as this =
                     <param name='Owner'>The owner of the schema for this provider to resolve</param>"
         
     do paramSqlType.DefineStaticParameters([conString;resolutionPath;individualsAmount;optionTypes;owner], fun typeName args -> 
-        SqlTypeProvider.createType(args.[0] :?> string,   // OrganizationServiceUrl
-                    args.[1] :?> string,                  // Resolution path
-                    args.[2] :?> int,                     // Individuals Amount
-                    args.[3] :?> bool,                    // Use option types?
-                    args.[4] :?> string,                  // Schema owner currently only used for oracle
+        SqlTypeProvider.createType(
+                    args.[0] :?> string,   // OrganizationServiceUrl
+                    args.[1] :?> string,   // Config name
+                    args.[2] :?> string,   // Resolution path
+                    config,
+                    args.[3] :?> int,      // Individuals Amount
+                    args.[4] :?> bool,     // Use option types?
+                    "",                    // Schema owner currently only used for oracle
                     DatabaseProviderTypes.ORACLE,
                     sqlRuntimeInfo,
                     ns,

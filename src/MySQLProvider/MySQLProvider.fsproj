@@ -39,6 +39,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
@@ -57,9 +58,6 @@
     <Compile Include="..\SQLProvider\Operators.fs">
       <Link>Operators.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider\SchemaProjections.fs">
-      <Link>SchemaProjections.fs</Link>
-    </Compile>
     <Compile Include="..\SQLProvider\SqlSchema.fs">
       <Link>SqlSchema.fs</Link>
     </Compile>
@@ -72,6 +70,9 @@
     <Compile Include="..\SQLProvider\SqlRuntime.Common.fs">
       <Link>SqlRuntime.Common.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider\Utils.fs">
+      <Link>Utils.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider\Providers.MySql.fs">
       <Link>Providers.MySql.fs</Link>
     </Compile>
@@ -83,6 +84,9 @@
     </Compile>
     <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\QuotationHelpers.fs">
+      <Link>QuotationHelpers.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider\SqlDesignTime.fs">
       <Link>SqlDesignTime.fs</Link>

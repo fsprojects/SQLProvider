@@ -16,9 +16,9 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     member this.RuntimeAssembly = runtimeAssembly   
 
 module internal SqlTypeProvider =
-    let createType (conString,resolutionPath,individualsAmount,useOptionTypes,owner, dbVendor, sqlRuntimeInfo:SqlRuntimeInfo, ns, rootTypeName) =       
-        let prov = Utilities.createSqlProvider dbVendor resolutionPath owner
-        let con = prov.CreateConnection conString
+    let createType (connnectionString, conStringName, resolutionPath, config : TypeProviderConfig, individualsAmount, useOptionTypes, owner, dbVendor, sqlRuntimeInfo:SqlRuntimeInfo, ns, rootTypeName) =       
+        let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
+        let con = prov.CreateConnection connnectionString
         con.Open()
         prov.CreateTypeMappings con
         
@@ -40,7 +40,7 @@ module internal SqlTypeProvider =
               
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner)
+        let designTimeDc = SqlDataContext(rootTypeName,connnectionString,dbVendor,config.ResolutionFolder,config.ReferencedAssemblies,owner)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -73,8 +73,8 @@ module internal SqlTypeProvider =
                         con.Close()
                         #endif
                         ret
-                   if entities.IsEmpty then [] else
-                   let e = entities.Head
+                   if Array.isEmpty entities then [] else
+                   let e = entities.[0]
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
                    // of the property and the primary key e.g. ``1, Dennis The Squirrel``

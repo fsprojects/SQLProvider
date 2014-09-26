@@ -13,15 +13,29 @@ module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
     let createProvider vendor resolutionPath referencedAssemblies owner =
-        match vendor with                
+        match vendor with
+        #if MSSQL
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        #endif
+        #if SQLITE
         | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if POSTGRE
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if MYSQL
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if ORACLE
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if MSACCESS
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
-        | _ -> failwith "Unsupported database provider" 
+        #endif
+        #if ODBC
+        | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
+        #endif
+        | _ -> failwith "Unsupported database provider"
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
@@ -79,26 +93,32 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-:               use com = provider.CreateCommand(con,name)
+               use com = provider.CreateCommand(con, definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let inputParameters, outputParameters = parameters |> Array.partition (fun (_, _, dir, _) -> dir = ParameterDirection.Input || dir = ParameterDirection.InputOutput)
                
-               let outps =
-                outputParameters
-                |> Array.mapi(fun i (name, dbtype, dir, length) ->
-                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, if length = -1 then None else Some length)
-                    com.Parameters.Add p |> ignore; p)
+               let entity = new SqlEntity(this, definition.Name.DbName)
 
-               inputParameters
-               |> Array.iteri(fun i (name, dbtype, dir, length) ->
-                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, if length = -1 then None else Some length)
-                   com.Parameters.Add p |> ignore)
+               let toEntityArray rowSet = 
+                   [|
+                       for row in rowSet do
+                           let entity = new SqlEntity(this, definition.Name.DbName)
+                           entity.SetData(row)
+                           yield entity
+                   |]
 
-               use reader = com.ExecuteReader()
-               let entities = 
-                if outputParameters.Length > 0
-                then SqlEntity.FromOutputParameters(this, name, outps)
-                else SqlEntity.FromDataReader(this,name,reader)
+               let entities =
+                   match provider.ExecuteSprocCommand(com, definition,retCols, values) with
+                   | Unit -> () |> box
+                   | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
+                   | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box
+                   | Set(rowSet) ->
+                       for row in rowSet do
+                            match row with
+                            | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                            | ResultSet(name, rs) ->
+                                let data = toEntityArray rs
+                                entity.SetColumnSilent(name, data)
+                       entity |> box
                #if MSACCESS
                con.Close()
                #endif
@@ -125,7 +145,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
-               let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)
+               let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]
                #if MSACCESS
                con.Close()
                #endif

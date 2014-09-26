@@ -23,11 +23,14 @@ type OdbcSqlProvider(config) as this =
                     <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>"
         
     do paramSqlType.DefineStaticParameters([conString;individualsAmount;optionTypes], fun typeName args -> 
-        SqlTypeProvider.createType(args.[0] :?> string,   // OrganizationServiceUrl
-                    "",                                   // Resolution path
-                    args.[1] :?> int,                     // Individuals Amount
-                    args.[2] :?> bool,                    // Use option types?
-                    "",                                   // Schema owner currently only used for oracle
+        SqlTypeProvider.createType(
+                    args.[0] :?> string,   // OrganizationServiceUrl
+                    args.[1] :?> string,   // Config name
+                    args.[2] :?> string,   // Resolution path
+                    config,
+                    args.[3] :?> int,      // Individuals Amount
+                    args.[4] :?> bool,     // Use option types?
+                    "",                    // Schema owner currently only used for oracle
                     DatabaseProviderTypes.ODBC,
                     sqlRuntimeInfo,
                     ns,

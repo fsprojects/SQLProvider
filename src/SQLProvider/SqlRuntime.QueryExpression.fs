@@ -1,36 +1,4 @@
 ﻿namespace FSharp.Data.Sql.Common
-    // I don't really like having these in this file..
-    module internal Utilities =
-        open FSharp.Data.Sql.Providers
-
-        let createSqlProvider vendor resolutionPath owner =
-            match vendor with
-            #if MSSQL
-            | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            #endif
-            #if SQLITE
-            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-            #endif
-            #if POSTGRE
-            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-            #endif
-            #if MYSQL
-            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
-            #endif
-            #if ORACLE
-            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
-            #endif
-            #if MSACCESS
-            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-            #endif
-            #if ODBC
-            | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
-            #endif
-            | _ -> failwith "Unsupported database provider"   
-
-        let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
-            // eg "Item1" -> tupleIndex.[0]
-            tupleIndex.[(int <| name.Remove(0, 4)) - 1]
 
 namespace FSharp.Data.Sql.QueryExpression
 
