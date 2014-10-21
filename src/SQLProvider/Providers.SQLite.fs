@@ -79,7 +79,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
-        member __.CreateCommand(connection,commandText) =  Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(param,value) = 
             let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
             p.DbType <- param.TypeMapping.DbType
@@ -332,7 +332,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
 
             con.Open()
             let createInsertCommand (entity:SqlEntity) =                 
-                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
@@ -357,7 +357,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                 cmd
 
             let createUpdateCommand (entity:SqlEntity) changedColumns =
-                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 let pk = pkLookup.[entity.Table.FullName] 
                 sb.Clear() |> ignore
@@ -396,7 +396,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                 cmd
             
             let createDeleteCommand (entity:SqlEntity) =
-                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 sb.Clear() |> ignore
                 let pk = pkLookup.[entity.Table.FullName] 

@@ -39,7 +39,8 @@ module internal QueryImplementation =
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
        if con.State <> ConnectionState.Open then con.Open()
-       let results = SqlEntity.FromDataReader(dc,baseTable.FullName, cmd.ExecuteReader())
+       use reader = cmd.ExecuteReader()
+       let results = SqlEntity.FromDataReader(dc,baseTable.FullName, reader)
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
