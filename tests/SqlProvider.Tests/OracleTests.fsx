@@ -23,11 +23,8 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-<<<<<<< HEAD
 let indv = ctx.Employees.Individuals.``As FirstName``.``100, Steven``
-=======
-let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
->>>>>>> master
+
 
 indv.FirstName + " " + indv.LastName + " " + indv.Email
 
@@ -35,13 +32,8 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-<<<<<<< HEAD
         for emp in ctx.Employees do
         select (emp.FirstName, emp.LastName)
-=======
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
-        select (emp.FIRST_NAME, emp.LAST_NAME)
->>>>>>> master
     } |> Seq.toList
 
 let salesNamedDavid = 
@@ -54,18 +46,18 @@ let salesNamedDavid =
 
 let employeesJob = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
+            for emp in ctx.Employees do
             for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
-            where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
-            select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
+            join dept in ctx.Departments on (emp.DepartmentId = dept.DepartmentId)
+            where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
+            select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
-        sortByDescending emp.COMMISSION_PCT
+        for emp in ctx.Employees do
+        sortByDescending emp.CommissionPct
         select emp
         take 5
     } 
@@ -90,7 +82,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[HR].[COUNTRIES]`` do
+        for emp in ctx.Countries do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -110,20 +102,20 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5M)
+            for reg in ctx.Regions do
+            where (reg.RegionId = 5M)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
-        newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5M
+        let newRegion = ctx.Regions.Create() 
+        newRegion.RegionName <- "Antartica"
+        newRegion.RegionId <- 5M
         ctx.SubmitUpdates()
         newRegion
 
-antartica.REGION_NAME <- "ant"
+antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
@@ -131,15 +123,15 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Procedures.AddJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //Support for sprocs with no parameters
-ctx.Procedures.SECURE_DML.Invoke()
+ctx.Procedures.SecureDml.Invoke()
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().CATCUR do
+      for e in ctx.Procedures.GetEmployees.Invoke().CATCUR do
         yield e.MapTo<Employee>()
     ]
 
@@ -151,7 +143,7 @@ type Region = {
 
 //Support for MARS procs
 let locations_and_regions =
-    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
+    let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     [
       for e in results.LOCATIONS do
         yield e.ColumnValues |> Seq.toList |> box
@@ -163,7 +155,7 @@ let locations_and_regions =
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
-    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER.Invoke hireDate)
+    let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.RESULTS do
         yield e.MapTo<Employee>()
@@ -173,12 +165,12 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME.Invoke(100M).ReturnValue
+let fullName = ctx.Functions.EmpFullname.Invoke(100M).ReturnValue
 
 //********************** Packaged Procs **********************//
 
-ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Packages.TestPackage.InsertJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //********************** Packaged Funcs **********************//
 
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME.Invoke("Bull", "Colin").ReturnValue
+let fullNamPkg = ctx.Packages.TestPackage.Fullname.Invoke("Bull", "Colin").ReturnValue
