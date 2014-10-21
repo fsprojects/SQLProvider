@@ -23,4 +23,4 @@ open FSharp.Data.Sql
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connectionString, ResolutionPath = resolutionPath>
 let ctx = sql.GetDataContext()
 
-let customers = ctx.``[main].[Customers]`` |> Seq.toArray
+let customers = ctx.Customers |> Seq.toArray

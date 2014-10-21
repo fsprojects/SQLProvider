@@ -42,26 +42,26 @@ open FSharp.Data.Sql
 
 // create a type alias with the connection string and database vendor settings
 type sql = SqlDataProvider< 
-              ConnectionString = @"Data Source=D:\Appdev\SqlProvider\tests\SqlProvider.Tests\northwindEF.db ;Version=3",
+              ConnectionString = @"Data Source=F:\sqlite\northwindEF.db ;Version=3",
               DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
-              ResolutionPath = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests\",
+              ResolutionPath = @"F:\sqlite\3",
               IndividualsAmount = 1000,
               UseOptionTypes = true >
 let ctx = sql.GetDataContext()
 
 // pick individual entities from the database 
-let christina = ctx.``[main].[Customers]``.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
 
 // directly enumerate an entity's relationships, 
 // this creates and triggers the relevant query in the background
 let christinasOrders = christina.FK_Orders_0_0 |> Seq.toArray
 
 let mattisOrderDetails =
-    query { for c in ctx.``[main].[Customers]`` do
+    query { for c in ctx.Customers do
             // you can directly enumerate relationships with no join information
             for o in c.FK_Orders_0_0 do
             // or you can explicitly join on the fields you choose
-            join od in ctx.``[main].[OrderDetails]`` on (o.OrderID = od.OrderID)
+            join od in ctx.OrderDetails on (o.OrderID = od.OrderID)
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.FK_OrderDetails_0_0 do 
             // nullable columns can be represented as option types. The following generates IS NOT NULL
