@@ -23,25 +23,24 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.``[HR_TEST].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.Employees.Individuals.``As FirstName``.``100, Steven``
 
-indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
+indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[HR_TEST].[EMPLOYEES]`` do
-        select (emp.FIRST_NAME, emp.LAST_NAME)
+        for emp in ctx.Employees do
+        select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
-            join d in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
-            where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
-            select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
-            
+            for emp in ctx.Employees do
+            join d in ctx.Departments on (emp.DepartmentId = d.DepartmentId)
+            where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
+            select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let employeesJob = 
