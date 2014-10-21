@@ -16,7 +16,7 @@ module internal QueryExpressionTransformer =
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (resultParam:ParameterExpression) baseTableAlias (aliasEntityDict:Map<string,Table>) =
         
         let (|SingleTable|MultipleTables|) = function
-            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> -> 
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp

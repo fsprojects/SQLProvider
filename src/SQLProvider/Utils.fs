@@ -194,8 +194,7 @@ module internal Sql =
         com.ExecuteReader()    
 
     let executeSqlAsDataTable createCommand sql con = 
-        executeSql createCommand sql con
-        |> (fun r -> 
-             let dt = new DataTable(); 
-             dt.Load(r); 
-             dt)
+        use r = executeSql createCommand sql con
+        let dt = new DataTable()
+        dt.Load(r)
+        dt
