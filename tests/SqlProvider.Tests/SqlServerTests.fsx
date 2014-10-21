@@ -23,65 +23,65 @@ type Employee = {
 
 
 //***************** Individuals ***********************//
-let indv = ctx.``[DBO].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.Employees.Individuals.``As FirstName``.``100, Steven``
 
-indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
+indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[DBO].[EMPLOYEES]`` do
-        select emp
+        for emp in ctx.Employees do
+        select emp.FirstName
     } |> Seq.toList
 
 //Ref issue #92
 let employeesFirstNameEmptyList = 
     query {
-        for emp in ctx.``[DBO].[EMPLOYEES]`` do
-        where (emp.EMPLOYEE_ID > 10000)
+        for emp in ctx.Employees do
+        where (emp.EmployeeId > 10000)
         select emp
     } |> Seq.toList
 
 let regionsEmptyTable = 
     query {
-        for r in ctx.``[DBO].[REGIONS]`` do
+        for r in ctx.Regions do
         select r
     } |> Seq.toList
 
 let tableWithNoKey = 
     query {
-        for r in ctx.``[DBO].[TABLE_1]`` do
-        select r.COL
+        for r in ctx.Table1 do
+        select r.Col
     } |> Seq.toList
 
-let entity = ctx.``[DBO].[TABLE_1]``.Create()
-entity.COL <- 123uy
+let entity = ctx.Table1.Create()
+entity.Col <- 123uy
 ctx.SubmitUpdates()
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[DBO].[EMPLOYEES]`` do
-            join d in ctx.``[DBO].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
-            where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
-            select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
+            for emp in ctx.Employees do
+            join d in ctx.Departments on (emp.DepartmentId = d.DepartmentId)
+            where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
+            select (d.DepartmentName, emp.FirstName, emp.LastName)
             
     } |> Seq.toList
 
 let employeesJob = 
     query {
-            for emp in ctx.``[DBO].[EMPLOYEES]`` do
+            for emp in ctx.Employees do
             for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.``[DBO].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
-            where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
-            select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
+            join dept in ctx.Departments on (emp.DepartmentId = dept.DepartmentId)
+            where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
+            select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[DBO].[EMPLOYEES]`` do
-        sortByDescending emp.COMMISSION_PCT
+        for emp in ctx.Employees do
+        sortByDescending emp.CommissionPct
         select emp
         take 5
     } 
@@ -106,7 +106,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[DBO].[COUNTRIES]`` do
+        for emp in ctx.Countries do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -126,20 +126,20 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[DBO].[REGIONS]`` do
-            where (reg.REGION_ID = 5)
+            for reg in ctx.Regions do
+            where (reg.RegionId = 5)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[DBO].[REGIONS]``.Create() 
-        newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5
+        let newRegion = ctx.Regions.Create() 
+        newRegion.RegionName <- "Antartica"
+        newRegion.RegionId <- 5
         ctx.SubmitUpdates()
         newRegion
 
-antartica.REGION_NAME <- "ant"
+antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
@@ -147,13 +147,13 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().ResultSet do
+      for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -165,7 +165,7 @@ type Region = {
 
 //Support for MARS procs
 let locations_and_regions =
-    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
+    let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
     [
       for e in results.ResultSet do
@@ -178,7 +178,7 @@ let locations_and_regions =
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
-    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER.Invoke hireDate)
+    let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ResultSet do
         yield e.MapTo<Employee>()

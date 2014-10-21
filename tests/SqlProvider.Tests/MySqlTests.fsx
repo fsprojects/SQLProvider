@@ -23,41 +23,41 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.``[HR].[EMPLOYEES]``.Individuals.``As FIRST_NAME``.``100, Steven``
+let indv = ctx.Employees.Individuals.``As FirstName``.``100, Steven``
 
-indv.FIRST_NAME + " " + indv.LAST_NAME + " " + indv.EMAIL
+
+indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
-        select (emp.FIRST_NAME, emp.LAST_NAME)
+        for emp in ctx.Employees do
+        select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
-            join d in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = d.DEPARTMENT_ID)
-            where (d.DEPARTMENT_NAME |=| [|"Sales";"IT"|] && emp.FIRST_NAME =% "David")
-            select (d.DEPARTMENT_NAME, emp.FIRST_NAME, emp.LAST_NAME)
-            
+            for emp in ctx.Employees do
+            join d in ctx.Departments on (emp.DepartmentId = d.DepartmentId)
+            where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
+            select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let employeesJob = 
     query {
-            for emp in ctx.``[HR].[EMPLOYEES]`` do
+            for emp in ctx.Employees do
             for manager in emp.employees_ibfk_3 do
-            join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
-            where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
-            select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
+            join dept in ctx.Departments on (emp.DepartmentId = dept.DepartmentId)
+            where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
+            select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
     query {
-        for emp in ctx.``[HR].[EMPLOYEES]`` do
-        sortByDescending emp.COMMISSION_PCT
+        for emp in ctx.Employees do
+        sortByDescending emp.CommissionPct
         select emp
         take 5
     } 
@@ -82,7 +82,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.``[HR].[COUNTRIES]`` do
+        for emp in ctx.Countries do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -102,20 +102,20 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5u)
+            for reg in ctx.Regions do
+            where (reg.RegionId = 5u)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.``[HR].[REGIONS]``.Create() 
-        newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5u
+        let newRegion = ctx.Regions.Create() 
+        newRegion.RegionName <- "Antartica"
+        newRegion.RegionId <- 5u
         ctx.SubmitUpdates()
         newRegion
 
-antartica.REGION_NAME <- "ant"
+antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
@@ -123,15 +123,13 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY.Invoke(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
+ctx.Procedures.AddJobHistory.Invoke(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
-//Support for sprocs with no parameters
-//ctx.Procedures.SECURE_DML()
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().ResultSet do
+      for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -143,20 +141,19 @@ type Region = {
 
 //Support for MARS procs
 let locations_and_regions =
-    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
+    let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     [
-      for e in results.ResultSet do
-        yield e.ColumnValues |> Seq.toList |> box
-      //This isn't supported as I cannot figure out how to get the information
-      //about how many result sets the sproc returns.
-//      for e in results.ResultSet1 do
+//      for e in results.ReturnValue do
 //        yield e.ColumnValues |> Seq.toList |> box
+//             
+      for e in results.ColumnValues do
+        yield e// |> Seq.toList |> box
     ]
 
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
-    let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER.Invoke hireDate)
+    let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ResultSet do
         yield e.MapTo<Employee>()
@@ -166,4 +163,4 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.FN_EMP_FULLNAME.Invoke(100u).ReturnValue
+let fullName = ctx.Functions.FnEmpFullname.Invoke(100u).ReturnValue

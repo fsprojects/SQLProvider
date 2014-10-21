@@ -429,7 +429,6 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             match relationshipLookup.TryGetValue(table.FullName) with
             | true,v -> v
             | _ ->
-                let toSchema schema table = sprintf "[%s].[%s]" schema table
                 let baseQuery = @"SELECT  
                                      KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
                                     ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
@@ -457,14 +456,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
                 let children =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(9)) (reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
                 reader.Dispose()
                 use reader = executeSql con (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name )
                 let parents =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(9)) (reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
                 relationshipLookup.Add(table.FullName,(children,parents))
                 con.Close()
                 (children,parents)    

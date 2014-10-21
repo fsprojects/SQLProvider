@@ -24,6 +24,9 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         tupleIndex.[(int <| name.Remove(0, 4)) - 1]
 
+    let quoteWhiteSpace (str:String) = 
+        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
+
 module ConfigHelpers = 
     
     open System

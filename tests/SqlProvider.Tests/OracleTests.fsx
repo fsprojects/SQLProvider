@@ -54,7 +54,7 @@ let employeesJob =
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Employees do
         sortByDescending emp.CommissionPct

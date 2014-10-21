@@ -7,6 +7,7 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql.Common.Utilities
 
 module internal Oracle =
     
@@ -95,15 +96,7 @@ module internal Oracle =
         if prop <> null
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None         
-
-    let quoteWhiteSpace (str:String) = 
-        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
-    
-    let tableFullName (table:Table) =
-        if (String.IsNullOrWhiteSpace(table.Schema))
-        then (quoteWhiteSpace table.Name)
-        else table.Schema + "." + (quoteWhiteSpace table.Name)
-
+            
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
@@ -234,11 +227,11 @@ module internal Oracle =
             )
         (children, rels)
 
-    let getIndivdualsQueryText amount table = 
-        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount
+    let getIndivdualsQueryText amount (table:Table) = 
+        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" table.FullName amount
 
-    let getIndivdualQueryText table column = 
-        let tName = tableFullName table
+    let getIndivdualQueryText (table:Table) column = 
+        let tName = table.FullName
         sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
 
     let getSprocs con =
@@ -443,8 +436,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (Oracle.quoteWhiteSpace col) col
-                                else yield sprintf "%s.%s as \"%s.%s\"" k (Oracle.quoteWhiteSpace col) k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
+                                else yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
@@ -477,19 +470,19 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (Oracle.quoteWhiteSpace col) 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (Oracle.quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (quoteWhiteSpace col) 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias (Oracle.quoteWhiteSpace col) text
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias (Oracle.quoteWhiteSpace col) text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias (Oracle.quoteWhiteSpace col) 
+                                        (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col) 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -525,7 +518,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
-                            joinType (Oracle.tableFullName destTable) destAlias 
+                            joinType destTable.FullName destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
@@ -535,14 +528,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias (Oracle.quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
+                    ~~ (sprintf "%s.%s%s" alias (quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s %s " (Oracle.tableFullName baseTable) baseAlias)         
+            ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -595,7 +588,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 
                 sb.Clear() |> ignore
                 ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)" 
-                    (Oracle.tableFullName entity.Table)
+                    (entity.Table.FullName)
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
                 let cmd = provider.CreateCommand(con, sb.ToString())
@@ -630,7 +623,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 let pkParam = provider.CreateCommandParameter(QueryParameter.Create(":pk",0), pkValue)
 
                 ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk" 
-                    (Oracle.tableFullName entity.Table)
+                    (entity.Table.FullName)
                     (String.Join(",", columns))
                     (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
                     pk.Column)
@@ -647,7 +640,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                     match entity.GetColumnOption<obj> pk.Column with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (Oracle.tableFullName entity.Table) pk.Column )
+                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (entity.Table.FullName) pk.Column )
                 let cmd = provider.CreateCommand(con, sb.ToString())
                 cmd.CommandType <- CommandType.Text
                 let pkType = pkValue.GetType().ToString();
