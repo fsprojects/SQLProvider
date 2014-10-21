@@ -109,7 +109,7 @@ module internal Oracle =
         let oracleDbTypeSetter = 
             parameterType.GetProperty("OracleDbType").GetSetMethod()
         
-        let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+        let p = Activator.CreateInstance(parameterType,[|box param.Name; box value|]) :?> IDbDataParameter
         
         p.Direction <- param.Direction 
         
@@ -446,10 +446,10 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? System.Array) -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
+                                         let elements = box x :?> System.Array
+                                         Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam null|]
 
