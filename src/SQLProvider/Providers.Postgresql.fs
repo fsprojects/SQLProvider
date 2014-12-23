@@ -724,7 +724,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             use scope = new Transactions.TransactionScope()
             try
                 
-                if con.State <> ConnectionState.Open then con.Open()         
+                // close the connection first otherwise it won't get enlisted into the transaction 
+                if con.State = ConnectionState.Open then con.Close()
+                con.Open()          
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
                 |> List.iter(fun e -> 
