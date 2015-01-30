@@ -1,4 +1,4 @@
-@import url(https://fonts.googleapis.com/css?family=Droid+Sans|Droid+Sans+Mono|Open+Sans:400,600,700);
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans|Droid+Sans+Mono|Open+Sans:400,600,700);
 
 /*-------------------------------------------------------------------------- 
   Formatting for F# code snippets 
@@ -93,10 +93,6 @@ pre {
 .masthead {
   overflow: hidden;
 }
-.masthead .muted a {
-  text-decoration:none;
-  color:#999999;
-}
 .masthead ul, .masthead li {
   margin-bottom:0px;
 }
@@ -174,17 +170,6 @@ td.title, thead {
 .github-link:hover .hover { display:block; }
 .github-link .normal { display: block; }
 .github-link:hover .normal { display: none; }
-
-/*-------------------------------------------------------------------------- 
-  Links 
-/*--------------------------------------------------------------------------*/
-
-h1 a, h1 a:hover, h1 a:focus,
-h2 a, h2 a:hover, h2 a:focus,
-h3 a, h3 a:hover, h3 a:focus,
-h4 a, h4 a:hover, h4 a:focus,
-h5 a, h5 a:hover, h5 a:focus,
-h6 a, h6 a:hover, h6 a:focus { color : inherit; text-decoration : inherit; outline:none }
 
 /*-------------------------------------------------------------------------- 
   Additional formatting for the homepage 

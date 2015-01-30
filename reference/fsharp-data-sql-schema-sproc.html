@@ -12,8 +12,8 @@
     <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
     <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
 
-    <link type="text/css" rel="stylesheet" href="/SQLProvider/content/style.css" />
-    <script type="text/javascript" src="/SQLProvider/content/tips.js"></script>
+    <link type="text/css" rel="stylesheet" href="./../content/style.css" />
+    <script type="text/javascript" src="./../content/tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -26,7 +26,7 @@
           <li><a href="http://fsharp.org">fsharp.org</a></li>
           <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
         </ul>
-        <h3 class="muted"><a href="/SQLProvider/index.html">SQLProvider</a></h3>
+        <h3 class="muted"><a href="./../index.html">SQLProvider</a></h3>
       </div>
       <hr />
       <div class="row">
@@ -38,55 +38,82 @@
 <h1>Sproc</h1>
 <div class="xmldoc">
 </div>
-  <h3>Record Fields</h3>
+  <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Record Field</td><td>Description</td></tr>
+      <tr><td>Union Case</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '93', 93)" onmouseover="showTip(event, '93', 93)">
-            FullName
+          <code onmouseout="hideTip(event, '204', 204)" onmouseover="showTip(event, '204', 204)">
+            Empty
           </code>
-          <div class="tip" id="93">
-            <strong>Signature:</strong>string<br />
+          <div class="tip" id="204">
+            <strong>Signature:</strong> <br />
                       </div>
         </td>
         <td class="xmldoc">
-        
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L19-19" class="github-link">Go to GitHub source</a>
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L65-65" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '94', 94)" onmouseover="showTip(event, '94', 94)">
-            Params
+          <code onmouseout="hideTip(event, '205', 205)" onmouseover="showTip(event, '205', 205)">
+            Root(string,Sproc)
           </code>
-          <div class="tip" id="94">
-            <strong>Signature:</strong>SprocParam list<br />
+          <div class="tip" id="205">
+            <strong>Signature:</strong> string * Sproc<br />
                       </div>
         </td>
         <td class="xmldoc">
-        
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L19-19" class="github-link">Go to GitHub source</a>
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L62-62" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '95', 95)" onmouseover="showTip(event, '95', 95)">
-            ReturnColumns
+          <code onmouseout="hideTip(event, '206', 206)" onmouseover="showTip(event, '206', 206)">
+            Sproc(SprocDefinition)
           </code>
-          <div class="tip" id="95">
-            <strong>Signature:</strong>Column list<br />
+          <div class="tip" id="206">
+            <strong>Signature:</strong> SprocDefinition<br />
                       </div>
         </td>
         <td class="xmldoc">
-        
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L19-19" class="github-link">Go to GitHub source</a>
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L64-64" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '207', 207)" onmouseover="showTip(event, '207', 207)">
+            SprocPath(string,Sproc)
+          </code>
+          <div class="tip" id="207">
+            <strong>Signature:</strong> string * Sproc<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L63-63" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
         </td>
       </tr>
     </tbody>
@@ -96,7 +123,7 @@
         <div class="span3">
           <ul class="nav nav-list" id="menu">
             <li class="nav-header">SQLProvider</li>
-            <li><a href="/SQLProvider/index.html">Home page</a></li>
+            <li><a href="./../index.html">Home page</a></li>
             <li class="divider"></li>
             <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
             <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
@@ -105,9 +132,9 @@
             
         
             <li class="nav-header">Documentation</li>
-              <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
-              <li><a href="/SQLProvider/core/oracle.html">Oracle Documentation</a></li>
-              <li><a href="/SQLProvider/reference/index.html">Internal API Docs</a></li>
+              <li><a href="./../core/general.html">Core Documentation</a></li>
+              <li><a href="./../core/oracle.html">Oracle Documentation</a></li>
+              <li><a href="./../reference/index.html">Internal API Docs</a></li>
           </ul>
         </div>
       </div>

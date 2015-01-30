@@ -12,8 +12,8 @@
     <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
     <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
 
-    <link type="text/css" rel="stylesheet" href="/SQLProvider/content/style.css" />
-    <script type="text/javascript" src="/SQLProvider/content/tips.js"></script>
+    <link type="text/css" rel="stylesheet" href="./../content/style.css" />
+    <script type="text/javascript" src="./../content/tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -26,7 +26,7 @@
           <li><a href="http://fsharp.org">fsharp.org</a></li>
           <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
         </ul>
-        <h3 class="muted"><a href="/SQLProvider/index.html">SQLProvider</a></h3>
+        <h3 class="muted"><a href="./../index.html">SQLProvider</a></h3>
       </div>
       <hr />
       <div class="row">
@@ -35,9 +35,9 @@
 
 <h1>SQLProvider</h1>
 
-  <h2>FSharp.Data.Sql Namespace</h2>
-  <div>
-      <table class="table table-bordered type-list">
+    <h2>FSharp.Data.Sql Namespace</h2>
+    <div>
+        <table class="table table-bordered type-list">
     <thead>
       <tr><td>Type</td><td>Description</td></tr>
     </thead>
@@ -52,7 +52,8 @@
           <td class="type-name">
             <a href="fsharp-data-sql-sqldataprovider.html">SqlDataProvider</a>
           </td>
-          <td class="xmldoc"></td>
+          <td class="xmldoc"><p>Typed representation of a database</p>
+</td>
         </tr>
         <tr>
           <td class="type-name">
@@ -81,17 +82,17 @@
         </tr>
         <tr>
           <td class="module-name">
-            <a href="fsharp-data-sql-schemaprojections.html">SchemaProjections</a>
+            <a href="fsharp-data-sql-quotationhelpers.html">QuotationHelpers</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
     </tbody>
   </table>
 
-  </div>
-  <h2>FSharp.Data.Sql.Common Namespace</h2>
-  <div>
-      <table class="table table-bordered type-list">
+    </div>
+    <h2>FSharp.Data.Sql.Common Namespace</h2>
+    <div>
+        <table class="table table-bordered type-list">
     <thead>
       <tr><td>Type</td><td>Description</td></tr>
     </thead>
@@ -110,6 +111,18 @@
         </tr>
         <tr>
           <td class="type-name">
+            <a href="fsharp-data-sql-common-entitystate.html">EntityState</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="type-name">
             <a href="fsharp-data-sql-common-linkdata.html">LinkData</a>
           </td>
           <td class="xmldoc"></td>
@@ -122,13 +135,25 @@
         </tr>
         <tr>
           <td class="type-name">
-            <a href="fsharp-data-sql-common-sqlentity.html">SqlEntity</a>
+            <a href="fsharp-data-sql-common-resultset.html">ResultSet</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
         <tr>
           <td class="type-name">
-            <a href="fsharp-data-sql-common-sqlexp.html">SqlExp</a>
+            <a href="fsharp-data-sql-common-returnsettype.html">ReturnSetType</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-common-sqlentity.html">SqlEntity</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
@@ -153,6 +178,12 @@
     <tbody>
         <tr>
           <td class="module-name">
+            <a href="fsharp-data-sql-common-confighelpers.html">ConfigHelpers</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="module-name">
             <a href="fsharp-data-sql-common-queryevents.html">QueryEvents</a>
           </td>
           <td class="xmldoc"></td>
@@ -160,14 +191,49 @@
     </tbody>
   </table>
 
-  </div>
-  <h2>FSharp.Data.Sql.Runtime Namespace</h2>
-  <div>
-      <table class="table table-bordered type-list">
+    </div>
+    <h2>FSharp.Data.Sql.Providers Namespace</h2>
+    <div>
+        <table class="table table-bordered module-list">
+    <thead>
+      <tr><td>Module</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td class="module-name">
+            <a href="fsharp-data-sql-providers-mssqlserver.html">MSSqlServer</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="module-name">
+            <a href="fsharp-data-sql-providers-mysql.html">MySql</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="module-name">
+            <a href="fsharp-data-sql-providers-postgresql.html">PostgreSQL</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+    </tbody>
+  </table>
+
+    </div>
+    <h2>FSharp.Data.Sql.Runtime Namespace</h2>
+    <div>
+        <table class="table table-bordered type-list">
     <thead>
       <tr><td>Type</td><td>Description</td></tr>
     </thead>
     <tbody>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-runtime-iwithdatacontext.html">IWithDataContext</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
         <tr>
           <td class="type-name">
             <a href="fsharp-data-sql-runtime-sqldatacontext.html">SqlDataContext</a>
@@ -177,10 +243,10 @@
     </tbody>
   </table>
 
-  </div>
-  <h2>FSharp.Data.Sql.Schema Namespace</h2>
-  <div>
-      <table class="table table-bordered type-list">
+    </div>
+    <h2>FSharp.Data.Sql.Schema Namespace</h2>
+    <div>
+        <table class="table table-bordered type-list">
     <thead>
       <tr><td>Type</td><td>Description</td></tr>
     </thead>
@@ -193,13 +259,13 @@
         </tr>
         <tr>
           <td class="type-name">
-            <a href="fsharp-data-sql-schema-direction.html">Direction</a>
+            <a href="fsharp-data-sql-schema-primarykey.html">PrimaryKey</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
         <tr>
           <td class="type-name">
-            <a href="fsharp-data-sql-schema-primarykey.html">PrimaryKey</a>
+            <a href="fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
@@ -217,7 +283,13 @@
         </tr>
         <tr>
           <td class="type-name">
-            <a href="fsharp-data-sql-schema-sprocparam.html">SprocParam</a>
+            <a href="fsharp-data-sql-schema-sprocdefinition.html">SprocDefinition</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-schema-sprocname.html">SprocName</a>
           </td>
           <td class="xmldoc"></td>
         </tr>
@@ -227,13 +299,19 @@
           </td>
           <td class="xmldoc"></td>
         </tr>
+        <tr>
+          <td class="type-name">
+            <a href="fsharp-data-sql-schema-typemapping.html">TypeMapping</a>
+          </td>
+          <td class="xmldoc"></td>
+        </tr>
     </tbody>
   </table>
 
-  </div>
-  <h2>Samples.FSharp.ProvidedTypes Namespace</h2>
-  <div>
-      <table class="table table-bordered type-list">
+    </div>
+    <h2>Samples.FSharp.ProvidedTypes Namespace</h2>
+    <div>
+        <table class="table table-bordered type-list">
     <thead>
       <tr><td>Type</td><td>Description</td></tr>
     </thead>
@@ -256,13 +334,13 @@ types are of type ProvidedTypeDefinition.</p>
     </tbody>
   </table>
 
-  </div>
+    </div>
 
         </div>
         <div class="span3">
           <ul class="nav nav-list" id="menu">
             <li class="nav-header">SQLProvider</li>
-            <li><a href="/SQLProvider/index.html">Home page</a></li>
+            <li><a href="./../index.html">Home page</a></li>
             <li class="divider"></li>
             <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
             <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
@@ -271,9 +349,9 @@ types are of type ProvidedTypeDefinition.</p>
             
         
             <li class="nav-header">Documentation</li>
-              <li><a href="/SQLProvider/core/general.html">Core Documentation</a></li>
-              <li><a href="/SQLProvider/core/oracle.html">Oracle Documentation</a></li>
-              <li><a href="/SQLProvider/reference/index.html">Internal API Docs</a></li>
+              <li><a href="./../core/general.html">Core Documentation</a></li>
+              <li><a href="./../core/oracle.html">Oracle Documentation</a></li>
+              <li><a href="./../reference/index.html">Internal API Docs</a></li>
           </ul>
         </div>
       </div>
