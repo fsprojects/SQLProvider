@@ -6,7 +6,7 @@
 // Binaries that have XML documentation (in a corresponding generated XML file)
 let referenceBinaries = [ "FSharp.Data.SqlProvider.dll" ]
 // Web site location for the generated documentation
-let website = "/SQLProvider"
+let website = "."
 
 let githubLink = "http://github.com/fsprojects/SQLProvider"
 
@@ -15,18 +15,18 @@ let info =
   [ "project-name", "SQLProvider"
     "project-author", "Ross McKinlay"
     "project-summary", "Type providers for SQL server access."
-    "project-github", "http://github.com/fsprojects/SQLProvider"
+    "project-github", githubLink
     "project-nuget", "http://nuget.org/packages/SQLProvider" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below
 // --------------------------------------------------------------------------------------
 
-#I "../../packages/FSharp.Formatting.2.3.5-beta/lib/net40"
-#I "../../packages/RazorEngine.3.3.0/lib/net40"
-#I "../../packages/FSharp.Compiler.Service.0.0.11-alpha/lib/net40"
-#r "../../packages/Microsoft.AspNet.Razor.2.0.30506.0/lib/net40/System.Web.Razor.dll"
+#I "../../packages/FSharp.Formatting/lib/net40"
+#I "../../packages/FSharp.Compiler.Service/lib/net40"
+#r "../../packages/FAKE/tools/NuGet.Core.dll"
 #r "../../packages/FAKE/tools/FakeLib.dll"
+#r "System.Web.Razor.dll"
 #r "RazorEngine.dll"
 #r "FSharp.Literate.dll"
 #r "FSharp.CodeFormat.dll"
@@ -51,7 +51,7 @@ let content    = __SOURCE_DIRECTORY__ @@ "../content"
 let output     = __SOURCE_DIRECTORY__ @@ "../output"
 let files      = __SOURCE_DIRECTORY__ @@ "../files"
 let templates  = __SOURCE_DIRECTORY__ @@ "templates"
-let formatting = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting.2.3.5-beta/"
+let formatting = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
 let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
@@ -66,16 +66,30 @@ let copyFiles () =
   CopyRecursive (formatting @@ "styles") (output @@ "content") true 
     |> Log "Copying styles and scripts: "
 
+// When called from 'build.fsx', use the public project URL as <root>
+// otherwise, use the current 'output' directory.
+#if RELEASE
+let refRoot = website + "/.."
+#else
+let refRoot = "file://" + (__SOURCE_DIRECTORY__ @@ "../output")
+#endif
+
 // Build API reference from XML comments
 let buildReference () =
   CleanDir (output @@ "reference")
   for lib in referenceBinaries do
     MetadataFormat.Generate
       ( bin @@ lib, output @@ "reference", layoutRoots, 
-        parameters = ("root", root)::info,
+        parameters = ("root", refRoot)::info,
         sourceRepo = githubLink @@ "tree/master",
         sourceFolder = __SOURCE_DIRECTORY__ @@ ".." @@ "..",
-        publicOnly = true )
+        libDirs = [ bin ] )
+
+#if RELEASE
+let docRoot = website
+#else
+let docRoot = "file://" + (__SOURCE_DIRECTORY__ @@ "../output")
+#endif
 
 // Build documentation from `fsx` and `md` files in `docs/content`
 let buildDocumentation () =
@@ -83,34 +97,15 @@ let buildDocumentation () =
   for dir in Seq.append [content] subdirs do
     let sub = if dir.Length > content.Length then dir.Substring(content.Length + 1) else "."
     Literate.ProcessDirectory
-      ( dir, docTemplate, output @@ sub, replacements = ("root", root)::info,
-        layoutRoots = layoutRoots )
-
-// Remove `FSharp.Core` from `bin` directory.
-// Otherwise, version conflict can break code tips.
-let execute pipeline =
-    // Cache `FSharp.Core.*` files
-    let files = 
-        !! (bin @@ "FSharp.Core.*")
-        |> Seq.toArray
-        |> Array.map (fun file ->
-            (file, File.ReadAllBytes file))
-    if (files.Length > 0) then
-        TraceHelper.traceError "Consider setting CopyLocal to False for FSharp.Core in all *.fsproj files"
-    // Remove `FSharp.Core.*` files
-    files |> Seq.iter (fun (file,_) ->
-        TraceHelper.traceImportant <| sprintf  "Removing '%s'" file
-        File.Delete file)
-    // Execute document generation pipeline
-    pipeline()
-    // Restore `FSharp.Core.*` files
-    files |> Seq.iter (fun (file, bytes) ->
-        TraceHelper.traceImportant <| sprintf "Restoring '%s'" file
-        File.WriteAllBytes(file, bytes))
-
+      ( dir, docTemplate, output @@ sub, replacements = ("root", docRoot)::info,
+        layoutRoots = layoutRoots,
+        generateAnchors = true )
 
 // Generate
-execute(
-  copyFiles 
-  >> buildDocumentation
-  >> buildReference)
+copyFiles()
+#if HELP
+buildDocumentation()
+#endif
+#if REFERENCE
+buildReference()
+#endif

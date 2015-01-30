@@ -1,12 +1,10 @@
-language: objective-c
+language: csharp
 
-env:
-  matrix:
-    - MONO_VERSION="3.2.5"
+sudo: false  # use the new container-based Travis infrastructure
 
 install:
-  - wget "http://download.xamarin.com/MonoFrameworkMDK/Macx86/MonoFramework-MDK-${MONO_VERSION}.macos10.xamarin.x86.pkg"
-  - sudo installer -pkg "MonoFramework-MDK-${MONO_VERSION}.macos10.xamarin.x86.pkg" -target /
+  - mkdir ~/.config/.mono/keypairs
+  - chmod 700 ~/.config/.mono/keypairs
 
-script: 
+script:
   - ./build.sh All
