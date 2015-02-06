@@ -527,11 +527,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when box x :? string array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
-                                     | Some(x) -> [|createParam (box x)|]
+                                            (box x :?> obj []) |> Array.map createParam
+                                     | Some(x) -> 
+                                         [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""

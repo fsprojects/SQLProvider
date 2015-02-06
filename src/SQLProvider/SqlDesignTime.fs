@@ -238,7 +238,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                               let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                               Expr.Call(args.[0],meth,[Expr.Value name])),
                                           SetterCode = (fun args ->
-                                              let meth = typeof<SqlEntity>.GetMethod "SetColumn"
+                                              let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
                                               Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                                   rt.AddMember prop)
                               resultType.AddMember(rt)
