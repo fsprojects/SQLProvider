@@ -122,9 +122,14 @@ module PostgreSQL =
                 yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
+        let adjustments = 
+            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ] 
+            |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
+
         let clrMappings =
             mappings
             |> List.map (fun m -> m.ClrType, m)
+            |> (fun tys -> List.append tys adjustments)
             |> Map.ofList
 
         let dbMappings = 
