@@ -154,13 +154,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let (columns,(children,parents)) = getTableData key
                 let attProps = 
                     let createColumnProperty (c:Column) =
-                        let nullable = useOptionTypes && c.IsNullable                      
-                        let ty = if nullable then typedefof<option<_>>.MakeGenericType(Type.GetType c.TypeMapping.ClrType)
-                                 else Type.GetType c.TypeMapping.ClrType
+                        let nullable = useOptionTypes && c.IsNullable
+                        let ty = Type.GetType c.TypeMapping.ClrType
+                        let propTy = if nullable then typedefof<option<_>>.MakeGenericType(ty) else ty
                         let name = c.Name
                         let prop = 
                             ProvidedProperty(
-                                SchemaProjections.buildFieldName(name),ty,
+                                SchemaProjections.buildFieldName(name),propTy,
                                 GetterCode = (fun args ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
