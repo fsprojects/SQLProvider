@@ -42,9 +42,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let cols = prov.GetColumns(con,t)
                             let rel = prov.GetRelationships(con,t)
                             (cols,rel))]
-
         let sprocData = lazy prov.GetSprocs con
-
         let getSprocReturnColumns (sprocDefinition:SprocDefinition) = 
             prov.GetSprocReturnColumns(con,sprocDefinition)
               
