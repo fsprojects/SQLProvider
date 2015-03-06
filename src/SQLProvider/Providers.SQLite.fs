@@ -332,7 +332,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
 
             con.Open()
             let createInsertCommand (entity:SqlEntity) =                 
-                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 let pk = pkLookup.[entity.Table.FullName] 
                 let columnNames, values = 
@@ -357,7 +357,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                 cmd
 
             let createUpdateCommand (entity:SqlEntity) changedColumns =
-                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 let pk = pkLookup.[entity.Table.FullName] 
                 sb.Clear() |> ignore
@@ -396,7 +396,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                 cmd
             
             let createDeleteCommand (entity:SqlEntity) =
-                use cmd = (this :> ISqlProvider).CreateCommand(con,"")
+                let cmd = (this :> ISqlProvider).CreateCommand(con,"")
                 cmd.Connection <- con 
                 sb.Clear() |> ignore
                 let pk = pkLookup.[entity.Table.FullName] 
@@ -422,7 +422,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                 |> List.iter(fun e -> 
                     match e._State with
                     | Created -> 
-                        let cmd = createInsertCommand e
+                        use cmd = createInsertCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
                         match e.GetColumnOption pkLookup.[e.Table.FullName] with
@@ -432,12 +432,12 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
                         e._State <- Unchanged
                     | Modified fields -> 
-                        let cmd = createUpdateCommand e fields
+                        use cmd = createUpdateCommand e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Deleted -> 
-                        let cmd = createDeleteCommand e
+                        use cmd = createDeleteCommand e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
