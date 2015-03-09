@@ -176,3 +176,8 @@ nuget/
 nuget/*.nupkg
 docs/files/msaccess/Northwind.ldb
 *.orig
+.paket/paket.exe
+*.bak
+paket-files/
+docs/content/license.md
+docs/content/release-notes.md
