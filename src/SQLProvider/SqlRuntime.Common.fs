@@ -105,7 +105,7 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     member e.SetColumnSilent(key,value) =
         data.[key] <- value                
 
-    member e.SetColumn(key,value) =        
+    member e.SetColumn<'t>(key,value : 't) =        
         data.[key] <- value
         e.UpdateField key        
         e.TriggerPropertyChange key

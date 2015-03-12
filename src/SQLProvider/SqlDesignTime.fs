@@ -42,9 +42,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let cols = prov.GetColumns(con,t)
                             let rel = prov.GetRelationships(con,t)
                             (cols,rel))]
-
         let sprocData = lazy prov.GetSprocs con
-
         let getSprocReturnColumns (sprocDefinition:SprocDefinition) = 
             prov.GetSprocReturnColumns(con,sprocDefinition)
               
@@ -154,13 +152,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let (columns,(children,parents)) = getTableData key
                 let attProps = 
                     let createColumnProperty (c:Column) =
-                        let nullable = useOptionTypes && c.IsNullable                      
-                        let ty = if nullable then typedefof<option<_>>.MakeGenericType(Type.GetType c.TypeMapping.ClrType)
-                                 else Type.GetType c.TypeMapping.ClrType
+                        let nullable = useOptionTypes && c.IsNullable
+                        let ty = Type.GetType c.TypeMapping.ClrType
+                        let propTy = if nullable then typedefof<option<_>>.MakeGenericType(ty) else ty
                         let name = c.Name
                         let prop = 
                             ProvidedProperty(
-                                SchemaProjections.buildFieldName(name),ty,
+                                SchemaProjections.buildFieldName(name),propTy,
                                 GetterCode = (fun args ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
@@ -241,7 +239,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                               let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                               Expr.Call(args.[0],meth,[Expr.Value name])),
                                           SetterCode = (fun args ->
-                                              let meth = typeof<SqlEntity>.GetMethod "SetColumn"
+                                              let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
                                               Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                                   rt.AddMember prop)
                               resultType.AddMember(rt)
