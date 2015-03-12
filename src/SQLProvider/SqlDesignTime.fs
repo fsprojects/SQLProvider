@@ -162,7 +162,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 GetterCode = (fun args ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                                    Expr.Call(args.[0],meth,[Expr.Value name])),
+                                    Expr.Call(args.[0],meth,[Expr.Value name])
+                                ),
                                 SetterCode = (fun args ->
                                     if nullable then 
                                         // setter code is not going to work yet.
@@ -170,12 +171,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
                                     else      
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
-                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])))
+                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
+                                 )
                         prop
                     List.map createColumnProperty columns
-                let relProps =
-                    [ for r in children do                       
-                        let (tt,_,_) = (baseTypes.Force().[r.ForeignTable])
+                let relProps = 
+                    let bts = baseTypes.Force()       
+                    [ for r in children do               
+                        let (tt,_,_) = (bts.[r.ForeignTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
@@ -188,7 +191,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
                         yield prop ] @
                     [ for r in parents do
-                        let (tt,_,_) = (baseTypes.Force().[r.PrimaryTable])
+                        let (tt,_,_) = (bts.[r.PrimaryTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
