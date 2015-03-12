@@ -26,7 +26,7 @@ type Predicate =
 
 let audits  = 
     <@ fun p -> query { 
-       for u in ctx.AuditTrail do
+       for u in ctx.Mopdc.AuditTrail do
        if p u.RecordedOn 
        then yield u
       } @>
@@ -42,7 +42,7 @@ let rec eval(t) =
 [<EntryPoint>]
 let main argv =
     
-    let search = And(After(DateTime(2014, 09, 23)), Before(DateTime(2014, 09, 26)))
+    let search = And(After(DateTime(2015, 01, 01)), Before(DateTime.Today))
 
     let result = 
         query { for aud in ((%audits) (%eval search)) do

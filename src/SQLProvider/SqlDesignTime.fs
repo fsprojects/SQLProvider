@@ -58,10 +58,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                                         InvokeCode = fun args -> <@@ new SqlEntity(((%%args.[0] : obj) :?> ISqlDataContext) ,table.FullName) @@>))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
                         t.AddXmlDoc desc
-                        yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"") ]
+                        yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
 
         let createIndividualsType (table:Table) =
-            let (et,_,_) = baseTypes.Force().[table.FullName]
+            let (et,_,_,_) = baseTypes.Force().[table.FullName]
             let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", None, HideObjectMethods = true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
@@ -135,19 +135,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                | None -> [])
             individualsTypes :> seq<_> 
             
-        ///Interesting this doesn't seem to be used anywhere...
         let baseCollectionTypes =
             lazy
                 dict [ for table in tables.Force() do  
                         let name = table.FullName
-                        let (et,_,_) = baseTypes.Force().[name]
+                        let (et,_,_,_) = baseTypes.Force().[name]
                         let ct = ProvidedTypeDefinition(table.FullName + "Set", None ,HideObjectMethods=false)                        
                         ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
                         let it = createIndividualsType table 
                         yield table.FullName,(ct,it) ]
         
         // add the attributes and relationships
-        for KeyValue(key,(t,desc,_)) in baseTypes.Force() do 
+        for KeyValue(key,(t,desc,_,_)) in baseTypes.Force() do 
             t.AddMembersDelayed(fun () -> 
                 let (columns,(children,parents)) = getTableData key
                 let attProps = 
@@ -178,7 +177,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let relProps = 
                     let bts = baseTypes.Force()       
                     [ for r in children do               
-                        let (tt,_,_) = (bts.[r.ForeignTable])
+                        let (tt,_,_,_) = (bts.[r.ForeignTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
@@ -191,7 +190,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
                         yield prop ] @
                     [ for r in parents do
-                        let (tt,_,_) = (bts.[r.PrimaryTable])
+                        let (tt,_,_,_) = (bts.[r.PrimaryTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
@@ -300,10 +299,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | sproc::rest -> generateTypeTree (walkSproc [] None None createdTypes sproc) rest
 
         serviceType.AddMembersDelayed( fun () ->
+            let schemaMap = new System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
+            let getOrAddSchema name = 
+                match schemaMap.TryGetValue name with
+                | true, pt -> pt
+                | false, _  -> 
+                    let pt = new ProvidedTypeDefinition(name + "Schema", Some typeof<obj>)
+                    schemaMap.Add(name, pt)
+                    pt
             [ 
               let containers = generateTypeTree Map.empty (sprocData.Force())
               yield! containers |> Seq.cast<MemberInfo>
-              for (KeyValue(key,(entityType,desc,_))) in baseTypes.Force() do
+              for (KeyValue(key,(entityType,desc,_,schema))) in baseTypes.Force() do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
                 
@@ -363,19 +370,29 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                      yield create3 :> MemberInfo } |> Seq.toList
                 )
 
-   
+                //Create types to hold tables from different schemas
+                let schemaType = getOrAddSchema schema
                 let prop = ProvidedProperty(SchemaProjections.buildTableName(key),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
+                schemaType.AddMember ct
+                schemaType.AddMember prop
+
+
+
                 yield entityType :> MemberInfo
-                yield ct         :> MemberInfo                
-                yield prop       :> MemberInfo
+                //yield ct         :> MemberInfo                
+                //yield prop       :> MemberInfo
                 yield! Seq.cast<MemberInfo> it
 
               yield! containers |> Seq.map(fun p ->  ProvidedProperty(p.Name.Replace("Container",""), p, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
               yield ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
-             ] )
+             ] @ [
+                for KeyValue(name,pt) in schemaMap do
+                    yield pt :> MemberInfo
+                    yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
+             ])
         
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
         let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
