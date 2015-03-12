@@ -122,9 +122,14 @@ module PostgreSQL =
                 yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
+        let adjustments = 
+            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ] 
+            |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
+
         let clrMappings =
             mappings
             |> List.map (fun m -> m.ClrType, m)
+            |> (fun tys -> List.append tys adjustments)
             |> Map.ofList
 
         let dbMappings = 
@@ -526,11 +531,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when box x :? string array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
-                                         strings |> Array.map createParam
-                                     | Some(x) -> [|createParam (box x)|]
+                                            (box x :?> obj []) |> Array.map createParam
+                                     | Some(x) -> 
+                                         [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
@@ -723,7 +728,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             use scope = new Transactions.TransactionScope()
             try
                 
-                if con.State <> ConnectionState.Open then con.Open()         
+                // close the connection first otherwise it won't get enlisted into the transaction 
+                if con.State = ConnectionState.Open then con.Close()
+                con.Open()          
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
                 |> List.iter(fun e -> 
