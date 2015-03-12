@@ -101,7 +101,7 @@ module internal Reflection =
             | _ -> None
          )
 
-module internal Sql =
+module Sql =
     
     open System
     open System.Data
