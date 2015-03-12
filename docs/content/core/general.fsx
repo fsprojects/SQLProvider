@@ -39,7 +39,7 @@ When you press . on ``ctx``, intellisense will display a list of properties repr
 In the simplest case, you can treat these properties as sequences that can be enumerated.
 *)
 
-let customers = ctx.Customers |> Seq.toArray
+let customers = ctx.Main.Customers |> Seq.toArray
 (**
 This is the equivalent of executing a query that selects all rows and columns from the ``[MAIN].[CUSTOMERS]`` table.  
 Notice the resulting type is an array of ``[MAIN].[CUSTOMERS]Entity``.  These entities will contain properties relating to each column name from the table.
@@ -69,7 +69,7 @@ The SQL provider supports LINQ queries using F#'s *query expression* syntax.
 *)
 
 let customersQuery =
-    query { for customer in ctx.Customers do
+    query { for customer in ctx.Main.Customers do
             select customer } |> Seq.toArray
 (**
 The above example is identical to the query that was executed when ``ctx.[MAIN].[CUSTOMERS] |> Seq.toArray`` was evaluated.
@@ -77,12 +77,12 @@ You can extend this basic query include to filter criteria by introducing one or
 *)
 
 let filteredQuery =
-    query { for customer in ctx.Customers do
+    query { for customer in ctx.Main.Customers do
             where (customer.ContactName = "John Smith")
             select customer } |> Seq.toArray
 
 let multipleFilteredQuery =
-    query { for customer in ctx.Customers do
+    query { for customer in ctx.Main.Customers do
             where ((customer.ContactName = "John Smith" && customer.Country = "England") 
                     || customer.ContactName = "Joe Bloggs")
             select customer } |> Seq.toArray
@@ -93,14 +93,14 @@ To access related data, you can either enumerate directly over the constraint pr
 *)
 
 let automaticJoinQuery =
-   query { for customer in ctx.Customers do
+   query { for customer in ctx.Main.Customers do
            for order in customer.FK_Orders_0_0 do
            where (customer.ContactName = "John Smith")
            select (customer,order) } |> Seq.toArray
 
 let explicitJoinQuery =
-   query { for customer in ctx.Customers do
-           join order in ctx.Customers on (customer.CustomerId = order.CustomerId)
+   query { for customer in ctx.Main.Customers do
+           join order in ctx.Main.Customers on (customer.CustomerId = order.CustomerId)
            where (customer.ContactName = "John Smith")
            select (customer,order) } |> Seq.toArray
 
@@ -113,7 +113,7 @@ Changing the select expression to use the entities' properties will cause the SQ
 *)
 
 let ordersQuery =
-   query { for customer in ctx.Customers do
+   query { for customer in ctx.Main.Customers do
            for order in customer.FK_Orders_0_0 do
            where (customer.ContactName = "John Smith")
            select (customer.ContactName, order.OrderDate, order.ShipAddress) } |> Seq.toArray
@@ -126,7 +126,7 @@ The SQL provider supports various other query keywords and features that you can
 The SQL provider has the ability via intellisense to navigate the actual data held within a table or view. You can then bind that data as an entity to a value.
 *)
 
-let BERGS = ctx.Customers.Individuals.BERGS
+let BERGS = ctx.Main.Customers.Individuals.BERGS
 (**
 Every table and view has an ``Individuals`` property. When you press dot on this property, intellisense will display a list of the data in that table, using whatever the primary key is as the text for each one.
 In this case, the primary key for ``[MAIN].[CUSTOMERS]`` is a string, and I have selected one named BERGS. You will see the resulting type is ``[MAIN].[CUSTOMERS]Entity``.
@@ -135,4 +135,4 @@ The primary key is not usually very useful for identifying data however, so in a
 When you press . on one of these properties, the data is re-projected to you using both the primary key and the text of the column you have selected.
 *)
 
-let christina = ctx.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
