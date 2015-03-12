@@ -19,11 +19,9 @@ open FSharp.Data.Sql.Common
 open Oracle
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
-//let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
-//Oracle.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
+let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
+Oracle.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
 
-let connectionString = "Data Source=fused41;User Id=mopdc;Password=mopdc;"
-Oracle.resolutionPath <- @"C:\Program Files\Oracle\product\11.2.0\client_1\ODP.NET\bin\4"
 
 Oracle.owner <- "MOPDC"
 let connection = Oracle.createConnection connectionString
