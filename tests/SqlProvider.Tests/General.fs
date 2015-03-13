@@ -13,7 +13,8 @@ open NUnit.Framework
 //type sql = SqlDataProvider<connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
 
 [<Test>]
-let Test1() = Assert.IsTrue true
+let Test1() = 
+    Assert.IsTrue true
 
 
 //[<Test>]

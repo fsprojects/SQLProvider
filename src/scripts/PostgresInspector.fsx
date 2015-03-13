@@ -54,7 +54,6 @@ PostgreSQL.connect connection (SqlHelpers.executeSqlAsDataTable PostgreSQL.creat
             ")
 |> DataTable.printDataTable
 
-#r "D:\Downloads\Npgsql-2.1.3-net40\Npgsql.dll"
 
 
 

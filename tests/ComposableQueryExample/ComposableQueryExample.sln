@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProviderTest", "SqlProviderTest\SqlProviderTest.fsproj", "{3BE990EC-B050-4163-849A-A3DF7CE328AD}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ComposableQueryExample", "ComposableQueryExample\ComposableQueryExample.fsproj", "{3BE990EC-B050-4163-849A-A3DF7CE328AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
