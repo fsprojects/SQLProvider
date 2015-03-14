@@ -20,66 +20,120 @@ module PostgreSQL =
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let findType name =
+    let tryFindType name =
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Some(assembly) -> assembly.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
         | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+
+    let findType name =
+        match tryFindType name with
+        | Some(t) -> t
+        | None -> failwithf "Unable to find type %s from specified postgresql assemblies." name
+
+    let checkType = tryFindType >> Option.isSome
 
     let connectionType = lazy (findType "NpgsqlConnection")
     let commandType = lazy (findType "NpgsqlCommand")
     let parameterType = lazy (findType "NpgsqlParameter")
-    let dbType = lazy (findType "NpgsqlDbType")
 
-    let mapTypeToClrType (sqlType:string) =
-            match sqlType.ToLower() with
-            | "bigint"
-            | "int8"       -> Some typeof<Int64>
-            | "bit"           // Doesn't seem to correspond to correct type - fixed-length bit string (Npgsql.BitString)
-            | "varbit"        // Doesn't seem to correspond to correct type - variable-length bit string (Npgsql.BitString)
-            | "boolean"
-            | "bool"       -> Some typeof<Boolean>
-            | "box"
-            | "circle"
-            | "line"
-            | "lseg"
-            | "path"
-            | "point"
-            | "polygon"    -> Some typeof<Object>
-            | "bytea"      -> Some typeof<Byte[]>
-            | "double"
-            | "float8"     -> Some typeof<Double>
-            | "integer"
-            | "int"
-            | "int4"       -> Some typeof<Int32>
-            | "money"
-            | "numeric"    -> Some typeof<Decimal>
-            | "real"
-            | "float4"     -> Some typeof<Single>
-            | "smallint"
-            | "int2"       -> Some typeof<Int16>
-            | "text"       -> Some typeof<String>
-            | "date"
-            | "time"
-            | "timetz"
-            | "timestamp"
-            | "timestamptz"-> Some typeof<DateTime>
-            | "interval"   -> Some typeof<TimeSpan>
-            | "character"
-            | "varchar"    -> Some typeof<String>
-            | "inet"       -> Some typeof<System.Net.IPAddress>
-            | "uuid"       -> Some typeof<Guid>
-            | "xml"        -> Some typeof<String>
-            | _ -> None
+    let dbType = lazy (findType "NpgsqlDbType")
+    let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
+    let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
+
+    let isSupportedType = function
+        | "abstime"     -> false                            // The types abstime and reltime are lower precision types which are used internally.
+                                                            // You are discouraged from using these types in applications; these internal types
+                                                            // might disappear in a future release.
+        | "box"         -> checkType "NpgsqlBox"
+        | "cidr"        -> checkType "NpgsqlInet"
+        | "circle"      -> checkType "NpgsqlCircle"
+        | "date"        -> checkType "NpgsqlDate"
+        | "inet"        -> checkType "NpgsqlInet"
+        | "interval"    -> checkType "NpgsqlInterval"
+        | "line"        -> checkType "NpgsqlLine"
+        | "lseg"        -> checkType "NpgsqlLSeg"
+        | "path"        -> checkType "NpgsqlPath"
+        | "point"       -> checkType "NpgsqlPoint"
+        | "polygon"     -> checkType "NpgsqlPolygon"
+        | "time"        -> checkType "NpgsqlTime"
+        | "timestamp"   -> checkType "NpgsqlTimeStamp"
+        | "timestamptz" -> checkType "NpgsqlTimeStampTZ"
+        | "timetz"      -> checkType "NpgsqlTimeTZ"
+        | "tsquery"     -> checkType "NpgsqlTsQuery"
+        | "tsvector"    -> checkType "NpgsqlTsVector"
+        | _             -> true
+
+    let mapNpgsqlDbTypeToClrType = function
+        | "abstime"     -> Some typeof<DateTime>
+        | "bigint"      -> Some typeof<int64>
+        | "bit"         -> Some typeof<bool>                // Fixed-width bit array; by default bit(1) is mapped to boolean and larger type values to BitString.
+        | "boolean"     -> Some typeof<bool>
+        | "box"         -> Some typeof<obj>
+        | "bytea"       -> Some typeof<byte[]>
+        | "char"        -> Some typeof<char[]>              // Fixed-width character array.
+        | "cid"         -> Some typeof<uint32>
+        | "cidr"        -> Some typeof<obj>
+        | "circle"      -> Some typeof<obj>
+        | "date"        -> Some typeof<DateTime>
+        | "double"      -> Some typeof<double>
+        | "hstore"      -> Some typeof<obj>                 // Npgsql maps to IDictionary<string,string>, but provider is currently unable to support
+                                                            // the type because data_type returns `USER-DEFINED` and real type name is in udt_name.
+        | "inet"        -> Some typeof<obj>                 // System.Net.IPAddress
+        | "integer"     -> Some typeof<int32>
+        | "interval"    -> Some typeof<TimeSpan>
+        | "json"        -> Some typeof<string>
+        | "jsonb"       -> Some typeof<string>
+        | "line"        -> Some typeof<obj>
+        | "lseg"        -> Some typeof<obj>
+        | "macaddr"     -> Some typeof<obj>                 // System.Net.NetworkInformation.PhysicalAddress
+        | "money"       -> Some typeof<decimal>
+        | "name"        -> Some typeof<string>
+        | "numeric"     -> Some typeof<decimal>
+        | "oid"         -> Some typeof<uint32>
+        | "oidvector"   -> Some typeof<uint32[]>
+        | "path"        -> Some typeof<obj>
+        | "point"       -> Some typeof<obj>
+        | "polygon"     -> Some typeof<obj>
+        | "real"        -> Some typeof<single>
+        | "refcursor"   -> Some typeof<SqlEntity[]>
+        | "singlechar"  -> Some typeof<char>
+        | "smallint"    -> Some typeof<int16>
+        | "text"        -> Some typeof<string>
+        | "time"        -> Some typeof<DateTime>
+        | "timestamp"   -> Some typeof<DateTime>
+        | "timestamptz" -> Some typeof<DateTime>
+        | "timetz"      -> Some typeof<DateTime>
+        | "tsquery"     -> Some typeof<obj>
+        | "tsvector"    -> Some typeof<obj>
+        | "unknown"     -> Some typeof<obj>
+        | "uuid"        -> Some typeof<Guid>
+        | "varbit"      -> Some typeof<obj>                 // Variable-length bit array, maps to System.Collections.BitArray
+        | "varchar"     -> Some typeof<string>
+        | "xid"         -> Some typeof<uint32>
+        | "xml"         -> Some typeof<string>
+        | "array"
+        | "composite"
+        | "enum"
+        | "range"
+        | _             -> None                             // Special enum values need separate handling
+
+    let mapNpgsqlDbTypeToDataType = function
+        | "char" -> "character"
+        | "double" -> "double precision"
+        | "singlechar" -> "\"char\""
+        | "time" -> "time without time zone"
+        | "timestamp" -> "timestamp without time zone"
+        | "timestamptz" -> "timestamp with time zone"
+        | "timetz" -> "time with time zone"
+        | "varbit" -> "bit varying"
+        | "varchar" -> "character varying"
+        | name -> name
 
     let getDbType(providerType) =
-        try
-            let parameterType = parameterType.Value
-            let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
-            let npgDbTypeSetter = parameterType.GetProperty("NpgsqlDbType").GetSetMethod()
-            let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
-            npgDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
-            dbTypeGetter.Invoke(p, [||]) :?> DbType
-        with _ -> DbType.Object //Weird cant cast Line to any DbType exception
+        let parameterType = parameterType.Value
+        let p = Activator.CreateInstance(parameterType, [| |]) :?> IDbDataParameter
+        dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
+        p.DbType
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -87,17 +141,20 @@ module PostgreSQL =
 
     let createTypeMappings() =
         let typ = dbType.Value
+
         let mappings =
-            [
-                for v in Enum.GetValues(typ) do
-                    let name = Enum.GetName(typ, v).ToLower()
-                    match (mapTypeToClrType name) with
-                    | Some(t) -> yield { ProviderTypeName = Some name; ClrType = t.ToString(); DbType = (getDbType v); ProviderType = Some (v :?> int) }
-                    | None -> ()
-                yield { ProviderTypeName = Some "character varying"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = Some 22; }
-                yield { ProviderTypeName = Some "refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
-                yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
-            ]
+            let enumMappings =
+                [ for v in Enum.GetValues(typ) -> Enum.GetName(typ, v).ToLower(), unbox<int> v ]
+                |> List.filter (fst >> isSupportedType)
+                |> List.choose (fun (name, value) ->
+                    match mapNpgsqlDbTypeToClrType name with
+                    | Some(t) -> Some({ ProviderTypeName = Some(mapNpgsqlDbTypeToDataType name)
+                                        ClrType = t.ToString()
+                                        DbType = (getDbType value)
+                                        ProviderType = Some value })
+                    | None -> None)
+            let refCursor = enumMappings |> List.find (fun x -> x.ProviderTypeName = Some "refcursor")
+            enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
 
         let adjustments =
             [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ]
@@ -141,11 +198,8 @@ module PostgreSQL =
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None   
 
-    let readParameter (parameter:IDbDataParameter) = 
-        let parameterType = parameterType.Value
-        let dbTypeGetter = 
-            parameterType.GetProperty("NpgsqlDbType").GetGetMethod()
-        match parameter.DbType, (dbTypeGetter.Invoke(parameter, [||]) :?> int) with
+    let readParameter (parameter:IDbDataParameter) =
+        match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
         | DbType.Object, 23 ->
             match parameter.Value with
             | null -> null
@@ -324,20 +378,20 @@ module PostgreSQL =
             
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
-    let pkLookup =     Dictionary<string,string>()
-    let tableLookup =  Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()    
+    let pkLookup = Dictionary<string,string>()
+    let tableLookup = Dictionary<string,Table>()
+    let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-    
-    do 
+
+    do
         PostgreSQL.resolutionPath <- resolutionPath
         PostgreSQL.referencedAssemblies <- referencedAssemblies
 
-        if not(String.IsNullOrEmpty owner) 
-        then PostgreSQL.owner <- owner
-    
-    let executeSql (con:IDbConnection) sql =        
-        use com = (this:>ISqlProvider).CreateCommand(con,sql)    
+        if not(String.IsNullOrEmpty owner) then
+            PostgreSQL.owner <- owner
+
+    let executeSql (con:IDbConnection) sql =
+        use com = (this:>ISqlProvider).CreateCommand(con,sql)
         com.ExecuteReader()
 
     interface ISqlProvider with
@@ -348,63 +402,76 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.GetSprocReturnColumns(con, def) = Sql.connect con (fun con -> PostgreSQL.getSprocReturnCols con def)
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
-        member __.GetTables(con) =            
-            use reader = executeSql con (sprintf "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '%s'" PostgreSQL.owner)
-            [ while reader.Read() do 
-                let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2).ToLower() } 
-                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+        member __.GetTables(con) =
+            use reader = executeSql con (sprintf "SELECT  table_schema,
+                                                          table_name,
+                                                          table_type
+                                                    FROM  information_schema.tables
+                                                   WHERE  table_schema = '%s'" PostgreSQL.owner)
+            [ while reader.Read() do
+                let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
+                              Name = Sql.dbUnbox<string> reader.["table_name"]
+                              Type = (Sql.dbUnbox<string> reader.["table_type"]).ToLower() }
+                if tableLookup.ContainsKey table.FullName = false then
+                    tableLookup.Add(table.FullName, table)
                 yield table ]
-        member __.GetPrimaryKey(table) = 
-            match pkLookup.TryGetValue table.FullName with 
+
+        member __.GetPrimaryKey(table) =
+            match pkLookup.TryGetValue table.FullName with
             | true, v -> Some v
             | _ -> None
-        member __.GetColumns(con,table) = 
+
+        member __.GetColumns(con,table) =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
-            | _ -> 
-                let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-                                    ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
-                        FROM INFORMATION_SCHEMA.COLUMNS c
-                        LEFT JOIN (
-                                    SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
-                                    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
-                                        ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY' 
-                                        AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
-                                )   pk 
-                        ON  c.TABLE_CATALOG = pk.TABLE_CATALOG 
-                                    AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
-                                    AND c.TABLE_NAME = pk.TABLE_NAME
-                                    AND c.COLUMN_NAME = pk.COLUMN_NAME
-                        WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
-                        ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
-                use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
-                let p =  (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0),table.Schema)
-                com.Parameters.Add p |> ignore
-                let p =  (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1),table.Name)
-                com.Parameters.Add p |> ignore
-                if con.State <> ConnectionState.Open then con.Open()
-                use reader = com.ExecuteReader()
-                let columns =
-                   [ while reader.Read() do 
-                       let dt = reader.GetString(1)//.ToLower().Replace("\"","")
-                       // postgre gives some really weird type names here like  "double precision" and  "timestamp with time zone"
-                       // this is a simple first implementation, there's also some complex types that i don't think are supported
-                       // with this .net connector, but this needs examining in detail (probably by someone else!)
-                     //  let dt = if dt.Contains(" ") then dt.Substring(0,dt.IndexOf(" ")).Trim() else dt
-                       match PostgreSQL.findDbType (dt.ToLower()) with
-                       | Some m ->
-                          let col =
-                             { Column.Name = reader.GetString(0)
-                               TypeMapping = m
-                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                               IsPrimarKey = if reader.GetString(5) = "PRIMARY KEY" then true else false } 
-                          if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
-                          yield col 
-                       | _ -> ()] //failwithf "Cant map type %s" dt]  
-                columnLookup.Add(table.FullName,columns)
-                con.Close()
-                columns
+            | _ ->
+                let baseQuery = @"SELECT  c.column_name,
+                                          c.data_type,
+                                          c.character_maximum_length,
+                                          c.numeric_precision,
+                                          c.is_nullable,
+                                          (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
+                                    FROM  information_schema.columns c
+                                          LEFT JOIN  (SELECT  ku.table_catalog,
+                                                              ku.table_schema,
+                                                              ku.table_name,
+                                                              ku.column_name
+                                                        FROM  information_schema.table_constraints AS tc
+                                                              INNER JOIN  information_schema.key_column_usage AS ku
+                                                                          ON      tc.constraint_type = 'PRIMARY KEY'
+                                                                              AND tc.constraint_name = ku.constraint_name
+                                                     ) pk
+                                                     ON      c.table_catalog = pk.table_catalog
+                                                         AND c.table_schema = pk.table_schema
+                                                         AND c.table_name = pk.table_name
+                                                         AND c.column_name = pk.column_name
+                                   WHERE      c.table_schema = @schema
+                                          AND c.table_name = @table
+                                ORDER BY  c.table_schema,
+                                          c.table_name,
+                                          c.ordinal_position"
+                use command = PostgreSQL.createCommand baseQuery con
+                PostgreSQL.createCommandParameter false (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
+                PostgreSQL.createCommandParameter false (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
+                Sql.connect con (fun _ ->
+                    use reader = command.ExecuteReader()
+                    let columns =
+                        [ while reader.Read() do
+                            let dataType = Sql.dbUnbox<string> reader.["data_type"]
+                            match PostgreSQL.findDbType (dataType.ToLower()) with
+                            | Some m ->
+                                let col =
+                                    { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
+                                      TypeMapping = m
+                                      IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
+                                      IsPrimarKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
+                                if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
+                                    pkLookup.Add(table.FullName, col.Name)
+                                yield col
+                            | _ -> () ]
+                    columnLookup.Add(table.FullName, columns)
+                    columns)
+
         member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue(table.FullName) with
             | true,v -> v
