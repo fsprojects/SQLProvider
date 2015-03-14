@@ -8,11 +8,10 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-module PostgreSQL = 
-    
+module PostgreSQL =
     let mutable resolutionPath = String.Empty
     let mutable owner = "public"
-    let mutable referencedAssemblies = [||]
+    let mutable referencedAssemblies = [| |]
 
     let assemblyNames = [
         "Npgsql.dll"
@@ -20,38 +19,16 @@ module PostgreSQL =
 
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
-    
-    let findType name = 
+
+    let findType name =
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
         | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
 
-   
     let connectionType = lazy (findType "NpgsqlConnection")
-    let commandType = lazy    (findType  "NpgsqlCommand")
-    let parameterType = lazy  (findType "NpgsqlParameter")
-    let dbType =  lazy (findType "NpgsqlDbType")
-    let transactionType = lazy (findType "NpgsqlTransaction")
-    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
-
-    let getBeginTransactionMethod = lazy (connectionType.Value.GetMethod("BeginTransaction",[||]))
-
-    let getEndTransactionMethod = lazy (transactionType.Value.GetMethod("Commit", [||]))
-
-    let beginTransaction conn = getBeginTransactionMethod.Value.Invoke(conn, [||])
-
-    let endTransaction tran = getEndTransactionMethod.Value.Invoke(tran, [||])
-
-    let createConnection connectionString = 
-        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
-
-    let connect (con:IDbConnection) f =
-        if con.State <> ConnectionState.Open then con.Open()
-        let result = f con
-        con.Close(); result
-
-    let getSchema name (args:string[]) conn = 
-        getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
+    let commandType = lazy (findType "NpgsqlCommand")
+    let parameterType = lazy (findType "NpgsqlParameter")
+    let dbType = lazy (findType "NpgsqlDbType")
 
     let mapTypeToClrType (sqlType:string) =
             match sqlType.ToLower() with
@@ -108,22 +85,22 @@ module PostgreSQL =
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let createTypeMappings() = 
+    let createTypeMappings() =
         let typ = dbType.Value
         let mappings =
             [
                 for v in Enum.GetValues(typ) do
                     let name = Enum.GetName(typ, v).ToLower()
                     match (mapTypeToClrType name) with
-                    | Some(t) -> yield { ProviderTypeName = Some name; ClrType = t.ToString(); DbType = (getDbType v); ProviderType = Some (v :?> int);}
+                    | Some(t) -> yield { ProviderTypeName = Some name; ClrType = t.ToString(); DbType = (getDbType v); ProviderType = Some (v :?> int) }
                     | None -> ()
                 yield { ProviderTypeName = Some "character varying"; ClrType = (typeof<string>).ToString(); DbType = DbType.String; ProviderType = Some 22; }
                 yield { ProviderTypeName = Some "refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
                 yield { ProviderTypeName = Some "SETOF refcursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
-        let adjustments = 
-            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ] 
+        let adjustments =
+            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ]
             |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
 
         let clrMappings =
@@ -132,14 +109,17 @@ module PostgreSQL =
             |> (fun tys -> List.append tys adjustments)
             |> Map.ofList
 
-        let dbMappings = 
+        let dbMappings =
             mappings
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
-            
+
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
+
+    let createConnection connectionString = 
+        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
     let createCommand commandText connection = 
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -165,17 +145,12 @@ module PostgreSQL =
         let parameterType = parameterType.Value
         let dbTypeGetter = 
             parameterType.GetProperty("NpgsqlDbType").GetGetMethod()
-        
         match parameter.DbType, (dbTypeGetter.Invoke(parameter, [||]) :?> int) with
-        | DbType.Object, 121 ->
-             if parameter.Value = null
-             then null
-             else
-                let data = 
-                    Sql.dataReaderToArray (parameter.Value :?> IDataReader) 
-                    |> Seq.ofArray
-                data |> box
-        | _, _ ->
+        | DbType.Object, 23 ->
+            match parameter.Value with
+            | null -> null
+            | value -> Sql.dataReaderToArray (value :?> IDataReader) |> Seq.toArray |> box
+        | _ ->
             match tryReadValueProperty parameter.Value with
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
@@ -248,8 +223,8 @@ module PostgreSQL =
   pg_get_function_result(p.oid) as returntype,
   pg_get_function_arguments(p.oid) as args,
   case 
-	when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
-	else 'PROCEDURE'
+    when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
+    else 'PROCEDURE'
   end as routine_type
   from pg_proc p
   left join pg_namespace n
@@ -316,8 +291,8 @@ module PostgreSQL =
               pg_get_function_result(p.oid) as returntype,
               pg_get_function_arguments(p.oid) as args,
               case 
-            	when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
-            	else 'PROCEDURE'
+                when (p.proretset = false and t.typname != 'void') then 'FUNCTION'
+                else 'PROCEDURE'
               end as routine_type
               from pg_proc p
               left join pg_namespace n
@@ -370,7 +345,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
         member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = PostgreSQL.executeSprocCommand con definition retCols values
-        member __.GetSprocReturnColumns(con, def) = PostgreSQL.connect con (fun con -> PostgreSQL.getSprocReturnCols con def)
+        member __.GetSprocReturnColumns(con, def) = Sql.connect con (fun con -> PostgreSQL.getSprocReturnCols con def)
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con) =            
@@ -475,7 +450,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 (children,parents)    
         
         /// Have not attempted stored procs yet
-        member __.GetSprocs(con) = PostgreSQL.connect con PostgreSQL.getSprocs 
+        member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs 
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","\"").Replace("]","\"")) amount 
 

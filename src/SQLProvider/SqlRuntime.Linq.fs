@@ -227,7 +227,10 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
                                       OptionalQuote projection ]) ->
-                        let (BaseTable(_,destEntity)) = dest.SqlExpression
+                        let destEntity =
+                            match dest.SqlExpression with
+                            | BaseTable(_,destEntity) -> destEntity
+                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression = 
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" -> 
