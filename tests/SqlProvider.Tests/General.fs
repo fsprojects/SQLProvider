@@ -1,23 +1,20 @@
 ﻿module SoundCheck
 
+open FSharp.Data.Sql
 open NUnit.Framework
 
-//open FSharp.Data.Sql
+[<Literal>]
+let connectionString = @"Data Source=.\libraries\northwindEF.db; Version = 3; Read Only=true; FailIfMissing=True;"
 
-//[<Literal>]
-//let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
-//
-//[<Literal>]
-//let resolutionPath = __SOURCE_DIRECTORY__ 
-//
-//type sql = SqlDataProvider<connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
-
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath="">
+    
 [<Test>]
-let Test1() = 
-    Assert.IsTrue true
-
-
-//[<Test>]
-//let DbCheck() = 
-//    let dc = sql.GetDataContext()
-//    Assert.IsTrue true
+let ``Can do a simple select``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust.ContactName
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
