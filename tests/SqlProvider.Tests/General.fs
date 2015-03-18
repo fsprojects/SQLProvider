@@ -4,9 +4,9 @@ open FSharp.Data.Sql
 open NUnit.Framework
 
 [<Literal>]
-let connectionString = @"Data Source=.\libraries\northwindEF.db; Version = 3; Read Only=true; FailIfMissing=True;"
+let connectionString = @"Data Source=.\db\northwindEF.db; Version = 3; Read Only=true; FailIfMissing=True;"
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath="">
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString>
     
 [<Test>]
 let ``Can do a simple select``() = 
