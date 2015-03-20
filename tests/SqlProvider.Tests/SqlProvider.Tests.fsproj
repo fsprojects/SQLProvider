@@ -54,11 +54,12 @@
     <None Include="x86\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Content Include="packages.config" />
+    <Content Include="app.config" />
+    <None Include="Mono.Data.Sqlite.dll" />
     <None Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="packages.config" />
-    <Content Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.SqlProvider">
