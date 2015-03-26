@@ -68,13 +68,13 @@ type Simple = {First : string}
 
 type Dummy<'t> = D of 't
 
-let employeesFirstName = 
+let employeesFirstName1 = 
     query {
         for emp in ctx.``[PUBLIC].[EMPLOYEES]`` do
         select (D {First=emp.FIRST_NAME})
     } |> Seq.toList
 
-let employeesFirstName = 
+let employeesFirstName2 = 
     query {
         for emp in ctx.``[PUBLIC].[EMPLOYEES]`` do
         select ({First=emp.FIRST_NAME} |> D)
