@@ -3,8 +3,10 @@ source https://nuget.org/api/v2
 nuget Nuget.CommandLine
 nuget Newtonsoft.Json
 nuget NUnit
+nuget NUnit.Runners
 nuget FAKE
 nuget FSharp.Formatting
 nuget FSharp.Core
+nuget RazorEngine
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

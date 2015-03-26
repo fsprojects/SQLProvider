@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30723.0
@@ -7,8 +6,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D46C35
 	ProjectSection(SolutionItems) = preProject
 		paket.dependencies = paket.dependencies
 	EndProjectSection
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SQLProvider\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3C867-4E92-4A85-BE21-5839A66F47E5}"
 	ProjectSection(SolutionItems) = preProject
@@ -19,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
 		src\scripts\SqliteInspector.fsx = src\scripts\SqliteInspector.fsx
 	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SQLProvider\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,8 +32,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
 	EndGlobalSection
 EndGlobal

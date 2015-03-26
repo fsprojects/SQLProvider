@@ -9,6 +9,7 @@ NUGET
       FSharpVSPowerTools.Core (>= 1.7.0)
     FSharpVSPowerTools.Core (1.7.0)
       FSharp.Compiler.Service (>= 0.0.81)
+    Microsoft.AspNet.Razor (3.2.3) - framework: >= net45
     Microsoft.Bcl (1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
     Microsoft.Bcl.Build (1.0.21)
@@ -20,6 +21,9 @@ NUGET
     NUnit (2.6.4)
     Octokit (0.8.0)
       Microsoft.Net.Http
+    RazorEngine (3.6.3)
+      Microsoft.AspNet.Razor (>= 3.0.0) - framework: >= net45
+      Microsoft.AspNet.Razor (2.0.30506.0) - framework: >= net40 < net45
 GITHUB
   remote: fsharp/FAKE
   specs:
