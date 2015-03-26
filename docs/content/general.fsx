@@ -1,13 +1,13 @@
 (*** hide ***)
-#I @"../../files/sqlite"
+#I @"../files/sqlite"
 (*** hide ***)
-#I "../../../bin"
+#I "../../bin"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite" 
+let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\files\sqlite" 
 
 (**
 # SQL Provider Basics

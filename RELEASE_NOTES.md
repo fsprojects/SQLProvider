@@ -1,3 +1,15 @@
+#### 0.0.10-alpha - Unreleased
+* Fixed a regression when building oracle relationships (PR # 126)
+* Fixes Postgres Type mapping issues (PR #117)
+* Fixes command already disposed exception (PR #124)
+* Fixes type mapping issues in Access provider (PR #122)
+* Fixes issues with optional tyepd properties (Issue #119, PR #116)
+* Converted project to use paket and latest project scaffold. (PR #113)
+* Added a function to retrieve the primary key for the table. (PR #105)
+* Fix for SQLite not releasing DB file (Issue #99, PR #100)
+* Support for stored procedures on DB's that support them (PR #83)
+* Support for SQLite on Mono (PR #81)
+
 #### 0.0.9-alpha - 21.05.2014
 * Fixing a bug with writing tinyints in SQL Server
 * Fixes to MySQL array parameters
