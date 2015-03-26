@@ -41,6 +41,17 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 
+    let pkOfConnection (provider : ISqlProvider) (con: IDbConnection) (table: Table) =
+        if con.State <> ConnectionState.Open then con.Open()
+        // this line is to ensure the columns for the table have been retrieved and therefore
+        // its primary key exists in the lookup
+        lock provider (fun () -> provider.GetColumns (con,table) |> ignore)
+        match provider.GetPrimaryKey table with
+        | Some v -> v
+        | None -> 
+            // this fail case should not really be possible unless the runtime database is different to the design-time one
+            failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
+
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
         member this.SubmitChangedEntity e = pendingChanges.Add e |> ignore
@@ -112,17 +123,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
-               con.Open()
+
                let table = Table.FromFullName table
-               // this line is to ensure the columns for the table have been retrieved and therefore
-               // its primary key exists in the lookup
-               lock provider (fun () -> provider.GetColumns (con,table) |> ignore)
-               let pk = 
-                   match provider.GetPrimaryKey table with
-                   | Some v -> v
-                   | None -> 
-                      // this fail case should not really be possible unless the runtime database is different to the design-time one
-                      failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName         
+               let pk = pkOfConnection provider con table
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
@@ -133,5 +136,11 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
-    
+        member this.GetPrimaryKeyDefinition(table) : string =
+            match providerCache.TryGetValue typeName with
+            | true,provider -> 
+                let table = Table.FromFullName table
+                use con = provider.CreateConnection(connectionString)
+                pkOfConnection provider con table
+            | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
         
