@@ -1,14 +1,14 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider.Tests", "tests\SqlProvider.Tests\SqlProvider.Tests.fsproj", "{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{1ED3ADCA-73B5-4A25-8AE7-8165E6212628}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{116D77B0-B9B2-4516-8DAF-485D43FE4B18}"
 	ProjectSection(SolutionItems) = preProject
-		.nuget\packages.config = .nuget\packages.config
+		paket.dependencies = paket.dependencies
 	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider.Tests", "tests\SqlProvider.Tests\SqlProvider.Tests.fsproj", "{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{DB8153B0-4B4F-4CD8-8500-C61D66E75426}"
 	ProjectSection(SolutionItems) = preProject
