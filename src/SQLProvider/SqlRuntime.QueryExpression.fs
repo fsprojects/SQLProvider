@@ -115,12 +115,7 @@ module internal QueryExpressionTransformer =
                                                                                          upcast resultParam
                                                                                     | _ -> upcast e
             | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(transform en e.Expression, e.Member)
-            | ExpressionType.Call,               (:? MethodCallExpression as e)  ->
-              let o = e.Object
-              let last = transform en e.Object
-              let args' = e.Arguments |> Seq.map(fun a -> transform en a)
-              let _ = Expression.Call(last,e.Method,args')
-              upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
                                                                                     if  exType.IsGenericType 
                                                                                         && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition() 
