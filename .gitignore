@@ -180,3 +180,5 @@ docs/files/msaccess/Northwind.ldb
 paket-files/
 docs/content/license.md
 docs/content/release-notes.md
+
+!tests/SqlProvider.Tests/libs
