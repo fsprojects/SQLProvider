@@ -64,6 +64,22 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
+type Simple = {First : string}
+
+type Dummy<'t> = D of 't
+
+let employeesFirstName1 = 
+    query {
+        for emp in ctx.``[PUBLIC].[EMPLOYEES]`` do
+        select (D {First=emp.FIRST_NAME})
+    } |> Seq.toList
+
+let employeesFirstName2 = 
+    query {
+        for emp in ctx.``[PUBLIC].[EMPLOYEES]`` do
+        select ({First=emp.FIRST_NAME} |> D)
+    } |> Seq.toList
+
 #r @"..\..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
