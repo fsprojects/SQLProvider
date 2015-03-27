@@ -12,7 +12,7 @@ Core documentation and samples can be found at the [SQLProvider home page](http:
 ## Building
 
 * Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsprojects/SQLProvider.png)](https://travis-ci.org/fsprojects/SQLProvider)
-* Windows: Run *build.cmd* 
+* Windows: Run *build.cmd* [![Build status](https://ci.appveyor.com/api/projects/status/68u9qx5vw1uf5opl/branch/master?svg=true)](https://ci.appveyor.com/project/colinbull/sqlprovider/branch/master)
 
 ## Known issues
 
