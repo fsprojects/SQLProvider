@@ -24,6 +24,22 @@ let name = firstCustomer.CONTACTNAME
 
 let orders = firstCustomer.FK_Orders_0_0 |> Seq.toArray
 
+type Simple = {First : string}
+
+type Dummy<'t> = D of 't
+
+let employeesFirstName1 = 
+    query {
+        for emp in ctx.``[MAIN].[CUSTOMERS]`` do
+        select (D {First=emp.CONTACTNAME})
+    } |> Seq.toList
+
+let employeesFirstName2 = 
+    query {
+        for emp in ctx.``[MAIN].[CUSTOMERS]`` do
+        select ({First=emp.CONTACTNAME} |> D)
+    } |> Seq.toList
+
 let customersQuery =
     query { for customer in ctx.``[MAIN].[CUSTOMERS]`` do
             select customer } |> Seq.toArray
