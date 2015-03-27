@@ -54,9 +54,10 @@ with
     member x.FriendlyName with get() = String.Join(" ", x.ToList())
     member x.FullName with get() = String.Join("_", x.ToList())
 
-
-
-type SprocDefinition = { Name:SprocName; Params:QueryParameter list }
+type SprocDefinition =
+    { Name: SprocName
+      Params: QueryParameter list
+      ReturnColumns: QueryParameter list }
 
 type Sproc =
     | Root of string * Sproc
