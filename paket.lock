@@ -19,6 +19,7 @@ NUGET
     Newtonsoft.Json (6.0.8)
     NuGet.CommandLine (2.8.3)
     NUnit (2.6.4)
+    NUnit.Runners (2.6.4)
     Octokit (0.8.0)
       Microsoft.Net.Http
     RazorEngine (3.6.3)
