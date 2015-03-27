@@ -117,6 +117,21 @@ module MySql =
              dt.Load(r); 
              dt)
 
+    let getSprocReturnCols con (sparams: QueryParameter list) = 
+        match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
+        | [] ->
+            match findDbType "cursor" with
+            | None -> []
+            | Some m -> 
+                [{
+                    Name = "ResultSet"
+                    TypeMapping = m
+                    Direction = ParameterDirection.Output
+                    Length = None
+                    Ordinal = 0
+                 }]
+        | a -> a
+
     let getSprocs (con:IDbConnection) =
        
         let procedures,functions = 
@@ -177,30 +192,15 @@ module MySql =
                             |> Seq.choose id
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
-                        
+                        let rcolumns = getSprocReturnCols con sparams
                         let isFunction, isProcedure =  Set.contains name.ProcName functions, Set.contains name.ProcName procedures
 
                         match isFunction, isProcedure with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
                         | _, _ -> Empty
                       ) 
         |> Seq.toList
-
-    let getSprocReturnCols con (def:SprocDefinition) = 
-        match def.Params |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
-        | [] ->
-            match findDbType "cursor" with
-            | None -> []
-            | Some m -> 
-                [{
-                    Name = "ResultSet"
-                    TypeMapping = m
-                    Direction = ParameterDirection.Output
-                    Length = None
-                    Ordinal = 0
-                 }]
-        | a -> a
 
     let readParameter (parameter:IDbDataParameter) =
         if parameter <> null 
@@ -273,13 +273,9 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
-
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
-
-        member __.GetSprocReturnColumns(con, sprocDefinition) = MySql.getSprocReturnCols con sprocDefinition
-
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
-   
+
         member __.GetTables(con) =
             MySql.connect con (fun con ->
                 use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = '%s'" MySql.owner) con

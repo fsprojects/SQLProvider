@@ -68,7 +68,6 @@ type internal OdbcProvider(resolutionPath) =
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
         member __.ExecuteSprocCommand(com,definition,retCols,values) = ReturnValueType.Unit //  raise(NotImplementedException())
-        member __.GetSprocReturnColumns(con, def) = []//raise(NotImplementedException())
 
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
         member __.GetTables(con) =
