@@ -116,17 +116,8 @@ module internal QueryExpressionTransformer =
                                                                                     | _ -> upcast e
             | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(transform en e.Expression, e.Member)
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
-            | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
-                                                                                    if  exType.IsGenericType 
-                                                                                        && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition() 
-                                                                                        && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
-                                                                                        upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
-                                                                                    else
-                                                                                        upcast Expression.Lambda(transform en e.Body, e.Parameters)
-            | ExpressionType.New,                (:? NewExpression as e)         -> if e.Members = null then
-                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
-                                                                                    else
-                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
+            | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> upcast Expression.Lambda(transform en e.Body, e.Parameters)
+            | ExpressionType.New,                (:? NewExpression as e)         -> upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
             | ExpressionType.NewArrayInit,       (:? NewArrayExpression as e)    -> upcast Expression.NewArrayInit(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.NewArrayBounds,     (:? NewArrayExpression as e)    -> upcast Expression.NewArrayBounds(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
@@ -134,7 +125,6 @@ module internal QueryExpressionTransformer =
             | ExpressionType.ListInit,           (:? ListInitExpression as e)    -> upcast Expression.ListInit( (transform en e.NewExpression) :?> NewExpression, e.Initializers)
             | _ -> failwith "encountered unknown LINQ expression"                                                                                                    
  
-
         let newProjection =
             match projection with
             | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) -> 
