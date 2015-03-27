@@ -44,9 +44,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let rel = prov.GetRelationships(con,t)
                             (cols,rel))]
         let sprocData = lazy prov.GetSprocs con
-        let getSprocReturnColumns (sprocDefinition:SprocDefinition) = 
-            prov.GetSprocReturnColumns(con,sprocDefinition)
-              
+
+        let getSprocReturnColumns (sprocDefinition: SprocDefinition) =
+            sprocDefinition.ReturnColumns
+
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
         let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies, config.ResolutionFolder, owner)
@@ -115,11 +116,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                          | FixedType pkValue -> 
                             let name = table.FullName
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
-                            e.ColumnValues 
+                            e.ColumnValues
                             |> Seq.iter(fun (k,v) -> 
                                if k = pk then () else      
                                (fst propertyMap.[k]).AddMemberDelayed(
-                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (v.ToString()) ,et,
+                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (if v = null then "<null>" else v.ToString()) ,et,
                                             GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )))
                             // return the primary key property
                             Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )

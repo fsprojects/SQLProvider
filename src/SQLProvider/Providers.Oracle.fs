@@ -234,6 +234,20 @@ module internal Oracle =
         let tName = table.FullName
         sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
 
+    let getSprocReturnColumns (con: IDbConnection) (sparams: QueryParameter list) =
+        sparams
+        |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
+        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
+                                           then "ReturnValue" + (string i)
+                                           elif (String.IsNullOrEmpty p.Name)
+                                           then "ReturnValue"
+                                           else p.Name);
+                                   TypeMapping = p.TypeMapping;
+                                   Direction = p.Direction;
+                                   Ordinal = p.Ordinal;
+                                   Length = None
+                                 })
+
     let getSprocs con =
 
         let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
@@ -283,27 +297,13 @@ module internal Oracle =
                             |> Seq.choose id
                             |> Seq.sortBy (fun p -> p.Ordinal)
                             |> Seq.toList
-                                                    
+                        let rcolumns = getSprocReturnColumns con sparams
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
-                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; })))
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
+                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns })))
                       ) 
         |> Seq.toList
-
-    let getSprocReturnColumns (con:IDbConnection) (def:SprocDefinition) =
-        def.Params
-        |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                           then "ReturnValue" + (string i)
-                                           elif (String.IsNullOrEmpty p.Name)
-                                           then "ReturnValue"
-                                           else p.Name); 
-                                   TypeMapping = p.TypeMapping; 
-                                   Direction = p.Direction; 
-                                   Ordinal = p.Ordinal;
-                                   Length = None 
-                                 })
 
     let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
@@ -371,7 +371,6 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
         member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = Oracle.executeSprocCommand con definition retCols values
-        member __.GetSprocReturnColumns(con, def) = Oracle.getSprocReturnColumns con def
 
         member __.CreateTypeMappings(con) = 
             Sql.connect con (fun con -> 

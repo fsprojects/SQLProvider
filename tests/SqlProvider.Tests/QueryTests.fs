@@ -408,4 +408,31 @@ let ``simple select with take``() =
 
     CollectionAssert.IsNotEmpty query   
     Assert.AreEqual(5, query.Length) 
-    CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"; "Barcelona"; "Barquisimeto"|], query)    
+    CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"; "Barcelona"; "Barquisimeto"|], query)  
+    
+
+type Simple = {First : string}
+
+type Dummy<'t> = D of 't
+
+ [<Test>]
+ let ``simple select into a generic type`` () =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for emp in dc.Main.Customers do
+            select (D {First=emp.ContactName})
+        } |> Seq.toList
+
+    CollectionAssert.IsNotEmpty query
+
+ [<Test>]
+ let ``simple select into a generic type with pipe`` () =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for emp in dc.Main.Customers do
+            select ({First=emp.ContactName} |> D)
+        } |> Seq.toList
+
+    CollectionAssert.IsNotEmpty query

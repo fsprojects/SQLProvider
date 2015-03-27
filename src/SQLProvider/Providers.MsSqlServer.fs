@@ -93,7 +93,46 @@ module MSSqlServer =
         Option.iter (fun l -> p.Size <- l) param.Length
         p :> IDbDataParameter
 
-    let getSprocs (con:IDbConnection) =
+    let getSprocReturnCols (con: IDbConnection) (sname: SprocName) (sparams: QueryParameter list) =
+        let parameterStr =
+            String.Join(", ", sparams
+                              |> List.filter (fun p -> p.Direction <> ParameterDirection.ReturnValue)
+                              |> List.map(fun p -> p.Name + "= null")
+                              |> List.toArray)
+        let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sname.DbName parameterStr
+        let derivedCols =
+            connect con (fun con ->
+                try
+                    let dr = executeSql query con
+                    [ yield dr.GetSchemaTable();
+                      while dr.NextResult() do yield dr.GetSchemaTable() ]
+                with
+                | ex ->
+                    System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
+                    []) //Just assumes the proc / func returns something and let the caller process the result, for now.  
+            |> List.mapi (fun i dt ->
+                match dt with
+                | null -> None
+                | _ ->
+                    match findDbType "cursor" with
+                    | Some m ->
+                        { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i)
+                          TypeMapping = m
+                          Direction = ParameterDirection.Output
+                          Ordinal = i
+                          Length = None } |> Some
+                    | None -> None)
+            |> List.choose id
+        let retValueCols = 
+            sparams
+            |> List.filter (fun x -> x.Direction = ParameterDirection.ReturnValue)
+            |> List.mapi (fun i p ->
+                if String.IsNullOrEmpty p.Name then
+                    { p with Name = (if i = 0 then "ReturnValue" else "ReturnValue_" + (string i))}
+                else p)
+        derivedCols @ retValueCols
+
+    let getSprocs (con: IDbConnection) =
         let con = (con :?> SqlConnection)
         let procedures,functions = 
             getSchema "Procedures" [||] con 
@@ -143,66 +182,15 @@ module MSSqlServer =
 
         parameters
         |> Seq.map (fun (name, parameters) -> 
-                        let sparams = 
-                            parameters
-                            |> Seq.choose id
-                            |> Seq.sortBy (fun p -> p.Ordinal)
-                            |> Seq.toList
-                            
+                        let sparams = parameters |> Seq.choose id |> Seq.sortBy (fun p -> p.Ordinal) |> Seq.toList
+                        let rcolumns = getSprocReturnCols con name sparams
                         match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
+                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
+                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
                         | _, _ -> Empty
                       ) 
         |> Seq.toList
 
-    let getSprocReturnCols (con:IDbConnection) (def:SprocDefinition) = 
-        
-        let parameterStr = 
-            String.Join(", ", def.Params |> List.filter (fun p -> p.Direction <> ParameterDirection.ReturnValue) |> List.map(fun p -> p.Name + "= null") |> List.toArray)
-    
-        let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" def.Name.DbName parameterStr
-    
-        let derivedCols = 
-            connect con (fun con -> 
-                    try
-                        let dr = executeSql query con
-                        [
-                            yield dr.GetSchemaTable()
-                            while dr.NextResult() do
-                                yield dr.GetSchemaTable()
-                        ]
-                    with
-                    | ex -> System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" def.Name.DbName (ex.ToString()))
-                            [] //Just assumes the proc / func returns something and let the caller process the result, for now.  
-            ) 
-            |> List.mapi (fun i dt ->
-                             if dt <> null
-                             then
-                                match findDbType "cursor" with
-                                | Some m -> 
-                                   { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i); 
-                                     TypeMapping = m; 
-                                     Direction = ParameterDirection.Output; 
-                                     Ordinal = i;
-                                     Length = None 
-                                    } |> Some
-                                | None -> None
-                             else None
-                         )
-            |> List.choose id
-    
-        let retValueCols = 
-            def.Params 
-            |> List.filter (fun x -> x.Direction = ParameterDirection.ReturnValue)
-            |> List.mapi (fun i p -> 
-                if String.IsNullOrEmpty p.Name
-                then { p with Name = (if i = 0 then "ReturnValue" else "ReturnValue_" + (string i))}
-                else p
-            )
-    
-        derivedCols @ retValueCols
-                
     let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (returnCols:QueryParameter[]) (values:obj[]) = 
         let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
         
@@ -375,9 +363,7 @@ type internal MSSqlServerProvider() =
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents))
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
-        
-        member __.GetSprocReturnColumns(con, sprocDefinition) = MSSqlServer.getSprocReturnCols con sprocDefinition
-         
+
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column

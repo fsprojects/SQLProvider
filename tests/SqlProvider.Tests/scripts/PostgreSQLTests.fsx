@@ -123,8 +123,16 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+let removeIfExists employeeId startDate =
+    let existing = query { for x in ctx.``[PUBLIC].[JOB_HISTORY]`` do
+                           where ((x.EMPLOYEE_ID = employeeId) && (x.START_DATE = startDate))
+                           headOrDefault }
+    if existing <> null then
+        existing.Delete()
+        ctx.SubmitUpdates()
 
+removeIfExists 100 (DateTime(1993, 1, 13))
+ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 //Support for sprocs that return ref cursors
 let employees =

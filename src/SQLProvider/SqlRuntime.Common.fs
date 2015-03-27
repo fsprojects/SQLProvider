@@ -392,8 +392,6 @@ and internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
-    /// Get Sproc Return Type
-    abstract GetSprocReturnColumns : IDbConnection * SprocDefinition -> QueryParameter list
     /// Returns the db vendor specific SQL  query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
@@ -407,4 +405,3 @@ and internal ISqlProvider =
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * QueryParameter[] *  obj[] -> ReturnValueType
-    
