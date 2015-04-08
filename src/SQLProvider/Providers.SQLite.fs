@@ -87,7 +87,6 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
             Option.iter (fun l -> p.Size <- l) param.Length
             p
         member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
-        member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException()) 
         member __.CreateTypeMappings(con) = 
             if con.State <> ConnectionState.Open then con.Open()
             createTypeMappings con

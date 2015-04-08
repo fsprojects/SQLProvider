@@ -123,8 +123,16 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+let removeIfExists employeeId startDate =
+    let existing = query { for x in ctx.``[PUBLIC].[JOB_HISTORY]`` do
+                           where ((x.EMPLOYEE_ID = employeeId) && (x.START_DATE = startDate))
+                           headOrDefault }
+    if existing <> null then
+        existing.Delete()
+        ctx.SubmitUpdates()
 
+removeIfExists 100 (DateTime(1993, 1, 13))
+ctx.Functions.ADD_JOB_HISTORY.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 //Support for sprocs that return ref cursors
 let employees =
@@ -141,7 +149,7 @@ type Region = {
 
 //Support for MARS procs
 let locations_and_regions =
-    let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
+    let results = ctx.Functions.GET_LOCATIONS_AND_REGIONS.Invoke()
     [
 //      for e in results.ReturnValue do
 //        yield e.ColumnValues |> Seq.toList |> box
