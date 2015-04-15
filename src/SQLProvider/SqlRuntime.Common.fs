@@ -257,6 +257,7 @@ and ISqlDataContext =
     abstract ClearPendingChanges        : unit -> unit
     abstract GetPendingEntities         : unit -> SqlEntity list
     abstract GetPrimaryKeyDefinition    : string -> string
+    abstract CreateConnection           : unit -> IDbConnection
 
          
 and LinkData =

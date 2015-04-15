@@ -54,6 +54,10 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
 
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
+        member this.CreateConnection() =
+            match providerCache.TryGetValue typeName with
+            | true,provider -> provider.CreateConnection(connectionString)
+            | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
         member this.SubmitChangedEntity e = pendingChanges.Add e |> ignore
         member this.ClearPendingChanges() = pendingChanges.Clear()
         member this.GetPendingEntities() = pendingChanges |> Seq.toList
