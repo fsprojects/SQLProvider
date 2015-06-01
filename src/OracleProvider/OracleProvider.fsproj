@@ -1,21 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>4eea1ad8-e8a9-4d54-bc39-d5f536366945</ProjectGuid>
+    <ProjectGuid>{16e63710-2840-40d6-b895-c993cf44789f}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>SqlProvider</RootNamespace>
-    <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
+    <RootNamespace>OdbcProvider</RootNamespace>
+    <AssemblyName>FSharp.Data.OracleProvider</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>FSharp.Data.SqlProvider</Name>
-    <SccProjectName>SAK</SccProjectName>
-    <SccProvider>SAK</SccProvider>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
+    <Name>OdbcProvider</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,65 +19,80 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>..\..\bin\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ORACLE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
     </DocumentationFile>
-    <StartAction>Program</StartAction>
-    <StartProgram>D:\Appdev\SqlProvider\tests\SqlProvider.Tests\Test.Console\bin\Debug\Test.Console.exe</StartProgram>
-    <StartArguments>
-    </StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>..\..\bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;ORACLE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <DocumentationFile>..\..\bin\FSharp.Data.OracleProvider.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ProvidedTypes-head.fsi" />
-    <Compile Include="ProvidedTypes-head.fs">
-      <Link>ProvidedTypes-head.fs</Link>
-    </Compile>
-    <Compile Include="Operators.fs" />
-    <Compile Include="Utils.fs" />
-    <Compile Include="SqlSchema.fs" />
-    <Compile Include="DataTable.fs" />
-    <Compile Include="SqlRuntime.Patterns.fs" />
-    <Compile Include="QuotationHelpers.fs" />
-    <Compile Include="SqlRuntime.Common.fs" />
-    <Compile Include="Providers.MsSqlServer.fs" />
-    <Compile Include="Providers.MSAccess.fs" />
-    <Compile Include="Providers.MySql.fs" />
-    <Compile Include="Providers.Odbc.fs" />
-    <Compile Include="Providers.Oracle.fs" />
-    <Compile Include="Providers.Postgresql.fs" />
-    <Compile Include="Providers.SQLite.fs" />
-    <Compile Include="SqlRuntime.QueryExpression.fs" />
-    <Compile Include="SqlRuntime.Linq.fs" />
-    <Compile Include="SqlRuntime.DataContext.fs" />
-    <Compile Include="SqlDesignTime.fs" />
-  </ItemGroup>
-  <ItemGroup>
+    <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
-    <Reference Include="FSharp.Data.TypeProviders, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\SQLProvider\ProvidedTypes-head.fsi">
+      <Link>ProvidedTypes-head.fsi</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\ProvidedTypes-head.fs">
+      <Link>ProvidedTypes-head.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Operators.fs">
+      <Link>Operators.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlSchema.fs">
+      <Link>SqlSchema.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\DataTable.fs">
+      <Link>DataTable.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Patterns.fs">
+      <Link>SqlRuntime.Patterns.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Common.fs">
+      <Link>SqlRuntime.Common.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Utils.fs">
+      <Link>Utils.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.Oracle.fs">
+      <Link>Providers.Oracle.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.QueryExpression.fs">
+      <Link>SqlRuntime.QueryExpression.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Linq.fs">
+      <Link>SqlRuntime.Linq.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
+      <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\QuotationHelpers.fs">
+      <Link>QuotationHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlDesignTime.fs">
+      <Link>SqlDesignTime.fs</Link>
+    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="OracleDesignTime.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -92,7 +103,7 @@
   <PropertyGroup Condition="'$(VisualStudioVersion)' != '11.0'">
     <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
   </PropertyGroup>
-  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
+  <Import Project="$(FSharpTargetsPath)" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

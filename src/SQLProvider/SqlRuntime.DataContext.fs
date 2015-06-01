@@ -13,15 +13,29 @@ module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
     let createProvider vendor resolutionPath referencedAssemblies owner =
-        match vendor with                
+        match vendor with
+        #if MSSQL
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        #endif
+        #if SQLITE
         | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if POSTGRE
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if MYSQL
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if ORACLE
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        #endif
+        #if MSACCESS
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
-        | _ -> failwith "Unsupported database provider" 
+        #endif
+        #if ODBC
+        | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
+        #endif
+        | _ -> failwith "Unsupported database provider"
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
     let pendingChanges = HashSet<SqlEntity>()
@@ -38,7 +52,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
                 prov.GetTables(con) |> ignore
-                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                #if MSACCESS
+                con.Close()
+                #endif
                 providerCache.Add(typeName,prov))
 
     interface ISqlDataContext with
@@ -103,9 +119,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                                 let data = toEntityArray rs
                                 entity.SetColumnSilent(name, data)
                        entity |> box
-
-                                  
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               #if MSACCESS
+               con.Close()
+               #endif
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
         member this.GetIndividual(table,id) : SqlEntity =
@@ -130,7 +146,9 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]
-               if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+               #if MSACCESS
+               con.Close()
+               #endif
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
     

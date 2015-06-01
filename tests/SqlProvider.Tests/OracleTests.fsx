@@ -1,4 +1,4 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"..\..\bin\FSharp.Data.OracleProvider.dll"
 
 open System
 open FSharp.Data.Sql

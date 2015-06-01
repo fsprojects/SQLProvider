@@ -42,7 +42,9 @@ module internal QueryImplementation =
        use reader = cmd.ExecuteReader()
        let results = SqlEntity.FromDataReader(dc,baseTable.FullName, reader)
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       #if MSACCESS
+       con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       #endif
        results
 
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =       
@@ -59,10 +61,15 @@ module internal QueryImplementation =
         | :? string as s -> Int32.Parse s
         | :? int as i -> i
         | :? int16 as i -> int32 i
-        | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int 
-        | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+        | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int
+        | x ->
+               #if MSACCESS
+               con.Close()
+               #endif
                failwithf "Count returned something other than a 32 bit integer : %s " (x.GetType().ToString())
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       #if MSACCESS
+       con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       #endif
        box result
        
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =       

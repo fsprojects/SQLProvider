@@ -1,4 +1,6 @@
-﻿namespace FSharp.Data.Sql.QueryExpression
+﻿namespace FSharp.Data.Sql.Common
+
+namespace FSharp.Data.Sql.QueryExpression
 
 open System
 open System.Reflection

@@ -13,22 +13,12 @@ open FSharp.Data.Sql.Schema
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    
-    member this.RuntimeAssembly = runtimeAssembly 
+    member this.RuntimeAssembly = runtimeAssembly   
 
-[<TypeProvider>]
-type SqlTypeProvider(config: TypeProviderConfig) as this =     
-    inherit TypeProviderForNamespaces()
-    let sqlRuntimeInfo = SqlRuntimeInfo(config)
-    let ns = "FSharp.Data.Sql";   
-    let asm = Assembly.GetExecutingAssembly()
-     
-    let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner, rootTypeName) =       
+module internal SqlTypeProvider =
+    let createType (connnectionString, conStringName, resolutionPath, config : TypeProviderConfig, individualsAmount, useOptionTypes, owner, dbVendor, sqlRuntimeInfo:SqlRuntimeInfo, ns, rootTypeName) =       
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
-        let conString = 
-            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
-            | Some(cs) -> cs
-            | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-        let con = prov.CreateConnection conString
+        let con = prov.CreateConnection connnectionString
         con.Open()
         prov.CreateTypeMappings con
         
@@ -49,7 +39,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner)
+        let designTimeDc = SqlDataContext(rootTypeName,connnectionString,dbVendor,config.ResolutionFolder,config.ReferencedAssemblies,owner)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -78,7 +68,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         if con.State <> ConnectionState.Open then con.Open()
                         use reader = com.ExecuteReader()
                         let ret = SqlEntity.FromDataReader(designTimeDc,table.FullName,reader)
-                        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                        #if MSACCESS
+                        con.Close()
+                        #endif
                         ret
                    if Array.isEmpty entities then [] else
                    let e = entities.[0]
@@ -416,43 +408,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
               yield meth
             ])
-        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+        #if MSACCESS
+        con.Close()
+        #endif
         rootType
-    
-    let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), HideObjectMethods = true)
-    
-    let conString = ProvidedStaticParameter("ConnectionString",typeof<string>, "")
-    let connStringName = ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")    
-    let optionTypes = ProvidedStaticParameter("UseOptionTypes",typeof<bool>,false)
-    let dbVendor = ProvidedStaticParameter("DatabaseVendor",typeof<DatabaseProviderTypes>,DatabaseProviderTypes.MSSQLSERVER)
-    let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
-    let owner = ProvidedStaticParameter("Owner", typeof<string>, "")    
-    let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>,"")    
-    let helpText = "<summary>Typed representation of a database</summary>
-                    <param name='ConnectionString'>The connection string for the SQL database</param>
-                    <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
-                    <param name='DatabaseVendor'> The target database vendor</param>
-                    <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 1000.</param>
-                    <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>
-                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
-                    <param name='Owner'>The owner of the schema for this provider to resolve (Oracle Only)</param>"
-        
-    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner], fun typeName args -> 
-        createTypes(args.[1] :?> string,                  // ConnectionString URL
-                    args.[2] :?> string,                  // ConnectionString Name
-                    args.[0] :?> DatabaseProviderTypes,   // db vendor
-                    args.[3] :?> string,                  // Assembly resolution path for db connectors and custom types
-                    args.[4] :?> int,                     // Individuals Amount
-                    args.[5] :?> bool,                    // Use option types?
-                    args.[6] :?> string,                  // Schema owner currently only used for oracle
-                    typeName))
-
-    do paramSqlType.AddXmlDoc helpText               
-    
-    // add them to the namespace    
-    do this.AddNamespace(ns, [paramSqlType])
-                            
-[<assembly:TypeProviderAssembly>] 
-do()
-
-
