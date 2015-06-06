@@ -18,12 +18,12 @@ connect to a variety of database sources in the IDE and explore them in a
 type-safe manner, without the inconvenience of a code-generation step.
 
 SQL Provider supports the following database types:
-    * MSSQL
-    * Oracle
-    * SQLite
-    * PostgreSQL
-    * MySQL
-    * ODBC (*Experimental*, only supports SELECT & MAKE)
+    * [`mssql.html` file] MSSQL
+    * [`oracle.html` file] Oracle
+    * [`sqlite.html` file] SQLite
+    * [`postgresql.html` file] PostgreSQL
+    * [`mysql.html` file] MySQL
+    * [`odbc.html` file] ODBC (*Experimental*, only supports SELECT & MAKE)
 
 After you have installed the nuget package or built the type provider assembly 
 from source, you should reference the assembly either as a project reference 
