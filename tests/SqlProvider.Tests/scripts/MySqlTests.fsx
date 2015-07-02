@@ -1,4 +1,7 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#I @"../../../packages/MySql.Data/lib/net40"
+#r @"../../../packages/MySql.Data/lib/net40/MySql.Data.dll"
+#I @"../bin/Debug"
+#r @"../bin/Debug/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
@@ -6,7 +9,7 @@ open FSharp.Data.Sql
 [<Literal>]
 let connStr = "Server=MYSQL;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
-let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
+let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/MySql.Data/lib/net40/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;

@@ -1,5 +1,6 @@
 source https://nuget.org/api/v2
 
+nuget MySql.Data
 nuget Nuget.CommandLine
 nuget Newtonsoft.Json
 nuget NUnit
