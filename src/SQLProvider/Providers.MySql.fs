@@ -24,7 +24,7 @@ module MySql =
     let findType name = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
    
     let connectionType =  lazy (findType "MySqlConnection")
@@ -175,6 +175,7 @@ module MySql =
 
         let parameters = 
             let withParameters = 
+                if String.IsNullOrEmpty owner then owner <- con.Database
                 connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
                 |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
 
@@ -277,6 +278,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
 
         member __.GetTables(con) =
+            if String.IsNullOrEmpty MySql.owner then MySql.owner <- con.Database
             MySql.connect con (fun con ->
                 use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = '%s'" MySql.owner) con
                 [ while reader.Read() do 
