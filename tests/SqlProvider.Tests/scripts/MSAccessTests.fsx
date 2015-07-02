@@ -1,4 +1,5 @@
-﻿#r @"C:\code_root\SQLProvider\bin\FSharp.Data.SQLProvider.dll"
+﻿#I @"../../../bin"
+#r @"../../../bin/FSharp.Data.SqlProvider.dll"
 open System
 open System.Linq
 open FSharp.Data.Sql
