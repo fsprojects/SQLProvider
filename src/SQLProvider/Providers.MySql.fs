@@ -276,9 +276,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
+            let caseChane = 
+                match cs with
+                | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
+                | Common.CaseSensitivityChange.TOLOWER -> "LOWER(TABLE_SCHEMA)"
+                | _ -> "TABLE_SCHEMA"
             MySql.connect con (fun con ->
-                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = '%s'" MySql.owner) con
+                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
                 [ while reader.Read() do 
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) } 
                     if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)

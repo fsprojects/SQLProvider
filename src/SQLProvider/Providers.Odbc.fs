@@ -70,7 +70,7 @@ type internal OdbcProvider(resolutionPath) =
         member __.ExecuteSprocCommand(com,definition,retCols,values) = ReturnValueType.Unit //  raise(NotImplementedException())
 
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             let con = con :?> OdbcConnection
             if con.State <> ConnectionState.Open then con.Open()
             let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)

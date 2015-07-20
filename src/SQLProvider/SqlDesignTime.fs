@@ -25,8 +25,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, rootTypeName) = 
         let caseInsensitivityCheck = 
             match caseSensitivity with
-            | CaseSensitivity.TOLOWER -> (fun (x:string) -> x.ToLower())
-            | CaseSensitivity.TOUPPER -> (fun (x:string) -> x.ToUpper())
+            | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
+            | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
             | _ -> (fun x -> x)
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies owner
         let conString = 
@@ -37,7 +37,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         con.Open()
         prov.CreateTypeMappings con
         
-        let tables = lazy prov.GetTables con
+        let tables = lazy prov.GetTables(con,caseSensitivity)
         let tableColumns =
             lazy
                 dict
@@ -54,7 +54,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner)
+        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner,caseSensitivity)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -90,7 +90,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
                    // of the property and the primary key e.g. ``1, Dennis The Squirrel``
-                   let buildFieldName = SchemaProjections.buildFieldName >> caseInsensitivityCheck
+                   let buildFieldName = SchemaProjections.buildFieldName
                    let propertyMap =
                       prov.GetColumns(con,table)
                       |> Seq.choose(fun col -> 
@@ -163,10 +163,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let ty = Type.GetType c.TypeMapping.ClrType
                         let propTy = if nullable then typedefof<option<_>>.MakeGenericType(ty) else ty
                         let name = c.Name
-                        let buildFieldName = SchemaProjections.buildFieldName >> caseInsensitivityCheck
                         let prop = 
                             ProvidedProperty(
-                                buildFieldName(name),propTy,
+                                SchemaProjections.buildFieldName(name),propTy,
                                 GetterCode = (fun args ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
@@ -220,8 +219,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                 |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
 
-            let buildSprocName = SchemaProjections.buildSprocName >> caseInsensitivityCheck
-            let rt = ProvidedTypeDefinition(buildSprocName(sproc.Name.DbName),Some typeof<ISqlDataContext>, HideObjectMethods = true)
+            let rt = ProvidedTypeDefinition(SchemaProjections.buildSprocName(sproc.Name.DbName),Some typeof<ISqlDataContext>, HideObjectMethods = true)
             let resultType = ProvidedTypeDefinition("Result",Some typeof<ISqlDataContext>, HideObjectMethods = true)
             resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
             rt.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
@@ -259,8 +257,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     ProvidedMethod("Invoke", parameters, returnType, InvokeCode = QuotationHelpers.quoteRecord sproc (fun args var ->                      
                         <@@ ((%%args.[0] : ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)))
 
-            let buildSprocName = SchemaProjections.buildSprocName >> caseInsensitivityCheck
-            ProvidedProperty(buildSprocName(sproc.Name.ProcName), resultType, GetterCode = (fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>) ) 
+            ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, GetterCode = (fun args -> <@@ (%%args.[0] : ISqlDataContext) @@>) ) 
             
         
         let rec walkSproc (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
@@ -401,7 +398,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                             | Some(cs) -> cs
                                             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName @@>
-                                    <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner) :> ISqlDataContext @@>))
+                                    <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner,caseSensitivity) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                    
@@ -410,7 +407,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, owner) :> ISqlDataContext @@> ))
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, owner, caseSensitivity) :> ISqlDataContext @@> ))
                       
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>"
@@ -419,7 +416,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
                                                             serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], %%referencedAssemblyExpr, owner) :> ISqlDataContext  @@>))
+                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], %%referencedAssemblyExpr, owner, caseSensitivity) :> ISqlDataContext  @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>
@@ -438,7 +435,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
     let owner = ProvidedStaticParameter("Owner", typeof<string>, "")    
     let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>,"")    
-    let caseSensitivity = ProvidedStaticParameter("CaseSensitivity",typeof<CaseSensitivity>,CaseSensitivity.TOUPPER)
+    let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.TOUPPER)
     let helpText = "<summary>Typed representation of a database</summary>
                     <param name='ConnectionString'>The connection string for the SQL database</param>
                     <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
@@ -447,7 +444,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>The owner of the schema for this provider to resolve (Oracle Only)</param>
-                    <param name='CaseSensitivity'>Should we do ToUpper or ToLower when generating table names?</param>"
+                    <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>"
         
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity], fun typeName args -> 
         createTypes(args.[1] :?> string,                  // ConnectionString URL
@@ -457,7 +454,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     args.[4] :?> int,                     // Individuals Amount
                     args.[5] :?> bool,                    // Use option types?
                     args.[6] :?> string,                  // Schema owner currently only used for oracle
-                    args.[7] :?> CaseSensitivity,       // Should we do ToUpper or ToLower when generating table names?
+                    args.[7] :?> CaseSensitivityChange,       // Should we do ToUpper or ToLower when generating table names?
                     typeName))
 
     do paramSqlType.AddXmlDoc helpText               

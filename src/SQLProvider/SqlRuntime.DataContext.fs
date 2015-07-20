@@ -23,7 +23,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
         | _ -> failwith "Unsupported database provider" 
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner) =   
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner, caseSensitivity) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -37,7 +37,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 // create type mappings and also trigger the table info read so the provider has 
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
-                prov.GetTables(con) |> ignore
+                prov.GetTables(con,caseSensitivity) |> ignore
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 

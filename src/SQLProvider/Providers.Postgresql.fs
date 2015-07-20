@@ -353,7 +353,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = PostgreSQL.executeSprocCommand con definition retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             use reader = executeSql con (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type

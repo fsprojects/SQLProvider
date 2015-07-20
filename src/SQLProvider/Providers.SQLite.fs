@@ -90,7 +90,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
             if con.State <> ConnectionState.Open then con.Open()
             createTypeMappings con
             con.Close()
-        member __.GetTables(con) =            
+        member __.GetTables(con,cs) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
                 [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do 

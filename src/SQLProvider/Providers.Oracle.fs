@@ -364,7 +364,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 Oracle.createTypeMappings con
                 primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
                match tableCache with
                | [] ->
                     let tables = Sql.connect con Oracle.getTables
