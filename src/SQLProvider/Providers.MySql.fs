@@ -24,7 +24,7 @@ module MySql =
     let findType name = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
    
     let connectionType =  lazy (findType "MySqlConnection")
@@ -615,7 +615,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk", 0),pkValue)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id", 0),pkValue)
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
                 cmd.CommandText <- sb.ToString()

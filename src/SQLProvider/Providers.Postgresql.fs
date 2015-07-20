@@ -23,7 +23,7 @@ module PostgreSQL =
     let tryFindType name =
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
     let findType name =
         match tryFindType name with

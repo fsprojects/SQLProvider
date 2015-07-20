@@ -19,6 +19,11 @@ type DatabaseProviderTypes =
     | MSACCESS = 5
     | ODBC = 6
 type RelationshipDirection = Children = 0 | Parents = 1 
+
+type CaseSensitivity =
+    | ORIGINAL = 0
+    | TOUPPER = 1
+    | TOLOWER = 2
     
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
