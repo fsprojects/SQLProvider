@@ -262,9 +262,14 @@ type internal MSSqlServerProvider() =
         member __.ExecuteSprocCommand(con, definition:SprocDefinition, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con definition returnCols values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
+            let caseChane = 
+                match cs with
+                | Common.CaseSensitivityChange.TOUPPER -> "UPPER(INFORMATION_SCHEMA.TABLES)"
+                | Common.CaseSensitivityChange.TOLOWER -> "LOWER(INFORMATION_SCHEMA.TABLES)"
+                | _ -> "INFORMATION_SCHEMA.TABLES"
             MSSqlServer.connect con (fun con -> 
-            use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
+            use reader = MSSqlServer.executeSql ("select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from "+caseChane) con
             [ while reader.Read() do 
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() } 
                 if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)

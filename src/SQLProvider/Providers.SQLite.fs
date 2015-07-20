@@ -30,8 +30,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
     let findType pred = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find pred
-        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
-
+        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
    
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
@@ -78,7 +77,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
         com.ExecuteReader()
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+        member __.CreateConnection(connectionString) = Activator.CreateInstance(connectionType,[|box (connectionString |> ConfigHelpers.parseConnectionString)|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(param,value) = 
             let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
@@ -91,7 +90,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies) as this =
             if con.State <> ConnectionState.Open then con.Open()
             createTypeMappings con
             con.Close()
-        member __.GetTables(con) =            
+        member __.GetTables(con,cs) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
                 [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do 

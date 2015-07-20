@@ -1,12 +1,12 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Server=MYSQL;Database=HR;Uid=admin;Pwd=password;"
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
-let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
+let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -64,7 +64,7 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
-#r @"..\..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll"
+#r @"../../packages/Newtonsoft.Json.6.0.3/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
 
@@ -98,14 +98,16 @@ let countries =
 
 //************************ CRUD *************************//
 
+let fetchAntartica () =
+    query {
+        for reg in ctx.``[HR].[REGIONS]`` do
+        where (reg.REGION_ID = 5u)
+        select reg
+    } |> Seq.toList
+
 
 let antartica =
-    let result =
-        query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5u)
-            select reg
-        } |> Seq.toList
+    let result = fetchAntartica ()
     match result with
     | [ant] -> ant
     | _ -> 
@@ -118,8 +120,12 @@ let antartica =
 antartica.REGION_NAME <- "ant"
 ctx.SubmitUpdates()
 
+let arctica2 = fetchAntartica () |> Seq.head
+if antartica.REGION_NAME <> arctica2.REGION_NAME then failwith "Update test fails!"
+
 antartica.Delete()
 ctx.SubmitUpdates()
+if fetchAntartica() |> Seq.length <> 0 then failwith "Delete test fails!"
 
 //********************** Procedures **************************//
 
