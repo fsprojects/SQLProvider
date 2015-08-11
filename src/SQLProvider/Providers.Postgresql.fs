@@ -157,7 +157,8 @@ module PostgreSQL =
             enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
 
         let adjustments =
-            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ]
+            [ (typeof<DateTime>.ToString(), DbType.Date)
+              (typeof<string>.ToString(), DbType.String) ]
             |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
 
         let clrMappings =
