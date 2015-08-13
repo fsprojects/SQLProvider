@@ -1,13 +1,16 @@
 (*** hide ***)
-#I @"../../files/sqlite"
+#I "../../files/sqlite"
 (*** hide ***)
 #I "../../../bin"
+
 (*** hide ***)
 [<Literal>]
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+
 (*** hide ***)
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+
 (**
 
 
@@ -23,17 +26,25 @@ SQL Provider supports the following database types:
     * [`sqlite.html` file] SQLite
     * [`postgresql.html` file] PostgreSQL
     * [`mysql.html` file] MySQL
-    * [`odbc.html` file] ODBC (*Experimental*, only supports SELECT & MAKE)
+    * [`odbc.html` file] ODBC (_Experimental_, only supports SELECT & MAKE)
 
 After you have installed the nuget package or built the type provider assembly 
 from source, you should reference the assembly either as a project reference 
 or by using an F# interactive script file.
-*)
 
-#r "FSharp.Data.SqlProvider.dll"
-open FSharp.Data.Sql
+```
+// when using the SQLProvider in a script file (.fsx), the file needs to be referenced
+// using F#'s `#r` command:
+#r "../../packages/SQLProvider.1.0.1/lib/net40/FSharp.Data.SqlProvider.dll"
+// whether referencing in a script, or added to project as an assembly
+// reference, the library needs to be opened
+```
+*)
+open FSharp.Data.Sql.Providers
 
 (** 
+
+
 To use the type provider you must first create a type alias. 
 
 In this declaration you are able to pass various pieces of information known 
@@ -45,7 +56,7 @@ more detail about the available static parameters in other areas of the
 documentation.
 *)
 
-type sql = SqlDataProvider< connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath >
+type sql = SqlDataProvider<connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath>
 
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in 
@@ -54,7 +65,6 @@ schema and reading its data, you create a *DataContext* value.
 *)
 
 let ctx = sql.GetDataContext()
-
 (**
 
 When you press ``.`` on ``ctx``, intellisense will display a list of properties 
@@ -65,7 +75,6 @@ be enumerated.
 *)
 
 let customers = ctx.``[main].[Customers]`` |> Seq.toArray
-
 (**
 This is the equivalent of executing a query that selects all rows and 
 columns from the ``[main].[customers]`` table.  
@@ -76,7 +85,6 @@ entities will contain properties relating to each column name from the table.
 
 let firstCustomer = customers.[0]
 let name = firstCustomer.ContactName
-
 (**
 Each property is correctly typed depending on the database column 
 definitions.  In this example, ``firstCustomer.ContactName`` is a string.
@@ -112,9 +120,12 @@ a relevant query using the entity's primary key.
 The SQL provider supports LINQ queries using F#'s *query expression* syntax.
 *)
 
-let customersQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
-            select customer } |> Seq.toArray
+let customersQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
+            select customer
+    }
+    |> Seq.toArray
 
 (**
 The above example is identical to the query that was executed when 
@@ -124,16 +135,21 @@ You can extend this basic query include to filter criteria by introducing
 one or more *where* clauses
 *)
 
-let filteredQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
+let filteredQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
             where (customer.ContactName = "John Smith")
-            select customer } |> Seq.toArray
+            select customer
+    }
+    |> Seq.toArray
 
-let multipleFilteredQuery =
-    query { for customer in ctx.``[main].[Customers]`` do
-            where ((customer.ContactName = "John Smith" && customer.Country = "England") 
-                    || customer.ContactName = "Joe Bloggs")
-            select customer } |> Seq.toArray
+let multipleFilteredQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
+            where ((customer.ContactName = "John Smith" && customer.Country = "England") || customer.ContactName = "Joe Bloggs")
+            select customer
+    }
+    |> Seq.toArray
 
 (**
 The SQL provider will accept any level of nested complex conditional logic 
@@ -143,17 +159,23 @@ To access related data, you can either enumerate directly over the constraint
 property of an entity, or you can perform an explicit join.
 *)
 
-let automaticJoinQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
-           for order in customer.FK_Orders_0_0 do
-           where (customer.ContactName = "John Smith")
-           select (customer,order) } |> Seq.toArray
+let automaticJoinQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
+            for order in customer.FK_Orders_0_0 do
+                where (customer.ContactName = "John Smith")
+                select (customer, order)
+    }
+    |> Seq.toArray
 
-let explicitJoinQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
-           join order in ctx.``[main].[Customers]`` on (customer.CustomerID = order.CustomerID)
-           where (customer.ContactName = "John Smith")
-           select (customer,order) } |> Seq.toArray
+let explicitJoinQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
+            join order in ctx.``[main].[Customers]`` on (customer.CustomerID = order.CustomerID)
+            where (customer.ContactName = "John Smith")
+            select (customer, order)
+    }
+    |> Seq.toArray
 
 (**
 Both of these queries have identical results, it's just one requires explicit 
@@ -167,11 +189,14 @@ SQL provider to select only the columns you have asked for, which is an
 important optimization.
 *)
 
-let ordersQuery =
-   query { for customer in ctx.``[main].[Customers]`` do
-           for order in customer.FK_Orders_0_0 do
-           where (customer.ContactName = "John Smith")
-           select (customer.ContactName, order.OrderDate, order.ShipAddress) } |> Seq.toArray
+let ordersQuery = 
+    query { 
+        for customer in ctx.``[main].[Customers]`` do
+            for order in customer.FK_Orders_0_0 do
+                where (customer.ContactName = "John Smith")
+                select (customer.ContactName, order.OrderDate, order.ShipAddress)
+    }
+    |> Seq.toArray
 
 (**
 The results of this query will return the name, order date and ship address 
@@ -186,7 +211,6 @@ held within a table or view. You can then bind that data as an entity to a value
 *)
 
 let BERGS = ctx.``[main].[Customers]``.Individuals.BERGS
-
 (**
 Every table and view has an ``Individuals`` property. When you press dot on 
 this property, intellisense will display a list of the data in that table, 
