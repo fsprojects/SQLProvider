@@ -39,10 +39,10 @@ module internal QueryImplementation =
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
        if con.State <> ConnectionState.Open then con.Open()
-       let results = SqlEntity.FromDataReader(dc,baseTable.FullName, cmd.ExecuteReader())
+       use reader = cmd.ExecuteReader()
+       let results = SqlEntity.FromDataReader(dc,baseTable.FullName, reader)
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then 
-            con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
 
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =       
@@ -227,7 +227,10 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))                                       
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(destTi,destKey,_)))                                       
                                       OptionalQuote projection ]) ->
-                        let (BaseTable(_,destEntity)) = dest.SqlExpression
+                        let destEntity =
+                            match dest.SqlExpression with
+                            | BaseTable(_,destEntity) -> destEntity
+                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression = 
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" -> 
@@ -322,21 +325,33 @@ module internal QueryImplementation =
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
                     | _ -> failwith "unrecognised method call"
-                    
+
                 member provider.Execute(e:Expression) : obj = failwith "Execute not implemented"
-                member provider.Execute<'T>(e:Expression) : 'T = 
+
+                member provider.Execute<'T>(e:Expression) : 'T =
                     Common.QueryEvents.PublishExpression e
-                    match e with                    
-                    | MethodCall(_, (MethodWithName "First" as meth),  [Constant(query,_)]  ) ->   
-                        let svc = (query:?>IWithSqlService)
-                        executeQuery svc.DataContext svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex                        
+                    match e with
+                    | MethodCall(_, (MethodWithName "First" as meth), [Constant(query, _)]) ->
+                        let svc = (query :?> IWithSqlService)
+                        executeQuery svc.DataContext svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex
                         |> Seq.cast<'T>
                         |> Seq.head
-                    | MethodCall(_, (MethodWithName "Single" as meth),  [Constant(query,_)]  ) ->   
+                    | MethodCall(_, (MethodWithName "FirstOrDefault" as meth), [Constant(query, _)]) ->
+                        let svc = (query :?> IWithSqlService)
+                        executeQuery svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
+                        |> Seq.cast<'T>
+                        |> Seq.tryFind (fun _ -> true)
+                        |> Option.fold (fun _ x -> x) Unchecked.defaultof<'T>
+                    | MethodCall(_, (MethodWithName "Single" as meth), [Constant(query, _)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
                         | x::[] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
-                    | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query,_)] ) ->  
-                        let svc = (query:?>IWithSqlService)
-                        executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T 
+                    | MethodCall(_, (MethodWithName "SingleOrDefault" as meth), [Constant(query, _)]) ->
+                        match (query :?> seq<_>) |> Seq.toList with
+                        | [] -> Unchecked.defaultof<'T>
+                        | x::[] -> x
+                        | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
+                    | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query, _)]) ->
+                        let svc = (query :?> IWithSqlService)
+                        executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
                     | _ -> failwith "Unsupported execution expression" }

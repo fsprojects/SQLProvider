@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Data.Sql.Runtime
 
+open System
 open System.Collections.Generic
 open System.Data
 open System.Linq
@@ -8,7 +9,21 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, owner) =   
+module internal ProviderBuilder = 
+    open FSharp.Data.Sql.Providers
+
+    let createProvider vendor resolutionPath referencedAssemblies owner =
+        match vendor with                
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
+        | _ -> failwith "Unsupported database provider" 
+
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner, caseSensitivity) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -16,13 +31,13 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = Utilities.createSqlProvider providerType resolutionPath owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
-                prov.GetTables(con) |> ignore
+                prov.GetTables(con,caseSensitivity) |> ignore
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 
@@ -57,31 +72,39 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(name,parameters,values:obj array) =
+        member this.CallSproc(definition:SprocDefinition, retCols:QueryParameter[], values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               use com = provider.CreateCommand(con,name)
+               use com = provider.CreateCommand(con, definition.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
-               let inputParameters, outputParameters = parameters |> Array.partition (fun (_, _, dir, _) -> dir = ParameterDirection.Input || dir = ParameterDirection.InputOutput)
                
-               let outps =
-                outputParameters
-                |> Array.mapi(fun i (name, dbtype, dir, length) ->
-                    let p = provider.CreateCommandParameter(name,null,Some dbtype, Some dir, if length = -1 then None else Some length)
-                    com.Parameters.Add p |> ignore; p)
+               let entity = new SqlEntity(this, definition.Name.DbName)
 
-               inputParameters
-               |> Array.iteri(fun i (name, dbtype, dir, length) ->
-                   let p = provider.CreateCommandParameter(name,values.[i],Some dbtype, Some dir, if length = -1 then None else Some length)
-                   com.Parameters.Add p |> ignore)
+               let toEntityArray rowSet = 
+                   [|
+                       for row in rowSet do
+                           let entity = new SqlEntity(this, definition.Name.DbName)
+                           entity.SetData(row)
+                           yield entity
+                   |]
 
-               use reader = com.ExecuteReader()
-               let entities = 
-                if outputParameters.Length > 0
-                then SqlEntity.FromOutputParameters(this, name, outps)
-                else SqlEntity.FromDataReader(this,name,reader)
+               let entities =
+                   match provider.ExecuteSprocCommand(com, definition,retCols, values) with
+                   | Unit -> () |> box
+                   | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
+                   | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box
+                   | Set(rowSet) ->
+                       for row in rowSet do
+                            match row with
+                            | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                            | ResultSet(name, rs) ->
+                                let data = toEntityArray rs
+                                entity.SetColumnSilent(name, data)
+                       entity |> box
+
+                                  
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entities
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
@@ -103,10 +126,10 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
-               com.Parameters.Add (provider.CreateCommandParameter("@id",id,None, None, None)) |> ignore
+               com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
-               let entity = List.head <| SqlEntity.FromDataReader(this,table.FullName,reader)
+               let entity = SqlEntity.FromDataReader(this,table.FullName,reader).[0]
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"

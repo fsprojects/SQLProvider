@@ -1,19 +1,19 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
-
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
-let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
+let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
+
 
 type Employee = {
     EmployeeId : int32
@@ -47,7 +47,7 @@ let salesNamedDavid =
 let employeesJob = 
     query {
             for emp in ctx.``[HR].[EMPLOYEES]`` do
-            for manager in emp.EMP_MANAGER_FK do
+            for manager in emp.employees_ibfk_3 do
             join dept in ctx.``[HR].[DEPARTMENTS]`` on (emp.DEPARTMENT_ID = dept.DEPARTMENT_ID)
             where ((dept.DEPARTMENT_NAME |=| [|"Sales";"Executive"|]) && emp.FIRST_NAME =% "David")
             select (emp.FIRST_NAME, emp.LAST_NAME, manager.FIRST_NAME, manager.LAST_NAME )
@@ -64,7 +64,7 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
-#r @"..\..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll"
+#r @"../../packages/Newtonsoft.Json.6.0.3/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
 
@@ -98,40 +98,46 @@ let countries =
 
 //************************ CRUD *************************//
 
+let fetchAntartica () =
+    query {
+        for reg in ctx.``[HR].[REGIONS]`` do
+        where (reg.REGION_ID = 5u)
+        select reg
+    } |> Seq.toList
+
 
 let antartica =
-    let result =
-        query {
-            for reg in ctx.``[HR].[REGIONS]`` do
-            where (reg.REGION_ID = 5M)
-            select reg
-        } |> Seq.toList
+    let result = fetchAntartica ()
     match result with
     | [ant] -> ant
     | _ -> 
         let newRegion = ctx.``[HR].[REGIONS]``.Create() 
         newRegion.REGION_NAME <- "Antartica"
-        newRegion.REGION_ID <- 5M
+        newRegion.REGION_ID <- 5u
         ctx.SubmitUpdates()
         newRegion
 
 antartica.REGION_NAME <- "ant"
 ctx.SubmitUpdates()
 
+let arctica2 = fetchAntartica () |> Seq.head
+if antartica.REGION_NAME <> arctica2.REGION_NAME then failwith "Update test fails!"
+
 antartica.Delete()
 ctx.SubmitUpdates()
+if fetchAntartica() |> Seq.length <> 0 then failwith "Delete test fails!"
 
 //********************** Procedures **************************//
 
-ctx.Procedures.ADD_JOB_HISTORY.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
+ctx.Procedures.ADD_JOB_HISTORY.Invoke(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
 //Support for sprocs with no parameters
-ctx.Procedures.SECURE_DML.Invoke()
+//ctx.Procedures.SECURE_DML()
 
 //Support for sprocs that return ref cursors
 let employees =
     [
-      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().CATCUR do
+      for e in ctx.Procedures.GET_EMPLOYEES.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -145,11 +151,12 @@ type Region = {
 let locations_and_regions =
     let results = ctx.Procedures.GET_LOCATIONS_AND_REGIONS.Invoke()
     [
-      for e in results.LOCATIONS do
+      for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
-              
-      for e in results.REGIONS do
-        yield e.MapTo<Region>() |> box
+      //This isn't supported as I cannot figure out how to get the information
+      //about how many result sets the sproc returns.
+//      for e in results.ResultSet1 do
+//        yield e.ColumnValues |> Seq.toList |> box
     ]
 
 
@@ -157,7 +164,7 @@ let locations_and_regions =
 let getemployees hireDate =
     let results = (ctx.Procedures.GET_EMPLOYEES_STARTING_AFTER.Invoke hireDate)
     [
-      for e in results.RESULTS do
+      for e in results.ResultSet do
         yield e.MapTo<Employee>()
     ]
 
@@ -165,12 +172,4 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EMP_FULLNAME.Invoke(100M).ReturnValue
-
-//********************** Packaged Procs **********************//
-
-ctx.Packages.TEST_PACKAGE.INSERT_JOB_HISTORY.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
-
-//********************** Packaged Funcs **********************//
-
-let fullNamPkg = ctx.Packages.TEST_PACKAGE.FULLNAME.Invoke("Bull", "Colin").ReturnValue
+let fullName = ctx.Functions.FN_EMP_FULLNAME.Invoke(100u).ReturnValue

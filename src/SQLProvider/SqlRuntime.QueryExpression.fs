@@ -1,24 +1,4 @@
-﻿namespace FSharp.Data.Sql.Common
-    // I don't really like having these in this file..
-    module internal Utilities =
-        open FSharp.Data.Sql.Providers
-
-        let createSqlProvider vendor resolutionPath owner =
-            match vendor with                
-            | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
-            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-            | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
-            | _ -> failwith "Unsupported database provider"        
-
-        let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
-            // eg "Item1" -> tupleIndex.[0]
-            tupleIndex.[(int <| name.Remove(0, 4)) - 1]
-
-namespace FSharp.Data.Sql.QueryExpression
+﻿namespace FSharp.Data.Sql.QueryExpression
 
 open System
 open System.Reflection
@@ -36,7 +16,7 @@ module internal QueryExpressionTransformer =
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (resultParam:ParameterExpression) baseTableAlias (aliasEntityDict:Map<string,Table>) =
         
         let (|SingleTable|MultipleTables|) = function
-            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> -> 
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
@@ -136,8 +116,17 @@ module internal QueryExpressionTransformer =
                                                                                     | _ -> upcast e
             | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(transform en e.Expression, e.Member)
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
-            | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> upcast Expression.Lambda(transform en e.Body, e.Parameters)
-            | ExpressionType.New,                (:? NewExpression as e)         -> upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
+            | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
+                                                                                    if  exType.IsGenericType 
+                                                                                        && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition() 
+                                                                                        && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
+                                                                                        upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
+                                                                                    else
+                                                                                        upcast Expression.Lambda(transform en e.Body, e.Parameters)
+            | ExpressionType.New,                (:? NewExpression as e)         -> if e.Members = null then
+                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
+                                                                                    else
+                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
             | ExpressionType.NewArrayInit,       (:? NewArrayExpression as e)    -> upcast Expression.NewArrayInit(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.NewArrayBounds,     (:? NewArrayExpression as e)    -> upcast Expression.NewArrayBounds(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
@@ -145,6 +134,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.ListInit,           (:? ListInitExpression as e)    -> upcast Expression.ListInit( (transform en e.NewExpression) :?> NewExpression, e.Initializers)
             | _ -> failwith "encountered unknown LINQ expression"                                                                                                    
  
+
         let newProjection =
             match projection with
             | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) -> 

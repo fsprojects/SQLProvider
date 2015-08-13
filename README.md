@@ -1,4 +1,7 @@
-# SQLProvider
+[![Issue Stats](http://issuestats.com/github/fsprojects/SQLProvider/badge/issue)](http://issuestats.com/github/fsprojects/SQLProvider)
+[![Issue Stats](http://issuestats.com/github/fsprojects/SQLProvider/badge/pr)](http://issuestats.com/github/fsprojects/SQLProvider)
+
+# SQLProvider [![NuGet Status](http://img.shields.io/nuget/v/SQLProvider.svg?style=flat)](https://www.nuget.org/packages/SQLProvider/)
 
 A general SQL database type provider, supporting LINQ queries, schema 
 exploration, individuals, CRUD operations and much more besides. The provider 
@@ -17,7 +20,7 @@ additional samples and documentation!
 ## Building
 
 * Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsprojects/SQLProvider.png)](https://travis-ci.org/fsprojects/SQLProvider)
-* Windows: Run *build.cmd* 
+* Windows: Run *build.cmd* [![Build status](https://ci.appveyor.com/api/projects/status/68u9qx5vw1uf5opl/branch/master?svg=true)](https://ci.appveyor.com/project/colinbull/sqlprovider/branch/master)
 
 ## Known issues
 
@@ -35,3 +38,11 @@ not suitable for production use.  I am not responsible for any inadvertent
 damage and destruction caused by this software. 
 
 Always fully assert the results of your queries!
+
+## Maintainer(s)
+
+- [@pezipink](https://github.com/pezipink)
+- [@colinbull](https://github.com/colinbull)
+
+The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
+
