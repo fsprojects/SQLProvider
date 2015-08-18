@@ -1,7 +1,7 @@
-EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"
+EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"
 
 -- delete data in all tables
-EXEC sp_MSForEachTable "DELETE FROM ?"
+EXEC sp_MSforeachtable "DELETE FROM ?"
 Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (1,'Europe');
 Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (2,'Americas');
 Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (3,'Asia');
@@ -219,4 +219,4 @@ Insert into dbo.LOCATIONS (LOCATION_ID,STREET_ADDRESS,POSTAL_CODE,CITY,STATE_PRO
 Insert into dbo.LOCATIONS (LOCATION_ID,STREET_ADDRESS,POSTAL_CODE,CITY,STATE_PROVINCE,COUNTRY_ID) values (3100,'Pieter Breughelstraat 837','3029SK','Utrecht','Utrecht','NL');
 Insert into dbo.LOCATIONS (LOCATION_ID,STREET_ADDRESS,POSTAL_CODE,CITY,STATE_PROVINCE,COUNTRY_ID) values (3200,'Mariano Escobedo 9991','11932','Mexico City','Distrito Federal,','MX');
 -- enable all constraints
-EXEC sp_msforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"
+EXEC sp_MSforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"

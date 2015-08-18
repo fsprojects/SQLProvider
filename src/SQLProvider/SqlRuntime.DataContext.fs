@@ -12,10 +12,10 @@ open FSharp.Data.Sql.Schema
 module internal ProviderBuilder = 
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner =
+    let createProvider vendor resolutionPath referencedAssemblies owner =
         match vendor with                
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
@@ -23,7 +23,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(resolutionPath) :> ISqlProvider
         | _ -> failwith "Unsupported database provider" 
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner) =   
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, owner, caseSensitivity) =   
     let pendingChanges = HashSet<SqlEntity>()
     static let providerCache = Dictionary<string,ISqlProvider>()
     do
@@ -31,33 +31,18 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache .TryGetValue typeName with
             | true, _ -> ()
             | false,_ -> 
-                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has 
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
-                prov.GetTables(con) |> ignore
+                prov.GetTables(con,caseSensitivity) |> ignore
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 providerCache.Add(typeName,prov))
 
-    let pkOfConnection (provider : ISqlProvider) (con: IDbConnection) (table: Table) =
-        if con.State <> ConnectionState.Open then con.Open()
-        // this line is to ensure the columns for the table have been retrieved and therefore
-        // its primary key exists in the lookup
-        lock provider (fun () -> provider.GetColumns (con,table) |> ignore)
-        match provider.GetPrimaryKey table with
-        | Some v -> v
-        | None -> 
-            // this fail case should not really be possible unless the runtime database is different to the design-time one
-            failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
-
     interface ISqlDataContext with
         member this.ConnectionString with get() = connectionString
-        member this.CreateConnection() =
-            match providerCache.TryGetValue typeName with
-            | true,provider -> provider.CreateConnection(connectionString)
-            | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
         member this.SubmitChangedEntity e = pendingChanges.Add e |> ignore
         member this.ClearPendingChanges() = pendingChanges.Clear()
         member this.GetPendingEntities() = pendingChanges |> Seq.toList
@@ -127,9 +112,17 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
-
+               con.Open()
                let table = Table.FromFullName table
-               let pk = pkOfConnection provider con table
+               // this line is to ensure the columns for the table have been retrieved and therefore
+               // its primary key exists in the lookup
+               lock provider (fun () -> provider.GetColumns (con,table) |> ignore)
+               let pk = 
+                   match provider.GetPrimaryKey table with
+                   | Some v -> v
+                   | None -> 
+                      // this fail case should not really be possible unless the runtime database is different to the design-time one
+                      failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName         
         
                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
                //todo: establish pk SQL data type
@@ -140,11 +133,5 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                entity
             | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
-        member this.GetPrimaryKeyDefinition(table) : string =
-            match providerCache.TryGetValue typeName with
-            | true,provider -> 
-                let table = Table.FromFullName table
-                use con = provider.CreateConnection(connectionString)
-                pkOfConnection provider con table
-            | false, _ -> failwith "fatal error - connection cache was not populated with expected connection details"
+    
         
