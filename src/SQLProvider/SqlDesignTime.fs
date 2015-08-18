@@ -185,6 +185,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let bts = baseTypes.Force()       
                     [ for r in children do       
                        if bts.ContainsKey(r.PrimaryTable) then
+                        let (tt,_,_,_) = bts.[r.PrimaryTable]
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
@@ -320,7 +321,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               for (KeyValue(key,(entityType,desc,_,schema))) in baseTypes.Force() do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
-                
+                let schemaType = getOrAddSchema schema
                 
                 ct.AddMembersDelayed( fun () -> 
                     // creation methods.
@@ -379,7 +380,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
-                let prop = ProvidedProperty(SchemaProjections.buildTableName(key),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
                 schemaType.AddMember ct
                 schemaType.AddMember prop
@@ -416,7 +416,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                             | Some(cs) -> cs
                                             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName @@>
-                                    <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr,owner,caseSensitivity) :> ISqlDataContext @@>))
+                                    <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr, runtimeAssembly,owner,caseSensitivity) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                    
@@ -425,7 +425,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, owner, caseSensitivity) :> ISqlDataContext @@> ))
+                                                                let runtimeAssembly = config.ResolutionFolder
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity) :> ISqlDataContext @@> ))
                       
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>"
@@ -434,7 +435,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
                                                             serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], %%referencedAssemblyExpr, owner, caseSensitivity) :> ISqlDataContext  @@>))
+                                                            InvokeCode = (fun args -> 
+                                                                let runtimeAssembly = config.ResolutionFolder
+                                                                <@@ SqlDataContext(rootTypeName,%%args.[0],dbVendor,%%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity) :> ISqlDataContext  @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
                               <param name='connectionString'>The database connection string</param>
