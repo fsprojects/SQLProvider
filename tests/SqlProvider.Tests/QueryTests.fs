@@ -415,8 +415,8 @@ type Simple = {First : string}
 
 type Dummy<'t> = D of 't
 
- [<Test>]
- let ``simple select into a generic type`` () =
+[<Test>]
+let ``simple select into a generic type`` () =
     let dc = sql.GetDataContext()
     let query = 
         query {
@@ -426,8 +426,8 @@ type Dummy<'t> = D of 't
 
     CollectionAssert.IsNotEmpty query
 
- [<Test>]
- let ``simple select into a generic type with pipe`` () =
+[<Test>]
+let ``simple select into a generic type with pipe`` () =
     let dc = sql.GetDataContext()
     let query = 
         query {

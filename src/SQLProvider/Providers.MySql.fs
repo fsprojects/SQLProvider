@@ -175,6 +175,7 @@ module MySql =
 
         let parameters = 
             let withParameters = 
+                if String.IsNullOrEmpty owner then owner <- con.Database
                 connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
                 |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
 
