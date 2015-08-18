@@ -32,6 +32,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
             | Some(cs) -> cs
             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+        let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner
         let con = prov.CreateConnection conString
         con.Open()
         prov.CreateTypeMappings con
@@ -53,7 +54,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies,owner,caseSensitivity)
+        let designTimeDc = SqlDataContext(rootTypeName,conString,dbVendor,resolutionPath,config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
