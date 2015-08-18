@@ -30,8 +30,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let findType pred = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find pred
-        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
-
+        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
    
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
@@ -98,7 +97,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             if con.State <> ConnectionState.Open then con.Open()
             createTypeMappings con
             con.Close()
-        member __.GetTables(con) =            
+        member __.GetTables(con,cs) =            
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
                 [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do 

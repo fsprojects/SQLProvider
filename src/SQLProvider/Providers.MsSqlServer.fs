@@ -262,7 +262,7 @@ type internal MSSqlServerProvider() =
         member __.ExecuteSprocCommand(con, definition:SprocDefinition, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con definition returnCols values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
-        member __.GetTables(con) =
+        member __.GetTables(con, cs) =
             MSSqlServer.connect con (fun con -> 
             use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
             [ while reader.Read() do 

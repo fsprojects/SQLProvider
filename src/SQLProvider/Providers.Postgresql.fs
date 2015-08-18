@@ -23,7 +23,7 @@ module PostgreSQL =
     let tryFindType name =
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
     let findType name =
         match tryFindType name with
@@ -157,7 +157,8 @@ module PostgreSQL =
             enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
 
         let adjustments =
-            [(typeof<System.DateTime>.ToString(),System.Data.DbType.Date) ]
+            [ (typeof<DateTime>.ToString(), DbType.Date)
+              (typeof<string>.ToString(), DbType.String) ]
             |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
 
         let clrMappings =
@@ -353,7 +354,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = PostgreSQL.executeSprocCommand con definition retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             use reader = executeSql con (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type

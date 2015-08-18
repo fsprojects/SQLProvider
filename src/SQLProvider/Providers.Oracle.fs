@@ -27,7 +27,7 @@ module internal Oracle =
     let findType name = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
     let systemNames = 
         [
@@ -377,7 +377,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 Oracle.createTypeMappings con
                 primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
                match tableCache with
                | [] ->
                     let tables = Sql.connect con Oracle.getTables

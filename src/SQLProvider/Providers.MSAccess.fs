@@ -71,7 +71,7 @@ type internal MSAccessProvider() =
             upcast p
         member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             if con.State <> ConnectionState.Open then con.Open()
             let con = con:?>OleDbConnection
             let tables = 
