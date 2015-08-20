@@ -6,7 +6,7 @@ open System.Linq
 open NUnit.Framework
 
 [<Literal>]
-let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=True; FailIfMissing=True;"
+let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=false; FailIfMissing=True;"
 
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
