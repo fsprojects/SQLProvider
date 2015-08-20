@@ -23,15 +23,22 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
      
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, rootTypeName) = 
+        let resolutionPath = 
+            if String.IsNullOrWhiteSpace resolutionPath
+            then config.ResolutionFolder
+            else resolutionPath
+
         let caseInsensitivityCheck = 
             match caseSensitivity with
             | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
             | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
             | _ -> (fun x -> x)
+
         let conString = 
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
             | Some(cs) -> cs
             | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner
         let con = prov.CreateConnection conString
         con.Open()
@@ -147,7 +154,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 dict [ for table in tables.Force() do  
                         let name = table.FullName
                         let (et,_,_,_) = baseTypes.Force().[name]
-                        let ct = ProvidedTypeDefinition(table.FullName + "Set", None ,HideObjectMethods=false)                        
+                        let ct = ProvidedTypeDefinition(table.FullName, None ,HideObjectMethods=false)                        
                         ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
                         let it = createIndividualsType table 
                         yield table.FullName,(ct,it) ]
@@ -184,8 +191,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let relProps = 
                     let bts = baseTypes.Force()       
                     [ for r in children do       
-                       if bts.ContainsKey(r.PrimaryTable) then
-                        let (tt,_,_,_) = bts.[r.PrimaryTable]
+                       if bts.ContainsKey(r.ForeignTable) then
+                        let (tt,_,_,_) = bts.[r.ForeignTable]
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
                         let name = r.Name
@@ -455,7 +462,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let dbVendor = ProvidedStaticParameter("DatabaseVendor",typeof<DatabaseProviderTypes>,DatabaseProviderTypes.MSSQLSERVER)
     let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
     let owner = ProvidedStaticParameter("Owner", typeof<string>, "")    
-    let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>,"")    
+    let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>, "")    
     let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.TOUPPER)
     let helpText = "<summary>Typed representation of a database</summary>
                     <param name='ConnectionString'>The connection string for the SQL database</param>

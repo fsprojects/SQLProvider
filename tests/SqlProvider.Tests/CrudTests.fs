@@ -9,10 +9,12 @@ open System
 open System.Transactions
 
 [<Literal>]
-let connectionString = @"Data Source=.\db\northwindEF.db; Version = 3;FailIfMissing=True;"
+let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=false; FailIfMissing=True;"
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString>
+
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+
  
 let createCustomer (dc:sql.dataContext) = 
     let newCustomer = dc.Main.Customers.Create()

@@ -22,16 +22,21 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let assemblyNames =  
         [
            (if isMono then "Mono" else "System") + ".Data.SQLite.dll"
+           (if isMono then "Mono" else "System") + ".Data.Sqlite.dll"
         ]
 
     let assembly =
-        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath (Array.append [|runtimeAssembly|] referencedAssemblies) assemblyNames
 
-    let findType pred = 
+    let findType f = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find pred
-        | None -> failwithf "Unable to resolve sql lite assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
-   
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find f
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
+
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
     let paramterType =    (findType (fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
@@ -80,10 +85,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member __.CreateConnection(connectionString) = 
             //Forces relative paths to be relative to the Runtime assembly
             let basePath = 
-                if String.IsNullOrEmpty(resolutionPath) || resolutionPath = @"\"
+                if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
                 then runtimeAssembly
                 else resolutionPath
-            let connectionString = connectionString.Replace(@".\", basePath + @"\")
+            let connectionString = connectionString.Replace(@"." + Path.DirectorySeparatorChar.ToString(), basePath + Path.DirectorySeparatorChar.ToString())
             Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
         member __.CreateCommandParameter(param,value) = 

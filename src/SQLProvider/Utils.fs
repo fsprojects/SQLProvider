@@ -155,15 +155,28 @@ module internal Reflection =
         let resolutionPaths =
             assemblyNames 
             |> List.map (fun asm ->
-                if String.IsNullOrEmpty resolutionPath then asm
+                if String.IsNullOrEmpty resolutionPath 
+                then asm
                 else System.IO.Path.Combine(resolutionPath,asm))
 
-        (assemblyNames @ resolutionPaths @ referencedPaths) 
-        |> List.tryPick (fun p -> 
-            match tryLoadAssembly p with
-            | Some(Choice1Of2 ass) -> Some ass
-            | _ -> None
-         )
+        let allPaths =
+            (assemblyNames @ resolutionPaths @ referencedPaths) 
+        
+        let result = 
+            allPaths
+            |> List.tryPick (fun p -> 
+                match tryLoadAssembly p with
+                | Some(Choice1Of2 ass) -> Some ass
+                | _ -> None
+            )
+        
+        match result with
+        | Some asm -> Choice1Of2 asm
+        | None -> 
+            allPaths
+            |> Seq.map (IO.Path.GetDirectoryName)
+            |> Seq.distinct
+            |> Choice2Of2
 
 module Sql =
     

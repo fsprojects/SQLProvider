@@ -23,8 +23,12 @@ module MySql =
 
     let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
 
    
     let connectionType =  lazy (findType "MySqlConnection")

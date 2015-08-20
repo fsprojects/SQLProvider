@@ -6,9 +6,10 @@ open System.Linq
 open NUnit.Framework
 
 [<Literal>]
-let connectionString = @"Data Source=.\db\northwindEF.db; Version = 3; Read Only=true; FailIfMissing=True;"
+let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=True; FailIfMissing=True;"
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString>
+
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
    
 [<Test; Ignore("Not Supported")>]
@@ -264,8 +265,8 @@ let ``simple select query with join using relationships``() =
     let query = 
         query {
             for cust in dc.Main.Customers do
-            for order in cust.FK_Orders_0_0 do
-            select (cust.CustomerId, order.OrderDate)
+            for order in cust.FK_Orders_0 do
+            select (cust.CustomerId, order.OrderId)
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query
@@ -308,8 +309,8 @@ let ``simple select query with multiple joins on relationships``() =
     let query = 
         query {
             for cust in dc.Main.Customers do
-            for order in cust.FK_Orders_0_0 do
-            for orderDetail in order.FK_OrderDetails_1_0 do
+            for order in cust.FK_Orders_0 do
+            for orderDetail in order.FK_OrderDetails_1 do
             select (cust.CustomerId, orderDetail.ProductId, orderDetail.Quantity)
         } |> Seq.toArray
     

@@ -20,17 +20,20 @@ module PostgreSQL =
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let tryFindType name =
+    let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
-
-    let findType name =
-        match tryFindType name with
-        | Some(t) -> t
-        | None -> failwithf "Unable to find type %s from specified postgresql assemblies." name
-
-    let checkType = tryFindType >> Option.isSome
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
+    
+    
+    let checkType name = 
+        match assembly.Value with
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name) 
+        | Choice2Of2 _ -> false
 
     let connectionType = lazy (findType "NpgsqlConnection")
     let commandType = lazy (findType "NpgsqlCommand")

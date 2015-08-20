@@ -39,9 +39,6 @@ let authors = [ "Ross McKinlay" ]
 // Tags for your project (for NuGet package)
 let tags = "F#, fsharp, typeproviders, sql, sqlserver"
 
-// File system information
-let solutionFile  = "SQLProvider"
-
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
 
@@ -91,7 +88,7 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    !! (solutionFile + "*.sln")
+    ["SqlProvider.sln"; "SqlProvider.Tests.sln"]
     |> MSBuildRelease "" "Rebuild"
     |> ignore
 )
