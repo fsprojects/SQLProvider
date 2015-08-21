@@ -265,7 +265,7 @@ let ``simple select query with join using relationships``() =
     let query = 
         query {
             for cust in dc.Main.Customers do
-            for order in cust.FK_Orders_0 do
+            for order in cust.``main.Orders by CustomerID`` do
             select (cust.CustomerId, order.OrderId)
         } |> Seq.toArray
     
@@ -309,8 +309,8 @@ let ``simple select query with multiple joins on relationships``() =
     let query = 
         query {
             for cust in dc.Main.Customers do
-            for order in cust.FK_Orders_0 do
-            for orderDetail in order.FK_OrderDetails_1 do
+            for order in cust.``main.Orders by CustomerID`` do
+            for orderDetail in order.``main.OrderDetails by OrderID`` do
             select (cust.CustomerId, orderDetail.ProductId, orderDetail.Quantity)
         } |> Seq.toArray
     

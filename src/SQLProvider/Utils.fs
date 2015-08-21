@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Data.Sql.Common
     
 open System
+open System.Collections.Generic
 
 module internal Utilities = 
     
@@ -26,6 +27,19 @@ module internal Utilities =
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
+
+    let uniqueName()= 
+        let dict = new Dictionary<string, int>()
+        (fun name -> 
+            match dict.TryGetValue(name) with
+            | true, count -> 
+                  dict.[name] <- count + 1
+                  name + "_" + (string count)
+            | false, _ -> 
+                  dict.[name] <- 0
+                  name
+               
+        )
 
 module ConfigHelpers = 
     

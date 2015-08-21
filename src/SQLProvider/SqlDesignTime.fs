@@ -189,33 +189,36 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         prop
                     List.map createColumnProperty columns
                 let relProps = 
+                    let getRelationshipName = Utilities.uniqueName() 
                     let bts = baseTypes.Force()       
                     [ for r in children do       
                        if bts.ContainsKey(r.ForeignTable) then
                         let (tt,_,_,_) = bts.[r.ForeignTable]
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
-                        let name = r.Name
-                        let prop = ProvidedProperty(name,ty,GetterCode = fun args -> 
+                        let constraintName = r.Name
+                        let niceName = getRelationshipName (sprintf "%s by %s" r.ForeignTable r.PrimaryKey) 
+                        let prop = ProvidedProperty(niceName,ty,GetterCode = fun args -> 
                             let pt = r.PrimaryTable
                             let pk = r.PrimaryKey
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
-                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),name,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
-                        prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s" r.ForeignTable r.PrimaryKey r.ForeignKey)
+                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
+                        prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constriant: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
                         yield prop ] @
                     [ for r in parents do
                         let (tt,_,_,_) = (bts.[r.PrimaryTable])
                         let ty = typedefof<System.Linq.IQueryable<_>>
                         let ty = ty.MakeGenericType tt
-                        let name = r.Name
-                        let prop = ProvidedProperty(name,ty,GetterCode = fun args -> 
+                        let constraintName = r.Name
+                        let niceName = getRelationshipName (sprintf "%s by %s" r.PrimaryTable r.PrimaryKey)
+                        let prop = ProvidedProperty(niceName,ty,GetterCode = fun args -> 
                             let pt = r.PrimaryTable
                             let pk = r.PrimaryKey
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
-                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),name,pt,pk,ft,fk,RelationshipDirection.Parents) @@> )
-                        prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s" r.PrimaryTable r.PrimaryKey r.ForeignKey)
+                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Parents) @@> )
+                        prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)
                         yield prop ]
                 attProps @ relProps)
         
@@ -463,7 +466,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
     let owner = ProvidedStaticParameter("Owner", typeof<string>, "")    
     let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>, "")    
-    let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.TOUPPER)
+    let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.ORIGINAL)
     let helpText = "<summary>Typed representation of a database</summary>
                     <param name='ConnectionString'>The connection string for the SQL database</param>
                     <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
