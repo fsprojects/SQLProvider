@@ -88,7 +88,7 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    ["SqlProvider.sln"; "SqlProvider.Tests.sln"]
+    !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore
 )
@@ -110,7 +110,7 @@ Target "RunTests" (fun _ ->
 
 Target "NuGet" (fun _ ->
     
-    CopyFiles "temp\lib" !!"bin\**\Cricket.dll"
+    CopyFiles "temp\lib" !!"bin\**\FSharp.Data.SqlProvider.dll"
 
     NuGet (fun p -> 
         { p with

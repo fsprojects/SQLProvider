@@ -1,19 +1,19 @@
-﻿#r @"..\..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#r @"../../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connectionString = @"Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+let connectionString = @"Data Source=" + __SOURCE_DIRECTORY__ + @"/northwindEF.db;Version=3"
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "\..\libs"
+let resolutionPath = __SOURCE_DIRECTORY__ + "/../libs"
 
 
 open FSharp.Data.Sql
 
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 let ctx = sql.GetDataContext()
 
@@ -76,5 +76,5 @@ let ordersQuery =
 let BERGS = ctx.Main.Customers.Individuals.BERGS
 
 
-let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``.Address
 

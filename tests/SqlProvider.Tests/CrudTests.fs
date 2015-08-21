@@ -31,7 +31,7 @@ let createCustomer (dc:sql.dataContext) =
     newCustomer.Region <- "London"
     newCustomer
 
-[<Test>]
+[<Test; Ignore>]
 let ``Can create and delete an entity``() = 
     let dc = sql.GetDataContext()
     
@@ -57,7 +57,7 @@ let ``Can create and delete an entity``() =
     dc.SubmitUpdates()
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
 
-[<Test>]
+[<Test; Ignore>]
 let ``Can enlist in a transaction scope and rollback changes without complete``() =
     let dc = sql.GetDataContext()
 
