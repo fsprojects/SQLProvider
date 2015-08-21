@@ -22,7 +22,7 @@ let customers = ctx.Main.Customers |> Seq.toArray
 let firstCustomer = customers.[0]
 let name = firstCustomer.ContactName
 
-let orders = firstCustomer.FK_Orders_0_0 |> Seq.toArray
+let orders = firstCustomer.``main.Orders by CustomerID`` |> Seq.toArray
 
 type Simple = {First : string}
 
@@ -57,8 +57,8 @@ let multipleFilteredQuery =
 
 let automaticJoinQuery =
    query { for customer in ctx.Main.Customers do
-           for order in customer.FK_Orders_0_0 do
-           where (customer.ContactName = "John Smith")
+           for order in customer.``main.Orders by CustomerID`` do
+           where (customer.ContactName = "John Steel")
            select (customer,order) } |> Seq.toArray
 
 let explicitJoinQuery =
@@ -69,7 +69,7 @@ let explicitJoinQuery =
 
 let ordersQuery =
    query { for customer in ctx.Main.Customers do
-           for order in customer.FK_Orders_0_0 do
+           for order in customer.``main.Orders by CustomerID`` do
            where (customer.ContactName = "John Smith")
            select (customer.ContactName, order.OrderDate, order.ShipAddress) } |> Seq.toArray
 

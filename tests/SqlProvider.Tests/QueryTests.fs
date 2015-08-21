@@ -212,7 +212,7 @@ let ``simple select and sort desc query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Århus"; "Warszawa"; "Walla Walla"|], query.[0..2])
 
-[<Test>]
+[<Test; Ignore("Not Supported")>]
 let ``simple select and sort query with then by query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -226,7 +226,7 @@ let ``simple select and sort query with then by query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Graz"|], query.[0..3])
 
-[<Test>]
+[<Test; Ignore("Not Supported")>]
 let ``simple select and sort query with then by desc query``() =
     let dc = sql.GetDataContext()
     let query = 
