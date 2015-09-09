@@ -41,28 +41,30 @@ open System
 open System.Linq
 open FSharp.Data.Sql
 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\files\sqlite" 
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
 // create a type alias with the connection string and database vendor settings
 type sql = SqlDataProvider< 
-              ConnectionString = @"Data Source=F:\sqlite\northwindEF.db ;Version=3",
+              ConnectionString = connectionString,
               DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
-              ResolutionPath = @"F:\sqlite\3",
+              ResolutionPath = resolutionPath,
               IndividualsAmount = 1000,
               UseOptionTypes = true >
 let ctx = sql.GetDataContext()
 
 // pick individual entities from the database 
-let christina = ctx.``[main].[Customers]``.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
 
 // directly enumerate an entity's relationships, 
 // this creates and triggers the relevant query in the background
 let christinasOrders = christina.FK_Orders_0_0 |> Seq.toArray
 
 let mattisOrderDetails =
-    query { for c in ctx.``[main].[Customers]`` do
+    query { for c in ctx.Main.Customers do
             // you can directly enumerate relationships with no join information
             for o in c.FK_Orders_0_0 do
             // or you can explicitly join on the fields you choose
-            join od in ctx.``[main].[OrderDetails]`` on (o.OrderID = od.OrderID)
+            join od in ctx.Main.OrderDetails on (o.OrderId = od.OrderId)
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.FK_OrderDetails_0_0 do 
             // nullable columns can be represented as option types. The following generates IS NOT NULL

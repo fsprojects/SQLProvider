@@ -20,17 +20,20 @@ module PostgreSQL =
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let tryFindType name =
+    let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve postgresql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
-
-    let findType name =
-        match tryFindType name with
-        | Some(t) -> t
-        | None -> failwithf "Unable to find type %s from specified postgresql assemblies." name
-
-    let checkType = tryFindType >> Option.isSome
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
+    
+    
+    let checkType name = 
+        match assembly.Value with
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name) 
+        | Choice2Of2 _ -> false
 
     let connectionType = lazy (findType "NpgsqlConnection")
     let commandType = lazy (findType "NpgsqlCommand")
@@ -428,7 +431,6 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             match relationshipLookup.TryGetValue(table.FullName) with
             | true,v -> v
             | _ ->
-                let toSchema schema table = sprintf "[%s].[%s]" schema table
                 let baseQuery = @"SELECT  
                                      KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
                                     ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
@@ -456,14 +458,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
                 let children =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(9)) (reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
                 reader.Dispose()
                 use reader = executeSql con (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name )
                 let parents =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(9)) (reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=toSchema (reader.GetString(8)) (reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
                 relationshipLookup.Add(table.FullName,(children,parents))
                 con.Close()
                 (children,parents)    

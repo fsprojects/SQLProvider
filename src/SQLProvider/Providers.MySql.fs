@@ -23,8 +23,12 @@ module MySql =
 
     let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
 
    
     let connectionType =  lazy (findType "MySqlConnection")
@@ -175,6 +179,7 @@ module MySql =
 
         let parameters = 
             let withParameters = 
+                if String.IsNullOrEmpty owner then owner <- con.Database
                 connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
                 |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
 
@@ -341,7 +346,6 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             match relationshipLookup.TryGetValue table.FullName with 
             | true,v -> v
             | _ -> 
-            let toSchema schema table = sprintf "[%s].[%s]" schema table
             let baseQuery = @"SELECT  
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
                                 ,RC.TABLE_NAME AS FK_TABLE_NAME 
@@ -361,14 +365,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             use reader = (MySql.executeSql (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
             let children =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
+                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                            ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             reader.Dispose()
             use reader = MySql.executeSql (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
+                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                            ForeignTable= Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             
             (children,parents))
