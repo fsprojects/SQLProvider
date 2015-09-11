@@ -253,65 +253,57 @@ module internal Oracle =
                                    Length = None
                                  })
 
-    let getSprocs con =
+    let getSprocName (row:DataRow) = 
+        let owner = Sql.dbUnbox row.["OWNER"]
+        let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
+        { ProcName = procName; Owner = owner; PackageName = packageName }
 
-        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = Sql.dbUnbox row.["OWNER"]
-            let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
-            { ProcName = procName; Owner = owner; PackageName = packageName }
-
+    let getSprocParameters (con:IDbConnection) (name:SprocName) = 
         let createSprocParameters (row:DataRow) = 
-            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
-            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
-            let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+           let dataType = Sql.dbUnbox row.["DATA_TYPE"]
+           let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
+           let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
 
-            findDbType dataType 
-            |> Option.map (fun m ->
-                let direction = 
-                    match Sql.dbUnbox row.["IN_OUT"] with
-                    | "IN" -> ParameterDirection.Input
-                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
-                    | "OUT" -> ParameterDirection.Output
-                    | "IN/OUT" -> ParameterDirection.InputOutput
-                    | a -> failwithf "Direction not supported %s" a
-                { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
-                  TypeMapping = m
-                  Direction = direction
-                  Length = maxLength
-                  Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
-            )
-
-        let parameters = 
-            let withParameters = getSchema "ProcedureParameters" [|owner|] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
-                then None
-                else Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
-                )
-            |> Seq.append withParameters
-
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = 
-                            parameters
-                            |> Seq.choose id
-                            |> Seq.sortBy (fun p -> p.Ordinal)
-                            |> Seq.toList
-                        let rcolumns = getSprocReturnColumns con sparams
-                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns })))
-                      ) 
+           findDbType dataType 
+           |> Option.map (fun m ->
+               let direction = 
+                   match Sql.dbUnbox row.["IN_OUT"] with
+                   | "IN" -> ParameterDirection.Input
+                   | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                   | "OUT" -> ParameterDirection.Output
+                   | "IN/OUT" -> ParameterDirection.InputOutput
+                   | a -> failwithf "Direction not supported %s" a
+               { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
+                 TypeMapping = m
+                 Direction = direction
+                 Length = maxLength
+                 Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
+           )
+        getSchema "ProcedureParameters" [|owner|] con 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
         |> Seq.toList
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let getSprocs con =
+
+        let buildDef classType row = 
+            let name = getSprocName row
+            Root(classType, Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnColumns con sparams) }))
+
+        let functions =
+            (getSchema "Functions" [|owner|] con)
+            |> DataTable.map (fun row -> buildDef "Functions" row)
+
+        let procs = 
+            (getSchema "Procedures" [|owner|] con) 
+            |> DataTable.map (fun row -> buildDef "Procedures" row)
+
+        functions @ procs
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              retCols
@@ -321,10 +313,9 @@ module internal Oracle =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
-             |> List.toArray
         
         Array.append outps inps
         |> Array.sortBy fst
@@ -375,7 +366,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = Oracle.executeSprocCommand con definition retCols values
+        member __.ExecuteSprocCommand(con, param ,retCols, values:obj array) = 
+            Oracle.executeSprocCommand con param retCols values
 
         member __.CreateTypeMappings(con) = 
             Sql.connect con (fun con -> 

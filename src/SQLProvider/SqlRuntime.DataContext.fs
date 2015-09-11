@@ -85,26 +85,28 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(definition:SprocDefinition, retCols:QueryParameter[], values:obj array) =
+        member this.CallSproc(def:SprocDefinition, retCols:QueryParameter[], values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
                con.Open()
-               use com = provider.CreateCommand(con, definition.Name.DbName)
+               use com = provider.CreateCommand(con, def.Name.DbName)
                com.CommandType <- CommandType.StoredProcedure
                
-               let entity = new SqlEntity(this, definition.Name.DbName)
+               let entity = new SqlEntity(this, def.Name.DbName)
 
                let toEntityArray rowSet = 
                    [|
                        for row in rowSet do
-                           let entity = new SqlEntity(this, definition.Name.DbName)
+                           let entity = new SqlEntity(this, def.Name.DbName)
                            entity.SetData(row)
                            yield entity
                    |]
 
+               let param = def.Params con |> List.toArray
+
                let entities =
-                   match provider.ExecuteSprocCommand(com, definition,retCols, values) with
+                   match provider.ExecuteSprocCommand(com, param, retCols, values) with
                    | Unit -> () |> box
                    | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
                    | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box

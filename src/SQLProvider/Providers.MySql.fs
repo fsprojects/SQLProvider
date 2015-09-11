@@ -136,21 +136,12 @@ module MySql =
                  }]
         | a -> a
 
-    let getSprocs (con:IDbConnection) =
-       
-        let procedures,functions = 
-            getSchema "Procedures" [||] con 
-            |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["routine_name"], Sql.dbUnbox<string> row.["routine_type"])
-            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+    let getSprocName (row:DataRow) = 
+        let owner = Sql.dbUnboxWithDefault<string> owner row.["specific_schema"]
+        let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
+        { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
-        let procedures = procedures |> List.map fst |> Set.ofList
-        let functions = functions |> List.map fst |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = Sql.dbUnboxWithDefault<string> owner row.["specific_schema"]
-            let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
-            { ProcName = procName; Owner = owner; PackageName = String.Empty; }
-
+    let getSprocParameters (con:IDbConnection) (name:SprocName) = 
         let createSprocParameters (row:DataRow) = 
             let dataType = Sql.dbUnbox row.["data_type"]
             let argumentName = Sql.dbUnbox row.["parameter_name"]
@@ -177,34 +168,25 @@ module MySql =
                   Ordinal = ordinal_position }
             )
 
-        let parameters = 
-            let withParameters = 
-                if String.IsNullOrEmpty owner then owner <- con.Database
-                connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
-                |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+        if String.IsNullOrEmpty owner then owner <- con.Database
 
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                match withParameters |> Seq.tryFind (fun (name,_) -> name.ProcName = proc) with
-                | None -> Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
-                | Some (name,parameters) -> Some(name, parameters))
+        //This could filter the query using the Sproc name passed in
+        connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner)) 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
+        |> Seq.toList
 
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = 
-                            parameters
-                            |> Seq.choose id
-                            |> Seq.sortBy (fun p -> p.Ordinal)
-                            |> Seq.toList
-                        let rcolumns = getSprocReturnCols con sparams
-                        let isFunction, isProcedure =  Set.contains name.ProcName functions, Set.contains name.ProcName procedures
-
-                        match isFunction, isProcedure with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | _, _ -> Empty
-                      ) 
+    let getSprocs (con:IDbConnection) =
+        getSchema "Procedures" [||] con 
+        |> DataTable.map (fun row -> 
+                            let name = getSprocName row
+                            match (Sql.dbUnbox<string> row.["routine_type"]).ToUpper() with
+                            | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con name -> getSprocReturnCols con name) }))
+                            | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con name -> getSprocReturnCols con name) }))
+                            | _ -> Empty
+                          )
         |> Seq.toList
 
     let readParameter (parameter:IDbDataParameter) =
@@ -214,8 +196,8 @@ module MySql =
             par.Value
         else null
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              retCols
@@ -225,10 +207,9 @@ module MySql =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
-             |> List.toArray
         
         Array.append outps inps
         |> Array.sortBy fst

@@ -132,20 +132,12 @@ module MSSqlServer =
                 else p)
         derivedCols @ retValueCols
 
-    let getSprocs (con: IDbConnection) =
-        let con = (con :?> SqlConnection)
-        let procedures,functions = 
-            getSchema "Procedures" [||] con 
-            |> DataTable.map (fun row -> dbUnbox<string> row.["routine_name"], dbUnbox<string> row.["routine_type"])
-            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+    let getSprocName (row:DataRow) = 
+        let owner = dbUnbox row.["specific_catalog"]
+        let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
+        { ProcName = procName; Owner = owner; PackageName = packageName; }
 
-        let procedures = procedures |> List.map fst |> Set.ofList
-        let functions = functions |> List.map fst |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = dbUnbox row.["specific_catalog"]
-            let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
-            { ProcName = procName; Owner = owner; PackageName = packageName; }
+    let getSprocParameters (con : IDbConnection) (name : SprocName) = 
 
         let createSprocParameters (row:DataRow) = 
             let dataType = dbUnbox row.["data_type"]
@@ -168,31 +160,29 @@ module MSSqlServer =
                   Length = maxLength
                   Ordinal = dbUnbox<int> row.["ordinal_position"] }
             )
-
-        let parameters = 
-            let withParameters = getSchema "ProcedureParameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
-                then None
-                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty; }, Seq.empty)
-                )
-            |> Seq.append withParameters
-
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = parameters |> Seq.choose id |> Seq.sortBy (fun p -> p.Ordinal) |> Seq.toList
-                        let rcolumns = getSprocReturnCols con name sparams
-                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | _, _ -> Empty
-                      ) 
+             
+        getSchema "ProcedureParameters" [||] con 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
         |> Seq.toList
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (returnCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let getSprocs (con: IDbConnection) =
+        let con = (con :?> SqlConnection)
+
+        getSchema "Procedures" [||] con 
+        |> DataTable.map (fun row -> getSprocName row, dbUnbox<string> row.["routine_type"])
+        |> Seq.map (fun (name, routineType) -> 
+             match routineType.ToUpper() with
+             | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
+             | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
+             | _ -> Empty
+           ) 
+        |> Seq.toList
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              returnCols
@@ -207,10 +197,9 @@ module MSSqlServer =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal, ip.Name, p))
-             |> List.toArray
         
         let returnValues =
             outps |> Array.filter (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue)
@@ -259,7 +248,7 @@ type internal MSSqlServerProvider() =
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, definition:SprocDefinition, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con definition returnCols values
+        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
         member __.GetTables(con, cs) =
