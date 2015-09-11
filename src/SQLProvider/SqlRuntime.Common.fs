@@ -252,15 +252,17 @@ and ReturnValueType =
     | Set of seq<ReturnSetType>
 
 and ISqlDataContext =       
-    abstract ConnectionString       : string
-    abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
-    abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : SprocDefinition * QueryParameter[] * obj[] -> obj
-    abstract GetIndividual          : string * obj -> SqlEntity
-    abstract SubmitChangedEntity    : SqlEntity -> unit
-    abstract SubmitPendingChanges   : unit -> unit
-    abstract ClearPendingChanges    : unit -> unit
-    abstract GetPendingEntities     : unit -> SqlEntity list
+    abstract ConnectionString           : string
+    abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
+    abstract CallSproc                  : SprocDefinition * QueryParameter[] * obj[] -> obj
+    abstract GetIndividual              : string * obj -> SqlEntity
+    abstract SubmitChangedEntity        : SqlEntity -> unit
+    abstract SubmitPendingChanges       : unit -> unit
+    abstract ClearPendingChanges        : unit -> unit
+    abstract GetPendingEntities         : unit -> SqlEntity list
+    abstract GetPrimaryKeyDefinition    : string -> string
+    abstract CreateConnection           : unit -> IDbConnection
 
          
 and LinkData =
@@ -408,4 +410,4 @@ and internal ISqlProvider =
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
-    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * QueryParameter[] *  obj[] -> ReturnValueType
+    abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
