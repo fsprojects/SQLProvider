@@ -55,15 +55,20 @@ with
     member x.FriendlyName with get() = String.Join(" ", x.ToList())
     member x.FullName with get() = String.Join("_", x.ToList())
 
-type SprocDefinition =
+type CompileTimeSprocDefinition =
     { Name: SprocName
       Params: (IDbConnection -> QueryParameter list)
       ReturnColumns: (IDbConnection -> QueryParameter list -> QueryParameter list) }
 
+type RunTimeSprocDefinition =
+    { Name: SprocName
+      Params: QueryParameter list }
+
+
 type Sproc =
     | Root of string * Sproc
     | SprocPath of string * Sproc
-    | Sproc of SprocDefinition
+    | Sproc of CompileTimeSprocDefinition
     | Empty
 
 type PrimaryKey = { Name : string; Table : string; Column : string; IndexName : string }

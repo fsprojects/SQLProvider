@@ -12,7 +12,10 @@ module MSSqlServer =
 
     let getSchema name (args:string[]) (con:IDbConnection) = 
         let con = (con :?> SqlConnection)
-        con.GetSchema(name, args)
+        if con.State <> ConnectionState.Open then con.Open()
+        let res = con.GetSchema(name, args)    
+        con.Close()
+        res
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -85,6 +88,13 @@ module MSSqlServer =
             par.Value
         else null
 
+    let isSQL2012Orlater (con:IDbConnection) =  
+        try
+            let reader = executeSql "SELECT SERVERPROPERTY('productversion')" con
+            let version = reader.GetSqlString(0)
+            version.Value.StartsWith("11.")
+        with _ -> false
+
     let createCommandParameter (param:QueryParameter) (value:obj) = 
         let p = SqlParameter(param.Name,value)            
         p.DbType <- param.TypeMapping.DbType
@@ -105,7 +115,7 @@ module MSSqlServer =
                 try
                     let dr = executeSql query con
                     [ yield dr.GetSchemaTable();
-                      while dr.NextResult() do yield dr.GetSchemaTable() ]
+                        while dr.NextResult() do yield dr.GetSchemaTable() ]
                 with
                 | ex ->
                     System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
@@ -175,7 +185,7 @@ module MSSqlServer =
         |> DataTable.map (fun row -> getSprocName row, dbUnbox<string> row.["routine_type"])
         |> Seq.map (fun (name, routineType) -> 
              match routineType.ToUpper() with
-             | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
+             | "FUNCTION" -> Root("Functions",  Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
              | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
              | _ -> Empty
            ) 

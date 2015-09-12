@@ -85,7 +85,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider) 
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-        member this.CallSproc(def:SprocDefinition, retCols:QueryParameter[], values:obj array) =
+        member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                use con = provider.CreateConnection(connectionString)
@@ -103,7 +103,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                            yield entity
                    |]
 
-               let param = def.Params con |> List.toArray
+               let param = def.Params |> List.toArray
 
                let entities =
                    match provider.ExecuteSprocCommand(com, param, retCols, values) with
