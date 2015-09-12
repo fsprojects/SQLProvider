@@ -255,7 +255,7 @@ and ISqlDataContext =
     abstract ConnectionString           : string
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : SprocDefinition * QueryParameter[] * obj[] -> obj
+    abstract CallSproc                  : SprocDefinition * QueryParameter[] * obj[] -> obj
     abstract GetIndividual              : string * obj -> SqlEntity
     abstract SubmitChangedEntity        : SqlEntity -> unit
     abstract SubmitPendingChanges       : unit -> unit
@@ -410,4 +410,4 @@ and internal ISqlProvider =
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
-    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * QueryParameter[] *  obj[] -> ReturnValueType
+    abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType

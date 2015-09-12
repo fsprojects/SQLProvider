@@ -57,8 +57,8 @@ with
 
 type SprocDefinition =
     { Name: SprocName
-      Params: QueryParameter list
-      ReturnColumns: QueryParameter list }
+      Params: (IDbConnection -> QueryParameter list)
+      ReturnColumns: (IDbConnection -> QueryParameter list -> QueryParameter list) }
 
 type Sproc =
     | Root of string * Sproc

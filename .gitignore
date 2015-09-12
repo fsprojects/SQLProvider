@@ -183,3 +183,4 @@ docs/content/license.md
 docs/content/release-notes.md
 
 !tests/SqlProvider.Tests/libs
+*.userprefs

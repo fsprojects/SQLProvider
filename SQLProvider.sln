@@ -1,5 +1,6 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio 2012
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D46C350C-AE47-4538-B63A-385A7E4D00E2}"
@@ -18,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 		src\scripts\SqliteInspector.fsx = src\scripts\SqliteInspector.fsx
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SQLProvider\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "SqlProvider", "src\SQLProvider\SqlProvider.fsproj", "{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{53362ACF-DB4B-44FC-81EA-B706D7C3C06F}"
 	ProjectSection(SolutionItems) = preProject
@@ -39,6 +40,8 @@ Global
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
