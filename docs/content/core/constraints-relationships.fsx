@@ -28,4 +28,4 @@ type sqlite  = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE,
                 connectionString,
                 ResolutionPath=resolutionPath>
-//let ctx     = sqlite
+
