@@ -111,15 +111,17 @@ module MSSqlServer =
                               |> List.toArray)
         let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sname.DbName parameterStr
         let derivedCols =
-            connect con (fun con ->
-                try
-                    let dr = executeSql query con
-                    [ yield dr.GetSchemaTable();
-                        while dr.NextResult() do yield dr.GetSchemaTable() ]
-                with
-                | ex ->
-                    System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
-                    []) //Just assumes the proc / func returns something and let the caller process the result, for now.  
+            let initialSchemas =
+                connect con (fun con ->
+                    try
+                        let dr = executeSql query con
+                        [ yield dr.GetSchemaTable();
+                          while dr.NextResult() do yield dr.GetSchemaTable() ]
+                    with
+                    | ex ->
+                        System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
+                        []) //Just assumes the proc / func returns something and let the caller process the result, for now.  
+            initialSchemas
             |> List.mapi (fun i dt ->
                 match dt with
                 | null -> None
@@ -372,6 +374,10 @@ type internal MSSqlServerProvider() =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
+            match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
+            | Some _, Some _, [] -> failwith "skip and take paging requries an orderBy clause."
+            | _ -> ()
+
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -493,7 +499,10 @@ type internal MSSqlServerProvider() =
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
+            else  
+                match sqlQuery.Skip, sqlQuery.Take with
+                | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                | _ -> ~~(sprintf "SELECT %s " columns)
             // FROM
             ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)         
             fromBuilder()
@@ -509,6 +518,12 @@ type internal MSSqlServerProvider() =
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()
+
+            match sqlQuery.Skip, sqlQuery.Take with 
+            | Some skip, Some take -> 
+                // Note: this only works in >=SQL2012 
+                ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+            | _ -> ()
 
             let sql = sb.ToString()
             (sql,parameters)
