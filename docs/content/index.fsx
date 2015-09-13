@@ -57,20 +57,20 @@ let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Chris
 
 // directly enumerate an entity's relationships, 
 // this creates and triggers the relevant query in the background
-let christinasOrders = christina.FK_Orders_0_0 |> Seq.toArray
+let christinasOrders = christina.``main.Orders by CustomerID`` |> Seq.toArray
 
 let mattisOrderDetails =
     query { for c in ctx.Main.Customers do
             // you can directly enumerate relationships with no join information
-            for o in c.FK_Orders_0_0 do
+            for o in c.``main.Orders by CustomerID`` do
             // or you can explicitly join on the fields you choose
             join od in ctx.Main.OrderDetails on (o.OrderId = od.OrderId)
             //  the (!!) operator will perform an outer join on a relationship
-            for prod in (!!) od.FK_OrderDetails_0_0 do 
+            for prod in (!!) od.``main.Products by ProductID`` do 
             // nullable columns can be represented as option types. The following generates IS NOT NULL
-            where c.CompanyName.IsSome                
+            where o.ShipCountry.IsSome                
             // standard operators will work as expected; the following shows the like operator and IN operator
-            where (c.ContactName =% ("Matti%") && o.ShipCountry |=| [|"Finland";"England"|] )
+            where (c.ContactName =% ("Matti%") && c.CompanyName |=| [|"Squirrelcomapny";"DaveCompant"|] )
             sortBy o.ShipName
             // arbitrarily complex projections are supported
             select (c.ContactName,o.ShipAddress,o.ShipCountry,prod.ProductName,prod.UnitPrice) } 

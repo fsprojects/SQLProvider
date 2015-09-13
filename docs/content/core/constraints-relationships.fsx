@@ -24,10 +24,8 @@ let connectionString =
 [<Literal>]
 let resolutionPath =
     __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
-let sqlite  = SqlDataProvider <I think pg has good docs on their 
-                connectionString,
+type sqlite  = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE,
-                resolutionPath,
-                3000,
-                true >
+                connectionString,
+                ResolutionPath=resolutionPath>
 //let ctx     = sqlite
