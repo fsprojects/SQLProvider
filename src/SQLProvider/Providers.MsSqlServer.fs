@@ -183,7 +183,30 @@ module MSSqlServer =
     let getSprocs (con: IDbConnection) =
         let con = (con :?> SqlConnection)
 
+        let tableValued = 
+            Sql.executeSqlAsDataTable 
+                createCommand 
+                "SELECT DISTINCT ROUTINE_CATALOG, ROUTINE_SCHEMA, ROUTINE_NAME FROM [Autumn].[INFORMATION_SCHEMA].[ROUTINES] where [DATA_TYPE] = 'table'" 
+                con
+            |> DataTable.map(fun row -> dbUnbox<string> row.["ROUTINE_CATALOG"], dbUnbox<string> row.["ROUTINE_SCHEMA"], dbUnbox<string> row.["ROUTINE_NAME"] )
+
+        let haveUDTs =
+            Sql.executeSqlAsDataTable
+                createCommand
+                "SELECT distinct [SPECIFIC_CATALOG]
+                      ,[SPECIFIC_SCHEMA]
+                      ,[SPECIFIC_NAME]
+                  FROM [Autumn].[INFORMATION_SCHEMA].[PARAMETERS] where USER_DEFINED_TYPE_NAME <> ''"
+                con
+            |> DataTable.map(fun row -> dbUnbox<string> row.["SPECIFIC_CATALOG"], dbUnbox<string> row.["SPECIFIC_SCHEMA"], dbUnbox<string> row.["SPECIFIC_NAME"] )
+
+        // table valued functions and stuff with user defined types are not currently supported.
+        let toFilter = set(tableValued @ haveUDTs)
+
         getSchema "Procedures" [||] con 
+        |> DataTable.filter(fun row -> 
+            let name = dbUnbox<string> row.["SPECIFIC_CATALOG"], dbUnbox<string> row.["SPECIFIC_SCHEMA"], dbUnbox<string> row.["SPECIFIC_NAME"]
+            not <| Set.contains name toFilter)
         |> DataTable.map (fun row -> getSprocName row, dbUnbox<string> row.["routine_type"])
         |> Seq.map (fun (name, routineType) -> 
              match routineType.ToUpper() with
