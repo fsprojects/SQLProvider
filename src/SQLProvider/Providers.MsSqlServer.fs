@@ -186,7 +186,7 @@ module MSSqlServer =
         let tableValued = 
             Sql.executeSqlAsDataTable 
                 createCommand 
-                "SELECT DISTINCT ROUTINE_CATALOG, ROUTINE_SCHEMA, ROUTINE_NAME FROM [Autumn].[INFORMATION_SCHEMA].[ROUTINES] where [DATA_TYPE] = 'table'" 
+                "SELECT DISTINCT ROUTINE_CATALOG, ROUTINE_SCHEMA, ROUTINE_NAME FROM [INFORMATION_SCHEMA].[ROUTINES] where [DATA_TYPE] = 'table'" 
                 con
             |> DataTable.map(fun row -> dbUnbox<string> row.["ROUTINE_CATALOG"], dbUnbox<string> row.["ROUTINE_SCHEMA"], dbUnbox<string> row.["ROUTINE_NAME"] )
 
@@ -196,7 +196,7 @@ module MSSqlServer =
                 "SELECT distinct [SPECIFIC_CATALOG]
                       ,[SPECIFIC_SCHEMA]
                       ,[SPECIFIC_NAME]
-                  FROM [Autumn].[INFORMATION_SCHEMA].[PARAMETERS] where USER_DEFINED_TYPE_NAME <> ''"
+                  FROM [INFORMATION_SCHEMA].[PARAMETERS] where USER_DEFINED_TYPE_NAME <> ''"
                 con
             |> DataTable.map(fun row -> dbUnbox<string> row.["SPECIFIC_CATALOG"], dbUnbox<string> row.["SPECIFIC_SCHEMA"], dbUnbox<string> row.["SPECIFIC_NAME"] )
 
