@@ -9,6 +9,7 @@ A general .NET/Mono SQL database type provider. Current features :
  * Automatic constraint navigation
  * Individuals 
  * Transactional CRUD operations with identity support
+ * Two-way data binding
  * Strored Procedures
  * Functions
  * Packages (Oracle)
