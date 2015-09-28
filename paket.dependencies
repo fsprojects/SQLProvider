@@ -7,7 +7,7 @@ nuget NUnit
 nuget NUnit.Runners
 nuget FAKE
 nuget FSharp.Formatting
-nuget FSharp.Core
+nuget FSharp.Core = 3.1.2.1
 nuget RazorEngine
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

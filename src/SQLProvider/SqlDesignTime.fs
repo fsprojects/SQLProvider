@@ -36,8 +36,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let conString = 
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
-            | Some(cs) -> cs
-            | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+            | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+            | cs -> cs
+            
 
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner
         let con = prov.CreateConnection conString
@@ -422,8 +423,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     let runtimeAssembly = config.ResolutionFolder
                                     let runtimeConStr = 
                                         <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                            | Some(cs) -> cs
-                                            | None -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName @@>
+                                            | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                            | cs -> cs @@>
                                     <@@ SqlDataContext(rootTypeName,%%runtimeConStr,dbVendor,resolutionPath,%%referencedAssemblyExpr, runtimeAssembly,owner,caseSensitivity) :> ISqlDataContext @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"

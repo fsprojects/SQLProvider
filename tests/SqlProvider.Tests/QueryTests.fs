@@ -6,7 +6,7 @@ open System.Linq
 open NUnit.Framework
 
 [<Literal>]
-let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=false; FailIfMissing=True;"
+let connectionString = @"Data Source=D:\SqlProvider\tests\SqlProvider.Tests\db\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
@@ -272,10 +272,10 @@ let ``simple select query with join using relationships``() =
     CollectionAssert.IsNotEmpty query
     CollectionAssert.AreEquivalent(
         [|
-            "VINET", new DateTime(1996,7,4)
-            "TOMSP", new DateTime(1996,7,5)
-            "HANAR", new DateTime(1996,7,8)
-            "VICTE", new DateTime(1996,7,8)
+            "ALFKI", 10643L
+            "ALFKI", 10692L
+            "ALFKI", 10702L
+            "ALFKI", 10835L
         |], query.[0..3])
 
 [<Test; Ignore("Not Supported")>]

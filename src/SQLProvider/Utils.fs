@@ -73,10 +73,10 @@ module ConfigHelpers =
                 let fileMap = new ExeConfigurationFileMap(ExeConfigFilename = tempFile.Path)
                 let config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None)
                 match config.ConnectionStrings.ConnectionStrings.[connectionStringName] with
-                | null -> None
-                | a -> Some(a.ConnectionString)
-            | None -> None
-        else Some(connectionString)
+                | null -> ""
+                | a -> a.ConnectionString
+            | None -> ""
+        else connectionString
 
 module internal SchemaProjections = 
     

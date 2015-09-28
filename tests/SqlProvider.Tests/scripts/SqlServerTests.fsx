@@ -5,8 +5,8 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
-//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
+//let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
@@ -74,7 +74,7 @@ let employeesJob =
     let dbo = ctx.Dbo
     query {
             for emp in dbo.Employees do
-            for manager in emp.EMP_MANAGER_FK do
+            for manager in emp.``dbo.EMPLOYEES by EMPLOYEE_ID`` do
             join dept in dbo.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)

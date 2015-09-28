@@ -9,7 +9,7 @@ open System
 open System.Transactions
 
 [<Literal>]
-let connectionString = @"Data Source=./db/northwindEF.db; Version = 3; Read Only=false; FailIfMissing=True;"
+let connectionString = @"Data Source=D:\SqlProvider\tests\SqlProvider.Tests\db\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
@@ -31,7 +31,7 @@ let createCustomer (dc:sql.dataContext) =
     newCustomer.Region <- "London"
     newCustomer
 
-[<Test; Ignore>]
+[<Test>]
 let ``Can create and delete an entity``() = 
     let dc = sql.GetDataContext()
     
