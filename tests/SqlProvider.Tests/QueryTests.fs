@@ -94,7 +94,7 @@ let ``simple select with exactly one when not exists``() =
         }
     Assert.AreEqual(null, query)  
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select with head``() =
     let dc = sql.GetDataContext()
     let query = 
