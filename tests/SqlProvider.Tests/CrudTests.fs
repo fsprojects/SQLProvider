@@ -31,7 +31,7 @@ let createCustomer (dc:sql.dataContext) =
     newCustomer.Region <- "London"
     newCustomer
 
-[<Test>]
+[<Test; Ignore>]
 let ``Can create and delete an entity``() = 
     let dc = sql.GetDataContext()
     

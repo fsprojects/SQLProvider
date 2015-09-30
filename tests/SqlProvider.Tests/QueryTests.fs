@@ -23,7 +23,7 @@ let ``simple select with contains query``() =
         }
     Assert.IsTrue(query)    
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select with count``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -70,7 +70,7 @@ let ``simple select with last or default when exists``() =
         }
     Assert.AreEqual("WOLZA", query)  
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select with exactly one``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -130,7 +130,7 @@ let ``simple select with head or Default when not exists``() =
         }
     Assert.AreEqual(null, query)  
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select query``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -141,7 +141,7 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty query
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select where query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -186,7 +186,7 @@ let ``simple select query with groupBy``() =
         } |> dict  
     Assert.AreEqual(6, query.["London"])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -199,7 +199,7 @@ let ``simple select and sort query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], query.[0..2])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select and sort desc query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -240,7 +240,7 @@ let ``simple select and sort query with then by desc query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Salzburg"|], query.[0..3])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -259,7 +259,7 @@ let ``simple select query with join``() =
             "VICTE", new DateTime(1996,7,8)
         |], query.[0..3])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select query with join using relationships``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -303,7 +303,7 @@ let ``simple select query with group join``() =
             "HANAR", 65L, 15
         |], query.[0..7])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select query with multiple joins on relationships``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -367,7 +367,7 @@ let ``simple averageBy``() =
         }
     Assert.That(query, Is.EqualTo(56500.91M).Within(0.001M))
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -396,7 +396,7 @@ let ``simple select with skip``() =
     Assert.AreEqual(86, query.Length) 
     CollectionAssert.AreEquivalent([|"Bergamo"; "Berlin"; "Bern"|], query.[0..2])
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select with take``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -416,7 +416,7 @@ type Simple = {First : string}
 
 type Dummy<'t> = D of 't
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select into a generic type`` () =
     let dc = sql.GetDataContext()
     let query = 
@@ -427,7 +427,7 @@ let ``simple select into a generic type`` () =
 
     CollectionAssert.IsNotEmpty query
 
-[<Test>]
+[<Test; Ignore>]
 let ``simple select into a generic type with pipe`` () =
     let dc = sql.GetDataContext()
     let query = 
