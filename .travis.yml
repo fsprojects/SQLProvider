@@ -1,6 +1,6 @@
 language: csharp
 
-sudo: false  # use the new container-based Travis infrastructure
+sudo: true  # use the new container-based Travis infrastructure
 
 install:
   - mkdir ~/.config/.mono/keypairs
