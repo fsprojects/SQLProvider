@@ -1,3 +1,15 @@
+### 0.0.11-alpha - Unreleased
+* Type provider generates nicer table names, relationships and sprocs
+* Added static parameter to control case senstivity when generating queries (PR #143)
+* Fixed relative paths for SQL lite
+* Fixed differences in path between mono and .net for sql lite
+* Added ability to use a connection string referenced in app or web config
+* Stored procedures are now lazily generated
+* Improved Postgre Type mappings (PR #127)
+* Documentation improvements (PR #137, PR #148, PR #150)
+* Fixes a regression that prevented UPPER on SqlServer (PR #149)
+* Fixes for the LINQ expression converter (PR #131)
+
 #### 0.0.10-alpha - Unreleased
 * Fixed a regression when building oracle relationships (PR # 126)
 * Fixes Postgres Type mapping issues (PR #117)
