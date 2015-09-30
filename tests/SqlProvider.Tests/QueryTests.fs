@@ -266,16 +266,16 @@ let ``simple select query with join using relationships``() =
         query {
             for cust in dc.Main.Customers do
             for order in cust.``main.Orders by CustomerID`` do
-            select (cust.CustomerId, order.OrderId)
+            select (cust.CustomerId, order.OrderDate)
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query
     CollectionAssert.AreEquivalent(
         [|
-            "ALFKI", 10643L
-            "ALFKI", 10692L
-            "ALFKI", 10702L
-            "ALFKI", 10835L
+            "VINET", new DateTime(1996,7,4)
+            "TOMSP", new DateTime(1996,7,5)
+            "HANAR", new DateTime(1996,7,8)
+            "VICTE", new DateTime(1996,7,8)
         |], query.[0..3])
 
 [<Test; Ignore("Not Supported")>]
