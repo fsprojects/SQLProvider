@@ -51,7 +51,7 @@ let employeesJob =
     let hr = ctx.Hr
     query {
             for emp in hr.Employees do
-            for manager in emp.employees_ibfk_3 do
+            for manager in emp.``hr.employees by MANAGER_ID`` do
             join dept in hr.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
@@ -127,7 +127,7 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-ctx.Procedures.AddJobHistory.Invoke(100u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
+ctx.Procedures.AddJobHistory.Invoke(101u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
 
 
 //Support for sprocs that return ref cursors
