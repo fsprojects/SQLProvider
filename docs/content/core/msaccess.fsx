@@ -2,16 +2,10 @@
 #I @"../../files/msaccess"
 (*** hide ***)
 #I "../../../bin"
-
+(*** hide ***)
+#r @"../../../bin/FSharp.Data.SqlProvider.dll"
 
 //type mdb = SqlDataProvider< "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:\\ACCESS\\BT.mdb", Common.DatabaseProviderTypes.MSACCESS, "c:\\ACCESS" , 100, true >
-[<Literal>]
-(*** hide ***)
-[<Literal>]
-(*** hide ***)
-
-[<Literal>]
-(*** hide ***)
 
 (**
 # SQL Provider for MSAccess
@@ -31,10 +25,11 @@ for a complete list of connection string options.
 
 *)
 //TODO: link to reference
-let connectionString1 =
-    "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= " +
-    __SOURCE_DIRECTORY__ +
-    @"..\..\..\files\msaccess\Northwind.accdb"
+
+[<Literal>]
+let connectionString1 = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= " +  __SOURCE_DIRECTORY__ + @"..\..\..\files\msaccess\Northwind.accdb"
+
+[<Literal>]
 let connectionString2 = 
     "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= " +
     __SOURCE_DIRECTORY__ + 
@@ -59,7 +54,7 @@ use `Common.DatabaseProviderTypes.MSACCESS`.
 
 *)
 
-let dbVendor = Common.DatabaseProviderTypes.MSSQL
+let dbVendor = FSharp.Data.Sql.Common.DatabaseProviderTypes.MSACCESS
 
 (**
 ### ResolutionPath
@@ -68,7 +63,7 @@ Path to search for assemblies containing database vendor specific connections
 and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
-
+[<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__
 
 (**
@@ -85,12 +80,12 @@ let useOptTypes = true
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 
-type accdb = SqlDataProvider< connectionString1, Common.DatabaseProviderTypes.MSACCESS , resolutionPath >
-let accdbctx = accdb.GetDataContext()
+//type accdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS , connectionString1, ResolutionPath=resolutionPath >
+//let accdbctx = accdb.GetDataContext()
+//
+//let accdbcustomers = accdbctx.Northwind.Customers|> Seq.toArray
 
-let accdbcustomers = accdbctx.``[Northwind].[Customers]``|> Seq.toArray
-
-type mdb = SqlDataProvider< connectionString2, Common.DatabaseProviderTypes.MSACCESS , resolutionPath >
+type mdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS, connectionString2, ResolutionPath=resolutionPath >
 let mdbctx = mdb.GetDataContext()
 
-let mdbcustomers = mdbbctx.``[Northwind].[Customers]``|> Seq.toArray
+let mdbcustomers = mdbctx.Northwind.Customers|> Seq.toArray

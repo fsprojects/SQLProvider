@@ -2,14 +2,16 @@
 #I "../../files/sqlite"
 (*** hide ***)
 #I "../../../bin"
+(*** hide ***)
+#r @"../../../bin/FSharp.Data.SqlProvider.dll"
 
 (*** hide ***)
 [<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
 
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 
 (**
 
@@ -40,7 +42,7 @@ or by using an F# interactive script file.
 // reference, the library needs to be opened
 ```
 *)
-open FSharp.Data.Sql.Providers
+open FSharp.Data.Sql
 
 (** 
 
@@ -56,7 +58,7 @@ more detail about the available static parameters in other areas of the
 documentation.
 *)
 
-type sql = SqlDataProvider<connectionString, Common.DatabaseProviderTypes.SQLITE, resolutionPath>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in 
@@ -74,7 +76,7 @@ In the simplest case, you can treat these properties as sequences that can
 be enumerated.
 *)
 
-let customers = ctx.``[main].[Customers]`` |> Seq.toArray
+let customers = ctx.Main.Customers |> Seq.toArray
 (**
 This is the equivalent of executing a query that selects all rows and 
 columns from the ``[main].[customers]`` table.  
@@ -102,7 +104,7 @@ You can gain access to these child or parent entities by simply enumerating
 the property in question.
 *)
 
-let orders = firstCustomer.FK_Orders_0_0 |> Seq.toArray
+let orders = firstCustomer.``main.Orders by CustomerID`` |> Seq.toArray
 
 (**
 ``orders`` now contains all the orders belonging to firstCustomer. You will 
@@ -122,7 +124,7 @@ The SQL provider supports LINQ queries using F#'s *query expression* syntax.
 
 let customersQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
+        for customer in ctx.Main.Customers do
             select customer
     }
     |> Seq.toArray
@@ -137,7 +139,7 @@ one or more *where* clauses
 
 let filteredQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
+        for customer in ctx.Main.Customers do
             where (customer.ContactName = "John Smith")
             select customer
     }
@@ -145,7 +147,7 @@ let filteredQuery =
 
 let multipleFilteredQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
+        for customer in ctx.Main.Customers do
             where ((customer.ContactName = "John Smith" && customer.Country = "England") || customer.ContactName = "Joe Bloggs")
             select customer
     }
@@ -161,8 +163,8 @@ property of an entity, or you can perform an explicit join.
 
 let automaticJoinQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
-            for order in customer.FK_Orders_0_0 do
+        for customer in ctx.Main.Customers do
+            for order in customer.``main.Orders by CustomerID`` do
                 where (customer.ContactName = "John Smith")
                 select (customer, order)
     }
@@ -170,8 +172,8 @@ let automaticJoinQuery =
 
 let explicitJoinQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
-            join order in ctx.``[main].[Customers]`` on (customer.CustomerID = order.CustomerID)
+        for customer in ctx.Main.Customers do
+            join order in ctx.Main.Orders on (customer.CustomerId = order.CustomerId)
             where (customer.ContactName = "John Smith")
             select (customer, order)
     }
@@ -191,8 +193,8 @@ important optimization.
 
 let ordersQuery = 
     query { 
-        for customer in ctx.``[main].[Customers]`` do
-            for order in customer.FK_Orders_0_0 do
+        for customer in ctx.Main.Customers do
+            for order in customer.``main.Orders by CustomerID`` do
                 where (customer.ContactName = "John Smith")
                 select (customer.ContactName, order.OrderDate, order.ShipAddress)
     }
@@ -210,7 +212,7 @@ The SQL provider has the ability via intellisense to navigate the actual data
 held within a table or view. You can then bind that data as an entity to a value.
 *)
 
-let BERGS = ctx.``[main].[Customers]``.Individuals.BERGS
+let BERGS = ctx.Main.Customers.Individuals.BERGS
 (**
 Every table and view has an ``Individuals`` property. When you press dot on 
 this property, intellisense will display a list of the data in that table, 
@@ -226,4 +228,4 @@ When you press . on one of these properties, the data is re-projected to you
 using both the primary key and the text of the column you have selected.
 *)
 
-let christina = ctx.``[main].[Customers]``.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
