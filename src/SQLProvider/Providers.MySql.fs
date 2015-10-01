@@ -137,7 +137,10 @@ module MySql =
         | a -> a
 
     let getSprocName (row:DataRow) = 
-        let owner = Sql.dbUnboxWithDefault<string> owner row.["specific_schema"]
+        let defaultValue = 
+            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
+            else row.["routine_schema"]
+        let owner = Sql.dbUnboxWithDefault<string> owner defaultValue
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
         { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
