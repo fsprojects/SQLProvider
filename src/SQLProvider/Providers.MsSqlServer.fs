@@ -92,7 +92,9 @@ module MSSqlServer =
         try
             let reader = executeSql "SELECT SERVERPROPERTY('productversion')" con
             let version = reader.GetSqlString(0)
-            version.Value.StartsWith("11.")
+            match version.Value.[0..1] |> Double.TryParse with
+            | true, v -> v >= 11.0
+            | _ -> false
         with _ -> false
 
     let createCommandParameter (param:QueryParameter) (value:obj) = 
