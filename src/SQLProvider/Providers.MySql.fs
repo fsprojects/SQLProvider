@@ -429,9 +429,9 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? System.Array) ->
+                                     | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
-                                         let elements = box x :?> System.Array
+                                         let elements = box x :?> obj array
                                          Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
