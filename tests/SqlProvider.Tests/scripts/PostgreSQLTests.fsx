@@ -1,4 +1,4 @@
-﻿#I @"../../../bin"
+#I @"../../../bin"
 #r @"../../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
