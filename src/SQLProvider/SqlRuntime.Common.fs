@@ -19,7 +19,12 @@ type DatabaseProviderTypes =
     | MSACCESS = 5
     | ODBC = 6
 type RelationshipDirection = Children = 0 | Parents = 1 
-    
+
+type CaseSensitivityChange =
+    | ORIGINAL = 0
+    | TOUPPER = 1
+    | TOLOWER = 2
+
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
    let private sqlEvent = new Event<string>()
@@ -377,7 +382,7 @@ and internal ISqlProvider =
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
     /// Queries the information schema and returns a list of table information
-    abstract GetTables  : IDbConnection -> Table list
+    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table list
     /// Queries the given table and returns a list of its columns
     /// this function should also populate a primary key cache for tables that
     /// have a single non-composite primary key

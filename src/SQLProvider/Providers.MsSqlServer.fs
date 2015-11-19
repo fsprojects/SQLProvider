@@ -262,7 +262,7 @@ type internal MSSqlServerProvider() =
         member __.ExecuteSprocCommand(con, definition:SprocDefinition, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con definition returnCols values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
-        member __.GetTables(con) =
+        member __.GetTables(con, cs) =
             MSSqlServer.connect con (fun con -> 
             use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
             [ while reader.Read() do 
@@ -413,9 +413,9 @@ type internal MSSqlServerProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? System.Array) ->
+                                     | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
-                                         let elements = box x :?> System.Array
+                                         let elements = box x :?> obj array
                                          Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]

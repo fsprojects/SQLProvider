@@ -70,7 +70,7 @@ type internal OdbcProvider(resolutionPath) =
         member __.ExecuteSprocCommand(com,definition,retCols,values) = ReturnValueType.Unit //  raise(NotImplementedException())
 
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)     
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             let con = con :?> OdbcConnection
             if con.State <> ConnectionState.Open then con.Open()
             let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
@@ -158,9 +158,9 @@ type internal OdbcProvider(resolutionPath) =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? obj array) -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
+                                         let strings = box x :?> obj array
                                          strings |> Array.map createParam
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]

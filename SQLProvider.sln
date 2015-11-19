@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{D46C350C-AE47-4538-B63A-385A7E4D00E2}"
 	ProjectSection(SolutionItems) = preProject
@@ -26,6 +26,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-91DA-43CE-B343-C54614949C13}"
 	ProjectSection(SolutionItems) = preProject
 		docs\content\core\general.fsx = docs\content\core\general.fsx
+		mysql.fsx = mysql.fsx
 		docs\content\core\oracle.fsx = docs\content\core\oracle.fsx
 	EndProjectSection
 EndProject

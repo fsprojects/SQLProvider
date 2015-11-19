@@ -24,7 +24,7 @@ module MySql =
     let findType name = 
         match assembly.Value with
         | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
 
    
     let connectionType =  lazy (findType "MySqlConnection")
@@ -276,9 +276,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
         member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
+            let caseChane = 
+                match cs with
+                | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
+                | Common.CaseSensitivityChange.TOLOWER -> "LOWER(TABLE_SCHEMA)"
+                | _ -> "TABLE_SCHEMA"
             MySql.connect con (fun con ->
-                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = '%s'" MySql.owner) con
+                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
                 [ while reader.Read() do 
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) } 
                     if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
@@ -424,9 +429,9 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? System.Array) ->
+                                     | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
-                                         let elements = box x :?> System.Array
+                                         let elements = box x :?> obj array
                                          Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
@@ -615,7 +620,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     match entity.GetColumnOption<obj> pk with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk", 0),pkValue)
+                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id", 0),pkValue)
                 cmd.Parameters.Add(p) |> ignore
                 ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
                 cmd.CommandText <- sb.ToString()

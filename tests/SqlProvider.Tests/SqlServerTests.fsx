@@ -5,6 +5,8 @@ open FSharp.Data.Sql
 
 [<Literal>]
 let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
+//let connStr = "Data Source=localhost;Initial Catalog=HR; Integrated Security=True"
+
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
@@ -122,14 +124,15 @@ let countries =
 
 //************************ CRUD *************************//
 
+let fetchAntartica () =
+    query {
+        for reg in ctx.``[DBO].[REGIONS]`` do
+        where (reg.REGION_ID = 5)
+        select reg
+    } |> Seq.toList
 
 let antartica =
-    let result =
-        query {
-            for reg in ctx.``[DBO].[REGIONS]`` do
-            where (reg.REGION_ID = 5)
-            select reg
-        } |> Seq.toList
+    let result = fetchAntartica ()
     match result with
     | [ant] -> ant
     | _ -> 
@@ -142,8 +145,12 @@ let antartica =
 antartica.REGION_NAME <- "ant"
 ctx.SubmitUpdates()
 
+let arctica2 = fetchAntartica () |> Seq.head
+if antartica.REGION_NAME <> arctica2.REGION_NAME then failwith "Update test fails!"
+
 antartica.Delete()
 ctx.SubmitUpdates()
+if fetchAntartica() |> Seq.length <> 0 then failwith "Delete test fails!"
 
 //********************** Procedures **************************//
 

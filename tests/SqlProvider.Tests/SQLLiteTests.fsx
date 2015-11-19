@@ -1,10 +1,11 @@
-﻿#r @"..\..\bin\FSharp.Data.SqlProvider.dll"
+﻿#I @"../../bin/"
+#r @"../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/northwindEF.db;Version=3"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ 
