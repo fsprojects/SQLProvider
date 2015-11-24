@@ -1,3 +1,4 @@
-Newtonsoft.Json
-NUnit
-FSharp.Core
+group Tests
+
+      NUnit
+      FSharp.Core

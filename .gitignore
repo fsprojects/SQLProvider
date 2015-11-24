@@ -181,6 +181,7 @@ docs/files/msaccess/Northwind.ldb
 paket-files/
 docs/content/license.md
 docs/content/release-notes.md
+.fake/
 
 !tests/SqlProvider.Tests/libs
 *.userprefs

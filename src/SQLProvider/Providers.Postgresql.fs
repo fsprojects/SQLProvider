@@ -42,7 +42,8 @@ module PostgreSQL =
     let dbType = lazy (findType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
-
+    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+        
     let isSupportedType = function
         | "abstime"     -> false                            // The types abstime and reltime are lower precision types which are used internally.
                                                             // You are discouraged from using these types in applications; these internal types
@@ -179,6 +180,10 @@ module PostgreSQL =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
+    let getSchema name (args:string[]) (conn:IDbConnection) = 
+        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
+
+
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
@@ -272,65 +277,65 @@ module PostgreSQL =
 
         entities 
 
-    let getSprocs con = []
-//        let query = @"SELECT  r.specific_name AS id,
-//                              r.routine_schema AS schema_name,
-//                              r.routine_name AS name,
-//                              r.data_type AS returntype,
-//                              (SELECT  STRING_AGG(x.param, E'\n')
-//                                 FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
-//                                          FROM  information_schema.parameters p
-//                                         WHERE  p.specific_name = r.specific_name
-//                                      ORDER BY  p.ordinal_position) x) AS args
-//                        FROM  information_schema.routines r
-//                       WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
-//                              AND r.routine_name NOT IN (SELECT  routine_name
-//                                                           FROM  information_schema.routines
-//                                                       GROUP BY  routine_name
-//                                                         HAVING  COUNT(routine_name) > 1)"
-//        Sql.executeSqlAsDataTable createCommand query con
-//        |> DataTable.map (fun r -> 
-//            let name = { ProcName = Sql.dbUnbox<string> r.["name"]
-//                         Owner = Sql.dbUnbox<string> r.["schema_name"]
-//                         PackageName = String.Empty }
-//            let sparams =
-//                match Sql.dbUnbox<string> r.["args"] with
-//                | null -> []
-//                | args ->
-//                    args.Split('\n')
-//                    |> Array.mapi (fun i arg ->
-//                        let direction, name, typeName =
-//                            match arg.Split(';') with
-//                            | [| direction; name; typeName |] -> direction, name, typeName
-//                            | _ -> failwith "Invalid procedure argument description."
-//                        findDbType typeName
-//                        |> Option.map (fun m ->
-//                            { Name = name
-//                              TypeMapping = m
-//                              Direction =
-//                                match direction.ToLower() with
-//                                | "in" -> ParameterDirection.Input
-//                                | "inout" -> ParameterDirection.InputOutput
-//                                | "out" -> ParameterDirection.Output
-//                                | _ -> failwithf "Unknown parameter direction value %s." direction
-//                              Ordinal = i
-//                              Length = None }))
-//                    |> Array.choose id
-//                    |> Array.toList
-//            let rcolumns =
-//                let rcolumns = sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
-//                match Sql.dbUnbox<string> r.["returntype"] with
-//                | null -> rcolumns
-//                | rtype ->
-//                    findDbType rtype
-//                    |> Option.map (fun m ->
-//                        { Name = "ReturnValue"
-//                          TypeMapping = m
-//                          Direction = ParameterDirection.ReturnValue
-//                          Ordinal = 0
-//                          Length = None })
-//                    |> Option.fold (fun acc col -> col :: acc) rcolumns
-//            Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns })))
+    let getSprocs con =
+         let query = @"SELECT  r.specific_name AS id,
+                               r.routine_schema AS schema_name,
+                               r.routine_name AS name,
+                               r.data_type AS returntype,
+                               (SELECT  STRING_AGG(x.param, E'\n')
+                                  FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
+                                           FROM  information_schema.parameters p
+                                          WHERE  p.specific_name = r.specific_name
+                                       ORDER BY  p.ordinal_position) x) AS args
+                         FROM  information_schema.routines r
+                        WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
+                               AND r.routine_name NOT IN (SELECT  routine_name
+                                                            FROM  information_schema.routines
+                                                        GROUP BY  routine_name
+                                                          HAVING  COUNT(routine_name) > 1)"
+         Sql.executeSqlAsDataTable createCommand query con
+         |> DataTable.map (fun r -> 
+             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
+                          Owner = Sql.dbUnbox<string> r.["schema_name"]
+                          PackageName = String.Empty }
+             let sparams =
+                 match Sql.dbUnbox<string> r.["args"] with
+                 | null -> []
+                 | args ->
+                     args.Split('\n')
+                     |> Array.mapi (fun i arg ->
+                         let direction, name, typeName =
+                             match arg.Split(';') with
+                             | [| direction; name; typeName |] -> direction, name, typeName
+                             | _ -> failwith "Invalid procedure argument description."
+                         findDbType typeName
+                         |> Option.map (fun m ->
+                             { Name = name
+                               TypeMapping = m
+                               Direction =
+                                 match direction.ToLower() with
+                                 | "in" -> ParameterDirection.Input
+                                 | "inout" -> ParameterDirection.InputOutput
+                                 | "out" -> ParameterDirection.Output
+                                 | _ -> failwithf "Unknown parameter direction value %s." direction
+                               Ordinal = i
+                               Length = None }))
+                     |> Array.choose id
+                     |> Array.toList
+             let rcolumns =
+                 let rcolumns = sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
+                 match Sql.dbUnbox<string> r.["returntype"] with
+                 | null -> rcolumns
+                 | rtype ->
+                     findDbType rtype
+                     |> Option.map (fun m ->
+                         { Name = "ReturnValue"
+                           TypeMapping = m
+                           Direction = ParameterDirection.ReturnValue
+                           Ordinal = 0
+                           Length = None })
+                     |> Option.fold (fun acc col -> col :: acc) rcolumns
+             Root("Functions", Sproc({ Name = name; Params = (fun con -> sparams); ReturnColumns = (fun con _ -> rcolumns) })))
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = Dictionary<string,string>()
@@ -345,10 +350,6 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         if not(String.IsNullOrEmpty owner) then
             PostgreSQL.owner <- owner
 
-    let executeSql (con:IDbConnection) sql =
-        use com = (this:>ISqlProvider).CreateCommand(con,sql)
-        com.ExecuteReader()
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
@@ -357,11 +358,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con,cs) =
-            use reader = executeSql con (sprintf "SELECT  table_schema,
+            use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type
                                                     FROM  information_schema.tables
-                                                   WHERE  table_schema = '%s'" PostgreSQL.owner)
+                                                   WHERE  table_schema = '%s'" PostgreSQL.owner) con
             [ while reader.Read() do
                 let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
                               Name = Sql.dbUnbox<string> reader.["table_name"]
@@ -454,17 +455,27 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                     AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
                                     AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
                 if con.State <> ConnectionState.Open then con.Open()
-                use reader = executeSql con (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name )
-                let children =
+                use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let children : Relationship list =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield {
+                                Name = reader.GetString(0);
+                                PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5));
+                                PrimaryKey=reader.GetString(6)
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
+                                ForeignKey=reader.GetString(2)
+                              } ] 
                 reader.Dispose()
-                use reader = executeSql con (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name )
-                let parents =
+                use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let parents : Relationship list =
                     [ while reader.Read() do 
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] 
+                        yield {
+                                Name = reader.GetString(0);
+                                PrimaryTable = Table.CreateFullName(reader.GetString(9), reader.GetString(5));
+                                PrimaryKey = reader.GetString(6)
+                                ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
+                                ForeignKey = reader.GetString(2)
+                              } ] 
                 relationshipLookup.Add(table.FullName,(children,parents))
                 con.Close()
                 (children,parents)    
