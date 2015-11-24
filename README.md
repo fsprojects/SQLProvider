@@ -40,7 +40,7 @@ additional samples and documentation!
 ## Building
 
 * Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsprojects/SQLProvider.png)](https://travis-ci.org/fsprojects/SQLProvider)
-* Windows: Run *build.cmd* 
+* Windows: Run *build.cmd* [![Build status](https://ci.appveyor.com/api/projects/status/ngbj9995twhfqn28?svg=true)](https://ci.appveyor.com/project/colinbull/sqlprovider-ogy2l)
 
 ## Known issues
 
