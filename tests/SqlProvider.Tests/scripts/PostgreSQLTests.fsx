@@ -3,12 +3,14 @@
 
 open System
 open FSharp.Data.Sql
+open System.Data
 
 [<Literal>]
 let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
 
 [<Literal>]
 let resolutionFolder = @"../../../packages/scripts/Npgsql/lib/net45"
+        
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -16,6 +18,8 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
+
+           
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -152,11 +156,11 @@ type Region = {
 let locations_and_regions =
     let results = ctx.Functions.GetLocationsAndRegions.Invoke()
     [
-//      for e in results.ReturnValue do
-//        yield e.ColumnValues |> Seq.toList |> box
-//             
-      for e in results.ColumnValues do
-        yield e// |> Seq.toList |> box
+      for e in results.ReturnValue do
+        yield e.ColumnValues |> Seq.toList |> box
+             
+      for e in results.ReturnValue do
+        yield e.ColumnValues |> Seq.toList |> box
     ]
 
 
@@ -165,7 +169,7 @@ let getemployees hireDate =
     let results = (ctx.Functions.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ReturnValue do
-        yield e.MapTo<Employee>()
+        yield! e.ColumnValues
     ]
 
 getemployees (new System.DateTime(1999,4,1))
@@ -173,3 +177,4 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
+

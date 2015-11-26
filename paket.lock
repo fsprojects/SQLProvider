@@ -33,7 +33,7 @@ NUGET
   specs:
     MySql.Data (6.9.8)
     Newtonsoft.Json (7.0.1)
-    Npgsql (3.0.3)
+    Npgsql (2.2.7)
 
 GROUP Tests
 NUGET

@@ -22,5 +22,5 @@ group Scripts
       source https://nuget.org/api/v2
 
       nuget MySql.Data
-      nuget Npgsql
+      nuget Npgsql = 2.2.7
       nuget Newtonsoft.Json
