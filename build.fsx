@@ -37,7 +37,7 @@ let description = "Type providers for SQL Server access."
 let authors = [ "Ross McKinlay, Colin Bull" ]
 
 // Tags for your project (for NuGet package)
-let tags = "F#, fsharp, typeproviders, sql, sqlserver"
+let tags = "F#, fsharp, typeprovider, sql, sqlserver"
 
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
