@@ -529,7 +529,7 @@ type internal MSSqlServerProvider() =
                 | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                 | _ -> ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)         
+            ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
