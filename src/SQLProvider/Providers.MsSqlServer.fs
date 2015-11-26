@@ -580,9 +580,10 @@ type internal MSSqlServerProvider() =
                     |> Array.unzip
                 
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT SCOPE_IDENTITY();" 
+                ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);" 
                     entity.Table.FullName
                     (String.Join(",",columnNames))
+                    pk
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
                 cmd.Parameters.AddRange(values)
                 cmd.CommandText <- sb.ToString()
