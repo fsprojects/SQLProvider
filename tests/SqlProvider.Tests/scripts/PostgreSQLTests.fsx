@@ -18,7 +18,6 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
-
            
 type Employee = {
     EmployeeId : int32
@@ -35,6 +34,21 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
+
+let employeesFirstNameNoProj = 
+    query {
+        for emp in ctx.Public.Employees do
+        select true
+    } |> Seq.toList
+ 
+
+let employeesFirstNameIdProj = 
+    query {
+        for emp in ctx.Public.Employees do
+        select emp
+    } |> Seq.toList
+
+
 let employeesFirstName = 
     query {
         for emp in ctx.Public.Employees do

@@ -182,7 +182,10 @@ module internal QueryExpressionTransformer =
         // a special case here to handle queries that start from the relationship of an individual
         let sqlQuery,baseAlias = 
             if sqlQuery.Aliases.Count = 0 then 
-               let alias =  projectionColumns.Keys |> Seq.head 
+               let alias =
+                   if projectionColumns.Keys.Count = 0
+                   then baseAlias
+                   else projectionColumns.Keys |> Seq.head 
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
             else sqlQuery,baseAlias
 
