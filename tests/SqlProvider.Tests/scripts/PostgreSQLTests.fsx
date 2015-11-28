@@ -48,6 +48,20 @@ let employeesFirstNameIdProj =
         select emp
     } |> Seq.toList
 
+let first10employess =
+    query {
+        for emp in ctx.Public.Employees do
+        select emp.EmployeeId
+        take 10
+    } |> Seq.toList
+
+let skip2first10employess = 
+    query {
+        for emp in ctx.Public.Employees do
+        select emp.EmployeeId
+        skip 2
+        take 10
+    } |> Seq.toList
 
 let employeesFirstName = 
     query {
