@@ -12,10 +12,11 @@ let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
 let resolutionFolder = @"../../../packages/scripts/Npgsql/lib/net45"
         
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder, UseOptionTypes=true>
 let ctx = HR.GetDataContext()
 
            
@@ -30,10 +31,25 @@ type Employee = {
 let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
 
 
-indv.FirstName + " " + indv.LastName + " " + indv.Email
+//indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
+
+type LocationQuery = {
+     City : string
+     PostalCode : string option
+}
+
+let locationBy (loc:LocationQuery) =
+    query {
+       for location in ctx.Public.Locations do
+       where (location.City = loc.City)
+       where (location.PostalCode = loc.PostalCode)
+       select location
+    } |> Seq.toList
+
+let result = locationBy { City = "Tokyo"; PostalCode = Some "1689" }
 
 let employeesFirstNameNoProj = 
     query {
@@ -41,7 +57,6 @@ let employeesFirstNameNoProj =
         select true
     } |> Seq.toList
  
-
 let employeesFirstNameIdProj = 
     query {
         for emp in ctx.Public.Employees do

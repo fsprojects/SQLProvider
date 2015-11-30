@@ -7,14 +7,14 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;"
+let connStr = "Server=192.168.99.100;Database=hr;Uid=root;Pwd=password;"
 [<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/MySql.Data/lib/net40/"
+let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net40/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "hr">
 let ctx = HR.GetDataContext()
 
 
