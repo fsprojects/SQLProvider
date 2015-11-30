@@ -69,6 +69,14 @@ let employeesFirstName =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
+let employeesSortByName =
+    query {
+        for emp in ctx.Public.Employees do
+        sortBy emp.FirstName
+        thenBy emp.LastName
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.toList
+
 let salesNamedDavid = 
     query {
             for emp in ctx.Public.Employees do
