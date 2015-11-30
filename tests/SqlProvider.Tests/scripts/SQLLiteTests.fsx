@@ -44,6 +44,13 @@ let customersQuery =
     query { for customer in ctx.Main.Customers do
             select customer } |> Seq.toArray
 
+
+let customersQuerySortedByName =
+    query { for customer in ctx.Main.Customers do
+            sortBy customer.CompanyName
+            thenBy customer.ContactName
+            select (customer.CompanyName, customer.ContactName) } |> Seq.toArray
+
 let filteredQuery =
     query { for customer in ctx.Main.Customers do
             where (customer.ContactName = "John Smith")
