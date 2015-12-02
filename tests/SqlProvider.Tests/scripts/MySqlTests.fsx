@@ -1,29 +1,30 @@
-﻿#I @"../../../packages/MySql.Data/lib/net40"
-#r @"../../../packages/MySql.Data/lib/net40/MySql.Data.dll"
-#I @"../../../bin"
+﻿#I @"../../../bin"
 #r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
 open FSharp.Data.Sql
-
+open FSharp.Data.Sql.Common
+open Newtonsoft.Json
+        
 [<Literal>]
-let connStr = "Server=192.168.99.100;Database=hr;Uid=root;Pwd=password;"
+let connStr = "Server=192.168.99.100;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net40/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "hr">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
-
-
+        
 type Employee = {
     EmployeeId : int32
     FirstName : string
     LastName : string
     HireDate : DateTime
 }
+
 
 //***************** Individuals ***********************//
 let indv = ctx.Hr.Employees.Individuals.``As FirstName``.``100, Steven``
@@ -51,7 +52,7 @@ let employeesJob =
     let hr = ctx.Hr
     query {
             for emp in hr.Employees do
-            for manager in emp.``hr.employees by MANAGER_ID`` do
+            for manager in emp.``HR.EMPLOYEES by MANAGER_ID`` do
             join dept in hr.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
@@ -67,10 +68,6 @@ let topSales5ByCommission =
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
-
-#r @"..\..\..\packages\Newtonsoft.Json\lib\net45\Newtonsoft.Json.dll"
-
-open Newtonsoft.Json
 
 type OtherCountryInformation = {
     Id : string
