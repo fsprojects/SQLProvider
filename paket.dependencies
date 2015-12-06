@@ -1,6 +1,6 @@
 source https://nuget.org/api/v2
 
-nuget Nuget.CommandLine
+nuget Nuget.CommandLine ~> 2
 nuget Newtonsoft.Json
 nuget NUnit
 nuget FAKE
