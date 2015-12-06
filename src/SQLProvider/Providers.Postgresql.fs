@@ -341,7 +341,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         PostgreSQL.referencedAssemblies <- referencedAssemblies
 
         if not(String.IsNullOrEmpty owner) then
-            PostgreSQL.owner <- owner
+            PostgreSQL.owner <- Array.append PostgreSQL.owner (owner.Split ',')
 
     let executeSql (con:IDbConnection) sql =
         use com = (this:>ISqlProvider).CreateCommand(con,sql)
