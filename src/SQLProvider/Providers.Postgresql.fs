@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Common
 
 module PostgreSQL =
     let mutable resolutionPath = String.Empty
-    let mutable owner = "public"
+    let mutable owner = ["public"]
     let mutable referencedAssemblies = [| |]
 
     let assemblyNames = [
@@ -355,11 +355,31 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con,cs) =
-            use reader = executeSql con (sprintf "SELECT  table_schema,
-                                                          table_name,
-                                                          table_type
-                                                    FROM  information_schema.tables
-                                                   WHERE  table_schema = '%s'" PostgreSQL.owner)
+
+            // for a list xs, glue together boolean OR queries.
+            let ptr column xs = 
+                // don't to all the way to the end, we dont want a dangling OR
+                [ for i = 0 to List.length xs - 2 do
+                    yield sprintf "%s = @p%d OR" column i
+                  // add the last one.
+                  yield sprintf "%s = @p%d;" column (List.length xs - 1)
+                ] |> String.concat " "
+
+            let baseQuery = 
+              sprintf "SELECT  table_schema,
+                               table_name,
+                               table_type
+                        FROM   information_schema.tables
+                        WHERE  %s" (ptr "table_schema" owner)
+            
+            use command = PostgreSQL.createCommand baseQuery con
+
+            for i = 0 to owner.Length-1 do
+                let c = QueryParameter.Create(sprintf "@p%d" i,i) 
+                command.Parameters.Add ( PostgreSQL.createCommandParameter false c owner.[i] )
+                |> ignore
+          
+            use reader = command.ExecuteReader()
             [ while reader.Read() do
                 let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
                               Name = Sql.dbUnbox<string> reader.["table_name"]
