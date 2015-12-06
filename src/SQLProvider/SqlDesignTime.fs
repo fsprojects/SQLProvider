@@ -474,7 +474,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 1000.</param>
                     <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
-                    <param name='Owner'>The owner of the schema for this provider to resolve (Oracle Only)</param>
+                    <param name='Owner'>The owner of the schema for this provider to resolve (Oracle and PostgreSQL Only)</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>"
         
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity], fun typeName args -> 
