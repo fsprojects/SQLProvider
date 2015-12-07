@@ -2,3 +2,5 @@ group Tests
 
       NUnit
       FSharp.Core
+      FSharp.Data
+      Fake
