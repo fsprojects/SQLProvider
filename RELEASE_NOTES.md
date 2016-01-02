@@ -1,4 +1,4 @@
-### 0.0.11-alpha - Unreleased
+### 0.0.11-alpha - 02.01.2016
 * Type provider generates nicer table names, relationships and sprocs
 * Added static parameter to control case senstivity when generating queries (PR #143)
 * Fixed relative paths for SQL lite

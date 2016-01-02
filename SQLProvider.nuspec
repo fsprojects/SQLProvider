@@ -5,13 +5,13 @@
     <version>@build.number@</version>
     <authors>@authors@</authors>
     <owners>@authors@</owners>
-    <licenseUrl>http://github.com/pezipink/SQLProvider/blob/master/LICENSE.md</licenseUrl>
-    <projectUrl>http://pezipink.github.com/SQLProvider</projectUrl>
+    <licenseUrl>http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>http://fsprojects.github.io/SqlProvider</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>@summary@</summary>
     <description>@description@</description>
     <releaseNotes>@releaseNotes@</releaseNotes>
-    <copyright>Copyright 2013</copyright>
+    <copyright>Copyright 2015</copyright>
     <tags>@tags@</tags>
     <dependencies />
   </metadata>
