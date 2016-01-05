@@ -10,7 +10,7 @@ A general .NET/Mono SQL database type provider. Current features :
  * Individuals 
  * Transactional CRUD operations with identity support
  * Two-way data binding
- * Strored Procedures
+ * Stored Procedures
  * Functions
  * Packages (Oracle)
  * Composable Query integration
