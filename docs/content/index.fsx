@@ -5,7 +5,8 @@
 SQLProvider
 ===========
 
-A general .NET/Mono SQL database type provider. Current features :
+A general .NET/Mono SQL database type provider. Current features:
+
  * [LINQ queries](core/querying.html)
  * Lazy schema exploration 
  * Automatic constraint navigation
@@ -19,7 +20,8 @@ A general .NET/Mono SQL database type provider. Current features :
  * Mapping to record types
  * Custom Operators
   
-The provider currently has explicit implementations for the following database vendors : 
+The provider currently has explicit implementations for the following database vendors:
+ 
 * SQL Server
 * SQLite
 * PostgreSQL
@@ -103,11 +105,12 @@ Samples & documentation
 -----------------------
 
 The library comes with comprehensible documentation.
+
  * [General](core/general.html) a high level view on the type providers' abilities and limitations
  * [Configuration & Setup](core/config.html) details on how to get the type provider up and running for your database
  * [Static Paramters](core/parameters.html) available static parameters
  * [Querying](core/querying.html) information on supported LINQ keywords and custom operators with examples
- * [Relationships](core/constraints-relatiobships.html) how to use automatic constraint navigation in your queries
+ * [Relationships](core/constraints-relationships.html) how to use automatic constraint navigation in your queries
  * [CRUD](core/crud.html) usage and limitations of transactional create - update - delete support
  * [Programmability](core/programmability.html) usage and limitations of stored procedures and functions
  * [Individuals](core/individuals.html) usage and limitations of this unqiue feature
@@ -133,5 +136,5 @@ redistribution for both commercial and non-commercial purposes. For more informa
   [gh]: https://github.com/fsprojects/SQLProvider
   [issues]: https://github.com/fsprojects/SQLProvider/issues
   [readme]: https://github.com/fsprojects/SQLProvider/blob/master/README.md
-  [license]: https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md
+  [license]: https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt
 *)
