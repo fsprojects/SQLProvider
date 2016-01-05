@@ -15,4 +15,7 @@
     <tags>@tags@</tags>
     <dependencies />
   </metadata>
+  <files>
+    <file src="**/*.dll" />
+  </files>
 </package>

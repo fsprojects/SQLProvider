@@ -110,9 +110,9 @@ Target "RunTests" (fun _ ->
 
 Target "NuGet" (fun _ ->
     
-    CopyFiles "temp\lib" !!"bin\**\FSharp.Data.SqlProvider.dll"
+    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvider.dll"
 
-    NuGet (fun p -> 
+    NuGet (fun p ->
         { p with
             Authors = authors
             Project = project
@@ -126,9 +126,9 @@ Target "NuGet" (fun _ ->
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
             Dependencies = [] })
-        ("nuget/" + project + ".nuspec")
+        (project + ".nuspec")
 
-    CleanDir "temp"
+    CleanDir "Temp"
 )
 
 // --------------------------------------------------------------------------------------
