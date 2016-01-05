@@ -7,18 +7,18 @@ SQLProvider
 
 A general .NET/Mono SQL database type provider. Current features:
 
- * [LINQ queries](core/querying.html)
- * Lazy schema exploration 
- * Automatic constraint navigation
- * [Individuals](Individuals.html)
- * Transactional [CRUD](core/crud.html) operations with identity support
- * [Strored Procedures](core/programmability.html)
- * [Functions](core/programmability.html)
- * Packages (Oracle)
- * [Composable Query](core/composable.html) integration
- * Optional option types
- * Mapping to record types
- * Custom Operators
+* [LINQ queries](core/querying.html)
+* Lazy schema exploration 
+* Automatic constraint navigation
+* [Individuals](Individuals.html)
+* Transactional [CRUD](core/crud.html) operations with identity support
+* [Stored Procedures](core/programmability.html)
+* [Functions](core/programmability.html)
+* Packages (Oracle)
+* [Composable Query](core/composable.html) integration
+* Optional option types
+* Mapping to record types
+* Custom Operators
   
 The provider currently has explicit implementations for the following database vendors:
  
