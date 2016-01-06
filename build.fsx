@@ -230,7 +230,7 @@ Target "BuildDocs" DoNothing
   ==> "RunTests"
   ==> "CleanDocs"
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
-  =?> ("GenerateDocs",isLocalBuild && not isMono)
+  =?> ("GenerateHelp",isLocalBuild && not isMono)
   ==> "All"
 
 "All"
