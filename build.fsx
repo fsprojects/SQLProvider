@@ -228,6 +228,7 @@ Target "BuildDocs" DoNothing
   ==> "AssemblyInfo"
   ==> "Build"
   ==> "RunTests"
+  ==> "CleanDocs"
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
   =?> ("GenerateDocs",isLocalBuild && not isMono)
   ==> "All"
@@ -236,7 +237,7 @@ Target "BuildDocs" DoNothing
   ==> "BuildDocs"
 
 "All" 
-  ==> "CleanDocs"
+
   ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
