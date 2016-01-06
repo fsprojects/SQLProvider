@@ -75,6 +75,15 @@ let buildReference () =
 
 // Build documentation from `fsx` and `md` files in `docs/content`
 let buildDocumentation () =
+  let rec getRelativePath root initialSubDir subDir =
+    let root' = Path.GetFullPath root
+    let subDir' = Path.GetFullPath subDir
+    if subDir' = Path.GetPathRoot subDir' then failwithf "Cannot find relative path for %s and %s" root initialSubDir
+    if root' = subDir' then "."
+    else
+      let next = getRelativePath root' initialSubDir (Path.GetDirectoryName subDir')
+      if next = "." then ".." else "../" + next
+      
   let subdirs = Directory.EnumerateDirectories(content, "*", SearchOption.AllDirectories) 
   for dir in Seq.append [content] subdirs do
     let sub = if dir.Length > content.Length then dir.Substring(content.Length + 1) else "."
@@ -87,7 +96,9 @@ let buildDocumentation () =
         | Some lang -> layoutRootsAll.[lang]
         | None -> layoutRootsAll.["en"] // "en" is the default language
     Literate.ProcessDirectory
-      ( dir, docTemplate, output @@ sub, replacements = ("root", ".")::info,
+      ( dir, docTemplate, output @@ sub,
+        processRecursive = false,
+        replacements = ("root", getRelativePath content dir dir)::info,
         layoutRoots = layoutRoots,
         generateAnchors = true )
 

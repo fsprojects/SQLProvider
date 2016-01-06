@@ -23,12 +23,13 @@ connect to a variety of database sources in the IDE and explore them in a
 type-safe manner, without the inconvenience of a code-generation step.
 
 SQL Provider supports the following database types:
-    * [`mssql.html` file] MSSQL
-    * [`oracle.html` file] Oracle
-    * [`sqlite.html` file] SQLite
-    * [`postgresql.html` file] PostgreSQL
-    * [`mysql.html` file] MySQL
-    * [`odbc.html` file] ODBC (_Experimental_, only supports SELECT & MAKE)
+
+* [MSSQL](mssql.html) 
+* [Oracle](oracle.html) 
+* [SQLite](sqlite.heml) 
+* [PostgreSQL](postgresql.html)
+* [MySQL](mysql.html)
+* [ODBC](odbc.html) (_Experimental_, only supports SELECT & MAKE)
 
 After you have installed the nuget package or built the type provider assembly 
 from source, you should reference the assembly either as a project reference 
@@ -58,7 +59,10 @@ more detail about the available static parameters in other areas of the
 documentation.
 *)
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
+                           connectionString,
+                           ResolutionPath = resolutionPath,
+                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in 
@@ -92,7 +96,7 @@ Each property is correctly typed depending on the database column
 definitions.  In this example, ``firstCustomer.ContactName`` is a string.
 *)
 
-(*
+(**
 ## Constraints and Relationships 
 
 A typical relational database will have many connected tables and views 
