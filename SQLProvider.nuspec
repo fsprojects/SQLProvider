@@ -6,7 +6,7 @@
     <authors>@authors@</authors>
     <owners>@authors@</owners>
     <licenseUrl>http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md</licenseUrl>
-    <projectUrl>http://fsprojects.github.io/SqlProvider</projectUrl>
+    <projectUrl>http://fsprojects.github.io/SQLProvider</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>@summary@</summary>
     <description>@description@</description>
