@@ -57,6 +57,7 @@
     <None Include="OracleTests.fsx" />
     <None Include="SQLLiteTests.fsx" />
     <None Include="SqlServerTests.fsx" />
+    <None Include="Northwind.accdb" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
