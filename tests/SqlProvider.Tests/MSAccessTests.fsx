@@ -1,34 +1,59 @@
-﻿#r @"C:\code_root\SQLProvider\bin\FSharp.Data.SQLProvider.dll"
+﻿#r @"..\..\bin\FSharp.Data.SQLProvider.dll"
 open System
 open System.Linq
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common.QueryEvents
-type mdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS, "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= C:\\code_root\\SQLProvider\\docs\\files\\msaccess\\Northwind.mdb", @"" , 100, true >
+
+[<Literal>]
+let connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source= " +  __SOURCE_DIRECTORY__ + @"\Northwind.accdb"
+
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ 
+type mdb = SqlDataProvider< DatabaseVendor = Common.DatabaseProviderTypes.MSACCESS, ConnectionString = connectionString, ResolutionPath = resolutionPath, UseOptionTypes = false>
 let ctx = mdb.GetDataContext()
 
 
 SqlQueryEvent.Add (printfn "%s")
-
+(*
 let mattisOrderDetails =
-    query { for c in ctx.``[Northwind].[Customers]`` do
+    query { for c in ctx.``[NORTHWIND].[CUSTOMERS]`` do
             // you can directly enumerate relationships with no join information
             for o in c.FK_Orders_Customers do
             // or you can explicitly join on the fields you choose
-            join od in ctx.``[Northwind].[Order Details]`` on (o.OrderID = od.OrderID.Value)
+            join od in ctx.``[NORTHWIND].[ORDER DETAILS]`` on (o.``ORDER ID`` = od.``ORDER ID``)
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.``FK_Order Details_Products`` do 
             // nullable columns can be represented as option types. The following generates IS NOT NULL
-            where c.ContactName.IsSome          
+            where c.``LAST NAME``.IsSome
             // standard operators will work as expected; the following shows the like operator and IN operator
-            where (c.ContactName =% ("Matti%") && o.ShipCountry.Value |=| [|"Finland";"England"|] )
-            sortBy o.ShipName
+            where (c.``LAST NAME``.Value =% ("Matti%") && o.``SHIP COUNTRY/REGION``.Value |=| [|"Finland";"England"|] )
+            sortBy o.``SHIP NAME``.Value
             // arbitrarily complex projections are supported
-            select (c.ContactName,o.ShipAddress,o.ShipCountry,prod.ProductName,prod.UnitPrice) } 
+            select (c.``LAST NAME``,o.``SHIP ADDRESS``,o.``SHIP COUNTRY/REGION``,prod.``PRODUCT NAME``,prod.``LIST PRICE``) } 
+    |> Seq.toArray
+*)
+
+
+let mattisOrderDetails =
+    query { for c in ctx.``[NORTHWIND].[CUSTOMERS]`` do
+            // you can directly enumerate relationships with no join information
+            for o in c.FK_Orders_Customers do
+            // or you can explicitly join on the fields you choose
+            join od in ctx.``[NORTHWIND].[ORDER DETAILS]`` on (o.``ORDER ID`` = od.``ORDER ID``)
+            //  the (!!) operator will perform an outer join on a relationship
+            for prod in (!!) od.``FK_Order Details_Products`` do 
+            // nullable columns can be represented as option types. The following generates IS NOT NULL
+            //where c.``LAST NAME``.IsSome
+            // standard operators will work as expected; the following shows the like operator and IN operator
+            where (c.``LAST NAME`` =% ("Matti%") && o.``SHIP COUNTRY/REGION`` |=| [|"Finland";"England"|] )
+            sortBy o.``SHIP NAME``
+            // arbitrarily complex projections are supported
+            select (c.``LAST NAME``,o.``SHIP ADDRESS``,o.``SHIP COUNTRY/REGION``,prod.``PRODUCT NAME``,prod.``LIST PRICE``) } 
     |> Seq.toArray
 
 let stuf =
-    query { for c in ctx.``[Northwind].[Customers]`` do
-            join qo in ctx.``[Northwind].[Quarterly Orders]`` on (c.CustomerID = qo.CustomerID)
-            where (c.City =% ("Lon%"))
-            select (c.ContactName.Value, qo.CompanyName, qo.Country.Value)
+    query { for c in ctx.``[NORTHWIND].[CUSTOMERS]`` do
+            join qo in ctx.``[NORTHWIND].[ORDERS]`` on (c.ID = qo.``CUSTOMER ID``)
+            where (c.CITY =% ("Sal%"))
+            select (c.``LAST NAME``, qo.``SHIP NAME``,qo.``SHIP COUNTRY/REGION``)
     } |> Seq.toArray
