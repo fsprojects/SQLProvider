@@ -108,17 +108,17 @@ The library comes with comprehensible documentation.
 
  * [General](core/general.html) a high level view on the type providers' abilities and limitations
  * [Configuration & Setup](core/config.html) details on how to get the type provider up and running for your database
- * [Static Paramters](core/parameters.html) available static parameters
+ * [Static Parameters](core/parameters.html) available static parameters
  * [Querying](core/querying.html) information on supported LINQ keywords and custom operators with examples
  * [Relationships](core/constraints-relationships.html) how to use automatic constraint navigation in your queries
  * [CRUD](core/crud.html) usage and limitations of transactional create - update - delete support
  * [Programmability](core/programmability.html) usage and limitations of stored procedures and functions
- * [Individuals](core/individuals.html) usage and limitations of this unqiue feature
+ * [Individuals](core/individuals.html) usage and limitations of this unique feature
  * [Composable Query](core/composable.html) information on integrating this project with the SQL provider
  * [API Reference](reference/index.html) contains automatically generated documentation for all types, modules
    and functions in the library. 
 
-Database vendor specific issues and cosndierations are documented on their seperate pages. Please see the menu on the right.
+Database vendor specific issues and considerations are documented on their seperate pages. Please see the menu on the right.
  
 Contributing and copyright
 --------------------------
