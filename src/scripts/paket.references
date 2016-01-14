@@ -1,0 +1,4 @@
+group Scripts
+
+      nuget Npgsql
+      nuget MySql.Data

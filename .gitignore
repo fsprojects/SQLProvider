@@ -5,12 +5,12 @@
 *.suo
 *.user
 *.sln.docstates
+*.vs/
 
 # Build results
 
 [Dd]ebug/
 [Rr]elease/
-x64/
 build/
 [Bb]in/
 [Oo]bj/
@@ -176,3 +176,12 @@ nuget/
 nuget/*.nupkg
 docs/files/msaccess/Northwind.ldb
 *.orig
+.paket/paket.exe
+*.bak
+paket-files/
+docs/content/license.md
+docs/content/release-notes.md
+.fake/
+
+!tests/SqlProvider.Tests/libs
+*.userprefs

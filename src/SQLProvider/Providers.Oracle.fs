@@ -7,6 +7,7 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql.Common.Utilities
 
 module internal Oracle =
     
@@ -23,10 +24,20 @@ module internal Oracle =
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
+
     let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve oracle assemblies. One of %s must exist in the resolution path" (String.Join(", ", assemblyNames |> List.toArray))
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
+
+    let systemNames = 
+        [
+            "SYSTEM"; "SYS"; "XDB"
+        ]
 
     let connectionType = lazy  (findType "OracleConnection")
     let commandType =  lazy   (findType "OracleCommand")
@@ -90,13 +101,7 @@ module internal Oracle =
         if prop <> null
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None         
-
-    let quoteWhiteSpace (str:String) = 
-        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
-    
-    let tableFullName (table:Table) = 
-        table.Schema + "." + (quoteWhiteSpace table.Name)
-
+            
     let createConnection connectionString = 
         Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
 
@@ -149,24 +154,37 @@ module internal Oracle =
     let getPrimaryKeys con =
         let indexColumns = 
             getSchema "IndexColumns" [|owner|] con
-            |> DataTable.map (fun row -> Sql.dbUnbox row.[1], Sql.dbUnbox row.[4])
+            |> DataTable.mapChoose (fun row -> 
+                let tableOwner = Sql.dbUnbox<string> row.[2]
+                if List.exists ((=) tableOwner) systemNames
+                then None 
+                else Some(Sql.dbUnbox row.[1], Sql.dbUnbox row.[4]))
             |> Map.ofList
         
         getSchema "PrimaryKeys" [|owner|] con
         |> DataTable.mapChoose (fun row ->
             let indexName = Sql.dbUnbox row.[15]
-            let tableName = Sql.dbUnbox row.[2]
-            match Map.tryFind indexName indexColumns with
-            | Some(column) -> 
-                let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
-                Some(tableName, pk)
-            | None -> None)
+            let tableName = Sql.dbUnbox<string> row.[2]
+            if tableName.StartsWith("BIN$")
+            then None
+            else
+                match Map.tryFind indexName indexColumns with
+                | Some(column) -> 
+                    let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
+                    Some(tableName, pk)
+                | None -> None)
 
     let getTables con = 
         getSchema "Tables" [|owner|] con
-        |> DataTable.map (fun row -> 
-                              let name = Sql.dbUnbox row.[1]
-                              { Schema = Sql.dbUnbox row.[0]; Name = name; Type = Sql.dbUnbox row.[2] })
+        |> DataTable.mapChoose (fun row -> 
+              let name = Sql.dbUnbox row.[1]
+              let typ = Sql.dbUnbox<string> row.[2]
+              if typ = "System"
+              then None
+              else
+                Some { Schema = Sql.dbUnbox row.[0]; 
+                       Name = name;
+                       Type = Sql.dbUnbox row.[2] })
 
     let getColumns (primaryKeys:IDictionary<_,_>) table con = 
         getSchema "Columns" [|owner; table|] con
@@ -197,9 +215,9 @@ module internal Oracle =
                     match foreignKeyCols.TryFind name with
                     | Some(fk) ->
                          { Name = name 
-                           PrimaryTable = Table.CreateFullName(owner,Sql.dbUnbox row.[2]) 
+                           PrimaryTable = Table.CreateFullName(Sql.dbUnbox row.[1],Sql.dbUnbox row.[2]) 
                            PrimaryKey = pk.Column
-                           ForeignTable = Table.CreateFullName(owner,Sql.dbUnbox row.[5])
+                           ForeignTable = Table.CreateFullName(Sql.dbUnbox row.[3],Sql.dbUnbox row.[5])
                            ForeignKey = fk } |> Some
                     | None -> None
                 | false, _ -> None
@@ -214,86 +232,78 @@ module internal Oracle =
             )
         (children, rels)
 
-    let getIndivdualsQueryText amount table = 
-        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" (tableFullName table) amount
+    let getIndivdualsQueryText amount (table:Table) = 
+        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" table.FullName amount
 
-    let getIndivdualQueryText table column = 
-        let tName = tableFullName table
+    let getIndivdualQueryText (table:Table) column = 
+        let tName = table.FullName
         sprintf "SELECT * FROM %s WHERE %s.%s = :id" tName tName (quoteWhiteSpace column)
 
-    let getSprocs con =
-
-        let functions = getSchema "Functions" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-        let procedures = getSchema "Procedures" [|owner|] con |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["OBJECT_NAME"]) |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = Sql.dbUnbox row.["OWNER"]
-            let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
-            { ProcName = procName; Owner = owner; PackageName = packageName }
-
-        let createSprocParameters (row:DataRow) = 
-            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
-            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
-            let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
-
-            findDbType dataType 
-            |> Option.map (fun m ->
-                let direction = 
-                    match Sql.dbUnbox row.["IN_OUT"] with
-                    | "IN" -> ParameterDirection.Input
-                    | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
-                    | "OUT" -> ParameterDirection.Output
-                    | "IN/OUT" -> ParameterDirection.InputOutput
-                    | a -> failwithf "Direction not supported %s" a
-                { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
-                  TypeMapping = m
-                  Direction = direction
-                  Length = maxLength
-                  Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
-            )
-
-        let parameters = 
-            let withParameters = getSchema "ProcedureParameters" [|owner|] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
-                then None
-                else Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
-                )
-            |> Seq.append withParameters
-
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = 
-                            parameters
-                            |> Seq.choose id
-                            |> Seq.sortBy (fun p -> p.Ordinal)
-                            |> Seq.toList
-                                                    
-                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; }))
-                        | _, _ ->  Root("Packages", SprocPath(name.PackageName, Sproc({ Name = name; Params = sparams; })))
-                      ) 
-        |> Seq.toList
-
-    let getSprocReturnColumns (con:IDbConnection) (def:SprocDefinition) =
-        def.Params
+    let getSprocReturnColumns (con: IDbConnection) (sparams: QueryParameter list) =
+        sparams
         |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
         |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
                                            then "ReturnValue" + (string i)
                                            elif (String.IsNullOrEmpty p.Name)
                                            then "ReturnValue"
-                                           else p.Name); 
-                                   TypeMapping = p.TypeMapping; 
-                                   Direction = p.Direction; 
+                                           else p.Name);
+                                   TypeMapping = p.TypeMapping;
+                                   Direction = p.Direction;
                                    Ordinal = p.Ordinal;
-                                   Length = None 
+                                   Length = None
                                  })
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let getSprocName (row:DataRow) = 
+        let owner = Sql.dbUnbox row.["OWNER"]
+        let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
+        { ProcName = procName; Owner = owner; PackageName = packageName }
+
+    let getSprocParameters (con:IDbConnection) (name:SprocName) = 
+        let createSprocParameters (row:DataRow) = 
+           let dataType = Sql.dbUnbox row.["DATA_TYPE"]
+           let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
+           let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+
+           findDbType dataType 
+           |> Option.map (fun m ->
+               let direction = 
+                   match Sql.dbUnbox row.["IN_OUT"] with
+                   | "IN" -> ParameterDirection.Input
+                   | "OUT" when String.IsNullOrEmpty(argumentName) -> ParameterDirection.ReturnValue
+                   | "OUT" -> ParameterDirection.Output
+                   | "IN/OUT" -> ParameterDirection.InputOutput
+                   | a -> failwithf "Direction not supported %s" a
+               { Name = Sql.dbUnbox row.["ARGUMENT_NAME"]
+                 TypeMapping = m
+                 Direction = direction
+                 Length = maxLength
+                 Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
+           )
+        getSchema "ProcedureParameters" [|owner|] con 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
+        |> Seq.toList
+
+    let getSprocs con =
+
+        let buildDef classType row = 
+            let name = getSprocName row
+            Root(classType, Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnColumns con sparams) }))
+
+        let functions =
+            (getSchema "Functions" [|owner|] con)
+            |> DataTable.map (fun row -> buildDef "Functions" row)
+
+        let procs = 
+            (getSchema "Procedures" [|owner|] con) 
+            |> DataTable.map (fun row -> buildDef "Procedures" row)
+
+        functions @ procs
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              retCols
@@ -303,10 +313,9 @@ module internal Oracle =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
-             |> List.toArray
         
         Array.append outps inps
         |> Array.sortBy fst
@@ -357,15 +366,15 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, definition:SprocDefinition,retCols, values:obj array) = Oracle.executeSprocCommand con definition retCols values
-        member __.GetSprocReturnColumns(con, def) = Oracle.getSprocReturnColumns con def
+        member __.ExecuteSprocCommand(con, param ,retCols, values:obj array) = 
+            Oracle.executeSprocCommand con param retCols values
 
         member __.CreateTypeMappings(con) = 
             Sql.connect con (fun con -> 
                 Oracle.createTypeMappings con
                 primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
 
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
                match tableCache with
                | [] ->
                     let tables = Sql.connect con Oracle.getTables
@@ -423,8 +432,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
                             for col in v do 
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (Oracle.quoteWhiteSpace col) col
-                                else yield sprintf "%s.%s as \"%s.%s\"" k (Oracle.quoteWhiteSpace col) k col|]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
+                                else yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
@@ -446,9 +455,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? System.Array) -> 
+                                     | Some(x) when (box x :? obj array) -> 
                                          // in and not in operators pass an array
-                                         let elements = box x :?> System.Array
+                                         let elements = box x :?> obj array
                                          Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam null|]
@@ -457,19 +466,19 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (Oracle.quoteWhiteSpace col) 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (Oracle.quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%s.%s IS NULL") alias (quoteWhiteSpace col) 
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%s.%s IS NOT NULL") alias (quoteWhiteSpace col) 
                                     | FSharp.Data.Sql.In ->                                     
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s IN (%s)") alias (Oracle.quoteWhiteSpace col) text
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
                                     | FSharp.Data.Sql.NotIn ->                                    
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%s.%s NOT IN (%s)") alias (Oracle.quoteWhiteSpace col) text 
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text 
                                     | _ -> 
                                         parameters.Add paras.[0]
-                                        (sprintf "%s.%s %s %s") alias (Oracle.quoteWhiteSpace col) 
+                                        (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col) 
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -505,7 +514,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s %s on %s.%s = %s.%s " 
-                            joinType (Oracle.tableFullName destTable) destAlias 
+                            joinType destTable.FullName destAlias 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                             data.ForeignKey  
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
@@ -515,14 +524,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) -> 
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s.%s%s" alias (Oracle.quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
+                    ~~ (sprintf "%s.%s%s" alias (quoteWhiteSpace column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s %s " (Oracle.tableFullName baseTable) baseAlias)         
+            ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -575,7 +584,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 
                 sb.Clear() |> ignore
                 ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)" 
-                    (Oracle.tableFullName entity.Table)
+                    (entity.Table.FullName)
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
                 let cmd = provider.CreateCommand(con, sb.ToString())
@@ -610,7 +619,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 let pkParam = provider.CreateCommandParameter(QueryParameter.Create(":pk",0), pkValue)
 
                 ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk" 
-                    (Oracle.tableFullName entity.Table)
+                    (entity.Table.FullName)
                     (String.Join(",", columns))
                     (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
                     pk.Column)
@@ -627,7 +636,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                     match entity.GetColumnOption<obj> pk.Column with
                     | Some v -> v
                     | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (Oracle.tableFullName entity.Table) pk.Column )
+                ~~(sprintf "DELETE FROM %s WHERE %s = :id" (entity.Table.FullName) pk.Column )
                 let cmd = provider.CreateCommand(con, sb.ToString())
                 cmd.CommandType <- CommandType.Text
                 let pkType = pkValue.GetType().ToString();

@@ -19,7 +19,12 @@ type DatabaseProviderTypes =
     | MSACCESS = 5
     | ODBC = 6
 type RelationshipDirection = Children = 0 | Parents = 1 
-    
+
+type CaseSensitivityChange =
+    | ORIGINAL = 0
+    | TOUPPER = 1
+    | TOLOWER = 2
+
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
    let private sqlEvent = new Event<string>()
@@ -247,15 +252,17 @@ and ReturnValueType =
     | Set of seq<ReturnSetType>
 
 and ISqlDataContext =       
-    abstract ConnectionString       : string
-    abstract CreateRelated          : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
-    abstract CreateEntities         : string -> System.Linq.IQueryable<SqlEntity>
-    abstract CallSproc              : SprocDefinition * QueryParameter[] * obj[] -> obj
-    abstract GetIndividual          : string * obj -> SqlEntity
-    abstract SubmitChangedEntity    : SqlEntity -> unit
-    abstract SubmitPendingChanges   : unit -> unit
-    abstract ClearPendingChanges    : unit -> unit
-    abstract GetPendingEntities     : unit -> SqlEntity list
+    abstract ConnectionString           : string
+    abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
+    abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
+    abstract GetIndividual              : string * obj -> SqlEntity
+    abstract SubmitChangedEntity        : SqlEntity -> unit
+    abstract SubmitPendingChanges       : unit -> unit
+    abstract ClearPendingChanges        : unit -> unit
+    abstract GetPendingEntities         : unit -> SqlEntity list
+    abstract GetPrimaryKeyDefinition    : string -> string
+    abstract CreateConnection           : unit -> IDbConnection
 
          
 and LinkData =
@@ -377,7 +384,7 @@ and internal ISqlProvider =
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
     /// Queries the information schema and returns a list of table information
-    abstract GetTables  : IDbConnection -> Table list
+    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table list
     /// Queries the given table and returns a list of its columns
     /// this function should also populate a primary key cache for tables that
     /// have a single non-composite primary key
@@ -391,8 +398,6 @@ and internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
-    /// Get Sproc Return Type
-    abstract GetSprocReturnColumns : IDbConnection * SprocDefinition -> QueryParameter list
     /// Returns the db vendor specific SQL  query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
@@ -405,5 +410,4 @@ and internal ISqlProvider =
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
-    abstract ExecuteSprocCommand : IDbCommand * SprocDefinition * QueryParameter[] *  obj[] -> ReturnValueType
-    
+    abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType

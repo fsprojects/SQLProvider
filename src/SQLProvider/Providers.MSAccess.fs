@@ -19,6 +19,7 @@ type internal MSAccessProvider() =
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbTypeByEnum : (int -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings (con:OleDbConnection) =
         let dt = con.GetSchema("DataTypes")
@@ -29,17 +30,16 @@ type internal MSAccessProvider() =
             p.DbType
 
         let getClrType (input:string) = Type.GetType(input).ToString()
-
         let mappings =             
             [
                 for r in dt.Rows do
-                    let clrType = getClrType (string r.["NativeDataType"])
-                    let oleDbType = string r.["TypeName"]
+                    let clrType = getClrType (string r.["DataType"])
+                    let oleDbType = string r.["NativeDataType"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
-
+        
         let clrMappings =
             mappings
             |> List.map (fun m -> m.ClrType, m)
@@ -49,10 +49,16 @@ type internal MSAccessProvider() =
             mappings
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
-            
+        
+        let enumMappings =
+            mappings
+            |> List.map (fun m -> m.ProviderType.Value, m)            
+            |> Map.ofList
+
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
-        findDbType <- dbMappings.TryFind 
+        findDbType <- dbMappings.TryFind
+        findDbTypeByEnum <- enumMappings.TryFind
     
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
@@ -64,9 +70,8 @@ type internal MSAccessProvider() =
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
         member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
-        member __.GetSprocReturnColumns(con, def) = raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
-        member __.GetTables(con) =
+        member __.GetTables(con,cs) =
             if con.State <> ConnectionState.Open then con.Open()
             let con = con:?>OleDbConnection
             let tables = 
@@ -183,9 +188,9 @@ type internal MSAccessProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? obj array) -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
+                                         let strings = box x :?> obj array
                                          strings |> Array.map createParam
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
