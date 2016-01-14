@@ -1,33 +1,4 @@
-﻿namespace FSharp.Data.Sql.Common
-    // I don't really like having these in this file..
-    module internal Utilities =
-        open FSharp.Data.Sql.Providers
-
-        let createSqlProvider vendor resolutionPath owner =
-            match vendor with                
-            | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-            | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath) :> ISqlProvider
-            | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner) :> ISqlProvider
-            | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(resolutionPath) :> ISqlProvider
-            | _ -> failwith "Unsupported database provider"        
-
-        let resolveTuplePropertyName name (tupleIndex:string ResizeArray) =
-            match name with // could do this by parsing the number from the end of the string...
-            | "Item1" -> tupleIndex.[0] | "Item11" -> tupleIndex.[10]
-            | "Item2" -> tupleIndex.[1] | "Item12" -> tupleIndex.[11]
-            | "Item3" -> tupleIndex.[2] | "Item13" -> tupleIndex.[12]
-            | "Item4" -> tupleIndex.[3] | "Item14" -> tupleIndex.[13]
-            | "Item5" -> tupleIndex.[4] | "Item15" -> tupleIndex.[14]
-            | "Item6" -> tupleIndex.[5] | "Item16" -> tupleIndex.[15]
-            | "Item7" -> tupleIndex.[6] | "Item17" -> tupleIndex.[16]
-            | "Item8" -> tupleIndex.[7] | "Item18" -> tupleIndex.[17]
-            | "Item9" -> tupleIndex.[8] | "Item19" -> tupleIndex.[18]
-            | "Item10"-> tupleIndex.[9] | "Item20" -> tupleIndex.[19]
-            | _ -> failwith "currently only support up to 20 nested entity aliases"
-
-namespace FSharp.Data.Sql.QueryExpression
+﻿namespace FSharp.Data.Sql.QueryExpression
 
 open System
 open System.Reflection
@@ -39,68 +10,142 @@ open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
 
 module internal QueryExpressionTransformer =    
-    /// Visitor has two uses - 1. extracting the columns the select statement
-    /// 2. transform the projection epxression into something that will work with the SqlEntity runtime object eg it replaces chunks of the 
-    // expression tree where fields are referenced with the relevant calls to GetColumn and GetSubTable
-    type private ProjectionTransformer(tupleIndex:string ResizeArray,BaseTableParam:ParameterExpression,baseTableAlias,aliasEntityDict:Map<string,Table>) =
-        inherit ExpressionVisitor()
-        static let getSubEntityMi = typeof<SqlEntity>.GetMethod("GetSubTable",BindingFlags.NonPublic ||| BindingFlags.Instance)
+    
+    let getSubEntityMi = typeof<SqlEntity>.GetMethod("GetSubTable",BindingFlags.NonPublic ||| BindingFlags.Instance)
 
-        let mutable singleEntityName = ""
-
-        /// holds the columns to select for each entity appearing in the projection tree, or a blank list if all columns         
-        member val ProjectionMap = Dictionary<string,string ResizeArray>()
-
-        override x.VisitLambda(exp) = 
-            if exp.Parameters.Count = 1 && exp.Parameters.[0].Type = typeof<SqlEntity> then
-                // this is a speical case when there were no select manys and as a result the projection parameter is just the single entity rather than a tuple
-                // this still includes cases where tuples are created by the user directly, that is fine - it is for avoiding linq auto generated tuples
-                singleEntityName <- exp.Parameters.[0].Name
-                match x.ProjectionMap.TryGetValue singleEntityName with
-                | true, values -> ()
-                | false, _ -> x.ProjectionMap.Add(singleEntityName,new ResizeArray<_>())
-                let body = base.Visit exp.Body
-                upcast Expression.Lambda(body,BaseTableParam) 
-            else base.VisitLambda exp
-
-        override x.VisitMethodCall(exp) =
-            let(|PropName|) (pi:PropertyInfo) = pi.Name
-            match exp with
-            | MethodCall(Some(ParamName name | PropertyGet(_,PropName name)),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption"),[FSharp.Data.Sql.Patterns.String key]) ->
-                // add this attribute to the select list for the alias
-                let alias = if tupleIndex.Count = 0 then singleEntityName else Utilities.resolveTuplePropertyName name tupleIndex
-                match x.ProjectionMap.TryGetValue alias with
-                | true, values -> values.Add key
-                | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
-            | _ -> ()
-            base.VisitMethodCall exp
-
-        override __.VisitParameter(exp) = 
-            // special case as above
-            if singleEntityName <> "" && exp.Type = typeof<SqlEntity> && exp.Name = singleEntityName then upcast BaseTableParam
-            else base.VisitParameter exp 
-                       
-        override x.VisitMember(exp) = 
-            // convert the member expression into a function call that retrieves the child entity from the result entity
-            // only interested in anonymous objects that were created by the LINQ infrastructure
-            // ignore other cases 
-            if exp.Type = typeof<SqlEntity> && exp.Expression.Type.FullName.StartsWith "Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject" then             
-                let (alias,name) = 
-                    if baseTableAlias = "" then ("","")
-                    else
-                        let alias = Utilities.resolveTuplePropertyName exp.Member.Name tupleIndex
-                        match x.ProjectionMap.TryGetValue alias with
-                        | true, values -> ()
-                        | false, _ -> x.ProjectionMap.Add(alias,new ResizeArray<_>())
-                        (alias,aliasEntityDict.[alias].FullName)
+    let transform (projection:Expression) (tupleIndex:string ResizeArray) (resultParam:ParameterExpression) baseTableAlias (aliasEntityDict:Map<string,Table>) =
+        
+        let (|SingleTable|MultipleTables|) = function
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
+                SingleTable exp
+            | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
+                MultipleTables exp
+            | _ -> failwith "Unsupported projection"
             
-                // convert this expression into a GetSubEntity call with the correct alias
-                upcast
-                    Expression.Convert(
-                        Expression.Call(BaseTableParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name))
-                            ,exp.Type)   
-                                     
-            else base.VisitMember exp 
+            // 1. only one table was involed so the input is a single parameter 
+            // 2. the input is a n tuple returned from the query
+            // in both cases we need to work out what columns were selected from the different tables,
+            //   and if at any point a whole table is selected, that should take precedence over any 
+            //   previously selected individual columns.
+            // in the second case we also need to change any property on the input tuple into calls
+            // onto GetSubEntity on the result parameter with the correct alias
+
+        let projectionMap = Dictionary<string,string ResizeArray>()
+
+        let (|SourceTupleGet|_|) (e:Expression) =
+            match e with
+            | PropertyGet(Some(ParamWithName "tupledArg"), info) when info.PropertyType = typeof<SqlEntity> ->
+                let alias = Utilities.resolveTuplePropertyName (e :?> MemberExpression).Member.Name tupleIndex                    
+                Some (alias,aliasEntityDict.[alias].FullName, None)
+
+            | MethodCall(Some(PropertyGet(Some(ParamWithName "tupledArg"),info) as getter),
+                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi) ,
+                         [String key]) when info.PropertyType = typeof<SqlEntity> ->
+                let alias = Utilities.resolveTuplePropertyName (getter :?> MemberExpression).Member.Name tupleIndex                    
+                Some (alias,aliasEntityDict.[alias].FullName, Some(key,mi))
+            | _ -> None
+        
+        // this is not tail recursive but it shouldn't matter in practice ....
+        let rec transform  (en:String option) (e:Expression): Expression =
+            if e = null then null else
+            match e.NodeType, e with
+            | _, SourceTupleGet(alias,name,None) -> 
+                // at any point if we see a property getter where the input is "tupledArg" this
+                // needs to be replaced with a call to GetSubEntity using the result as an input
+                match projectionMap.TryGetValue alias with
+                | true, values -> values.Clear()
+                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>()) 
+                upcast Expression.Call(resultParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name))
+            | _, SourceTupleGet(alias,name,Some(key,mi)) -> 
+                match projectionMap.TryGetValue alias with
+                | true, values when values.Count > 0 -> values.Add(key)
+                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield key})) 
+                | _ -> ()
+                upcast 
+                    Expression.Call(
+                        Expression.Call(resultParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
+                            mi,Expression.Constant(key))
+
+            | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])  ->
+                match projectionMap.TryGetValue name with
+                | true, values when values.Count > 0 -> values.Add(key)
+                | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield key})) 
+                | _ -> ()
+                upcast Expression.Call(resultParam,mi,Expression.Constant(key))
+
+            | ExpressionType.Negate,             (:? UnaryExpression as e)       -> upcast Expression.Negate(transform en e.Operand,e.Method)         
+            | ExpressionType.NegateChecked,      (:? UnaryExpression as e)       -> upcast Expression.NegateChecked(transform en e.Operand,e.Method)
+            | ExpressionType.Not,                (:? UnaryExpression as e)       -> upcast Expression.Not(transform en e.Operand,e.Method)
+            | ExpressionType.Convert,            (:? UnaryExpression as e)       -> upcast Expression.Convert(transform en e.Operand,e.Type)
+            | ExpressionType.ConvertChecked,     (:? UnaryExpression as e)       -> upcast Expression.ConvertChecked(transform en e.Operand,e.Type)
+            | ExpressionType.ArrayLength,        (:? UnaryExpression as e)       -> upcast Expression.ArrayLength(transform en e.Operand)
+            | ExpressionType.Quote,              (:? UnaryExpression as e)       -> upcast Expression.Quote(transform en e.Operand)
+            | ExpressionType.TypeAs,             (:? UnaryExpression as e)       -> upcast Expression.TypeAs(transform en e.Operand,e.Type)
+            | ExpressionType.Add,                (:? BinaryExpression as e)      -> upcast Expression.Add(transform en e.Left, transform en e.Right)
+            | ExpressionType.AddChecked,         (:? BinaryExpression as e)      -> upcast Expression.AddChecked(transform en e.Left, transform en e.Right)
+            | ExpressionType.Subtract,           (:? BinaryExpression as e)      -> upcast Expression.Subtract(transform en e.Left, transform en e.Right)
+            | ExpressionType.SubtractChecked,    (:? BinaryExpression as e)      -> upcast Expression.SubtractChecked(transform en e.Left, transform en e.Right)
+            | ExpressionType.Multiply,           (:? BinaryExpression as e)      -> upcast Expression.Multiply(transform en e.Left, transform en e.Right)
+            | ExpressionType.MultiplyChecked,    (:? BinaryExpression as e)      -> upcast Expression.MultiplyChecked(transform en e.Left, transform en e.Right)
+            | ExpressionType.Divide,             (:? BinaryExpression as e)      -> upcast Expression.Divide(transform en e.Left, transform en e.Right)
+            | ExpressionType.Modulo,             (:? BinaryExpression as e)      -> upcast Expression.Modulo(transform en e.Left, transform en e.Right)
+            | ExpressionType.And,                (:? BinaryExpression as e)      -> upcast Expression.And(transform en e.Left, transform en e.Right)
+            | ExpressionType.AndAlso,            (:? BinaryExpression as e)      -> upcast Expression.AndAlso(transform en e.Left, transform en e.Right)
+            | ExpressionType.Or,                 (:? BinaryExpression as e)      -> upcast Expression.Or(transform en e.Left, transform en e.Right)
+            | ExpressionType.OrElse,             (:? BinaryExpression as e)      -> upcast Expression.OrElse(transform en e.Left, transform en e.Right)
+            | ExpressionType.LessThan,           (:? BinaryExpression as e)      -> upcast Expression.LessThan(transform en e.Left, transform en e.Right)
+            | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as e)      -> upcast Expression.LessThanOrEqual(transform en e.Left, transform en e.Right)
+            | ExpressionType.GreaterThan,        (:? BinaryExpression as e)      -> upcast Expression.GreaterThan(transform en e.Left, transform en e.Right)
+            | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as e)      -> upcast Expression.GreaterThanOrEqual(transform en e.Left, transform en e.Right)
+            | ExpressionType.Equal,              (:? BinaryExpression as e)      -> upcast Expression.Equal(transform en e.Left, transform en e.Right)
+            | ExpressionType.NotEqual,           (:? BinaryExpression as e)      -> upcast Expression.NotEqual(transform en e.Left, transform en e.Right)
+            | ExpressionType.Coalesce,           (:? BinaryExpression as e)      -> upcast Expression.Coalesce(transform en e.Left, transform en e.Right)
+            | ExpressionType.ArrayIndex,         (:? BinaryExpression as e)      -> upcast Expression.ArrayIndex(transform en e.Left, transform en e.Right)
+            | ExpressionType.RightShift,         (:? BinaryExpression as e)      -> upcast Expression.RightShift(transform en e.Left, transform en e.Right)
+            | ExpressionType.LeftShift,          (:? BinaryExpression as e)      -> upcast Expression.LeftShift(transform en e.Left, transform en e.Right)
+            | ExpressionType.ExclusiveOr,        (:? BinaryExpression as e)      -> upcast Expression.ExclusiveOr(transform en e.Left, transform en e.Right)
+            | ExpressionType.TypeIs,             (:? TypeBinaryExpression as e)  -> upcast Expression.TypeIs(transform en e.Expression, e.Type)
+            | ExpressionType.Conditional,        (:? ConditionalExpression as e) -> upcast Expression.Condition(transform en e.Test, transform en e.IfTrue, transform en e.IfFalse)
+            | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
+            | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with 
+                                                                                    | Some(en) when en = e.Name -> 
+                                                                                         match projectionMap.TryGetValue en with
+                                                                                         | true, values -> values.Clear()
+                                                                                         | false, _ -> projectionMap.Add(en,new ResizeArray<_>()) 
+                                                                                         upcast resultParam
+                                                                                    | _ -> upcast e
+            | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(transform en e.Expression, e.Member)
+            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
+                                                                                    if  exType.IsGenericType 
+                                                                                        && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition() 
+                                                                                        && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
+                                                                                        upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
+                                                                                    else
+                                                                                        upcast Expression.Lambda(transform en e.Body, e.Parameters)
+            | ExpressionType.New,                (:? NewExpression as e)         -> if e.Members = null then
+                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
+                                                                                    else
+                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
+            | ExpressionType.NewArrayInit,       (:? NewArrayExpression as e)    -> upcast Expression.NewArrayInit(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
+            | ExpressionType.NewArrayBounds,     (:? NewArrayExpression as e)    -> upcast Expression.NewArrayBounds(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
+            | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.MemberInit,         (:? MemberInitExpression as e)  -> upcast Expression.MemberInit( (transform en e.NewExpression) :?> NewExpression , e.Bindings)
+            | ExpressionType.ListInit,           (:? ListInitExpression as e)    -> upcast Expression.ListInit( (transform en e.NewExpression) :?> NewExpression, e.Initializers)
+            | _ -> failwith "encountered unknown LINQ expression"                                                                                                    
+ 
+
+        let newProjection =
+            match projection with
+            | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) -> 
+                projectionMap.Add(x,ResizeArray<_>())
+                Expression.Lambda(resultParam,[resultParam]) :> Expression
+            | SingleTable(OptionalQuote(Lambda([ParamName x], (NewExpr(ci, args ) )))) -> 
+                Expression.Lambda(Expression.New(ci, (List.map (transform (Some x)) args)),[resultParam]) :> Expression
+            | SingleTable(OptionalQuote(lambda)) 
+            | MultipleTables(OptionalQuote(lambda)) -> transform None lambda
+
+        newProjection, projectionMap
     
     let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) =
         // first convert the abstract query tree into a more useful format
@@ -108,7 +153,6 @@ module internal QueryExpressionTransformer =
                 if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
 
         let entityIndex = new ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
-            
                  
         let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
         
@@ -122,11 +166,11 @@ module internal QueryExpressionTransformer =
         let (projectionDelegate,projectionColumns) = 
             let param = Expression.Parameter(typeof<SqlEntity>,"result")
             match sqlQuery.Projection with
-            | Some(proj) -> let megatron = ProjectionTransformer(entityIndex,param,baseAlias,sqlQuery.Aliases)
-                            let newProjection = megatron.Visit(proj) :?> LambdaExpression
-                            (Expression.Lambda(newProjection.Body,param).Compile(),megatron.ProjectionMap)
+            | Some(proj) -> let newProjection, projectionMap = transform proj entityIndex param baseAlias sqlQuery.Aliases
+                            QueryEvents.PublishExpression newProjection
+                            (Expression.Lambda( (newProjection :?> LambdaExpression).Body,param).Compile(),projectionMap)
             | none -> 
-                // this case happens when there are only where clauses with a single table and a projection cotaining just the table's entire rows. example:
+                // this case happens when there are only where clauses with a single table and a projection containing just the table's entire rows. example:
                 // for x in dc.john 
                 // where x.y = 1
                 // select x
@@ -138,13 +182,16 @@ module internal QueryExpressionTransformer =
         // a special case here to handle queries that start from the relationship of an individual
         let sqlQuery,baseAlias = 
             if sqlQuery.Aliases.Count = 0 then 
-               let alias =  projectionColumns.Keys |> Seq.head 
+               let alias =
+                   if projectionColumns.Keys.Count = 0
+                   then baseAlias
+                   else projectionColumns.Keys |> Seq.head 
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
             else sqlQuery,baseAlias
 
         let resolve name =
             // name will be blank when there is only a single table as it never gets
-            // tupled by the linq infrastructure. In this case we know it must be referring
+            // tupled by the LINQ infrastructure. In this case we know it must be referring
             // to the only table in the query, so replace it
             if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
             else Utilities.resolveTuplePropertyName name entityIndex
@@ -153,14 +200,15 @@ module internal QueryExpressionTransformer =
             | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
             | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
 
-        // the crazy linq infrastructure does all kinds of weird things with joins which means some information
+        // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
-
+                                                          
         // 1.
         // re-map the tuple arg names to their proper aliases in the filters
         // its possible to do this when converting the expression but its
         // much easier at this stage once we have knowledge of the whole query
-        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters}
+        let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters 
+                                       Ordering = List.map(function ("",b,c) -> (resolve "",b,c) | x -> x) sqlQuery.Ordering }
         
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking
@@ -170,22 +218,18 @@ module internal QueryExpressionTransformer =
             match sqlQuery.UltimateChild with
             | Some(uc) when alias = fst uc -> snd uc
             | _ -> sqlQuery.Links 
-                    |> Map.pick(fun outerLinkAlias links ->
-                        links 
-                        |> List.tryPick(fun (innerAlias,linkData) -> 
-                            if innerAlias = alias then Some(linkData.PrimaryTable) else None))     
+                   |> List.pick(fun (outerAlias, linkData, innerAlias) -> if innerAlias = alias then Some(linkData.PrimaryTable) else None)     
         let sqlQuery = { sqlQuery with Aliases = Map.map resolveAlias sqlQuery.Aliases }
         
         // 3.
         // Some link data will be missing its foreign table data which needs setting to the resolved table of the 
-        // outer alias - this happens depending on the which way the join is around - infromation is "lost" up the tree which
+        // outer alias - this happens depending on the which way the join is around - information is "lost" up the tree which
         // able to be resolved now.
-        let resolveLinks outerAlias linkData =
+        let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            linkData 
-            |> List.map(fun (a,data:LinkData) ->
-                (a,if data.ForeignTable.Name <> "" then data else { data with ForeignTable = resolved }))
-        let sqlQuery = { sqlQuery with Links = Map.map resolveLinks sqlQuery.Links }
+            if linkData.ForeignTable.Name <> "" then (outerAlias, linkData, innerAlias) 
+            else (outerAlias, { linkData with ForeignTable = resolved }, innerAlias)
+        let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
         
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
@@ -193,7 +237,7 @@ module internal QueryExpressionTransformer =
                                 let table = match sqlQuery.Aliases.TryFind k with
                                             | Some v -> v
                                             | None -> snd sqlQuery.UltimateChild.Value
-                                provider.GetColumns (con,table) |> ignore )
+                                lock provider (fun () -> provider.GetColumns (con,table) |> ignore ))
 
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns)
 

@@ -10,79 +10,78 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MSAccessProvider(resolutionPath) as this =
-
-    // note we intentionally do not hang onto a connection object at any time,
-    // as the type provider will dicate the connection lifecycles 
-    let pkLookup =     Dictionary<string,string>()
-    let tableLookup =  Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-
-    let mutable clrToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToEnum : (string -> DbType option)  = fun _ -> failwith "!"
-    let mutable sqlToClr :  (string -> Type option)       = fun _ -> failwith "!"
+type internal MSAccessProvider() =
+    let pkLookup =     new Dictionary<string,string>()
+    let tableLookup =  new Dictionary<string,Table>()
+    let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
+    let columnLookup = new Dictionary<string,Column list>()
+     
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbTypeByEnum : (int -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings (con:OleDbConnection) =
-        let clr = 
-            [for r in con.GetSchema("DataTypes").AsEnumerable() -> 
-                string r.["NativeDataType"],  unbox<int> r.["ProviderDbType"], string r.["DataType"]]
+        let dt = con.GetSchema("DataTypes")
+
+        let getDbType(providerType:int) =
+            let p = new OleDbParameter()
+            p.OleDbType <- (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
+            p.DbType
+
+        let getClrType (input:string) = Type.GetType(input).ToString()
+        let mappings =             
+            [
+                for r in dt.Rows do
+                    let clrType = getClrType (string r.["DataType"])
+                    let oleDbType = string r.["NativeDataType"]
+                    let providerType = unbox<int> r.["ProviderDbType"]
+                    let dbType = getDbType providerType
+                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+            ]
         
-        // create map from sql name to clr type, and type to lDbType enum
-        let sqlToClr', sqlToEnum', clrToEnum' =
-            clr
-            |> List.choose( fun (tn,ev,dt) ->
-                if String.IsNullOrWhiteSpace dt then None else
-                let ty = Type.GetType dt
-                // we need to convert the sqldbtype enum value to dbtype.
-                // the sql param will do this for us but it might throw if not mapped -
-                // this is a bit hacky but I don't want to write a big conversion mapping right now
-                let p = OleDbParameter()
-                try
-                    p.OleDbType <- enum<OleDbType> ev
-                    Some ((tn,ty),(tn,p.DbType),(ty.FullName,p.DbType))
-                with
-                | ex -> None
-            )
-            |> fun x ->  
-                let fst (x,_,_) = x
-                let snd (_,y,_) = y
-                let trd (_,_,z) = z
-                (Map.ofList (List.map fst x), 
-                 Map.ofList (List.map snd x),
-                 Map.ofList (List.map trd x))
+        let clrMappings =
+            mappings
+            |> List.map (fun m -> m.ClrType, m)
+            |> Map.ofList
 
-        // set lookup functions         
-        sqlToClr <-  (fun name -> Map.tryFind name sqlToClr')
-        sqlToEnum <- (fun name -> Map.tryFind name sqlToEnum' )
-        clrToEnum <- (fun name -> Map.tryFind name clrToEnum' )
+        let dbMappings = 
+            mappings
+            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> Map.ofList
+        
+        let enumMappings =
+            mappings
+            |> List.map (fun m -> m.ProviderType.Value, m)            
+            |> Map.ofList
+
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind
+        findDbTypeByEnum <- enumMappings.TryFind
     
-    let executeSql (con:IDbConnection) sql =
-        use com = (this:>ISqlProvider).CreateCommand(con,sql)
-        //use com = new OleDbCommand(sql,con:?>OleDbConnection) 
-        com.ExecuteReader()
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
-        member __.CreateCommandParameter(name,value,dbType) = 
-            let p = OleDbParameter(name,value)            
-            if dbType.IsSome then p.DbType <- dbType.Value 
+        member __.CreateCommandParameter(param, value) = 
+            let p = OleDbParameter(param.Name,value)            
+            p.DbType <- param.TypeMapping.DbType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
-        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)
-        member __.ClrToEnum = clrToEnum
-        member __.SqlToEnum = sqlToEnum
-        member __.SqlToClr = sqlToClr        
-        member __.GetTables(con) =
+        member __.ExecuteSprocCommand(com,definition,retCols,values) =  raise(NotImplementedException())
+        member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)     
+        member __.GetTables(con,cs) =
+            if con.State <> ConnectionState.Open then con.Open()
             let con = con:?>OleDbConnection
-            con.GetSchema("Tables").AsEnumerable()
-            |> Seq.filter (fun row -> row.["TABLE_TYPE"].ToString() = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW") // || row.["TABLE_TYPE"].ToString() = "LINK")
-                                                                                                                         // - sadly, cannot get linked tables to work : 
-                                                                                                                         //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.
-            |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() } 
-                                   if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                                   table)
-            |> List.ofSeq
+            let tables = 
+                con.GetSchema("Tables").AsEnumerable()
+                |> Seq.filter (fun row -> ["TABLE";"VIEW";"LINK"] |> List.exists (fun typ -> typ = row.["TABLE_TYPE"].ToString())) // = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW" || row.["TABLE_TYPE"].ToString() = "LINK")  //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.                                                                                                                       
+                |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
+                                       if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
+                                       table)
+                |> List.ofSeq
+            tables
 
         member __.GetPrimaryKey(table) = 
             match pkLookup.TryGetValue table.FullName with
@@ -92,27 +91,35 @@ type internal MSAccessProvider(resolutionPath) as this =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ -> 
-               let pks =  
-                    (con:?>OleDbConnection).GetSchema("Indexes").AsEnumerable()
-                    |> Seq.filter (fun idx ->  idx.["TABLE_NAME"].ToString() = table.Name  && bool.Parse(idx.["PRIMARY_KEY"].ToString()))
+               if con.State <> ConnectionState.Open then con.Open()
+               let pks = 
+                    (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
+                    |> Seq.filter (fun idx ->  bool.Parse(idx.["PRIMARY_KEY"].ToString()))
                     |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
+                    |> Seq.toList
+
                let columns = 
                     (con:?>OleDbConnection).GetSchema("Columns",[|null;null;table.Name;null|]).AsEnumerable()
                     |> Seq.map (fun row -> let dt = row.["DATA_TYPE"].ToString()
-                                           match sqlToClr dt, sqlToEnum dt with
-                                           |Some(clr),Some(sql) ->
+                                           match findDbType dt with
+                                           |Some(m) ->
                                                  let col = 
                                                     {Column.Name = row.["COLUMN_NAME"].ToString();
-                                                     ClrType = clr;
-                                                     DbType = sql;
-                                                     IsPrimarKey = pks |> Seq.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
+                                                     TypeMapping = m
+                                                     IsPrimarKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                                                      IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
-                                                 if (col.IsPrimarKey) && not (pkLookup.ContainsKey table.FullName) then (pkLookup.Add(table.FullName,col.Name))
                                                  col
                                            |_ -> failwith "failed to map datatypes") |> List.ofSeq
+              
+              // only add to PK lookup if it's a single pk - no support for composite keys yet
+               match pks with
+               | pk::[] -> pkLookup.Add(table.FullName, pk) 
+               | _ -> ()
+
                columnLookup.Add(table.FullName,columns)
                columns
-        member __.GetRelationships(con,table) = 
+        member __.GetRelationships(con,table) =
+            if con.State <> ConnectionState.Open then con.Open() 
             let rels = 
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
             let children = rels |> Seq.filter (fun r -> r.["PK_TABLE_NAME"].ToString() = table.Name)
@@ -140,15 +147,7 @@ type internal MSAccessProvider(resolutionPath) as this =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
-            
-            // SQL query syntax is ordered in the following manner
-            // SELECT [alias].[field] as '[alias].[field]' [, .. ]
-            // FROM [TABLE_1] as [alias1] join [TABLE_2] as [Alias_2] on ...
-            // WHERE (([TABLE_1].Field = cirtiera AND [TABLE_1].Field = cirtiera) OR [TABLE_1].Field = cirtiera ) ...
-
-            // to simplfy (ha!) the processing, all tables should be aliased.
-            // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
-            // if it does not, then we first need to create an alias for the single table
+    
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -156,24 +155,22 @@ type internal MSAccessProvider(resolutionPath) as this =
 
             let singleEntity = sqlQuery.Aliases.Count = 0
             
-            // build the sql query from the simplified abstract query expression
-            // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
+            // first build  the select statement, this is easy ...
             let columns = 
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
+                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
                         else
                             for col in v do 
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
-                                yield sprintf "[%s].[%s] as [%s_%s]" k col k col|]) // F# makes this so easy :)
+                                else yield sprintf "[%s].[%s] as [%s_%s]" k col k col|]) // F# makes this so easy :)
         
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
-            // NOTE: really need to assign the parameters their correct sql types
+            // NOTE: really need to assign the parameters their correct SQL types
             let param = ref 0
             let nextParam() =
                 incr param
@@ -181,7 +178,7 @@ type internal MSAccessProvider(resolutionPath) as this =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                OleDbParameter(paramName,value):> IDataParameter
+                OleDbParameter(paramName,value):> IDbDataParameter
 
             let rec filterBuilder = function 
                 | [] -> ()
@@ -191,9 +188,9 @@ type internal MSAccessProvider(resolutionPath) as this =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data = 
                                      match data with
-                                     | Some(x) when (box x :? string array) -> 
+                                     | Some(x) when (box x :? obj array) -> 
                                          // in and not in operators pass an array
-                                         let strings = box x :?> string array
+                                         let strings = box x :?> obj array
                                          strings |> Array.map createParam
                                      | Some(x) -> [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
@@ -246,18 +243,16 @@ type internal MSAccessProvider(resolutionPath) as this =
             // next up is the FROM statement which includes joins .. 
             let fromBuilder(numLinks:int) = 
                 sqlQuery.Links
-                |> Map.iter(fun fromAlias (destList) ->
-                    destList
-                    |> List.iteri(fun i (alias,data) -> 
-                        let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
-                        let destTable = getTable alias
-                        ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
-                            joinType destTable.Name alias 
-                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else alias)
-                            data.ForeignKey  
-                            (if data.RelDirection = RelationshipDirection.Parents then alias else fromAlias) 
-                            data.PrimaryKey)
-                        if (numLinks > 0)  then ~~ ")"))//append close paren after each JOIN, if necessary
+                |> List.iter(fun (fromAlias, data, destAlias)  ->
+                    let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
+                    let destTable = getTable destAlias
+                    ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
+                        joinType destTable.Name destAlias 
+                        (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                        data.ForeignKey  
+                        (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                        data.PrimaryKey)
+                    if (numLinks > 0)  then ~~ ")")//append close paren after each JOIN, if necessary
                         
 
             let orderByBuilder() =
@@ -272,7 +267,7 @@ type internal MSAccessProvider(resolutionPath) as this =
             else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
             // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
-            let numLinks = sqlQuery.Links |> Map.fold (fun state k v -> state + v.Length) 0
+            let numLinks = sqlQuery.Links.Length
             ~~(sprintf "FROM %s%s as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
             fromBuilder(numLinks)
             // WHERE
@@ -290,3 +285,6 @@ type internal MSAccessProvider(resolutionPath) as this =
 
             let sql = sb.ToString()
             (sql,parameters)
+    
+        member this.ProcessUpdates(con, entities) =
+                failwith "The Access type provider does not currently support CRUD operations."

@@ -8,6 +8,7 @@ open System.Linq.Expressions
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
+open Microsoft.FSharp.Reflection
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
@@ -16,7 +17,14 @@ type DatabaseProviderTypes =
     | MYSQL = 3
     | ORACLE = 4
     | MSACCESS = 5
-    
+    | ODBC = 6
+type RelationshipDirection = Children = 0 | Parents = 1 
+
+type CaseSensitivityChange =
+    | ORIGINAL = 0
+    | TOUPPER = 1
+    | TOLOWER = 2
+
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
    let private sqlEvent = new Event<string>()
@@ -30,20 +38,41 @@ module public QueryEvents =
    let PublishExpression(e) = expressionEvent.Trigger(e)
    let PublishSqlQuery(s) = sqlEvent.Trigger(s)
 
+type EntityState =
+    | Unchanged
+    | Created
+    | Modified of string list
+    | Deleted
+
 [<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
-type SqlEntity(tableName) =
-    
+type SqlEntity(dc:ISqlDataContext,tableName:string) =
+    let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()
     
     let data = Dictionary<string,obj>()
     let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
 
+    let replaceFirst (text:string) (oldValue:string) (newValue) =
+        let position = text.IndexOf oldValue
+        if position < 0 then
+            text
+        else
+            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+
+    member val _State = Unchanged with get, set
+
+    member e.Delete() = 
+        e._State <- Deleted
+        dc.SubmitChangedEntity e
+
     member internal e.TriggerPropertyChange(name) = 
         propertyChanged.Trigger(e,PropertyChangedEventArgs(name))
 
-    member e.ColumnValues = seq { for kvp in data -> kvp }
+    member e.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
 
-    member e.TableName = tableName     
+    member e.Table= table
+
+    member e.DataContext with get() = dc    
 
     member e.GetColumn<'T>(key) : 'T = 
         let defaultValue() =                       
@@ -54,7 +83,7 @@ type SqlEntity(tableName) =
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
             //This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...
-           | data when data.GetType() <> typeof<'T> -> unbox <| Convert.ChangeType(data, typeof<'T>)
+           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
         else defaultValue()
     
@@ -63,41 +92,65 @@ type SqlEntity(tableName) =
            match data.[key] with
            | null -> None
            | :? System.DBNull -> None
-           | data when data.GetType() <> typeof<'T> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))           
+           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))           
            | data -> Some(unbox data)           
        else None
 
-    member e.SetColumn(key,value) =
-        if not (data.ContainsKey key) && value <> null then data.Add(key,value)
-        else data.[key] <- value
+    member private e.UpdateField key =
+        match e._State with
+        | Modified fields -> 
+            e._State <- Modified (key::fields)
+            e.DataContext.SubmitChangedEntity e
+        | Unchanged -> 
+            e._State <- Modified [key]
+            e.DataContext.SubmitChangedEntity e
+        | Deleted -> failwith "You cannot modify an entity that is pending deletion"
+        | Created -> ()
+
+    member e.SetColumnSilent(key,value) =
+        data.[key] <- value                
+
+    member e.SetColumn<'t>(key,value : 't) =        
+        data.[key] <- value
+        e.UpdateField key        
         e.TriggerPropertyChange key
     
+    member e.SetData(data) = data |> Seq.iter e.SetColumnSilent  
+
+    member e.SetColumnOptionSilent(key,value) =
+      match value with
+      | Some value -> 
+          if not (data.ContainsKey key) then data.Add(key,value)
+          else data.[key] <- value
+      | None -> data.Remove key |> ignore
+
     member e.SetColumnOption(key,value) =
       match value with
       | Some value -> 
-          if not (data.ContainsKey key) && value <> null then data.Add(key,value)
+          if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
+      e.UpdateField key
     
     member e.HasValue(key) = data.ContainsKey key
 
-    static member internal FromDataReader(name,reader:System.Data.IDataReader) =
-        [ while reader.Read() = true do
-          let e = SqlEntity(name)        
-          for i = 0 to reader.FieldCount - 1 do 
-              match reader.GetValue(i) with
-              | null | :? DBNull -> ()
-              | value -> e.SetColumn(reader.GetName(i),value)
-          yield e ]
+    static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
+        [| while reader.Read() = true do
+           let e = SqlEntity(con,name)        
+           for i = 0 to reader.FieldCount - 1 do 
+               match reader.GetValue(i) with
+               | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+               | value -> e.SetColumnSilent(reader.GetName(i),value)
+           yield e |]
 
-    /// creates a new sql entity from alias data in this entity
+    /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
         match aliasCache.TryGetValue alias with
         | true, entity -> entity
         | false, _ -> 
-            let tableName = if tableName <> "" then tableName else e.TableName
-            let newEntity = SqlEntity(tableName)
+            let tableName = if tableName <> "" then tableName else e.Table.FullName 
+            let newEntity = SqlEntity(dc,tableName)
             let pk = sprintf "%sid" tableName
             // attributes names cannot have a period in them unless they are an alias
             let pred =                 
@@ -105,32 +158,57 @@ type SqlEntity(tableName) =
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
-                (fun (kvp:KeyValuePair<string,_>) -> 
-                    if kvp.Key.StartsWith prefix then 
-                        let temp = kvp.Key.Replace(prefix,"")
+                (fun (k:string,v) -> 
+                    if k.StartsWith prefix then
+                        let temp = replaceFirst k prefix ""
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    // this case is for postgresql and other vendors that use " as whitepsace qualifiers 
-                    elif  kvp.Key.StartsWith prefix2 then  
-                        let temp = kvp.Key.Replace(prefix2,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
-                    // this case is for mysql and other vendors that use ` as whitespace qualifiers 
-                    elif  kvp.Key.StartsWith prefix3 then  
-                        let temp = kvp.Key.Replace(prefix3,"")
+                        Some(temp,v)
+                    // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers 
+                    elif  k.StartsWith prefix2 then  
+                        let temp = replaceFirst k prefix2 ""
+                        Some(temp,v)
+                    // this case is for MySQL and other vendors that use ` as whitespace qualifiers 
+                    elif  k.StartsWith prefix3 then  
+                        let temp = replaceFirst k prefix3 ""
                         let temp = temp.Substring(1,temp.Length-2)
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                        Some(temp,v)
                     //this case for MSAccess, uses _ as whitespace qualifier
-                    elif  kvp.Key.StartsWith prefix4 then
-                        let temp = kvp.Key.Replace(prefix4,"")
-                        Some(KeyValuePair<string,_>(temp,kvp.Value))
+                    elif  k.StartsWith prefix4 then
+                        let temp = replaceFirst k prefix4 ""
+                        Some(temp,v)
                     else None)
                         
             e.ColumnValues
             |> Seq.choose pred
-            |> Seq.iter( fun kvp -> newEntity.SetColumn(kvp.Key,kvp.Value)) 
+            |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v)) 
 
             aliasCache.Add(alias,newEntity)
-            newEntity    
+            newEntity
+
+    member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) = 
+        let typ = typeof<'a>
+        let propertyTypeMapping = defaultArg propertyTypeMapping snd
+        let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
+        let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
+        if FSharpType.IsRecord typ
+        then 
+            let ctor = FSharpValue.PreComputeRecordConstructor(typ)
+            let fields = FSharpType.GetRecordFields(typ)
+            let values = 
+                [|
+                    for prop in fields do
+                        match dataMap.TryGetValue(cleanName prop.Name) with
+                        | true, data -> yield propertyTypeMapping (prop.Name,data)
+                        | false, _ -> ()
+                |]
+            unbox<'a> (ctor(values))
+        else
+            let instance = Activator.CreateInstance<'a>()
+            for prop in typ.GetProperties() do
+                match dataMap.TryGetValue(cleanName prop.Name) with
+                | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
+                | false, _ -> ()
+            instance
     
     interface System.ComponentModel.INotifyPropertyChanged with
         [<CLIEvent>] member x.PropertyChanged = propertyChanged.Publish
@@ -138,7 +216,7 @@ type SqlEntity(tableName) =
     interface System.ComponentModel.ICustomTypeDescriptor with
         member e.GetComponentName() = TypeDescriptor.GetComponentName(e,true)
         member e.GetDefaultEvent() = TypeDescriptor.GetDefaultEvent(e,true)
-        member e.GetClassName() = e.TableName
+        member e.GetClassName() = e.Table.FullName
         member e.GetEvents(attributes) = TypeDescriptor.GetEvents(e,true)
         member e.GetEvents() = TypeDescriptor.GetEvents(e,null,true)
         member e.GetConverter() = TypeDescriptor.GetConverter(e,true)
@@ -162,10 +240,32 @@ type SqlEntity(tableName) =
                                  override __.ResetValue(_) = ()
                                  override __.ShouldSerializeValue(_) = false }) 
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
-         
-type RelationshipDirection = Children = 0 | Parents = 1 
 
-type LinkData =
+and ResultSet = seq<(string * obj)[]>
+and ReturnSetType = 
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
+and ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
+
+and ISqlDataContext =       
+    abstract ConnectionString           : string
+    abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
+    abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
+    abstract GetIndividual              : string * obj -> SqlEntity
+    abstract SubmitChangedEntity        : SqlEntity -> unit
+    abstract SubmitPendingChanges       : unit -> unit
+    abstract ClearPendingChanges        : unit -> unit
+    abstract GetPendingEntities         : unit -> SqlEntity list
+    abstract GetPrimaryKeyDefinition    : string -> string
+    abstract CreateConnection           : unit -> IDbConnection
+
+         
+and LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : string
       ForeignTable       : Table
@@ -176,32 +276,44 @@ type LinkData =
         member x.Rev() = 
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-type alias = string
-type table = string 
+and alias = string
+and table = string 
 
-type Condition = 
+and Condition = 
     // this is  (table alias * column name * operator * right hand value ) list  * (the same again list) 
     // basically any AND or OR expression can have N terms and can have N nested condition children
-    // this is largely from my CRM type provider. I dont think in practice for the sql provider 
-    // you will ever have more than what is representable in a traditonal binary expression tree, but 
+    // this is largely from my CRM type provider. I don't think in practice for the SQL provider 
+    // you will ever have more than what is representable in a traditional binary expression tree, but 
     // changing it would be a lot of effort ;) 
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option  
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option   
 
-type SqlExp =
+and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected 
     | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es) 
-    | Projection   of Expression * SqlExp                // entire linq projection expression tree
+    | Projection   of Expression * SqlExp                // entire LINQ projection expression tree
     | Distinct     of SqlExp                             // distinct indicator
     | OrderBy      of alias * string * bool * SqlExp     // alias and column name, bool indicates ascending sort
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
+    with member this.HasAutoTupled() = 
+            let rec aux = function
+                | BaseTable(_) -> false
+                | SelectMany(_) -> true
+                | FilterClause(_,rest) 
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Count(rest) -> aux rest
+            aux this
     
-type internal SqlQuery =
+and internal SqlQuery =
     { Filters       : Condition list
-      Links         : Map<alias, (alias * LinkData) list>
+      Links         : (alias * LinkData * alias) list 
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
       Projection    : Expression option
@@ -211,7 +323,7 @@ type internal SqlQuery =
       Take          : int option
       Count         : bool } 
     with
-        static member Empty = { Filters = []; Links = Map.empty; Aliases = Map.empty; Ordering = []; Count = false
+        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false
                                 Projection = None; Distinct = false; UltimateChild = None; Skip = None; Take = None }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -226,8 +338,8 @@ type internal SqlQuery =
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(a,e) -> q
-                                        | None when q.Links.Count > 0 && q.Links.ContainsKey(a) = false -> 
-                                                // the check here relates to the special case as descibed in the FilterClause below.
+                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false -> 
+                                                // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
                                                   { q with UltimateChild = Some(legaliseName entityIndex.[0], e) }
@@ -236,10 +348,10 @@ type internal SqlQuery =
                    match link.RelDirection with
                    | RelationshipDirection.Children -> 
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
-                                          Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                                          Links = (legaliseName a, link, legaliseName b)  :: q.Links } rest
                    | _ ->
                          convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
-                                         Links = q.Links |> add (legaliseName a) (legaliseName b,link) } rest
+                                         Links = (legaliseName a, link, legaliseName b) :: q.Links  } rest
                 | FilterClause(c,rest) as e ->  convert { q with Filters = (c)::q.Filters } rest 
                 | Projection(exp,rest) as e ->  
                     if q.Projection.IsSome then failwith "the type provider only supports a single projection"
@@ -247,7 +359,7 @@ type internal SqlQuery =
                 | Distinct(rest) ->
                     if q.Distinct then failwith "distinct is applied to the entire query and can only be supplied once"                
                     else convert { q with Distinct = true } rest
-                | OrderBy(alias,key,desc,rest) ->
+                | OrderBy(alias,key,desc,rest) ->                    
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) -> 
                     if q.Skip.IsSome then failwith "skip may only be specified once"
@@ -261,24 +373,18 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+and internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
     abstract CreateCommand : IDbConnection * string -> IDbCommand
-    /// return a new command paramter with the provided name, value and optionally type
-    abstract CreateCommandParameter : string * obj * DbType option -> IDataParameter
+    /// return a new command parameter with the provided name, value and optionally type, direction and length
+    abstract CreateCommandParameter : QueryParameter * obj -> IDbDataParameter
     /// This function will be called when the provider is first created and should be used
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
-    /// Accepts a full clr type name and returns the relevant value from the DbType enum
-    abstract ClrToEnum : (string -> DbType option) with get
-    /// Accepts sql datatype name and returns the relevant value from the DbType enum
-    abstract SqlToEnum : (string -> DbType option) with get
-    /// Accepts sql datatype name and returns the CLR type
-    abstract SqlToClr : (string -> Type option)       with get
     /// Queries the information schema and returns a list of table information
-    abstract GetTables  : IDbConnection -> Table list
+    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table list
     /// Queries the given table and returns a list of its columns
     /// this function should also populate a primary key cache for tables that
     /// have a single non-composite primary key
@@ -292,12 +398,16 @@ type internal ISqlProvider =
     abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list) 
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
-    /// Returns the db vendor specific sql query to select the top x amount of rows from 
+    /// Returns the db vendor specific SQL  query to select the top x amount of rows from 
     /// the given table
     abstract GetIndividualsQueryText : Table * int -> string
-    /// Returns the db vendor specific sql query to select a single row based on the table and column name specified
+    /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
+
+    abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection
-    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDataParameter>
+    abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
+    ///Builds a command representing a call to a stored procedure
+    abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
