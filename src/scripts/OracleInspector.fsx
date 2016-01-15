@@ -2,10 +2,11 @@
 
 #r "System.Transactions"
 #r "System.Runtime.Serialization"
+#r "System.Configuration"
 #load "Operators.fs"
-#load "SchemaProjections.fs"
+#load "Utils.fs"
 #load "SqlSchema.fs"
-#load "SqlHelpers.fs"
+//#load "SqlHelpers.fs"
 #load "DataTable.fs"
 #load "SqlRuntime.Patterns.fs"
 #load "SqlRuntime.Common.fs"
@@ -14,6 +15,7 @@
 open System
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Providers
+open FSharp.Data.Sql.Common
 open Oracle
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
@@ -21,57 +23,43 @@ let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCO
 Oracle.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
 
 
-//let connectionString = "Data Source=fused41;User Id=mopdc;Password=mopdc;"
-//Oracle.resolutionPath <- @"C:\Program Files\Oracle\product\11.2.0\client_1\ODP.NET\bin\4"
-
-Oracle.owner <- "HR"
+Oracle.owner <- "MOPDC"
 let connection = Oracle.createConnection connectionString
-Oracle.connect connection Oracle.createTypeMappings
+Sql.connect connection Oracle.createTypeMappings
 
-Oracle.connect connection (Oracle.getSchema "Packages" [|"HR"|])
+Sql.connect connection (Oracle.getSchema "Packages" [|"MOPDC"|])
 |> DataTable.printDataTable
 
-Oracle.connect connection (Oracle.getSchema "DataTypes" [||])
+Sql.connect connection (Oracle.getSchema "DataTypes" [||])
 |> DataTable.printDataTable
 
-Oracle.connect connection (Oracle.getSchema "PackageBodies" [|"HR"|])
+Sql.connect connection (Oracle.getSchema "ForeignKeys" [|"MOPDC"; "AUDIT_TRAIL"|])
 |> DataTable.printDataTable
 
-Oracle.connect connection (Oracle.getSchema "Functions" [|"HR"|])
+Sql.connect connection (Oracle.getSchema "ForeignKeyColumns" [|"MOPDC"; "AUDIT_TRAIL"|])
 |> DataTable.printDataTable
 
-Oracle.connect connection (Oracle.getSchema "Procedures" [|"HR"|])
+Sql.connect connection (Oracle.getSchema "PackageBodies" [|"MOPDC"|])
 |> DataTable.printDataTable
 
-Oracle.connect connection (Oracle.getSchema "ProcedureParameters" [|"HR"|])
+Sql.connect connection (Oracle.getSchema "Functions" [|"MOPDC"|])
 |> DataTable.printDataTable
+
+Sql.connect connection (Oracle.getSchema "Procedures" [|"MOPDC"|])
+|> DataTable.printDataTable
+
+Sql.connect connection (Oracle.getSchema "ProcedureParameters" [|"MOPDC"|])
+|> DataTable.printDataTable
+
+Sql.connect connection (fun c -> 
+    let tables = Oracle.getTables c
+    let priKeys = Oracle.getPrimaryKeys c |> dict
+    [
+        for table in tables do
+            yield table.FullName, (Oracle.getColumns priKeys table.Name c)
+    ])
+
 
 Oracle.typeMappings
 
-Oracle.connect connection Oracle.getSprocs
-
-#r  @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common\Oracle.ManagedDataAccess.dll"
-
-open Oracle.ManagedDataAccess.Client
-open Oracle.ManagedDataAccess.Types
-
-[|
-    for v in Enum.GetValues(typeof<OracleDbType>) do
-        yield v :?> int, (Enum.GetName(typeof<OracleDbType>, v))
-|]
-
-open System
-
-type MyRecord = {
-    TimeStamp : DateTime
-    Name : string
-    Value : float
-}
-
-
-let e = new Common.SqlEntity(Unchecked.defaultof<_>, "foo")
-e.SetData(["TIME_STAMP", DateTime.Now |>  box; "NAME", "Colin Bull" |> box; "Value", 1. |> box])
-
-e.MapTo<MyRecord>()
-
-typeof<MyRecord>.GetProperties()
+Sql.connect connection Oracle.getSprocs

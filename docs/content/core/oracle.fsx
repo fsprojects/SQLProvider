@@ -1,7 +1,7 @@
 (*** hide ***)
-#I @"../../files/sqlite"
+#I @"../files/sqlite"
 (*** hide ***)
-#I "../../../bin"
+#I "../../bin"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=MyHost)(PORT=MyPort))(CONNECT_DATA=(SERVICE_NAME=MyOracleSID)));User Id=myUsername;Password=myPassword;"
@@ -23,4 +23,4 @@ open FSharp.Data.Sql
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connectionString, ResolutionPath = resolutionPath>
 let ctx = sql.GetDataContext()
 
-let customers = ctx.``[main].[Customers]`` |> Seq.toArray
+let customers = ctx.Customers |> Seq.toArray

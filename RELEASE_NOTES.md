@@ -1,3 +1,27 @@
+### 0.0.11-alpha - 02.01.2016
+* Type provider generates nicer table names, relationships and sprocs
+* Added static parameter to control case senstivity when generating queries (PR #143)
+* Fixed relative paths for SQL lite
+* Fixed differences in path between mono and .net for sql lite
+* Added ability to use a connection string referenced in app or web config
+* Stored procedures are now lazily generated
+* Improved Postgre Type mappings (PR #127)
+* Documentation improvements (PR #137, PR #148, PR #150)
+* Fixes a regression that prevented UPPER on SqlServer (PR #149)
+* Fixes for the LINQ expression converter (PR #131)
+
+#### 0.0.10-alpha - Unreleased
+* Fixed a regression when building oracle relationships (PR # 126)
+* Fixes Postgres Type mapping issues (PR #117)
+* Fixes command already disposed exception (PR #124)
+* Fixes type mapping issues in Access provider (PR #122)
+* Fixes issues with optional tyepd properties (Issue #119, PR #116)
+* Converted project to use paket and latest project scaffold. (PR #113)
+* Added a function to retrieve the primary key for the table. (PR #105)
+* Fix for SQLite not releasing DB file (Issue #99, PR #100)
+* Support for stored procedures on DB's that support them (PR #83)
+* Support for SQLite on Mono (PR #81)
+
 #### 0.0.9-alpha - 21.05.2014
 * Fixing a bug with writing tinyints in SQL Server
 * Fixes to MySQL array parameters
