@@ -178,8 +178,10 @@ type internal MSAccessProvider() =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                OleDbParameter(paramName,value):> IDbDataParameter
-
+                let valu = match value with
+                           | :? DateTime as dt -> dt.ToOADate() |> box
+                           | _           -> value
+                OleDbParameter(paramName,valu):> IDbDataParameter
             let rec filterBuilder = function 
                 | [] -> ()
                 | (cond::conds) ->
