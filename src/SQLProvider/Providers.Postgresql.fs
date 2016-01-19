@@ -483,7 +483,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         /// Have not attempted stored procs yet
         member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs 
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","\"").Replace("]","\"")) amount 
+        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount 
 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
@@ -615,7 +615,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             else  ~~(sprintf "SELECT %s " columns)
 
             // FROM
-            ~~(sprintf "FROM %s as \"%s\" " (baseTable.FullName.Replace("[","\"").Replace("]","\""))  baseAlias)         
+            ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name  baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -665,15 +665,15 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                     |> Array.unzip
 
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s " (entity.Table.FullName.Replace("[","\"").Replace("]","\"")))
+                ~~(sprintf "INSERT INTO \"%s\".\"%s\" " entity.Table.Schema entity.Table.Name)
 
                 match columnNames with
                 | [||] -> ~~(sprintf "DEFAULT VALUES")
                 | _ -> ~~(sprintf "(%s) VALUES (%s)"
-                           (String.Join(",",columnNames))
+                           (String.Join(",",columnNames |> Array.map (fun c -> sprintf "\"%s\"" c)))
                            (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
-                ~~(sprintf " RETURNING %s;" pk)
+                ~~(sprintf " RETURNING \"%s\";" pk)
 
                 values |> Array.iter (cmd.Parameters.Add >> ignore)
                 cmd.CommandText <- sb.ToString()
@@ -708,8 +708,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 
                 let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
-                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
-                    (entity.Table.FullName.Replace("[","\"").Replace("]","\""))
+                ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;" 
+                    entity.Table.Schema entity.Table.Name
                     (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
                     pk)
 
@@ -731,7 +731,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
 
                 cmd.Parameters.Add(p) |> ignore
-                ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","\"").Replace("]","\"")) pk )
+                ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE %s = @id" entity.Table.Schema entity.Table.Name pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
 
