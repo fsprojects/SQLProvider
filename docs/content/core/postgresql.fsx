@@ -27,7 +27,7 @@ for a complete list of connection string options.
 
 *)
 
-let connString = "Server=localhost;Database=test;User Id=test;Password=test"
+let [<Literal>] connString = "Server=localhost;Database=test;User Id=test;Password=test"
 
 (**
 ### ConnectionStringName
@@ -38,7 +38,7 @@ connectionString key/value pair stored in App.config (TODO: confirm file name).
 *)
 
 // found in App.config (TOOD: confirm)
-let connexStringName = "DefaultConnectionString"
+let [<Literal>] connexStringName = "DefaultConnectionString"
 
 (**
 ### DatabaseVendor
@@ -48,7 +48,7 @@ use `Common.DatabaseProviderTypes.POSTGRESQL`.
 
 *)
 
-let dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
+let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 (**
 ### Resolution Path
@@ -58,7 +58,7 @@ and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
 
-let resPath = @"C:\Projects\Libs\Npgsql\"
+let [<Literal>] resPath = @"C:\Projects\Libs\Npgsql\"
 
 (**
 ### IndividualsAmount
@@ -68,7 +68,7 @@ for further info.
 
 *)
 
-let indivAmount = 1000
+let [<Literal>] indivAmount = 1000
 
 (**
 ### UseOptionTypes
@@ -79,12 +79,12 @@ if it is null in the database.
 
 *)
 
-let useOptTypes  = true
+let [<Literal>] useOptTypes  = true
 
-let sql             = SqlDataProvider<
-                        connsString,
-                        dbVendor,
-                        resPath,
-                        indivAmount,
-                        useOptTypes
-                      >
+let sql =
+    SqlDataProvider<
+        connString,
+        dbVendor,
+        resPath,
+        indivAmount,
+        useOptTypes>
