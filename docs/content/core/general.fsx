@@ -184,9 +184,9 @@ let explicitJoinQuery =
     |> Seq.toArray
 
 (**
-Both of these queries have identical results, it's just one requires explicit 
-knowledge of which tables join where and how, and the other doesn't.
-You might have noticed the select expression has now changed to (customer,order). 
+Both of these queries have identical results, the only difference is that one 
+requires explicit knowledge of which tables join where and how, and the other doesn't.
+You might have noticed the select expression has now changed to (customer, order). 
 As you may expect, this will return an array of tuples where the first item 
 is a ``[Main].[Customers]Entity`` and the second a ``[Main].[Orders]Entity``.
 Often you will not be interested in selecting entire entities from the database.

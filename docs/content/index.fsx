@@ -39,14 +39,14 @@ PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfo
 
 MySQL is based on the .NET drivers found [here](http://dev.mysql.com/downloads/connector/net/1.0.html). You will need the correct version for your specific architecture and setup. You also need to specify ResolutionPath, which points to the folder containing the dll files for the MySQL driver.
 
-Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However although the managed version is recommended it should also work with previous versions of the native driver.
+Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However, although the managed version is recommended, it should also work with previous versions of the native driver.
 
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
     <div class="well well-small" id="nuget">
       The library can be <a href="https://nuget.org/packages/SQLProvider">installed from NuGet</a>:
-      <pre>PM> Install-Package SQLProvider</pre>
+      <pre>PM> Install-Package SQLProvider -Pre</pre>
     </div>
   </div>
   <div class="span1"></div>
@@ -60,8 +60,6 @@ This example demonstrates the use of the SQL type provider:
 *)
 // reference the type provider dll
 #r "FSharp.Data.SQLProvider.dll"
-open System
-open System.Linq
 open FSharp.Data.Sql
 
 let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\files\sqlite" 
@@ -90,7 +88,7 @@ let mattisOrderDetails =
             join od in ctx.Main.OrderDetails on (o.OrderId = od.OrderId)
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.``main.Products by ProductID`` do 
-            // nullable columns can be represented as option types. The following generates IS NOT NULL
+            // nullable columns can be represented as option types; the following generates IS NOT NULL
             where o.ShipCountry.IsSome                
             // standard operators will work as expected; the following shows the like operator and IN operator
             where (c.ContactName =% ("Matti%") && c.CompanyName |=| [|"Squirrelcomapny";"DaveCompant"|] )
@@ -118,7 +116,7 @@ The library comes with comprehensible documentation.
  * [API Reference](reference/index.html) contains automatically generated documentation for all types, modules
    and functions in the library. 
 
-Database vendor specific issues and considerations are documented on their seperate pages. Please see the menu on the right.
+Database vendor specific issues and considerations are documented on their separate pages. Please see the menu on the right.
  
 Contributing and copyright
 --------------------------

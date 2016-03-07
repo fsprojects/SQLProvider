@@ -22,7 +22,7 @@ open FSharp.Data.Sql
 
 Basic connection string used to connect to PostgreSQL instance; typical 
 connection strings for the driver apply here. See
-(PostgreSQL Connecting Strings Documentation)[https://github.com/npgsql/Npgsql/wiki/User-Manual]
+[PostgreSQL Connecting Strings Documentation](https://github.com/npgsql/Npgsql/wiki/User-Manual)
 for a complete list of connection string options.
 
 *)
@@ -63,7 +63,7 @@ let [<Literal>] resPath = @"C:\Projects\Libs\Npgsql\"
 (**
 ### IndividualsAmount
 
-Sets the count to load for each individual. See (individuals)[individuals.html] 
+Sets the count to load for each individual. See [individuals](individuals.html)
 for further info.
 
 *)
@@ -74,7 +74,7 @@ let [<Literal>] indivAmount = 1000
 ### UseOptionTypes
 
 If true, F# option types will be used in place of nullable database columns.  
-If false, you will always receive the default value of the column's type even 
+If false, you will always receive the default value of the column's type, even 
 if it is null in the database.
 
 *)
