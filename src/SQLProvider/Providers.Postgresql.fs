@@ -424,7 +424,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                     if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
                                         pkLookup.Add(table.FullName, col.Name)
                                     yield col
-                                | _ -> () ]
+                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
                         columnLookup.Add(table.FullName, columns)
                         columns)
             finally
