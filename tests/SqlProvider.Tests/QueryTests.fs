@@ -59,6 +59,16 @@ let ``simple select with last or default when not exists``() =
     Assert.AreEqual(null, query)   
 
 [<Test; Ignore("Not Supported")>]
+let ``simple exists when exists``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            exists (cust.CustomerId = "WOLZA")
+        }
+    Assert.AreEqual(true, query)  
+
+[<Test; Ignore("Not Supported")>]
 let ``simple select with last or default when exists``() =
     let dc = sql.GetDataContext()
     let query = 
