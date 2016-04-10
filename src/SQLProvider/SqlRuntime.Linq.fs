@@ -355,4 +355,4 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
                         executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
-                    | _ -> failwith "Unsupported execution expression" }
+                    | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }

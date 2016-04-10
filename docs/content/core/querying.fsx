@@ -25,7 +25,7 @@ type sql  = SqlDataProvider<
 let ctx = sql.GetDataContext()
 
 
-
+(**
 SQLProvider leverages F#'s `query {}` expression syntax to perform queries 
 against the database.  Though many are supported, not all LINQ expressions are.
 *)

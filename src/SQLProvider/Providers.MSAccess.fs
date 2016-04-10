@@ -248,7 +248,7 @@ type internal MSAccessProvider() =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s [%s] as %s on [%s].[%s] = [%s].[%s]"
+                    ~~  (sprintf "%s [%s] as [%s] on [%s].[%s] = [%s].[%s]"
                         joinType destTable.Name destAlias 
                         (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
                         data.ForeignKey  
@@ -270,7 +270,11 @@ type internal MSAccessProvider() =
             // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
+<<<<<<< HEAD
             ~~(sprintf "FROM %s[%s] as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
+=======
+            ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) baseTable.Name baseAlias)
+>>>>>>> refs/remotes/fsprojects/master
             fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then
