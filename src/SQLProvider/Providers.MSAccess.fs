@@ -270,11 +270,8 @@ type internal MSAccessProvider() =
             // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
-<<<<<<< HEAD
-            ~~(sprintf "FROM %s[%s] as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
-=======
+
             ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) baseTable.Name baseAlias)
->>>>>>> refs/remotes/fsprojects/master
             fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then
