@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open System.Data
 open System.Reflection
+open System.Threading
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
@@ -53,16 +54,14 @@ module PostgreSQL =
         | "circle"      -> checkType "NpgsqlCircle"
         | "date"        -> checkType "NpgsqlDate"
         | "inet"        -> checkType "NpgsqlInet"
-        | "interval"    -> checkType "NpgsqlInterval"
+        | "interval"    -> checkType "NpgsqlTimeSpan"
         | "line"        -> checkType "NpgsqlLine"
         | "lseg"        -> checkType "NpgsqlLSeg"
         | "path"        -> checkType "NpgsqlPath"
         | "point"       -> checkType "NpgsqlPoint"
         | "polygon"     -> checkType "NpgsqlPolygon"
-        | "time"        -> checkType "NpgsqlTime"
-        | "timestamp"   -> checkType "NpgsqlTimeStamp"
-        | "timestamptz" -> checkType "NpgsqlTimeStampTZ"
-        | "timetz"      -> checkType "NpgsqlTimeTZ"
+        | "timestamp"   -> checkType "NpgsqlDateTime"
+        | "timestamptz" -> checkType "NpgsqlDateTime"
         | "tsquery"     -> checkType "NpgsqlTsQuery"
         | "tsvector"    -> checkType "NpgsqlTsVector"
         | _             -> true
@@ -161,7 +160,7 @@ module PostgreSQL =
             enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
 
         let adjustments =
-            [ (typeof<DateTime>.ToString(), DbType.Date)
+            [ (typeof<DateTime>.ToString(), DbType.DateTime)
               (typeof<string>.ToString(), DbType.String) ]
             |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
 
@@ -377,113 +376,121 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match columnLookup.TryGetValue table.FullName with
-            | (true,data) -> data
-            | _ ->
-                let baseQuery = @"SELECT  c.column_name,
-                                          c.data_type,
-                                          c.character_maximum_length,
-                                          c.numeric_precision,
-                                          c.is_nullable,
-                                          (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
-                                    FROM  information_schema.columns c
-                                          LEFT JOIN  (SELECT  ku.table_catalog,
-                                                              ku.table_schema,
-                                                              ku.table_name,
-                                                              ku.column_name
-                                                        FROM  information_schema.table_constraints AS tc
-                                                              INNER JOIN  information_schema.key_column_usage AS ku
-                                                                          ON      tc.constraint_type = 'PRIMARY KEY'
-                                                                              AND tc.constraint_name = ku.constraint_name
-                                                     ) pk
-                                                     ON      c.table_catalog = pk.table_catalog
-                                                         AND c.table_schema = pk.table_schema
-                                                         AND c.table_name = pk.table_name
-                                                         AND c.column_name = pk.column_name
-                                   WHERE      c.table_schema = @schema
-                                          AND c.table_name = @table
-                                ORDER BY  c.table_schema,
-                                          c.table_name,
-                                          c.ordinal_position"
-                use command = PostgreSQL.createCommand baseQuery con
-                PostgreSQL.createCommandParameter false (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
-                PostgreSQL.createCommandParameter false (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
-                Sql.connect con (fun _ ->
-                    use reader = command.ExecuteReader()
-                    let columns =
-                        [ while reader.Read() do
-                            let dataType = Sql.dbUnbox<string> reader.["data_type"]
-                            match PostgreSQL.findDbType (dataType.ToLower()) with
-                            | Some m ->
-                                let col =
-                                    { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
-                                      TypeMapping = m
-                                      IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                      IsPrimarKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
-                                if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
-                                    pkLookup.Add(table.FullName, col.Name)
-                                yield col
-                            | _ -> () ]
-                    columnLookup.Add(table.FullName, columns)
-                    columns)
+            Monitor.Enter columnLookup
+            try
+                match columnLookup.TryGetValue table.FullName with
+                | (true,data) -> data
+                | _ ->
+                    let baseQuery = @"SELECT  c.column_name,
+                                              c.data_type,
+                                              c.character_maximum_length,
+                                              c.numeric_precision,
+                                              c.is_nullable,
+                                              (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
+                                        FROM  information_schema.columns c
+                                              LEFT JOIN  (SELECT  ku.table_catalog,
+                                                                  ku.table_schema,
+                                                                  ku.table_name,
+                                                                  ku.column_name
+                                                            FROM  information_schema.table_constraints AS tc
+                                                                  INNER JOIN  information_schema.key_column_usage AS ku
+                                                                              ON      tc.constraint_type = 'PRIMARY KEY'
+                                                                                  AND tc.constraint_name = ku.constraint_name
+                                                         ) pk
+                                                         ON      c.table_catalog = pk.table_catalog
+                                                             AND c.table_schema = pk.table_schema
+                                                             AND c.table_name = pk.table_name
+                                                             AND c.column_name = pk.column_name
+                                       WHERE      c.table_schema = @schema
+                                              AND c.table_name = @table
+                                    ORDER BY  c.table_schema,
+                                              c.table_name,
+                                              c.ordinal_position"
+                    use command = PostgreSQL.createCommand baseQuery con
+                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
+                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
+                    Sql.connect con (fun _ ->
+                        use reader = command.ExecuteReader()
+                        let columns =
+                            [ while reader.Read() do
+                                let dataType = Sql.dbUnbox<string> reader.["data_type"]
+                                match PostgreSQL.findDbType (dataType.ToLower()) with
+                                | Some m ->
+                                    let col =
+                                        { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
+                                          TypeMapping = m
+                                          IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
+                                          IsPrimarKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
+                                    if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
+                                        pkLookup.Add(table.FullName, col.Name)
+                                    yield col
+                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
+                        columnLookup.Add(table.FullName, columns)
+                        columns)
+            finally
+                Monitor.Exit columnLookup
 
         member __.GetRelationships(con,table) =
-            match relationshipLookup.TryGetValue(table.FullName) with
-            | true,v -> v
-            | _ ->
-                let baseQuery = @"SELECT  
-                                     KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
-                                    ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
-                                    ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME 
-                                    ,KCU1.ORDINAL_POSITION AS FK_ORDINAL_POSITION 
-                                    ,KCU2.CONSTRAINT_NAME AS REFERENCED_CONSTRAINT_NAME 
-                                    ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME 
-                                    ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME 
-                                    ,KCU2.ORDINAL_POSITION AS REFERENCED_ORDINAL_POSITION 
-                                    ,KCU1.CONSTRAINT_SCHEMA AS FK_CONSTRAINT_SCHEMA
-                                    ,KCU2.CONSTRAINT_SCHEMA AS PK_CONSTRAINT_SCHEMA
-                                FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC 
+            Monitor.Enter relationshipLookup
+            try
+                match relationshipLookup.TryGetValue(table.FullName) with
+                | true,v -> v
+                | _ ->
+                    let baseQuery = @"SELECT  
+                                         KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
+                                        ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
+                                        ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME 
+                                        ,KCU1.ORDINAL_POSITION AS FK_ORDINAL_POSITION 
+                                        ,KCU2.CONSTRAINT_NAME AS REFERENCED_CONSTRAINT_NAME 
+                                        ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME 
+                                        ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME 
+                                        ,KCU2.ORDINAL_POSITION AS REFERENCED_ORDINAL_POSITION 
+                                        ,KCU1.CONSTRAINT_SCHEMA AS FK_CONSTRAINT_SCHEMA
+                                        ,KCU2.CONSTRAINT_SCHEMA AS PK_CONSTRAINT_SCHEMA
+                                    FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC 
 
-                                INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1 
-                                    ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG  
-                                    AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA 
-                                    AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
+                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1 
+                                        ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG  
+                                        AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA 
+                                        AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 
-                                INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2 
-                                    ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG  
-                                    AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA 
-                                    AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
-                                    AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
-                if con.State <> ConnectionState.Open then con.Open()
-                use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
-                let children : Relationship list =
-                    [ while reader.Read() do 
-                        yield {
-                                Name = reader.GetString(0);
-                                PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5));
-                                PrimaryKey=reader.GetString(6)
-                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
-                                ForeignKey=reader.GetString(2)
-                              } ] 
-                reader.Dispose()
-                use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
-                let parents : Relationship list =
-                    [ while reader.Read() do 
-                        yield {
-                                Name = reader.GetString(0);
-                                PrimaryTable = Table.CreateFullName(reader.GetString(9), reader.GetString(5));
-                                PrimaryKey = reader.GetString(6)
-                                ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
-                                ForeignKey = reader.GetString(2)
-                              } ] 
-                relationshipLookup.Add(table.FullName,(children,parents))
-                con.Close()
-                (children,parents)    
+                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2 
+                                        ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG  
+                                        AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA 
+                                        AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
+                                        AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
+                    if con.State <> ConnectionState.Open then con.Open()
+                    use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                    let children : Relationship list =
+                        [ while reader.Read() do 
+                            yield {
+                                    Name = reader.GetString(0);
+                                    PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5));
+                                    PrimaryKey=reader.GetString(6)
+                                    ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
+                                    ForeignKey=reader.GetString(2)
+                                  } ] 
+                    reader.Dispose()
+                    use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                    let parents : Relationship list =
+                        [ while reader.Read() do 
+                            yield {
+                                    Name = reader.GetString(0);
+                                    PrimaryTable = Table.CreateFullName(reader.GetString(9), reader.GetString(5));
+                                    PrimaryKey = reader.GetString(6)
+                                    ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
+                                    ForeignKey = reader.GetString(2)
+                                  } ] 
+                    relationshipLookup.Add(table.FullName,(children,parents))
+                    con.Close()
+                    (children,parents)
+                finally
+                    Monitor.Exit relationshipLookup
         
         /// Have not attempted stored procs yet
         member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs 
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","\"").Replace("]","\"")) amount 
+        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount 
 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
@@ -615,7 +622,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             else  ~~(sprintf "SELECT %s " columns)
 
             // FROM
-            ~~(sprintf "FROM %s as \"%s\" " (baseTable.FullName.Replace("[","\"").Replace("]","\""))  baseAlias)         
+            ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name  baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -665,15 +672,15 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                     |> Array.unzip
 
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s " (entity.Table.FullName.Replace("[","\"").Replace("]","\"")))
+                ~~(sprintf "INSERT INTO \"%s\".\"%s\" " entity.Table.Schema entity.Table.Name)
 
                 match columnNames with
                 | [||] -> ~~(sprintf "DEFAULT VALUES")
                 | _ -> ~~(sprintf "(%s) VALUES (%s)"
-                           (String.Join(",",columnNames))
+                           (String.Join(",",columnNames |> Array.map (fun c -> sprintf "\"%s\"" c)))
                            (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
-                ~~(sprintf " RETURNING %s;" pk)
+                ~~(sprintf " RETURNING \"%s\";" pk)
 
                 values |> Array.iter (cmd.Parameters.Add >> ignore)
                 cmd.CommandText <- sb.ToString()
@@ -708,8 +715,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 
                 let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
-                ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;" 
-                    (entity.Table.FullName.Replace("[","\"").Replace("]","\""))
+                ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;" 
+                    entity.Table.Schema entity.Table.Name
                     (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
                     pk)
 
@@ -731,7 +738,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
 
                 cmd.Parameters.Add(p) |> ignore
-                ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","\"").Replace("]","\"")) pk )
+                ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE %s = @id" entity.Table.Schema entity.Table.Name pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
 

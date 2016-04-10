@@ -64,7 +64,7 @@ let resolutionPath =
 ### IndividualsAmount
 
 Number of instances to retrieve when using the [individuals](core/individuals.html) feature.
-Defaults to 1000.
+Default is 1000.
 *)
 
 let indivAmt = 500

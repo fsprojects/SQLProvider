@@ -22,12 +22,12 @@ open FSharp.Data.Sql
 
 Basic connection string used to connect to PostgreSQL instance; typical 
 connection strings for the driver apply here. See
-(PostgreSQL Connecting Strings Documentation)[https://github.com/npgsql/Npgsql/wiki/User-Manual]
+[PostgreSQL Connecting Strings Documentation](https://github.com/npgsql/Npgsql/wiki/User-Manual)
 for a complete list of connection string options.
 
 *)
 
-let connString = "Server=localhost;Database=test;User Id=test;Password=test"
+let [<Literal>] connString = "Server=localhost;Database=test;User Id=test;Password=test"
 
 (**
 ### ConnectionStringName
@@ -38,7 +38,7 @@ connectionString key/value pair stored in App.config (TODO: confirm file name).
 *)
 
 // found in App.config (TOOD: confirm)
-let connexStringName = "DefaultConnectionString"
+let [<Literal>] connexStringName = "DefaultConnectionString"
 
 (**
 ### DatabaseVendor
@@ -48,7 +48,7 @@ use `Common.DatabaseProviderTypes.POSTGRESQL`.
 
 *)
 
-let dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
+let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 (**
 ### Resolution Path
@@ -58,33 +58,33 @@ and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
 
-let resPath = @"C:\Projects\Libs\Npgsql\"
+let [<Literal>] resPath = @"C:\Projects\Libs\Npgsql\"
 
 (**
 ### IndividualsAmount
 
-Sets the count to load for each individual. See (individuals)[individuals.html] 
+Sets the count to load for each individual. See [individuals](individuals.html)
 for further info.
 
 *)
 
-let indivAmount = 1000
+let [<Literal>] indivAmount = 1000
 
 (**
 ### UseOptionTypes
 
 If true, F# option types will be used in place of nullable database columns.  
-If false, you will always receive the default value of the column's type even 
+If false, you will always receive the default value of the column's type, even 
 if it is null in the database.
 
 *)
 
-let useOptTypes  = true
+let [<Literal>] useOptTypes  = true
 
-let sql             = SqlDataProvider<
-                        connsString,
-                        dbVendor,
-                        resPath,
-                        indivAmount,
-                        useOptTypes
-                      >
+let sql =
+    SqlDataProvider<
+        connString,
+        dbVendor,
+        resPath,
+        indivAmount,
+        useOptTypes>

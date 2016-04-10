@@ -185,3 +185,4 @@ docs/content/release-notes.md
 
 !tests/SqlProvider.Tests/libs
 *.userprefs
+.fake

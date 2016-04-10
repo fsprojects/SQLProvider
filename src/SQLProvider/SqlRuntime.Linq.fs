@@ -34,7 +34,8 @@ module internal QueryImplementation =
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =        
        use con = provider.CreateConnection(dc.ConnectionString) 
        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
-       Common.QueryEvents.PublishSqlQuery query
+       let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
+       Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow       
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
@@ -49,7 +50,7 @@ module internal QueryImplementation =
        use con = provider.CreateConnection(dc.ConnectionString) 
        con.Open()
        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
-       Common.QueryEvents.PublishSqlQuery query       
+       Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
        use cmd = provider.CreateCommand(con,query)   
        for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
@@ -354,4 +355,4 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
                         executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
-                    | _ -> failwith "Unsupported execution expression" }
+                    | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
