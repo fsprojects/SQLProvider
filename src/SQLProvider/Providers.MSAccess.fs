@@ -270,12 +270,9 @@ type internal MSAccessProvider() =
             // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
-<<<<<<< HEAD
-            ~~(sprintf "FROM %s[%s] as %s " (new String('(',numLinks)) baseTable.Name baseAlias)
-=======
 
             ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) baseTable.Name baseAlias)
->>>>>>> msaccess
+
             fromBuilder(numLinks)
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -380,39 +377,46 @@ type internal MSAccessProvider() =
                 ~~(sprintf "DELETE FROM [%s] WHERE %s = @id" entity.Table.Name pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
-
             //use scope = new Transactions.TransactionScope()
-            try                
-                // close the connection first otherwise it won't get enlisted into the transaction 
+            
+            try
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
-                // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e -> 
-                    match e._State with
-                    | Created -> 
-                        let cmd = createInsertCommand e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                        let id = cmd.ExecuteScalar()
-                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                        | Some v -> () // if the primary key exists, do nothing
-                                       // this is because non-identity columns will have been set 
-                                       // manually and in that case scope_identity would bring back 0 "" or whatever
-                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
-                        e._State <- Unchanged
-                    | Modified fields -> 
-                        let cmd = createUpdateCommand e fields
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                        cmd.ExecuteNonQuery() |> ignore
-                        e._State <- Unchanged
-                    | Deleted -> 
-                        let cmd = createDeleteCommand e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                        cmd.ExecuteNonQuery() |> ignore
-                        // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
-                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                //scope.Complete()
-                
+                use trnsx = con.BeginTransaction()
+                try                
+                    // close the connection first otherwise it won't get enlisted into the transaction 
+                    
+                    // initially supporting update/create/delete of single entities, no hierarchies yet
+                    entities
+                    |> List.iter(fun e -> 
+                        match e._State with
+                        | Created -> 
+                            let cmd = createInsertCommand e
+                            cmd.Transaction <- trnsx :?> OleDbTransaction
+                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                            let id = cmd.ExecuteScalar()
+                            match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                            | Some v -> () // if the primary key exists, do nothing
+                                           // this is because non-identity columns will have been set 
+                                           // manually and in that case scope_identity would bring back 0 "" or whatever
+                            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                            e._State <- Unchanged
+                        | Modified fields -> 
+                            let cmd = createUpdateCommand e fields
+                            cmd.Transaction <- trnsx :?> OleDbTransaction
+                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                            cmd.ExecuteNonQuery() |> ignore
+                            e._State <- Unchanged
+                        | Deleted -> 
+                            let cmd = createDeleteCommand e
+                            cmd.Transaction <- trnsx :?> OleDbTransaction
+                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                            cmd.ExecuteNonQuery() |> ignore
+                            // remove the pk to prevent this attempting to be used again
+                            e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    trnsx.Commit()
+                with 
+                |e -> printfn "rolling back \r\n; %A" e; trnsx.Rollback()
             finally
                 con.Close()
