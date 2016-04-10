@@ -144,7 +144,7 @@ ModelManifest.xml
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
-
+*.laccdb
 # Folder config file
 Desktop.ini
 
@@ -181,5 +181,7 @@ docs/files/msaccess/Northwind.ldb
 paket-files/
 docs/content/license.md
 docs/content/release-notes.md
+.fake/
 
 !tests/SqlProvider.Tests/libs
+*.userprefs

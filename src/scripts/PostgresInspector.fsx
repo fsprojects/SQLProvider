@@ -1,40 +1,42 @@
-﻿#I "../SQLProvider"
+﻿#I "../SqlProvider"
 
 #r "System.Transactions"
 #r "System.Runtime.Serialization"
+#r "System.Configuration.dll"
+#load "Utils.fs"
 #load "Operators.fs"
-#load "SchemaProjections.fs"
 #load "SqlSchema.fs"
 #load "DataTable.fs"
 #load "SqlRuntime.Patterns.fs"
-#load "SqlHelpers.fs"
 #load "SqlRuntime.Common.fs"
 #load "Providers.Postgresql.fs"
-
+        
 open System
+open System.IO
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Providers
+open FSharp.Data.Sql.Common
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
-let connectionString = "User ID=postgres;Password=password;Host=POSTGRESQL;Port=9090;Database=hr;"
-PostgreSQL.resolutionPath <- @"D:\Downloads\Npgsql-2.1.3-net40"
+let connectionString = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
+PostgreSQL.resolutionPath <- Path.GetFullPath(__SOURCE_DIRECTORY__ + @"/../../packages/scripts/Npgsql/lib/net45/")
 
 let connection = PostgreSQL.createConnection connectionString
 
 PostgreSQL.createTypeMappings()
 
 PostgreSQL.typeMappings
-|> List.filter (fun m -> m.ClrType = "System.DateTime")
+
 
 PostgreSQL.findDbType "varchar"
 
-PostgreSQL.connect connection (PostgreSQL.getSchema "Tables" [|"hr";"public"|])
+Sql.connect connection (PostgreSQL.getSchema "Tables" [|"hr";"public"|])
 |> DataTable.printDataTable
 
-PostgreSQL.connect connection PostgreSQL.getSprocs
+Sql.connect connection PostgreSQL.getSprocs
 //|> DataTable.printDataTable
 
-PostgreSQL.connect connection (SqlHelpers.executeSqlAsDataTable PostgreSQL.createCommand "
+Sql.connect connection (Sql.executeSqlAsDataTable PostgreSQL.createCommand "
             SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                                 ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
                                     FROM INFORMATION_SCHEMA.COLUMNS c
@@ -54,7 +56,6 @@ PostgreSQL.connect connection (SqlHelpers.executeSqlAsDataTable PostgreSQL.creat
             ")
 |> DataTable.printDataTable
 
-#r "D:\Downloads\Npgsql-2.1.3-net40\Npgsql.dll"
 
 
 

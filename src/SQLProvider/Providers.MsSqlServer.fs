@@ -12,7 +12,10 @@ module MSSqlServer =
 
     let getSchema name (args:string[]) (con:IDbConnection) = 
         let con = (con :?> SqlConnection)
-        con.GetSchema(name, args)
+        if con.State <> ConnectionState.Open then con.Open()
+        let res = con.GetSchema(name, args)    
+        con.Close()
+        res
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -85,6 +88,15 @@ module MSSqlServer =
             par.Value
         else null
 
+    let isSQL2012Orlater (con:IDbConnection) =  
+        try
+            let reader = executeSql "SELECT SERVERPROPERTY('productversion')" con
+            let version = reader.GetSqlString(0)
+            match version.Value.[0..1] |> Double.TryParse with
+            | true, v -> v >= 11.0
+            | _ -> false
+        with _ -> false
+
     let createCommandParameter (param:QueryParameter) (value:obj) = 
         let p = SqlParameter(param.Name,value)            
         p.DbType <- param.TypeMapping.DbType
@@ -101,15 +113,17 @@ module MSSqlServer =
                               |> List.toArray)
         let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sname.DbName parameterStr
         let derivedCols =
-            connect con (fun con ->
-                try
-                    let dr = executeSql query con
-                    [ yield dr.GetSchemaTable();
-                      while dr.NextResult() do yield dr.GetSchemaTable() ]
-                with
-                | ex ->
-                    System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
-                    []) //Just assumes the proc / func returns something and let the caller process the result, for now.  
+            let initialSchemas =
+                connect con (fun con ->
+                    try
+                        let dr = executeSql query con
+                        [ yield dr.GetSchemaTable();
+                          while dr.NextResult() do yield dr.GetSchemaTable() ]
+                    with
+                    | ex ->
+                        System.Diagnostics.Debug.WriteLine(sprintf "Failed to retrieve metadata for sproc %s\r\n : %s" sname.DbName (ex.ToString()))
+                        []) //Just assumes the proc / func returns something and let the caller process the result, for now.  
+            initialSchemas
             |> List.mapi (fun i dt ->
                 match dt with
                 | null -> None
@@ -132,20 +146,12 @@ module MSSqlServer =
                 else p)
         derivedCols @ retValueCols
 
-    let getSprocs (con: IDbConnection) =
-        let con = (con :?> SqlConnection)
-        let procedures,functions = 
-            getSchema "Procedures" [||] con 
-            |> DataTable.map (fun row -> dbUnbox<string> row.["routine_name"], dbUnbox<string> row.["routine_type"])
-            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+    let getSprocName (row:DataRow) = 
+        let owner = dbUnbox row.["specific_catalog"]
+        let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
+        { ProcName = procName; Owner = owner; PackageName = packageName; }
 
-        let procedures = procedures |> List.map fst |> Set.ofList
-        let functions = functions |> List.map fst |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = dbUnbox row.["specific_catalog"]
-            let (procName, packageName) = (dbUnbox row.["specific_name"], dbUnbox row.["specific_schema"])
-            { ProcName = procName; Owner = owner; PackageName = packageName; }
+    let getSprocParameters (con : IDbConnection) (name : SprocName) = 
 
         let createSprocParameters (row:DataRow) = 
             let dataType = dbUnbox row.["data_type"]
@@ -168,31 +174,52 @@ module MSSqlServer =
                   Length = maxLength
                   Ordinal = dbUnbox<int> row.["ordinal_position"] }
             )
-
-        let parameters = 
-            let withParameters = getSchema "ProcedureParameters" [||] con |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                if withParameters |> Seq.exists (fun (name,_) -> name.ProcName = proc)
-                then None
-                else Some({ ProcName = proc; Owner = String.Empty; PackageName = String.Empty; }, Seq.empty)
-                )
-            |> Seq.append withParameters
-
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = parameters |> Seq.choose id |> Seq.sortBy (fun p -> p.Ordinal) |> Seq.toList
-                        let rcolumns = getSprocReturnCols con name sparams
-                        match Set.contains name.ProcName functions, Set.contains name.ProcName procedures with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | _, _ -> Empty
-                      ) 
+             
+        getSchema "ProcedureParameters" [||] con 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
         |> Seq.toList
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (returnCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let getSprocs (con: IDbConnection) =
+        let con = (con :?> SqlConnection)
+
+        let tableValued = 
+            Sql.executeSqlAsDataTable 
+                createCommand 
+                "SELECT DISTINCT ROUTINE_CATALOG, ROUTINE_SCHEMA, ROUTINE_NAME FROM [INFORMATION_SCHEMA].[ROUTINES] where [DATA_TYPE] = 'table'" 
+                con
+            |> DataTable.map(fun row -> dbUnbox<string> row.["ROUTINE_CATALOG"], dbUnbox<string> row.["ROUTINE_SCHEMA"], dbUnbox<string> row.["ROUTINE_NAME"] )
+
+        let haveUDTs =
+            Sql.executeSqlAsDataTable
+                createCommand
+                "SELECT distinct [SPECIFIC_CATALOG]
+                      ,[SPECIFIC_SCHEMA]
+                      ,[SPECIFIC_NAME]
+                  FROM [INFORMATION_SCHEMA].[PARAMETERS] where USER_DEFINED_TYPE_NAME <> ''"
+                con
+            |> DataTable.map(fun row -> dbUnbox<string> row.["SPECIFIC_CATALOG"], dbUnbox<string> row.["SPECIFIC_SCHEMA"], dbUnbox<string> row.["SPECIFIC_NAME"] )
+
+        // table valued functions and stuff with user defined types are not currently supported.
+        let toFilter = set(tableValued @ haveUDTs)
+
+        getSchema "Procedures" [||] con 
+        |> DataTable.filter(fun row -> 
+            let name = dbUnbox<string> row.["SPECIFIC_CATALOG"], dbUnbox<string> row.["SPECIFIC_SCHEMA"], dbUnbox<string> row.["SPECIFIC_NAME"]
+            not <| Set.contains name toFilter)
+        |> DataTable.map (fun row -> getSprocName row, dbUnbox<string> row.["routine_type"])
+        |> Seq.map (fun (name, routineType) -> 
+             match routineType.ToUpper() with
+             | "FUNCTION" -> Root("Functions",  Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
+             | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
+             | _ -> Empty
+           ) 
+        |> Seq.toList
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              returnCols
@@ -207,10 +234,9 @@ module MSSqlServer =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal, ip.Name, p))
-             |> List.toArray
         
         let returnValues =
             outps |> Array.filter (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue)
@@ -259,7 +285,7 @@ type internal MSSqlServerProvider() =
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, definition:SprocDefinition, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con definition returnCols values
+        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
 
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con   
         member __.GetTables(con, cs) =
@@ -324,7 +350,6 @@ type internal MSSqlServerProvider() =
             | _ -> 
             // mostly stolen from
             // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
-            let toSchema schema table = sprintf "[%s].[%s]" schema table
             let baseQuery = @"SELECT  
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
                                 ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
@@ -353,14 +378,14 @@ type internal MSSqlServerProvider() =
             use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let children =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                            ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
+                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
+                            ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             reader.Dispose()
             use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=toSchema (reader.GetSqlString(9).Value) (reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                            ForeignTable=toSchema (reader.GetSqlString(8).Value) (reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
+                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
+                            ForeignTable=Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             (children,parents))
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
@@ -374,6 +399,10 @@ type internal MSSqlServerProvider() =
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
             
+            match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
+            | Some _, Some _, [] -> failwith "skip and take paging requries an orderBy clause."
+            | _ -> ()
+
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
@@ -495,9 +524,12 @@ type internal MSSqlServerProvider() =
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
+            else  
+                match sqlQuery.Skip, sqlQuery.Take with
+                | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                | _ -> ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)         
+            ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)         
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -511,6 +543,12 @@ type internal MSSqlServerProvider() =
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()
+
+            match sqlQuery.Skip, sqlQuery.Take with 
+            | Some skip, Some take -> 
+                // Note: this only works in >=SQL2012 
+                ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+            | _ -> ()
 
             let sql = sb.ToString()
             (sql,parameters)
@@ -542,9 +580,10 @@ type internal MSSqlServerProvider() =
                     |> Array.unzip
                 
                 sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT SCOPE_IDENTITY();" 
+                ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);" 
                     entity.Table.FullName
                     (String.Join(",",columnNames))
+                    pk
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
                 cmd.Parameters.AddRange(values)
                 cmd.CommandText <- sb.ToString()

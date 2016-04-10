@@ -2,10 +2,7 @@
 // FAKE build script
 // --------------------------------------------------------------------------------------
 
-#I @"packages/FAKE/tools/"
-
-#r @"FakeLib.dll"
-
+#r @"packages/FAKE/tools/FakeLib.dll"
 open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
@@ -28,8 +25,6 @@ open System.IO
 
 let project = "SQLProvider"
 
-
-
 // Short summary of the project
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
 let summary = "Type providers for SQL Server access."
@@ -39,13 +34,10 @@ let summary = "Type providers for SQL Server access."
 let description = "Type providers for SQL Server access."
 
 // List of author names (for NuGet package)
-let authors = [ "Ross McKinlay" ]
+let authors = [ "Ross McKinlay, Colin Bull" ]
 
 // Tags for your project (for NuGet package)
-let tags = "F#, fsharp, typeproviders, sql, sqlserver"
-
-// File system information
-let solutionFile  = "SQLProvider"
+let tags = "F#, fsharp, typeprovider, sql, sqlserver"
 
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
@@ -64,11 +56,9 @@ let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/fsprojects"
 // --------------------------------------------------------------------------------------
 // END TODO: The rest of the file includes standard build steps
 // --------------------------------------------------------------------------------------
-
-let buildDir = "bin"
-
 // Read additional information from the release notes document
-let release = LoadReleaseNotes "RELEASE_NOTES.md"
+Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
+let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
 
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
@@ -82,10 +72,12 @@ Target "AssemblyInfo" (fun _ ->
 )
 
 // --------------------------------------------------------------------------------------
-// Clean build results
+// Clean build results & restore NuGet packages
+
+Target "RestorePackages" RestorePackages
 
 Target "Clean" (fun _ ->
-    CleanDirs [buildDir; "temp"]
+    CleanDirs ["bin"; "temp"]
 )
 
 Target "CleanDocs" (fun _ ->
@@ -96,20 +88,16 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    !! (solutionFile + ".sln")
+    !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore
-
-    !! (solutionFile + ".Tests.sln")
-    |> MSBuildRelease "" "Rebuild"
-    |> ignore    
 )
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
 Target "RunTests" (fun _ ->
-    !! testAssemblies
+    !! testAssemblies 
     |> NUnit (fun p ->
         { p with
             DisableShadowCopy = true
@@ -121,21 +109,26 @@ Target "RunTests" (fun _ ->
 // Build a NuGet package
 
 Target "NuGet" (fun _ ->
+    
+    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvider.dll"
 
-    NuGet (fun p -> 
-        { p with   
+    NuGet (fun p ->
+        { p with
             Authors = authors
             Project = project
             Summary = summary
             Description = description
             Version = release.NugetVersion
-            ReleaseNotes = release.Notes |> toLines
+            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
             Tags = tags
+            WorkingDir = "temp"
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
             Dependencies = [] })
         (project + ".nuspec")
+
+    CleanDir "Temp"
 )
 
 // --------------------------------------------------------------------------------------
@@ -146,18 +139,23 @@ Target "GenerateReferenceDocs" (fun _ ->
       failwith "generating reference documentation failed"
 )
 
-let generateHelp fail =
-    if executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"; "--define:HELP"] [] then
+let generateHelp' fail debug =
+    let args =
+        if debug then ["--define:HELP"]
+        else ["--define:RELEASE"; "--define:HELP"]
+    if executeFSIWithArgs "docs/tools" "generate.fsx" args [] then
         traceImportant "Help generated"
     else
         if fail then
             failwith "generating help documentation failed"
         else
             traceImportant "generating help documentation failed"
-    
+
+let generateHelp fail =
+    generateHelp' fail false
 
 Target "GenerateHelp" (fun _ ->
-    DeleteFile "docs/content/release-notes.md"    
+    DeleteFile "docs/content/release-notes.md"
     CopyFile "docs/content/" "RELEASE_NOTES.md"
     Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
 
@@ -165,12 +163,23 @@ Target "GenerateHelp" (fun _ ->
     CopyFile "docs/content/" "LICENSE.txt"
     Rename "docs/content/license.md" "docs/content/LICENSE.txt"
 
-    CopyFile buildDir "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
-    CopyFile buildDir "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
+    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
+    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
 
     generateHelp true
 )
 
+Target "GenerateHelpDebug" (fun _ ->
+    DeleteFile "docs/content/release-notes.md"
+    CopyFile "docs/content/" "RELEASE_NOTES.md"
+    Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
+
+    DeleteFile "docs/content/license.md"
+    CopyFile "docs/content/" "LICENSE.txt"
+    Rename "docs/content/license.md" "docs/content/LICENSE.txt"
+
+    generateHelp' true true
+)
 
 Target "KeepRunning" (fun _ ->    
     use watcher = new FileSystemWatcher(DirectoryInfo("docs/content").FullName,"*.*")
@@ -201,60 +210,36 @@ Target "ReleaseDocs" (fun _ ->
     fullclean tempDocsDir
     CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
     StageAll tempDocsDir
-    Git.Commit.Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
     Branches.push tempDocsDir
 )
 
-#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
-open Octokit
-
-Target "Release" (fun _ ->
-    StageAll ""
-    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
-    Branches.push ""
-
-    Branches.tag "" release.NugetVersion
-    Branches.pushTag "" "origin" release.NugetVersion
-    
-    // release on github
-    createClient (getBuildParamOrDefault "github-user" "") (getBuildParamOrDefault "github-pw" "")
-    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes 
-    |> releaseDraft
-    |> Async.RunSynchronously
-)
-
-Target "BuildPackage" DoNothing
+Target "Release" DoNothing
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
 Target "All" DoNothing
 
+
+Target "BuildDocs" DoNothing
+
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
   ==> "RunTests"
+  ==> "CleanDocs"
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
-  =?> ("GenerateDocs",isLocalBuild && not isMono)
+  =?> ("GenerateHelp",isLocalBuild && not isMono)
   ==> "All"
-  =?> ("ReleaseDocs",isLocalBuild && not isMono)
 
 "All"
+  ==> "BuildDocs"
+
+"All" 
+
+  ==> "ReleaseDocs"
   ==> "NuGet"
-  ==> "BuildPackage"
-
-"CleanDocs"
-  ==> "GenerateHelp"
-  ==> "GenerateReferenceDocs"
-  ==> "GenerateDocs"
-
-"GenerateHelp"
-  ==> "KeepRunning"
-    
-"ReleaseDocs"
-  ==> "Release"
-
-"BuildPackage"
   ==> "Release"
 
 RunTargetOrDefault "All"

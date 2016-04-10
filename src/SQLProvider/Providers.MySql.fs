@@ -23,8 +23,12 @@ module MySql =
 
     let findType name = 
         match assembly.Value with
-        | Some(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | None -> failwithf "Unable to resolve mysql assemblies. One of %s must exist in the resolution path: %s" (String.Join(", ", assemblyNames |> List.toArray)) resolutionPath
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice2Of2(paths) -> 
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+                (String.Join(", ", assemblyNames |> List.toArray)) 
+                Environment.NewLine
+                (String.Join(Environment.NewLine, paths))
 
    
     let connectionType =  lazy (findType "MySqlConnection")
@@ -101,22 +105,7 @@ module MySql =
         
         Option.iter (fun l -> p.Size <- l) param.Length             
         p
-
-    let connect (con:IDbConnection) f =
-        if con.State <> ConnectionState.Open then con.Open()
-        let result = f con
-        con.Close(); result
-
-    let executeSql sql (con:IDbConnection) =        
-        Sql.executeSql createCommand sql con  
-
-    let executeSqlAsDataTable sql con = 
-        executeSql sql con
-        |> (fun r -> 
-             let dt = new DataTable(); 
-             dt.Load(r); 
-             dt)
-
+        
     let getSprocReturnCols con (sparams: QueryParameter list) = 
         match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
         | [] ->
@@ -132,21 +121,15 @@ module MySql =
                  }]
         | a -> a
 
-    let getSprocs (con:IDbConnection) =
-       
-        let procedures,functions = 
-            getSchema "Procedures" [||] con 
-            |> DataTable.map (fun row -> Sql.dbUnbox<string> row.["routine_name"], Sql.dbUnbox<string> row.["routine_type"])
-            |> List.partition (fun (_,t) -> t = "PROCEDURE")
+    let getSprocName (row:DataRow) = 
+        let defaultValue = 
+            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
+            else row.["routine_schema"]
+        let owner = Sql.dbUnboxWithDefault<string> owner defaultValue
+        let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
+        { ProcName = procName; Owner = owner; PackageName = String.Empty; }
 
-        let procedures = procedures |> List.map fst |> Set.ofList
-        let functions = functions |> List.map fst |> Set.ofList
-
-        let getName (row:DataRow) = 
-            let owner = Sql.dbUnboxWithDefault<string> owner row.["specific_schema"]
-            let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
-            { ProcName = procName; Owner = owner; PackageName = String.Empty; }
-
+    let getSprocParameters (con:IDbConnection) (name:SprocName) = 
         let createSprocParameters (row:DataRow) = 
             let dataType = Sql.dbUnbox row.["data_type"]
             let argumentName = Sql.dbUnbox row.["parameter_name"]
@@ -173,33 +156,25 @@ module MySql =
                   Ordinal = ordinal_position }
             )
 
-        let parameters = 
-            let withParameters = 
-                connect con (executeSqlAsDataTable (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
-                |> DataTable.groupBy (fun row -> getName row, createSprocParameters row)
+        if String.IsNullOrEmpty owner then owner <- con.Database
 
-            (Set.union procedures functions)
-            |> Set.toSeq 
-            |> Seq.choose (fun proc -> 
-                match withParameters |> Seq.tryFind (fun (name,_) -> name.ProcName = proc) with
-                | None -> Some({ ProcName = proc; Owner = owner; PackageName = String.Empty }, Seq.empty)
-                | Some (name,parameters) -> Some(name, parameters))
+        //This could filter the query using the Sproc name passed in
+        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner)) 
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
+        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        |> Seq.collect (snd >> Seq.choose id)
+        |> Seq.sortBy (fun x -> x.Ordinal)
+        |> Seq.toList
 
-        parameters
-        |> Seq.map (fun (name, parameters) -> 
-                        let sparams = 
-                            parameters
-                            |> Seq.choose id
-                            |> Seq.sortBy (fun p -> p.Ordinal)
-                            |> Seq.toList
-                        let rcolumns = getSprocReturnCols con sparams
-                        let isFunction, isProcedure =  Set.contains name.ProcName functions, Set.contains name.ProcName procedures
-
-                        match isFunction, isProcedure with
-                        | true, false -> Root("Functions", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | false, true ->  Root("Procedures", Sproc({ Name = name; Params = sparams; ReturnColumns = rcolumns }))
-                        | _, _ -> Empty
-                      ) 
+    let getSprocs (con:IDbConnection) =
+        getSchema "Procedures" [||] con 
+        |> DataTable.map (fun row -> 
+                            let name = getSprocName row
+                            match (Sql.dbUnbox<string> row.["routine_type"]).ToUpper() with
+                            | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con name -> getSprocReturnCols con name) }))
+                            | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con name -> getSprocReturnCols con name) }))
+                            | _ -> Empty
+                          )
         |> Seq.toList
 
     let readParameter (parameter:IDbDataParameter) =
@@ -209,8 +184,8 @@ module MySql =
             par.Value
         else null
 
-    let executeSprocCommand (com:IDbCommand) (definition:SprocDefinition) (retCols:QueryParameter[]) (values:obj[]) = 
-        let inputParameters = definition.Params |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) = 
+        let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
         
         let outps =
              retCols
@@ -220,10 +195,9 @@ module MySql =
         
         let inps =
              inputParameters
-             |> List.mapi(fun i ip ->
+             |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
-             |> List.toArray
         
         Array.append outps inps
         |> Array.sortBy fst
@@ -274,7 +248,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
-        member __.CreateTypeMappings(con) = MySql.connect con MySql.createTypeMappings
+        member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
 
         member __.GetTables(con,cs) =
             let caseChane = 
@@ -282,8 +256,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
                 | Common.CaseSensitivityChange.TOLOWER -> "LOWER(TABLE_SCHEMA)"
                 | _ -> "TABLE_SCHEMA"
-            MySql.connect con (fun con ->
-                use reader = MySql.executeSql (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
+            Sql.connect con (fun con ->
+                use reader = Sql.executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
                 [ while reader.Read() do 
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) } 
                     if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
@@ -314,8 +288,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                              AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
                                              AND c.TABLE_NAME = pk.TABLE_NAME
                                              AND c.COLUMN_NAME = pk.COLUMN_NAME
-                                 WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
-                                 ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
+                                 WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table"
                use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)               
                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), table.Name)) |> ignore
@@ -341,7 +314,6 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             match relationshipLookup.TryGetValue table.FullName with 
             | true,v -> v
             | _ -> 
-            let toSchema schema table = sprintf "[%s].[%s]" schema table
             let baseQuery = @"SELECT  
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
                                 ,RC.TABLE_NAME AS FK_TABLE_NAME 
@@ -357,24 +329,24 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA 
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
-            MySql.connect con (fun con ->
-            use reader = (MySql.executeSql (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
+            Sql.connect con (fun con ->
+            use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
             let children =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
+                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                            ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             reader.Dispose()
-            use reader = MySql.executeSql (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
+            use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
             let parents =
                 [ while reader.Read() do 
-                    yield { Name = reader.GetString(0); PrimaryTable=toSchema (reader.GetString(2)) (reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable=toSchema (reader.GetString(5)) (reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
+                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                            ForeignTable= Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] 
             relationshipLookup.Add(table.FullName,(children,parents))
             
             (children,parents))
         
         // todo
-        member __.GetSprocs(con) = MySql.connect con MySql.getSprocs
+        member __.GetSprocs(con) = Sql.connect con MySql.getSprocs
 
         member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","`").Replace("]","`")) amount 
         member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema table.Name table.Schema table.Name column
