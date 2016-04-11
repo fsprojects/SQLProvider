@@ -377,15 +377,12 @@ type internal MSAccessProvider() =
                 ~~(sprintf "DELETE FROM [%s] WHERE %s = @id" entity.Table.Name pk )
                 cmd.CommandText <- sb.ToString()
                 cmd
-            //use scope = new Transactions.TransactionScope()
-            
             try
+                // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 use trnsx = con.BeginTransaction()
                 try                
-                    // close the connection first otherwise it won't get enlisted into the transaction 
-                    
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     entities
                     |> List.iter(fun e -> 
@@ -417,6 +414,6 @@ type internal MSAccessProvider() =
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                     trnsx.Commit()
                 with 
-                |e -> printfn "rolling back \r\n; %A" e; trnsx.Rollback()
+                |e -> trnsx.Rollback()
             finally
                 con.Close()
