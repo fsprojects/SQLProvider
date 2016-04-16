@@ -184,10 +184,18 @@ module PostgreSQL =
 
 
     let createConnection connectionString = 
-        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+        try
+            Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+        with 
+          | :? System.Reflection.TargetInvocationException as e ->
+            failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
 
     let createCommand commandText connection = 
-        Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+        try
+            Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+        with 
+          | :? System.Reflection.TargetInvocationException as e ->
+            failwithf "Could not create the command, error from Npgsql %s" e.InnerException.Message
 
     let createCommandParameter sprocCommand (param:QueryParameter) value =
         let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
