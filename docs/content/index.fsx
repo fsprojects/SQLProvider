@@ -46,7 +46,7 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
   <div class="span6">
     <div class="well well-small" id="nuget">
       The library can be <a href="https://nuget.org/packages/SQLProvider">installed from NuGet</a>:
-      <pre>PM> Install-Package SQLProvider -Pre</pre>
+      <pre>PM> Install-Package SQLProvider</pre>
     </div>
   </div>
   <div class="span1"></div>
