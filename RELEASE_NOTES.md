@@ -1,3 +1,7 @@
+### 1.0.0 - 16.04.2016
+* Support for multiple owners on postgres (PR #189)
+* V1 release
+
 ### 0.0.11-alpha - 02.01.2016
 * Type provider generates nicer table names, relationships and sprocs
 * Added static parameter to control case senstivity when generating queries (PR #143)
