@@ -1,5 +1,8 @@
 ### 1.0.0 - 16.04.2016
-* Support for multiple owners on postgres (PR #189)
+* CRUD in Access (PR #211)
+* Better error handling (PR #233)
+* Better thread synchronisation (PR #222)
+* General bug fixes
 * V1 release
 
 ### 0.0.11-alpha - 02.01.2016
