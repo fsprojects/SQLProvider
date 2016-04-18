@@ -34,8 +34,31 @@
         <div class="span9" id="main">
           
 <h1><a name="Programmability" class="anchor" href="#Programmability">Programmability</a></h1>
-<p>Documentation stub.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="t">AdventureWorks</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">MSSQLSERVER</span>, <span class="i">connStr</span>, <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionFolder</span><span class="o">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">AdventureWorks</span><span class="o">.</span><span class="i">GetDataContext</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Execute a function in the Adventure Works database</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 3)" onmouseover="showTip(event, 'fs1', 3)" class="i">ctx</span><span class="o">.</span><span class="i">Functions</span><span class="o">.</span><span class="i">UfnGetSalesOrderStatusText</span><span class="o">.</span><span class="i">Invoke</span>(<span class="n">0uy</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>Execute a stored procedure in the Adventure Works database</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">ctx</span><span class="o">.</span><span class="i">Procedures</span><span class="o">.</span><span class="i">UspLogError</span><span class="o">.</span><span class="i">Invoke</span>(<span class="n">1</span>)
+</code></pre></td>
+</tr>
+</table>
 
+<div class="tip" id="fs1">val ctx : obj<br /><br />Full name: Programmability.ctx</div>
+<div class="tip" id="fs2">type AdventureWorks = obj<br /><br />Full name: Programmability.AdventureWorks</div>
 
         </div>
         <div class="span3">

@@ -57,8 +57,8 @@
             connect con f
           </code>
           <div class="tip" id="31">
-            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;?8002) -&gt; &#39;?8002<br />
-                          <strong>Type parameters:</strong> '?8002          </div>
+            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;a) -&gt; &#39;a<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L234-234" class="github-link">
@@ -129,8 +129,8 @@
             executeSql createCommand sql con
           </code>
           <div class="tip" id="35">
-            <strong>Signature:</strong> createCommand:(&#39;?8004 -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;?8004 -&gt; con:IDbConnection -&gt; IDataReader<br />
-                          <strong>Type parameters:</strong> '?8004          </div>
+            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; IDataReader<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L239-239" class="github-link">
@@ -147,8 +147,8 @@
             executeSqlAsDataTable (...)
           </code>
           <div class="tip" id="36">
-            <strong>Signature:</strong> createCommand:(&#39;?8006 -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;?8006 -&gt; con:IDbConnection -&gt; DataTable<br />
-                          <strong>Type parameters:</strong> '?8006          </div>
+            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; DataTable<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L243-243" class="github-link">
