@@ -27,11 +27,11 @@ let project = "SQLProvider"
 
 // Short summary of the project
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
-let summary = "Type providers for SQL Server access."
+let summary = "Type providers for SQL database access."
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = "Type providers for SQL Server access."
+let description = "Type providers for SQL database access."
 
 // List of author names (for NuGet package)
 let authors = [ "Ross McKinlay, Colin Bull" ]
