@@ -235,10 +235,10 @@ Target "BuildDocs" DoNothing
 
 "All"
   ==> "BuildDocs"
+  ==> "ReleaseDocs"
+  ==> "Release"
 
 "All" 
-
-  ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
 
