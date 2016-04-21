@@ -23,8 +23,6 @@ summary
     Type providers for SQL database access.
 description
     Type providers for SQL database access.
-dependencies
-    FSharp.Core ~> LOCKEDVERSION
 include-pdbs
     true
 
