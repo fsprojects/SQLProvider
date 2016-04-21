@@ -56,6 +56,7 @@ your program or the program using your library : http://msdn.microsoft.com/en-us
 
 - [@pezipink](https://github.com/pezipink)
 - [@colinbull](https://github.com/colinbull)
+- [@Thorium](https://github.com/Thorium)
 
 The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
 
