@@ -1,4 +1,6 @@
 type project
+id
+    SQLProvider
 title
     SQLProvider
 owners
@@ -23,5 +25,6 @@ description
     Type providers for SQL database access.
 dependencies
     FSharp.Core ~> LOCKEDVERSION
-
+include-pdbs
+    true
 
