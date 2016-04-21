@@ -131,6 +131,14 @@ Target "NuGet" (fun _ ->
     CleanDir "Temp"
 )
 
+Target "PackNuGet" (fun _ -> 
+    Paket.Pack(fun p -> 
+        { p with 
+            Version = release.NugetVersion
+            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
+            OutputPath = "bin" })
+) 
+
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
@@ -235,11 +243,13 @@ Target "BuildDocs" DoNothing
 
 "All"
   ==> "BuildDocs"
+
+"All" 
+  ==> "NuGet"
   ==> "ReleaseDocs"
   ==> "Release"
 
 "All" 
-  ==> "NuGet"
-  ==> "Release"
+  ==> "PackNuGet"
 
 RunTargetOrDefault "All"
