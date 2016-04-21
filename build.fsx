@@ -136,6 +136,7 @@ Target "PackNuGet" (fun _ ->
         { p with 
             Version = release.NugetVersion
             ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
+            Symbols = true
             OutputPath = "bin" })
 ) 
 
