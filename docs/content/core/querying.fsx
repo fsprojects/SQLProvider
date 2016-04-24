@@ -26,7 +26,7 @@ let ctx = sql.GetDataContext()
 
 
 (**
-SQLProvider leverages F#'s `query {}` expression syntax to perform queries 
+SQLProvider leverages F#'s `query {}` expression syntax to perform queries
 against the database.  Though many are supported, not all LINQ expressions are.
 *)
 
@@ -35,7 +35,7 @@ against the database.  Though many are supported, not all LINQ expressions are.
 (**
 ## Expressions
 
-These operators perform no specific function in the code itself, rather they 
+These operators perform no specific function in the code itself, rather they
 are placeholders replaced by their database-specific server-side operations.
 Their utility is in forcing the compiler to check against the correct types.
 
@@ -56,4 +56,28 @@ let bergs = ctx.``[main].[Customers]``.Individuals.BERGS
 * `!!` (Left join)
 *)
 
+(**
+## Adding Mappers using dataContext to use generated types from db
 
+# Adding Domain Model
+
+*)
+
+type Energyplant =
+  { Description : string;
+    Street : string ;
+    Location : string ;
+    ZipCode : string
+  }
+
+(**
+# Create the mapper using dataContext to use generated types from db
+# This mapper will get sure that you always sync your types with the db.
+
+*)
+
+let mapEnergyPlant (dbRecord:Sql.dataContext.``[main].[energyplant]``) : Energyplant =
+    { Description = dbRecord.Description
+      Street = dbRecord.UserStreet
+      Location = dbRecord.UserLocation
+      ZipCode = dbRecord.UserZipCode }
