@@ -57,27 +57,28 @@ let bergs = ctx.``[main].[Customers]``.Individuals.BERGS
 *)
 
 (**
-## Adding Mappers using dataContext to use generated types from db
+## Adding a Mapper using dataContext to use generated types from db
 
-# Adding Domain Model
+This mapper will get sure that you always sync your types with types you receive from your db.
+
+### First add an Domain Model
 
 *)
 
-type Energyplant =
-  { Description : string;
-    Street : string ;
-    Location : string ;
-    ZipCode : string
-  }
+type Employee = {
+    EmployeeId : int32
+    FirstName : string
+    LastName : string
+    HireDate : DateTime
+}
 
 (**
-# Create the mapper using dataContext to use generated types from db
-# This mapper will get sure that you always sync your types with the db.
+### Then you can create the mapper using dataContext to use generated types from db
 
 *)
 
-let mapEnergyPlant (dbRecord:Sql.dataContext.``[main].[energyplant]``) : Energyplant =
-    { Description = dbRecord.Description
-      Street = dbRecord.UserStreet
-      Location = dbRecord.UserLocation
-      ZipCode = dbRecord.UserZipCode }
+let mapEmployee (dbRecord:ctx.Dbo.Employees.Individuals) : Employee =
+    { EmployeeId = dbRecord.EmployeeId
+      FirstName = dbRecord.FirstName
+      LastName = dbRecord.LastName
+      HireDate = dbRecord.HireDate }
