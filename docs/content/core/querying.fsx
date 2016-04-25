@@ -74,10 +74,10 @@ type Employee = {
 
 (**
 ### Then you can create the mapper using dataContext to use generated types from db
-
+TODO: Find the right Entity
 *)
 
-let mapEmployee (dbRecord:ctx.Dbo.Employees.Individuals) : Employee =
+let mapEmployee (dbRecord:ctx.Dbo.``[Main].[Employees]Entity``) : Employee =
     { EmployeeId = dbRecord.EmployeeId
       FirstName = dbRecord.FirstName
       LastName = dbRecord.LastName
