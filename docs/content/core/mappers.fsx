@@ -23,7 +23,7 @@ This mapper will get sure that you always sync your types with types you receive
 *)
 
 type Employee = {
-    EmployeeId : int32
+    EmployeeId : int64
     FirstName : string
     LastName : string
     HireDate : DateTime
@@ -31,10 +31,9 @@ type Employee = {
 
 (**
 ### Then you can create the mapper using dataContext to use generated types from db
-TODO: Find the right Entity
 *)
 
-let mapEmployee (dbRecord:ctx.Dbo.``[Main].[Employees]Entity``) : Employee =
+let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
     { EmployeeId = dbRecord.EmployeeId
       FirstName = dbRecord.FirstName
       LastName = dbRecord.LastName
