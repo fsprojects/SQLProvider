@@ -26,7 +26,7 @@ let ctx = sql.GetDataContext()
 
 
 (**
-SQLProvider leverages F#'s `query {}` expression syntax to perform queries 
+SQLProvider leverages F#'s `query {}` expression syntax to perform queries
 against the database.  Though many are supported, not all LINQ expressions are.
 *)
 
@@ -35,7 +35,7 @@ against the database.  Though many are supported, not all LINQ expressions are.
 (**
 ## Expressions
 
-These operators perform no specific function in the code itself, rather they 
+These operators perform no specific function in the code itself, rather they
 are placeholders replaced by their database-specific server-side operations.
 Their utility is in forcing the compiler to check against the correct types.
 
@@ -55,5 +55,3 @@ let bergs = ctx.``[main].[Customers]``.Individuals.BERGS
 * `<>%` (Not like)
 * `!!` (Left join)
 *)
-
-
