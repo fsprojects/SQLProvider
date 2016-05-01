@@ -425,7 +425,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
             con.Open()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try
                 
                 // close the connection first otherwise it won't get enlisted into the transaction 
@@ -471,7 +471,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
             async { 
-                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                use scope = Utilities.ensureTransaction()
                 try
                 
                     // close the connection first otherwise it won't get enlisted into the transaction 

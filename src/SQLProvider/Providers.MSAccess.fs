@@ -431,7 +431,7 @@ type internal MSAccessProvider() =
                      |> Seq.distinct 
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()

@@ -353,7 +353,7 @@ type internal OdbcProvider(resolutionPath) =
 
             if con.State <> ConnectionState.Open then con.Open()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try                
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
@@ -399,7 +399,7 @@ type internal OdbcProvider(resolutionPath) =
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
             async { 
-                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                use scope = Utilities.ensureTransaction()
                 try                
                     // close the connection first otherwise it won't get enlisted into the transaction 
                     if con.State = ConnectionState.Open then con.Close()

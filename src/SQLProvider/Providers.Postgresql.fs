@@ -754,7 +754,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
             con.Open()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try
                 
                 // close the connection first otherwise it won't get enlisted into the transaction 
@@ -800,7 +800,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
             async { 
-                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                use scope = Utilities.ensureTransaction()
                 try
                 
                     // close the connection first otherwise it won't get enlisted into the transaction 

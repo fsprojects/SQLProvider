@@ -603,7 +603,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             con.Open()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
@@ -651,7 +651,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             async { 
 
-                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                use scope = Utilities.ensureTransaction()
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction 
                     if con.State = ConnectionState.Open then con.Close()

@@ -649,7 +649,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
 
             con.Open()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use scope = Utilities.ensureTransaction()
             try                
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
@@ -695,7 +695,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                      |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
 
             async { 
-                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                use scope = Utilities.ensureTransaction()
                 try                
                     // close the connection first otherwise it won't get enlisted into the transaction 
                     if con.State = ConnectionState.Open then con.Close()

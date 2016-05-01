@@ -52,6 +52,15 @@ module internal Utilities =
             }
         | [] -> async { () }
 
+    let ensureTransaction() =
+        #if __MonoCS__
+            // Todo: Take TransactionScopeAsyncFlowOption into use when implemented in Mono.
+            // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
+            new Transactions.TransactionScope()
+        #else
+            new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+        #endif
+
 module ConfigHelpers = 
     
     open System
