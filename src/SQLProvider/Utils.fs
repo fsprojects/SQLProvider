@@ -43,12 +43,12 @@ module internal Utilities =
 
     /// DB-connections are not usually supporting parallel SQL-query execution, so even when
     /// async thread is available, it can't be used to execute another SQL at the same time.
-    let rec execiuteOneByOne asyncFunc entityList =
+    let rec executeOneByOne asyncFunc entityList =
         match entityList with
         | h::t -> 
             async {
                 do! asyncFunc h
-                return! execiuteOneByOne asyncFunc t
+                return! executeOneByOne asyncFunc t
             }
         | [] -> async { () }
 

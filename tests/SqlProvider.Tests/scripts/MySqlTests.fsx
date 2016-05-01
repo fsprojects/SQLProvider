@@ -40,6 +40,13 @@ let employeesFirstName =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
+let employeesFirstNameAsync = 
+    query {
+        for emp in ctx.Hr.Employees do
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+
+
 let salesNamedDavid = 
     query {
             for emp in ctx.Hr.Employees do
@@ -120,7 +127,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdates()
+ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 

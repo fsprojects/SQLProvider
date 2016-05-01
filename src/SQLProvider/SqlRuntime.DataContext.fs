@@ -70,7 +70,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             match providerCache.TryGetValue typeName with
             | true,provider -> 
                 async{
-                    use con = provider.CreateConnection(connectionString)
+                    use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                     do! provider.ProcessUpdatesAsync(con, Seq.toList pendingChanges)
                     pendingChanges.Clear()
                 }

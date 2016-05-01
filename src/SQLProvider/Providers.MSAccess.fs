@@ -431,60 +431,58 @@ type internal MSAccessProvider() =
                      |> Seq.distinct 
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
-            if con.State = ConnectionState.Closed then con.Open()
-
             use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
             try
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
-                con.Open()
-                use trnsx = con.BeginTransaction()
-                try                
-                    // initially supporting update/create/delete of single entities, no hierarchies yet
-                    let handleEntity (e: SqlEntity) =
-                        match e._State with
-                        | Created -> 
-                            async {
-                                let cmd = createInsertCommand con sb e
-                                cmd.Transaction <- trnsx :?> OleDbTransaction
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                let id = cmd.ExecuteScalarAsync()
-                                match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                                | Some v -> () // if the primary key exists, do nothing
-                                               // this is because non-identity columns will have been set 
-                                               // manually and in that case scope_identity would bring back 0 "" or whatever
-                                | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
-                                e._State <- Unchanged
-                            }
-                        | Modified fields -> 
-                            async {
-                                let cmd = createUpdateCommand con sb e fields
-                                cmd.Transaction <- trnsx :?> OleDbTransaction
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                cmd.ExecuteNonQuery() |> ignore
-                                e._State <- Unchanged
-                            }
-                        | Deleted -> 
-                            async {
-                                let cmd = createDeleteCommand con sb e
-                                cmd.Transaction <- trnsx :?> OleDbTransaction
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                cmd.ExecuteNonQuery() |> ignore
-                                // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
-                            }
-                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                async { 
 
-                    async { 
-                        do! Utilities.execiuteOneByOne handleEntity entities
+                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    use trnsx = con.BeginTransaction()
+                    try                
+                        // initially supporting update/create/delete of single entities, no hierarchies yet
+                        let handleEntity (e: SqlEntity) =
+                            match e._State with
+                            | Created -> 
+                                async {
+                                    let cmd = createInsertCommand con sb e
+                                    cmd.Transaction <- trnsx :?> OleDbTransaction
+                                    Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                    let id = cmd.ExecuteScalarAsync()
+                                    match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                                    | Some v -> () // if the primary key exists, do nothing
+                                                   // this is because non-identity columns will have been set 
+                                                   // manually and in that case scope_identity would bring back 0 "" or whatever
+                                    | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                                    e._State <- Unchanged
+                                }
+                            | Modified fields -> 
+                                async {
+                                    let cmd = createUpdateCommand con sb e fields
+                                    cmd.Transaction <- trnsx :?> OleDbTransaction
+                                    Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                    cmd.ExecuteNonQuery() |> ignore
+                                    e._State <- Unchanged
+                                }
+                            | Deleted -> 
+                                async {
+                                    let cmd = createDeleteCommand con sb e
+                                    cmd.Transaction <- trnsx :?> OleDbTransaction
+                                    Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                    cmd.ExecuteNonQuery() |> ignore
+                                    // remove the pk to prevent this attempting to be used again
+                                    e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                }
+                            | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+
+                        do! Utilities.executeOneByOne handleEntity entities
                         trnsx.Commit()
                         scope.Complete()
-                    }
 
-                with 
-                |e -> 
-                    async {
+                    with 
+                    |e -> 
                         trnsx.Rollback()
-                    }
+                }
+
             finally
                 con.Close()

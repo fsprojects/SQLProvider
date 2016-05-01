@@ -64,3 +64,9 @@ row.Delete()
 Submit updates to the database
 *)
 ctx.SubmitUpdates()
+
+(** 
+
+Support also async operations: ctx.SubmitUpdatesAsync() |> Async.StartAsTask
+
+*)

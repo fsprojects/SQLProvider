@@ -46,6 +46,24 @@ module internal QueryImplementation =
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
 
+    let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =        
+       async {
+           use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
+           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+           let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
+           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
+           // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow       
+           use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           for p in parameters do cmd.Parameters.Add p |> ignore
+           if con.State <> ConnectionState.Open then 
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
+           let! results = SqlEntity.FromDataReaderAsync(dc,baseTable.FullName, reader)
+           let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           return results
+       }
+
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =       
        use con = provider.CreateConnection(dc.ConnectionString) 
        con.Open()
@@ -65,6 +83,30 @@ module internal QueryImplementation =
                failwithf "Count returned something other than a 32 bit integer : %s " (x.GetType().ToString())
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        box result
+
+    let executeQueryScalarAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =       
+       async {
+           use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
+           do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
+           use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           for p in parameters do cmd.Parameters.Add p |> ignore
+           // ignore any generated projection and just expect a single integer back
+           if con.State <> ConnectionState.Open then 
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+           let result = 
+            match executed with
+            | :? string as s -> Int32.Parse s
+            | :? int as i -> i
+            | :? int16 as i -> int32 i
+            | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int 
+            | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                   failwithf "Count returned something other than a 32 bit integer : %s " (x.GetType().ToString())
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           return box result
+       }
        
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =       
         static member Create(table,conString,provider) = 
@@ -85,6 +127,11 @@ module internal QueryImplementation =
              member x.SqlExpression = sqlQuery
              member x.TupleIndex = tupleIndex
              member x.Provider = provider
+        member x.GetAsyncEnumerator() = 
+            async {
+                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                return (Seq.cast<'T> (executeSql)).GetEnumerator()
+            }
 
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =       
         static member Create(table,conString,provider) = 
@@ -106,6 +153,11 @@ module internal QueryImplementation =
              member x.SqlExpression = sqlQuery
              member x.TupleIndex = tupleIndex
              member x.Provider = provider
+        member x.GetAsyncEnumerator() = 
+            async {
+                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                return (Seq.cast<'T> (executeSql)).GetEnumerator()
+            }
 
     and SqlQueryProvider() =
          static member val Provider = 
@@ -355,4 +407,30 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "Count" as meth), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
                         executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
+
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
+
+
+    let executeAsync(s:Linq.IQueryable<'T>) = 
+        let yieldseq (en: IEnumerator<'T>) =
+            seq{
+                while en.MoveNext() do
+                yield en.Current
+            }
+        async{
+//            match s :> SqlQueryable<_>) with
+//            | true ->
+                let coll = s :?> SqlQueryable<_>
+                let! en = coll.GetAsyncEnumerator()
+                return yieldseq en
+//            | false ->
+//                let en = s.GetEnumerator()
+//                return yieldseq en
+        }
+namespace FSharp.Data.Sql
+open FSharp.Data.Sql.Runtime
+
+module Seq = let executeQueryAsync = QueryImplementation.executeAsync
+module List = let executeQueryAsync = QueryImplementation.executeAsync
+module Array = let executeQueryAsync = QueryImplementation.executeAsync
+

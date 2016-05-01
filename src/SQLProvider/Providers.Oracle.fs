@@ -694,48 +694,48 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                      |> Seq.distinct 
                      |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
 
-            con.Open()
+            async { 
+                use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                try                
+                    // close the connection first otherwise it won't get enlisted into the transaction 
+                    if con.State = ConnectionState.Open then con.Close()
 
-            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
-            try                
-                // close the connection first otherwise it won't get enlisted into the transaction 
-                if con.State = ConnectionState.Open then con.Close()
-                con.Open()         
-                // initially supporting update/create/delete of single entities, no hierarchies yet
-                let handleEntity (e: SqlEntity) =
-                    match e._State with
-                    | Created -> 
-                        async {
-                            let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
-                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                            let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                            match e.GetColumnOption primaryKeyCache.[e.Table.Name].Column with
-                            | Some v -> () // if the primary key exists, do nothing
-                                           // this is because non-identity columns will have been set 
-                                           // manually and in that case scope_identity would bring back 0 "" or whatever
-                            | None ->  e.SetColumnSilent(primaryKeyCache.[e.Table.Name].Column, id)
-                            e._State <- Unchanged
-                        }
-                    | Modified fields -> 
-                        async {
-                            let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
-                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                            do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
-                            e._State <- Unchanged
-                        }
-                    | Deleted -> 
-                        async {
-                            let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
-                            Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                            do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
-                            // remove the pk to prevent this attempting to be used again
-                            e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
-                        }
-                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
-                async { 
-                    do! Utilities.execiuteOneByOne handleEntity entities
+                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+
+                    // initially supporting update/create/delete of single entities, no hierarchies yet
+                    let handleEntity (e: SqlEntity) =
+                        match e._State with
+                        | Created -> 
+                            async {
+                                let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                match e.GetColumnOption primaryKeyCache.[e.Table.Name].Column with
+                                | Some v -> () // if the primary key exists, do nothing
+                                               // this is because non-identity columns will have been set 
+                                               // manually and in that case scope_identity would bring back 0 "" or whatever
+                                | None ->  e.SetColumnSilent(primaryKeyCache.[e.Table.Name].Column, id)
+                                e._State <- Unchanged
+                            }
+                        | Modified fields -> 
+                            async {
+                                let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                e._State <- Unchanged
+                            }
+                        | Deleted -> 
+                            async {
+                                let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                // remove the pk to prevent this attempting to be used again
+                                e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
+                            }
+                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+
+                    do! Utilities.executeOneByOne handleEntity entities
                     scope.Complete()
-                }
-
-            finally
-                con.Close()
+                finally
+                    con.Close()
+            }

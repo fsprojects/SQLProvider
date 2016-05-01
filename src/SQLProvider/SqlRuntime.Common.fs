@@ -135,14 +135,40 @@ type SqlEntity(dc:ISqlDataContext,tableName:string) =
     
     member e.HasValue(key) = data.ContainsKey key
 
-    static member internal FromDataReader(con,name,reader:System.Data.IDataReader) =  
+    static member internal FromDataReader((con:ISqlDataContext),(name:string),(reader:System.Data.IDataReader)) =  
         [| while reader.Read() = true do
-           let e = SqlEntity(con,name)        
-           for i = 0 to reader.FieldCount - 1 do 
-               match reader.GetValue(i) with
-               | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
-               | value -> e.SetColumnSilent(reader.GetName(i),value)
-           yield e |]
+             let e = SqlEntity(con,name)        
+             for i = 0 to reader.FieldCount - 1 do 
+                match reader.GetValue(i) with
+                | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+                | value -> e.SetColumnSilent(reader.GetName(i),value)
+             yield e
+        |]
+
+    static member internal FromDataReaderAsync((con:ISqlDataContext),(name:string),(reader:System.Data.Common.DbDataReader)) =  
+
+        let collectItemfunc() : SqlEntity =
+                let e = SqlEntity(con,name)        
+                for i = 0 to reader.FieldCount - 1 do 
+                    match reader.GetValue(i) with
+                    | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+                    | value -> e.SetColumnSilent(reader.GetName(i),value)
+                e
+
+        let rec readitems acc =
+            async {
+                let! moreitems = reader.ReadAsync() |> Async.AwaitTask
+                match moreitems with
+                | true -> 
+                    return! readitems (collectItemfunc()::acc)
+                | false -> return acc
+            }
+
+        async {
+            let! items = readitems []
+            return items |> List.toArray
+        }
+
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
@@ -406,7 +432,7 @@ and internal ISqlProvider =
     abstract GetIndividualQueryText : Table * string -> string
 
     abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
-    abstract ProcessUpdatesAsync : IDbConnection * SqlEntity list -> Async<unit>
+    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * SqlEntity list -> Async<unit>
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection

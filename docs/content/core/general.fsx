@@ -134,6 +134,20 @@ let customersQuery =
     |> Seq.toArray
 
 (**
+
+Support also async queries
+
+ *)
+
+let customersQueryAsync = 
+    query { 
+        for customer in ctx.Main.Customers do
+            select customer
+    }
+    |> Seq.executeQueryAsync |> Async.StartAsTask
+
+
+(**
 The above example is identical to the query that was executed when 
 ``ctx.[main].[Customers] |> Seq.toArray`` was evaluated.
 
