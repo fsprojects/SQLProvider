@@ -259,6 +259,7 @@ and ISqlDataContext =
     abstract GetIndividual              : string * obj -> SqlEntity
     abstract SubmitChangedEntity        : SqlEntity -> unit
     abstract SubmitPendingChanges       : unit -> unit
+    abstract SubmitPendingChangesAsync  : unit -> Async<unit>
     abstract ClearPendingChanges        : unit -> unit
     abstract GetPendingEntities         : unit -> SqlEntity list
     abstract GetPrimaryKeyDefinition    : string -> string
@@ -405,6 +406,7 @@ and internal ISqlProvider =
     abstract GetIndividualQueryText : Table * string -> string
 
     abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
+    abstract ProcessUpdatesAsync : IDbConnection * SqlEntity list -> Async<unit>
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing 
     /// the columns from the various table aliases that are in the SELECT projection

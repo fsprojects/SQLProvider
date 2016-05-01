@@ -66,7 +66,16 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 provider.ProcessUpdates(con, Seq.toList pendingChanges)
                 pendingChanges.Clear()
             | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
-            
+        member this.SubmitPendingChangesAsync() = 
+            match providerCache.TryGetValue typeName with
+            | true,provider -> 
+                async{
+                    use con = provider.CreateConnection(connectionString)
+                    do! provider.ProcessUpdatesAsync(con, Seq.toList pendingChanges)
+                    pendingChanges.Clear()
+                }
+            | false, _ -> failwith "fatal error - provider cache was not populated with expected ISqlprovider instance"
+                        
         member this.CreateRelated(inst:SqlEntity,entity,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =
             match providerCache.TryGetValue typeName with
             | true,provider -> 

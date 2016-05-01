@@ -60,6 +60,86 @@ type internal MSAccessProvider() =
         findDbType <- dbMappings.TryFind
         findDbTypeByEnum <- enumMappings.TryFind
     
+    let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =     
+        let (~~) (t:string) = sb.Append t |> ignore
+        let cmd = new OleDbCommand()
+        cmd.Connection <- con :?> OleDbConnection
+        let pk = pkLookup.[entity.Table.FullName] 
+        let columnNames, values = 
+            (([],0),entity.ColumnValues)
+            ||> Seq.fold(fun (out,i) (k,v) ->
+                let name = sprintf "@param%i" i
+                let p = OleDbParameter(name,v)
+                (k,p)::out,i+1)
+            |> fun (x,_)-> x 
+            |> List.rev
+            |> List.toArray 
+            |> Array.unzip
+                
+        sb.Clear() |> ignore
+        ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;" 
+            entity.Table.Name
+            (String.Join(",", columnNames))
+            (String.Join(",", values |> Array.map(fun p -> p.ParameterName))))
+        cmd.Parameters.AddRange(values)
+        cmd.CommandText <- sb.ToString()
+        cmd
+
+    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+        let (~~) (t:string) = sb.Append t |> ignore
+        let cmd = new OleDbCommand()
+        cmd.Connection <- con :?> OleDbConnection
+        let pk = pkLookup.[entity.Table.FullName] 
+        sb.Clear() |> ignore
+
+        if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+
+        let pkValue = 
+            match entity.GetColumnOption<obj> pk with
+            | Some v -> v
+            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+                
+        let data = 
+            (([],0),changedColumns)
+            ||> List.fold(fun (out,i) col ->                                                         
+                let name = sprintf "@param%i" i
+                let p = 
+                    match entity.GetColumnOption<obj> col with
+                    | Some v -> OleDbParameter(name,v)
+                    | None -> OleDbParameter(name,DBNull.Value)
+                (col,p)::out,i+1)
+            |> fun (x,_)-> x 
+            |> List.rev
+            |> List.toArray 
+                
+        let pkParam = OleDbParameter("@pk", pkValue)
+
+        ~~(sprintf "UPDATE [%s] SET %s WHERE %s = @pk;" 
+            entity.Table.Name
+            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+            pk)
+
+        cmd.Parameters.AddRange(data |> Array.map snd)
+        cmd.Parameters.Add pkParam |> ignore
+        cmd.CommandText <- sb.ToString()
+        cmd
+            
+    let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        let (~~) (t:string) = sb.Append t |> ignore
+        let cmd = new OleDbCommand()
+        cmd.Connection <- con :?> OleDbConnection
+        sb.Clear() |> ignore
+        let pk = pkLookup.[entity.Table.FullName] 
+        sb.Clear() |> ignore
+        let pkValue = 
+            match entity.GetColumnOption<obj> pk with
+            | Some v -> v
+            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+        cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
+        ~~(sprintf "DELETE FROM [%s] WHERE %s = @id" entity.Table.Name pk )
+        cmd.CommandText <- sb.ToString()
+        cmd
+
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
@@ -292,7 +372,7 @@ type internal MSAccessProvider() =
     
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
-            let (~~) (t:string) = sb.Append t |> ignore
+
             entities |> List.iter (fun e -> printfn "entity - %A" e.ColumnValues)
             // ensure columns have been loaded
             entities |> List.map(fun e -> e.Table) 
@@ -301,82 +381,6 @@ type internal MSAccessProvider() =
 
             if con.State = ConnectionState.Closed then con.Open()
 
-            let createInsertCommand (entity:SqlEntity) =     
-                let cmd = new OleDbCommand()
-                cmd.Connection <- con :?> OleDbConnection
-                let pk = pkLookup.[entity.Table.FullName] 
-                let columnNames, values = 
-                    (([],0),entity.ColumnValues)
-                    ||> Seq.fold(fun (out,i) (k,v) ->
-                        let name = sprintf "@param%i" i
-                        let p = OleDbParameter(name,v)
-                        (k,p)::out,i+1)
-                    |> fun (x,_)-> x 
-                    |> List.rev
-                    |> List.toArray 
-                    |> Array.unzip
-                
-                sb.Clear() |> ignore
-                ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;" 
-                    entity.Table.Name
-                    (String.Join(",", columnNames))
-                    (String.Join(",", values |> Array.map(fun p -> p.ParameterName))))
-                cmd.Parameters.AddRange(values)
-                cmd.CommandText <- sb.ToString()
-                cmd
-
-            let createUpdateCommand (entity:SqlEntity) changedColumns =
-                let cmd = new OleDbCommand()
-                cmd.Connection <- con :?> OleDbConnection
-                let pk = pkLookup.[entity.Table.FullName] 
-                sb.Clear() |> ignore
-
-                if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
-
-                let pkValue = 
-                    match entity.GetColumnOption<obj> pk with
-                    | Some v -> v
-                    | None -> failwith "Error - you cannot update an entity that does not have a primary key."
-                
-                let data = 
-                    (([],0),changedColumns)
-                    ||> List.fold(fun (out,i) col ->                                                         
-                        let name = sprintf "@param%i" i
-                        let p = 
-                            match entity.GetColumnOption<obj> col with
-                            | Some v -> OleDbParameter(name,v)
-                            | None -> OleDbParameter(name,DBNull.Value)
-                        (col,p)::out,i+1)
-                    |> fun (x,_)-> x 
-                    |> List.rev
-                    |> List.toArray 
-                
-                let pkParam = OleDbParameter("@pk", pkValue)
-
-                ~~(sprintf "UPDATE [%s] SET %s WHERE %s = @pk;" 
-                    entity.Table.Name
-                    (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-                    pk)
-
-                cmd.Parameters.AddRange(data |> Array.map snd)
-                cmd.Parameters.Add pkParam |> ignore
-                cmd.CommandText <- sb.ToString()
-                cmd
-            
-            let createDeleteCommand (entity:SqlEntity) =
-                let cmd = new OleDbCommand()
-                cmd.Connection <- con :?> OleDbConnection
-                sb.Clear() |> ignore
-                let pk = pkLookup.[entity.Table.FullName] 
-                sb.Clear() |> ignore
-                let pkValue = 
-                    match entity.GetColumnOption<obj> pk with
-                    | Some v -> v
-                    | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-                cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
-                ~~(sprintf "DELETE FROM [%s] WHERE %s = @id" entity.Table.Name pk )
-                cmd.CommandText <- sb.ToString()
-                cmd
             try
                 // close the connection first otherwise it won't get enlisted into the transaction 
                 if con.State = ConnectionState.Open then con.Close()
@@ -388,7 +392,7 @@ type internal MSAccessProvider() =
                     |> List.iter(fun e -> 
                         match e._State with
                         | Created -> 
-                            let cmd = createInsertCommand e
+                            let cmd = createInsertCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQuery cmd.CommandText
                             let id = cmd.ExecuteScalar()
@@ -399,13 +403,13 @@ type internal MSAccessProvider() =
                             | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
                             e._State <- Unchanged
                         | Modified fields -> 
-                            let cmd = createUpdateCommand e fields
+                            let cmd = createUpdateCommand con sb e fields
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQuery cmd.CommandText
                             cmd.ExecuteNonQuery() |> ignore
                             e._State <- Unchanged
                         | Deleted -> 
-                            let cmd = createDeleteCommand e
+                            let cmd = createDeleteCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQuery cmd.CommandText
                             cmd.ExecuteNonQuery() |> ignore
@@ -415,5 +419,72 @@ type internal MSAccessProvider() =
                     trnsx.Commit()
                 with 
                 |e -> trnsx.Rollback()
+            finally
+                con.Close()
+
+        member this.ProcessUpdatesAsync(con, entities) =
+            let sb = Text.StringBuilder()
+
+            entities |> List.iter (fun e -> printfn "entity - %A" e.ColumnValues)
+            // ensure columns have been loaded
+            entities |> List.map(fun e -> e.Table) 
+                     |> Seq.distinct 
+                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if con.State = ConnectionState.Closed then con.Open()
+
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            try
+                // close the connection first otherwise it won't get enlisted into the transaction 
+                if con.State = ConnectionState.Open then con.Close()
+                con.Open()
+                use trnsx = con.BeginTransaction()
+                try                
+                    // initially supporting update/create/delete of single entities, no hierarchies yet
+                    let handleEntity (e: SqlEntity) =
+                        match e._State with
+                        | Created -> 
+                            async {
+                                let cmd = createInsertCommand con sb e
+                                cmd.Transaction <- trnsx :?> OleDbTransaction
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                let id = cmd.ExecuteScalarAsync()
+                                match e.GetColumnOption pkLookup.[e.Table.FullName] with
+                                | Some v -> () // if the primary key exists, do nothing
+                                               // this is because non-identity columns will have been set 
+                                               // manually and in that case scope_identity would bring back 0 "" or whatever
+                                | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                                e._State <- Unchanged
+                            }
+                        | Modified fields -> 
+                            async {
+                                let cmd = createUpdateCommand con sb e fields
+                                cmd.Transaction <- trnsx :?> OleDbTransaction
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                cmd.ExecuteNonQuery() |> ignore
+                                e._State <- Unchanged
+                            }
+                        | Deleted -> 
+                            async {
+                                let cmd = createDeleteCommand con sb e
+                                cmd.Transaction <- trnsx :?> OleDbTransaction
+                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                cmd.ExecuteNonQuery() |> ignore
+                                // remove the pk to prevent this attempting to be used again
+                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                            }
+                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+
+                    async { 
+                        do! Utilities.execiuteOneByOne handleEntity entities
+                        trnsx.Commit()
+                        scope.Complete()
+                    }
+
+                with 
+                |e -> 
+                    async {
+                        trnsx.Rollback()
+                    }
             finally
                 con.Close()

@@ -41,6 +41,17 @@ module internal Utilities =
                
         )
 
+    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
+    /// async thread is available, it can't be used to execute another SQL at the same time.
+    let rec execiuteOneByOne asyncFunc entityList =
+        match entityList with
+        | h::t -> 
+            async {
+                do! asyncFunc h
+                return! execiuteOneByOne asyncFunc t
+            }
+        | [] -> async { () }
+
 module ConfigHelpers = 
     
     open System
@@ -214,16 +225,33 @@ module Sql =
     open System
     open System.Data
 
+    let private collectfunc(reader:IDataReader) = 
+        [|
+            for i = 0 to reader.FieldCount - 1 do 
+                match reader.GetValue(i) with
+                | null | :? DBNull ->  yield (reader.GetName(i),null)
+                | value -> yield (reader.GetName(i),value)
+        |]
+        
     let dataReaderToArray (reader:IDataReader) = 
         [| 
             while reader.Read() do
-               yield [|      
-                    for i = 0 to reader.FieldCount - 1 do 
-                        match reader.GetValue(i) with
-                        | null | :? DBNull ->  yield (reader.GetName(i),null)
-                        | value -> yield (reader.GetName(i),value)
-               |]
+               yield collectfunc reader
         |]
+
+    let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) = 
+
+        let rec readitems acc =
+            async {
+                let! moreitems = reader.ReadAsync() |> Async.AwaitTask
+                match moreitems with
+                | true -> return! readitems (collectfunc(reader)::acc)
+                | false -> return acc
+            }
+        async {
+            let! items = readitems []
+            return items |> List.toArray
+        }
 
     let dbUnbox<'a> (v:obj) : 'a = 
         if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
@@ -236,12 +264,32 @@ module Sql =
         let result = f con
         con.Close(); result
 
+    let connectAsync (con:System.Data.Common.DbConnection) f =
+        async {
+            if con.State <> ConnectionState.Open then 
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            let result = f con
+            con.Close(); result
+        }
+
     let executeSql createCommand sql (con:IDbConnection) =        
         use com : IDbCommand = createCommand sql con   
         com.ExecuteReader()    
+
+    let executeSqlAsync createCommand sql (con:IDbConnection) =
+        use com : System.Data.Common.DbCommand = createCommand sql con   
+        com.ExecuteReaderAsync() |> Async.AwaitTask  
 
     let executeSqlAsDataTable createCommand sql con = 
         use r = executeSql createCommand sql con
         let dt = new DataTable()
         dt.Load(r)
         dt
+
+    let executeSqlAsDataTableAsync createCommand sql con = 
+        async{
+            use! r = executeSqlAsync createCommand sql con
+            let dt = new DataTable()
+            dt.Load(r)
+            return dt
+        }
