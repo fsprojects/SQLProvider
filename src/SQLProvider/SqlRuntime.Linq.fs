@@ -418,14 +418,16 @@ module internal QueryImplementation =
                 yield en.Current
             }
         async{
-//            match s :> SqlQueryable<_>) with
-//            | true ->
-                let coll = s :?> SqlQueryable<_>
+            match s with
+            | :? SqlQueryable<'T> as coll -> 
                 let! en = coll.GetAsyncEnumerator()
                 return yieldseq en
-//            | false ->
-//                let en = s.GetEnumerator()
-//                return yieldseq en
+            | :? SqlOrderedQueryable<'T> as coll -> 
+                let! en = coll.GetAsyncEnumerator()
+                return yieldseq en
+            | c ->
+                let en = c.GetEnumerator()
+                return yieldseq en
         }
 namespace FSharp.Data.Sql
 open FSharp.Data.Sql.Runtime
