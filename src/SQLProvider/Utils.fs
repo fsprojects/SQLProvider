@@ -52,14 +52,22 @@ module internal Utilities =
             }
         | [] -> async { () }
 
+
     let ensureTransaction() =
-        #if __MonoCS__
-            // Todo: Take TransactionScopeAsyncFlowOption into use when implemented in Mono.
-            // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
-            new Transactions.TransactionScope()
-        #else
-            new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
-        #endif
+        // Todo: Take TransactionScopeAsyncFlowOption into use when implemented in Mono.
+        // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
+        // However, default option for TransactionScopeOption is Required, so you can create top level transaction
+        // and this Mono-transaction will have its properties.
+        let isMono = Type.GetType ("Mono.Runtime") <> null
+        match isMono with
+        | true -> new Transactions.TransactionScope()
+        | false ->
+            // Mono would fail to compilation, so we have to construct this via reflection:
+            // new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            let transactionAssembly = System.Reflection.Assembly.GetAssembly typeof<System.Transactions.TransactionScope>
+            let asynctype = transactionAssembly.GetType "System.Transactions.TransactionScopeAsyncFlowOption"
+            let transaction = typeof<System.Transactions.TransactionScope>.GetConstructor [|asynctype|]
+            transaction.Invoke [|1|] :?> System.Transactions.TransactionScope
 
 module ConfigHelpers = 
     
