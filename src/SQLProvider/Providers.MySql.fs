@@ -90,8 +90,10 @@ module MySql =
     let createCommand commandText connection = 
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
-    let createCommandParameter (param:QueryParameter) value = 
+    let createCommandParameter sprocCommand (param:QueryParameter) value = 
+        let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if value = null then (box System.DBNull.Value) else value
+        
         let parameterType = parameterType.Value
         let mySqlDbTypeSetter = 
             parameterType.GetProperty("MySqlDbType").GetSetMethod()
@@ -100,7 +102,7 @@ module MySql =
         
         p.Direction <-  param.Direction 
         
-        p.DbType <- param.TypeMapping.DbType
+        p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         param.TypeMapping.ProviderType |> Option.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
         
         Option.iter (fun l -> p.Size <- l) param.Length             
@@ -190,13 +192,13 @@ module MySql =
         let outps =
              retCols
              |> Array.map(fun ip ->
-                 let p = createCommandParameter ip null
+                 let p = createCommandParameter true ip null
                  (ip.Ordinal, p))
         
         let inps =
              inputParameters
              |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter ip values.[i]
+                 let p = createCommandParameter true ip values.[i]
                  (ip.Ordinal,p))
         
         Array.append outps inps
@@ -329,7 +331,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = MySql.createCommandParameter param value
+        member __.CreateCommandParameter(param, value) = MySql.createCommandParameter false param value
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
         member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
 
