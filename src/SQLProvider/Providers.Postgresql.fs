@@ -3,7 +3,6 @@
 open System
 open System.Collections.Generic
 open System.Data
-open System.Reflection
 open System.Threading
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
@@ -21,19 +20,18 @@ module PostgreSQL =
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let findType name = 
+    let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | Choice2Of2(paths) -> 
+        | Choice2Of2(paths) ->
            failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
-                (String.Join(", ", assemblyNames |> List.toArray)) 
+                (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths))
-    
-    
-    let checkType name = 
+
+    let checkType name =
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name) 
+        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name)
         | Choice2Of2 _ -> false
 
     let connectionType = lazy (findType "NpgsqlConnection")
@@ -44,7 +42,7 @@ module PostgreSQL =
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
-        
+
     let isSupportedType = function
         | "abstime"     -> false                            // The types abstime and reltime are lower precision types which are used internally.
                                                             // You are discouraged from using these types in applications; these internal types
@@ -179,21 +177,21 @@ module PostgreSQL =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
-    let getSchema name (args:string[]) (conn:IDbConnection) = 
+    let getSchema name (args:string[]) (conn:IDbConnection) =
         getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
 
 
-    let createConnection connectionString = 
+    let createConnection connectionString =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
-        with 
+        with
           | :? System.Reflection.TargetInvocationException as e ->
             failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
 
-    let createCommand commandText connection = 
+    let createCommand commandText connection =
         try
             Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
-        with 
+        with
           | :? System.Reflection.TargetInvocationException as e ->
             failwithf "Could not create the command, error from Npgsql %s" e.InnerException.Message
 
@@ -207,12 +205,12 @@ module PostgreSQL =
         Option.iter (fun l -> p.Size <- l) param.Length
         p
 
-    let tryReadValueProperty instance = 
+    let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty("Value")
         if prop <> null
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
-        else None   
+        else None
 
     let readParameter (parameter:IDbDataParameter) =
         match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
@@ -225,15 +223,15 @@ module PostgreSQL =
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
 
-    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) = 
+    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
-        
+
         let outps =
              retCols
              |> Array.map(fun ip ->
                  let p = createCommandParameter true ip null
                  (ip.Ordinal, p))
-        
+
         let inps =
              inputParameters
              |> Array.mapi(fun i ip ->
@@ -245,7 +243,7 @@ module PostgreSQL =
         |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         let tran = com.Connection.BeginTransaction()
-        let entities = 
+        let entities =
             try
                 match retCols with
                 | [||] -> com.ExecuteNonQuery() |> ignore; Unit
@@ -262,14 +260,14 @@ module PostgreSQL =
                              results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
                              incr(i)
                         Set(!results)
-                    | _ -> 
+                    | _ ->
                         match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                         | Some(_,p) -> Scalar(p.ParameterName, com.ExecuteScalar())
                         | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
-                | cols -> 
+                | cols ->
                     com.ExecuteNonQuery() |> ignore
-                    let returnValues = 
-                        cols 
+                    let returnValues =
+                        cols
                         |> Array.map (fun col ->
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->
@@ -279,10 +277,9 @@ module PostgreSQL =
                             | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                         )
                     Set(returnValues)
-            finally 
+            finally
                 tran.Commit()
-
-        entities 
+        entities
 
     let getSprocs con =
          let query = @"SELECT  r.specific_name AS id,
@@ -301,7 +298,7 @@ module PostgreSQL =
                                                         GROUP BY  routine_name
                                                           HAVING  COUNT(routine_name) > 1)"
          Sql.executeSqlAsDataTable createCommand query con
-         |> DataTable.map (fun r -> 
+         |> DataTable.map (fun r ->
              let name = { ProcName = Sql.dbUnbox<string> r.["name"]
                           Owner = Sql.dbUnbox<string> r.["schema_name"]
                           PackageName = String.Empty }
@@ -342,7 +339,7 @@ module PostgreSQL =
                            Ordinal = 0
                            Length = None })
                      |> Option.fold (fun acc col -> col :: acc) rcolumns
-             Root("Functions", Sproc({ Name = name; Params = (fun con -> sparams); ReturnColumns = (fun con _ -> rcolumns) })))
+             Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = Dictionary<string,string>()
@@ -350,20 +347,20 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
     let columnLookup = Dictionary<string,Column list>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =                 
+    let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
-        cmd.Connection <- con 
-        let pk = pkLookup.[entity.Table.FullName] 
-        let columnNames, values = 
+        cmd.Connection <- con
+        let pk = pkLookup.[entity.Table.FullName]
+        let columnNames, values =
             (([],0),entity.ColumnValues)
-            ||> Seq.fold(fun (out,i) (k,v) -> 
+            ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
                 let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
                 (k,p)::out,i+1)
-            |> fun (x,_)-> x 
+            |> fun (x,_)-> x
             |> List.rev
-            |> List.toArray 
+            |> List.toArray
             |> Array.unzip
 
         sb.Clear() |> ignore
@@ -384,34 +381,33 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
     let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
-        cmd.Connection <- con 
-        let pk = pkLookup.[entity.Table.FullName] 
+        cmd.Connection <- con
+        let pk = pkLookup.[entity.Table.FullName]
         sb.Clear() |> ignore
 
         if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
 
-        let pkValue = 
+        let pkValue =
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot update an entity that does not have a primary key."
-                
-        let data = 
+
+        let data =
             (([],0),changedColumns)
-            ||> List.fold(fun (out,i) col ->                                                         
+            ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
-                let p = 
+                let p =
                     match entity.GetColumnOption<obj> col with
                     | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
                     | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                 (col,p)::out,i+1)
-            |> fun (x,_)-> x 
+            |> fun (x,_)-> x
             |> List.rev
-            |> List.toArray 
-                    
-                
+            |> List.toArray
+
         let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
 
-        ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;" 
+        ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;"
             entity.Table.Schema entity.Table.Name
             (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
             pk)
@@ -420,15 +416,15 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         cmd.Parameters.Add pkParam |> ignore
         cmd.CommandText <- sb.ToString()
         cmd
-            
+
     let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
-        cmd.Connection <- con 
+        cmd.Connection <- con
         sb.Clear() |> ignore
-        let pk = pkLookup.[entity.Table.FullName] 
+        let pk = pkLookup.[entity.Table.FullName]
         sb.Clear() |> ignore
-        let pkValue = 
+        let pkValue =
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
@@ -453,7 +449,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
-        member __.GetTables(con,cs) =
+        member __.GetTables(con,_) =
             use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type
@@ -533,72 +529,69 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 match relationshipLookup.TryGetValue(table.FullName) with
                 | true,v -> v
                 | _ ->
-                    let baseQuery = @"SELECT  
-                                         KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME                                 
-                                        ,KCU1.TABLE_NAME AS FK_TABLE_NAME 
-                                        ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME 
-                                        ,KCU1.ORDINAL_POSITION AS FK_ORDINAL_POSITION 
-                                        ,KCU2.CONSTRAINT_NAME AS REFERENCED_CONSTRAINT_NAME 
-                                        ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME 
-                                        ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME 
-                                        ,KCU2.ORDINAL_POSITION AS REFERENCED_ORDINAL_POSITION 
+                    let baseQuery = @"SELECT
+                                         KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
+                                        ,KCU1.TABLE_NAME AS FK_TABLE_NAME
+                                        ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME
+                                        ,KCU1.ORDINAL_POSITION AS FK_ORDINAL_POSITION
+                                        ,KCU2.CONSTRAINT_NAME AS REFERENCED_CONSTRAINT_NAME
+                                        ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME
+                                        ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME
+                                        ,KCU2.ORDINAL_POSITION AS REFERENCED_ORDINAL_POSITION
                                         ,KCU1.CONSTRAINT_SCHEMA AS FK_CONSTRAINT_SCHEMA
                                         ,KCU2.CONSTRAINT_SCHEMA AS PK_CONSTRAINT_SCHEMA
-                                    FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC 
+                                    FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC
 
-                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1 
-                                        ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG  
-                                        AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA 
-                                        AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
+                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1
+                                        ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG
+                                        AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA
+                                        AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME
 
-                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2 
-                                        ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG  
-                                        AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA 
-                                        AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME 
+                                    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2
+                                        ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG
+                                        AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA
+                                        AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
                                         AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
                     if con.State <> ConnectionState.Open then con.Open()
                     use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
                     let children : Relationship list =
-                        [ while reader.Read() do 
+                        [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
                                     PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5));
                                     PrimaryKey=reader.GetString(6)
                                     ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey=reader.GetString(2)
-                                  } ] 
+                                  } ]
                     reader.Dispose()
                     use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
                     let parents : Relationship list =
-                        [ while reader.Read() do 
+                        [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
                                     PrimaryTable = Table.CreateFullName(reader.GetString(9), reader.GetString(5));
                                     PrimaryKey = reader.GetString(6)
                                     ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey = reader.GetString(2)
-                                  } ] 
+                                  } ]
                     relationshipLookup.Add(table.FullName,(children,parents))
                     con.Close()
                     (children,parents)
                 finally
                     Monitor.Exit relationshipLookup
-        
-        /// Have not attempted stored procs yet
-        member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs 
 
-        member this.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount 
+        member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs
+        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
+        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
-        member this.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
-
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) = 
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
-            
+
             // all tables should be aliased.
             // the LINQ infrastructure will cause this will happen by default if the query includes more than one table
             // if it does not, then we first need to create an alias for the single table
@@ -611,18 +604,18 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             // now we can build the sql query that has been simplified by the above expression converter
             // working on the basis that we will alias everything to make my life eaiser
             // first build  the select statment, this is easy ...
-            let columns = 
+            let columns =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do 
+                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
                         else
-                            for col in v do 
+                            for col in v do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
-        
+
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0
@@ -634,18 +627,18 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 let paramName = nextParam()
                 (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param),value)
 
-            let rec filterBuilder = function 
+            let rec filterBuilder = function
                 | [] -> ()
                 | (cond::conds) ->
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let extractData data = 
+                                let extractData data =
                                      match data with
-                                     | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn -> 
+                                     | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn ->
                                          // in and not in operators pass an array
                                             (box x :?> obj []) |> Array.map createParam
-                                     | Some(x) -> 
+                                     | Some(x) ->
                                          [|createParam (box x)|]
                                      | None ->    [|createParam DBNull.Value|]
 
@@ -653,19 +646,19 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "\"%s\".\"%s\" IS NULL") alias col 
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "\"%s\".\"%s\" IS NOT NULL") alias col 
-                                    | FSharp.Data.Sql.In ->                                     
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "\"%s\".\"%s\" IS NULL") alias col
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "\"%s\".\"%s\" IS NOT NULL") alias col
+                                    | FSharp.Data.Sql.In ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "\"%s\".\"%s\" IN (%s)") alias col text
-                                    | FSharp.Data.Sql.NotIn ->                                    
+                                    | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "\"%s\".\"%s\" NOT IN (%s)") alias col text 
-                                    | _ -> 
+                                        (sprintf "\"%s\".\"%s\" NOT IN (%s)") alias col text
+                                    | _ ->
                                         parameters.Add paras.[0]
-                                        (sprintf "\"%s\".\"%s\" %s %s") alias col 
+                                        (sprintf "\"%s\".\"%s\" %s %s") alias col
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -678,38 +671,38 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                 ~~ (sprintf " %s " op)
                                 filterBuilder [x]
                                 ~~ (sprintf " %s " op)
-                                aux xs 
+                                aux xs
                             | x::xs ->
                                 filterBuilder [x]
                                 ~~ (sprintf " %s " op)
                                 aux xs
                             | [] -> ()
-                    
+
                         Option.iter aux rest
                         ~~ ")"
-                
+
                     match cond with
                     | Or(preds,rest) -> build "OR" preds rest
-                    | And(preds,rest) ->  build "AND" preds rest 
-                
+                    | And(preds,rest) ->  build "AND" preds rest
+
                     filterBuilder conds
-                
-            // next up is the FROM statement which includes joins .. 
-            let fromBuilder() = 
+
+            // next up is the FROM statement which includes joins ..
+            let fromBuilder() =
                 sqlQuery.Links
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" " 
-                            joinType destTable.Schema destTable.Name destAlias 
+                    ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on \"%s\".\"%s\" = \"%s\".\"%s\" "
+                            joinType destTable.Schema destTable.Name destAlias
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey  
-                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) 
+                            data.ForeignKey
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
                             data.PrimaryKey))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
-                |> List.iteri(fun i (alias,column,desc) -> 
+                |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "\"%s\".\"%s\" %s" alias column (if not desc then "DESC" else "")))
 
@@ -719,17 +712,17 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             else  ~~(sprintf "SELECT %s " columns)
 
             // FROM
-            ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name  baseAlias)         
+            ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name  baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
                 // each filter is effectively the entire contents of each where clause in the linq query,
                 // of which there can be many. Simply turn them all into one big AND expression as that is the
-                // only logical way to deal with them. 
+                // only logical way to deal with them.
                 let f = [And([],Some sqlQuery.Filters)]
-                ~~"WHERE " 
+                ~~"WHERE "
                 filterBuilder f
-        
+
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()
@@ -742,44 +735,42 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
             let sql = sb.ToString()
             (sql,parameters)
-        
+
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
-            let (~~) (t:string) = sb.Append t |> ignore
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table) 
-                     |> Seq.distinct 
+            entities |> List.map(fun e -> e.Table)
+                     |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
             con.Open()
 
             use scope = Utilities.ensureTransaction()
             try
-                
-                // close the connection first otherwise it won't get enlisted into the transaction 
+                // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
-                con.Open()          
+                con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 entities
-                |> List.iter(fun e -> 
+                |> List.iter(fun e ->
                     match e._State with
-                    | Created -> 
+                    | Created ->
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
                         match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                        | Some v -> () // if the primary key exists, do nothing
-                                       // this is because non-identity columns will have been set 
-                                       // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | Some(_) -> () // if the primary key exists, do nothing
+                                        // this is because non-identity columns will have been set
+                                        // manually and in that case scope_identity would bring back 0 "" or whatever
                         | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
                         e._State <- Unchanged
-                    | Modified fields -> 
+                    | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
-                    | Deleted -> 
+                    | Deleted ->
                         let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
@@ -792,45 +783,43 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
-            let (~~) (t:string) = sb.Append t |> ignore
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table) 
-                     |> Seq.distinct 
+            entities |> List.map(fun e -> e.Table)
+                     |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
-            async { 
+            async {
                 use scope = Utilities.ensureTransaction()
                 try
-                
-                    // close the connection first otherwise it won't get enlisted into the transaction 
+                    // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
 
                     do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-       
+
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
-                        | Created -> 
+                        | Created ->
                             async {
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                                | Some v -> () // if the primary key exists, do nothing
-                                               // this is because non-identity columns will have been set 
-                                               // manually and in that case scope_identity would bring back 0 "" or whatever
+                                | Some(_) -> () // if the primary key exists, do nothing
+                                                // this is because non-identity columns will have been set
+                                                // manually and in that case scope_identity would bring back 0 "" or whatever
                                 | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
                                 e._State <- Unchanged
                             }
-                        | Modified fields -> 
+                        | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
-                        | Deleted -> 
+                        | Deleted ->
                             async {
                                 let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -845,4 +834,3 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 finally
                     con.Close()
             }
-
