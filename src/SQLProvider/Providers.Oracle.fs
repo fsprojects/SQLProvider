@@ -237,16 +237,11 @@ module internal Oracle =
     let getSprocReturnColumns (sparams: QueryParameter list) =
         sparams
         |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                           then "ReturnValue" + (string i)
-                                           elif (String.IsNullOrEmpty p.Name)
-                                           then "ReturnValue"
-                                           else p.Name);
-                                   TypeMapping = p.TypeMapping;
-                                   Direction = p.Direction;
-                                   Ordinal = p.Ordinal;
-                                   Length = None
-                                 })
+        |> List.mapi (fun i p ->
+            let name = if (String.IsNullOrEmpty p.Name) && (i > 0) then "ReturnValue" + (string i)
+                       elif (String.IsNullOrEmpty p.Name) then "ReturnValue"
+                       else p.Name
+            QueryParameter.Create(name,p.Ordinal,p.TypeMapping,p.Direction))
 
     let getSprocName (row:DataRow) =
         let owner = Sql.dbUnbox row.["OWNER"]

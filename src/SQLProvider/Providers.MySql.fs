@@ -109,16 +109,9 @@ module MySql =
     let getSprocReturnCols (sparams: QueryParameter list) =
         match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
         | [] ->
-            match findDbType "cursor" with
-            | None -> []
-            | Some m ->
-                [{
-                    Name = "ResultSet"
-                    TypeMapping = m
-                    Direction = ParameterDirection.Output
-                    Length = None
-                    Ordinal = 0
-                 }]
+            findDbType "cursor"
+            |> Option.map (fun m -> QueryParameter.Create("ResultSet",0,m,ParameterDirection.Output))
+            |> Option.fold (fun _ p -> [p]) []
         | a -> a
 
     let getSprocName (row:DataRow) =

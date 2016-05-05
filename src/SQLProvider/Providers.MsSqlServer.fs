@@ -124,15 +124,10 @@ module MSSqlServer =
             |> List.mapi (fun i dt ->
                 match dt with
                 | null -> None
-                | _ ->
-                    match findDbType "cursor" with
-                    | Some m ->
-                        { Name = if i = 0 then "ResultSet" else "ResultSet_" + (string i)
-                          TypeMapping = m
-                          Direction = ParameterDirection.Output
-                          Ordinal = i
-                          Length = None } |> Some
-                    | None -> None)
+                | _ -> findDbType "cursor"
+                       |> Option.map (fun m ->
+                            let name = if i = 0 then "ResultSet" else "ResultSet_" + (string i)
+                            QueryParameter.Create(name,i,m,ParameterDirection.Output)))
             |> List.choose id
         let retValueCols =
             sparams

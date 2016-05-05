@@ -314,16 +314,13 @@ module PostgreSQL =
                              | _ -> failwith "Invalid procedure argument description."
                          findDbType typeName
                          |> Option.map (fun m ->
-                             { Name = name
-                               TypeMapping = m
-                               Direction =
-                                 match direction.ToLower() with
-                                 | "in" -> ParameterDirection.Input
-                                 | "inout" -> ParameterDirection.InputOutput
-                                 | "out" -> ParameterDirection.Output
-                                 | _ -> failwithf "Unknown parameter direction value %s." direction
-                               Ordinal = i
-                               Length = None }))
+                            let direction =
+                                match direction.ToLower() with
+                                | "in" -> ParameterDirection.Input
+                                | "inout" -> ParameterDirection.InputOutput
+                                | "out" -> ParameterDirection.Output
+                                | _ -> failwithf "Unknown parameter direction value %s." direction
+                            QueryParameter.Create(name,i,m,direction)))
                      |> Array.choose id
                      |> Array.toList
              let rcolumns =
@@ -332,12 +329,7 @@ module PostgreSQL =
                  | null -> rcolumns
                  | rtype ->
                      findDbType rtype
-                     |> Option.map (fun m ->
-                         { Name = "ReturnValue"
-                           TypeMapping = m
-                           Direction = ParameterDirection.ReturnValue
-                           Ordinal = 0
-                           Length = None })
+                     |> Option.map (fun m -> QueryParameter.Create("ReturnValue",0,m,ParameterDirection.ReturnValue))
                      |> Option.fold (fun acc col -> col :: acc) rcolumns
              Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
