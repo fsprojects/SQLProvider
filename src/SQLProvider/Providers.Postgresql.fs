@@ -18,21 +18,17 @@ module PostgreSQL =
     ]
 
     let assembly =
-        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+        lazy
+            match Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames with
+            | Choice1Of2(assembly) -> assembly
+            | Choice2Of2(paths) ->
+                let assemblyNames = String.Join(", ", assemblyNames |> List.toArray)
+                let resolutionPaths = String.Join(Environment.NewLine, paths)
+                failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s" assemblyNames Environment.NewLine resolutionPaths
 
-    let findType name =
-        match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | Choice2Of2(paths) ->
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
-                (String.Join(", ", assemblyNames |> List.toArray))
-                Environment.NewLine
-                (String.Join(Environment.NewLine, paths))
-
-    let checkType name =
-        match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name)
-        | Choice2Of2 _ -> false
+    let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
+    let findType name = assembly.Value.GetTypes() |> Array.find (fun t -> t.Name = name)
+    let checkType name = assembly.Value.GetTypes() |> Array.exists (fun t -> t.Name = name)
 
     let connectionType = lazy (findType "NpgsqlConnection")
     let commandType = lazy (findType "NpgsqlCommand")
@@ -250,6 +246,10 @@ module PostgreSQL =
                 | [|col|] ->
                     match col.TypeMapping.ProviderTypeName with
                     | Some "refcursor" ->
+                        if not isLegacyVersion.Value then
+                            let cursorName = com.ExecuteScalar() |> unbox
+                            com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
+                            com.CommandType <- CommandType.Text
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | Some "SETOF refcursor" ->
