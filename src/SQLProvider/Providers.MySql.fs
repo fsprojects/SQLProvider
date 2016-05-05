@@ -324,7 +324,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         MySql.owner <- owner
         MySql.referencedAssemblies <- referencedAssemblies
 
-    let checkKey (e:SqlEntity) =
+    let checkKey id (e:SqlEntity) =
         if pkLookup.ContainsKey e.Table.FullName then
             match e.GetColumnOption pkLookup.[e.Table.FullName] with
             | Some(_) -> () // if the primary key exists, do nothing
@@ -622,7 +622,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey e
+                        checkKey id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -665,7 +665,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey e
+                                checkKey id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

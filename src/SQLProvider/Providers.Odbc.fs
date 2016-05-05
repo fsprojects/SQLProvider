@@ -135,7 +135,7 @@ type internal OdbcProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let checkKey (e:SqlEntity) =
+    let checkKey id (e:SqlEntity) =
         if pkLookup.ContainsKey e.Table.FullName then
             match e.GetColumnOption pkLookup.[e.Table.FullName] with
             | Some(_) -> () // if the primary key exists, do nothing
@@ -370,7 +370,7 @@ type internal OdbcProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         let id = (lastInsertId con).ExecuteScalar()
-                        checkKey e
+                        checkKey id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -412,7 +412,7 @@ type internal OdbcProvider() =
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 let id = (lastInsertId con).ExecuteScalar()
-                                checkKey e
+                                checkKey id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

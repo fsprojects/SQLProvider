@@ -361,7 +361,7 @@ type internal MSSqlServerProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let checkKey (e:SqlEntity) =
+    let checkKey id (e:SqlEntity) =
         if pkLookup.ContainsKey e.Table.FullName then
             match e.GetColumnOption pkLookup.[e.Table.FullName] with
             | Some(_) -> () // if the primary key exists, do nothing
@@ -664,7 +664,7 @@ type internal MSSqlServerProvider() =
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey e
+                        checkKey id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -704,7 +704,7 @@ type internal MSSqlServerProvider() =
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey e
+                                checkKey id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
