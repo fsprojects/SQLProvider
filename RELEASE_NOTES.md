@@ -1,3 +1,6 @@
+### 1.0.2 - 05.05.2016
+* Fixed: Insert did return object as id, not the id wanted.
+
 ### 1.0.1 - 04.05.2016
 * Many community bug-fixes and PRs, latest (PR #257)
 * Documentation improvements
