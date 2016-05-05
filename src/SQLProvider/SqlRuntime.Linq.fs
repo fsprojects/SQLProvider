@@ -317,15 +317,21 @@ module internal QueryImplementation =
 
                         // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
                         let rec processSelectManys toAlias inExp outExp =
-                             let (|OptionalOuterJoin|) e =
+                            let (|OptionalOuterJoin|) e =
                                 match e with
                                 | MethodCall(None, (!!), [inner]) -> (true,inner)
                                 | _ -> (false,e)
-                             match inExp with
-                             | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
+                            match inExp with
+                            | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
                                 let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
                                 processSelectManys projectionParams.[1].Name inner outExp
-                             | MethodCall(None, (MethodWithName "Join"),
+                            | MethodCall(None, (MethodWithName "Join"),
+                                                    [createRelated
+                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+                                                     OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
+                                                     OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
+                                                     OptionalQuote (Lambda(projectionParams,_))])
+                            | MethodCall(None, (MethodWithName "Join"),
                                                     [createRelated
                                                      ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
                                                      OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
@@ -344,7 +350,7 @@ module internal QueryImplementation =
                                                 ForeignTable = {Schema="";Name="";Type=""};
                                                 OuterJoin = false; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,data,outExp)
-                             | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
+                            | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
                                 let fromAlias =
                                     match param with
                                     | ParamName x -> x
@@ -362,7 +368,7 @@ module internal QueryImplementation =
                                 if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
                                 if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
                                 sqlExpression
-                             | _ -> failwith ""
+                            | _ -> failwith ""
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
