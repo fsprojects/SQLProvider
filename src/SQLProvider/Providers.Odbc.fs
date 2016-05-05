@@ -135,6 +135,14 @@ type internal OdbcProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
+    let checkKey (e:SqlEntity) =
+        if pkLookup.ContainsKey e.Table.FullName then
+            match e.GetColumnOption pkLookup.[e.Table.FullName] with
+            | Some(_) -> () // if the primary key exists, do nothing
+                            // this is because non-identity columns will have been set
+                            // manually and in that case scope_identity would bring back 0 "" or whatever
+            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
@@ -362,11 +370,7 @@ type internal OdbcProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         let id = (lastInsertId con).ExecuteScalar()
-                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                        | Some(_) -> () // if the primary key exists, do nothing
-                                        // this is because non-identity columns will have been set
-                                        // manually and in that case scope_identity would bring back 0 "" or whatever
-                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        checkKey e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -408,11 +412,7 @@ type internal OdbcProvider() =
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 let id = (lastInsertId con).ExecuteScalar()
-                                match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                                | Some(_) -> () // if the primary key exists, do nothing
-                                                // this is because non-identity columns will have been set
-                                                // manually and in that case scope_identity would bring back 0 "" or whatever
-                                | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                                checkKey e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

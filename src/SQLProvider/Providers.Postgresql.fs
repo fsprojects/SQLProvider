@@ -442,6 +442,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         if not(String.IsNullOrEmpty owner) then
             PostgreSQL.owner <- owner
 
+    let checkKey (e:SqlEntity) =
+        if pkLookup.ContainsKey e.Table.FullName then
+            match e.GetColumnOption pkLookup.[e.Table.FullName] with
+            | Some(_) -> () // if the primary key exists, do nothing
+                            // this is because non-identity columns will have been set
+                            // manually and in that case scope_identity would bring back 0 "" or whatever
+            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
@@ -760,11 +768,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                        | Some(_) -> () // if the primary key exists, do nothing
-                                        // this is because non-identity columns will have been set
-                                        // manually and in that case scope_identity would bring back 0 "" or whatever
-                        | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                        checkKey e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -806,11 +810,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                match e.GetColumnOption pkLookup.[e.Table.FullName] with
-                                | Some(_) -> () // if the primary key exists, do nothing
-                                                // this is because non-identity columns will have been set
-                                                // manually and in that case scope_identity would bring back 0 "" or whatever
-                                | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
+                                checkKey e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
