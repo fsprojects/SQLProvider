@@ -118,6 +118,7 @@
 </code></pre></td>
 </tr>
 </table>
+<p>Support also async operations: ctx.SubmitUpdatesAsync() |&gt; Async.StartAsTask</p>
 
 <div class="tip" id="fs1">Multiple items<br />type LiteralAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; LiteralAttribute<br /><br />Full name: Microsoft.FSharp.Core.LiteralAttribute<br /><br />--------------------<br />new : unit -&gt; LiteralAttribute</div>
 <div class="tip" id="fs2">val connectionString : string<br /><br />Full name: Crud.connectionString</div>
@@ -140,7 +141,7 @@
 <div class="tip" id="fs19">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders<br /><em><br /><br />&lt;summary&gt;The table Orders belonging to schema main&lt;/summary&gt;</em></div>
 <div class="tip" id="fs20">val customer : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Crud.customer</div>
 <div class="tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
-<div class="tip" id="fs22">module Seq<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs22">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
 <div class="tip" id="fs23">val head : source:seq&lt;&#39;T&gt; -&gt; &#39;T<br /><br />Full name: Microsoft.FSharp.Collections.Seq.head</div>
 <div class="tip" id="fs24">val employee : SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity<br /><br />Full name: Crud.employee</div>
 <div class="tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees<br /><em><br /><br />&lt;summary&gt;The table Employees belonging to schema main&lt;/summary&gt;</em></div>
