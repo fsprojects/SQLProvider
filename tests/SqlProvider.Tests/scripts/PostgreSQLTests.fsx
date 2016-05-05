@@ -9,8 +9,8 @@ open System.Data
 let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
 
 [<Literal>]
-let resolutionFolder = @"../../../packages/scripts/Npgsql/lib/net45"
-        
+let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/Npgsql/lib/net45"
+
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")
 
@@ -19,7 +19,6 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder, UseOptionTypes=true>
 let ctx = HR.GetDataContext()
 
-           
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -29,10 +28,7 @@ type Employee = {
 
 //***************** Individuals ***********************//
 let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
-
-
-//indv.FirstName + " " + indv.LastName + " " + indv.Email
-
+printfn "%s %s (%s)" indv.FirstName.Value indv.LastName indv.Email
 
 //*************** QUERY ************************//
 
@@ -51,13 +47,13 @@ let locationBy (loc:LocationQuery) =
 
 let result = locationBy { City = "Tokyo"; PostalCode = Some "1689" }
 
-let employeesFirstNameNoProj = 
+let employeesFirstNameNoProj =
     query {
         for emp in ctx.Public.Employees do
         select true
     } |> Seq.toList
- 
-let employeesFirstNameIdProj = 
+
+let employeesFirstNameIdProj =
     query {
         for emp in ctx.Public.Employees do
         select emp
@@ -70,7 +66,7 @@ let first10employess =
         take 10
     } |> Seq.toList
 
-let skip2first10employess = 
+let skip2first10employess =
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -78,7 +74,7 @@ let skip2first10employess =
         take 10
     } |> Seq.toList
 
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Public.Employees do
         select (emp.FirstName, emp.LastName)
@@ -92,31 +88,31 @@ let employeesSortByName =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Public.Employees do
-            join d in ctx.Public.Departments on (emp.DepartmentId = d.DepartmentId)
+            join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let employeesJob = 
+let employeesJob =
     query {
             for emp in ctx.Public.Employees do
-            for manager in emp.``public.employees by employee_id`` do
-            join dept in ctx.Public.Departments on (emp.DepartmentId = dept.DepartmentId)
+            for manager in emp.``public.employees by employee_id_0`` do
+            join dept in ctx.Public.Departments on (emp.DepartmentId = Some(dept.DepartmentId))
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Public.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -136,14 +132,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Public.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -154,7 +150,6 @@ let countries =
 
 //************************ CRUD *************************//
 
-
 let antartica =
     let result =
         query {
@@ -164,14 +159,14 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Public.Regions.Create() 
-        newRegion.RegionName <- "Antartica"
+    | _ ->
+        let newRegion = ctx.Public.Regions.Create()
+        newRegion.RegionName <- Some("Antartica")
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
         newRegion
 
-antartica.RegionName <- "ant"
+antartica.RegionName <- Some("ant")
 ctx.SubmitUpdates()
 
 antartica.Delete()
@@ -209,11 +204,9 @@ let locations_and_regions =
     [
       for e in results.ReturnValue do
         yield e.ColumnValues |> Seq.toList |> box
-             
       for e in results.ReturnValue do
         yield e.ColumnValues |> Seq.toList |> box
     ]
-
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
@@ -228,4 +221,3 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
-
