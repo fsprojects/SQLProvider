@@ -73,6 +73,7 @@
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
+    <Compile Include="SqlRuntime.Async.fs" />
     <Compile Include="SqlRuntime.DataContext.fs" />
     <Compile Include="SqlDesignTime.fs" />
     <None Include="..\..\docs\content\core\operators.fsx">
