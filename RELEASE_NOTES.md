@@ -1,3 +1,7 @@
+### 1.0.1 - 04.05.2016
+* Many community bug-fixes and PRs, latest (PR #257)
+* Documentation improvements
+
 ### 1.0.0 - 16.04.2016
 * Support for multiple owners on postgres (PR #189)
 * V1 release
