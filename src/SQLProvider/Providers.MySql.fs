@@ -450,6 +450,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             // working on the basis that we will alias everything to make my life eaiser
             // first build  the select statment, this is easy ...
             let columns =
+                if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything

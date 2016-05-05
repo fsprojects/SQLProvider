@@ -212,6 +212,7 @@ type internal OdbcProvider() =
             let singleEntity = sqlQuery.Aliases.Count = 0
 
             let columns =
+                if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
