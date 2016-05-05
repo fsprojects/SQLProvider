@@ -5,6 +5,8 @@ open System.Collections.Generic
 open System.ComponentModel
 open System.Data
 open System.Linq.Expressions
+open System.Reflection
+open System.Runtime.Serialization
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
@@ -43,7 +45,7 @@ type EntityState =
     | Modified of string list
     | Deleted
 
-[<System.Runtime.Serialization.DataContractAttribute(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts");System.Reflection.DefaultMemberAttribute("Item")>]
+[<DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc:ISqlDataContext,tableName:string) =
     let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()

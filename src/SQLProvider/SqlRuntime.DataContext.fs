@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Data.Sql.Runtime
 
+open System
 open System.Collections.Generic
 open System.Data
 open System.Linq
@@ -119,6 +120,8 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                    |]
 
                let param = def.Params |> List.toArray
+
+               Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A")))))
 
                let entities =
                    match provider.ExecuteSprocCommand(com, param, retCols, values) with
