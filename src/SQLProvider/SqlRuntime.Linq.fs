@@ -219,15 +219,19 @@ module internal QueryImplementation =
                             | OptionIsSome(SqlColumnGet(ti,key,_)) ->
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,ConditionOperator.NotNull,None)
-                            | OptionIsNone(SqlColumnGet(ti,key,_)) ->
+                            | OptionIsNone(SqlColumnGet(ti,key,_))
+                            | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) ->
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,ConditionOperator.IsNull,None)
+                            | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) ->
+                                paramNames.Add(ti) |> ignore
+                                Some(ti,key,ConditionOperator.NotNull,None)
                             // matches column to constant with any operator eg c.name = "john", c.age > 42
-                            | SqlCondOp(op,(SqlColumnGet(ti,key,_)),ConstantOrNullableConstant(c)) ->
+                            | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,op,c)
                             // matches to another property getter, method call or new expression
-                            | SqlCondOp(op,SqlColumnGet(ti,key,_),(((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)) ->
+                            | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
                                 paramNames.Add(ti) |> ignore
                                 Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
                             | _ -> None

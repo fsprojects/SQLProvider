@@ -63,6 +63,14 @@ let (|Constant|_|) (e:Expression) =
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
     | _ -> None
 
+let (|OptionNone|_|) (e: Expression) =
+    match e with
+    | MethodCall(None,MethodWithName("get_None"),[]) ->
+        match e with
+        | :? MethodCallExpression as e when e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> Some()
+        | _ -> None
+    | _ -> None
+
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some(Some(ce.Value))
@@ -102,7 +110,11 @@ let (|OptionalFSharpOptionValue|) (e:Expression) =
     | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
         match e.Member with 
         | :? PropertyInfo as p when p.Name = "Value" && e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> e.Expression
-        | _ -> upcast e 
+        | _ -> upcast e
+    | ExpressionType.Call, ( :? MethodCallExpression as e) ->
+        if e.Method.Name = "Some" && e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
+        then e.Arguments.[0]
+        else upcast e
     | _ -> e
 
 let (|AndAlso|_|) (e:Expression) =
