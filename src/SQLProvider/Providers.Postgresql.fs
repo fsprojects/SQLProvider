@@ -173,9 +173,9 @@ module PostgreSQL =
             match tryReadValueProperty value with Some(v) -> v | None -> null
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
+        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
         p.Value <- value
         p.Direction <- param.Direction
-        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
         Option.iter (fun l -> p.Size <- l) param.Length
         p
 
