@@ -36,9 +36,10 @@ module internal QueryImplementation =
        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
+       let columns = provider.GetColumns(con, baseTable)
        if con.State <> ConnectionState.Open then con.Open()
        use reader = cmd.ExecuteReader()
-       let results = SqlEntity.FromDataReader(dc,baseTable.FullName, reader)
+       let results = dc.ReadEntities(baseTable.FullName, columns, reader)
        let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        results
@@ -52,10 +53,11 @@ module internal QueryImplementation =
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            for p in parameters do cmd.Parameters.Add p |> ignore
+           let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
-           let! results = SqlEntity.FromDataReaderAsync(dc,baseTable.FullName, reader)
+           let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
            let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return results

@@ -33,6 +33,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION GET_DEPARTMENTS()
+RETURNS TABLE (
+    department_id INT,
+    department_name VARCHAR(30)
+) AS $$
+BEGIN
+    RETURN query
+    SELECT departments.department_id, departments.department_name FROM departments;
+END;
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION GET_EMPLOYEES_STARTING_AFTER (IN STARTDATE DATE)
 RETURNS refcursor AS $$
 DECLARE

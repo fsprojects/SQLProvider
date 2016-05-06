@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
 open FSharp.Data.Sql
@@ -192,9 +193,11 @@ module internal Oracle =
                 | Some(m) ->
                         { Name = colName
                           TypeMapping = m
-                          IsPrimarKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table && x.Column = colName)
+                          IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table && x.Column = colName)
                           IsNullable = nullable } |> Some
                 | _ -> None)
+        |> List.map (fun c -> (c.Name, c))
+        |> Map.ofList
 
     let getRelationships (primaryKeys:IDictionary<_,_>) table con =
         let foreignKeyCols =
@@ -237,16 +240,11 @@ module internal Oracle =
     let getSprocReturnColumns (sparams: QueryParameter list) =
         sparams
         |> List.filter (fun x -> x.Direction <> ParameterDirection.Input)
-        |> List.mapi (fun i p -> { Name = (if (String.IsNullOrEmpty p.Name) && (i > 0)
-                                           then "ReturnValue" + (string i)
-                                           elif (String.IsNullOrEmpty p.Name)
-                                           then "ReturnValue"
-                                           else p.Name);
-                                   TypeMapping = p.TypeMapping;
-                                   Direction = p.Direction;
-                                   Ordinal = p.Ordinal;
-                                   Length = None
-                                 })
+        |> List.mapi (fun i p ->
+            let name = if (String.IsNullOrEmpty p.Name) && (i > 0) then "ReturnValue" + (string i)
+                       elif (String.IsNullOrEmpty p.Name) then "ReturnValue"
+                       else p.Name
+            QueryParameter.Create(name,p.Ordinal,p.TypeMapping,p.Direction))
 
     let getSprocName (row:DataRow) =
         let owner = Sql.dbUnbox row.["OWNER"]
@@ -345,7 +343,7 @@ module internal Oracle =
 type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
     let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new Dictionary<string, Relationship list * Relationship list>()
-    let columnCache = new Dictionary<string, Column list>()
+    let columnCache = new ConcurrentDictionary<string,ColumnLookup>()
     let mutable tableCache : Table list = []
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -462,8 +460,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
             | true, cols -> cols
             | false, _ ->
                 let cols = Sql.connect con (Oracle.getColumns primaryKeyCache table.Name)
-                columnCache.Add(table.FullName, cols)
-                cols
+                columnCache.GetOrAdd(table.FullName, cols)
 
         member __.GetRelationships(con,table) =
                 match relationshipCache.TryGetValue(table.FullName) with
@@ -496,7 +493,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[baseTable.FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnCache.[baseTable.FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
