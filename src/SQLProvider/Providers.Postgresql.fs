@@ -106,7 +106,7 @@ module PostgreSQL =
         | "time"        -> Some typeof<TimeSpan>
         | "timestamp"   -> Some typeof<DateTime>
         | "timestamptz" -> Some typeof<DateTime>
-        | "timetz"      -> Some typeof<TimeSpan>
+        | "timetz"      -> Some typeof<DateTimeOffset>
         | "tsquery"     -> Some typeof<obj>
         | "tsvector"    -> Some typeof<obj>
         | "unknown"     -> Some typeof<obj>
