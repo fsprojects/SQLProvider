@@ -57,11 +57,11 @@
             assembly 
           </code>
           <div class="tip" id="91">
-            <strong>Signature:</strong> Lazy&lt;Choice&lt;Assembly,seq&lt;string&gt;&gt;&gt;<br />
+            <strong>Signature:</strong> Lazy&lt;Assembly&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L20-20" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L24-24" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -79,7 +79,7 @@
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L16-16" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L20-20" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -90,27 +90,9 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '93', 93)" onmouseover="showTip(event, '93', 93)">
-            checkType name
-          </code>
-          <div class="tip" id="93">
-            <strong>Signature:</strong> name:string -&gt; bool<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L32-32" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '94', 94)" onmouseover="showTip(event, '94', 94)">
             commandType 
           </code>
-          <div class="tip" id="94">
+          <div class="tip" id="93">
             <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
                       </div>
         </td>
@@ -125,10 +107,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '95', 95)" onmouseover="showTip(event, '95', 95)">
+          <code onmouseout="hideTip(event, '94', 94)" onmouseover="showTip(event, '94', 94)">
             connectionType 
           </code>
-          <div class="tip" id="95">
+          <div class="tip" id="94">
             <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
                       </div>
         </td>
@@ -143,15 +125,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '96', 96)" onmouseover="showTip(event, '96', 96)">
+          <code onmouseout="hideTip(event, '95', 95)" onmouseover="showTip(event, '95', 95)">
             createCommand commandText connection
           </code>
-          <div class="tip" id="96">
-            <strong>Signature:</strong> commandText:&#39;?7730 -&gt; connection:&#39;?7731 -&gt; IDbCommand<br />
-                          <strong>Type parameters:</strong> '?7730, '?7731          </div>
+          <div class="tip" id="95">
+            <strong>Signature:</strong> commandText:&#39;?7731 -&gt; connection:&#39;?7732 -&gt; IDbCommand<br />
+                          <strong>Type parameters:</strong> '?7731, '?7732          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L191-191" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L152-152" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '96', 96)" onmouseover="showTip(event, '96', 96)">
+            createCommandParameter param value
+          </code>
+          <div class="tip" id="96">
+            <strong>Signature:</strong> param:QueryParameter -&gt; value:obj -&gt; IDbDataParameter<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L171-171" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -162,14 +162,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '97', 97)" onmouseover="showTip(event, '97', 97)">
-            createCommandParameter (...)
+            createConnection connectionString
           </code>
           <div class="tip" id="97">
-            <strong>Signature:</strong> sprocCommand:bool -&gt; param:QueryParameter -&gt; value:&#39;?7733 -&gt; IDbDataParameter<br />
-                          <strong>Type parameters:</strong> '?7733          </div>
+            <strong>Signature:</strong> connectionString:&#39;?7729 -&gt; IDbConnection<br />
+                          <strong>Type parameters:</strong> '?7729          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L198-198" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L145-145" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -180,14 +180,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '98', 98)" onmouseover="showTip(event, '98', 98)">
-            createConnection connectionString
+            createTypeMappings ()
           </code>
           <div class="tip" id="98">
-            <strong>Signature:</strong> connectionString:&#39;?7728 -&gt; IDbConnection<br />
-                          <strong>Type parameters:</strong> '?7728          </div>
+            <strong>Signature:</strong> unit -&gt; unit<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L184-184" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L59-59" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -198,14 +198,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '99', 99)" onmouseover="showTip(event, '99', 99)">
-            createTypeMappings ()
+            dbType 
           </code>
           <div class="tip" id="99">
-            <strong>Signature:</strong> unit -&gt; unit<br />
+            <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L143-143" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L40-40" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -216,10 +216,10 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '100', 100)" onmouseover="showTip(event, '100', 100)">
-            dbType 
+            dbTypeGetter 
           </code>
           <div class="tip" id="100">
-            <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
+            <strong>Signature:</strong> Lazy&lt;MethodInfo&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
@@ -234,7 +234,7 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '101', 101)" onmouseover="showTip(event, '101', 101)">
-            dbTypeGetter 
+            dbTypeSetter 
           </code>
           <div class="tip" id="101">
             <strong>Signature:</strong> Lazy&lt;MethodInfo&gt;<br />
@@ -252,14 +252,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '102', 102)" onmouseover="showTip(event, '102', 102)">
-            dbTypeSetter 
+            executeSprocCommand (...)
           </code>
           <div class="tip" id="102">
-            <strong>Signature:</strong> Lazy&lt;MethodInfo&gt;<br />
+            <strong>Signature:</strong> com:IDbCommand -&gt; inputParams:QueryParameter [] -&gt; retCols:QueryParameter [] -&gt; values:obj [] -&gt; ReturnValueType<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L43-43" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L194-194" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -270,14 +270,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '103', 103)" onmouseover="showTip(event, '103', 103)">
-            executeSprocCommand (...)
+            findDbType 
           </code>
           <div class="tip" id="103">
-            <strong>Signature:</strong> com:IDbCommand -&gt; inputParams:QueryParameter [] -&gt; retCols:QueryParameter [] -&gt; values:obj [] -&gt; ReturnValueType<br />
+            <strong>Signature:</strong> string -&gt; TypeMapping option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L226-226" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L50-50" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -288,14 +288,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '104', 104)" onmouseover="showTip(event, '104', 104)">
-            findClrType 
+            findType name
           </code>
           <div class="tip" id="104">
-            <strong>Signature:</strong> string -&gt; TypeMapping option<br />
+            <strong>Signature:</strong> name:string -&gt; Type option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L140-140" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L34-34" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -306,83 +306,11 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '105', 105)" onmouseover="showTip(event, '105', 105)">
-            findDbType 
-          </code>
-          <div class="tip" id="105">
-            <strong>Signature:</strong> string -&gt; TypeMapping option<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L141-141" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '106', 106)" onmouseover="showTip(event, '106', 106)">
-            findType name
-          </code>
-          <div class="tip" id="106">
-            <strong>Signature:</strong> name:string -&gt; Type<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L23-23" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '107', 107)" onmouseover="showTip(event, '107', 107)">
             getDbType providerType
           </code>
-          <div class="tip" id="107">
-            <strong>Signature:</strong> providerType:&#39;?7720 -&gt; DbType<br />
-                          <strong>Type parameters:</strong> '?7720          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L133-133" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '108', 108)" onmouseover="showTip(event, '108', 108)">
-            getSchema name args conn
-          </code>
-          <div class="tip" id="108">
-            <strong>Signature:</strong> name:&#39;?7726 -&gt; args:string [] -&gt; conn:IDbConnection -&gt; DataTable<br />
-                          <strong>Type parameters:</strong> '?7726          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L180-180" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '109', 109)" onmouseover="showTip(event, '109', 109)">
-            getSchemaMethod 
-          </code>
-          <div class="tip" id="109">
-            <strong>Signature:</strong> Lazy&lt;MethodInfo&gt;<br />
-                      </div>
+          <div class="tip" id="105">
+            <strong>Signature:</strong> providerType:&#39;?7721 -&gt; DbType<br />
+                          <strong>Type parameters:</strong> '?7721          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L44-44" class="github-link">
@@ -395,15 +323,87 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '110', 110)" onmouseover="showTip(event, '110', 110)">
+          <code onmouseout="hideTip(event, '106', 106)" onmouseover="showTip(event, '106', 106)">
             getSprocs con
           </code>
-          <div class="tip" id="110">
+          <div class="tip" id="106">
             <strong>Signature:</strong> con:IDbConnection -&gt; Sproc list<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L284-284" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L259-259" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '107', 107)" onmouseover="showTip(event, '107', 107)">
+            getType 
+          </code>
+          <div class="tip" id="107">
+            <strong>Signature:</strong> string -&gt; Type<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L35-35" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '108', 108)" onmouseover="showTip(event, '108', 108)">
+            isLegacyVersion 
+          </code>
+          <div class="tip" id="108">
+            <strong>Signature:</strong> Lazy&lt;bool&gt;<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L33-33" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '109', 109)" onmouseover="showTip(event, '109', 109)">
+            isOptionValue value
+          </code>
+          <div class="tip" id="109">
+            <strong>Signature:</strong> value:&#39;?7736 -&gt; bool<br />
+                          <strong>Type parameters:</strong> '?7736          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L166-166" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '110', 110)" onmouseover="showTip(event, '110', 110)">
+            namemap name dbTypes
+          </code>
+          <div class="tip" id="110">
+            <strong>Signature:</strong> name:string -&gt; dbTypes:string list -&gt; (Type * int) option<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L57-57" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -414,14 +414,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '111', 111)" onmouseover="showTip(event, '111', 111)">
-            isSupportedType _arg1
+            owner 
           </code>
           <div class="tip" id="111">
-            <strong>Signature:</strong> _arg1:string -&gt; bool<br />
+            <strong>Signature:</strong> string<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L46-46" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L17-17" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -432,63 +432,9 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '112', 112)" onmouseover="showTip(event, '112', 112)">
-            mapNpgsqlDbTypeToClrType _arg1
-          </code>
-          <div class="tip" id="112">
-            <strong>Signature:</strong> _arg1:string -&gt; Type option<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L67-67" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '113', 113)" onmouseover="showTip(event, '113', 113)">
-            mapNpgsqlDbTypeToDataType _arg1
-          </code>
-          <div class="tip" id="113">
-            <strong>Signature:</strong> _arg1:string -&gt; string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L121-121" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '114', 114)" onmouseover="showTip(event, '114', 114)">
-            owner 
-          </code>
-          <div class="tip" id="114">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L13-13" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '115', 115)" onmouseover="showTip(event, '115', 115)">
             parameterType 
           </code>
-          <div class="tip" id="115">
+          <div class="tip" id="112">
             <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
                       </div>
         </td>
@@ -503,15 +449,69 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '116', 116)" onmouseover="showTip(event, '116', 116)">
+          <code onmouseout="hideTip(event, '113', 113)" onmouseover="showTip(event, '113', 113)">
+            parseDbType ty dbt
+          </code>
+          <div class="tip" id="113">
+            <strong>Signature:</strong> ty:Type -&gt; dbt:string -&gt; (Type * int) option<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L52-52" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '114', 114)" onmouseover="showTip(event, '114', 114)">
             readParameter parameter
           </code>
-          <div class="tip" id="116">
+          <div class="tip" id="114">
             <strong>Signature:</strong> parameter:IDbDataParameter -&gt; obj<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L215-215" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L183-183" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '115', 115)" onmouseover="showTip(event, '115', 115)">
+            referencedAssemblies 
+          </code>
+          <div class="tip" id="115">
+            <strong>Signature:</strong> string []<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L18-18" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '116', 116)" onmouseover="showTip(event, '116', 116)">
+            resolutionPath 
+          </code>
+          <div class="tip" id="116">
+            <strong>Signature:</strong> string<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L16-16" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -522,14 +522,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '117', 117)" onmouseover="showTip(event, '117', 117)">
-            referencedAssemblies 
+            tryReadValueProperty instance
           </code>
           <div class="tip" id="117">
-            <strong>Signature:</strong> string []<br />
-                      </div>
+            <strong>Signature:</strong> instance:&#39;?7734 -&gt; obj option<br />
+                          <strong>Type parameters:</strong> '?7734          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L14-14" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L159-159" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -540,50 +540,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '118', 118)" onmouseover="showTip(event, '118', 118)">
-            resolutionPath 
+            typemap 
           </code>
           <div class="tip" id="118">
-            <strong>Signature:</strong> string<br />
-                      </div>
+            <strong>Signature:</strong> string list -&gt; (Type * int) option<br />
+                          <strong>Type parameters:</strong> 't          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L12-12" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '119', 119)" onmouseover="showTip(event, '119', 119)">
-            tryReadValueProperty instance
-          </code>
-          <div class="tip" id="119">
-            <strong>Signature:</strong> instance:&#39;?7735 -&gt; obj option<br />
-                          <strong>Type parameters:</strong> '?7735          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L208-208" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '120', 120)" onmouseover="showTip(event, '120', 120)">
-            typeMappings 
-          </code>
-          <div class="tip" id="120">
-            <strong>Signature:</strong> TypeMapping list<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L139-139" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Postgresql.fs#L56-56" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
