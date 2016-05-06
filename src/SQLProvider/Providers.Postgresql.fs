@@ -1,8 +1,12 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
+open System.Net
+open System.Net.NetworkInformation
 open System.Threading
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
@@ -18,117 +22,24 @@ module PostgreSQL =
     ]
 
     let assembly =
-        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+        lazy
+            match Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames with
+            | Choice1Of2(assembly) -> assembly
+            | Choice2Of2(paths) ->
+                let assemblyNames = String.Join(", ", assemblyNames |> List.toArray)
+                let resolutionPaths = String.Join(Environment.NewLine, paths)
+                failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s" assemblyNames Environment.NewLine resolutionPaths
 
-    let findType name =
-        match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | Choice2Of2(paths) ->
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
-                (String.Join(", ", assemblyNames |> List.toArray))
-                Environment.NewLine
-                (String.Join(Environment.NewLine, paths))
+    let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
+    let findType name = assembly.Value.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
+    let getType = findType >> Option.get
 
-    let checkType name =
-        match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.exists(fun t -> t.Name = name)
-        | Choice2Of2 _ -> false
-
-    let connectionType = lazy (findType "NpgsqlConnection")
-    let commandType = lazy (findType "NpgsqlCommand")
-    let parameterType = lazy (findType "NpgsqlParameter")
-
-    let dbType = lazy (findType "NpgsqlDbType")
+    let connectionType = lazy (getType "NpgsqlConnection")
+    let commandType = lazy (getType "NpgsqlCommand")
+    let parameterType = lazy (getType "NpgsqlParameter")
+    let dbType = lazy (getType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
-    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
-
-    let isSupportedType = function
-        | "abstime"     -> false                            // The types abstime and reltime are lower precision types which are used internally.
-                                                            // You are discouraged from using these types in applications; these internal types
-                                                            // might disappear in a future release.
-        | "box"         -> checkType "NpgsqlBox"
-        | "cidr"        -> checkType "NpgsqlInet"
-        | "circle"      -> checkType "NpgsqlCircle"
-        | "date"        -> checkType "NpgsqlDate"
-        | "inet"        -> checkType "NpgsqlInet"
-        | "interval"    -> checkType "NpgsqlTimeSpan"
-        | "line"        -> checkType "NpgsqlLine"
-        | "lseg"        -> checkType "NpgsqlLSeg"
-        | "path"        -> checkType "NpgsqlPath"
-        | "point"       -> checkType "NpgsqlPoint"
-        | "polygon"     -> checkType "NpgsqlPolygon"
-        | "timestamp"   -> checkType "NpgsqlDateTime"
-        | "timestamptz" -> checkType "NpgsqlDateTime"
-        | "tsquery"     -> checkType "NpgsqlTsQuery"
-        | "tsvector"    -> checkType "NpgsqlTsVector"
-        | _             -> true
-
-    let mapNpgsqlDbTypeToClrType = function
-        | "abstime"     -> Some typeof<DateTime>
-        | "bigint"      -> Some typeof<int64>
-        | "bit"         -> Some typeof<bool>                // Fixed-width bit array; by default bit(1) is mapped to boolean and larger type values to BitString.
-        | "boolean"     -> Some typeof<bool>
-        | "box"         -> Some typeof<obj>
-        | "bytea"       -> Some typeof<byte[]>
-        | "char"        -> Some typeof<char[]>              // Fixed-width character array.
-        | "cid"         -> Some typeof<uint32>
-        | "cidr"        -> Some typeof<obj>
-        | "circle"      -> Some typeof<obj>
-        | "date"        -> Some typeof<DateTime>
-        | "double"      -> Some typeof<double>
-        | "hstore"      -> Some typeof<obj>                 // Npgsql maps to IDictionary<string,string>, but provider is currently unable to support
-                                                            // the type because data_type returns `USER-DEFINED` and real type name is in udt_name.
-        | "inet"        -> Some typeof<obj>                 // System.Net.IPAddress
-        | "integer"     -> Some typeof<int32>
-        | "interval"    -> Some typeof<TimeSpan>
-        | "json"        -> Some typeof<string>
-        | "jsonb"       -> Some typeof<string>
-        | "line"        -> Some typeof<obj>
-        | "lseg"        -> Some typeof<obj>
-        | "macaddr"     -> Some typeof<obj>                 // System.Net.NetworkInformation.PhysicalAddress
-        | "money"       -> Some typeof<decimal>
-        | "name"        -> Some typeof<string>
-        | "numeric"     -> Some typeof<decimal>
-        | "oid"         -> Some typeof<uint32>
-        | "oidvector"   -> Some typeof<uint32[]>
-        | "path"        -> Some typeof<obj>
-        | "point"       -> Some typeof<obj>
-        | "polygon"     -> Some typeof<obj>
-        | "real"        -> Some typeof<single>
-        | "refcursor"   -> Some typeof<SqlEntity[]>
-        | "singlechar"  -> Some typeof<char>
-        | "smallint"    -> Some typeof<int16>
-        | "text"        -> Some typeof<string>
-        | "time"        -> Some typeof<DateTime>
-        | "timestamp"   -> Some typeof<DateTime>
-        | "timestamptz" -> Some typeof<DateTime>
-        | "timetz"      -> Some typeof<DateTime>
-        | "tsquery"     -> Some typeof<obj>
-        | "tsvector"    -> Some typeof<obj>
-        | "unknown"     -> Some typeof<obj>
-        | "uuid"        -> Some typeof<Guid>
-        | "varbit"      -> Some typeof<obj>                 // Variable-length bit array, maps to System.Collections.BitArray
-        | "varchar"     -> Some typeof<string>
-        | "xid"         -> Some typeof<uint32>
-        | "xml"         -> Some typeof<string>
-        | "array"
-        | "composite"
-        | "enum"
-        | "range"
-        | _             -> None                             // Special enum values need separate handling
-
-    let mapNpgsqlDbTypeToDataType = function
-        | "char" -> "character"
-        | "double" -> "double precision"
-        | "singlechar" -> "\"char\""
-        | "time" -> "time without time zone"
-        | "timestamp" -> "timestamp without time zone"
-        | "timestamptz" -> "timestamp with time zone"
-        | "timetz" -> "time with time zone"
-        | "varbit" -> "bit varying"
-        | "varchar" -> "character varying"
-        | name -> name
 
     let getDbType(providerType) =
         let parameterType = parameterType.Value
@@ -136,50 +47,100 @@ module PostgreSQL =
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
         p.DbType
 
-    let mutable typeMappings = []
-    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let createTypeMappings() =
-        let typ = dbType.Value
+    let parseDbType (ty: Type) dbt =
+        try Some(ty, Enum.Parse(dbType.Value, dbt) |> unbox<int>)
+        with _ -> None
 
+    let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
+    let namemap name dbTypes = findType name |> Option.bind (fun ty -> dbTypes |> List.tryPick (parseDbType ty))
+
+    let createTypeMappings () =
+        // http://www.npgsql.org/doc/2.2/
+        // http://www.npgsql.org/doc/3.0/types.html
         let mappings =
-            let enumMappings =
-                [ for v in Enum.GetValues(typ) -> Enum.GetName(typ, v).ToLower(), unbox<int> v ]
-                |> List.filter (fst >> isSupportedType)
-                |> List.choose (fun (name, value) ->
-                    match mapNpgsqlDbTypeToClrType name with
-                    | Some(t) -> Some({ ProviderTypeName = Some(mapNpgsqlDbTypeToDataType name)
-                                        ClrType = t.ToString()
-                                        DbType = (getDbType value)
-                                        ProviderType = Some value })
-                    | None -> None)
-            let refCursor = enumMappings |> List.find (fun x -> x.ProviderTypeName = Some "refcursor")
-            enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
-
-        let adjustments =
-            [ (typeof<DateTime>.ToString(), DbType.DateTime)
-              (typeof<string>.ToString(), DbType.String) ]
-            |> List.map (fun (``type``,dbType) -> ``type``,mappings |> List.find (fun mp -> mp.ClrType = ``type`` && mp.DbType = dbType))
-
-        let clrMappings =
-            mappings
-            |> List.map (fun m -> m.ClrType, m)
-            |> (fun tys -> List.append tys adjustments)
-            |> Map.ofList
+            [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
+              "bigint"                      , typemap<int64>                      ["Bigint"]
+              "bit",                    (if isLegacyVersion.Value
+                                         then typemap<bool>                       ["Bit"]
+                                         else typemap<BitArray>                   ["Bit"])
+              "bit varying"                 , typemap<BitArray>                   ["Varbit"]
+              "boolean"                     , typemap<bool>                       ["Boolean"]
+              "box"                         , namemap "NpgsqlBox"                 ["Box"]
+              "bytea"                       , typemap<byte[]>                     ["Bytea"]
+              "\"char\""                    , typemap<char>                       ["InternalChar"; "SingleChar"]
+              "character"                   , typemap<string>                     ["Char"]
+              "character varying"           , typemap<string>                     ["Varchar"]
+              "cid"                         , typemap<uint32>                     ["Cid"]
+              "cidr"                        , namemap "NpgsqlInet"                ["Cidr"]
+              "circle"                      , namemap "NpgsqlCircle"              ["Circle"]
+              "citext"                      , typemap<string>                     ["Citext"]
+              "date"                        , typemap<DateTime>                   ["Date"]
+              "double precision"            , typemap<double>                     ["Double"]
+              "geometry"                    , namemap "IGeometry"                 ["Geometry"]
+              "hstore",                 (if isLegacyVersion.Value
+                                         then typemap<string>                     ["Hstore"]
+                                         else typemap<IDictionary<string,string>> ["Hstore"])
+              "inet"                        , typemap<IPAddress>                  ["Inet"]
+            //"int2vector"                  , typemap<short[]>                    ["Int2Vector"]
+              "integer"                     , typemap<int32>                      ["Integer"]
+              "interval"                    , typemap<TimeSpan>                   ["Interval"]
+              "json"                        , typemap<string>                     ["Json"]
+              "jsonb"                       , typemap<string>                     ["Jsonb"]
+              "line"                        , namemap "NpgsqlLine"                ["Line"]
+              "lseg"                        , namemap "NpgsqlLSeg"                ["LSeg"]
+              "macaddr"                     , typemap<PhysicalAddress>            ["MacAddr"]
+              "money"                       , typemap<decimal>                    ["Money"]
+              "name"                        , typemap<string>                     ["Name"]
+              "numeric"                     , typemap<decimal>                    ["Numeric"]
+              "oid"                         , typemap<uint32>                     ["Oid"]
+            //"oidvector",              (if isLegacyVersion.Value
+            //                           then typemap<string>                     ["Oidvector"]
+            //                           else typemap<uint32[]>                   ["Oidvector"])
+              "path"                        , namemap "NpgsqlPath"                ["Path"]
+            //"pg_lsn"                      , typemap<???>                        ["???"]
+              "point"                       , namemap "NpgsqlPoint"               ["Point"]
+              "polygon"                     , namemap "NpgsqlPolygon"             ["Polygon"]
+              "real"                        , typemap<single>                     ["Real"]
+              "record"                      , typemap<SqlEntity[]>                ["Refcursor"]
+              "refcursor"                   , typemap<SqlEntity[]>                ["Refcursor"]
+              "regtype"                     , typemap<uint32>                     ["Regtype"]
+              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
+              "smallint"                    , typemap<int16>                      ["Smallint"]
+              "text"                        , typemap<string>                     ["Text"]
+              "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
+              "time without time zone"      , typemap<TimeSpan>                   ["Time"]
+              "time with time zone",    (if isLegacyVersion.Value
+                                         then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
+                                         else typemap<DateTimeOffset>             ["TimeTZ"])
+              "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
+              "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
+              "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
+              "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
+            //"txid_snapshot"               , typemap<???>                        ["???"]
+              "unknown"                     , typemap<obj>                        ["Unknown"]
+              "uuid"                        , typemap<Guid>                       ["Uuid"]
+              "xid"                         , typemap<uint32>                     ["Xid"]
+              "xml"                         , typemap<string>                     ["Xml"]
+            //"array"                       , typemap<Array>                      ["Array"]
+            //"composite"                   , typemap<obj>                        ["Composite"]
+            //"enum"                        , typemap<obj>                        ["Enum"]
+            //"range"                       , typemap<Array>                      ["Range"]
+              ]
+            |> List.choose (fun (name,dbt) ->
+                dbt |> Option.map (fun (clrType,providerType) ->
+                    { ProviderTypeName = Some(name)
+                      ClrType = clrType.AssemblyQualifiedName
+                      DbType = getDbType providerType
+                      ProviderType = Some(providerType) }))
 
         let dbMappings =
             mappings
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
 
-        typeMappings <- mappings
-        findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
-
-    let getSchema name (args:string[]) (conn:IDbConnection) =
-        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
-
 
     let createConnection connectionString =
         try
@@ -195,22 +156,29 @@ module PostgreSQL =
           | :? System.Reflection.TargetInvocationException as e ->
             failwithf "Could not create the command, error from Npgsql %s" e.InnerException.Message
 
-    let createCommandParameter sprocCommand (param:QueryParameter) value =
-        let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
-        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
-        p.ParameterName <- param.Name
-        p.Value <- box value
-        p.DbType <- (defaultArg mapping param.TypeMapping).DbType
-        p.Direction <- param.Direction
-        Option.iter (fun l -> p.Size <- l) param.Length
-        p
-
     let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty("Value")
         if prop <> null
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None
+
+    let isOptionValue value =
+        if value = null then false else
+        let typ = value.GetType()
+        typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
+
+    let createCommandParameter (param:QueryParameter) value =
+        let value =
+            if not (isOptionValue value) then value else
+            match tryReadValueProperty value with Some(v) -> v | None -> null
+        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
+        p.ParameterName <- param.Name
+        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
+        p.Value <- value
+        p.Direction <- param.Direction
+        Option.iter (fun l -> p.Size <- l) param.Length
+        p
 
     let readParameter (parameter:IDbDataParameter) =
         match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
@@ -229,13 +197,13 @@ module PostgreSQL =
         let outps =
              retCols
              |> Array.map(fun ip ->
-                 let p = createCommandParameter true ip null
+                 let p = createCommandParameter ip null
                  (ip.Ordinal, p))
 
         let inps =
              inputParameters
              |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter true ip values.[i]
+                 let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
 
         Array.append outps inps
@@ -249,7 +217,14 @@ module PostgreSQL =
                 | [||] -> com.ExecuteNonQuery() |> ignore; Unit
                 | [|col|] ->
                     match col.TypeMapping.ProviderTypeName with
+                    | Some "record" ->
+                        use reader = com.ExecuteReader()
+                        SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | Some "refcursor" ->
+                        if not isLegacyVersion.Value then
+                            let cursorName = com.ExecuteScalar() |> unbox
+                            com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
+                            com.CommandType <- CommandType.Text
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | Some "SETOF refcursor" ->
@@ -282,81 +257,83 @@ module PostgreSQL =
         entities
 
     let getSprocs con =
-         let query = @"SELECT  r.specific_name AS id,
-                               r.routine_schema AS schema_name,
-                               r.routine_name AS name,
-                               r.data_type AS returntype,
-                               (SELECT  STRING_AGG(x.param, E'\n')
-                                  FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
-                                           FROM  information_schema.parameters p
-                                          WHERE  p.specific_name = r.specific_name
-                                       ORDER BY  p.ordinal_position) x) AS args
-                         FROM  information_schema.routines r
-                        WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
-                               AND r.routine_name NOT IN (SELECT  routine_name
-                                                            FROM  information_schema.routines
-                                                        GROUP BY  routine_name
-                                                          HAVING  COUNT(routine_name) > 1)"
-         Sql.executeSqlAsDataTable createCommand query con
-         |> DataTable.map (fun r ->
-             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
-                          Owner = Sql.dbUnbox<string> r.["schema_name"]
-                          PackageName = String.Empty }
-             let sparams =
-                 match Sql.dbUnbox<string> r.["args"] with
-                 | null -> []
-                 | args ->
-                     args.Split('\n')
-                     |> Array.mapi (fun i arg ->
-                         let direction, name, typeName =
-                             match arg.Split(';') with
-                             | [| direction; name; typeName |] -> direction, name, typeName
-                             | _ -> failwith "Invalid procedure argument description."
-                         findDbType typeName
-                         |> Option.map (fun m ->
-                             { Name = name
-                               TypeMapping = m
-                               Direction =
-                                 match direction.ToLower() with
-                                 | "in" -> ParameterDirection.Input
-                                 | "inout" -> ParameterDirection.InputOutput
-                                 | "out" -> ParameterDirection.Output
-                                 | _ -> failwithf "Unknown parameter direction value %s." direction
-                               Ordinal = i
-                               Length = None }))
-                     |> Array.choose id
-                     |> Array.toList
-             let rcolumns =
-                 let rcolumns = sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
-                 match Sql.dbUnbox<string> r.["returntype"] with
-                 | null -> rcolumns
-                 | rtype ->
-                     findDbType rtype
-                     |> Option.map (fun m ->
-                         { Name = "ReturnValue"
-                           TypeMapping = m
-                           Direction = ParameterDirection.ReturnValue
-                           Ordinal = 0
-                           Length = None })
-                     |> Option.fold (fun acc col -> col :: acc) rcolumns
-             Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
+        let query = @"SELECT  r.specific_name AS id,
+                              r.routine_schema AS schema_name,
+                              r.routine_name AS name,
+                              r.data_type AS returntype,
+                              (SELECT  STRING_AGG(x.param, E'\n')
+                                 FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
+                                          FROM  information_schema.parameters p
+                                         WHERE  p.specific_name = r.specific_name
+                                      ORDER BY  p.ordinal_position) x) AS args
+                        FROM  information_schema.routines r
+                       WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
+                              AND r.routine_name NOT IN (SELECT  routine_name
+                                                           FROM  information_schema.routines
+                                                       GROUP BY  routine_name
+                                                         HAVING  COUNT(routine_name) > 1)"
+        Sql.executeSqlAsDataTable createCommand query con
+        |> DataTable.map (fun r ->
+            let name = { ProcName = Sql.dbUnbox<string> r.["name"]
+                         Owner = Sql.dbUnbox<string> r.["schema_name"]
+                         PackageName = String.Empty }
+            let sparams =
+                match Sql.dbUnbox<string> r.["args"] with
+                | null -> []
+                | args ->
+                    args.Split('\n')
+                    |> Array.mapi (fun i arg ->
+                        let direction, name, typeName =
+                            match arg.Split(';') with
+                            | [| direction; name; typeName |] -> direction, name, typeName
+                            | _ -> failwith "Invalid procedure argument description."
+                        findDbType typeName
+                        |> Option.map (fun m ->
+                           let direction =
+                               match direction.ToLower() with
+                               | "in" -> ParameterDirection.Input
+                               | "inout" -> ParameterDirection.InputOutput
+                               | "out" -> ParameterDirection.Output
+                               | _ -> failwithf "Unknown parameter direction value %s." direction
+                           QueryParameter.Create(name,i,m,direction)))
+                    |> Array.choose id
+                    |> Array.toList
+            let sparams, rcolumns =
+                let rcolumns = sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
+                match Sql.dbUnbox<string> r.["returntype"] with
+                | null -> sparams, rcolumns
+                | "record" ->
+                    match findDbType "record" with
+                    | Some(m) ->
+                        // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
+                        let sparams = sparams |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+                        sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = Some("record") }, ParameterDirection.ReturnValue) ]
+                    | None -> sparams, rcolumns
+                | rtype ->
+                    findDbType rtype
+                    |> Option.map (fun m -> QueryParameter.Create("ReturnValue",0,m,ParameterDirection.ReturnValue))
+                    |> Option.fold (fun acc col -> fst acc, col :: (snd acc)) (sparams, rcolumns)
+            Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
-type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
+type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
+    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let pk = pkLookup.[entity.Table.FullName]
         let columnNames, values =
-            (([],0),entity.ColumnValues)
-            ||> Seq.fold(fun (out,i) (k,v) ->
+            (([],0),entity.ColumnValuesWithDefinition)
+            ||> Seq.fold(fun (out,i) (k,v,c) ->
                 let name = sprintf "@param%i" i
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                let qp = match c with
+                         | Some(c) -> QueryParameter.Create(name,i,c.TypeMapping)
+                         | None -> QueryParameter.Create(name,i)
+                let p = PostgreSQL.createCommandParameter qp v
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -380,7 +357,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
     let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let pk = pkLookup.[entity.Table.FullName]
         sb.Clear() |> ignore
@@ -396,16 +373,18 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
-                let p =
-                    match entity.GetColumnOption<obj> col with
-                    | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
-                    | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
+                let qp, v =
+                    match entity.GetColumnOptionWithDefinition col with
+                    | Some(v, Some(c)) -> QueryParameter.Create(name,i,c.TypeMapping), v
+                    | Some(v, None) -> QueryParameter.Create(name,i), v
+                    | None -> QueryParameter.Create(name,i), box DBNull.Value
+                let p = PostgreSQL.createCommandParameter qp v
                 (col,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
             |> List.toArray
 
-        let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
+        let pkParam = PostgreSQL.createCommandParameter (QueryParameter.Create("@pk",0)) pkValue
 
         ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;"
             entity.Table.Schema entity.Table.Name
@@ -419,7 +398,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
     let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         sb.Clear() |> ignore
         let pk = pkLookup.[entity.Table.FullName]
@@ -428,7 +407,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
+        let p = PostgreSQL.createCommandParameter (QueryParameter.Create("@id",0)) pkValue
 
         cmd.Parameters.Add(p) |> ignore
         ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE %s = @id" entity.Table.Schema entity.Table.Name pk )
@@ -453,7 +432,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
+        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
         member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
@@ -508,8 +487,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                               c.table_name,
                                               c.ordinal_position"
                     use command = PostgreSQL.createCommand baseQuery con
-                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
-                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
                     Sql.connect con (fun _ ->
                         use reader = command.ExecuteReader()
                         let columns =
@@ -521,13 +500,13 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                          IsPrimarKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
-                                    if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
+                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
+                                    if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then
                                         pkLookup.Add(table.FullName, col.Name)
-                                    yield col
+                                    yield (col.Name,col)
                                 | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
-                        columnLookup.Add(table.FullName, columns)
-                        columns)
+                            |> Map.ofList
+                        columnLookup.GetOrAdd(table.FullName, columns))
             finally
                 Monitor.Exit columnLookup
 
@@ -592,7 +571,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
@@ -617,7 +596,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
                         else
@@ -634,7 +613,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param),value)
+                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
 
             let rec filterBuilder = function
                 | [] -> ()

@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
 open System.Data.OleDb
@@ -14,7 +15,7 @@ type internal MSAccessProvider() =
     let pkLookup = new Dictionary<string,string>()
     let tableLookup = new Dictionary<string,Table>()
     let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
-    let columnLookup = new Dictionary<string,Column list>()
+    let columnLookup = new ConcurrentDictionary<string,ColumnLookup>()
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -184,33 +185,33 @@ type internal MSAccessProvider() =
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ ->
-               if con.State <> ConnectionState.Open then con.Open()
-               let pks =
+                if con.State <> ConnectionState.Open then con.Open()
+                let pks =
                     (con:?>OleDbConnection).GetSchema("Indexes",[|null;null;null;null;table.Name|]).AsEnumerable()
                     |> Seq.filter (fun idx ->  bool.Parse(idx.["PRIMARY_KEY"].ToString()))
                     |> Seq.map (fun idx -> idx.["COLUMN_NAME"].ToString())
                     |> Seq.toList
 
-               let columns =
+                let columns =
                     (con:?>OleDbConnection).GetSchema("Columns",[|null;null;table.Name;null|]).AsEnumerable()
-                    |> Seq.map (fun row -> let dt = row.["DATA_TYPE"].ToString()
-                                           match findDbType dt with
-                                           |Some(m) ->
-                                                 let col =
-                                                    {Column.Name = row.["COLUMN_NAME"].ToString();
-                                                     TypeMapping = m
-                                                     IsPrimarKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
-                                                     IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
-                                                 col
-                                           |_ -> failwith "failed to map datatypes") |> List.ofSeq
+                    |> Seq.map (fun row ->
+                        match row.["DATA_TYPE"].ToString() |> findDbType with
+                        |Some(m) ->
+                            let col =
+                                { Column.Name = row.["COLUMN_NAME"].ToString();
+                                  TypeMapping = m
+                                  IsPrimaryKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
+                                  IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
+                            (col.Name,col)
+                        |_ -> failwith "failed to map datatypes")
+                    |> Map.ofSeq
 
-              // only add to PK lookup if it's a single pk - no support for composite keys yet
-               match pks with
-               | pk::[] -> pkLookup.Add(table.FullName, pk)
-               | _ -> ()
+                // only add to PK lookup if it's a single pk - no support for composite keys yet
+                match pks with
+                | pk::[] -> pkLookup.Add(table.FullName, pk)
+                | _ -> ()
 
-               columnLookup.Add(table.FullName,columns)
-               columns
+                columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
             if con.State <> ConnectionState.Open then con.Open()
@@ -253,7 +254,7 @@ type internal MSAccessProvider() =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
                         else

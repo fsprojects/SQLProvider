@@ -2,9 +2,9 @@
 
 open System
 open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
-
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
@@ -14,7 +14,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     // as the type provider will dicate the connection lifecycles
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
+    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
     let isMono = Type.GetType ("Mono.Runtime") <> null
 
@@ -215,27 +215,27 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ ->
-               if con.State <> ConnectionState.Open then con.Open()
-               let query = sprintf "pragma table_info(%s)" table.Name
-               use com = (this:>ISqlProvider).CreateCommand(con,query)
-               use reader = com.ExecuteReader()
-               let columns =
-                  [ while reader.Read() do
-                      let dt = reader.GetString(2).ToLower()
-                      let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
-                      match findDbType dt with
-                      | Some(m) ->
-                         let col =
-                            { Column.Name = reader.GetString(1);
-                              TypeMapping = m
-                              IsNullable = not <| reader.GetBoolean(3);
-                              IsPrimarKey = if reader.GetBoolean(5) then true else false }
-                         if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
-                         yield col
-                      | _ -> ()]
-               columnLookup.Add(table.FullName,columns)
-               con.Close()
-               columns
+                if con.State <> ConnectionState.Open then con.Open()
+                let query = sprintf "pragma table_info(%s)" table.Name
+                use com = (this:>ISqlProvider).CreateCommand(con,query)
+                use reader = com.ExecuteReader()
+                let columns =
+                    [ while reader.Read() do
+                        let dt = reader.GetString(2).ToLower()
+                        let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
+                        match findDbType dt with
+                        | Some(m) ->
+                            let col =
+                                { Column.Name = reader.GetString(1);
+                                  TypeMapping = m
+                                  IsNullable = not <| reader.GetBoolean(3);
+                                  IsPrimaryKey = if reader.GetBoolean(5) then true else false }
+                            if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                            yield (col.Name,col)
+                        | _ -> ()]
+                    |> Map.ofList
+                con.Close()
+                columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue(table.FullName) with
@@ -300,7 +300,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
                         else
