@@ -1,8 +1,11 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections
 open System.Collections.Generic
 open System.Data
+open System.Net
+open System.Net.NetworkInformation
 open System.Threading
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
@@ -27,111 +30,15 @@ module PostgreSQL =
                 failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s" assemblyNames Environment.NewLine resolutionPaths
 
     let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
-    let findType name = assembly.Value.GetTypes() |> Array.find (fun t -> t.Name = name)
-    let checkType name = assembly.Value.GetTypes() |> Array.exists (fun t -> t.Name = name)
+    let findType name = assembly.Value.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
+    let getType = findType >> Option.get
 
-    let connectionType = lazy (findType "NpgsqlConnection")
-    let commandType = lazy (findType "NpgsqlCommand")
-    let parameterType = lazy (findType "NpgsqlParameter")
-
-    let dbType = lazy (findType "NpgsqlDbType")
+    let connectionType = lazy (getType "NpgsqlConnection")
+    let commandType = lazy (getType "NpgsqlCommand")
+    let parameterType = lazy (getType "NpgsqlParameter")
+    let dbType = lazy (getType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
-    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
-
-    let isSupportedType = function
-        // The types abstime and reltime are lower precision types which are used internally.
-        // You are discouraged from using these types in applications; these internal types
-        // might disappear in a future release.
-        | "abstime"                                -> false
-
-        | "box"                                    -> checkType "NpgsqlBox"
-        | "cidr"                                   -> checkType "NpgsqlInet"
-        | "circle"                                 -> checkType "NpgsqlCircle"
-        | "date"                                   -> checkType "NpgsqlDate"
-        | "inet"                                   -> checkType "NpgsqlInet"
-        | "interval" when isLegacyVersion.Value    -> checkType "NpgsqlInterval"
-        | "interval"                               -> checkType "NpgsqlTimeSpan"
-        | "line"                                   -> checkType "NpgsqlLine"
-        | "lseg"                                   -> checkType "NpgsqlLSeg"
-        | "path"                                   -> checkType "NpgsqlPath"
-        | "point"                                  -> checkType "NpgsqlPoint"
-        | "polygon"                                -> checkType "NpgsqlPolygon"
-        | "time" when isLegacyVersion.Value        -> checkType "NpgsqlTime"
-        | "timestamp" when isLegacyVersion.Value   -> checkType "NpgsqlTimeStamp"
-        | "timestamp"                              -> checkType "NpgsqlDateTime"
-        | "timestamptz" when isLegacyVersion.Value -> checkType "NpgsqlTimeStampTZ"
-        | "timestamptz"                            -> checkType "NpgsqlDateTime"
-        | "timetz" when isLegacyVersion.Value      -> checkType "NpgsqlTimeTZ"
-        | "tsquery"                                -> checkType "NpgsqlTsQuery"
-        | "tsvector"                               -> checkType "NpgsqlTsVector"
-        | _                                        -> true
-
-    let mapNpgsqlDbTypeToClrType = function
-        | "abstime"     -> Some typeof<DateTime>
-        | "bigint"      -> Some typeof<int64>
-        | "bit"         -> Some typeof<bool>                // Fixed-width bit array; by default bit(1) is mapped to boolean and larger type values to BitString.
-        | "boolean"     -> Some typeof<bool>
-        | "box"         -> Some typeof<obj>
-        | "bytea"       -> Some typeof<byte[]>
-        | "char"        -> Some typeof<char[]>              // Fixed-width character array.
-        | "cid"         -> Some typeof<uint32>
-        | "cidr"        -> Some typeof<obj>
-        | "circle"      -> Some typeof<obj>
-        | "date"        -> Some typeof<DateTime>
-        | "double"      -> Some typeof<double>
-        | "hstore"      -> Some typeof<obj>                 // Npgsql maps to IDictionary<string,string>, but provider is currently unable to support
-                                                            // the type because data_type returns `USER-DEFINED` and real type name is in udt_name.
-        | "inet"        -> Some typeof<obj>                 // System.Net.IPAddress
-        | "integer"     -> Some typeof<int32>
-        | "interval"    -> Some typeof<TimeSpan>
-        | "json"        -> Some typeof<string>
-        | "jsonb"       -> Some typeof<string>
-        | "line"        -> Some typeof<obj>
-        | "lseg"        -> Some typeof<obj>
-        | "macaddr"     -> Some typeof<obj>                 // System.Net.NetworkInformation.PhysicalAddress
-        | "money"       -> Some typeof<decimal>
-        | "name"        -> Some typeof<string>
-        | "numeric"     -> Some typeof<decimal>
-        | "oid"         -> Some typeof<uint32>
-        | "oidvector"   -> Some typeof<uint32[]>
-        | "path"        -> Some typeof<obj>
-        | "point"       -> Some typeof<obj>
-        | "polygon"     -> Some typeof<obj>
-        | "real"        -> Some typeof<single>
-        | "refcursor"   -> Some typeof<SqlEntity[]>
-        | "singlechar"  -> Some typeof<char>
-        | "smallint"    -> Some typeof<int16>
-        | "text"        -> Some typeof<string>
-        | "time"        -> Some typeof<TimeSpan>
-        | "timestamp"   -> Some typeof<DateTime>
-        | "timestamptz" -> Some typeof<DateTime>
-        | "timetz"      -> Some typeof<DateTimeOffset>
-        | "tsquery"     -> Some typeof<obj>
-        | "tsvector"    -> Some typeof<obj>
-        | "unknown"     -> Some typeof<obj>
-        | "uuid"        -> Some typeof<Guid>
-        | "varbit"      -> Some typeof<obj>                 // Variable-length bit array, maps to System.Collections.BitArray
-        | "varchar"     -> Some typeof<string>
-        | "xid"         -> Some typeof<uint32>
-        | "xml"         -> Some typeof<string>
-        | "array"
-        | "composite"
-        | "enum"
-        | "range"
-        | _             -> None                             // Special enum values need separate handling
-
-    let mapNpgsqlDbTypeToDataType = function
-        | "char" -> "character"
-        | "double" -> "double precision"
-        | "singlechar" -> "\"char\""
-        | "time" -> "time without time zone"
-        | "timestamp" -> "timestamp without time zone"
-        | "timestamptz" -> "timestamp with time zone"
-        | "timetz" -> "time with time zone"
-        | "varbit" -> "bit varying"
-        | "varchar" -> "character varying"
-        | name -> name
 
     let getDbType(providerType) =
         let parameterType = parameterType.Value
@@ -139,57 +46,100 @@ module PostgreSQL =
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
         p.DbType
 
-    let mutable typeMappings = []
-    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let createTypeMappings() =
-        let typ = dbType.Value
+    let parseDbType (ty: Type) dbt =
+        try Some(ty, Enum.Parse(dbType.Value, dbt) |> unbox<int>)
+        with _ -> None
 
+    let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
+    let namemap name dbTypes = findType name |> Option.bind (fun ty -> dbTypes |> List.tryPick (parseDbType ty))
+
+    let createTypeMappings () =
+        // http://www.npgsql.org/doc/2.2/
+        // http://www.npgsql.org/doc/3.0/types.html
         let mappings =
-            let enumMappings =
-                [ for v in Enum.GetValues(typ) -> Enum.GetName(typ, v).ToLower(), unbox<int> v ]
-                |> List.filter (fst >> isSupportedType)
-                |> List.choose (fun (name, value) ->
-                    match mapNpgsqlDbTypeToClrType name with
-                    | Some(t) -> Some({ ProviderTypeName = Some(mapNpgsqlDbTypeToDataType name)
-                                        ClrType = t.ToString()
-                                        DbType = (getDbType value)
-                                        ProviderType = Some value })
-                    | None -> None)
-            let refCursor = enumMappings |> List.find (fun x -> x.ProviderTypeName = Some "refcursor")
-            enumMappings @ [{ refCursor with ProviderTypeName = Some "SETOF refcursor" }]
-
-        let findTypeMapping (m: TypeMapping) =
-            let defaultProviderTypeName =
-                match m.ClrType with
-                | "System.DateTime" -> Some("timestamp without time zone")
-                | "System.TimeSpan" -> Some("interval")
-                | "System.Boolean" -> Some("boolean")
-                | "System.String" -> Some("character varying")
-                | "System.Object" when not isLegacyVersion.Value -> Some("unknown")
-                | "System.Decimal" -> Some("numeric")
-                | _ -> m.ProviderTypeName
-            if defaultProviderTypeName = m.ProviderTypeName then m else
-            mappings |> List.find (fun m -> m.ProviderTypeName = defaultProviderTypeName)
-
-        let clrMappings =
-            mappings
-            |> List.map (fun m -> m.ClrType, findTypeMapping(m))
-            |> Map.ofList
+            [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
+              "bigint"                      , typemap<int64>                      ["Bigint"]
+              "bit"                         , typemap<BitArray>                   ["Bit"]
+              "bit varying"                 , typemap<BitArray>                   ["Varbit"]
+              "boolean"                     , typemap<bool>                       ["Boolean"]
+              "box"                         , namemap "NpgsqlBox"                 ["Box"]
+              "bytea"                       , typemap<byte[]>                     ["Bytea"]
+              "\"char\""                    , typemap<char>                       ["InternalChar"; "SingleChar"]
+              "character"                   , typemap<string>                     ["Char"]
+              "character varying"           , typemap<string>                     ["Varchar"]
+              "cid"                         , typemap<uint32>                     ["Cid"]
+              "cidr"                        , namemap "NpgsqlInet"                ["Cidr"]
+              "circle"                      , namemap "NpgsqlCircle"              ["Circle"]
+              "citext"                      , typemap<string>                     ["Citext"]
+              "date"                        , typemap<DateTime>                   ["Date"]
+              "double precision"            , typemap<double>                     ["Double"]
+              "geometry"                    , namemap "IGeometry"                 ["Geometry"]
+              "hstore",                 (if isLegacyVersion.Value
+                                         then typemap<string>                     ["Hstore"]
+                                         else typemap<IDictionary<string,string>> ["Hstore"])
+              "inet"                        , typemap<IPAddress>                  ["Inet"]
+            //"int2vector"                  , typemap<short[]>                    ["Int2Vector"]
+              "integer"                     , typemap<int32>                      ["Integer"]
+              "interval"                    , typemap<TimeSpan>                   ["Interval"]
+              "json"                        , typemap<string>                     ["Json"]
+              "jsonb"                       , typemap<string>                     ["Jsonb"]
+              "line"                        , namemap "NpgsqlLine"                ["Line"]
+              "lseg"                        , namemap "NpgsqlLSeg"                ["LSeg"]
+              "macaddr"                     , typemap<PhysicalAddress>            ["MacAddr"]
+              "money"                       , typemap<decimal>                    ["Money"]
+              "name"                        , typemap<string>                     ["Name"]
+              "numeric"                     , typemap<decimal>                    ["Numeric"]
+              "oid"                         , typemap<uint32>                     ["Oid"]
+            //"oidvector",              (if isLegacyVersion.Value
+            //                           then typemap<string>                     ["Oidvector"]
+            //                           else typemap<uint32[]>                   ["Oidvector"])
+              "path"                        , namemap "NpgsqlPath"                ["Path"]
+            //"pg_lsn"                      , typemap<???>                        ["???"]
+              "point"                       , namemap "NpgsqlPoint"               ["Point"]
+              "polygon"                     , namemap "NpgsqlPolygon"             ["Polygon"]
+              "real"                        , typemap<single>                     ["Real"]
+              "record"                      , typemap<SqlEntity[]>                ["Refcursor"]
+              "refcursor"                   , typemap<SqlEntity[]>                ["Refcursor"]
+              "regtype"                     , typemap<uint32>                     ["Regtype"]
+              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
+              "smallint"                    , typemap<int16>                      ["Smallint"]
+              "text"                        , typemap<string>                     ["Text"]
+              "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
+              "time without time zone", (if isLegacyVersion.Value
+                                         then typemap<DateTime>                   ["Time"]
+                                         else typemap<TimeSpan>                   ["Time"])
+              "time with time zone",    (if isLegacyVersion.Value
+                                         then typemap<DateTime>                   ["TimeTZ"]
+                                         else typemap<DateTimeOffset>             ["TimeTZ"])
+              "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
+              "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
+              "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
+              "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
+            //"txid_snapshot"               , typemap<???>                        ["???"]
+              "unknown"                     , typemap<obj>                        ["Unknown"]
+              "uuid"                        , typemap<Guid>                       ["Uuid"]
+              "xid"                         , typemap<uint32>                     ["Xid"]
+              "xml"                         , typemap<string>                     ["Xml"]
+            //"array"                       , typemap<Array>                      ["Array"]
+            //"composite"                   , typemap<obj>                        ["Composite"]
+            //"enum"                        , typemap<obj>                        ["Enum"]
+            //"range"                       , typemap<Array>                      ["Range"]
+              ]
+            |> List.choose (fun (name,dbt) ->
+                dbt |> Option.map (fun (clrType,providerType) ->
+                    { ProviderTypeName = Some(name)
+                      ClrType = clrType.AssemblyQualifiedName
+                      DbType = getDbType providerType
+                      ProviderType = Some(providerType) }))
 
         let dbMappings =
             mappings
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
 
-        typeMappings <- mappings
-        findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
-
-    let getSchema name (args:string[]) (conn:IDbConnection) =
-        getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
-
 
     let createConnection connectionString =
         try
@@ -217,16 +167,15 @@ module PostgreSQL =
         let typ = value.GetType()
         typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
 
-    let createCommandParameter sprocCommand (param:QueryParameter) value =
+    let createCommandParameter (param:QueryParameter) value =
         let value =
             if not (isOptionValue value) then value else
             match tryReadValueProperty value with Some(v) -> v | None -> null
-        let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         p.Value <- value
-        p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         p.Direction <- param.Direction
+        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
         Option.iter (fun l -> p.Size <- l) param.Length
         p
 
@@ -247,13 +196,13 @@ module PostgreSQL =
         let outps =
              retCols
              |> Array.map(fun ip ->
-                 let p = createCommandParameter true ip null
+                 let p = createCommandParameter ip null
                  (ip.Ordinal, p))
 
         let inps =
              inputParameters
              |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter true ip values.[i]
+                 let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
 
         Array.append outps inps
@@ -353,7 +302,7 @@ module PostgreSQL =
                 match Sql.dbUnbox<string> r.["returntype"] with
                 | null -> sparams, rcolumns
                 | "record" ->
-                    match findDbType "refcursor" with
+                    match findDbType "record" with
                     | Some(m) ->
                         // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
                         let sparams = sparams |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
@@ -477,7 +426,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter false param value
+        member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
         member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
@@ -532,8 +481,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                                               c.table_name,
                                               c.ordinal_position"
                     use command = PostgreSQL.createCommand baseQuery con
-                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
-                    PostgreSQL.createCommandParameter false (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
                     Sql.connect con (fun _ ->
                         use reader = command.ExecuteReader()
                         let columns =
