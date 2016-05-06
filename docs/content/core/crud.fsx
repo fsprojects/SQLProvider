@@ -67,6 +67,9 @@ ctx.SubmitUpdates()
 
 (** 
 
+Transactions are created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
+
 Support also async operations: ctx.SubmitUpdatesAsync() |> Async.StartAsTask
+
 
 *)

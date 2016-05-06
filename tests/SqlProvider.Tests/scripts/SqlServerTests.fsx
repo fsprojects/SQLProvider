@@ -37,6 +37,12 @@ let employeesFirstName =
         select emp.FirstName
     } |> Seq.toList
 
+let employeesFirstNameAsync = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        select emp.FirstName
+    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+
 //Ref issue #92
 let employeesFirstNameEmptyList = 
     query {
@@ -146,7 +152,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdates()
+ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 
