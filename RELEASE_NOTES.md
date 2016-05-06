@@ -1,5 +1,7 @@
-### 1.0.3 - 06.05.2016
+### 1.0.4 - 06.05.2016
 * PostgreSQL types, Npgsql 2 and 3. (PR #261)
+
+### 1.0.3 - 06.05.2016
 * Improved option type usage in join and where clauses (PR #260)
 
 ### 1.0.2 - 05.05.2016
