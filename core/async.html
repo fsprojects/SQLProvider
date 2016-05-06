@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Asynchronous Database Operation
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull">
+
+    <script src="http://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="http://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="Asynchronous-Database-Operation" class="anchor" href="#Asynchronous-Database-Operation">Asynchronous Database Operation</a></h1>
+<p>You get more performance by concurrency. The idea of async database operations
+is release the business logics thread while the database is doing its job.
+This can lead a huge performance difference on heavy traffic environment
+(basically, will your business logics server / web-server crash or not).</p>
+<p><img src="http://i.imgur.com/DBPLRlP.png" alt="" /></p>
+<p>In the picture, we talk about the red block, which can be released to serve other customers.</p>
+<p>Currently SQLProvider supports async operations on runtime, not design-time.</p>
+<p>Your execution thread may change. For transactions to support this,
+.NET 4.5.1 has a fix for asynchronous transactions that has to be explicitly used.</p>
+<h3><a name="Async-queries-and-updates" class="anchor" href="#Async-queries-and-updates">Async queries and updates</a></h3>
+<p>Consept for async queries is this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="i">System</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs11', 13)" onmouseover="showTip(event, 'fs11', 13)" class="i">System</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs12', 14)" onmouseover="showTip(event, 'fs12', 14)" class="i">Threading</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs13', 15)" onmouseover="showTip(event, 'fs13', 15)" class="i">Tasks</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 16)" onmouseover="showTip(event, 'fs1', 16)" class="i">FSharp</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 17)" onmouseover="showTip(event, 'fs2', 17)" class="i">Data</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 18)" onmouseover="showTip(event, 'fs3', 18)" class="i">Sql</span>
+
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="t">MyWebServer</span>() <span class="o">=</span> 
+    <span class="k">member</span> <span class="i">__</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="f">``Execute Business Logics``</span> (<span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="i">id</span> <span class="o">:</span> <span class="o">&lt;</span><span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="i">Guid</span><span class="o">&gt;</span>) <span class="o">:</span> <span onmouseout="hideTip(event, 'fs18', 23)" onmouseover="showTip(event, 'fs18', 23)" class="i">Task</span><span class="o">&lt;</span>_<span class="o">&gt;</span> <span class="o">=</span> 
+        <span onmouseout="hideTip(event, 'fs19', 24)" onmouseover="showTip(event, 'fs19', 24)" class="i">async</span> {
+            <span class="k">use</span> <span onmouseout="hideTip(event, 'fs20', 25)" onmouseover="showTip(event, 'fs20', 25)" class="i">transaction</span> <span class="o">=</span> 
+                <span class="k">new</span> <span onmouseout="hideTip(event, 'fs11', 26)" onmouseover="showTip(event, 'fs11', 26)" class="i">System</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs21', 27)" onmouseover="showTip(event, 'fs21', 27)" class="i">Transactions</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 28)" onmouseover="showTip(event, 'fs22', 28)" class="t">TransactionScope</span>(
+                <span class="c">// .NET 4.5.1 fix for asynchronous transactions:</span>
+                    <span onmouseout="hideTip(event, 'fs11', 29)" onmouseover="showTip(event, 'fs11', 29)" class="i">System</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs21', 30)" onmouseover="showTip(event, 'fs21', 30)" class="i">Transactions</span><span class="o">.</span><span class="i">TransactionScopeAsyncFlowOption</span><span class="o">.</span><span class="i">Enabled</span>
+                )
+            <span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 31)" onmouseover="showTip(event, 'fs23', 31)" class="i">context</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 32)" onmouseover="showTip(event, 'fs4', 32)" class="i">TypeProviderConnection</span><span class="o">.</span><span class="i">GetDataContext</span> <span class="i">cstr</span>
+            <span class="k">let!</span> <span onmouseout="hideTip(event, 'fs24', 33)" onmouseover="showTip(event, 'fs24', 33)" class="i">fetched</span> <span class="o">=</span>
+                <span onmouseout="hideTip(event, 'fs25', 34)" onmouseover="showTip(event, 'fs25', 34)" class="i">query</span> {
+                    <span class="k">for</span>  <span onmouseout="hideTip(event, 'fs26', 35)" onmouseover="showTip(event, 'fs26', 35)" class="i">t2</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="i">context</span><span class="o">.</span><span class="i">MyDataBase</span><span class="o">.</span><span class="i">MyTable2</span> <span class="k">do</span>
+                    <span onmouseout="hideTip(event, 'fs27', 37)" onmouseover="showTip(event, 'fs27', 37)" class="k">join</span> <span onmouseout="hideTip(event, 'fs28', 38)" onmouseover="showTip(event, 'fs28', 38)" class="i">t1</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs23', 39)" onmouseover="showTip(event, 'fs23', 39)" class="i">context</span><span class="o">.</span><span class="i">MyDataBase</span><span class="o">.</span><span class="i">MyTable1</span> <span class="i">on</span> (<span class="i">t2</span><span class="o">.</span><span class="i">ForeignId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs28', 40)" onmouseover="showTip(event, 'fs28', 40)" class="i">t1</span><span class="o">.</span><span class="i">Id</span>)
+                    <span onmouseout="hideTip(event, 'fs29', 41)" onmouseover="showTip(event, 'fs29', 41)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs26', 42)" onmouseover="showTip(event, 'fs26', 42)" class="i">t2</span><span class="o">.</span><span class="i">Id</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 43)" onmouseover="showTip(event, 'fs16', 43)" class="f">id</span>)
+                    <span onmouseout="hideTip(event, 'fs30', 44)" onmouseover="showTip(event, 'fs30', 44)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs28', 45)" onmouseover="showTip(event, 'fs28', 45)" class="i">t1</span>)
+                } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs31', 46)" onmouseover="showTip(event, 'fs31', 46)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs32', 47)" onmouseover="showTip(event, 'fs32', 47)" class="f">executeQueryAsync</span>
+
+            <span class="i">fetched</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs31', 48)" onmouseover="showTip(event, 'fs31', 48)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs33', 49)" onmouseover="showTip(event, 'fs33', 49)" class="f">iter</span> (<span class="k">fun</span> <span onmouseout="hideTip(event, 'fs34', 50)" onmouseover="showTip(event, 'fs34', 50)" class="i">entity</span> <span class="k">-&gt;</span>
+                <span onmouseout="hideTip(event, 'fs34', 51)" onmouseover="showTip(event, 'fs34', 51)" class="i">entity</span><span class="o">.</span><span class="i">SetColumn</span>(<span class="s">&quot;Updated&quot;</span>, <span onmouseout="hideTip(event, 'fs35', 52)" onmouseover="showTip(event, 'fs35', 52)" class="i">DateTime</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs36', 53)" onmouseover="showTip(event, 'fs36', 53)" class="i">UtcNow</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs37', 54)" onmouseover="showTip(event, 'fs37', 54)" class="i">box</span>)
+            )
+            <span class="k">do!</span> <span onmouseout="hideTip(event, 'fs23', 55)" onmouseover="showTip(event, 'fs23', 55)" class="i">context</span><span class="o">.</span><span class="i">SubmitUpdatesAsync</span>()
+
+            <span onmouseout="hideTip(event, 'fs20', 56)" onmouseover="showTip(event, 'fs20', 56)" class="i">transaction</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs38', 57)" onmouseover="showTip(event, 'fs38', 57)" class="f">Complete</span>()
+            <span class="k">return</span> <span class="s">&quot;done!&quot;</span>
+        } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs39', 58)" onmouseover="showTip(event, 'fs39', 58)" class="t">Async</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs40', 59)" onmouseover="showTip(event, 'fs40', 59)" class="f">StartAsTask</span>
+</code></pre></td>
+</tr>
+</table>
+<h4><a name="Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context" class="anchor" href="#Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context">Database asynchrony can't be used as a way to do parallelism inside one context.</a></h4>
+<p>Usually database operations can't be executed as parallel inside one context/transaction.
+That is an anti-pattern in general: the network lag between database and your logics server
+is probably the bottle-neck of your system. So, in this order:</p>
+<ol>
+<li>Try to execute your business logics as database queries, as one big query.</li>
+<li>Or sometimes, not often, load eagerly data with single query and process it in the logics server.</li>
+<li>Avoid case that you create as many queries as your collection has items.</li>
+</ol>
+<p>So if you are still in the worst case, 3, and have to deal with a List<Async<T>&gt;, you cannot
+say Async.Parallel as that may corrupt your data. To avoid custom imperative while-loops,
+we have provided a little helper function for you, that is List.evaluateOneByOne.</p>
+<p>Avoid network traffic between business logics (BL) and database (DB).
+When you exit the query-computation, you cause the traffic.</p>
+
+<div class="tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div class="tip" id="fs2">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
+<div class="tip" id="fs3">namespace FSharp.Data.Sql</div>
+<div class="tip" id="fs4">type TypeProviderConnection = obj<br /><br />Full name: Async.TypeProviderConnection</div>
+<div class="tip" id="fs5">type SqlDataProvider<br /><br />Full name: FSharp.Data.Sql.SqlDataProvider<br /><em><br /><br />&lt;summary&gt;Typed representation of a database&lt;/summary&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 1000.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;UseOptionTypes&#39;&gt;If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;Owner&#39;&gt;The owner of the schema for this provider to resolve (Oracle Only)&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;CaseSensitivityChange&#39;&gt;Should we do ToUpper or ToLower when generating table names?&lt;/param&gt;</em></div>
+<div class="tip" id="fs6">namespace FSharp.Data.Sql.Common</div>
+<div class="tip" id="fs7">type DatabaseProviderTypes =<br />&#160;&#160;|  MSSQLSERVER  =  0<br />&#160;&#160;|  SQLITE  =  1<br />&#160;&#160;|  POSTGRESQL  =  2<br />&#160;&#160;|  MYSQL  =  3<br />&#160;&#160;|  ORACLE  =  4<br />&#160;&#160;|  MSACCESS  =  5<br />&#160;&#160;|  ODBC  =  6<br /><br />Full name: FSharp.Data.Sql.Common.DatabaseProviderTypes</div>
+<div class="tip" id="fs8">Common.DatabaseProviderTypes.MSSQLSERVER: Common.DatabaseProviderTypes = 0</div>
+<div class="tip" id="fs9">type CaseSensitivityChange =<br />&#160;&#160;|  ORIGINAL  =  0<br />&#160;&#160;|  TOUPPER  =  1<br />&#160;&#160;|  TOLOWER  =  2<br /><br />Full name: FSharp.Data.Sql.Common.CaseSensitivityChange</div>
+<div class="tip" id="fs10">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+<div class="tip" id="fs11">namespace System</div>
+<div class="tip" id="fs12">namespace System.Threading</div>
+<div class="tip" id="fs13">namespace System.Threading.Tasks</div>
+<div class="tip" id="fs14">Multiple items<br />type MyWebServer =<br />&#160;&#160;new : unit -&gt; MyWebServer<br />&#160;&#160;member ( Execute Business Logics ) : &#39;a -&gt; Task&lt;string&gt;<br /><br />Full name: Async.MyWebServer<br /><br />--------------------<br />new : unit -&gt; MyWebServer</div>
+<div class="tip" id="fs15">member MyWebServer.( Execute Business Logics ) : &#39;a -&gt; Task&lt;string&gt;<br /><br />Full name: Async.MyWebServer.( Execute Business Logics )</div>
+<div class="tip" id="fs16">val id : x:&#39;T -&gt; &#39;T<br /><br />Full name: Microsoft.FSharp.Core.Operators.id</div>
+<div class="tip" id="fs17">Multiple items<br />type Guid =<br />&#160;&#160;struct<br />&#160;&#160;&#160;&#160;new : b:byte[] -&gt; Guid + 4 overloads<br />&#160;&#160;&#160;&#160;member CompareTo : value:obj -&gt; int + 1 overload<br />&#160;&#160;&#160;&#160;member Equals : o:obj -&gt; bool + 1 overload<br />&#160;&#160;&#160;&#160;member GetHashCode : unit -&gt; int<br />&#160;&#160;&#160;&#160;member ToByteArray : unit -&gt; byte[]<br />&#160;&#160;&#160;&#160;member ToString : unit -&gt; string + 2 overloads<br />&#160;&#160;&#160;&#160;static val Empty : Guid<br />&#160;&#160;&#160;&#160;static member NewGuid : unit -&gt; Guid<br />&#160;&#160;&#160;&#160;static member Parse : input:string -&gt; Guid<br />&#160;&#160;&#160;&#160;static member ParseExact : input:string * format:string -&gt; Guid<br />&#160;&#160;&#160;&#160;...<br />&#160;&#160;end<br /><br />Full name: System.Guid<br /><br />--------------------<br />Guid()<br />Guid(b: byte []) : unit<br />Guid(g: string) : unit<br />Guid(a: int, b: int16, c: int16, d: byte []) : unit<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : unit<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : unit</div>
+<div class="tip" id="fs18">Multiple items<br />type Task =<br />&#160;&#160;new : action:Action -&gt; Task + 7 overloads<br />&#160;&#160;member AsyncState : obj<br />&#160;&#160;member ContinueWith : continuationAction:Action&lt;Task&gt; -&gt; Task + 9 overloads<br />&#160;&#160;member CreationOptions : TaskCreationOptions<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;member Exception : AggregateException<br />&#160;&#160;member Id : int<br />&#160;&#160;member IsCanceled : bool<br />&#160;&#160;member IsCompleted : bool<br />&#160;&#160;member IsFaulted : bool<br />&#160;&#160;...<br /><br />Full name: System.Threading.Tasks.Task<br /><br />--------------------<br />type Task&lt;&#39;TResult&gt; =<br />&#160;&#160;inherit Task<br />&#160;&#160;new : function:Func&lt;&#39;TResult&gt; -&gt; Task&lt;&#39;TResult&gt; + 7 overloads<br />&#160;&#160;member ContinueWith : continuationAction:Action&lt;Task&lt;&#39;TResult&gt;&gt; -&gt; Task + 9 overloads<br />&#160;&#160;member Result : &#39;TResult with get, set<br />&#160;&#160;static member Factory : TaskFactory&lt;&#39;TResult&gt;<br /><br />Full name: System.Threading.Tasks.Task&lt;_&gt;<br /><br />--------------------<br />Task(action: Action) : unit<br />Task(action: Action, cancellationToken: Threading.CancellationToken) : unit<br />Task(action: Action, creationOptions: TaskCreationOptions) : unit<br />Task(action: Action&lt;obj&gt;, state: obj) : unit<br />Task(action: Action, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : unit<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken) : unit<br />Task(action: Action&lt;obj&gt;, state: obj, creationOptions: TaskCreationOptions) : unit<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : unit<br /><br />--------------------<br />Task(function: Func&lt;&#39;TResult&gt;) : unit<br />Task(function: Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken) : unit<br />Task(function: Func&lt;&#39;TResult&gt;, creationOptions: TaskCreationOptions) : unit<br />Task(function: Func&lt;obj,&#39;TResult&gt;, state: obj) : unit<br />Task(function: Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : unit<br />Task(function: Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken) : unit<br />Task(function: Func&lt;obj,&#39;TResult&gt;, state: obj, creationOptions: TaskCreationOptions) : unit<br />Task(function: Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : unit</div>
+<div class="tip" id="fs19">val async : AsyncBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.async</div>
+<div class="tip" id="fs20">val transaction : Transactions.TransactionScope</div>
+<div class="tip" id="fs21">namespace System.Transactions</div>
+<div class="tip" id="fs22">Multiple items<br />type TransactionScope =<br />&#160;&#160;new : unit -&gt; TransactionScope + 7 overloads<br />&#160;&#160;member Complete : unit -&gt; unit<br />&#160;&#160;member Dispose : unit -&gt; unit<br /><br />Full name: System.Transactions.TransactionScope<br /><br />--------------------<br />Transactions.TransactionScope() : unit<br />Transactions.TransactionScope(scopeOption: Transactions.TransactionScopeOption) : unit<br />Transactions.TransactionScope(transactionToUse: Transactions.Transaction) : unit<br />Transactions.TransactionScope(scopeOption: Transactions.TransactionScopeOption, scopeTimeout: TimeSpan) : unit<br />Transactions.TransactionScope(scopeOption: Transactions.TransactionScopeOption, transactionOptions: Transactions.TransactionOptions) : unit<br />Transactions.TransactionScope(transactionToUse: Transactions.Transaction, scopeTimeout: TimeSpan) : unit<br />Transactions.TransactionScope(scopeOption: Transactions.TransactionScopeOption, transactionOptions: Transactions.TransactionOptions, interopOption: Transactions.EnterpriseServicesInteropOption) : unit<br />Transactions.TransactionScope(transactionToUse: Transactions.Transaction, scopeTimeout: TimeSpan, interopOption: Transactions.EnterpriseServicesInteropOption) : unit</div>
+<div class="tip" id="fs23">val context : obj</div>
+<div class="tip" id="fs24">val fetched : seq&lt;obj&gt;</div>
+<div class="tip" id="fs25">val query : Linq.QueryBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.query</div>
+<div class="tip" id="fs26">val t2 : obj</div>
+<div class="tip" id="fs27">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;<br /><br />Calls Linq.QueryBuilder.Join </div>
+<div class="tip" id="fs28">val t1 : obj</div>
+<div class="tip" id="fs29">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where </div>
+<div class="tip" id="fs30">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select </div>
+<div class="tip" id="fs31">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs32">val executeQueryAsync : (Linq.IQueryable&lt;&#39;a&gt; -&gt; Async&lt;seq&lt;&#39;a&gt;&gt;)<br /><br />Full name: FSharp.Data.Sql.Seq.executeQueryAsync</div>
+<div class="tip" id="fs33">val iter : action:(&#39;T -&gt; unit) -&gt; source:seq&lt;&#39;T&gt; -&gt; unit<br /><br />Full name: Microsoft.FSharp.Collections.Seq.iter</div>
+<div class="tip" id="fs34">val entity : obj</div>
+<div class="tip" id="fs35">Multiple items<br />type DateTime =<br />&#160;&#160;struct<br />&#160;&#160;&#160;&#160;new : ticks:int64 -&gt; DateTime + 10 overloads<br />&#160;&#160;&#160;&#160;member Add : value:TimeSpan -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddDays : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddHours : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMilliseconds : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMinutes : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMonths : months:int -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddSeconds : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddTicks : value:int64 -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddYears : value:int -&gt; DateTime<br />&#160;&#160;&#160;&#160;...<br />&#160;&#160;end<br /><br />Full name: System.DateTime<br /><br />--------------------<br />DateTime()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs36">property DateTime.UtcNow: DateTime</div>
+<div class="tip" id="fs37">val box : value:&#39;T -&gt; obj<br /><br />Full name: Microsoft.FSharp.Core.Operators.box</div>
+<div class="tip" id="fs38">Transactions.TransactionScope.Complete() : unit</div>
+<div class="tip" id="fs39">Multiple items<br />type Async<br />static member AsBeginEnd : computation:(&#39;Arg -&gt; Async&lt;&#39;T&gt;) -&gt; (&#39;Arg * AsyncCallback * obj -&gt; IAsyncResult) * (IAsyncResult -&gt; &#39;T) * (IAsyncResult -&gt; unit)<br />static member AwaitEvent : event:IEvent&lt;&#39;Del,&#39;T&gt; * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; (requires delegate and &#39;Del :&gt; Delegate)<br />static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -&gt; Async&lt;bool&gt;<br />static member AwaitTask : task:Task -&gt; Async&lt;unit&gt;<br />static member AwaitTask : task:Task&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt;<br />static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -&gt; Async&lt;bool&gt;<br />static member CancelDefaultToken : unit -&gt; unit<br />static member Catch : computation:Async&lt;&#39;T&gt; -&gt; Async&lt;Choice&lt;&#39;T,exn&gt;&gt;<br />static member FromBeginEnd : beginAction:(AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg:&#39;Arg1 * beginAction:(&#39;Arg1 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg1:&#39;Arg1 * arg2:&#39;Arg2 * beginAction:(&#39;Arg1 * &#39;Arg2 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg1:&#39;Arg1 * arg2:&#39;Arg2 * arg3:&#39;Arg3 * beginAction:(&#39;Arg1 * &#39;Arg2 * &#39;Arg3 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromContinuations : callback:((&#39;T -&gt; unit) * (exn -&gt; unit) * (OperationCanceledException -&gt; unit) -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member Ignore : computation:Async&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;<br />static member OnCancel : interruption:(unit -&gt; unit) -&gt; Async&lt;IDisposable&gt;<br />static member Parallel : computations:seq&lt;Async&lt;&#39;T&gt;&gt; -&gt; Async&lt;&#39;T []&gt;<br />static member RunSynchronously : computation:Async&lt;&#39;T&gt; * ?timeout:int * ?cancellationToken:CancellationToken -&gt; &#39;T<br />static member Sleep : millisecondsDueTime:int -&gt; Async&lt;unit&gt;<br />static member Start : computation:Async&lt;unit&gt; * ?cancellationToken:CancellationToken -&gt; unit<br />static member StartAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:TaskCreationOptions * ?cancellationToken:CancellationToken -&gt; Task&lt;&#39;T&gt;<br />static member StartChild : computation:Async&lt;&#39;T&gt; * ?millisecondsTimeout:int -&gt; Async&lt;Async&lt;&#39;T&gt;&gt;<br />static member StartChildAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:TaskCreationOptions -&gt; Async&lt;Task&lt;&#39;T&gt;&gt;<br />static member StartImmediate : computation:Async&lt;unit&gt; * ?cancellationToken:CancellationToken -&gt; unit<br />static member StartWithContinuations : computation:Async&lt;&#39;T&gt; * continuation:(&#39;T -&gt; unit) * exceptionContinuation:(exn -&gt; unit) * cancellationContinuation:(OperationCanceledException -&gt; unit) * ?cancellationToken:CancellationToken -&gt; unit<br />static member SwitchToContext : syncContext:SynchronizationContext -&gt; Async&lt;unit&gt;<br />static member SwitchToNewThread : unit -&gt; Async&lt;unit&gt;<br />static member SwitchToThreadPool : unit -&gt; Async&lt;unit&gt;<br />static member TryCancelled : computation:Async&lt;&#39;T&gt; * compensation:(OperationCanceledException -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member CancellationToken : Async&lt;CancellationToken&gt;<br />static member DefaultCancellationToken : CancellationToken<br /><br />Full name: Microsoft.FSharp.Control.Async<br /><br />--------------------<br />type Async&lt;&#39;T&gt;<br /><br />Full name: Microsoft.FSharp.Control.Async&lt;_&gt;</div>
+<div class="tip" id="fs40">static member Async.StartAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:TaskCreationOptions * ?cancellationToken:Threading.CancellationToken -&gt; Task&lt;&#39;T&gt;</div>
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/ODBC.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>
