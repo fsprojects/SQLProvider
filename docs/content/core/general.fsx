@@ -26,9 +26,10 @@ SQL Provider supports the following database types:
 
 * [MSSQL](mssql.html) 
 * [Oracle](oracle.html) 
-* [SQLite](sqlite.heml) 
+* [SQLite](sqlite.html) 
 * [PostgreSQL](postgresql.html)
 * [MySQL](mysql.html)
+* [MsAccess](msaccess.html)
 * [ODBC](odbc.html) (_Experimental_, only supports SELECT & MAKE)
 
 After you have installed the nuget package or built the type provider assembly 
