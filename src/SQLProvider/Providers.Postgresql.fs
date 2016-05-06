@@ -314,7 +314,7 @@ module PostgreSQL =
                     |> Option.fold (fun acc col -> fst acc, col :: (snd acc)) (sparams, rcolumns)
             Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
-type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as this =
+type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
     let columnLookup = Dictionary<string,Column list>()
@@ -322,14 +322,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let pk = pkLookup.[entity.Table.FullName]
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                let p = PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) v
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -353,7 +353,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
     let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let pk = pkLookup.[entity.Table.FullName]
         sb.Clear() |> ignore
@@ -371,14 +371,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
                 let name = sprintf "@param%i" i
                 let p =
                     match entity.GetColumnOption<obj> col with
-                    | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
-                    | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
+                    | Some v -> PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) v
+                    | None -> PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) DBNull.Value
                 (col,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
             |> List.toArray
 
-        let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
+        let pkParam = PostgreSQL.createCommandParameter (QueryParameter.Create("@pk",0)) pkValue
 
         ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;"
             entity.Table.Schema entity.Table.Name
@@ -392,7 +392,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
     let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = (this :> ISqlProvider).CreateCommand(con,"")
+        let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         sb.Clear() |> ignore
         let pk = pkLookup.[entity.Table.FullName]
@@ -401,7 +401,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
+        let p = PostgreSQL.createCommandParameter (QueryParameter.Create("@id",0)) pkValue
 
         cmd.Parameters.Add(p) |> ignore
         ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE %s = @id" entity.Table.Schema entity.Table.Name pk )
@@ -565,7 +565,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
@@ -607,7 +607,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) as
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param),value)
+                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
 
             let rec filterBuilder = function
                 | [] -> ()
