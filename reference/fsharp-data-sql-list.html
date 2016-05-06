@@ -54,18 +54,41 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
-            executeQueryAsync 
+            evaluateOneByOne asyncFunc entityList
           </code>
           <div class="tip" id="12">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7888&gt; -&gt; Async&lt;seq&lt;&#39;?7888&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?7888          </div>
+            <strong>Signature:</strong> asyncFunc:(&#39;?7891 -&gt; Async&lt;&#39;?7892&gt;) -&gt; entityList:&#39;?7891 list -&gt; Async&lt;&#39;?7892 list&gt;<br />
+                          <strong>Type parameters:</strong> '?7891, '?7892          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L9-9" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L20-20" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Helper function to run async computation non-parallel style for list of objects.
+This is needed if async database opreation is executed for a list of entities.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
+            executeQueryAsync 
+          </code>
+          <div class="tip" id="13">
+            <strong>Signature:</strong> IQueryable&lt;&#39;?7889&gt; -&gt; Async&lt;seq&lt;&#39;?7889&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?7889          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L16-16" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Execute SQLProvider query and release the OS thread while query is being executed.</p>
+
+
         </td>
       </tr>
     </tbody>
