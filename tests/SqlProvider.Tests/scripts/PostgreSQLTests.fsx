@@ -238,19 +238,21 @@ let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
 let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
+let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
+let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
 let tt = ctx.Public.PostgresqlTypes.Create()
 tt.Abstime0 <- Some DateTime.Today
 tt.Bigint0 <- Some 100L
 tt.Bigserial0 <- 300L
-tt.Bit0 <- Some(System.Collections.BitArray([| true; true; false; true |]))
+tt.Bit0 <- Some(true)
 //tt.BitVarying0 <- Some(System.Collections.BitArray([| true; true; false; false |]))
 tt.Boolean0 <- Some(true)
 //tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0, 1.0, 2.0, 3.0))
 tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0f, 1.0f, 2.0f, 3.0f))
 tt.Bytea0 <- Some([| 1uy; 10uy |])
 tt.Character0 <- Some("test")
-tt.CharacterVarying0 <- Some("konspiratsioon")
+tt.CharacterVarying0 <- Some("raudpats")
 //tt.Cid0 <- Some(87u)
 //tt.Cidr0 <- Some(NpgsqlTypes.NpgsqlInet("0.0.0.0/24"))
 //tt.Circle0 <- Some(NpgsqlTypes.NpgsqlCircle(0.0, 1.0, 2.0))
@@ -270,9 +272,9 @@ tt.Money0 <- Some(100M)
 tt.Name0 <- Some("name")
 tt.Numeric0 <- Some(99.76M)
 //tt.Oid0 <- Some(67u)
-tt.Path0 <- Some(NpgsqlTypes.NpgsqlPath())
-tt.Point0 <- Some(NpgsqlTypes.NpgsqlPoint())
-tt.Polygon0 <- Some(NpgsqlTypes.NpgsqlPolygon())
+tt.Path0 <- Some(path [| point (0.0f, 0.0f); point (0.0f, 1.0f); point (1.0f, 0.0f) |])
+tt.Point0 <- Some(point (5.0f, 5.0f))
+tt.Polygon0 <- Some(polygon [| point (0.0f, 0.0f); point (0.0f, 1.0f); point (1.0f, 1.0f) |])
 tt.Real0 <- Some(0.8f)
 //tt.Regtype0 <- Some(77u)
 tt.Smallint0 <- Some(9000s)
@@ -280,16 +282,39 @@ tt.Smallserial0 <- 678s
 tt.Serial0 <- 77
 tt.Text0 <- Some("kesine")
 //tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
-tt.Time0 <- Some(new DateTime(TimeSpan.FromMinutes(15.0).Ticks))
+tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
 //tt.Timetz0 <- Some(DateTimeOffset.Now)
-tt.Timetz0 <- Some(DateTime.Now)
+tt.Timetz0 <- Some(NpgsqlTypes.NpgsqlTimeTZ.Now)
 tt.Timestamp0 <- Some(DateTime.Now)
 tt.Timestamptz0 <- Some(DateTime.Now)
-//tt.Tsquery0 <- Some(upcast NpgsqlTypes.NpgsqlTsQueryEmpty())
-//tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse(""))
+//tt.Tsquery0 <- Some(NpgsqlTypes.NpgsqlTsQuery.Parse("test"))
+//tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
 //tt.Unknown0 <- Some(box 13)
 tt.Uuid0 <- Some(Guid.NewGuid())
 //tt.Xid0 <- Some(15u)
 tt.Xml0 <- Some("xml")
 
 ctx.SubmitUpdates()
+
+let ttb =
+    query {
+        for t in ctx.Public.PostgresqlTypes do
+        where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
+        exactlyOne
+    }
+
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+let printTest (exp: Expr) =
+    match exp with
+    | Call(_,mi,[Value(name,_)]) ->
+        let valof x = mi.Invoke(x, [| name |])
+        printfn "%A: %A => %A" name (valof tt) (valof ttb)
+    | _ -> ()
+
+printTest <@@ tt.Bigint0 @@>
+printTest <@@ tt.Bit0 @@>
+printTest <@@ tt.Box0 @@>
+printTest <@@ tt.Interval0 @@>
+printTest <@@ tt.Jsonb0 @@>

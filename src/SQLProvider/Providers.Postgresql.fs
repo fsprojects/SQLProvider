@@ -2,6 +2,7 @@
 
 open System
 open System.Collections
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
 open System.Net
@@ -61,7 +62,9 @@ module PostgreSQL =
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
-              "bit"                         , typemap<BitArray>                   ["Bit"]
+              "bit",                    (if isLegacyVersion.Value
+                                         then typemap<bool>                       ["Bit"]
+                                         else typemap<BitArray>                   ["Bit"])
               "bit varying"                 , typemap<BitArray>                   ["Varbit"]
               "boolean"                     , typemap<bool>                       ["Boolean"]
               "box"                         , namemap "NpgsqlBox"                 ["Box"]
@@ -107,11 +110,9 @@ module PostgreSQL =
               "smallint"                    , typemap<int16>                      ["Smallint"]
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
-              "time without time zone", (if isLegacyVersion.Value
-                                         then typemap<DateTime>                   ["Time"]
-                                         else typemap<TimeSpan>                   ["Time"])
+              "time without time zone"      , typemap<TimeSpan>                   ["Time"]
               "time with time zone",    (if isLegacyVersion.Value
-                                         then typemap<DateTime>                   ["TimeTZ"]
+                                         then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
                                          else typemap<DateTimeOffset>             ["TimeTZ"])
               "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
               "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
@@ -317,7 +318,7 @@ module PostgreSQL =
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
+    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -326,10 +327,13 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         cmd.Connection <- con
         let pk = pkLookup.[entity.Table.FullName]
         let columnNames, values =
-            (([],0),entity.ColumnValues)
-            ||> Seq.fold(fun (out,i) (k,v) ->
+            (([],0),entity.ColumnValuesWithDefinition)
+            ||> Seq.fold(fun (out,i) (k,v,c) ->
                 let name = sprintf "@param%i" i
-                let p = PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) v
+                let qp = match c with
+                         | Some(c) -> QueryParameter.Create(name,i,c.TypeMapping)
+                         | None -> QueryParameter.Create(name,i)
+                let p = PostgreSQL.createCommandParameter qp v
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -369,10 +373,12 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
-                let p =
-                    match entity.GetColumnOption<obj> col with
-                    | Some v -> PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) v
-                    | None -> PostgreSQL.createCommandParameter (QueryParameter.Create(name,i)) DBNull.Value
+                let qp, v =
+                    match entity.GetColumnOptionWithDefinition col with
+                    | Some(v, Some(c)) -> QueryParameter.Create(name,i,c.TypeMapping), v
+                    | Some(v, None) -> QueryParameter.Create(name,i), v
+                    | None -> QueryParameter.Create(name,i), box DBNull.Value
+                let p = PostgreSQL.createCommandParameter qp v
                 (col,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -494,13 +500,13 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                          IsPrimarKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
-                                    if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then
+                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
+                                    if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then
                                         pkLookup.Add(table.FullName, col.Name)
-                                    yield col
+                                    yield (col.Name,col)
                                 | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
-                        columnLookup.Add(table.FullName, columns)
-                        columns)
+                            |> Map.ofList
+                        columnLookup.GetOrAdd(table.FullName, columns))
             finally
                 Monitor.Exit columnLookup
 
@@ -590,7 +596,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
                         else

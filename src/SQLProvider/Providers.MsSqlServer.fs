@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
 open System.Data.SqlClient
@@ -269,7 +270,7 @@ module MSSqlServer =
 type internal MSSqlServerProvider() =
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
+    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -413,21 +414,21 @@ type internal MSSqlServerProvider() =
                if con.State <> ConnectionState.Open then con.Open()
                use reader = com.ExecuteReader()
                let columns =
-                  [ while reader.Read() do
-                      let dt = reader.GetSqlString(1).Value
-                      match MSSqlServer.findDbType dt with
-                      | Some(m) ->
-                         let col =
-                            { Column.Name = reader.GetSqlString(0).Value;
-                              TypeMapping = m
-                              IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                              IsPrimarKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false }
-                         if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
-                         yield col
-                      | _ -> ()]
-               columnLookup.Add(table.FullName,columns)
+                   [ while reader.Read() do
+                       let dt = reader.GetSqlString(1).Value
+                       match MSSqlServer.findDbType dt with
+                       | Some(m) ->
+                           let col =
+                             { Column.Name = reader.GetSqlString(0).Value;
+                               TypeMapping = m
+                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
+                               IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false }
+                           if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                           yield (col.Name,col)
+                       | _ -> ()]
+                   |> Map.ofList
                con.Close()
-               columns
+               columnLookup.GetOrAdd(table.FullName, columns)
 
         member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue table.FullName with
@@ -500,7 +501,7 @@ type internal MSSqlServerProvider() =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
                         else

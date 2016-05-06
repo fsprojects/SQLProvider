@@ -1,9 +1,9 @@
 ﻿namespace FSharp.Data.Sql.Providers
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
-
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
@@ -226,7 +226,7 @@ module MySql =
 type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = Dictionary<string,string>()
     let tableLookup = Dictionary<string,Table>()
-    let columnLookup = Dictionary<string,Column list>()
+    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -354,44 +354,44 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             match columnLookup.TryGetValue table.FullName with
             | (true,data) -> data
             | _ ->
-               // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
-               // we are interested in on demand
-               let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-                                              ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
-                                 FROM INFORMATION_SCHEMA.COLUMNS c
-                                 LEFT JOIN (
-                                             SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
-                                             FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-                                             INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
-                                                 ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                                                 AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
-                                          )   pk
-                                 ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
-                                             AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
-                                             AND c.TABLE_NAME = pk.TABLE_NAME
-                                             AND c.COLUMN_NAME = pk.COLUMN_NAME
-                                 WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table"
-               use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
-               com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), table.Name)) |> ignore
-               if con.State <> ConnectionState.Open then con.Open()
-               use reader = com.ExecuteReader()
-               let columns =
-                  [ while reader.Read() do
-                      let dt = reader.GetString(1)
-                      match MySql.findDbType dt with
-                      | Some(m) ->
-                         let col =
-                            { Column.Name = reader.GetString(0)
-                              TypeMapping = m
-                              IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                              IsPrimarKey = if reader.GetString(5) = "PRIMARY KEY" then true else false }
-                         if col.IsPrimarKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
-                         yield col
-                      | _ -> ()]
-               columnLookup.Add(table.FullName,columns)
-               con.Close()
-               columns
+                // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
+                // we are interested in on demand
+                let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
+                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
+                                  FROM INFORMATION_SCHEMA.COLUMNS c
+                                  LEFT JOIN (
+                                              SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
+                                              FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+                                              INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
+                                                  ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                                                  AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
+                                           )   pk
+                                  ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
+                                              AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
+                                              AND c.TABLE_NAME = pk.TABLE_NAME
+                                              AND c.COLUMN_NAME = pk.COLUMN_NAME
+                                  WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table"
+                use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
+                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), table.Name)) |> ignore
+                if con.State <> ConnectionState.Open then con.Open()
+                use reader = com.ExecuteReader()
+                let columns =
+                    [ while reader.Read() do
+                        let dt = reader.GetString(1)
+                        match MySql.findDbType dt with
+                        | Some(m) ->
+                            let col =
+                                { Column.Name = reader.GetString(0)
+                                  TypeMapping = m
+                                  IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
+                                  IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false }
+                            if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                            yield (col.Name,col)
+                        | _ -> ()]
+                    |> Map.ofList
+                con.Close()
+                columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
             match relationshipLookup.TryGetValue table.FullName with
@@ -455,7 +455,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> List.map(fun c -> c.Name) do
+                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
                                 else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col
                         else

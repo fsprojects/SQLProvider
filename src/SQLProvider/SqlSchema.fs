@@ -40,8 +40,16 @@ type QueryParameter =
 type Column =
     { Name: string
       TypeMapping: TypeMapping
-      IsPrimarKey: bool
+      IsPrimaryKey: bool
       IsNullable: bool }
+    with
+        static member FromQueryParameter(q: QueryParameter) =
+            { Name = q.Name
+              TypeMapping = q.TypeMapping
+              IsPrimaryKey = false
+              IsNullable = true }
+
+type ColumnLookup = Map<string,Column>
 
 type Relationship =
     { Name: string

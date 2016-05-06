@@ -94,10 +94,11 @@ CREATE TABLE IF NOT EXISTS JOB_HISTORY
 CREATE TABLE IF NOT EXISTS postgresql_types
 (
     postgresql_types_id SERIAL NOT NULL,
-    abstime_0 ABSTIME,
+    abstime_0 ABSTIME, -- [Npgsql < 3]
     bigint_0 BIGINT, -- alias: INT8
     bigserial_0 BIGSERIAL, -- alias: SERIAL8
-    bit_0 BIT (10),
+    bit_0 BIT (1), -- [Npgsql < 3]
+    --bit_0 BIT (10), -- [Npgsql >= 3]
     --bit_varying_0 BIT VARYING (10), -- alias: VARBIT [Npgsql >= 3]
     boolean_0 BOOLEAN, -- alias: BOOL
     box_0 BOX,
