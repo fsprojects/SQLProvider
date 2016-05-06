@@ -1,9 +1,14 @@
+### 1.0.3 - 06.05.2016
+* PostgreSQL types, Npgsql 2 and 3. (PR #261)
+* Improved option type usage in join and where clauses (PR #260)
+
 ### 1.0.2 - 05.05.2016
 * Fixed: Insert did return object as id, not the id wanted.
 
 ### 1.0.1 - 04.05.2016
-* Many community bug-fixes and PRs, latest (PR #257)
+* Many community bug-fixes and PRs
 * Documentation improvements
+* Async operations (PR #257)
 
 ### 1.0.0 - 16.04.2016
 * Support for multiple owners on postgres (PR #189)
