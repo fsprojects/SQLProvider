@@ -26,6 +26,11 @@ type Employee = {
     HireDate : DateTime
 }
 
+type Department = {
+    DepartmentId: int
+    DepartmentName: string
+}
+
 //***************** Individuals ***********************//
 let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
 printfn "%s %s (%s)" indv.FirstName.Value indv.LastName indv.Email
@@ -217,6 +222,11 @@ let getemployees hireDate =
     ]
 
 getemployees (new System.DateTime(1999,4,1))
+
+// Support for sprocs that return `table of`
+ctx.Functions.GetDepartments.Invoke().ReturnValue
+|> Array.map (fun e -> e.MapTo<Department>())
+|> printfn "%A"
 
 //********************** Functions ***************************//
 
