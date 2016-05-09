@@ -53,19 +53,81 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '28', 28)" onmouseover="showTip(event, '28', 28)">
+          <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
             executeQueryAsync 
           </code>
-          <div class="tip" id="28">
+          <div class="tip" id="30">
             <strong>Signature:</strong> IQueryable&lt;&#39;?7312&gt; -&gt; Async&lt;seq&lt;&#39;?7312&gt;&gt;<br />
                           <strong>Type parameters:</strong> '?7312          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L8-8" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L74-74" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           <p>Execute SQLProvider query and release the OS thread while query is being executed.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
+            headAsync 
+          </code>
+          <div class="tip" id="31">
+            <strong>Signature:</strong> IQueryable&lt;&#39;?7316&gt; -&gt; Async&lt;&#39;?7316&gt;<br />
+                          <strong>Type parameters:</strong> '?7316          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L79-79" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
+Like normal head: Throws exception if no elements exists. See also tryHeadAsync.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
+            lengthAsync 
+          </code>
+          <div class="tip" id="32">
+            <strong>Signature:</strong> IQueryable&lt;&#39;?7314&gt; -&gt; Async&lt;int&gt;<br />
+                          <strong>Type parameters:</strong> '?7314          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L76-76" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Execute SQLProvider query to count the elements, and release the OS thread while query is being executed.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
+            tryHeadAsync 
+          </code>
+          <div class="tip" id="33">
+            <strong>Signature:</strong> IQueryable&lt;&#39;?7318&gt; -&gt; Async&lt;&#39;?7318 option&gt;<br />
+                          <strong>Type parameters:</strong> '?7318          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L82-82" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
+Returns None if no elements exists.</p>
 
 
         </td>

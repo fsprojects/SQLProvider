@@ -107,6 +107,14 @@ This can lead a huge performance difference on heavy traffic environment
 </code></pre></td>
 </tr>
 </table>
+<p>The functions to work with asynchrony are:</p>
+<ul>
+<li>Seq.executeQueryAsync : IQueryable<'a> -&gt; Async<seq<'a>&gt;</li>
+<li>Seq.lengthAsync : IQueryable<'a> -&gt; Async<int></li>
+<li>Seq.headAsync : IQueryable<'a> -&gt; Async<'a></li>
+<li>Seq.tryHeadAsync : IQueryable<'a> -&gt; Async<'a option></li>
+<li>and for your data context: SubmitUpdatesAsync : unit -&gt; Async&lt;Unit</li>
+</ul>
 <h4><a name="Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context" class="anchor" href="#Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context">Database asynchrony can't be used as a way to do parallelism inside one context.</a></h4>
 <p>Usually database operations can't be executed as parallel inside one context/transaction.
 That is an anti-pattern in general: the network lag between database and your logics server

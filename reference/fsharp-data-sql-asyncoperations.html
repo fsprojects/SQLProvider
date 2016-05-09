@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Array - SQLProvider</title>
+    <title>AsyncOperations - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,7 +35,7 @@
 
 
 
-<h1>Array</h1>
+<h1>AsyncOperations</h1>
 <p>
   <span>Namespace: FSharp.Data.Sql</span><br />
 </p>
@@ -54,20 +54,72 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '1', 1)" onmouseover="showTip(event, '1', 1)">
-            executeQueryAsync 
+            executeAsync s
           </code>
           <div class="tip" id="1">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?8126&gt; -&gt; Async&lt;seq&lt;&#39;?8126&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?8126          </div>
+            <strong>Signature:</strong> s:IQueryable&lt;&#39;T&gt; -&gt; Async&lt;seq&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L12-12" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L11-11" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query and release the OS thread while query is being executed.</p>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
 
+          <code onmouseout="hideTip(event, '2', 2)" onmouseover="showTip(event, '2', 2)">
+            getCountAsync s
+          </code>
+          <div class="tip" id="2">
+            <strong>Signature:</strong> s:IQueryable&lt;&#39;T&gt; -&gt; Async&lt;int&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L55-55" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
 
+          <code onmouseout="hideTip(event, '3', 3)" onmouseover="showTip(event, '3', 3)">
+            getHeadAsync s
+          </code>
+          <div class="tip" id="3">
+            <strong>Signature:</strong> s:IQueryable&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L43-43" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '4', 4)" onmouseover="showTip(event, '4', 4)">
+            getTryHeadAsync s
+          </code>
+          <div class="tip" id="4">
+            <strong>Signature:</strong> s:IQueryable&lt;&#39;T&gt; -&gt; Async&lt;&#39;T option&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L49-49" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
         </td>
       </tr>
     </tbody>
