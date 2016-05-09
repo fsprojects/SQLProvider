@@ -76,6 +76,14 @@ type MyWebServer() =
 
 (**
 
+The functions to work with asynchrony are:
+
+* Seq.executeQueryAsync : IQueryable<'a> -> Async<seq<'a>>
+* Seq.lengthAsync : IQueryable<'a> -> Async<int>
+* Seq.headAsync : IQueryable<'a> -> Async<'a>
+* Seq.tryHeadAsync : IQueryable<'a> -> Async<'a option>
+* and for your data context: SubmitUpdatesAsync : unit -> Async<Unit
+
 #### Database asynchrony can't be used as a way to do parallelism inside one context. 
 
 Usually database operations can't be executed as parallel inside one context/transaction. 

@@ -408,6 +408,7 @@ module internal QueryImplementation =
                     | MethodCall(_, (MethodWithName "Single"), [Constant(query, _)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
                         | x::[] -> x
+                        | [] -> raise <| InvalidOperationException("Encountered zero elements in the input sequence")
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(_, (MethodWithName "SingleOrDefault"), [Constant(query, _)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
@@ -419,21 +420,4 @@ module internal QueryImplementation =
                         executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
-    let executeAsync (s:Linq.IQueryable<'T>) =
-        let yieldseq (en: IEnumerator<'T>) =
-            seq {
-                while en.MoveNext() do
-                yield en.Current
-            }
-        async {
-            match s with
-            | :? SqlQueryable<'T> as coll ->
-                let! en = coll.GetAsyncEnumerator()
-                return yieldseq en
-            | :? SqlOrderedQueryable<'T> as coll ->
-                let! en = coll.GetAsyncEnumerator()
-                return yieldseq en
-            | c ->
-                let en = c.GetEnumerator()
-                return yieldseq en
-        }
+
