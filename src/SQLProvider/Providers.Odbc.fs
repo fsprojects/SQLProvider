@@ -220,7 +220,7 @@ type internal OdbcProvider() =
 
             let singleEntity = sqlQuery.Aliases.Count = 0
 
-            let columns =
+            let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -232,6 +232,23 @@ type internal OdbcProvider() =
                             for col in v do
                                 if singleEntity then yield sprintf "`%s`" col
                                 else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col |]) // F# makes this so easy :)
+
+            // Create sumBy, minBy, maxBy, ... field columns
+            let columns =
+                let extracolumns =
+                    let fieldNotation(al:alias,col:string) =
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "`%s`" col
+                        | false -> sprintf "`%s`.`%s`" al col
+                    let fieldNotationAlias(al:alias,col:string) =
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "`%s`" col
+                        | false -> sprintf "`%s_%s`" al col
+                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+                match extracolumns with
+                | [] -> selectcolumns
+                | h::t -> h
 
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types

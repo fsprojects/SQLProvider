@@ -58,6 +58,7 @@ let (|ConvertOrTypeAs|_|) (e:Expression) =
     | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> Some ue.Operand
     | _ -> None
 
+
 let (|Constant|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
@@ -103,6 +104,12 @@ let (|Lambda|_|) (e:Expression) =
 let (|OptionalQuote|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
+    | _ -> e
+
+let (|OptionalConvertOrTypeAs|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> ue.Operand
     | _ -> e
 
 let (|OptionalFSharpOptionValue|) (e:Expression) = 

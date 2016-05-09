@@ -591,7 +591,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             // now we can build the sql query that has been simplified by the above expression converter
             // working on the basis that we will alias everything to make my life eaiser
             // first build  the select statment, this is easy ...
-            let columns =
+            let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -603,6 +603,23 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             for col in v do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col|]) // F# makes this so easy :)
+
+            // Create sumBy, minBy, maxBy, ... field columns
+            let columns =
+                let extracolumns =
+                    let fieldNotation(al:alias,col:string) =
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "\"%s\"" col
+                        | false -> sprintf "\"%s\".\"%s\"" al col
+                    let fieldNotationAlias(al:alias,col:string) =
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "\"%s\"" col
+                        | false -> sprintf "\"%s.%s\"" al col
+                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+                match extracolumns with
+                | [] -> selectcolumns
+                | h::t -> h
 
             // next up is the filter expressions
             // NOTE: really need to assign the parameters their correct db types

@@ -69,6 +69,28 @@ module internal Utilities =
             let transaction = typeof<System.Transactions.TransactionScope>.GetConstructor [|asynctype|]
             transaction.Invoke [|1|] :?> System.Transactions.TransactionScope
 
+    type internal AggregateOperation =
+    | Max
+    | Min
+    | Sum
+    | Avg
+
+    let parseAggregates fieldNotation fieldNotationAlias query =
+        let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
+            match query with
+            | [] -> selectColumns
+            | (agop, opAlias, sumCol)::tail ->
+                let aggregate = 
+                    match agop with
+                    | Sum -> "SUM"
+                    | Max -> "MAX"
+                    | Min -> "MIN"
+                    | Avg -> "AVG"
+                let parsed = 
+                         (aggregate + "(" + fieldNotation(opAlias, sumCol) + ") as " + fieldNotationAlias(sumCol, aggregate)) :: selectColumns
+                parseAggregates' fieldNotation fieldNotationAlias tail parsed
+        parseAggregates' fieldNotation fieldNotationAlias query []
+
 module ConfigHelpers = 
     
     open System
