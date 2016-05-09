@@ -1,3 +1,6 @@
+### 1.0.5 - 09.05.2016
+* More async operations: Seq.lengthAsync, Seq.headAsync, Seq.tryHeadAsync
+
 ### 1.0.4 - 06.05.2016
 * PostgreSQL types, Npgsql 2 and 3. (PR #261)
 
