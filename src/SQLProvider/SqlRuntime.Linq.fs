@@ -131,17 +131,6 @@ module internal QueryImplementation =
                 let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                 return (Seq.cast<'T> (executeSql)).GetEnumerator()
             }
-        member __.GetHeadAsync() =
-            async {
-                let! res = executeQueryAsync dc provider (Take(1,(sqlQuery))) tupleIndex
-                return res |> Seq.cast<'T> |> Seq.truncate 1
-            }
-        member __.GetCountAsync() =
-            async {
-                let! res = executeQueryScalarAsync dc provider (Count(sqlQuery)) tupleIndex
-                return res :?> 'T
-            }
-
 
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         static member Create(table,conString,provider) =
