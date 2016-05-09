@@ -27,34 +27,29 @@ module AsyncOperations =
                 return yieldseq en
         }
 
-    let getHeadAsync (s:Linq.IQueryable<'T>) =
+    let private fetchTakeOne (s:Linq.IQueryable<'T>) =
         async {
             match s with
             | :? SqlQueryable<'T> as coll ->
                 let svc = (coll :> IWithSqlService)
-                let! res = executeQueryAsync svc.DataContext svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex
-                return res |> Seq.cast<'T> |> Seq.head
+                return! executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
             | :? SqlOrderedQueryable<'T> as coll ->
                 let svc = (coll :> IWithSqlService)
-                let! res = executeQueryAsync svc.DataContext svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex
-                return res |> Seq.cast<'T> |> Seq.head
+                return! executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
             | c ->
-                return c |> Seq.head
+                return c :> Collections.IEnumerable
+        }
+
+    let getHeadAsync (s:Linq.IQueryable<'T>) =
+        async {
+            let! res = fetchTakeOne s
+            return res |> Seq.cast<'T> |> Seq.head
         }
 
     let getTryHeadAsync (s:Linq.IQueryable<'T>) =
         async {
-            match s with
-            | :? SqlQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
-                let! res = executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
-                return res |> Seq.cast<'T> |> Seq.tryPick Some
-            | :? SqlOrderedQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
-                let! res = executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
-                return res |> Seq.cast<'T> |> Seq.tryPick Some
-            | c ->
-                return c |> Seq.cast<'T> |> Seq.tryPick Some
+            let! res = fetchTakeOne s
+            return res |> Seq.cast<'T> |> Seq.tryPick Some
         }
 
     let getCountAsync (s:Linq.IQueryable<'T>) =
