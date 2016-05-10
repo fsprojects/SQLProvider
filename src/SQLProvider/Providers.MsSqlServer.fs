@@ -660,18 +660,21 @@ type internal MSSqlServerProvider() =
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
+            if entities.Count = 0 then 
+                ()
+            else
             use scope = Utilities.ensureTransaction()
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e ->
+                entities.Keys
+                |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand con sb e
@@ -692,6 +695,7 @@ type internal MSSqlServerProvider() =
                         e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
+
             finally
                 con.Close()
 
@@ -699,9 +703,13 @@ type internal MSSqlServerProvider() =
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             async {
                 use scope = Utilities.ensureTransaction()
@@ -737,8 +745,9 @@ type internal MSSqlServerProvider() =
                             }
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    do! Utilities.executeOneByOne handleEntity entities
+                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()
+
                 finally
                     con.Close()
             }

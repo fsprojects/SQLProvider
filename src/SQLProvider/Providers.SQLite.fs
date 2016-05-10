@@ -445,9 +445,13 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                ()
+            else
 
             con.Open()
 
@@ -457,8 +461,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e ->
+                entities.Keys
+                |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
@@ -479,6 +483,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
+
             finally
                 con.Close()
 
@@ -486,9 +491,13 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             async {
                 use scope = Utilities.ensureTransaction()
@@ -524,8 +533,9 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                             }
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    do! Utilities.executeOneByOne handleEntity entities
+                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()
+
                 finally
                     con.Close()
             }

@@ -24,7 +24,7 @@ module internal ProviderBuilder =
         | _ -> failwith "Unsupported database provider"
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity) =
-    let pendingChanges = HashSet<SqlEntity>()
+    let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = Dictionary<string,ISqlProvider>()
 
     let provider =
@@ -54,20 +54,20 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
             |> Option.bind (fun t -> provider.GetPrimaryKey(t))
             |> (fun x -> defaultArg x "")
 
-        member __.SubmitChangedEntity e = pendingChanges.Add e |> ignore
+        member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
         member __.ClearPendingChanges() = pendingChanges.Clear()
-        member __.GetPendingEntities() = pendingChanges |> Seq.toList
+        member __.GetPendingEntities() = pendingChanges.Keys |> Seq.toList
 
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)
-            provider.ProcessUpdates(con, Seq.toList pendingChanges)
-            pendingChanges.Clear()
+            provider.ProcessUpdates(con, pendingChanges)
+            pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged then pendingChanges.TryRemove(e.Key) |> ignore)
 
         member __.SubmitPendingChangesAsync() =
             async {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
-                do! provider.ProcessUpdatesAsync(con, Seq.toList pendingChanges)
-                pendingChanges.Clear()
+                do! provider.ProcessUpdatesAsync(con, pendingChanges)
+                pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged then pendingChanges.TryRemove(e.Key) |> ignore)
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =

@@ -403,11 +403,15 @@ type internal MSAccessProvider() =
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            entities |> List.iter (fun e -> printfn "entity - %A" e.ColumnValues)
+            entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                ()
+            else
 
             if con.State = ConnectionState.Closed then con.Open()
 
@@ -418,8 +422,8 @@ type internal MSAccessProvider() =
                 use trnsx = con.BeginTransaction()
                 try
                     // initially supporting update/create/delete of single entities, no hierarchies yet
-                    entities
-                    |> List.iter(fun e ->
+                    entities.Keys
+                    |> Seq.iter(fun e ->
                         match e._State with
                         | Created ->
                             let cmd = createInsertCommand con sb e
@@ -443,6 +447,7 @@ type internal MSAccessProvider() =
                             e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                     trnsx.Commit()
+
                 with _ ->
                     trnsx.Rollback()
             finally
@@ -451,11 +456,15 @@ type internal MSAccessProvider() =
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            entities |> List.iter (fun e -> printfn "entity - %A" e.ColumnValues)
+            entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             use scope = Utilities.ensureTransaction()
             try
@@ -497,9 +506,10 @@ type internal MSAccessProvider() =
                                 }
                             | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                        do! Utilities.executeOneByOne handleEntity entities
+                        do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                         trnsx.Commit()
                         scope.Complete()
+
                     with _ ->
                         trnsx.Rollback()
                 }

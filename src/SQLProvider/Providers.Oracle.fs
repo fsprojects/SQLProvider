@@ -645,9 +645,13 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
             let provider = this :> ISqlProvider
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                ()
+            else
 
             con.Open()
 
@@ -657,8 +661,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e ->
+                entities.Keys
+                |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand provider con sb e
@@ -683,6 +687,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                         e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
+
             finally
                 con.Close()
 
@@ -691,9 +696,13 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
             let provider = this :> ISqlProvider
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             async {
                 use scope = Utilities.ensureTransaction()
@@ -735,8 +744,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                             }
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    do! Utilities.executeOneByOne handleEntity entities
+                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()
+
                 finally
                     con.Close()
             }
