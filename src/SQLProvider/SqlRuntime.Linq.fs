@@ -422,7 +422,11 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
-                        executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
+                        let res = executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex 
+                        match res with 
+                        | :? Decimal -> let r:decimal = res |> unbox
+                                        Convert.ToInt32(r) |> box :?> 'T
+                        | _ ->  res :?> 'T
                     | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
                              OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) 
                              ]) ->
