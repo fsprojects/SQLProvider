@@ -32,6 +32,14 @@ This can lead a huge performance difference on heavy traffic environment
 ![](http://i.imgur.com/DBPLRlP.png)
 
 In the picture, we talk about the red block, which can be released to serve other customers.
+As usual with async operations, there will happen some more thread context switching, 
+which may cause minor performance delays, but concurrency benefits should outweigh the
+context switching cons.
+
+This is the theory. In practice SQLProvider is calling implementation of async methods from
+abstract classes under System.Data.Common. The implementation quality of your database 
+connection .NET drivers will define if async is good for you or not. (E.g. The current 
+situation is that MS-SQL-server handles async well and MySQL not so.)
 
 Currently SQLProvider supports async operations on runtime, not design-time.
 
@@ -83,6 +91,7 @@ The functions to work with asynchrony are:
 * Seq.headAsync : IQueryable<'a> -> Async<'a>
 * Seq.tryHeadAsync : IQueryable<'a> -> Async<'a option>
 * and for your data context: SubmitUpdatesAsync : unit -> Async<Unit
+
 
 #### Database asynchrony can't be used as a way to do parallelism inside one context. 
 

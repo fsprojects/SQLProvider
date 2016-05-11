@@ -447,10 +447,11 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             let singleEntity = sqlQuery.Aliases.Count = 0
 
+
             // build the sql query from the simplified abstract query expression
             // working on the basis that we will alias everything to make my life eaiser
             // first build  the select statment, this is easy ...
-            let columns =
+            let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -462,6 +463,23 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                             for col in v do
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
                                 else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col|]) // F# makes this so easy :)
+
+            // Create sumBy, minBy, maxBy, ... field columns
+            let columns = 
+                let extracolumns =
+                    let fieldNotation(al:alias,col:string) = 
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "`%s`" col
+                        | false -> sprintf "`%s`.`%s`" al col
+                    let fieldNotationAlias(al:alias,col:string) =
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "`%s`" col
+                        | false -> sprintf "'`%s`.`%s`'" al col
+                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+                match extracolumns with
+                | [] -> selectcolumns
+                | h::t -> h
 
             // next up is the filter expressions
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
@@ -595,9 +613,13 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                ()
+            else
 
             con.Open()
 
@@ -608,8 +630,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 con.Open()
 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e ->
+                entities.Keys
+                |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand con sb e
@@ -631,6 +653,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
 
                 scope.Complete()
+                
             finally
                 con.Close()
 
@@ -638,9 +661,13 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             async {
 
@@ -678,9 +705,10 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                             }
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    do! Utilities.executeOneByOne handleEntity entities
+                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
 
                     scope.Complete()
+
                 finally
                     con.Close()
             }

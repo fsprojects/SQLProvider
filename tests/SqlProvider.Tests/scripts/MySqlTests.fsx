@@ -172,3 +172,41 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EmpFullname.Invoke(100u).ReturnValue
+
+//********************** Thread test ***************************//
+
+let rnd = new Random()
+open System.Threading
+
+let taskarray = 
+    [1u..100u] |> Seq.map(fun itm ->
+        let itm = rnd.Next(1, 300) |> uint32
+        let t1 = Tasks.Task.Run(fun () ->
+            let ctx1 = HR.GetDataContext()
+            let country1 = 
+                query {
+                    for c in ctx1.Hr.Countries do
+                    where (c.CountryId = "AR")
+                    head
+                }
+            Console.WriteLine Thread.CurrentThread.ManagedThreadId
+            country1.CountryName <- "Argentina" + itm.ToString()
+            ctx1.SubmitUpdates()
+        )
+        let t2 = Tasks.Task.Run(fun () ->
+            let ctx2 = HR.GetDataContext()
+            Console.WriteLine Thread.CurrentThread.ManagedThreadId
+            let country2 = 
+                query {
+                    for c in ctx2.Hr.Countries do
+                    where (c.CountryId = "BR")
+                    head
+                }
+            country2.RegionId <- itm
+            ctx2.SubmitUpdates()
+        )
+        Tasks.Task.WhenAll [|t1; t2|]
+        //ctx.ClearUpdates() |> ignore
+    ) |> Seq.toArray |> Tasks.Task.WaitAll
+
+ctx.GetUpdates()

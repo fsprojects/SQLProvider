@@ -7,6 +7,7 @@ open System.Data
 
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql.Common.Utilities
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
@@ -74,14 +75,18 @@ module internal QueryImplementation =
        if con.State <> ConnectionState.Open then con.Open()
        let result =
         match cmd.ExecuteScalar() with
-        | :? string as s -> Int32.Parse s
-        | :? int as i -> i
-        | :? int16 as i -> int32 i
-        | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int
+        | :? string as s when Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | :? string as s when Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? int as i -> i |> box
+        | :? int16 as i -> int32 i |> box
+        | :? int64 as i -> int32 i |> box  // LINQ says we must return a 32bit int
+        | :? float as i -> decimal i |> box
+        | :? decimal as i -> decimal i |> box
+        | :? double as i -> decimal i |> box
         | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-               failwithf "Count returned something other than a 32 bit integer : %s " (x.GetType().ToString())
+               failwithf "Scalar operation returned something other than a numeric value : %s " (x.GetType().ToString())
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-       box result
+       result
 
     let executeQueryScalarAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
@@ -417,7 +422,40 @@ module internal QueryImplementation =
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
-                        executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex :?> 'T
+                        let res = executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex 
+                        match res with 
+                        | :? Decimal -> let r:decimal = res |> unbox
+                                        Convert.ToInt32(r) |> box :?> 'T
+                        | _ ->  res :?> 'T
+                    | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
+                             OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) 
+                             ]) ->
+                        let alias =
+                             match entity with
+                             | "" when source.SqlExpression.HasAutoTupled() -> param
+                             | "" -> ""
+                             | _ -> resolveTuplePropertyName entity source.TupleIndex
+                        let sqlExpression =
+                               
+                               match meth.Name, source.SqlExpression with
+                               | "Sum", BaseTable("",entity)  -> AggregateOp(Sum,"",key,BaseTable(alias,entity))
+                               | "Sum", _ ->  AggregateOp(Sum,alias,key,source.SqlExpression)
+                               | "Max", BaseTable("",entity)  -> AggregateOp(Max,"",key,BaseTable(alias,entity))
+                               | "Max", _ ->  AggregateOp(Max,alias,key,source.SqlExpression)
+                               | "Min", BaseTable("",entity)  -> AggregateOp(Min,"",key,BaseTable(alias,entity))
+                               | "Min", _ ->  AggregateOp(Min,alias,key,source.SqlExpression)
+                               | "Average", BaseTable("",entity)  -> AggregateOp(Avg,"",key,BaseTable(alias,entity))
+                               | "Average", _ ->  AggregateOp(Avg,alias,key,source.SqlExpression)
+                               | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
+                        let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                        match box Unchecked.defaultof<'T>, res with 
+                        | :? Int32, :? Int32 -> res :?> 'T
+                        | :? Decimal, :? Decimal -> res :?> 'T
+                        | :? Int32, :? Decimal -> let r:decimal = res |> unbox
+                                                  Convert.ToInt32(r) |> box :?> 'T
+                        | :? Decimal, :? Int32 -> decimal(unbox(res)) |> box :?> 'T
+                        | _ ->  res :?> 'T
+                        
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
 

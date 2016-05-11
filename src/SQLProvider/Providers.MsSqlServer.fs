@@ -496,7 +496,7 @@ type internal MSSqlServerProvider() =
             let singleEntity = sqlQuery.Aliases.Count = 0
 
             // first build  the select statement, this is easy ...
-            let columns =
+            let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
@@ -508,6 +508,23 @@ type internal MSSqlServerProvider() =
                             for col in v do
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|])
+
+            // Create sumBy, minBy, maxBy, ... field columns
+            let columns =
+                let extracolumns =
+                    let fieldNotation(al:alias,col:string) = 
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "[%s]" col
+                        | false -> sprintf "[%s].[%s]" al col
+                    let fieldNotationAlias(al:alias,col:string) = 
+                        match String.IsNullOrEmpty(al) with
+                        | true -> sprintf "'%s'" col
+                        | false -> sprintf "'[%s%s]'" al col
+                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+                match extracolumns with
+                | [] -> selectcolumns
+                | h::t -> h
 
             // next up is the filter expressions
             // make this nicer later..
@@ -643,18 +660,21 @@ type internal MSSqlServerProvider() =
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
 
+            if entities.Count = 0 then 
+                ()
+            else
             use scope = Utilities.ensureTransaction()
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities
-                |> List.iter(fun e ->
+                entities.Keys
+                |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand con sb e
@@ -675,6 +695,7 @@ type internal MSSqlServerProvider() =
                         e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                     | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
+
             finally
                 con.Close()
 
@@ -682,9 +703,13 @@ type internal MSSqlServerProvider() =
             let sb = Text.StringBuilder()
 
             // ensure columns have been loaded
-            entities |> List.map(fun e -> e.Table)
+            entities |> Seq.map(fun e -> e.Key.Table)
                      |> Seq.distinct
                      |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+
+            if entities.Count = 0 then 
+                async { () }
+            else
 
             async {
                 use scope = Utilities.ensureTransaction()
@@ -720,8 +745,9 @@ type internal MSSqlServerProvider() =
                             }
                         | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    do! Utilities.executeOneByOne handleEntity entities
+                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()
+
                 finally
                     con.Close()
             }

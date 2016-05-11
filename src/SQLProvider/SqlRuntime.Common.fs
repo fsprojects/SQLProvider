@@ -294,6 +294,7 @@ and internal SqlExp =
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
+    | AggregateOp  of Utilities.AggregateOperation * alias * string * SqlExp
     with member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
@@ -304,7 +305,8 @@ and internal SqlExp =
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Count(rest) -> aux rest
+                | Count(rest) 
+                | AggregateOp(_,_,_,rest) -> aux rest
             aux this
 
 and internal SqlQuery =
@@ -317,9 +319,10 @@ and internal SqlQuery =
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
-      Count         : bool }
+      Count         : bool 
+      AggregateOp   : (Utilities.AggregateOperation * alias * string) list }
     with
-        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false
+        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
                                 Projection = None; Distinct = false; UltimateChild = None; Skip = None; Take = None }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -359,8 +362,10 @@ and internal SqlQuery =
                     if q.Take.IsSome then failwith "take may only be specified once"
                     else convert { q with Take = Some(amount) } rest
                 | Count(rest) ->
-                    if q.Take.IsSome then failwith "count may only be specified once"
+                    if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
+                | AggregateOp(operation, alias, key, rest) ->
+                    convert { q with AggregateOp = (operation, alias, key)::q.AggregateOp } rest
             let sq = convert (SqlQuery.Empty) exp
             sq
 
@@ -395,9 +400,9 @@ and internal ISqlProvider =
     /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
     /// Writes all pending database changes to database
-    abstract ProcessUpdates : IDbConnection * SqlEntity list -> unit
+    abstract ProcessUpdates : IDbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> -> unit
     /// Asynchronously writes all pending database changes to database
-    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * SqlEntity list -> Async<unit>
+    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> -> Async<unit>
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing
     /// the columns from the various table aliases that are in the SELECT projection
