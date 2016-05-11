@@ -57,7 +57,7 @@ open System.Threading.Tasks
 open FSharp.Data.Sql
 
 type MyWebServer() = 
-    member __.``Execute Business Logics`` (id : <Guid>) : Task<_> = 
+    member __.``Execute Business Logics`` (id : Guid) : Task<_> = 
         async {
             use transaction = 
                 new System.Transactions.TransactionScope(
@@ -90,7 +90,7 @@ The functions to work with asynchrony are:
 * Seq.lengthAsync : IQueryable<'a> -> Async<int>
 * Seq.headAsync : IQueryable<'a> -> Async<'a>
 * Seq.tryHeadAsync : IQueryable<'a> -> Async<'a option>
-* and for your data context: SubmitUpdatesAsync : unit -> Async<Unit
+* and for your data context: SubmitUpdatesAsync : unit -> Async<Unit>
 
 
 #### Database asynchrony can't be used as a way to do parallelism inside one context. 
