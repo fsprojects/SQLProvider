@@ -14,6 +14,8 @@ MSAccess is based on System.Data.OleDb. For databases > Access 2007 (with
 .accdb extension), use ACE drivers. For dbs < 2007 (with .mdb extension), 
 JET drivers can be used, although ACE will also work.
 
+[http://www.microsoft.com/download/en/confirmation.aspx?id=23734](http://www.microsoft.com/download/en/confirmation.aspx?id=23734)
+
 ## Parameters
 
 ### ConnectionString
@@ -74,6 +76,7 @@ for further info.
 
 *)
 
+[<Literal>]
 let useOptTypes = true
 
 
@@ -85,7 +88,11 @@ open FSharp.Data.Sql
 //
 //let accdbcustomers = accdbctx.Northwind.Customers|> Seq.toArray
 
-type mdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS, connectionString2, ResolutionPath=resolutionPath >
+type mdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS, connectionString2, ResolutionPath=resolutionPath, UseOptionTypes=useOptTypes >
 let mdbctx = mdb.GetDataContext()
 
-let mdbcustomers = mdbctx.Northwind.Customers|> Seq.toArray
+let mdbcustomers = 
+    mdbctx.Northwind.Customers 
+    |> Seq.map(fun c -> 
+        c.ColumnValues |> Seq.toList) 
+    |> Seq.toList

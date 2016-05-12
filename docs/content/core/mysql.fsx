@@ -20,8 +20,8 @@ string parameters apply here.  See
 for a complete list of connection string options.
 
 *)
-
-let connString  = "Server=localhost;Database=test;User=test;Password=test"
+[<Literal>]
+let connString  = "Server=localhost;Database=HR;User=root;Password=password"
 
 (**
 ### ConnectionStringName
@@ -40,7 +40,7 @@ let connexStringName = "DefaultConnectionString"
 Use `MYSQL` from the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration.
 
 *)
-
+[<Literal>]
 let dbVendor    = Common.DatabaseProviderTypes.MYSQL
 
 (**
@@ -50,8 +50,8 @@ Path to search for assemblies containing database vendor specific connections an
 `Mysql.Data.dll` is stored. Both absolute and relative paths are supported.
 
 *)
-
-let resPath     = @"C:\Users\JHaas\Documents\Projects\jeroldhaas\CompleteFSharpWebApplication\CompleteFSharWebApplication\packages\MySql.Data.6.9.3\lib\net45"
+[<Literal>]
+let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 
 (**
 ### Individuals Amount
@@ -59,7 +59,7 @@ let resPath     = @"C:\Users\JHaas\Documents\Projects\jeroldhaas\CompleteFSharpW
 Sets the count of records to load for each table. See [individuals](individuals.html) for further info.
 
 *)
-
+[<Literal>]
 let indivAmount = 1000
 
 (**
@@ -68,6 +68,7 @@ let indivAmount = 1000
 If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.
 
 *)
+[<Literal>]
 let useOptTypes = true
 
 (**
@@ -76,13 +77,19 @@ let useOptTypes = true
 *)
 
 type sql = SqlDataProvider<
-                connString,
                 dbVendor,
-                resPath,
-                indivAmount,
-                useOptTypes
+                connString,
+                ResolutionPath = resPath,
+                IndividualsAmount = indivAmount,
+                UseOptionTypes = useOptTypes,
+                Owner = "HR"
             >
-let ctx = () // TODO: resolve
+let ctx = sql.GetDataContext()
+
+let employees = 
+    ctx.Hr.Employees 
+    |> Seq.map (fun e -> e.ColumnValues |> Seq.toList)
+    |> Seq.toList
 
 (**
 

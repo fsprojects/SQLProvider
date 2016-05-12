@@ -1,15 +1,13 @@
 ﻿(*** hide ***)
-#I @"../../files/sqlite"
-(*** hide ***)
 #I "../../../bin"
 (*** hide ***)
 [<Literal>]
 let connectionString =
-    "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+    "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
 let resolutionPath =
-    __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+    __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 (**
@@ -18,9 +16,10 @@ open FSharp.Data.Sql
 # Querying
 *)
 type sql  = SqlDataProvider<
-                connectionString,
                 Common.DatabaseProviderTypes.SQLITE,
-                resolutionPath
+                connectionString,
+                ResolutionPath = resolutionPath, 
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
             >
 let ctx = sql.GetDataContext()
 
@@ -41,9 +40,7 @@ Their utility is in forcing the compiler to check against the correct types.
 
 *)
 
-let ctx = sql.GetDataContext()
-
-let bergs = ctx.``[main].[Customers]``.Individuals.BERGS
+let bergs = ctx.Main.Customers.Individuals.BERGS
 
 
 (**

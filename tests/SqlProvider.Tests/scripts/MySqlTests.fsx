@@ -10,7 +10,7 @@ open Newtonsoft.Json
 [<Literal>]
 let connStr = "Server=192.168.99.100;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net40/"
+let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;

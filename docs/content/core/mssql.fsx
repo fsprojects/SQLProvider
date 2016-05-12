@@ -49,13 +49,6 @@ use `Common.DatabaseProviderTypes.MSSQLSERVER`.
 let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
 
 (**
-### Resolution Path (ToDo)
-
-*)
-
-let [<Literal>] resPath = @"ToDo"
-
-(**
 ### IndividualsAmount
 
 Sets the count to load for each individual. See [individuals](individuals.html)

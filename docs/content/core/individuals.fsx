@@ -11,7 +11,7 @@ let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests
 
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 
 (**
 # Individuals
