@@ -392,7 +392,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let template=
                         let cols = normalParameters |> Seq.map(fun c -> c.Name )
                         "Create(" + String.Join(", ", cols) + ")"
-                    let create4 = ProvidedMethod(template, normalParameters, entityType, InvokeCode = fun args ->                           
+                    let create4 = ProvidedMethod(template, normalParameters, entityType, InvokeCode = fun args -> 
                           let dc = args.Head
                           let args = args.Tail
                           let columns =

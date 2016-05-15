@@ -1,3 +1,6 @@
+### 1.0.6 - 15.05.2016
+* sumBy, maxBy, minBy, averageBy
+
 ### 1.0.5 - 09.05.2016
 * More async operations: Seq.lengthAsync, Seq.headAsync, Seq.tryHeadAsync
 
