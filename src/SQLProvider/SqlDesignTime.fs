@@ -339,7 +339,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let normalParameters = 
                         columns 
                         |> List.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
-                        |> List.sortBy(fun p -> p.Name)                 
+                        |> List.sortBy(fun p -> p.Name)
+                    
+                    // Create: unit -> SqlEntity 
                     let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
                         <@@ 
                             let e = ((%%args.[0] : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
@@ -348,7 +350,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             e 
                         @@> )
                     
+                    // Create: ('a * 'b * 'c * ...) -> SqlEntity 
                     let create2 = ProvidedMethod("Create", normalParameters, entityType, InvokeCode = fun args -> 
+                          
                           let dc = args.Head
                           let args = args.Tail
                           let columns =
@@ -365,7 +369,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
-
+                    
+                    // Create: (data : seq<string*obj>) -> SqlEntity 
                     let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, InvokeCode = fun args -> 
                           let dc = args.[0]
                           let data = args.[1]
@@ -376,13 +381,44 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
+                    let desc3 = 
+                        let cols = columns |> Seq.map(fun c -> c.Name)
+                        "Item array of database columns: \r\n" + String.Join(",", cols)
+                    create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
 
+
+                    // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity 
+
+                    let template=
+                        let cols = normalParameters |> Seq.map(fun c -> c.Name )
+                        "Create(" + String.Join(", ", cols) + ")"
+                    let create4 = ProvidedMethod(template, normalParameters, entityType, InvokeCode = fun args ->                           
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                              e._State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+                    create4.AddXmlDoc("Create version that breaks if your columns change.")
                     
+                    // This genertes a template.
+
                     seq {
                      yield ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> ) :> MemberInfo
-                     yield create1 :> MemberInfo
                      if normalParameters.Length > 0 then yield create2 :> MemberInfo
-                     yield create3 :> MemberInfo } |> Seq.toList
+                     yield create3 :> MemberInfo
+                     yield create1 :> MemberInfo
+                     yield create4 :> MemberInfo } |> Seq.toList
                 )
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
