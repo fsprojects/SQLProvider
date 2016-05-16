@@ -51,8 +51,8 @@ let dbVendor = Common.DatabaseProviderTypes.SQLITE
 (**
 ### ResolutionPath
 
-When using datbase vendors other than SQL Server, Access and ODBC, a third party driver
-is required. This parameter should point to an abosulte or relative directory where the
+When using database vendors other than SQL Server, Access and ODBC, a third party driver
+is required. This parameter should point to an absolute or relative directory where the
 relevant assemblies are located. See the database vendor specific page for more details.
 *)
 
@@ -73,7 +73,7 @@ let indivAmt = 500
 (**
 ### UseOptionTypes
 
-If set to true, all nullable fields will be represented by F# option tyes.  If false, nullable
+If set to true, all nullable fields will be represented by F# option types.  If false, nullable
 fields will be represented by the default value of the column type - this is important because
 the provider will return 0 instead of null, which might cause problems in some scenarios.
 *)
