@@ -146,7 +146,10 @@ module PostgreSQL =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
-          | :? System.Reflection.TargetInvocationException as e ->
+        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            let msg = ex.InnerException.Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            raise(new System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as e when (e.InnerException <> null) ->
             failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
 
     let createCommand commandText connection =

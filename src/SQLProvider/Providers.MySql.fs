@@ -83,7 +83,12 @@ module MySql =
         findDbType <- dbMappings.TryFind
 
     let createConnection connectionString =
-        Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+        try
+            Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+        with
+        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            let msg = ex.InnerException.Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            raise(new System.Reflection.TargetInvocationException(msg, ex))
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand

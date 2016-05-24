@@ -175,8 +175,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
                 then runtimeAssembly
                 else resolutionPath
+                |> Path.GetFullPath 
             let connectionString = connectionString.Replace(@"." + Path.DirectorySeparatorChar.ToString(), basePath + Path.DirectorySeparatorChar.ToString())
-            Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+            try
+                Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+            with
+            | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+                let msg = ex.InnerException.Message + ", Path: " + (Path.GetFullPath resolutionPath)
+                raise(new System.Reflection.TargetInvocationException(msg, ex))
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
 
