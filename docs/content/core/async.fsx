@@ -25,14 +25,14 @@ type TypeProviderConnection =
 # Asynchronous Database Operation
 
 You get more performance by concurrency. The idea of async database operations 
-is release the business logics thread while the database is doing its job. 
+is to release the business logics thread while the database is doing its job. 
 This can lead a huge performance difference on heavy traffic environment 
 (basically, will your business logics server / web-server crash or not). 
 
 ![](http://i.imgur.com/DBPLRlP.png)
 
 In the picture, we talk about the red block, which can be released to serve other customers.
-As usual with async operations, there will happen some more thread context switching, 
+As usual with async operations, there will be more thread context switching, 
 which may cause minor performance delays, but concurrency benefits should outweigh the
 context switching cons.
 
@@ -48,7 +48,7 @@ Your execution thread may change. For transactions to support this,
 
 ### Async queries and updates
 
-Consept for async queries is this:
+Concept for async queries is this:
 
 *)
 
@@ -97,7 +97,7 @@ The functions to work with asynchrony are:
 
 Usually database operations can't be executed as parallel inside one context/transaction. 
 That is an anti-pattern in general: the network lag between database and your logics server 
-is probably the bottle-neck of your system. So, in this order: 
+is probably the bottleneck of your system. So, in this order: 
 
 1. Try to execute your business logics as database queries, as one big query.
 2. Or sometimes, not often, load eagerly data with single query and process it in the logics server.

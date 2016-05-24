@@ -18,7 +18,7 @@ let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/
 
 # SQL Provider Basics
 
-The SQL provider in an erasing type provider which enables you to instantly 
+The SQL provider is an erasing type provider which enables you to instantly 
 connect to a variety of database sources in the IDE and explore them in a 
 type-safe manner, without the inconvenience of a code-generation step.
 
