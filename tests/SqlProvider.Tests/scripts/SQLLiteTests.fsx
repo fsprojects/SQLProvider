@@ -71,19 +71,21 @@ let automaticJoinQuery =
 let explicitJoinQuery =
    query { for customer in ctx.Main.Customers do
            join order in ctx.Main.Orders on (customer.CustomerId = order.CustomerId)
-           where (customer.ContactName = "John Smith")
+           where (customer.ContactName = "John Steel")
            select (customer,order) } |> Seq.toArray
 
 let ordersQuery =
    query { for customer in ctx.Main.Customers do
            for order in customer.``main.Orders by CustomerID`` do
-           where (customer.ContactName = "John Smith")
+           where (customer.ContactName = "John Steel")
            select (customer.ContactName, order.OrderDate, order.ShipAddress) } |> Seq.toArray
 
 let BERGS = ctx.Main.Customers.Individuals.BERGS
 
 
 let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``.Address
+
+// TypeMapper Example
 
 type Employee = {
     EmployeeId : int64
@@ -97,3 +99,18 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
       FirstName = dbRecord.FirstName
       LastName = dbRecord.LastName
       HireDate = dbRecord.HireDate }
+
+// Composable Query Example
+
+let query1 =
+    query {
+      for customers  in ctx.Main.Customers do
+      where (customers.ContactTitle = "USA")
+      select (customers)} |> Seq.toArray
+
+let query2 =
+    query {
+      for customers in query1 do
+      where (customers.CompanyName = "The Big Cheese")
+      select customers}
+    |> Seq.toArray
