@@ -74,8 +74,8 @@ type the provider will be connecting to.</p>
 </tr>
 </table>
 <h3><a name="ResolutionPath" class="anchor" href="#ResolutionPath">ResolutionPath</a></h3>
-<p>When using datbase vendors other than SQL Server, Access and ODBC, a third party driver
-is required. This parameter should point to an abosulte or relative directory where the
+<p>When using database vendors other than SQL Server, Access and ODBC, a third party driver
+is required. This parameter should point to an absolute or relative directory where the
 relevant assemblies are located. See the database vendor specific page for more details.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -97,7 +97,7 @@ Default is 1000.</p>
 </tr>
 </table>
 <h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
-<p>If set to true, all nullable fields will be represented by F# option tyes.  If false, nullable
+<p>If set to true, all nullable fields will be represented by F# option types.  If false, nullable
 fields will be represented by the default value of the column type - this is important because
 the provider will return 0 instead of null, which might cause problems in some scenarios.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
