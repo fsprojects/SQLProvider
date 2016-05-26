@@ -56,8 +56,9 @@ To see how this works, let’s look at a simple query:</p>
 </code></pre></td>
 </tr>
 </table>
-<p>The variable that is returned from the query is sometimes called a computation.
-If you write evaluate (e.g. a foreach loop or |&gt; Seq.toList) and display the address field from the customers returned by this computation, you see the following output:</p>
+<p>The variable that is returned from the query is sometimes called a computation. If you write evaluate
+(e.g. a foreach loop or <code>|&gt; Seq.toList</code>) and display the address field from the customers returned by this
+computation, you see the following output:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 <span class="l">3: </span>
@@ -68,7 +69,7 @@ If you write evaluate (e.g. a foreach loop or |&gt; Seq.toList) and display the 
 <span class="i">HUNGC</span>|<span class="i">Hungry</span> <span class="i">Coyote</span> <span class="i">Import</span> <span class="i">Store</span>|<span class="i">Yoshi</span> <span class="i">Latimer</span>|<span class="i">Sales</span> <span class="i">Representative</span>|<span class="i">City</span> <span class="i">Center</span> <span class="i">Plaza</span> <span class="n">516</span> <span class="i">Main</span> <span class="i">St</span><span class="o">.</span><span class="o">|</span><span class="i">Elgin</span>|<span class="i">OR</span>|<span class="n">97827</span>|<span class="i">USA</span>|(<span class="n">503</span>) <span class="n">555</span><span class="o">-</span><span class="n">6874</span>|(<span class="n">503</span>) <span class="n">555</span><span class="o">-</span><span class="n">2376</span>
 <span class="o">..</span><span class="o">.</span>
 <span class="i">TRAIH</span>|<span class="i">Trail&#39;s</span> <span class="i">Head</span> <span class="i">Gourmet</span> <span class="i">Provisioners</span>|<span class="i">Helvetius</span> <span class="i">Nagy</span>|<span class="i">Sales</span> <span class="i">Associate</span>|<span class="n">722</span> <span class="i">DaVinci</span> <span class="i">Blvd</span><span class="o">.</span><span class="o">|</span><span class="i">Kirkland</span>|<span class="i">WA</span>|<span class="n">98034</span>|<span class="i">USA</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">8257</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">2174</span>
-<span class="i">WHITC</span>|<span class="i">White</span> <span class="i">Clover</span> <span class="i">Markets</span>|<span class="i">Karl</span> <span class="i">Jablonski</span>|<span class="i">Owner</span>|<span class="n">305</span> <span class="o">-</span> <span class="n">14th</span> <span class="i">Ave</span><span class="o">.</span> <span class="i">S</span><span class="o">.</span> <span class="i">Suite</span> <span class="n">3B</span>|<span class="i">Seattle</span>|<span class="i">WA</span>|<span class="n">98128</span>|<span class="i">USA</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">4112</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">4115</span><span class="c">// You can now write a second query against the results of this query:</span>
+<span class="i">WHITC</span>|<span class="i">White</span> <span class="i">Clover</span> <span class="i">Markets</span>|<span class="i">Karl</span> <span class="i">Jablonski</span>|<span class="i">Owner</span>|<span class="n">305</span> <span class="o">-</span> <span class="n">14th</span> <span class="i">Ave</span><span class="o">.</span> <span class="i">S</span><span class="o">.</span> <span class="i">Suite</span> <span class="n">3B</span>|<span class="i">Seattle</span>|<span class="i">WA</span>|<span class="n">98128</span>|<span class="i">USA</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">4112</span>|(<span class="n">206</span>) <span class="n">555</span><span class="o">-</span><span class="n">4115</span>
 </code></pre></td>
 </tr>
 </table>
@@ -97,7 +98,7 @@ This second query produces the following output:</p>
 </code></pre></td>
 </tr>
 </table>
-<p>SQLProvider to Objects queries are composable because they operate on and usually return variables of type IQueryable<T>.
+<p>SQLProvider to Objects queries are composable because they operate on and usually return variables of type <code>IQueryable&lt;T&gt;</code>.
 In other words, SQLProvider queries typically follow this pattern:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -121,7 +122,7 @@ In other words, SQLProvider queries typically follow this pattern:</p>
 </table>
 <p>This is a simple mechanism to understand, but it yields powerful results.
 It allows you to take complex problems, break them into manageable pieces, and solve them with code that is easy to understand and easy to maintain.</p>
-<h2><a name="Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable" class="anchor" href="#Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable">Generate composable queries by using .NET LINQ functions with IQueryable.</a></h2>
+<h3><a name="Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable" class="anchor" href="#Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable">Generate composable queries by using .NET LINQ functions with IQueryable.</a></h3>
 <p>The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as en expression tree to some other context (like a database query).
 They are both lazy by nature, meaning they aren’t evaluated until you enumerate over the results.</p>
 <p>Here an example:</p>
@@ -207,7 +208,7 @@ They are both lazy by nature, meaning they aren’t evaluated until you enumerat
 </code></pre></td>
 </tr>
 </table>
-<h2><a name="Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery" class="anchor" href="#Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery">Generate composable queries by using FSharp.Linq.ComposableQuery</a></h2>
+<h3><a name="Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery" class="anchor" href="#Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery">Generate composable queries by using FSharp.Linq.ComposableQuery</a></h3>
 <p>The SQLProvider also supports composable queries by integrating following library FSharpLinqComposableQuery.
 You can read more about that library here: <a href="http://fsprojects.github.io/FSharp.Linq.ComposableQuery">FSharp.Linq.ComposableQuery</a></p>
 <p>Because it is implemented in the SQLProvider you dont need to add FSharpComposableQuery in your script.</p>
