@@ -12,9 +12,9 @@ nuget NUnit.Runners = 2.6.4
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
 group Scripts
+    framework >= 4.0
+    source https://nuget.org/api/v2
 
-      source https://nuget.org/api/v2
-
-      nuget MySql.Data
-      nuget Npgsql = 2.2.7
-      nuget Newtonsoft.Json
+    nuget MySql.Data
+    nuget Newtonsoft.Json
+    nuget Npgsql
