@@ -17,7 +17,6 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
    
 [<Test; Ignore("Not Supported")>]
 let ``simple select with contains query``() =
-  if ``check if disabled on Mono`` then
     let dc = sql.GetDataContext()
     let query = 
         query {
