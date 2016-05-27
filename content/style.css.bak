@@ -1,47 +1,33 @@
-@import url(https://fonts.googleapis.com/css?family=Droid+Sans|Droid+Sans+Mono|Open+Sans:400,600,700);
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans|Droid+Sans+Mono|Open+Sans:400,600,700);
 
-/*--------------------------------------------------------------------------
-  Formatting for F# code snippets
+/*-------------------------------------------------------------------------- 
+  Formatting for F# code snippets 
 /*--------------------------------------------------------------------------*/
 
 /* identifier */
-span.i { color:#000000; }
+span.i { color:#d1d1d1; }
 /* string */
-span.s { color:#a31515; }
+span.s { color:#d4b43c; }
 /* keywords */
-span.k { color:#0000ff; }
+span.k { color:#4e98dc; }
 /* comment */
-span.c { color:#008000; }
+span.c { color:#96C71D; }
 /* operators */
-span.o { color:#000000; }
+span.o { color:#af75c1; }
 /* numbers */
-span.n { color:#000000; }
+span.n { color:#96C71D; }
 /* line number */
-span.l { color:#96c2cd; }
-/* type or module */
-span.t { color:#2b91af; }
-/* function */
-span.f { color:#0000a0; }
-/* DU case or active pattern */
-span.p { color:#800080; }
-/* mutable var or ref cell */
-span.v { color:#000000; font-weight: bold; }
-/* printf formatters */
-span.pf { color:#2b91af; }
-/* escaped chars */
-span.e { color:#ff0080; }
-/* mutable var or ref cell */
-
+span.l { color:#80b0b0; }
 
 /* inactive code */
 span.inactive { color:#808080; }
 /* preprocessor */
-span.prep { color:#0000ff; }
+span.prep { color:#af75c1; }
 /* fsi output */
 span.fsi { color:#808080; }
 
 /* omitted */
-span.omitted {
+span.omitted { 
 	background:#3c4e52;
   border-radius:5px;
 	color:#808080;
@@ -49,35 +35,30 @@ span.omitted {
 }
 /* tool tip */
 div.tip {
-	background:#e5e5e5;
+	background:#475b5f;
   border-radius:4px;
-  font:9pt 'Droid Sans', arial, sans-serif;
+  font:11pt 'Droid Sans', arial, sans-serif;
 	padding:6px 8px 6px 8px;
 	display:none;
-  color:#000000;
-  pointer-events:none;
+  color:#d1d1d1;
 }
 table.pre pre {
   padding:0px;
   margin:0px;
   border:none;
-}
+} 
 table.pre, pre.fssnip, pre {
   line-height:13pt;
   border:1px solid #d8d8d8;
   border-collapse:separate;
   white-space:pre;
-  font: 10pt consolas,monospace;
+  font: 9pt 'Droid Sans Mono',consolas,monospace;
   width:90%;
   margin:10px 20px 20px 20px;
-  background-color:#fdfdfd;
+  background-color:#212d30;
   padding:10px;
   border-radius:5px;
-  color:#000000;
-  max-width: none;
-}
-pre.fssnip code {
-  font: 9pt 'Droid Sans Mono',consolas,monospace;
+  color:#d1d1d1;  
 }
 table.pre pre {
   padding:0px;
@@ -94,7 +75,7 @@ table.pre td.lines {
   width:30px;
 }
 
-/*--------------------------------------------------------------------------
+/*-------------------------------------------------------------------------- 
   Formatting for page & standard document content
 /*--------------------------------------------------------------------------*/
 
@@ -111,10 +92,6 @@ pre {
 /* Format the heading - nicer spacing etc. */
 .masthead {
   overflow: hidden;
-}
-.masthead .muted a {
-  text-decoration:none;
-  color:#999999;
 }
 .masthead ul, .masthead li {
   margin-bottom:0px;
@@ -162,7 +139,7 @@ td.title, thead {
 #main li { font-size: 11pt; margin: 5px 0px 5px 0px; }
 #main strong { font-weight:700; }
 
-/*--------------------------------------------------------------------------
+/*-------------------------------------------------------------------------- 
   Formatting for API reference
 /*--------------------------------------------------------------------------*/
 
@@ -194,25 +171,14 @@ td.title, thead {
 .github-link .normal { display: block; }
 .github-link:hover .normal { display: none; }
 
-/*--------------------------------------------------------------------------
-  Links
+/*-------------------------------------------------------------------------- 
+  Additional formatting for the homepage 
 /*--------------------------------------------------------------------------*/
 
-h1 a, h1 a:hover, h1 a:focus,
-h2 a, h2 a:hover, h2 a:focus,
-h3 a, h3 a:hover, h3 a:focus,
-h4 a, h4 a:hover, h4 a:focus,
-h5 a, h5 a:hover, h5 a:focus,
-h6 a, h6 a:hover, h6 a:focus { color : inherit; text-decoration : inherit; outline:none }
-
-/*--------------------------------------------------------------------------
-  Additional formatting for the homepage
-/*--------------------------------------------------------------------------*/
-
-#nuget {
+#nuget { 
   margin-top:20px;
-  font-size: 11pt;
-  padding:20px;
+  font-size: 11pt; 
+  padding:20px; 
 }
 
 #nuget pre {
