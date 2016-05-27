@@ -445,8 +445,11 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 ~~"ORDER BY "
                 orderByBuilder()
 
-            if sqlQuery.Take.IsSome then
-                ~~(sprintf " LIMIT %i;" sqlQuery.Take.Value)
+            match sqlQuery.Take, sqlQuery.Skip with
+            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
+            | None, Some skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt32.MaxValue skip)
+            | None, None -> ()
 
             let sql = sb.ToString()
             (sql,parameters)

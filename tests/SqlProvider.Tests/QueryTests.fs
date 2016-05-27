@@ -406,7 +406,7 @@ let ``simple select with distinct``() =
     Assert.AreEqual(69, query.Length) 
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], query.[0..2])
 
-[<Test; Ignore("Query supported but providers implement badly.")>]
+[<Test>]
 let ``simple select with skip``() =
     let dc = sql.GetDataContext()
     let query = 

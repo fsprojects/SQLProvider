@@ -651,6 +651,9 @@ type internal MSSqlServerProvider() =
             | Some skip, Some take ->
                 // Note: this only works in >=SQL2012
                 ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+            | Some skip, None ->
+                // Note: this only works in >=SQL2012
+                ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
             | _ -> ()
 
             let sql = sb.ToString()
