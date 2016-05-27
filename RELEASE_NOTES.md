@@ -1,3 +1,9 @@
+### 1.0.8 - 28.05.2016
+* .PossibleError property to notify schema or database name (Owner)
+* Fixed select string concat, e.g: Select (person.FirstName + " " + person.LastName)
+* minBy and maxBy for DateTime fields
+* Fixed operating table with no primary key
+
 ### 1.0.7 - 27.05.2016
 * Better error reporting
 * SQLite skip fix
