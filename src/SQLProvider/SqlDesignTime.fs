@@ -38,6 +38,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
             | cs -> cs
             
+        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
 
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner
         let con = prov.CreateConnection conString
@@ -65,7 +66,24 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
-                dict [ for table in tables.Force() do
+                dict [ let tablesforced = tables.Force()
+                       if tablesforced.Length = 0 then
+                            let hint =
+                                match caseSensitivity with
+                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
+                                        when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
+                                    ". Try adding parameter SqlDataProvider<FSharp.Data.Sql.Common.CaseSensitivityChange.TOUPPER=...>"
+                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
+                                        when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
+                                    ". Try adding parameter SqlDataProvider<FSharp.Data.Sql.Common.CaseSensitivityChange.TOLOWER=...>"
+                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner is database name or schema." + owner + "."
+                                | _ -> " for schema " + owner + "."
+                            let possibleError = "Tables not found" + hint
+                            let t = ProvidedProperty("PossibleError", typeof<String>, IsStatic=true, GetterCode = fun _ -> <@@ possibleError @@>)
+                            t.AddXmlDoc possibleError
+                            rootType.AddMember t
+                       else                
+                       for table in tablesforced do
                         let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)
                         t.AddMemberDelayed(fun () -> ProvidedConstructor([ProvidedParameter("dataContext",typeof<ISqlDataContext>)],
                                                         InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntity(table.FullName) @@>))
@@ -447,7 +465,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
              ])
         
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
-        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
             [ let meth = 
