@@ -31,7 +31,7 @@ let createCustomer (dc:sql.dataContext) =
     newCustomer.Region <- "London"
     newCustomer
 
-[<Test; Ignore("")>]
+[<Test>]
 let ``Can create and delete an entity``() = 
     let dc = sql.GetDataContext()
     
@@ -57,11 +57,12 @@ let ``Can create and delete an entity``() =
     dc.SubmitUpdates()
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
 
-[<Test; Ignore("")>]
+[<Test; Ignore("Something wrong with SQLite transactions...")>]
 let ``Can enlist in a transaction scope and rollback changes without complete``() =
+
+    use ts = new TransactionScope()
     let dc = sql.GetDataContext()
 
-    let ts = new TransactionScope()
     createCustomer dc |> ignore
     dc.SubmitUpdates()
     ts.Dispose()

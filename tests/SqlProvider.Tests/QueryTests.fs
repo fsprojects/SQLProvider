@@ -8,6 +8,9 @@ open NUnit.Framework
 [<Literal>]
 let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
+// If you want to run these in Visual Studio Test Explorer, please install:
+// Tools -> Extensions and Updates... -> Online -> NUnit Test Adapter for Visual Studio
+// http://nunit.org/index.php?p=vsTestAdapter&r=2.6.4
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
@@ -23,7 +26,7 @@ let ``simple select with contains query``() =
         }
     Assert.IsTrue(query)    
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select with count``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -80,7 +83,7 @@ let ``simple select with last or default when exists``() =
         }
     Assert.AreEqual("WOLZA", query)  
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select with exactly one``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -92,7 +95,7 @@ let ``simple select with exactly one``() =
         }
     Assert.AreEqual("ALFKI", query)  
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select with exactly one when not exists``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -104,7 +107,7 @@ let ``simple select with exactly one when not exists``() =
         }
     Assert.AreEqual(null, query)  
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select with head``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -116,7 +119,7 @@ let ``simple select with head``() =
         }
     Assert.AreEqual("ALFKI", query)  
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select with head or Default``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -128,7 +131,7 @@ let ``simple select with head or Default``() =
         }
     Assert.AreEqual("ALFKI", query)  
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select with head or Default when not exists``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -140,7 +143,7 @@ let ``simple select with head or Default when not exists``() =
         }
     Assert.AreEqual(null, query)  
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select query``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -151,7 +154,7 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty query
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select where query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -165,25 +168,37 @@ let ``simple select where query``() =
     Assert.AreEqual(1, query.Length)
     Assert.AreEqual("Berlin", query.[0].City)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with minBy``() = 
     let dc = sql.GetDataContext()
     let query = 
         query {
-            for cust in dc.Main.Customers do
-            minBy cust.City
+            for ord in dc.Main.OrderDetails do
+            minBy (decimal ord.Discount)
         }   
-    Assert.AreEqual("Berlin", query)
+    Assert.AreEqual(0m, query)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with maxBy``() = 
     let dc = sql.GetDataContext()
     let query = 
         query {
-            for cust in dc.Main.Customers do
-            maxBy cust.City
-        }   
-    Assert.AreEqual("Århus", query)
+            for od in dc.Main.OrderDetails do
+            sumBy od.UnitPrice
+        }
+    Assert.Greater(56501m, query)
+    Assert.Less(56499m, query)
+
+[<Test>]
+let ``simple select query with averageBy``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for od in dc.Main.OrderDetails do
+            averageBy od.UnitPrice
+        }
+    Assert.Greater(27m, query)
+    Assert.Less(26m, query)
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with groupBy``() = 
@@ -196,7 +211,7 @@ let ``simple select query with groupBy``() =
         } |> dict  
     Assert.AreEqual(6, query.["London"])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -209,7 +224,7 @@ let ``simple select and sort query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], query.[0..2])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select and sort desc query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -222,7 +237,7 @@ let ``simple select and sort desc query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Århus"; "Warszawa"; "Walla Walla"|], query.[0..2])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select and sort query with then by query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -236,7 +251,7 @@ let ``simple select and sort query with then by query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Graz"|], query.[0..3])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select and sort query with then by desc query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -250,7 +265,7 @@ let ``simple select and sort query with then by desc query``() =
     CollectionAssert.IsNotEmpty query    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Salzburg"|], query.[0..3])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -269,7 +284,7 @@ let ``simple select query with join``() =
             "VICTE", new DateTime(1996,7,8)
         |], query.[0..3])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select query with join using relationships``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -313,7 +328,7 @@ let ``simple select query with group join``() =
             "HANAR", 65L, 15
         |], query.[0..7])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select query with multiple joins on relationships``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -357,7 +372,7 @@ let ``simple select query with left outer join``() =
             "VICTE", new DateTime(1996,7,8)
         |], query.[0..3])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple sumBy``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -367,7 +382,7 @@ let ``simple sumBy``() =
         }
     Assert.That(query, Is.EqualTo(56500.91M).Within(0.001M))
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple averageBy``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -375,9 +390,9 @@ let ``simple averageBy``() =
             for od in dc.Main.OrderDetails do
             averageBy od.UnitPrice
         }
-    Assert.That(query, Is.EqualTo(56500.91M).Within(0.001M))
+    Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -391,7 +406,7 @@ let ``simple select with distinct``() =
     Assert.AreEqual(69, query.Length) 
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], query.[0..2])
 
-[<Test; Ignore("Query supported but providers implement badly.")>]
+[<Test>]
 let ``simple select with skip``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -406,7 +421,7 @@ let ``simple select with skip``() =
     Assert.AreEqual(86, query.Length) 
     CollectionAssert.AreEquivalent([|"Bergamo"; "Berlin"; "Bern"|], query.[0..2])
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select with take``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -426,7 +441,7 @@ type Simple = {First : string}
 
 type Dummy<'t> = D of 't
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select into a generic type`` () =
     let dc = sql.GetDataContext()
     let query = 
@@ -437,7 +452,7 @@ let ``simple select into a generic type`` () =
 
     CollectionAssert.IsNotEmpty query
 
-[<Test; Ignore("")>]
+[<Test >]
 let ``simple select into a generic type with pipe`` () =
     let dc = sql.GetDataContext()
     let query = 
