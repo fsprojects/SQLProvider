@@ -4,11 +4,11 @@ NUGET
     FAKE (4.23.1)
     FSharp.Compiler.Service (1.4.2.3)
     FSharp.Core (3.1.2.1)
-    FSharp.Formatting (2.13.0)
-      FSharp.Compiler.Service (>= 1.4.2 < 1.5.0)
-      FSharpVSPowerTools.Core (>= 2.2.0 < 2.3.0)
-    FSharpVSPowerTools.Core (2.2.0)
-      FSharp.Compiler.Service (>= 1.4.2.0)
+    FSharp.Formatting (2.13)
+      FSharp.Compiler.Service (>= 1.4.2 < 1.5)
+      FSharpVSPowerTools.Core (>= 2.2 < 2.3)
+    FSharpVSPowerTools.Core (2.2)
+      FSharp.Compiler.Service (>= 1.4.2)
     Microsoft.AspNet.Razor (3.2.3) - framework: >= net45
     Microsoft.Bcl (1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
@@ -19,10 +19,10 @@ NUGET
     NuGet.CommandLine (2.8.6)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
-    Octokit (0.17.0)
+    Octokit (0.17)
       Microsoft.Net.Http
     RazorEngine (3.7.6)
-      Microsoft.AspNet.Razor (>= 3.0.0) - framework: >= net45
+      Microsoft.AspNet.Razor (>= 3.0) - framework: >= net45
       Microsoft.AspNet.Razor (2.0.30506) - framework: net40
 GITHUB
   remote: fsharp/FAKE
@@ -30,9 +30,10 @@ GITHUB
     modules/Octokit/Octokit.fsx (3834900476aed462f35ce3acc3ea5c4708971e43)
       Octokit
 GROUP Scripts
+FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
   specs:
     MySql.Data (6.9.8)
-    Newtonsoft.Json (8.0.1)
-    Npgsql (2.2.7)
+    Newtonsoft.Json (8.0.3)
+    Npgsql (3.1.2)
