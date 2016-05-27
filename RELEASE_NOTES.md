@@ -1,3 +1,7 @@
+### 1.0.7 - 27.05.2016
+* Better error reporting
+* SQLite skip fix
+
 ### 1.0.6 - 15.05.2016
 * sumBy, maxBy, minBy, averageBy
 

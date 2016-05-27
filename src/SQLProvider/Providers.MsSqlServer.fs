@@ -696,7 +696,8 @@ type internal MSSqlServerProvider() =
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
-                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible! ")
+                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                                   // but is possible if you try to use same context on multiple threads. Don't do that.
                 scope.Complete()
 
             finally
