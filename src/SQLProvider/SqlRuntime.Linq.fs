@@ -77,6 +77,7 @@ module internal QueryImplementation =
         match cmd.ExecuteScalar() with
         | :? string as s when Int32.TryParse s |> fst -> Int32.Parse s |> box
         | :? string as s when Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? string as s when DateTime.TryParse s |> fst -> DateTime.Parse s |> box
         | :? int as i -> i |> box
         | :? int16 as i -> int32 i |> box
         | :? int64 as i -> int32 i |> box  // LINQ says we must return a 32bit int

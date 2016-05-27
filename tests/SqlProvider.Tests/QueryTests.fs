@@ -155,6 +155,17 @@ let ``simple select query``() =
     CollectionAssert.IsNotEmpty query
 
 [<Test >]
+let ``simple select query with operations in select``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust.Country + " " + cust.Address + (1).ToString())
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
+[<Test >]
 let ``simple select where query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -168,6 +179,21 @@ let ``simple select where query``() =
     Assert.AreEqual(1, query.Length)
     Assert.AreEqual("Berlin", query.[0].City)
 
+[<Test >]
+let ``simple select where query with operations in where``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId = "ALFKI" && (cust.City.StartsWith("B")))
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(1, query.Length)
+    Assert.AreEqual("Berlin", query.[0].City)
+
+
 [<Test>]
 let ``simple select query with minBy``() = 
     let dc = sql.GetDataContext()
@@ -177,6 +203,16 @@ let ``simple select query with minBy``() =
             minBy (decimal ord.Discount)
         }   
     Assert.AreEqual(0m, query)
+
+[<Test>]
+let ``simple select query with minBy DateTime``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for emp in dc.Main.Employees do
+            minBy (emp.BirthDate)
+        }   
+    Assert.AreEqual(DateTime(1937, 09, 19), query)
 
 [<Test>]
 let ``simple select query with maxBy``() = 

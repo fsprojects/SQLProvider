@@ -81,6 +81,10 @@ module internal QueryExpressionTransformer =
             | ExpressionType.ArrayLength,        (:? UnaryExpression as e)       -> upcast Expression.ArrayLength(transform en e.Operand)
             | ExpressionType.Quote,              (:? UnaryExpression as e)       -> upcast Expression.Quote(transform en e.Operand)
             | ExpressionType.TypeAs,             (:? UnaryExpression as e)       -> upcast Expression.TypeAs(transform en e.Operand,e.Type)
+            | ExpressionType.Add,                (:? BinaryExpression as e)  when e.Left.Type = typeof<string> && e.Right.Type = typeof<string> -> 
+                                                                             // http://stackoverflow.com/questions/7027384/the-binary-operator-add-is-not-defined-for-the-types-system-string-and-syste
+                                                                             let concatMethod = typeof<string>.GetMethod("Concat", [| typeof<string>; typeof<string> |]); 
+                                                                             upcast Expression.Add(transform en e.Left, transform en e.Right, concatMethod)
             | ExpressionType.Add,                (:? BinaryExpression as e)      -> upcast Expression.Add(transform en e.Left, transform en e.Right)
             | ExpressionType.AddChecked,         (:? BinaryExpression as e)      -> upcast Expression.AddChecked(transform en e.Left, transform en e.Right)
             | ExpressionType.Subtract,           (:? BinaryExpression as e)      -> upcast Expression.Subtract(transform en e.Left, transform en e.Right)
