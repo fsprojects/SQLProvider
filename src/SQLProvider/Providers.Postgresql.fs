@@ -27,7 +27,7 @@ module PostgreSQL =
             | Choice1Of2(assembly) -> assembly
             | Choice2Of2(paths) ->
                 let assemblyNames = String.Join(", ", assemblyNames |> List.toArray)
-                let resolutionPaths = String.Join(Environment.NewLine, paths)
+                let resolutionPaths = String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p)))
                 failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s" assemblyNames Environment.NewLine resolutionPaths
 
     let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)

@@ -79,7 +79,7 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         match ue.Operand with
         | :? ConstantExpression as ce -> if ce.Value = null then Some(None) else Some(Some(ce.Value))
         | :? NewExpression as ne -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
-        | _ -> failwith "unsupported nullable expression"
+        | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
 let (|Bool|_|)   = function Constant((:? bool   as b),_) -> Some b | _ -> None

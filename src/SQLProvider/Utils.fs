@@ -240,8 +240,15 @@ module internal Reflection =
                 then asm
                 else System.IO.Path.Combine(resolutionPath,asm))
 
+        let currentPaths =
+            let myPath = 
+                System.Reflection.Assembly.GetExecutingAssembly().Location
+                |> System.IO.Path.GetDirectoryName
+            assemblyNames 
+            |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm))
+
         let allPaths =
-            (assemblyNames @ resolutionPaths @ referencedPaths) 
+            (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
         
         let result = 
             allPaths

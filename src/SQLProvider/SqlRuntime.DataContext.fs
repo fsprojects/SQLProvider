@@ -21,7 +21,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
-        | _ -> failwith "Unsupported database provider"
+        | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()

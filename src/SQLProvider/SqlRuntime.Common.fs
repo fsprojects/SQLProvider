@@ -107,7 +107,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         | Unchanged ->
             e._State <- Modified [key]
             e.DataContext.SubmitChangedEntity e
-        | Deleted -> failwith "You cannot modify an entity that is pending deletion"
+        | Deleted -> failwith ("You cannot modify an entity that is pending deletion: " + key)
         | Created -> ()
 
     member __.SetColumnSilent(key,value) =

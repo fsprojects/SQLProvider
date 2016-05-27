@@ -248,7 +248,7 @@ module internal QueryImplementation =
                                 match exp with
                                 | AndAlso(_) -> And(conditions,nextFilter)
                                 | OrElse(_) -> Or(conditions,nextFilter)
-                                | _ -> failwith ""
+                                | _ -> failwith ("Filter problem: " + exp.ToString())
                             match exp with
                             | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
                                 extendFilter [] (Some ([filterExpression left; filterExpression right]))
@@ -379,7 +379,7 @@ module internal QueryImplementation =
                                 if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
                                 if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
                                 sqlExpression
-                            | _ -> failwith ""
+                            | _ -> failwith ("Unknown: " + inExp.ToString())
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
@@ -391,7 +391,7 @@ module internal QueryImplementation =
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
-                    | _ -> failwith "unrecognised method call"
+                    | x -> failwith ("unrecognised method call" + x.ToString())
 
                 member __.Execute(_: Expression) : obj =
                     failwith "Execute not implemented"

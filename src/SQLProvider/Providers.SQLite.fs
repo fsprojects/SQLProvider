@@ -35,7 +35,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
            failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
 
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
@@ -175,8 +175,12 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
                 then runtimeAssembly
                 else resolutionPath
-                |> Path.GetFullPath 
-            let connectionString = connectionString.Replace(@"." + Path.DirectorySeparatorChar.ToString(), basePath + Path.DirectorySeparatorChar.ToString())
+                |> Path.GetFullPath
+             
+            let connectionString = 
+                connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
+                    .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
+                    .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
             try
                 Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
             with

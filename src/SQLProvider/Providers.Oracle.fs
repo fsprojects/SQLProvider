@@ -30,7 +30,7 @@ module internal Oracle =
            failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
 
     let systemNames =
         [

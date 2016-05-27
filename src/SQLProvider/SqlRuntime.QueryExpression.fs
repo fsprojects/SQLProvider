@@ -20,7 +20,7 @@ module internal QueryExpressionTransformer =
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
-            | _ -> failwith "Unsupported projection"
+            | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
 
             // 1. only one table was involed so the input is a single parameter
             // 2. the input is a n tuple returned from the query
@@ -132,7 +132,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
             | ExpressionType.MemberInit,         (:? MemberInitExpression as e)  -> upcast Expression.MemberInit( (transform en e.NewExpression) :?> NewExpression , e.Bindings)
             | ExpressionType.ListInit,           (:? ListInitExpression as e)    -> upcast Expression.ListInit( (transform en e.NewExpression) :?> NewExpression, e.Initializers)
-            | _ -> failwith "encountered unknown LINQ expression"
+            | _ -> failwith ("encountered unknown LINQ expression: " + e.NodeType.ToString() + " " + e.ToString())
 
         let newProjection =
             match projection with
@@ -160,7 +160,7 @@ module internal QueryExpressionTransformer =
             match sqlQuery.UltimateChild with
             | Some(baseAlias,baseTable) when baseAlias = ""-> (baseTable.Name,baseTable)
             | Some(baseAlias,baseTable) -> (baseAlias,baseTable)
-            | _ -> failwith ""
+            | _ -> failwith ("Unknown sqlQuery.UltimateChild: " + sqlQuery.UltimateChild.ToString())
 
         let (projectionDelegate,projectionColumns) =
             let param = Expression.Parameter(typeof<SqlEntity>,"result")
