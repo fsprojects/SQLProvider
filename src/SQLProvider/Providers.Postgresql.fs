@@ -328,7 +328,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else ""
         let columnNames, values =
             (([],0),entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out,i) (k,v,c) ->
@@ -352,7 +353,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     (String.Join(",",columnNames |> Array.map (fun c -> sprintf "\"%s\"" c)))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
-        ~~(sprintf " RETURNING \"%s\";" pk)
+        if haspk then
+            ~~(sprintf " RETURNING \"%s\";" pk)
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()

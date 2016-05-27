@@ -72,12 +72,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 match caseSensitivity with
                                 | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
                                         when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<FSharp.Data.Sql.Common.CaseSensitivityChange.TOUPPER=...>"
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...>"
                                 | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
                                         when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<FSharp.Data.Sql.Common.CaseSensitivityChange.TOLOWER=...>"
-                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner is database name or schema." + owner + "."
-                                | _ -> " for schema " + owner + "."
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...>"
+                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema."
+                                | _ -> " for schema or database " + owner + "."
                             let possibleError = "Tables not found" + hint
                             let t = ProvidedProperty("PossibleError", typeof<String>, IsStatic=true, GetterCode = fun _ -> <@@ possibleError @@>)
                             t.AddXmlDoc possibleError

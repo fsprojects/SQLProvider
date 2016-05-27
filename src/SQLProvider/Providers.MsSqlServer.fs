@@ -278,7 +278,8 @@ type internal MSSqlServerProvider() =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else ""
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -291,11 +292,18 @@ type internal MSSqlServerProvider() =
             |> Array.unzip
 
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);"
-            entity.Table.FullName
-            (String.Join(",",columnNames))
-            pk
-            (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+        if haspk then
+            ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);"
+                entity.Table.FullName
+                (String.Join(",",columnNames))
+                pk
+                (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+        else
+            ~~(sprintf "INSERT INTO %s (%s) VALUES (%s);"
+                entity.Table.FullName
+                (String.Join(",",columnNames))
+                (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+
         cmd.Parameters.AddRange(values)
         cmd.CommandText <- sb.ToString()
         cmd
