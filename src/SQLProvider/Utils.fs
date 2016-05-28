@@ -260,11 +260,22 @@ module internal Reflection =
         
         match result with
         | Some asm -> Choice1Of2 asm
-        | None -> 
-            allPaths
-            |> Seq.map (IO.Path.GetDirectoryName)
-            |> Seq.distinct
-            |> Choice2Of2
+        | None ->
+            let folders = 
+                allPaths
+                |> Seq.map (IO.Path.GetDirectoryName)
+                |> Seq.distinct
+            let errors = 
+                allPaths
+                |> List.map (fun p -> 
+                    match tryLoadAssembly p with
+                    | Some(Choice2Of2 err) when (err :? System.IO.FileNotFoundException) -> None //trivial
+                    | Some(Choice2Of2 err) -> Some err
+                    | _ -> None
+                ) |> List.filter Option.isSome
+                |> List.map(fun o -> o.Value.GetBaseException().Message)
+                |> Seq.distinct |> Seq.toList
+            Choice2Of2(folders, errors)
 
 module Sql =
     

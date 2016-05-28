@@ -23,11 +23,16 @@ module MySql =
     let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
-        | Choice2Of2(paths) ->
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+        | Choice2Of2(paths, errors) ->
+           let details = 
+                match errors with 
+                | [] -> "" 
+                | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                details
 
     let connectionType =  lazy (findType "MySqlConnection")
     let commandType =     lazy (findType "MySqlCommand")

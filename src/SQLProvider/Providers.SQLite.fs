@@ -31,11 +31,16 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let findType f =
         match assembly.Value with
         | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find f
-        | Choice2Of2(paths) ->
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s"
+        | Choice2Of2(paths, errors) ->
+           let details = 
+                match errors with 
+                | [] -> "" 
+                | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
+           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                details
 
     let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
     let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))

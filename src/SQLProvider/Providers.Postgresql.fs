@@ -25,10 +25,15 @@ module PostgreSQL =
         lazy
             match Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames with
             | Choice1Of2(assembly) -> assembly
-            | Choice2Of2(paths) ->
+            | Choice2Of2(paths, errors) ->
+                let details = 
+                    match errors with 
+                    | [] -> "" 
+                    | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
                 let assemblyNames = String.Join(", ", assemblyNames |> List.toArray)
                 let resolutionPaths = String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p)))
-                failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s" assemblyNames Environment.NewLine resolutionPaths
+                failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s" 
+                    assemblyNames Environment.NewLine resolutionPaths details
 
     let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
     let findType name = assembly.Value.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
