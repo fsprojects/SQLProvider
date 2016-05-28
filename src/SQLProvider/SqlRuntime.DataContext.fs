@@ -61,13 +61,13 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)
             provider.ProcessUpdates(con, pendingChanges)
-            pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged then pendingChanges.TryRemove(e.Key) |> ignore)
+            pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
 
         member __.SubmitPendingChangesAsync() =
             async {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 do! provider.ProcessUpdatesAsync(con, pendingChanges)
-                pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged then pendingChanges.TryRemove(e.Key) |> ignore)
+                pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =
