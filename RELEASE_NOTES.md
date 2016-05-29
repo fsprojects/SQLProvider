@@ -1,3 +1,6 @@
+### 1.0.9 - 29.05.2016
+* Fixed possibility to call SubmitUpdates many times after delete. 
+
 ### 1.0.8 - 28.05.2016
 * .PossibleError property to notify schema or database name (Owner)
 * Fixed select string concat, e.g: Select (person.FirstName + " " + person.LastName)
