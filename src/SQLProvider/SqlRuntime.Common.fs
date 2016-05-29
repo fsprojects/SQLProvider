@@ -44,6 +44,7 @@ type EntityState =
     | Unchanged
     | Created
     | Modified of string list
+    | Delete
     | Deleted
 
 [<DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
@@ -64,7 +65,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member val _State = Unchanged with get, set
 
     member e.Delete() =
-        e._State <- Deleted
+        e._State <- Delete
         dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = propertyChanged.Trigger(e, PropertyChangedEventArgs(name))
@@ -107,7 +108,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         | Unchanged ->
             e._State <- Modified [key]
             e.DataContext.SubmitChangedEntity e
-        | Deleted -> failwith ("You cannot modify an entity that is pending deletion: " + key)
+        | Deleted | Delete -> failwith ("You cannot modify an entity that is pending deletion: " + key)
         | Created -> ()
 
     member __.SetColumnSilent(key,value) =

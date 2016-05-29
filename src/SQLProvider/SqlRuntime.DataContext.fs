@@ -26,9 +26,11 @@ module internal ProviderBuilder =
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = Dictionary<string,ISqlProvider>()
+    let myLock1 = new Object();
+    let myLock2 = new Object();
 
     let provider =
-        lock providerCache (fun () ->
+        lock myLock1 (fun () ->
             match providerCache .TryGetValue typeName with
             | true, prov -> prov
             | _ ->
@@ -60,12 +62,17 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
 
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)
-            provider.ProcessUpdates(con, pendingChanges)
-            pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
+            lock myLock2 (fun () ->
+                provider.ProcessUpdates(con, pendingChanges)
+                pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
+            )
 
         member __.SubmitPendingChangesAsync() =
             async {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
+                let maxWait = DateTime.Now.AddSeconds(3.)
+                while (pendingChanges |> Seq.exists(fun e -> match e.Key._State with Unchanged | Deleted -> true | _ -> false)) && DateTime.Now < maxWait do
+                    do! Async.Sleep 150 // we can't let async lock but this helps.
                 do! provider.ProcessUpdatesAsync(con, pendingChanges)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             }

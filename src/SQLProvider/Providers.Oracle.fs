@@ -689,13 +689,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
-                    | Deleted ->
+                    | Delete ->
                         let cmd = createDeleteCommand provider con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
-                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                        e._State <- Deleted
+                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
 
             finally
@@ -744,7 +745,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
-                        | Deleted ->
+                        | Delete ->
                             async {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -752,7 +753,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
                             }
-                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()

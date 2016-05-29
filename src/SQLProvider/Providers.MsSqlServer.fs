@@ -698,13 +698,14 @@ type internal MSSqlServerProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
-                    | Deleted ->
+                    | Delete ->
                         let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
-                    | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                        e._State <- Deleted
+                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
                 scope.Complete()
 
@@ -747,7 +748,7 @@ type internal MSSqlServerProvider() =
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
-                        | Deleted ->
+                        | Delete ->
                             async {
                                 let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
@@ -755,7 +756,7 @@ type internal MSSqlServerProvider() =
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                             }
-                        | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                     scope.Complete()
