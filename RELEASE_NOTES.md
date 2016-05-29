@@ -1,3 +1,6 @@
+### 1.0.10 - 29.05.2016
+* Concurrency fix for SubmitUpdates()
+
 ### 1.0.9 - 29.05.2016
 * Fixed possibility to call SubmitUpdates many times after delete. 
 
