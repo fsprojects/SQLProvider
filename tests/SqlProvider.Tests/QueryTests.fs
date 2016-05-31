@@ -61,7 +61,7 @@ let ``simple select with last or default when not exists``() =
         }
     Assert.AreEqual(null, query)   
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple exists when exists``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -192,7 +192,6 @@ let ``simple select where query with operations in where``() =
     CollectionAssert.IsNotEmpty query
     Assert.AreEqual(1, query.Length)
     Assert.AreEqual("Berlin", query.[0].City)
-
 
 [<Test>]
 let ``simple select query with minBy``() = 

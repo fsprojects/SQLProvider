@@ -563,8 +563,8 @@ type internal MSSqlServerProvider() =
                                 let operatorIn operator (array : IDbDataParameter[]) =
                                     if Array.isEmpty array then
                                         match operator with
-                                        | FSharp.Data.Sql.In -> "FALSE" // nothing is in the empty set
-                                        | FSharp.Data.Sql.NotIn -> "TRUE" // anything is not in the empty set
+                                        | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
+                                        | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
                                         | _ -> failwith "Should not be called with any other operator"
                                     else
                                         let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))

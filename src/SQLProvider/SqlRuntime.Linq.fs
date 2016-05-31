@@ -166,6 +166,78 @@ module internal QueryImplementation =
 
     and SqlQueryProvider() =
          static member val Provider =
+
+             let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
+                let paramNames = HashSet<string>()
+                let (|Condition|_|) exp =
+                    // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
+                    match exp with
+                    | SqlSpecialOpArr(ti,op,key,value) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,Some (box value))
+                    | SqlSpecialOp(ti,op,key,value) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,Some value)
+                    // if using nullable types
+                    | OptionIsSome(SqlColumnGet(ti,key,_)) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.NotNull,None)
+                    | OptionIsNone(SqlColumnGet(ti,key,_))
+                    | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.IsNull,None)
+                    | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.NotNull,None)
+                    // matches column to constant with any operator eg c.name = "john", c.age > 42
+                    | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,c)
+                    // matches to another property getter, method call or new expression
+                    | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
+                    | _ -> None
+
+                let rec filterExpression (exp:Expression)  =
+                    let extendFilter conditions nextFilter =
+                        match exp with
+                        | AndAlso(_) -> And(conditions,nextFilter)
+                        | OrElse(_) -> Or(conditions,nextFilter)
+                        | _ -> failwith ("Filter problem: " + exp.ToString())
+                    match exp with
+                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
+                        extendFilter [] (Some ([filterExpression left; filterExpression right]))
+                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,Condition(c))  ->
+                        extendFilter [c] (Some ([filterExpression left]))
+                    | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_,_) as right))  ->
+                        extendFilter [c] (Some ([filterExpression right]))
+                    | AndAlsoOrElse(Condition(c1) ,Condition(c2)) ->
+                        extendFilter [c1;c2] None
+                    | Condition(cond) ->
+                        Condition.And([cond],None)
+                    | _ -> failwith ("Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax. " + exp.ToString())
+
+                match qual with
+                | Lambda([name],ex) ->
+                    // name here will either be the alias the user entered in the where clause if no joining / select many has happened before this
+                    // otherwise, it will be the compiler-generated alias eg _arg2.  this might be the first method called in which case set the
+                    // base entity alias to this name.
+                    let filter = filterExpression ex
+                    let sqlExpression =
+                        match source.SqlExpression with
+                        | BaseTable(alias,entity) when alias = "" ->
+                            // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the filter
+                            FilterClause(filter,BaseTable(name.Name,entity))
+                        | current ->
+                            // the following case can happen with multiple where clauses when only a single entity is selected
+                            if paramNames.First() = "" || source.TupleIndex.Count = 0 then FilterClause(filter,current)
+                            else FilterClause(filter,current)
+
+                    let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
+                    ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
+                | _ -> failwith "only support lambdas in a where"
+
              { new System.Linq.IQueryProvider with
                 member __.CreateQuery(e:Expression) : IQueryable = failwithf "CreateQuery, e = %A" e
                 member __.CreateQuery<'T>(e:Expression) : IQueryable<'T> =
@@ -213,76 +285,8 @@ module internal QueryImplementation =
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Distinct(source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
-                        let paramNames = HashSet<string>()
-                        let (|Condition|_|) exp =
-                            // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
-                            match exp with
-                            | SqlSpecialOpArr(ti,op,key,value) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,Some (box value))
-                            | SqlSpecialOp(ti,op,key,value) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,Some value)
-                            // if using nullable types
-                            | OptionIsSome(SqlColumnGet(ti,key,_)) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,ConditionOperator.NotNull,None)
-                            | OptionIsNone(SqlColumnGet(ti,key,_))
-                            | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,ConditionOperator.IsNull,None)
-                            | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,ConditionOperator.NotNull,None)
-                            // matches column to constant with any operator eg c.name = "john", c.age > 42
-                            | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,c)
-                            // matches to another property getter, method call or new expression
-                            | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
-                                paramNames.Add(ti) |> ignore
-                                Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
-                            | _ -> None
-
-                        let rec filterExpression (exp:Expression)  =
-                            let extendFilter conditions nextFilter =
-                                match exp with
-                                | AndAlso(_) -> And(conditions,nextFilter)
-                                | OrElse(_) -> Or(conditions,nextFilter)
-                                | _ -> failwith ("Filter problem: " + exp.ToString())
-                            match exp with
-                            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
-                                extendFilter [] (Some ([filterExpression left; filterExpression right]))
-                            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,Condition(c))  ->
-                                extendFilter [c] (Some ([filterExpression left]))
-                            | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_,_) as right))  ->
-                                extendFilter [c] (Some ([filterExpression right]))
-                            | AndAlsoOrElse(Condition(c1) ,Condition(c2)) ->
-                                extendFilter [c1;c2] None
-                            | Condition(cond) ->
-                                Condition.And([cond],None)
-                            | _ -> failwith "Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax."
-
-                        match qual with
-                        | Lambda([name],ex) ->
-                            // name here will either be the alias the user entered in the where clause if no joining / select many has happened before this
-                            // otherwise, it will be the compiler-generated alias eg _arg2.  this might be the first method called in which case set the
-                            // base entity alias to this name.
-                            let filter = filterExpression ex
-                            let sqlExpression =
-                                match source.SqlExpression with
-                                | BaseTable(alias,entity) when alias = "" ->
-                                    // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the filter
-                                    FilterClause(filter,BaseTable(name.Name,entity))
-                                | current ->
-                                    // the following case can happen with multiple where clauses when only a single entity is selected
-                                    if paramNames.First() = "" || source.TupleIndex.Count = 0 then FilterClause(filter,current)
-                                    else FilterClause(filter,current)
-
-                            let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                            ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
-                        | _ -> failwith "only support lambdas in a where"
-
+                        parseWhere meth source qual
+                        
                     | MethodCall(None, (MethodWithName "Join"),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
@@ -428,6 +432,15 @@ module internal QueryImplementation =
                         | :? Decimal -> let r:decimal = res |> unbox
                                         Convert.ToInt32(r) |> box :?> 'T
                         | _ ->  res :?> 'T
+                    | MethodCall(None, (MethodWithName "Any" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
+                        let limitedSource = 
+                            {new IWithSqlService with 
+                                member t.DataContext = source.DataContext
+                                member t.SqlExpression = Take(1, source.SqlExpression) 
+                                member t.Provider = source.Provider
+                                member t.TupleIndex = source.TupleIndex }
+                        let res = parseWhere meth limitedSource qual
+                        res |> Seq.length > 0 |> box :?> 'T
                     | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
                              OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) 
                              ]) ->
