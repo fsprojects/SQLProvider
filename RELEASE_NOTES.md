@@ -1,3 +1,7 @@
+### 1.0.12 - 01.06.2016
+* Odbc fixed (on some level).
+* SQLite fix for reserved keywords table names.
+
 ### 1.0.11 - 31.05.2016
 * MsSql IN with empty collection
 * Added Linq Any support (contains)
