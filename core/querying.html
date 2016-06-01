@@ -54,13 +54,98 @@
 </table>
 <p>SQLProvider leverages F#'s <code>query {}</code> expression syntax to perform queries
 against the database.  Though many are supported, not all LINQ expressions are.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="i">example</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="i">query</span> {
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs18', 23)" onmouseover="showTip(event, 'fs18', 23)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 24)" onmouseover="showTip(event, 'fs14', 24)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="i">Orders</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs21', 27)" onmouseover="showTip(event, 'fs21', 27)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs18', 28)" onmouseover="showTip(event, 'fs18', 28)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+        <span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="k">sortBy</span> (<span onmouseout="hideTip(event, 'fs18', 31)" onmouseover="showTip(event, 'fs18', 31)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="i">ShipPostalCode</span>)
+        <span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="k">skip</span> <span class="n">3</span>
+        <span onmouseout="hideTip(event, 'fs26', 34)" onmouseover="showTip(event, 'fs26', 34)" class="k">take</span> <span class="n">4</span>
+        <span onmouseout="hideTip(event, 'fs27', 35)" onmouseover="showTip(event, 'fs27', 35)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs18', 36)" onmouseover="showTip(event, 'fs18', 36)" class="i">order</span>)
+    }
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 37)" onmouseover="showTip(event, 'fs28', 37)" class="i">test</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 38)" onmouseover="showTip(event, 'fs16', 38)" class="i">example</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs29', 39)" onmouseover="showTip(event, 'fs29', 39)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs30', 40)" onmouseover="showTip(event, 'fs30', 40)" class="f">toArray</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs31', 41)" onmouseover="showTip(event, 'fs31', 41)" class="t">Array</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs32', 42)" onmouseover="showTip(event, 'fs32', 42)" class="f">map</span>(<span class="k">fun</span> <span onmouseout="hideTip(event, 'fs33', 43)" onmouseover="showTip(event, 'fs33', 43)" class="i">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs33', 44)" onmouseover="showTip(event, 'fs33', 44)" class="i">i</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs34', 45)" onmouseover="showTip(event, 'fs34', 45)" class="i">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 46)" onmouseover="showTip(event, 'fs35', 46)" class="t">Map</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs36', 47)" onmouseover="showTip(event, 'fs36', 47)" class="f">ofSeq</span>)
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs37', 48)" onmouseover="showTip(event, 'fs37', 48)" class="i">item</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs17', 49)" onmouseover="showTip(event, 'fs17', 49)" class="i">query</span> {
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs18', 50)" onmouseover="showTip(event, 'fs18', 50)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 51)" onmouseover="showTip(event, 'fs14', 51)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 52)" onmouseover="showTip(event, 'fs19', 52)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 53)" onmouseover="showTip(event, 'fs20', 53)" class="i">Orders</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs21', 54)" onmouseover="showTip(event, 'fs21', 54)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs18', 55)" onmouseover="showTip(event, 'fs18', 55)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 56)" onmouseover="showTip(event, 'fs22', 56)" class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+        <span onmouseout="hideTip(event, 'fs38', 57)" onmouseover="showTip(event, 'fs38', 57)" class="k">head</span>
+    }
+</code></pre></td>
+</tr>
+</table>
+<p>Or async versions:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs39', 58)" onmouseover="showTip(event, 'fs39', 58)" class="i">exampleAsync</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs40', 59)" onmouseover="showTip(event, 'fs40', 59)" class="i">async</span> {
+        <span class="k">let!</span> <span onmouseout="hideTip(event, 'fs41', 60)" onmouseover="showTip(event, 'fs41', 60)" class="i">res</span> <span class="o">=</span>
+            <span onmouseout="hideTip(event, 'fs17', 61)" onmouseover="showTip(event, 'fs17', 61)" class="i">query</span> {
+                <span class="k">for</span> <span onmouseout="hideTip(event, 'fs18', 62)" onmouseover="showTip(event, 'fs18', 62)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 63)" onmouseover="showTip(event, 'fs14', 63)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 64)" onmouseover="showTip(event, 'fs19', 64)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 65)" onmouseover="showTip(event, 'fs20', 65)" class="i">Orders</span> <span class="k">do</span>
+                <span onmouseout="hideTip(event, 'fs21', 66)" onmouseover="showTip(event, 'fs21', 66)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs18', 67)" onmouseover="showTip(event, 'fs18', 67)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 68)" onmouseover="showTip(event, 'fs22', 68)" class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+                <span onmouseout="hideTip(event, 'fs27', 69)" onmouseover="showTip(event, 'fs27', 69)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs18', 70)" onmouseover="showTip(event, 'fs18', 70)" class="i">order</span>)
+            } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs29', 71)" onmouseover="showTip(event, 'fs29', 71)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs42', 72)" onmouseover="showTip(event, 'fs42', 72)" class="f">executeQueryAsync</span>
+        <span class="k">return</span> <span class="i">res</span>
+    } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs43', 73)" onmouseover="showTip(event, 'fs43', 73)" class="t">Async</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs44', 74)" onmouseover="showTip(event, 'fs44', 74)" class="f">StartAsTask</span>
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs45', 75)" onmouseover="showTip(event, 'fs45', 75)" class="i">itemAsync</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs40', 76)" onmouseover="showTip(event, 'fs40', 76)" class="i">async</span> {
+        <span class="k">let!</span> <span onmouseout="hideTip(event, 'fs46', 77)" onmouseover="showTip(event, 'fs46', 77)" class="i">item</span> <span class="o">=</span>
+            <span onmouseout="hideTip(event, 'fs17', 78)" onmouseover="showTip(event, 'fs17', 78)" class="i">query</span> {
+                <span class="k">for</span> <span onmouseout="hideTip(event, 'fs18', 79)" onmouseover="showTip(event, 'fs18', 79)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 80)" onmouseover="showTip(event, 'fs14', 80)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 81)" onmouseover="showTip(event, 'fs19', 81)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 82)" onmouseover="showTip(event, 'fs20', 82)" class="i">Orders</span> <span class="k">do</span>
+                <span onmouseout="hideTip(event, 'fs21', 83)" onmouseover="showTip(event, 'fs21', 83)" class="k">where</span> (<span onmouseout="hideTip(event, 'fs18', 84)" onmouseover="showTip(event, 'fs18', 84)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 85)" onmouseover="showTip(event, 'fs22', 85)" class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+            } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs29', 86)" onmouseover="showTip(event, 'fs29', 86)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs47', 87)" onmouseover="showTip(event, 'fs47', 87)" class="f">headAsync</span>
+        <span class="k">return</span> <span onmouseout="hideTip(event, 'fs37', 88)" onmouseover="showTip(event, 'fs37', 88)" class="i">item</span>
+    } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs43', 89)" onmouseover="showTip(event, 'fs43', 89)" class="t">Async</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs44', 90)" onmouseover="showTip(event, 'fs44', 90)" class="f">StartAsTask</span>
+</code></pre></td>
+</tr>
+</table>
 <h2><a name="Expressions" class="anchor" href="#Expressions">Expressions</a></h2>
 <p>These operators perform no specific function in the code itself, rather they
 are placeholders replaced by their database-specific server-side operations.
 Their utility is in forcing the compiler to check against the correct types.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="i">bergs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 22)" onmouseover="showTip(event, 'fs14', 22)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="i">Customers</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="i">Individuals</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="i">BERGS</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 91)" onmouseover="showTip(event, 'fs48', 91)" class="i">bergs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 92)" onmouseover="showTip(event, 'fs14', 92)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 93)" onmouseover="showTip(event, 'fs19', 93)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 94)" onmouseover="showTip(event, 'fs49', 94)" class="i">Customers</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs50', 95)" onmouseover="showTip(event, 'fs50', 95)" class="i">Individuals</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 96)" onmouseover="showTip(event, 'fs51', 96)" class="i">BERGS</span>
 </code></pre></td>
 </tr>
 </table>
@@ -88,11 +173,42 @@ Their utility is in forcing the compiler to check against the correct types.</p>
 <div class="tip" id="fs13">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
 <div class="tip" id="fs14">val ctx : SqlDataProvider&lt;...&gt;.dataContext<br /><br />Full name: Querying.ctx</div>
 <div class="tip" id="fs15">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em><br /><br />&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em><br /><br />&lt;summary&gt;Returns an instance of the SQL Provider&lt;/summary&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;connectionString&#39;&gt;The database connection string&lt;/param&gt;</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em><br /><br />&lt;summary&gt;Returns an instance of the SQL Provider&lt;/summary&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;connectionString&#39;&gt;The database connection string&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types&lt;/param&gt;</em></div>
-<div class="tip" id="fs16">val bergs : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Querying.bergs</div>
-<div class="tip" id="fs17">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema</div>
-<div class="tip" id="fs18">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
-<div class="tip" id="fs19">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals</div>
-<div class="tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="tip" id="fs16">val example : System.Linq.IQueryable&lt;SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity&gt;<br /><br />Full name: Querying.example</div>
+<div class="tip" id="fs17">val query : Linq.QueryBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.query</div>
+<div class="tip" id="fs18">val order : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
+<div class="tip" id="fs19">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema</div>
+<div class="tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders<br /><em><br /><br />&lt;summary&gt;The table Orders belonging to schema main&lt;/summary&gt;</em></div>
+<div class="tip" id="fs21">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where </div>
+<div class="tip" id="fs22">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.Freight: decimal</div>
+<div class="tip" id="fs23">custom operation: sortBy (&#39;Key)<br /><br />Calls Linq.QueryBuilder.SortBy </div>
+<div class="tip" id="fs24">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipPostalCode: string</div>
+<div class="tip" id="fs25">custom operation: skip (int)<br /><br />Calls Linq.QueryBuilder.Skip </div>
+<div class="tip" id="fs26">custom operation: take (int)<br /><br />Calls Linq.QueryBuilder.Take </div>
+<div class="tip" id="fs27">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select </div>
+<div class="tip" id="fs28">val test : Map&lt;string,obj&gt; []<br /><br />Full name: Querying.test</div>
+<div class="tip" id="fs29">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs30">val toArray : source:seq&lt;&#39;T&gt; -&gt; &#39;T []<br /><br />Full name: Microsoft.FSharp.Collections.Seq.toArray</div>
+<div class="tip" id="fs31">module Array<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs32">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; array:&#39;T [] -&gt; &#39;U []<br /><br />Full name: Microsoft.FSharp.Collections.Array.map</div>
+<div class="tip" id="fs33">val i : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
+<div class="tip" id="fs34">property Common.SqlEntity.ColumnValues: seq&lt;string * obj&gt;</div>
+<div class="tip" id="fs35">Multiple items<br />module Map<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&lt;&#39;Key,&#39;Value (requires comparison)&gt; =<br />&#160;&#160;interface IEnumerable<br />&#160;&#160;interface IComparable<br />&#160;&#160;interface IEnumerable&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface ICollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface IDictionary&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member Add : key:&#39;Key * value:&#39;Value -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member ContainsKey : key:&#39;Key -&gt; bool<br />&#160;&#160;override Equals : obj -&gt; bool<br />&#160;&#160;member Remove : key:&#39;Key -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;...<br /><br />Full name: Microsoft.FSharp.Collections.Map&lt;_,_&gt;<br /><br />--------------------<br />new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;</div>
+<div class="tip" id="fs36">val ofSeq : elements:seq&lt;&#39;Key * &#39;T&gt; -&gt; Map&lt;&#39;Key,&#39;T&gt; (requires comparison)<br /><br />Full name: Microsoft.FSharp.Collections.Map.ofSeq</div>
+<div class="tip" id="fs37">val item : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity<br /><br />Full name: Querying.item</div>
+<div class="tip" id="fs38">custom operation: head<br /><br />Calls Linq.QueryBuilder.Head </div>
+<div class="tip" id="fs39">val exampleAsync : System.Threading.Tasks.Task&lt;seq&lt;SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity&gt;&gt;<br /><br />Full name: Querying.exampleAsync</div>
+<div class="tip" id="fs40">val async : AsyncBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.async</div>
+<div class="tip" id="fs41">val res : seq&lt;SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity&gt;</div>
+<div class="tip" id="fs42">val executeQueryAsync : (System.Linq.IQueryable&lt;&#39;a&gt; -&gt; Async&lt;seq&lt;&#39;a&gt;&gt;)<br /><br />Full name: FSharp.Data.Sql.Seq.executeQueryAsync</div>
+<div class="tip" id="fs43">Multiple items<br />type Async<br />static member AsBeginEnd : computation:(&#39;Arg -&gt; Async&lt;&#39;T&gt;) -&gt; (&#39;Arg * AsyncCallback * obj -&gt; IAsyncResult) * (IAsyncResult -&gt; &#39;T) * (IAsyncResult -&gt; unit)<br />static member AwaitEvent : event:IEvent&lt;&#39;Del,&#39;T&gt; * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; (requires delegate and &#39;Del :&gt; Delegate)<br />static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -&gt; Async&lt;bool&gt;<br />static member AwaitTask : task:Task -&gt; Async&lt;unit&gt;<br />static member AwaitTask : task:Task&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt;<br />static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -&gt; Async&lt;bool&gt;<br />static member CancelDefaultToken : unit -&gt; unit<br />static member Catch : computation:Async&lt;&#39;T&gt; -&gt; Async&lt;Choice&lt;&#39;T,exn&gt;&gt;<br />static member FromBeginEnd : beginAction:(AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg:&#39;Arg1 * beginAction:(&#39;Arg1 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg1:&#39;Arg1 * arg2:&#39;Arg2 * beginAction:(&#39;Arg1 * &#39;Arg2 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromBeginEnd : arg1:&#39;Arg1 * arg2:&#39;Arg2 * arg3:&#39;Arg3 * beginAction:(&#39;Arg1 * &#39;Arg2 * &#39;Arg3 * AsyncCallback * obj -&gt; IAsyncResult) * endAction:(IAsyncResult -&gt; &#39;T) * ?cancelAction:(unit -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member FromContinuations : callback:((&#39;T -&gt; unit) * (exn -&gt; unit) * (OperationCanceledException -&gt; unit) -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member Ignore : computation:Async&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;<br />static member OnCancel : interruption:(unit -&gt; unit) -&gt; Async&lt;IDisposable&gt;<br />static member Parallel : computations:seq&lt;Async&lt;&#39;T&gt;&gt; -&gt; Async&lt;&#39;T []&gt;<br />static member RunSynchronously : computation:Async&lt;&#39;T&gt; * ?timeout:int * ?cancellationToken:CancellationToken -&gt; &#39;T<br />static member Sleep : millisecondsDueTime:int -&gt; Async&lt;unit&gt;<br />static member Start : computation:Async&lt;unit&gt; * ?cancellationToken:CancellationToken -&gt; unit<br />static member StartAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:TaskCreationOptions * ?cancellationToken:CancellationToken -&gt; Task&lt;&#39;T&gt;<br />static member StartChild : computation:Async&lt;&#39;T&gt; * ?millisecondsTimeout:int -&gt; Async&lt;Async&lt;&#39;T&gt;&gt;<br />static member StartChildAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:TaskCreationOptions -&gt; Async&lt;Task&lt;&#39;T&gt;&gt;<br />static member StartImmediate : computation:Async&lt;unit&gt; * ?cancellationToken:CancellationToken -&gt; unit<br />static member StartWithContinuations : computation:Async&lt;&#39;T&gt; * continuation:(&#39;T -&gt; unit) * exceptionContinuation:(exn -&gt; unit) * cancellationContinuation:(OperationCanceledException -&gt; unit) * ?cancellationToken:CancellationToken -&gt; unit<br />static member SwitchToContext : syncContext:SynchronizationContext -&gt; Async&lt;unit&gt;<br />static member SwitchToNewThread : unit -&gt; Async&lt;unit&gt;<br />static member SwitchToThreadPool : unit -&gt; Async&lt;unit&gt;<br />static member TryCancelled : computation:Async&lt;&#39;T&gt; * compensation:(OperationCanceledException -&gt; unit) -&gt; Async&lt;&#39;T&gt;<br />static member CancellationToken : Async&lt;CancellationToken&gt;<br />static member DefaultCancellationToken : CancellationToken<br /><br />Full name: Microsoft.FSharp.Control.Async<br /><br />--------------------<br />type Async&lt;&#39;T&gt;<br /><br />Full name: Microsoft.FSharp.Control.Async&lt;_&gt;</div>
+<div class="tip" id="fs44">static member Async.StartAsTask : computation:Async&lt;&#39;T&gt; * ?taskCreationOptions:System.Threading.Tasks.TaskCreationOptions * ?cancellationToken:System.Threading.CancellationToken -&gt; System.Threading.Tasks.Task&lt;&#39;T&gt;</div>
+<div class="tip" id="fs45">val itemAsync : System.Threading.Tasks.Task&lt;SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity&gt;<br /><br />Full name: Querying.itemAsync</div>
+<div class="tip" id="fs46">val item : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
+<div class="tip" id="fs47">val headAsync : (System.Linq.IQueryable&lt;&#39;a&gt; -&gt; Async&lt;&#39;a&gt;)<br /><br />Full name: FSharp.Data.Sql.Seq.headAsync</div>
+<div class="tip" id="fs48">val bergs : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Querying.bergs</div>
+<div class="tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals</div>
+<div class="tip" id="fs51">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 
         </div>
         <div class="span3">

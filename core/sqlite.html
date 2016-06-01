@@ -62,6 +62,18 @@
 </code></pre></td>
 </tr>
 </table>
+<h1><a name="CRUD" class="anchor" href="#CRUD">CRUD</a></h1>
+<p>When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="i">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 34)" onmouseover="showTip(event, 'fs15', 34)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 35)" onmouseover="showTip(event, 'fs18', 35)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 36)" onmouseover="showTip(event, 'fs19', 36)" class="i">Customers</span><span class="o">.</span><span class="f">``Create(CompanyName)``</span>(<span class="s">&quot;MyCompany&quot;</span>)
+<span onmouseout="hideTip(event, 'fs15', 37)" onmouseover="showTip(event, 'fs15', 37)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs26', 38)" onmouseover="showTip(event, 'fs26', 38)" class="f">SubmitUpdates</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 39)" onmouseover="showTip(event, 'fs27', 39)" class="i">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 40)" onmouseover="showTip(event, 'fs25', 40)" class="i">myCustomer</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs28', 41)" onmouseover="showTip(event, 'fs28', 41)" class="f">GetColumn</span>(<span class="s">&quot;rowid&quot;</span>) <span class="o">:</span> <span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="t">int</span>
+</code></pre></td>
+</tr>
+</table>
 
 <div class="tip" id="fs1">Multiple items<br />type LiteralAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; LiteralAttribute<br /><br />Full name: Microsoft.FSharp.Core.LiteralAttribute<br /><br />--------------------<br />new : unit -&gt; LiteralAttribute</div>
 <div class="tip" id="fs2">val connectionString : string<br /><br />Full name: Sqlite.connectionString</div>
@@ -87,6 +99,11 @@
 <div class="tip" id="fs22">val c : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string</div>
 <div class="tip" id="fs24">val toList : source:seq&lt;&#39;T&gt; -&gt; &#39;T list<br /><br />Full name: Microsoft.FSharp.Collections.Seq.toList</div>
+<div class="tip" id="fs25">val myCustomer : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Sqlite.myCustomer</div>
+<div class="tip" id="fs26">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdates() : Unit</div>
+<div class="tip" id="fs27">val rowid : int<br /><br />Full name: Sqlite.rowid</div>
+<div class="tip" id="fs28">member Common.SqlEntity.GetColumn : key:string -&gt; &#39;T</div>
+<div class="tip" id="fs29">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.int<br /><br />--------------------<br />type int = int32<br /><br />Full name: Microsoft.FSharp.Core.int<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int<br /><br />Full name: Microsoft.FSharp.Core.int&lt;_&gt;</div>
 
         </div>
         <div class="span3">
