@@ -435,7 +435,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as %s " baseTable.FullName baseAlias)
+            ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -447,7 +447,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 filterBuilder f
 
             if sqlQuery.Ordering.Length > 0 then
-                ~~"ORDER BY "
+                ~~" ORDER BY "
                 orderByBuilder()
 
             match sqlQuery.Take, sqlQuery.Skip with

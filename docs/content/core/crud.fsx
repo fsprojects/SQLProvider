@@ -11,7 +11,7 @@ let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests
 
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../"
 
 (**
 # CRUD sample
@@ -56,6 +56,16 @@ Submit updates to the database
 ctx.SubmitUpdates()
 
 (**
+After update your item (row) is having Id property.
+
+You can also create with longer ``Create(...)``(parameters) -method like thisP:
+
+*)
+
+let emp = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
+
+(**
+
 Delete the row
 *)
 row.Delete()
@@ -67,9 +77,10 @@ ctx.SubmitUpdates()
 
 (** 
 
-Transactions are created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
+Inside SubmitUpdate transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
 
-Support also async operations: ctx.SubmitUpdatesAsync() |> Async.StartAsTask
-
+SQLProvider also support also async database operations: 
 
 *)
+
+ctx.SubmitUpdatesAsync() |> Async.StartAsTask

@@ -29,7 +29,49 @@ SQLProvider leverages F#'s `query {}` expression syntax to perform queries
 against the database.  Though many are supported, not all LINQ expressions are.
 *)
 
+let example =
+    query {
+        for order in ctx.Main.Orders do
+        where (order.Freight > 0m)
+        sortBy (order.ShipPostalCode)
+        skip 3
+        take 4
+        select (order)
+    }
 
+let test = example |> Seq.toArray |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+
+let item =
+    query {
+        for order in ctx.Main.Orders do
+        where (order.Freight > 0m)
+        head
+    }
+
+(**
+Or async versions:
+*)
+
+let exampleAsync =
+    async {
+        let! res =
+            query {
+                for order in ctx.Main.Orders do
+                where (order.Freight > 0m)
+                select (order)
+            } |> Seq.executeQueryAsync
+        return res
+    } |> Async.StartAsTask
+
+let itemAsync =
+    async {
+        let! item =
+            query {
+                for order in ctx.Main.Orders do
+                where (order.Freight > 0m)
+            } |> Seq.headAsync
+        return item
+    } |> Async.StartAsTask
 
 (**
 ## Expressions

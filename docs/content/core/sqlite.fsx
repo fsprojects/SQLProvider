@@ -28,3 +28,14 @@ let customers =
     |> Seq.map(fun c -> c.ContactName)
     |> Seq.toList
 
+(**
+
+# CRUD
+
+When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:
+
+*)
+
+let myCustomer = ctx.Main.Customers.``Create(CompanyName)``("MyCompany")
+ctx.SubmitUpdates()
+let rowid = myCustomer.GetColumn("rowid") : int
