@@ -77,7 +77,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
                                     ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...>"
                                 | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema."
-                                | _ -> " for schema or database " + owner + "."
+                                | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
                             let possibleError = "Tables not found" + hint
                             let t = ProvidedProperty("PossibleError", typeof<String>, IsStatic=true, GetterCode = fun _ -> <@@ possibleError @@>)
                             t.AddXmlDoc possibleError

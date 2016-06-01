@@ -18,7 +18,15 @@ type internal OdbcProvider() =
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
+    let mutable cOpen = '`' //char separator in query for table aliases `alias` or [alias]
+    let mutable cClose = '`' 
+
     let createTypeMappings (con:OdbcConnection) =
+
+        if con.Driver.Contains("sql") then
+            cOpen <- '['
+            cClose <- ']'
+
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
@@ -31,11 +39,20 @@ type internal OdbcProvider() =
         let mappings =
             [
                 for r in dt.Rows do
-                    let clrType = getClrType (string r.["DataType"])
-                    let oleDbType = string r.["TypeName"]
-                    let providerType = unbox<int> r.["ProviderDbType"]
-                    let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                    
+                    if not(String.IsNullOrEmpty(r.["DataType"].ToString()) || String.IsNullOrEmpty(r.["TypeName"].ToString()) || String.IsNullOrEmpty(r.["ProviderDbType"].ToString())) then
+                        let clrType = getClrType (string r.["DataType"])
+                        let oleDbType = string r.["TypeName"]
+                        let providerType = unbox<int> r.["ProviderDbType"]
+                        let dbType = getDbType providerType
+                        yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                    
+                    if r.Table <> null && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
+                        let clrType = getClrType (r.Table.Columns.["DataType"].DataType.ToString())
+                        let oleDbType = r.Table.Columns.["TypeName"].DataType.ToString()
+                        let providerType = unbox<int> r.Table.Columns.["ProviderDbType"].Ordinal
+                        let dbType = getDbType providerType
+                        yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
             ]
 
         let clrMappings =
@@ -165,7 +182,12 @@ type internal OdbcProvider() =
             if con.State <> ConnectionState.Open then con.Open()
             let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
             [ for dataTable in dataTables do
-                let table ={ Schema = string dataTable.[1] ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
+                let schema = 
+                    if String.IsNullOrEmpty(dataTable.[1].ToString()) then
+                        "dbo"
+                    else string dataTable.[1]
+
+                let table ={ Schema = schema ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
                 if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
                 yield table ]
 
@@ -203,10 +225,11 @@ type internal OdbcProvider() =
         member __.GetSprocs(_) = []
 
         member __.GetIndividualsQueryText(table,_) =
-            sprintf "SELECT * FROM `%s`" table.Name
+            sprintf "SELECT * FROM %c%s%c" cOpen table.Name cClose
 
         member __.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = ?" table.Name table.Name column
+            sprintf "SELECT * FROM %c%s%c WHERE %c%s%c.%c%s%c = ?" 
+                     cOpen table.Name cClose cOpen table.Name cClose cOpen column cClose
 
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let sb = System.Text.StringBuilder()
@@ -226,24 +249,24 @@ type internal OdbcProvider() =
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "`%s`" col
-                                else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col
+                                if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
+                                else yield sprintf "%c%s%c.%c%s%c as %c%s_%s%c" cOpen k cClose cOpen col cClose cOpen k col cClose
                         else
                             for col in v do
-                                if singleEntity then yield sprintf "`%s`" col
-                                else yield sprintf "`%s`.`%s` as `%s_%s`" k col k col |]) // F# makes this so easy :)
+                                if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
+                                else yield sprintf "%c%s%c.%c%s%c as %c%s_%s%c" cOpen k cClose cOpen col cClose cOpen k col cClose |]) // F# makes this so easy :)
 
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
                 let extracolumns =
                     let fieldNotation(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "`%s`" col
-                        | false -> sprintf "`%s`.`%s`" al col
+                        | true -> sprintf "%c%s%c" cOpen col cClose
+                        | false -> sprintf "%c%s%c.%c%s%c" cOpen al cClose cOpen col cClose
                     let fieldNotationAlias(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "`%s`" col
-                        | false -> sprintf "`%s_%s`" al col
+                        | true -> sprintf "%c%s%c" cOpen col cClose
+                        | false -> sprintf "%c%s_%s%c" cOpen al col cClose
                     FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                 // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
                 match extracolumns with
@@ -276,19 +299,19 @@ type internal OdbcProvider() =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%c%s%c.%c%s%c IS NULL") cOpen alias cClose cOpen col cClose
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%c%s%c.%c%s%c IS NOT NULL") cOpen alias cClose cOpen col cClose
                                     | FSharp.Data.Sql.In ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` IN (%s)") alias col text
+                                        (sprintf "%c%s%c.%c%s%c IN (%s)") cOpen alias cClose cOpen col cClose text
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "`%s`.`%s` NOT IN (%s)") alias col text
+                                        (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose text
                                     | _ ->
                                         parameters.Add paras.[0]
-                                        (sprintf "`%s`.%s %s %s") alias col
+                                        (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
                         // there's probably a nicer way to do this
@@ -323,18 +346,18 @@ type internal OdbcProvider() =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s `%s` as `%s` on `%s`.`%s` = `%s`.`%s` "
-                            joinType destTable.Name destAlias
+                    ~~  (sprintf "%s %c%s%c as %c%s%c on %c%s%c.%c%s%c = %c%s%c.%c%s%c "
+                            joinType cOpen destTable.Name cClose cOpen destAlias cClose cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            cClose cOpen data.ForeignKey cClose cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            cClose cOpen data.PrimaryKey cClose))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "`%s`.`%s` %s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%c%s%c.%c%s%c %s" cOpen alias cClose cOpen column cClose (if not desc then "DESC" else "")))
 
             // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
             // or else it will fail
@@ -346,7 +369,7 @@ type internal OdbcProvider() =
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM `%s` as `%s` " baseTable.Name (stripSpecialCharacters baseAlias))
+            ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen baseTable.Name cClose cOpen (stripSpecialCharacters baseAlias) cClose)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
