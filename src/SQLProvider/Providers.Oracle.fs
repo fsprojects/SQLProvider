@@ -258,7 +258,11 @@ module internal Oracle =
 
     let getSprocName (row:DataRow) =
         let owner = Sql.dbUnbox row.["OWNER"]
-        let (procName, packageName) = (Sql.dbUnbox row.["OBJECT_NAME"], Sql.dbUnbox row.["PACKAGE_NAME"])
+        let procName = Sql.dbUnbox row.["OBJECT_NAME"]
+        let packageName = 
+            match row.Table.Columns.Contains("PACKAGE_NAME") with
+            | true -> Sql.dbUnbox row.["PACKAGE_NAME"]
+            | false -> ""
         { ProcName = procName; Owner = owner; PackageName = packageName }
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
