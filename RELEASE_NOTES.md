@@ -1,3 +1,7 @@
+### 1.0.13 - 11.06.2016
+* Byte array to Blob fixes for SQLite and MySQL
+* Some performance fixes.
+
 ### 1.0.12 - 01.06.2016
 * Odbc fixed (on some level).
 * SQLite fix for reserved keywords table names.
