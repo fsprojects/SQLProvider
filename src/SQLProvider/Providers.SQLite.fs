@@ -13,7 +13,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
     let pkLookup = Dictionary<string,string>()
-    let tableLookup = Dictionary<string,Table>()
+    let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
     let isMono = Type.GetType ("Mono.Runtime") <> null
@@ -216,8 +216,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     let ty = string row.["TABLE_TYPE"]
                     if ty <> "SYSTEM_TABLE" then
                         let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty }
-                        if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                        yield table ]
+                        yield tableLookup.GetOrAdd(table.FullName,table)
+                        ]
             con.Close()
             ret
 

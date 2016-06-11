@@ -11,7 +11,7 @@ open FSharp.Data.Sql.Common
 
 type internal OdbcProvider() =
     let pkLookup = Dictionary<string,string>()
-    let tableLookup = Dictionary<string,Table>()
+    let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
 
     let mutable typeMappings = []
@@ -188,8 +188,8 @@ type internal OdbcProvider() =
                     else string dataTable.[1]
 
                 let table ={ Schema = schema ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
-                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                yield table ]
+                yield tableLookup.GetOrAdd(table.FullName,table)
+                ]
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with

@@ -6,6 +6,7 @@ open System.Collections.Generic
 module internal Utilities = 
     
     open System.IO
+    open System.Collections.Concurrent
 
     type TempFile(path:string) =
          member val Path = path with get
@@ -29,16 +30,11 @@ module internal Utilities =
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
     let uniqueName()= 
-        let dict = new Dictionary<string, int>()
+        let dict = new ConcurrentDictionary<string, int>()
         (fun name -> 
-            match dict.TryGetValue(name) with
-            | true, count -> 
-                  dict.[name] <- count + 1
-                  name + "_" + (string count)
-            | false, _ -> 
-                  dict.[name] <- 0
-                  name
-               
+            match dict.AddOrUpdate(name,(fun n -> 0),(fun n v -> v + 1)) with
+            | 0 -> name
+            | count -> name + "_" + (string count)
         )
 
     /// DB-connections are not usually supporting parallel SQL-query execution, so even when
@@ -125,24 +121,16 @@ module ConfigHelpers =
                     | a -> a.ConnectionString
                 | None -> ""
 
-    let cachedConStrings = Dictionary<string, string>()
+    let cachedConStrings = System.Collections.Concurrent.ConcurrentDictionary<string, string>()
 
     let tryGetConnectionString isRuntime root (connectionStringName:string) (connectionString:string) =
         if String.IsNullOrWhiteSpace(connectionString)
         then
             match isRuntime with
             | false -> getConStringFromConfig isRuntime root connectionStringName
-            | _ -> match cachedConStrings.TryGetValue connectionStringName with
-                   | (true, cached) -> cached
-                   | _ ->
-                       lock cachedConStrings (fun () ->
-                           match cachedConStrings.TryGetValue connectionStringName with
-                           | (true, cached) -> cached
-                           | _ ->
-                                let fromFile = getConStringFromConfig isRuntime root connectionStringName
-                                cachedConStrings.Add(connectionStringName, fromFile)
-                                fromFile
-                        )
+            | _ -> cachedConStrings.GetOrAdd(connectionStringName, fun name ->
+                    let fromFile = getConStringFromConfig isRuntime root connectionStringName
+                    fromFile)
         else connectionString
 
 module internal SchemaProjections = 

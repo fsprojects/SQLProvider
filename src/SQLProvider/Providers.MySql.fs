@@ -49,6 +49,14 @@ module MySql =
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
+    let createParam name i v = 
+        match v with
+        | null -> QueryParameter.Create(name, i) 
+        | value -> 
+            match findClrType (value.GetType().FullName) with
+            | None -> QueryParameter.Create(name, i) 
+            | Some typemap -> QueryParameter.Create(name, i, typemap)
+
     let createTypeMappings con =
         let dt = getSchema "DataTypes" [||] con
 
@@ -235,7 +243,7 @@ module MySql =
 
 type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = Dictionary<string,string>()
-    let tableLookup = Dictionary<string,Table>()
+    let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
@@ -249,7 +257,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i),v)
+                let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam name i v),v)
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -286,14 +294,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 let name = sprintf "@param%i" i
                 let p =
                     match entity.GetColumnOption<obj> col with
-                    | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i),v)
+                    | Some v -> (this :> ISqlProvider).CreateCommandParameter((MySql.createParam name i v),v)
                     | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i), DBNull.Value)
                 (col,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
             |> List.toArray
 
-        let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk", 0),pkValue)
+        let pkParam = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam "@pk" 0 pkValue),pkValue)
 
         ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
             (entity.Table.FullName.Replace("[","`").Replace("]","`"))
@@ -316,7 +324,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id", 0),pkValue)
+        let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam "@id" 0 pkValue),pkValue)
         cmd.Parameters.Add(p) |> ignore
         ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
         cmd.CommandText <- sb.ToString()
@@ -352,8 +360,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 use reader = Sql.executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
                 [ while reader.Read() do
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
-                    if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                    yield table ])
+                    yield tableLookup.GetOrAdd(table.FullName,table) ])
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
@@ -501,7 +508,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
+                (this:>ISqlProvider).CreateCommandParameter((MySql.createParam paramName !param value), value)
 
             let rec filterBuilder = function
                 | [] -> ()

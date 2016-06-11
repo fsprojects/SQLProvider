@@ -13,7 +13,7 @@ open FSharp.Data.Sql.Common
 
 type internal MSAccessProvider() =
     let pkLookup = new Dictionary<string,string>()
-    let tableLookup = new Dictionary<string,Table>()
+    let tableLookup = new ConcurrentDictionary<string,Table>()
     let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
     let columnLookup = new ConcurrentDictionary<string,ColumnLookup>()
 
@@ -171,8 +171,8 @@ type internal MSAccessProvider() =
                 con.GetSchema("Tables").AsEnumerable()
                 |> Seq.filter (fun row -> ["TABLE";"VIEW";"LINK"] |> List.exists (fun typ -> typ = row.["TABLE_TYPE"].ToString())) // = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW" || row.["TABLE_TYPE"].ToString() = "LINK")  //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.
                 |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
-                                       if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                                       table)
+                                       tableLookup.GetOrAdd(table.FullName,table)
+                                       )
                 |> List.ofSeq
             tables
 

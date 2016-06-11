@@ -325,7 +325,7 @@ module PostgreSQL =
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
     let pkLookup = Dictionary<string,string>()
-    let tableLookup = Dictionary<string,Table>()
+    let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
@@ -456,9 +456,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
                               Name = Sql.dbUnbox<string> reader.["table_name"]
                               Type = (Sql.dbUnbox<string> reader.["table_type"]).ToLower() }
-                if tableLookup.ContainsKey table.FullName = false then
-                    tableLookup.Add(table.FullName, table)
-                yield table ]
+                
+                yield tableLookup.GetOrAdd(table.FullName, table)
+                ]
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with

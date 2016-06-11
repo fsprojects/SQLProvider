@@ -269,7 +269,7 @@ module MSSqlServer =
 
 type internal MSSqlServerProvider() =
     let pkLookup = Dictionary<string,string>()
-    let tableLookup = Dictionary<string,Table>()
+    let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
@@ -385,8 +385,8 @@ type internal MSSqlServerProvider() =
             use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
-                if tableLookup.ContainsKey table.FullName = false then tableLookup.Add(table.FullName,table)
-                yield table ])
+                yield tableLookup.GetOrAdd(table.FullName,table)
+                ])
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
