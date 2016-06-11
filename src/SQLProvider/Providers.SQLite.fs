@@ -82,6 +82,17 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
+    let createParam name ordinal value =
+        let paramType = 
+            match value with
+            | null -> None
+            | value -> findClrType (value.GetType().FullName)
+        let queryParameter = 
+            match paramType with
+            | None -> QueryParameter.Create( name, ordinal )
+            | Some typeMapping -> QueryParameter.Create( name, ordinal, typeMapping)
+        (this:>ISqlProvider).CreateCommandParameter(queryParameter, value)
+
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
@@ -92,7 +103,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
-                let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                let p = createParam name i v
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
@@ -129,15 +140,15 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 let name = sprintf "@param%i" i
                 let p =
                     match entity.GetColumnOption<obj> col with
-                    | Some v -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),v)
+                    | Some v -> createParam name i v
                     | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                 (col,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
             |> List.toArray
 
-        let pkParam = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@pk",0),pkValue)
-
+        let pkParam = createParam "@pk" 0 pkValue
+        
         ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
             entity.Table.FullName
             (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
@@ -159,7 +170,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
             | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create("@id",0),pkValue)
+        let p = createParam "@id" 0 pkValue
         cmd.Parameters.Add(p) |> ignore
         ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
         cmd.CommandText <- sb.ToString()
@@ -347,9 +358,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
-                let paramName = nextParam()
-                (this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create(paramName, !param), value)
+            
 
             let rec filterBuilder = function
                 | [] -> ()
@@ -358,13 +367,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
+                                     let createParamForValue = createParam (nextParam()) !param
                                      match data with
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
-                                         strings |> Array.map createParam
-                                     | Some(x) -> [|createParam (box x)|]
-                                     | None ->    [|createParam DBNull.Value|]
+                                         strings |> Array.map createParamForValue
+                                     | Some(x) -> [|createParamForValue (box x)|]
+                                     | None ->    [|createParamForValue DBNull.Value|]
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data

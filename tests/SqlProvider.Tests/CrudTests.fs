@@ -101,6 +101,22 @@ let ``Can create, update and delete an entity``() =
 
     Assert.AreEqual(originalCustomers.Length, reallyDeleted.Length)
 
+[<Test>]
+let ``Can persist a blob``() = 
+    let dc = sql.GetDataContext()
+    
+    let imageBytes = [| 0uy .. 100uy |]
+
+    let savedEntity = dc.Main.Pictures.``Create(Image)`` imageBytes
+    dc.SubmitUpdates()
+
+    let reloadedEntity =
+        query { for image in dc.Main.Pictures do
+                where (image.Id = savedEntity.Id)
+                head }
+
+    Assert.That( reloadedEntity.Image, Is.EqualTo(imageBytes))
+
 [<Test; Ignore("Something wrong with SQLite transactions...")>]
 let ``Can enlist in a transaction scope and rollback changes without complete``() =
 
