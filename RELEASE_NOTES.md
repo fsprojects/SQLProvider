@@ -1,3 +1,6 @@
+### 1.0.14 - 11.06.2016
+* Fix for #279
+
 ### 1.0.13 - 11.06.2016
 * Byte array to Blob fixes for SQLite and MySQL
 * Some performance fixes.
