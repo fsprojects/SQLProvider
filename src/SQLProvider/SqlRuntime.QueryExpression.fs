@@ -9,6 +9,7 @@ open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
 
 module internal QueryExpressionTransformer =
+    let myLock = new Object();
     let getSubEntityMi =
         match <@ (Unchecked.defaultof<SqlEntity>).GetSubTable("", "") @> with
         | FSharp.Quotations.Patterns.Call(_,mi,_) -> mi
@@ -240,7 +241,7 @@ module internal QueryExpressionTransformer =
                                 let table = match sqlQuery.Aliases.TryFind k with
                                             | Some v -> v
                                             | None -> snd sqlQuery.UltimateChild.Value
-                                lock provider (fun () -> provider.GetColumns (con,table) |> ignore ))
+                                lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns)
 
