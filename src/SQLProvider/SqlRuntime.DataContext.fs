@@ -8,6 +8,7 @@ open System.Linq
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Schema
+open System.Collections.Concurrent
 
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
@@ -25,15 +26,12 @@ module internal ProviderBuilder =
 
 type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
-    static let providerCache = Dictionary<string,ISqlProvider>()
-    let myLock1 = new Object();
+    static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
 
     let provider =
-        lock myLock1 (fun () ->
-            match providerCache .TryGetValue typeName with
-            | true, prov -> prov
-            | _ ->
+        providerCache.GetOrAdd(typeName,
+            fun typeName -> 
                 let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
@@ -42,7 +40,6 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 prov.CreateTypeMappings(con)
                 prov.GetTables(con,caseSensitivity) |> ignore
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-                providerCache.Add(typeName,prov)
                 prov)
 
     interface ISqlDataContext with
