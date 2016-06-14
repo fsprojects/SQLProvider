@@ -154,6 +154,18 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty query
 
+[<Test; Ignore("Not Supported")>]
+let ``simple select query let temp``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y = cust.City + "test"
+            select y
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
 [<Test >]
 let ``simple select query with operations in select``() = 
     let dc = sql.GetDataContext()
@@ -245,6 +257,41 @@ let ``simple select query with groupBy``() =
             select (c.Key, c.Count())
         } |> dict  
     Assert.AreEqual(6, query.["London"])
+
+[<Test; Ignore("Not Supported")>]
+let ``simple select query with groupValBy``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            groupValBy cust.ContactTitle cust.City into g
+            select (g.Key, g.Count())
+        } |> dict  
+    Assert.IsNotEmpty(query)
+
+[<Test; Ignore("Not Supported")>]
+let ``complex select query with groupValBy``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            groupValBy (cust.ContactTitle, Int32.Parse(cust.PostalCode)) (cust.PostalCode, cust.City) into g
+            let maxPlusOne = 1 + query {for i in g do sumBy (snd i) }
+            select (snd(g.Key), maxPlusOne)
+        } |> dict  
+    Assert.IsNotEmpty(query)
+
+[<Test;>]
+let ``simple if query``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            if cust.Country = "UK" then select cust.City
+        } |> Seq.toArray
+    CollectionAssert.IsNotEmpty query
+    CollectionAssert.Contains(query, "London")
+    CollectionAssert.DoesNotContain(query, "Helsinki")
 
 [<Test >]
 let ``simple select and sort query``() =
