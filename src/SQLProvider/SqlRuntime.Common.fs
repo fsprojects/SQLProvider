@@ -11,6 +11,7 @@ open System.Runtime.Serialization
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
+open System.Collections.Concurrent
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
@@ -53,7 +54,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let propertyChanged = Event<_,_>()
 
     let data = Dictionary<string,obj>()
-    let aliasCache = new Dictionary<string,SqlEntity>(HashIdentity.Structural)
+    let aliasCache = new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural)
 
     let replaceFirst (text:string) (oldValue:string) (newValue) =
         let position = text.IndexOf oldValue
@@ -141,9 +142,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        match aliasCache.TryGetValue alias with
-        | true, entity -> entity
-        | false, _ ->
+        aliasCache.GetOrAdd(alias, fun alias ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
             let newEntity = SqlEntity(dc, tableName, columns)
             // attributes names cannot have a period in them unless they are an alias
@@ -176,8 +175,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
             |> Seq.choose pred
             |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
 
-            aliasCache.Add(alias,newEntity)
-            newEntity
+            newEntity)
 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
         let typ = typeof<'a>

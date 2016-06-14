@@ -268,10 +268,10 @@ module MSSqlServer =
             Set(cols |> Array.map (processReturnColumn reader))
 
 type internal MSSqlServerProvider() =
-    let pkLookup = Dictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+    let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -431,7 +431,8 @@ type internal MSSqlServerProvider() =
                                TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false }
-                           if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                           if col.IsPrimaryKey then
+                               pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                            yield (col.Name,col)
                        | _ -> ()]
                    |> Map.ofList
@@ -439,9 +440,7 @@ type internal MSSqlServerProvider() =
                columnLookup.GetOrAdd(table.FullName, columns)
 
         member __.GetRelationships(con,table) =
-            match relationshipLookup.TryGetValue table.FullName with
-            | true,v -> v
-            | _ ->
+          relationshipLookup.GetOrAdd(table.FullName, fun name ->
             // mostly stolen from
             // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
             let baseQuery = @"SELECT
@@ -468,20 +467,20 @@ type internal MSSqlServerProvider() =
                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
-            MSSqlServer.connect con (fun con ->
-            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
-            let children =
-                [ while reader.Read() do
-                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                            ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
-            reader.Dispose()
-            use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
-            let parents =
-                [ while reader.Read() do
-                    yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                            ForeignTable=Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
-            relationshipLookup.Add(table.FullName,(children,parents))
-            (children,parents))
+            let res = MSSqlServer.connect con (fun con ->
+                use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let children =
+                    [ while reader.Read() do
+                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
+                                ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
+                reader.Dispose()
+                use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let parents =
+                    [ while reader.Read() do
+                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
+                                ForeignTable=Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
+                (children,parents))
+            res)
 
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName

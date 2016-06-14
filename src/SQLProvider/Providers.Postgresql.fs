@@ -324,7 +324,7 @@ module PostgreSQL =
             Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
-    let pkLookup = Dictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
@@ -511,8 +511,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
                                           IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
-                                    if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then
-                                        pkLookup.Add(table.FullName, col.Name)
+                                    if col.IsPrimaryKey then
+                                        pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                                     yield (col.Name,col)
                                 | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
                             |> Map.ofList

@@ -12,9 +12,9 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal MSAccessProvider() =
-    let pkLookup = new Dictionary<string,string>()
+    let pkLookup = new ConcurrentDictionary<string,string>()
     let tableLookup = new ConcurrentDictionary<string,Table>()
-    let relationshipLookup = new Dictionary<string,Relationship list * Relationship list>()
+    let relationshipLookup = new ConcurrentDictionary<string,Relationship list * Relationship list>()
     let columnLookup = new ConcurrentDictionary<string,ColumnLookup>()
 
     let mutable typeMappings = []
@@ -208,12 +208,13 @@ type internal MSAccessProvider() =
 
                 // only add to PK lookup if it's a single pk - no support for composite keys yet
                 match pks with
-                | pk::[] -> pkLookup.Add(table.FullName, pk)
+                | pk::[] -> pkLookup.AddOrUpdate(table.FullName, pk, fun key old -> pk) |> ignore
                 | _ -> ()
 
                 columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
+          relationshipLookup.GetOrAdd(table.FullName, fun name ->
             if con.State <> ConnectionState.Open then con.Open()
             let rels =
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
@@ -229,8 +230,7 @@ type internal MSAccessProvider() =
                                                         let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString())
                                                         {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})
                                 |> List.ofSeq
-            relationshipLookup.Add(table.FullName,(children,parents))
-            (children,parents)
+            (children,parents))
 
         member __.GetSprocs(_) = []
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name

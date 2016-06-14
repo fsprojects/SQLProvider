@@ -242,10 +242,10 @@ module MySql =
             Set(cols |> Array.map (processReturnColumn reader))
 
 type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
-    let pkLookup = Dictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
-    let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
+    let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -403,7 +403,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false }
-                            if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                            if col.IsPrimaryKey then 
+                                pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
@@ -411,9 +412,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
-            match relationshipLookup.TryGetValue table.FullName with
-            | true,v -> v
-            | _ ->
+          relationshipLookup.GetOrAdd(table.FullName, fun name ->
             let baseQuery = @"SELECT
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
                                 ,RC.TABLE_NAME AS FK_TABLE_NAME
@@ -429,21 +428,20 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
-            Sql.connect con (fun con ->
-            use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
-            let children =
-                [ while reader.Read() do
-                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
-            reader.Dispose()
-            use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
-            let parents =
-                [ while reader.Read() do
-                    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
-                            ForeignTable= Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
-            relationshipLookup.Add(table.FullName,(children,parents))
-
-            (children,parents))
+            let res = Sql.connect con (fun con ->
+                use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
+                let children =
+                    [ while reader.Read() do
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                                ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
+                reader.Dispose()
+                use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let parents =
+                    [ while reader.Read() do
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                                ForeignTable= Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
+                (children,parents)) 
+            res)
 
         member __.GetSprocs(con) = Sql.connect con MySql.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","`").Replace("]","`")) amount

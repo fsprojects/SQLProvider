@@ -356,7 +356,7 @@ module internal Oracle =
 
 type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
     let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
-    let relationshipCache = new Dictionary<string, Relationship list * Relationship list>()
+    let relationshipCache = new ConcurrentDictionary<string, Relationship list * Relationship list>()
     let columnCache = new ConcurrentDictionary<string,ColumnLookup>()
     let mutable tableCache : Table list = []
 
@@ -477,12 +477,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
                 columnCache.GetOrAdd(table.FullName, cols)
 
         member __.GetRelationships(con,table) =
-                match relationshipCache.TryGetValue(table.FullName) with
-                | true, rels -> rels
-                | false, _ ->
+            relationshipCache.GetOrAdd(table.FullName, fun name ->
                     let rels = Sql.connect con (Oracle.getRelationships primaryKeyCache table.Name)
-                    relationshipCache.Add(table.FullName, rels)
-                    rels
+                    rels)
 
         member __.GetSprocs(con) = Sql.connect con Oracle.getSprocs
         member __.GetIndividualsQueryText(table,amount) = Oracle.getIndivdualsQueryText amount table

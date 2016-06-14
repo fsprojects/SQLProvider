@@ -12,7 +12,7 @@ open FSharp.Data.Sql.Common
 type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
-    let pkLookup = Dictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
@@ -256,7 +256,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = if reader.GetBoolean(5) then true else false }
-                            if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                            if col.IsPrimaryKey then pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
@@ -264,6 +264,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 columnLookup.GetOrAdd(table.FullName,columns)
 
         member __.GetRelationships(con,table) =
+          System.Threading.Monitor.Enter relationshipLookup
+          try
             match relationshipLookup.TryGetValue(table.FullName) with
             | true,v -> v
             | _ ->
@@ -300,6 +302,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 match relationshipLookup.TryGetValue table.FullName with
                 | true,v -> v
                 | _ -> [],[]
+          finally
+            System.Threading.Monitor.Exit relationshipLookup
 
         member __.GetSprocs(_) = [] // SQLite does not support stored procedures.
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" table.FullName amount

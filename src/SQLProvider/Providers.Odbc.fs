@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal OdbcProvider() =
-    let pkLookup = Dictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
 
@@ -215,7 +215,8 @@ type internal OdbcProvider() =
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
                                   IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false }
-                            if col.IsPrimaryKey && pkLookup.ContainsKey table.FullName = false then pkLookup.Add(table.FullName,col.Name)
+                            if col.IsPrimaryKey then 
+                                pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
