@@ -293,6 +293,20 @@ let ``simple if query``() =
     CollectionAssert.Contains(query, "London")
     CollectionAssert.DoesNotContain(query, "Helsinki")
 
+[<Test;>]
+let ``simple select query with case``() = 
+    // Works but wrong implementation. Doesn't transfer logics to SQL.
+    // Expected: SELECT CASE [cust].[Country] WHEN "UK" THEN [cust].[City] ELSE "Outside UK" END as 'City' FROM main.Customers as [cust]
+    // Actual: SELECT [cust].[Country] as 'Country',[cust].[City] as 'City' FROM main.Customers as [cust]
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select (if cust.Country = "UK" then (cust.City)
+                else ("Outside UK"))
+        } |> Seq.toArray
+    CollectionAssert.IsNotEmpty query
+
 [<Test >]
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
