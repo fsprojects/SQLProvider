@@ -1,3 +1,7 @@
+### 1.0.17 - 15.06.2016
+* Fixed SQLite IN-queries (had problem with all the parameters being param1)
+* Added ys.Contains(x) to create IN-clause as well as |=|
+
 ### 1.0.16 - 14.06.2016
 * Some concurrency fixes (#282)
 
