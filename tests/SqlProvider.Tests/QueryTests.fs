@@ -601,3 +601,18 @@ let ``simple select into a generic type with pipe`` () =
         } |> Seq.toList
 
     CollectionAssert.IsNotEmpty query
+
+[<Test >]
+let ``simple select query async``() = 
+    let dc = sql.GetDataContext()
+    let task = 
+        async {
+            let! asyncquery =
+                query {
+                    for cust in dc.Main.Customers do
+                    select cust
+                } |> Seq.executeQueryAsync 
+            return asyncquery |> Seq.toList
+        } |> Async.StartAsTask
+    task.Wait()
+    CollectionAssert.IsNotEmpty task.Result
