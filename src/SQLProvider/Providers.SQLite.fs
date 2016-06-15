@@ -371,14 +371,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
-                                     let createParamForValue = createParam (nextParam()) !param
                                      match data with
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
-                                         strings |> Array.map createParamForValue
-                                     | Some(x) -> [|createParamForValue (box x)|]
-                                     | None ->    [|createParamForValue DBNull.Value|]
+                                         strings 
+                                         |> Array.map (fun x -> createParam (nextParam()) !param x)
+                                     | Some(x) -> [|createParam (nextParam()) !param (box x)|]
+                                     | None ->    [|createParam (nextParam()) !param DBNull.Value|]
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data

@@ -14,6 +14,7 @@ open FSharp.Data.Sql
 
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let ctx = sql.GetDataContext()
 
@@ -102,15 +103,19 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
 
 // Composable Query Example
 
+// Notice that there is only one query with two filters created here:
+// SELECT [customers].[CompanyName] as 'CompanyName' FROM main.Customers as [customers] WHERE (([customers].[ContactTitle]= @param1) AND ([customers].[CompanyName]= @param2)) - params @param1 - "Marketing Manager"; @param2 - "The Big Cheese"; 
+
 let query1 =
     query {
-      for customers  in ctx.Main.Customers do
-      where (customers.ContactTitle = "USA")
-      select (customers)} |> Seq.toArray
+      for customers in ctx.Main.Customers do
+      where (customers.ContactTitle = "Marketing Manager")
+      select customers} 
 
 let query2 =
     query {
       for customers in query1 do
       where (customers.CompanyName = "The Big Cheese")
-      select customers}
+      select customers.CompanyName}
     |> Seq.toArray
+

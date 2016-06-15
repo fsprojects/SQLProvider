@@ -192,6 +192,49 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", query.[0].City)
 
 [<Test >]
+let ``simple select where in query``() =
+    let dc = sql.GetDataContext()
+    let arr = ["ALFKI"; "ANATR"; "AROUT"]
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (arr.Contains(cust.CustomerId))
+            select cust.CustomerId
+        } |> Seq.toArray
+    let res = query
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(3, query.Length)
+    Assert.IsTrue(query.Contains("ANATR"))
+
+[<Test >]
+let ``simple select where in query custom syntax``() =
+    let dc = sql.GetDataContext()
+    let arr = ["ALFKI"; "ANATR"; "AROUT"]
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId |=| arr)
+            select cust.CustomerId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(3, query.Length)
+    Assert.IsTrue(query.Contains("ANATR"))
+
+[<Test >]
+let ``simple select where like query``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId.Contains("a"))
+            select cust.CustomerId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty query
+
+[<Test >]
 let ``simple select where query with operations in where``() =
     let dc = sql.GetDataContext()
     let query = 
