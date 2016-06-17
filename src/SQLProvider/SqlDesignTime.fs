@@ -12,15 +12,14 @@ open Samples.FSharp.ProvidedTypes
 open FSharp.Data.Sql.Schema
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
-    let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)    
-    member this.RuntimeAssembly = runtimeAssembly 
+    let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
+    member __.RuntimeAssembly = runtimeAssembly 
 
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces()
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
-    let ns = "FSharp.Data.Sql";   
-    let asm = Assembly.GetExecutingAssembly()
+    let ns = "FSharp.Data.Sql"
      
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, rootTypeName) = 
         let resolutionPath = 
@@ -39,6 +38,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
             | cs -> cs
             
+        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
 
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner
         let con = prov.CreateConnection conString
@@ -66,10 +66,27 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
-                dict [ for table in tables.Force() do
+                dict [ let tablesforced = tables.Force()
+                       if tablesforced.Length = 0 then
+                            let hint =
+                                match caseSensitivity with
+                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
+                                        when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...>"
+                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
+                                        when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...>"
+                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema."
+                                | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
+                            let possibleError = "Tables not found" + hint
+                            let t = ProvidedProperty("PossibleError", typeof<String>, IsStatic=true, GetterCode = fun _ -> <@@ possibleError @@>)
+                            t.AddXmlDoc possibleError
+                            rootType.AddMember t
+                       else                
+                       for table in tablesforced do
                         let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)
                         t.AddMemberDelayed(fun () -> ProvidedConstructor([ProvidedParameter("dataContext",typeof<ISqlDataContext>)],
-                                                        InvokeCode = fun args -> <@@ new SqlEntity(((%%args.[0] : obj) :?> ISqlDataContext) ,table.FullName) @@>))
+                                                        InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntity(table.FullName) @@>))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
                         t.AddXmlDoc desc
                         yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
@@ -83,18 +100,17 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             t.AddXmlDocDelayed(fun _ -> sprintf "A sample of %s individuals from the SQL object as supplied in the static parameters" table.Name)
             t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)]))
             t.AddMembersDelayed( fun _ ->
-               prov.GetColumns(con,table) |> ignore 
+               let columns = prov.GetColumns(con,table)
                match prov.GetPrimaryKey table with
                | Some pk ->
-                   let entities = 
+                   let entities =
                         use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                         if con.State <> ConnectionState.Open then con.Open()
                         use reader = com.ExecuteReader()
-                        let ret = SqlEntity.FromDataReader(designTimeDc,table.FullName,reader)
+                        let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName, columns, reader)
                         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                         ret
                    if Array.isEmpty entities then [] else
-                   let e = entities.[0]
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
                    // of the property and the primary key e.g. ``1, Dennis The Squirrel``
@@ -102,12 +118,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    let propertyMap =
                       prov.GetColumns(con,table)
                       |> Seq.choose(fun col -> 
-                        if col.Name = pk then None else
-                        let name = table.Schema + "." + table.Name + "." + col.Name + "Individuals"
+                        if col.Key = pk then None else
+                        let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
                         let ty = ProvidedTypeDefinition(name, None, HideObjectMethods = true )
                         ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)]))
                         individualsTypes.Add ty
-                        Some(col.Name,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Name),ty, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
+                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
                       |> Map.ofSeq
                  
                    // special case for guids as they are not a supported quotable constant in the TP mechanics,
@@ -161,7 +177,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         yield table.FullName,(ct,it) ]
         
         // add the attributes and relationships
-        for KeyValue(key,(t,desc,_,_)) in baseTypes.Force() do 
+        for KeyValue(key,(t,_,_,_)) in baseTypes.Force() do 
             t.AddMembersDelayed(fun () -> 
                 let (columns,(children,parents)) = getTableData key
                 let attProps = 
@@ -187,7 +203,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
                         prop
-                    List.map createColumnProperty columns
+                    List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
                     let getRelationshipName = Utilities.uniqueName() 
                     let bts = baseTypes.Force()       
@@ -285,7 +301,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 match createdTypes.TryFind path with
                 | Some(typ) ->
                     match containerType, previousType with
-                    | Some(containerType), Some(previousType) ->
+                    | Some(_), Some(previousType) ->
                         previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
                     walkSproc con path containerType (Some typ) createdTypes next 
@@ -307,11 +323,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
             match sprocs with
             | [] -> 
-                Map.filter (fun (k:string list) _ -> 
-                    match k with
-                    | [k] -> true
-                    | _ -> false
-                ) createdTypes
+                Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
                 |> Map.toSeq
                 |> Seq.map snd
             | sproc::rest -> generateTypeTree con (walkSproc con [] None None createdTypes sproc) rest
@@ -338,20 +350,27 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     // we are forced to load the columns here, but this is ok as the user has already 
                     // pressed . on an IQueryable type so they are obviously interested in using this entity..
                     let columns,_ = getTableData key 
-                    let (optionalColumns,columns) = columns |> List.partition(fun c->c.IsNullable || c.IsPrimarKey)
+                    let (_,columns) =
+                        columns |> Seq.map (fun kvp -> kvp.Value)
+                                |> Seq.toList
+                                |> List.partition(fun c->c.IsNullable || c.IsPrimaryKey)
                     let normalParameters = 
                         columns 
                         |> List.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
-                        |> List.sortBy(fun p -> p.Name)                 
+                        |> List.sortBy(fun p -> p.Name)
+                    
+                    // Create: unit -> SqlEntity 
                     let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
                         <@@ 
-                            let e = new SqlEntity(((%%args.[0] : obj ):?> IWithDataContext ).DataContext,key)
+                            let e = ((%%args.[0] : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
                             e._State <- Created
                             ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                             e 
                         @@> )
                     
+                    // Create: ('a * 'b * 'c * ...) -> SqlEntity 
                     let create2 = ProvidedMethod("Create", normalParameters, entityType, InvokeCode = fun args -> 
+                          
                           let dc = args.Head
                           let args = args.Tail
                           let columns =
@@ -362,30 +381,62 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name 
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
-                              let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
                               e._State <- Created                            
                               e.SetData(%%columns : (string *obj) array)
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
-
+                    
+                    // Create: (data : seq<string*obj>) -> SqlEntity 
                     let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, InvokeCode = fun args -> 
                           let dc = args.[0]
                           let data = args.[1]
                           <@@
-                              let e = new SqlEntity(((%%dc : obj ):?> IWithDataContext ).DataContext,key)
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
                               e._State <- Created                            
                               e.SetData(%%data : (string * obj) seq)
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
+                    let desc3 = 
+                        let cols = columns |> Seq.map(fun c -> c.Name)
+                        "Item array of database columns: \r\n" + String.Join(",", cols)
+                    create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
 
+
+                    // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity 
+
+                    let template=
+                        let cols = normalParameters |> Seq.map(fun c -> c.Name )
+                        "Create(" + String.Join(", ", cols) + ")"
+                    let create4 = ProvidedMethod(template, normalParameters, entityType, InvokeCode = fun args -> 
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                              e._State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+                    create4.AddXmlDoc("Create version that breaks if your columns change.")
                     
+                    // This genertes a template.
+
                     seq {
                      yield ProvidedProperty("Individuals",Seq.head it, GetterCode = fun args -> <@@ ((%%args.[0] : obj ):?> IWithDataContext ).DataContext @@> ) :> MemberInfo
-                     yield create1 :> MemberInfo
                      if normalParameters.Length > 0 then yield create2 :> MemberInfo
-                     yield create3 :> MemberInfo } |> Seq.toList
+                     yield create3 :> MemberInfo
+                     yield create1 :> MemberInfo
+                     yield create4 :> MemberInfo } |> Seq.toList
                 )
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
@@ -403,6 +454,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               yield! containers |> Seq.map(fun p ->  ProvidedProperty(p.Name.Replace("Container",""), p, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
               yield ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)  :> MemberInfo
+              yield ProvidedMethod("SubmitUpdatesAsync",[],typeof<Async<unit>>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() @@>)  :> MemberInfo
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
@@ -413,7 +465,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
              ])
         
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
-        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
             [ let meth = 

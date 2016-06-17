@@ -6,6 +6,7 @@ open System.Collections.Generic
 module internal Utilities = 
     
     open System.IO
+    open System.Collections.Concurrent
 
     type TempFile(path:string) =
          member val Path = path with get
@@ -29,17 +30,62 @@ module internal Utilities =
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
     let uniqueName()= 
-        let dict = new Dictionary<string, int>()
+        let dict = new ConcurrentDictionary<string, int>()
         (fun name -> 
-            match dict.TryGetValue(name) with
-            | true, count -> 
-                  dict.[name] <- count + 1
-                  name + "_" + (string count)
-            | false, _ -> 
-                  dict.[name] <- 0
-                  name
-               
+            match dict.AddOrUpdate(name,(fun n -> 0),(fun n v -> v + 1)) with
+            | 0 -> name
+            | count -> name + "_" + (string count)
         )
+
+    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
+    /// async thread is available, it can't be used to execute another SQL at the same time.
+    let rec executeOneByOne asyncFunc entityList =
+        match entityList with
+        | h::t -> 
+            async {
+                do! asyncFunc h
+                return! executeOneByOne asyncFunc t
+            }
+        | [] -> async { () }
+
+
+    let ensureTransaction() =
+        // Todo: Take TransactionScopeAsyncFlowOption into use when implemented in Mono.
+        // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
+        // However, default option for TransactionScopeOption is Required, so you can create top level transaction
+        // and this Mono-transaction will have its properties.
+        let isMono = Type.GetType ("Mono.Runtime") <> null
+        match isMono with
+        | true -> new Transactions.TransactionScope()
+        | false ->
+            // Mono would fail to compilation, so we have to construct this via reflection:
+            // new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            let transactionAssembly = System.Reflection.Assembly.GetAssembly typeof<System.Transactions.TransactionScope>
+            let asynctype = transactionAssembly.GetType "System.Transactions.TransactionScopeAsyncFlowOption"
+            let transaction = typeof<System.Transactions.TransactionScope>.GetConstructor [|asynctype|]
+            transaction.Invoke [|1|] :?> System.Transactions.TransactionScope
+
+    type internal AggregateOperation =
+    | Max
+    | Min
+    | Sum
+    | Avg
+
+    let parseAggregates fieldNotation fieldNotationAlias query =
+        let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
+            match query with
+            | [] -> selectColumns
+            | (agop, opAlias, sumCol)::tail ->
+                let aggregate = 
+                    match agop with
+                    | Sum -> "SUM"
+                    | Max -> "MAX"
+                    | Min -> "MIN"
+                    | Avg -> "AVG"
+                let parsed = 
+                         (aggregate + "(" + fieldNotation(opAlias, sumCol) + ") as " + fieldNotationAlias(sumCol, aggregate)) :: selectColumns
+                parseAggregates' fieldNotation fieldNotationAlias tail parsed
+        parseAggregates' fieldNotation fieldNotationAlias query []
 
 module ConfigHelpers = 
     
@@ -75,24 +121,16 @@ module ConfigHelpers =
                     | a -> a.ConnectionString
                 | None -> ""
 
-    let cachedConStrings = Dictionary<string, string>()
+    let cachedConStrings = System.Collections.Concurrent.ConcurrentDictionary<string, string>()
 
     let tryGetConnectionString isRuntime root (connectionStringName:string) (connectionString:string) =
         if String.IsNullOrWhiteSpace(connectionString)
         then
             match isRuntime with
             | false -> getConStringFromConfig isRuntime root connectionStringName
-            | _ -> match cachedConStrings.TryGetValue connectionStringName with
-                   | (true, cached) -> cached
-                   | _ ->
-                       lock cachedConStrings (fun () ->
-                           match cachedConStrings.TryGetValue connectionStringName with
-                           | (true, cached) -> cached
-                           | _ ->
-                                let fromFile = getConStringFromConfig isRuntime root connectionStringName
-                                cachedConStrings.Add(connectionStringName, fromFile)
-                                fromFile
-                        )
+            | _ -> cachedConStrings.GetOrAdd(connectionStringName, fun name ->
+                    let fromFile = getConStringFromConfig isRuntime root connectionStringName
+                    fromFile)
         else connectionString
 
 module internal SchemaProjections = 
@@ -190,8 +228,15 @@ module internal Reflection =
                 then asm
                 else System.IO.Path.Combine(resolutionPath,asm))
 
+        let currentPaths =
+            let myPath = 
+                System.Reflection.Assembly.GetExecutingAssembly().Location
+                |> System.IO.Path.GetDirectoryName
+            assemblyNames 
+            |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm))
+
         let allPaths =
-            (assemblyNames @ resolutionPaths @ referencedPaths) 
+            (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
         
         let result = 
             allPaths
@@ -203,27 +248,55 @@ module internal Reflection =
         
         match result with
         | Some asm -> Choice1Of2 asm
-        | None -> 
-            allPaths
-            |> Seq.map (IO.Path.GetDirectoryName)
-            |> Seq.distinct
-            |> Choice2Of2
+        | None ->
+            let folders = 
+                allPaths
+                |> Seq.map (IO.Path.GetDirectoryName)
+                |> Seq.distinct
+            let errors = 
+                allPaths
+                |> List.map (fun p -> 
+                    match tryLoadAssembly p with
+                    | Some(Choice2Of2 err) when (err :? System.IO.FileNotFoundException) -> None //trivial
+                    | Some(Choice2Of2 err) -> Some err
+                    | _ -> None
+                ) |> List.filter Option.isSome
+                |> List.map(fun o -> o.Value.GetBaseException().Message)
+                |> Seq.distinct |> Seq.toList
+            Choice2Of2(folders, errors)
 
 module Sql =
     
     open System
     open System.Data
 
+    let private collectfunc(reader:IDataReader) = 
+        [|
+            for i = 0 to reader.FieldCount - 1 do 
+                match reader.GetValue(i) with
+                | null | :? DBNull ->  yield (reader.GetName(i),null)
+                | value -> yield (reader.GetName(i),value)
+        |]
+        
     let dataReaderToArray (reader:IDataReader) = 
         [| 
             while reader.Read() do
-               yield [|      
-                    for i = 0 to reader.FieldCount - 1 do 
-                        match reader.GetValue(i) with
-                        | null | :? DBNull ->  yield (reader.GetName(i),null)
-                        | value -> yield (reader.GetName(i),value)
-               |]
+               yield collectfunc reader
         |]
+
+    let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) = 
+
+        let rec readitems acc =
+            async {
+                let! moreitems = reader.ReadAsync() |> Async.AwaitTask
+                match moreitems with
+                | true -> return! readitems (collectfunc(reader)::acc)
+                | false -> return acc
+            }
+        async {
+            let! items = readitems []
+            return items |> List.toArray
+        }
 
     let dbUnbox<'a> (v:obj) : 'a = 
         if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
@@ -236,12 +309,32 @@ module Sql =
         let result = f con
         con.Close(); result
 
+    let connectAsync (con:System.Data.Common.DbConnection) f =
+        async {
+            if con.State <> ConnectionState.Open then 
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            let result = f con
+            con.Close(); result
+        }
+
     let executeSql createCommand sql (con:IDbConnection) =        
         use com : IDbCommand = createCommand sql con   
         com.ExecuteReader()    
+
+    let executeSqlAsync createCommand sql (con:IDbConnection) =
+        use com : System.Data.Common.DbCommand = createCommand sql con   
+        com.ExecuteReaderAsync() |> Async.AwaitTask  
 
     let executeSqlAsDataTable createCommand sql con = 
         use r = executeSql createCommand sql con
         let dt = new DataTable()
         dt.Load(r)
         dt
+
+    let executeSqlAsDataTableAsync createCommand sql con = 
+        async{
+            use! r = executeSqlAsync createCommand sql con
+            let dt = new DataTable()
+            dt.Load(r)
+            return dt
+        }

@@ -27,11 +27,11 @@ let project = "SQLProvider"
 
 // Short summary of the project
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
-let summary = "Type providers for SQL Server access."
+let summary = "Type providers for SQL database access."
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = "Type providers for SQL Server access."
+let description = "Type providers for SQL database access."
 
 // List of author names (for NuGet package)
 let authors = [ "Ross McKinlay, Colin Bull" ]
@@ -131,6 +131,15 @@ Target "NuGet" (fun _ ->
     CleanDir "Temp"
 )
 
+Target "PackNuGet" (fun _ -> 
+    Paket.Pack(fun p -> 
+        { p with 
+            Version = release.NugetVersion
+            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
+            Symbols = true
+            OutputPath = "bin" })
+) 
+
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
@@ -227,7 +236,7 @@ Target "BuildDocs" DoNothing
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
-  ==> "RunTests"
+  =?> ("RunTests", isLocalBuild || not isMono) //Travis can't run database tests
   ==> "CleanDocs"
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
   =?> ("GenerateHelp",isLocalBuild && not isMono)
@@ -237,9 +246,11 @@ Target "BuildDocs" DoNothing
   ==> "BuildDocs"
 
 "All" 
-
-  ==> "ReleaseDocs"
   ==> "NuGet"
+  ==> "ReleaseDocs"
   ==> "Release"
+
+"All" 
+  ==> "PackNuGet"
 
 RunTargetOrDefault "All"

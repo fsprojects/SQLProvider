@@ -19,6 +19,7 @@ A general .NET/Mono SQL database type provider. Current features:
 * Optional option types
 * Mapping to record types
 * Custom Operators
+* Supports [Asynchronous Operations](core/async.html)
   
 The provider currently has explicit implementations for the following database vendors:
  
@@ -46,7 +47,7 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
   <div class="span6">
     <div class="well well-small" id="nuget">
       The library can be <a href="https://nuget.org/packages/SQLProvider">installed from NuGet</a>:
-      <pre>PM> Install-Package SQLProvider -Pre</pre>
+      <pre>PM> Install-Package SQLProvider</pre>
     </div>
   </div>
   <div class="span1"></div>
@@ -125,12 +126,14 @@ The project is hosted on [GitHub][gh] where you can [report issues][issues], for
 the project and submit pull requests. If you're adding new public API, please also 
 consider adding [samples][content] that can be turned into a documentation. You might
 also want to read [library design notes][readme] to understand how it works.
+Our tests have [more samples][tests].
 
 The library is available under Public Domain license, which allows modification and 
 redistribution for both commercial and non-commercial purposes. For more information see the 
 [License file][license] in the GitHub repository. 
 
-  [content]: https://github.com/fsprojects/SQLProvider/tree/master/docs/content
+  [content]: https://github.com/fsprojects/SQLProvider/tree/master/docs/content/core
+  [tests]: https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Tests/scripts
   [gh]: https://github.com/fsprojects/SQLProvider
   [issues]: https://github.com/fsprojects/SQLProvider/issues
   [readme]: https://github.com/fsprojects/SQLProvider/blob/master/README.md

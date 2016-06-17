@@ -1,3 +1,61 @@
+### 1.0.17 - 15.06.2016
+* Fixed SQLite IN-queries (had problem with all the parameters being param1)
+* Added ys.Contains(x) to create IN-clause as well as |=|
+
+### 1.0.16 - 14.06.2016
+* Some concurrency fixes (#282)
+
+### 1.0.15 - 13.06.2016
+* Fix for #279
+
+### 1.0.13 - 11.06.2016
+* Byte array to Blob fixes for SQLite and MySQL
+* Some performance fixes.
+
+### 1.0.12 - 01.06.2016
+* Odbc fixed (on some level).
+* SQLite fix for reserved keywords table names.
+
+### 1.0.11 - 31.05.2016
+* MsSql IN with empty collection
+* Added Linq Any support (contains)
+
+### 1.0.10 - 29.05.2016
+* Concurrency fix for SubmitUpdates()
+
+### 1.0.9 - 29.05.2016
+* Fixed possibility to call SubmitUpdates many times after delete. 
+
+### 1.0.8 - 28.05.2016
+* .PossibleError property to notify schema or database name (Owner)
+* Fixed select string concat, e.g: Select (person.FirstName + " " + person.LastName)
+* minBy and maxBy for DateTime fields
+* Fixed operating table with no primary key
+
+### 1.0.7 - 27.05.2016
+* Better error reporting
+* SQLite skip fix
+
+### 1.0.6 - 15.05.2016
+* sumBy, maxBy, minBy, averageBy
+
+### 1.0.5 - 09.05.2016
+* More async operations: Seq.lengthAsync, Seq.headAsync, Seq.tryHeadAsync
+
+### 1.0.4 - 06.05.2016
+* PostgreSQL types, Npgsql 2 and 3. (PR #261)
+
+### 1.0.3 - 06.05.2016
+* Improved option type usage in join and where clauses (PR #260)
+
+### 1.0.2 - 05.05.2016
+* Fixed: Insert did return object as id, not the id wanted.
+
+### 1.0.1 - 04.05.2016
+* Many community bug-fixes and PRs
+* Documentation improvements
+* Async operations (PR #257)
+
 ### 1.0.0 - 16.04.2016
 * CRUD in Access (PR #211)
 * Better error handling (PR #233)

@@ -3,6 +3,8 @@
 
 # SQLProvider [![NuGet Status](http://img.shields.io/nuget/v/SQLProvider.svg?style=flat)](https://www.nuget.org/packages/SQLProvider/)
 
+[![Join the chat at https://gitter.im/fsprojects/SQLProvider](https://badges.gitter.im/fsprojects/SQLProvider.svg)](https://gitter.im/fsprojects/SQLProvider?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 A general .NET/Mono SQL database type provider. Current features :
  * LINQ queries
  * Lazy schema exploration 
@@ -17,6 +19,7 @@ A general .NET/Mono SQL database type provider. Current features :
  * Optional option types
  * Mapping to record types
  * Custom Operators
+ * Supports Asynchronous Operations
   
 The provider currently has explicit implementations for the following database vendors : 
 * SQL Server
@@ -56,6 +59,7 @@ your program or the program using your library : http://msdn.microsoft.com/en-us
 
 - [@pezipink](https://github.com/pezipink)
 - [@colinbull](https://github.com/colinbull)
+- [@Thorium](https://github.com/Thorium)
 
 The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
 

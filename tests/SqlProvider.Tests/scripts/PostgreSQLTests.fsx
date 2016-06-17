@@ -1,5 +1,5 @@
-#I @"../../../bin"
-#r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#I "../../../bin"
+#r "../../../bin/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
@@ -9,17 +9,16 @@ open System.Data
 let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
 
 [<Literal>]
-let resolutionFolder = @"../../../packages/scripts/Npgsql/lib/net45"
-        
+let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/Npgsql/lib/net45"
+
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath = resolutionFolder, UseOptionTypes=true>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath=resolutionPath, UseOptionTypes=true>
 let ctx = HR.GetDataContext()
 
-           
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -27,12 +26,14 @@ type Employee = {
     HireDate : DateTime
 }
 
+type Department = {
+    DepartmentId: int
+    DepartmentName: string
+}
+
 //***************** Individuals ***********************//
 let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
-
-
-//indv.FirstName + " " + indv.LastName + " " + indv.Email
-
+printfn "%s %s (%s)" indv.FirstName.Value indv.LastName indv.Email
 
 //*************** QUERY ************************//
 
@@ -51,13 +52,13 @@ let locationBy (loc:LocationQuery) =
 
 let result = locationBy { City = "Tokyo"; PostalCode = Some "1689" }
 
-let employeesFirstNameNoProj = 
+let employeesFirstNameNoProj =
     query {
         for emp in ctx.Public.Employees do
         select true
     } |> Seq.toList
- 
-let employeesFirstNameIdProj = 
+
+let employeesFirstNameIdProj =
     query {
         for emp in ctx.Public.Employees do
         select emp
@@ -70,7 +71,7 @@ let first10employess =
         take 10
     } |> Seq.toList
 
-let skip2first10employess = 
+let skip2first10employess =
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -78,7 +79,7 @@ let skip2first10employess =
         take 10
     } |> Seq.toList
 
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Public.Employees do
         select (emp.FirstName, emp.LastName)
@@ -92,31 +93,31 @@ let employeesSortByName =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Public.Employees do
-            join d in ctx.Public.Departments on (emp.DepartmentId = d.DepartmentId)
+            join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let employeesJob = 
+let employeesJob =
     query {
             for emp in ctx.Public.Employees do
-            for manager in emp.``public.employees by employee_id`` do
-            join dept in ctx.Public.Departments on (emp.DepartmentId = dept.DepartmentId)
+            for manager in emp.``public.employees by employee_id_0`` do
+            join dept in ctx.Public.Departments on (emp.DepartmentId = Some(dept.DepartmentId))
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Public.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -136,14 +137,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Public.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -154,7 +155,6 @@ let countries =
 
 //************************ CRUD *************************//
 
-
 let antartica =
     let result =
         query {
@@ -164,14 +164,14 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Public.Regions.Create() 
-        newRegion.RegionName <- "Antartica"
+    | _ ->
+        let newRegion = ctx.Public.Regions.Create()
+        newRegion.RegionName <- Some("Antartica")
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
         newRegion
 
-antartica.RegionName <- "ant"
+antartica.RegionName <- Some("ant")
 ctx.SubmitUpdates()
 
 antartica.Delete()
@@ -209,11 +209,9 @@ let locations_and_regions =
     [
       for e in results.ReturnValue do
         yield e.ColumnValues |> Seq.toList |> box
-             
       for e in results.ReturnValue do
         yield e.ColumnValues |> Seq.toList |> box
     ]
-
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
@@ -225,7 +223,99 @@ let getemployees hireDate =
 
 getemployees (new System.DateTime(1999,4,1))
 
+// Support for sprocs that return `table of`
+ctx.Functions.GetDepartments.Invoke().ReturnValue
+|> Array.map (fun e -> e.MapTo<Department>())
+|> printfn "%A"
+
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
+//********************** Type test ***************************//
+
+#r "../../../packages/scripts/Npgsql/lib/net45/Npgsql.dll"
+
+let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
+let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
+let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
+let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
+
+let tt = ctx.Public.PostgresqlTypes.Create()
+//tt.Abstime0 <- Some DateTime.Today
+tt.Bigint0 <- Some 100L
+tt.Bigserial0 <- 300L
+//tt.Bit0 <- Some(true)
+tt.Bit0 <- Some(System.Collections.BitArray(10, true))
+tt.BitVarying0 <- Some(System.Collections.BitArray([| true; true; false; false |]))
+tt.Boolean0 <- Some(true)
+tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0, 1.0, 2.0, 3.0))
+//tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0f, 1.0f, 2.0f, 3.0f))
+tt.Bytea0 <- Some([| 1uy; 10uy |])
+tt.Character0 <- Some("test")
+tt.CharacterVarying0 <- Some("raudpats")
+tt.Cid0 <- Some(87u)
+tt.Cidr0 <- Some(NpgsqlTypes.NpgsqlInet("0.0.0.0/24"))
+tt.Circle0 <- Some(NpgsqlTypes.NpgsqlCircle(0.0, 1.0, 2.0))
+//tt.Circle0 <- Some(circle(0.0f, 1.0f, 2.0))
+tt.Date0 <- Some(DateTime.Today)
+tt.DoublePrecision0 <- Some(100.0)
+tt.Inet0 <- Some(System.Net.IPAddress.Any)
+tt.Integer0 <- Some(1)
+tt.InternalChar0 <- Some('c')
+tt.Interval0 <- Some(TimeSpan.FromDays(3.0))
+tt.Json0 <- Some("{ }")
+tt.Jsonb0 <- Some(@"{ ""x"": [] }")
+tt.Line0 <- Some(NpgsqlTypes.NpgsqlLine())
+tt.Lseg0 <- Some(NpgsqlTypes.NpgsqlLSeg())
+tt.Macaddr0 <- Some(System.Net.NetworkInformation.PhysicalAddress([| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy |]))
+tt.Money0 <- Some(100M)
+tt.Name0 <- Some("name")
+tt.Numeric0 <- Some(99.76M)
+tt.Oid0 <- Some(67u)
+tt.Path0 <- Some(path [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 0.0) |])
+tt.Point0 <- Some(point (5.0, 5.0))
+tt.Polygon0 <- Some(polygon [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 1.0) |])
+tt.Real0 <- Some(0.8f)
+tt.Regtype0 <- Some(77u)
+tt.Smallint0 <- Some(9000s)
+tt.Smallserial0 <- 678s
+tt.Serial0 <- 77
+tt.Text0 <- Some("kesine")
+tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
+tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
+tt.Timetz0 <- Some(DateTimeOffset.Now)
+//tt.Timetz0 <- Some(NpgsqlTypes.NpgsqlTimeTZ.Now)
+tt.Timestamp0 <- Some(DateTime.Now)
+tt.Timestamptz0 <- Some(DateTime.Now)
+tt.Tsquery0 <- Some(NpgsqlTypes.NpgsqlTsQuery.Parse("test"))
+tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
+//tt.Unknown0 <- Some(box 13)
+tt.Uuid0 <- Some(Guid.NewGuid())
+tt.Xid0 <- Some(15u)
+tt.Xml0 <- Some("xml")
+
+ctx.SubmitUpdates()
+
+let ttb =
+    query {
+        for t in ctx.Public.PostgresqlTypes do
+        where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
+        exactlyOne
+    }
+
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+let printTest (exp: Expr) =
+    match exp with
+    | Call(_,mi,[Value(name,_)]) ->
+        let valof x = mi.Invoke(x, [| name |])
+        printfn "%A: %A => %A" name (valof tt) (valof ttb)
+    | _ -> ()
+
+printTest <@@ tt.Bigint0 @@>
+printTest <@@ tt.Bit0 @@>
+printTest <@@ tt.Box0 @@>
+printTest <@@ tt.Interval0 @@>
+printTest <@@ tt.Jsonb0 @@>

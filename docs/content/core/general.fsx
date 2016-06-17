@@ -11,14 +11,14 @@ let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests
 
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 
 (**
 
 
 # SQL Provider Basics
 
-The SQL provider in an erasing type provider which enables you to instantly 
+The SQL provider is an erasing type provider which enables you to instantly 
 connect to a variety of database sources in the IDE and explore them in a 
 type-safe manner, without the inconvenience of a code-generation step.
 
@@ -26,9 +26,10 @@ SQL Provider supports the following database types:
 
 * [MSSQL](mssql.html) 
 * [Oracle](oracle.html) 
-* [SQLite](sqlite.heml) 
+* [SQLite](sqlite.html) 
 * [PostgreSQL](postgresql.html)
 * [MySQL](mysql.html)
+* [MsAccess](msaccess.html)
 * [ODBC](odbc.html) (_Experimental_, only supports SELECT & MAKE)
 
 After you have installed the nuget package or built the type provider assembly 
@@ -132,6 +133,20 @@ let customersQuery =
             select customer
     }
     |> Seq.toArray
+
+(**
+
+Support also async queries
+
+ *)
+
+let customersQueryAsync = 
+    query { 
+        for customer in ctx.Main.Customers do
+            select customer
+    }
+    |> Seq.executeQueryAsync |> Async.StartAsTask
+
 
 (**
 The above example is identical to the query that was executed when 

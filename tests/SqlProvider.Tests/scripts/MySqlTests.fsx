@@ -10,7 +10,7 @@ open Newtonsoft.Json
 [<Literal>]
 let connStr = "Server=192.168.99.100;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net40/"
+let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -39,6 +39,13 @@ let employeesFirstName =
         for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
+
+let employeesFirstNameAsync = 
+    query {
+        for emp in ctx.Hr.Employees do
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+
 
 let salesNamedDavid = 
     query {
@@ -120,7 +127,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdates()
+ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 
@@ -165,3 +172,41 @@ getemployees (new System.DateTime(1999,4,1))
 //********************** Functions ***************************//
 
 let fullName = ctx.Functions.EmpFullname.Invoke(100u).ReturnValue
+
+//********************** Thread test ***************************//
+
+let rnd = new Random()
+open System.Threading
+
+let taskarray = 
+    [1u..100u] |> Seq.map(fun itm ->
+        let itm = rnd.Next(1, 300) |> uint32
+        let t1 = Tasks.Task.Run(fun () ->
+            let ctx1 = HR.GetDataContext()
+            let country1 = 
+                query {
+                    for c in ctx1.Hr.Countries do
+                    where (c.CountryId = "AR")
+                    head
+                }
+            Console.WriteLine Thread.CurrentThread.ManagedThreadId
+            country1.CountryName <- "Argentina" + itm.ToString()
+            ctx1.SubmitUpdates()
+        )
+        let t2 = Tasks.Task.Run(fun () ->
+            let ctx2 = HR.GetDataContext()
+            Console.WriteLine Thread.CurrentThread.ManagedThreadId
+            let country2 = 
+                query {
+                    for c in ctx2.Hr.Countries do
+                    where (c.CountryId = "BR")
+                    head
+                }
+            country2.RegionId <- itm
+            ctx2.SubmitUpdates()
+        )
+        Tasks.Task.WhenAll [|t1; t2|]
+        //ctx.ClearUpdates() |> ignore
+    ) |> Seq.toArray |> Tasks.Task.WaitAll
+
+ctx.GetUpdates()

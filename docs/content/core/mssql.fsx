@@ -13,7 +13,66 @@ open FSharp.Data.Sql
 (**
 
 
-# MSSQL
-Documentation stub.
+# MSSQL Provider
+## Parameters
+
+### ConnectionString
+
+Basic connection string used to connect to MSSQL instance; typical
+connection strings for the driver apply here. See
+[MSSQL Connecting Strings Documentation](https://www.connectionstrings.com/sql-server/)
+for a complete list of connection string options.
+
 *)
-let sql = SQLProvider<"Data Source=/Servername/MSSQL"
+
+let [<Literal>] connString = "Server=localhost;Database=test;User Id=test;Password=test"
+
+(**
+### ConnectionStringName
+
+Instead of storing the connection string in the source code / `fsx` script, you
+can store values in the `App.config` file.  This is the name of the
+connectionString key/value pair stored in App.config.
+*)
+
+// found in App.config
+let [<Literal>] connexStringName = "DefaultConnectionString"
+
+(**
+### DatabaseVendor
+
+From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For MSSQL,
+use `Common.DatabaseProviderTypes.MSSQLSERVER`.
+
+*)
+
+let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
+
+(**
+### IndividualsAmount
+
+Sets the count to load for each individual. See [individuals](individuals.html)
+for further info.
+
+*)
+
+let [<Literal>] indivAmount = 1000
+
+(**
+### UseOptionTypes
+
+If true, F# option types will be used in place of nullable database columns.
+If false, you will always receive the default value of the column's type, even
+if it is null in the database.
+
+*)
+
+let [<Literal>] useOptTypes  = true
+
+let sql =
+    SqlDataProvider<
+        connString,
+        dbVendor,
+        resPath,
+        indivAmount,
+        useOptTypes>
