@@ -296,24 +296,22 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let typ = ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
                     walkSproc con path (Some typ) (Some typ) (createdTypes.Add(path, typ)) next 
-            | SprocPath(typeName, next) -> 
+            | Package(typeName, packageDefn) -> 
                 let path = (path @ [typeName])
                 match createdTypes.TryFind path with
                 | Some(typ) ->
-                    match containerType, previousType with
-                    | Some(_), Some(previousType) ->
-                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
-                    | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
-                    walkSproc con path containerType (Some typ) createdTypes next 
+                    //should not ever have packages with duplicated names
+                    createdTypes 
                 | None -> 
                     let typ = ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
-                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)])) 
+                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
+                    typ.AddMembersDelayed(fun () -> (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) -> 
                         containerType.AddMemberDelayed(fun () -> typ)
                         previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
-                    walkSproc con path containerType (Some typ) (createdTypes.Add(path, typ)) next 
+                    createdTypes 
             | Sproc(sproc) ->
                     match containerType, previousType with
                     | Some(containerType), Some(previousType) -> previousType.AddMemberDelayed(fun () -> generateSprocMethod containerType con sproc); createdTypes

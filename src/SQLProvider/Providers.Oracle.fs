@@ -266,6 +266,14 @@ module internal Oracle =
         { ProcName = procName; Owner = owner; PackageName = packageName }
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
+        let querySprocParameters packageName sprocName =
+            let sql = 
+                if String.IsNullOrWhiteSpace(packageName)
+                then sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s'" sprocName
+                else sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND PACKAGE_NAME = '%s'" sprocName packageName 
+
+            Sql.executeSqlAsDataTable createCommand sql con
+        
         let createSprocParameters (row:DataRow) =
            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
@@ -286,11 +294,21 @@ module internal Oracle =
                  Length = maxLength
                  Ordinal = int(Sql.dbUnbox<decimal> row.["POSITION"]) }
            )
-        getSchema "ProcedureParameters" [|owner|] con
-        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
-        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
-        |> Seq.collect (snd >> Seq.choose id)
+
+        querySprocParameters name.PackageName name.ProcName
+        |> DataTable.mapChoose createSprocParameters
         |> Seq.sortBy (fun x -> x.Ordinal)
+        |> Seq.toList
+    
+    let getPackageSprocs (con:IDbConnection) packageName = 
+        let sql = 
+            sprintf "SELECT * FROM SYS.DBA_PROCEDURES WHERE OBJECT_TYPE = 'PACKAGE' AND OBJECT_NAME = '%s'" packageName
+
+        Sql.executeSqlAsDataTable createCommand sql con
+        |> DataTable.map (fun row -> 
+            let name = getSprocName row
+            { Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
+        )
         |> Seq.toList
 
     let getSprocs con =
@@ -298,6 +316,10 @@ module internal Oracle =
         let buildDef classType row =
             let name = getSprocName row
             Root(classType, Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }))
+        
+        let buildPackageDef classType (row:DataRow) =
+            let name = Sql.dbUnbox<string> row.["OBJECT_NAME"]
+            Root(classType, Package(name, { Name = name; Sprocs = (fun con -> getPackageSprocs con name) }))
 
         let functions =
             (getSchema "Functions" [|owner|] con)
@@ -306,6 +328,10 @@ module internal Oracle =
         let procs =
             (getSchema "Procedures" [|owner|] con)
             |> DataTable.map (fun row -> buildDef "Procedures" row)
+
+        let packages = 
+            (getSchema "Packages" [|owner|] con)
+            |> DataTable.map (fun row -> buildDef "Packages" row)
 
         functions @ procs
 

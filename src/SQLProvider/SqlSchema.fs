@@ -81,9 +81,13 @@ type RunTimeSprocDefinition =
 
 type Sproc =
     | Root of string * Sproc
-    | SprocPath of string * Sproc
+    | Package of string * CompileTimePackageDefinition
     | Sproc of CompileTimeSprocDefinition
     | Empty
+and CompileTimePackageDefinition =
+    { Name : string
+      Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
+    }
 
 type PrimaryKey =
     { Name: string
