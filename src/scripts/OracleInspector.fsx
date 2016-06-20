@@ -51,9 +51,10 @@ Sql.connect connection (Oracle.getSchema "Procedures" [|"MOPDC"|])
 Sql.connect connection (Oracle.getSchema "ProcedureParameters" [|"MOPDC"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (fun c -> 
-    let tables = Oracle.getTables c
-    let priKeys = Oracle.getPrimaryKeys c |> dict
+Sql.connect connection (fun c ->
+    let tableNames = ""
+    let tables = Oracle.getTables tableNames c
+    let priKeys = Oracle.getPrimaryKeys tableNames c
     [
         for table in tables do
             yield table.FullName, (Oracle.getColumns priKeys table.Name c)

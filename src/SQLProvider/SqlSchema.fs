@@ -99,7 +99,6 @@ type Table =
         // Note here the [].[] format is ONLY used internally.  Do not use this in queries; Different vendors have
         // different ways to qualify whitespace.
         member x.FullName =
-            let quoteWhiteSpace (str:String) = (if str.Contains(" ") then sprintf "\"%s\"" str else str)
             if (String.IsNullOrWhiteSpace(x.Schema)) then (quoteWhiteSpace x.Name)
             else x.Schema + "." + (quoteWhiteSpace x.Name)
         static member FromFullName(fullName:string) =
