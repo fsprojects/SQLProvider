@@ -167,10 +167,10 @@ module MySql =
                   Ordinal = ordinal_position }
             )
 
-        if String.IsNullOrEmpty owner then owner <- con.Database
+        let dbName = if String.IsNullOrEmpty owner then con.Database else owner
 
         //This could filter the query using the Sproc name passed in
-        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" owner))
+        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" dbName))
         |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
         |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
         |> Seq.collect (snd >> Seq.choose id)
@@ -351,13 +351,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
 
         member __.GetTables(con,cs) =
+            let dbName = if String.IsNullOrEmpty owner then con.Database else owner
             let caseChane =
                 match cs with
                 | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
                 | Common.CaseSensitivityChange.TOLOWER -> "LOWER(TABLE_SCHEMA)"
                 | _ -> "TABLE_SCHEMA"
             Sql.connect con (fun con ->
-                use reader = Sql.executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane MySql.owner) con
+                use reader = Sql.executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane dbName) con
                 [ while reader.Read() do
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
                     yield tableLookup.GetOrAdd(table.FullName,table) ])
