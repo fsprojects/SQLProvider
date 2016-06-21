@@ -71,8 +71,8 @@ let [<Literal>] useOptTypes  = true
 
 let sql =
     SqlDataProvider<
-        connString,
         dbVendor,
+        connString,
         resPath,
         indivAmount,
         useOptTypes>
