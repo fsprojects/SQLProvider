@@ -58,7 +58,7 @@ and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
 
-let [<Literal>] resPath = @"C:\Projects\Libs\Npgsql\"
+let [<Literal>] resPath = @"C:\Projects\Libs\Npgsql"
 
 (**
 ### IndividualsAmount
