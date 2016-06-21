@@ -59,8 +59,6 @@ module internal Oracle =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings con =
-        let dt = getSchema "DataTypes" [||] con
-
         let getDbType(providerType) =
             let p = Activator.CreateInstance(parameterType.Value,[||]) :?> IDbDataParameter
             let oracleDbTypeSetter = parameterType.Value.GetProperty("OracleDbType").GetSetMethod()
@@ -75,6 +73,7 @@ module internal Oracle =
 
         let mappings =
             [
+                let dt = getSchema "DataTypes" [||] con
                 for r in dt.Rows do
                     let clrType = getClrType (string r.["DataType"])
                     let oracleType = string r.["TypeName"]
@@ -158,56 +157,85 @@ module internal Oracle =
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
 
-    let getPrimaryKeys con =
-        let indexColumns =
-            getSchema "IndexColumns" [|owner|] con
-            |> DataTable.mapChoose (fun row ->
-                let tableOwner = Sql.dbUnbox<string> row.[2]
-                if List.exists ((=) tableOwner) systemNames
-                then None
-                else Some(Sql.dbUnbox row.[1], Sql.dbUnbox row.[4]))
-            |> Map.ofList
+    let buildTableNameWhereFilter columnName (tableNames : string) =
+        let trim (s:string) = s.Trim()
+        let names = tableNames.Split([|","|], StringSplitOptions.RemoveEmptyEntries)
+                    |> Seq.map trim
+                    |> Seq.toArray
+        match names with
+        | [||] -> ""
+        | [|name|] -> sprintf "and %s like '%s'" columnName name
+        | _ -> names |> Array.map (sprintf "%s like '%s'" columnName)
+                     |> String.concat " or "
+                     |> sprintf "and (%s)"
 
-        getSchema "PrimaryKeys" [|owner|] con
-        |> DataTable.mapChoose (fun row ->
-            let indexName = Sql.dbUnbox row.[15]
-            let tableName = Sql.dbUnbox<string> row.[2]
-            if tableName.StartsWith("BIN$")
-            then None
-            else
-                match Map.tryFind indexName indexColumns with
-                | Some(column) ->
-                    let pk = { Name = unbox row.[1]; Table = tableName; Column = column; IndexName = indexName }
-                    Some(tableName, pk)
-                | None -> None)
+    let read conn f sql =
+      seq { use cmd = createCommand sql conn
+            use reader = cmd.ExecuteReader()
+            while reader.Read()
+              do yield f reader }
 
-    let getTables con =
-        getSchema "Tables" [|owner|] con
-        |> DataTable.mapChoose (fun row ->
-              let name = Sql.dbUnbox row.[1]
-              let typ = Sql.dbUnbox<string> row.[2]
-              if typ = "System"
-              then None
-              else
-                Some { Schema = Sql.dbUnbox row.[0];
-                       Name = name;
-                       Type = Sql.dbUnbox row.[2] })
+    let getIndexColumns tableNames conn = 
+        let whereTableName = buildTableNameWhereFilter "table_name" tableNames
+        let whereNotSystemOwner = 
+          systemNames 
+          |> List.map (sprintf "'%s'") 
+          |> String.concat ","
+          |> sprintf "index_owner not in (%s)"
 
-    let getColumns (primaryKeys:IDictionary<_,_>) table con =
-        getSchema "Columns" [|owner; table|] con
-        |> DataTable.mapChoose (fun row ->
-                let typ = Sql.dbUnbox row.[4]
-                let nullable = (Sql.dbUnbox row.[8]) = "Y"
-                let colName =  (Sql.dbUnbox row.[2])
-                match findDbType typ with
-                | Some(m) ->
-                        { Name = colName
-                          TypeMapping = m
-                          IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table && x.Column = colName)
-                          IsNullable = nullable } |> Some
-                | _ -> None)
-        |> List.map (fun c -> (c.Name, c))
-        |> Map.ofList
+        sprintf """select index_name, column_name
+                   from all_ind_columns
+                   where %s
+                   %s'""" whereNotSystemOwner whereTableName
+        |> read conn (fun row -> row.[0], row.[1]) 
+        |> dict
+               
+    let getPrimaryKeys tableNames conn =
+        let whereTableName = buildTableNameWhereFilter "a.table_name" tableNames
+        sprintf """select c.constraint_name, a.table_name, a.column_name, c.index_name 
+                   from all_cons_columns a
+                   join all_constraints c on a.constraint_name = c.constraint_name
+                   where c.constraint_type = 'P' and a.table_name not like 'BIN$%%'
+                   %s""" whereTableName
+        |> read conn (fun row -> 
+            let pkName     = Sql.dbUnbox row.[0]
+            let tableName  = Sql.dbUnbox row.[1]
+            let columnName = Sql.dbUnbox row.[2]
+            let indexName  = Sql.dbUnbox row.[3]
+            tableName, { PrimaryKey.Name = pkName
+                         Table = tableName
+                         Column = columnName
+                         IndexName = indexName })
+        |> dict
+
+    let getTables tableNames conn = 
+        let whereTableName = buildTableNameWhereFilter "table_name" tableNames
+        sprintf """select owner, table_name, tablespace_name
+                   from all_tables
+                   where owner != 'System'
+                   %s""" whereTableName
+        |> read conn (fun row -> 
+            { Schema = Sql.dbUnbox row.[0];
+              Name   = Sql.dbUnbox row.[1];
+              Type   = Sql.dbUnbox row.[2] })
+        |> Seq.toList
+
+    let getColumns (primaryKeys:IDictionary<_,_>) tableName conn = 
+        sprintf """select data_type, nullable, column_name from all_tab_columns where table_name = '%s'""" tableName
+        |> read conn (fun row ->
+                let columnType = Sql.dbUnbox row.[0]
+                let nullable   = (Sql.dbUnbox row.[1]) = "Y"
+                let columnName = Sql.dbUnbox row.[2]
+                findDbType columnType
+                |> Option.map (fun m ->
+                    { Name = columnName
+                      TypeMapping = m
+                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = columnName)
+                      IsNullable = nullable }
+                ))
+        |> Seq.choose id
+        |> Seq.map (fun c -> c.Name, c)
+        |> Map.ofSeq
 
     let getRelationships (primaryKeys:IDictionary<_,_>) table con =
         let foreignKeyCols =
@@ -354,11 +382,16 @@ module internal Oracle =
                 Set(returnValues)
         entities
 
-type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
+type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) =
     let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new ConcurrentDictionary<string, Relationship list * Relationship list>()
     let columnCache = new ConcurrentDictionary<string,ColumnLookup>()
     let mutable tableCache : Table list = []
+
+    let isPrimaryKey tableName columnName = 
+        match primaryKeyCache.TryGetValue tableName with
+        | true, pk when pk.Column = columnName -> true
+        | _ -> false
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -385,11 +418,12 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
 
     let createUpdateCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
         let (~~) (t:string) = sb.Append t |> ignore
-        let pk = primaryKeyCache.[entity.Table.Name]
         sb.Clear() |> ignore
 
-        if changedColumns |> List.exists ((=)pk.Column) then failwith "Error - you cannot change the primary key of an entity."
+        if changedColumns |> List.exists (isPrimaryKey entity.Table.Name) 
+        then failwith "Error - you cannot change the primary key of an entity."
 
+        let pk = primaryKeyCache.[entity.Table.Name]
         let pkValue =
             match entity.GetColumnOption<obj> pk.Column with
             | Some v -> v
@@ -454,12 +488,12 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateTypeMappings(con) =
             Sql.connect con (fun con ->
                 Oracle.createTypeMappings con
-                primaryKeyCache <- ((Oracle.getPrimaryKeys con) |> dict))
+                primaryKeyCache <- (Oracle.getPrimaryKeys tableNames con))
 
         member __.GetTables(con,_) =
                match tableCache with
                | [] ->
-                    let tables = Sql.connect con Oracle.getTables
+                    let tables = Sql.connect con (Oracle.getTables tableNames)
                     tableCache <- tables
                     tables
                 | a -> a
