@@ -18,6 +18,17 @@ open FSharp.Data.Sql
 
 ## Parameters
 
+### DatabaseVendor
+
+From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For PostgreSQL,
+use `Common.DatabaseProviderTypes.POSTGRESQL`.
+
+*)
+
+let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
+
+(**
+
 ### ConnectionString
 
 Basic connection string used to connect to PostgreSQL instance; typical 
@@ -39,16 +50,6 @@ connectionString key/value pair stored in App.config (TODO: confirm file name).
 
 // found in App.config (TOOD: confirm)
 let [<Literal>] connexStringName = "DefaultConnectionString"
-
-(**
-### DatabaseVendor
-
-From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For PostgreSQL,
-use `Common.DatabaseProviderTypes.POSTGRESQL`.
-
-*)
-
-let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 (**
 ### Resolution Path
