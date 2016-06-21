@@ -10,8 +10,6 @@ let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db
 let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
-(**
-
 
 # MSSQL Provider
 ## Parameters
@@ -26,6 +24,7 @@ use `Common.DatabaseProviderTypes.MSSQLSERVER`.
 
 let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
 
+(**
 ### ConnectionString
 
 Basic connection string used to connect to MSSQL instance; typical
