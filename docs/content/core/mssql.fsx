@@ -11,10 +11,11 @@ let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 
+(**
 # MSSQL Provider
 ## Parameters
 
-(**
+
 ### DatabaseVendor
 
 From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For MSSQL,
