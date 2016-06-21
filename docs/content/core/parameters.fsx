@@ -15,7 +15,7 @@ open FSharp.Data.Sql
 These are the "common" parameters used by all SqlProviders.
 
 All static parameters must be known at compile time, for strings this can be 
-achieved by adding the [&gt;Literal&lt;] attribute if you are not passing it inline.
+achieved by adding the `[<Literal>]` attribute if you are not passing it inline.
 
 ### ConnectionString
 
