@@ -10,12 +10,22 @@ let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db
 let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
+
 (**
-
-
 # MSSQL Provider
 ## Parameters
 
+
+### DatabaseVendor
+
+From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For MSSQL,
+use `Common.DatabaseProviderTypes.MSSQLSERVER`.
+
+*)
+
+let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
+
+(**
 ### ConnectionString
 
 Basic connection string used to connect to MSSQL instance; typical
@@ -39,14 +49,13 @@ connectionString key/value pair stored in App.config.
 let [<Literal>] connexStringName = "DefaultConnectionString"
 
 (**
-### DatabaseVendor
-
-From the `FSharp.Data.Sql.Common.DatabaseProviderTypes` enumeration. For MSSQL,
-use `Common.DatabaseProviderTypes.MSSQLSERVER`.
-
+### Resolution Path
+Path to search for assemblies containing database vendor specific connections 
+and custom types. Type the path where SQL Server dll is stored.
 *)
 
-let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
+let [<Literal>] resPath = @"C:\Projects\Libs\YourPathHere"
+
 
 (**
 ### IndividualsAmount
