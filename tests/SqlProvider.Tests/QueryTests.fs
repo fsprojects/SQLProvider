@@ -15,7 +15,7 @@ let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=fal
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
    
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select with contains query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -25,6 +25,29 @@ let ``simple select with contains query``() =
             contains "ALFKI"
         }
     Assert.IsTrue(query)    
+
+[<Test>]
+let ``simple select with contains query with where``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City <> "")
+            select cust.CustomerId
+            contains "ALFKI"
+        }
+    Assert.IsTrue(query)    
+
+[<Test>]
+let ``simple select with contains query when not exists``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust.CustomerId
+            contains "ALFKI2"
+        }
+    Assert.IsFalse(query)    
 
 [<Test >]
 let ``simple select with count``() =

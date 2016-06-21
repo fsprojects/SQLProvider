@@ -469,7 +469,26 @@ module internal QueryImplementation =
                                                   Convert.ToInt32(r) |> box :?> 'T
                         | :? Decimal, :? Int32 -> decimal(unbox(res)) |> box :?> 'T
                         | _ ->  res :?> 'T
-                        
+                    | MethodCall(None, (MethodWithName "Contains"), [SourceWithQueryData source; 
+                             OptionalQuote(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) 
+                             ]) ->
+                             
+                        let sqlExpression =
+                            match source.SqlExpression with 
+                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]),BaseTable(alias,entity2)) ->
+                                Count(Take(1,(FilterClause(Condition.And([alias, key, ConditionOperator.Equal, c],None),source.SqlExpression))))
+                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]), current) ->
+                                Count(Take(1,(FilterClause(Condition.And(["", key, ConditionOperator.Equal, c],None),current))))
+                            | others ->
+                                failwithf "Unsupported execution of contains expression `%s`" (e.ToString())
+
+                        let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                        let boolres =
+                            match res with 
+                            | :? Int32 as ires -> ires > 0
+                            | :? Decimal as mres -> mres > 0m
+                            | _ -> Convert.ToInt32(res) > 0
+                        boolres |> box :?> 'T                      
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
 
