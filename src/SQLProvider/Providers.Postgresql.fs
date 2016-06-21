@@ -514,7 +514,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     if col.IsPrimaryKey then
                                         pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
                                     yield (col.Name,col)
-                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql" table.FullName dataType ]
+                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName dataType ]
                             |> Map.ofList
                         columnLookup.GetOrAdd(table.FullName, columns))
             finally
