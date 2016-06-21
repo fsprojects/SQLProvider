@@ -95,11 +95,11 @@ module ConfigHelpers =
 
     let internal getConStringFromConfig isRuntime root (connectionStringName : string) =
                 let entryAssembly =
-                    Reflection.Assembly.GetEntryAssembly()
+                    match Reflection.Assembly.GetEntryAssembly() with null -> None | x -> Some x
 
                 let root, paths =
-                    if isRuntime
-                    then entryAssembly.Location, [entryAssembly.GetName().Name + ".exe.config"]
+                    if isRuntime && entryAssembly.IsSome
+                    then entryAssembly.Value.Location, [entryAssembly.Value.GetName().Name + ".exe.config"]
                     else root, []
 
                 let configFilePath =
