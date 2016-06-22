@@ -27,15 +27,15 @@ minBy                    |X |                                                   
 minByNullable            |  |                                                       | 
 nth                      |  |                                                       | 
 select                   |X |                                                       | 
-skip                     |X |                                                       | 
+skip                     |X |Broken on SQLServer when combined with sortByDescending + take     | 
 skipWhile                |  |                                                       | 
 sortBy                   |X |                                                       | 
-sortByDescending	       |X |                                                       | 
+sortByDescending	       |X |Broken on SQLServer when combined with skip+take       | 
 sortByNullable           |  |                                                       | 
 sortByNullableDescending |  |                                                       | 
 sumBy                    |X |                                                       | 
 sumByNullable            |  |                                                       | 
-take                     |X |                                                       | 
+take                     |X |Broken on SQLServer when combined with skip+sortByDescending      | 
 takeWhile                |  |                                                       | 
 thenBy	                 |X |                                                       |     
 thenByDescending	       |  |                                                       |   
