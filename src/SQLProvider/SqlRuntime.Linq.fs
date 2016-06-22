@@ -183,18 +183,22 @@ module internal QueryImplementation =
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.NotNull,None)
                     | OptionIsNone(SqlColumnGet(ti,key,_))
-                    | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) ->
+                    | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) 
+                    | SqlNegativeCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),OptionNone) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.IsNull,None)
-                    | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) ->
+                    | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) 
+                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),OptionNone) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.NotNull,None)
                     // matches column to constant with any operator eg c.name = "john", c.age > 42
-                    | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
+                    | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) 
+                    | SqlNegativeCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,c)
                     // matches to another property getter, method call or new expression
-                    | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
+                    | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))
+                    | SqlNegativeCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
                     | _ -> None
@@ -286,7 +290,6 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         parseWhere meth source qual
-                        
                     | MethodCall(None, (MethodWithName "Join"),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
@@ -441,6 +444,30 @@ module internal QueryImplementation =
                                 member t.TupleIndex = source.TupleIndex }
                         let res = parseWhere meth limitedSource qual
                         res |> Seq.length > 0 |> box :?> 'T
+                    | MethodCall(None, (MethodWithName "All" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
+                        let negativeCheck = 
+                            match qual with
+                            | :? LambdaExpression as la -> Expression.Lambda(Expression.Not(la.Body), la.Parameters) :> Expression
+                            | _ -> Expression.Not(qual) :> Expression
+
+                        let limitedSource = 
+                            {new IWithSqlService with 
+                                member t.DataContext = source.DataContext
+                                member t.SqlExpression = Take(1, source.SqlExpression) 
+                                member t.Provider = source.Provider
+                                member t.TupleIndex = source.TupleIndex }
+                        
+                        let res = parseWhere meth limitedSource negativeCheck
+                        res |> Seq.length = 0 |> box :?> 'T
+                    | MethodCall(None, (MethodWithName "First" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
+                        let limitedSource = 
+                            {new IWithSqlService with 
+                                member t.DataContext = source.DataContext
+                                member t.SqlExpression = Take(1, source.SqlExpression) 
+                                member t.Provider = source.Provider
+                                member t.TupleIndex = source.TupleIndex }
+                        let res = parseWhere meth limitedSource qual
+                        res |> Seq.head |> box :?> 'T
                     | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
                              OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) 
                              ]) ->

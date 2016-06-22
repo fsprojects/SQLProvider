@@ -215,6 +215,19 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", query.[0].City)
 
 [<Test >]
+let ``simple select where not query``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (not(cust.CustomerId = "ALFKI"))
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(90, query.Length)
+
+[<Test >]
 let ``simple select where in query``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
@@ -597,7 +610,36 @@ let ``simple select with take``() =
     CollectionAssert.IsNotEmpty query   
     Assert.AreEqual(5, query.Length) 
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"; "Barcelona"; "Barquisimeto"|], query)  
-    
+
+[<Test>]
+let ``simple select query with all``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            all (ord.Discount >= 0.)
+        }   
+    Assert.IsTrue(query)
+
+[<Test>]
+let ``simple select query with all false``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            all (ord.Discount = 0.)
+        }   
+    Assert.IsFalse(query)
+
+[<Test>]
+let ``simple select query with find``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            find (ord.Discount > 0.)
+        }   
+    Assert.AreEqual(15, Convert.ToInt32(query.Discount*100.))
 
 type Simple = {First : string}
 
