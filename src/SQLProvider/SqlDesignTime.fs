@@ -246,7 +246,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             rt.AddMember resultType
             container.AddMember(rt)
             
-            resultType.AddMemberDelayed(fun () -> 
+            resultType.AddMemberDelayed(fun () ->
+                    Sql.ensureOpen con
                     let sprocParameters = sproc.Params con        
                     let parameters =
                         sprocParameters
@@ -280,42 +281,40 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
                     ProvidedMethod("Invoke", parameters, returnType, InvokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->                      
-                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>)))
+                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+            )
 
             ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, GetterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
             
         
-        let rec walkSproc con (path:string list) (containerType:ProvidedTypeDefinition option) (previousType:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
+        let rec walkSproc con (path:string list) (parent:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
             match sproc with
             | Root(typeName, next) -> 
                 let path = (path @ [typeName])
                 match createdTypes.TryFind path with
                 | Some(typ) -> 
-                    walkSproc con path (Some typ) (Some typ) createdTypes next 
+                    walkSproc con path (Some typ) createdTypes next 
                 | None ->
                     let typ = ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
-                    walkSproc con path (Some typ) (Some typ) (createdTypes.Add(path, typ)) next 
-            | Package(typeName, packageDefn) -> 
-                let path = (path @ [typeName])
-                match createdTypes.TryFind path with
-                | Some(typ) ->
-                    //should not ever have packages with duplicated names
-                    createdTypes 
-                | None -> 
+                    walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next 
+            | Package(typeName, packageDefn) ->       
+                match parent with
+                | Some(parent) ->
+                    let path = (path @ [typeName])
                     let typ = ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
+                    parent.AddMember(typ)
+                    parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
-                    typ.AddMembersDelayed(fun () -> (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
-                    match containerType, previousType with
-                    | Some(containerType), Some(previousType) -> 
-                        containerType.AddMemberDelayed(fun () -> typ)
-                        previousType.AddMemberDelayed(fun () -> ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
-                    | _, _ -> failwithf "Could not generate sproc path type undefined root or previous type"
+                    typ.AddMembersDelayed(fun () -> Sql.ensureOpen con; (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
+                    createdTypes.Add(path, typ)
                     createdTypes 
+                | _ -> failwithf "Could not generate package path type undefined root or previous type"    
             | Sproc(sproc) ->
-                    match containerType, previousType with
-                    | Some(containerType), Some(previousType) -> previousType.AddMemberDelayed(fun () -> generateSprocMethod containerType con sproc); createdTypes
-                    | _,_ -> failwithf "Could not generate sproc undefined root or previous type"
+                    match parent with
+                    | Some(parent) ->
+                        parent.AddMemberDelayed(fun () -> Sql.ensureOpen con;  generateSprocMethod parent con sproc); createdTypes
+                    | _ -> failwithf "Could not generate sproc undefined root or previous type"
             | Empty -> createdTypes
 
         let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
@@ -324,7 +323,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
                 |> Map.toSeq
                 |> Seq.map snd
-            | sproc::rest -> generateTypeTree con (walkSproc con [] None None createdTypes sproc) rest
+            | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
 
         serviceType.AddMembersDelayed( fun () ->
             let schemaMap = new System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()

@@ -8,7 +8,7 @@ open FSharp.Data.Sql
 let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
 
 [<Literal>]
-let resolutionFolder = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
+let resolutionFolder = "/Users/colinbull/appdev/SqlProvider/tests/SqlProvider.Tests/libs/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -24,7 +24,7 @@ type Employee = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.Employees.Individuals.``As FirstName``.``100, Steven``
+let indv = ctx.Hr.Employees.Individuals.``As FirstName``.``100, Steven``
 
 
 indv.FirstName + " " + indv.LastName + " " + indv.Email
@@ -33,23 +33,23 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 //*************** QUERY ************************//
 let employeesFirstName = 
     query {
-        for emp in ctx.Employees do
+        for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let salesNamedDavid = 
     query {
-            for emp in ctx.Employees do
-            join d in ctx.Departments on (emp.DepartmentId = d.DepartmentId)
+            for emp in ctx.Hr.Employees do
+            join d in ctx.Hr.Departments on (emp.DepartmentId = d.DepartmentId)
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
 let employeesJob = 
     query {
-            for emp in ctx.Employees do
-            for manager in emp.EMP_MANAGER_FK do
-            join dept in ctx.Departments on (emp.DepartmentId = dept.DepartmentId)
+            for emp in ctx.Hr.Employees do
+            for manager in emp.``HR.EMPLOYEES by MANAGER_ID`` do
+            join dept in ctx.Hr.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
@@ -57,7 +57,7 @@ let employeesJob =
 //Can map SQLEntities to a domain type
 let topSales5ByCommission =
     query {
-        for emp in ctx.Employees do
+        for emp in ctx.Hr.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
@@ -65,7 +65,7 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
-#r @"..\..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll"
+#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
 
@@ -83,7 +83,7 @@ type Country = {
 //Can customise SQLEntity mapping
 let countries = 
     query {
-        for emp in ctx.Countries do
+        for emp in ctx.Hr.Countries do
         select emp
     } 
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
@@ -103,14 +103,14 @@ let countries =
 let antartica =
     let result =
         query {
-            for reg in ctx.Regions do
+            for reg in ctx.Hr.Regions do
             where (reg.RegionId = 5M)
             select reg
         } |> Seq.toList
     match result with
     | [ant] -> ant
     | _ -> 
-        let newRegion = ctx.Regions.Create() 
+        let newRegion = ctx.Hr.Regions.Create() 
         newRegion.RegionName <- "Antartica"
         newRegion.RegionId <- 5M
         ctx.SubmitUpdates()
@@ -123,6 +123,7 @@ antartica.Delete()
 ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
+
 
 ctx.Procedures.AddJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 

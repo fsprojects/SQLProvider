@@ -1,6 +1,5 @@
 NUGET
   remote: https://www.nuget.org/api/v2
-  specs:
     FAKE (4.27)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Core (3.1.2.1) - redirects: force
@@ -26,14 +25,13 @@ NUGET
       Microsoft.AspNet.Razor (2.0.30506) - framework: net40
 GITHUB
   remote: fsharp/FAKE
-  specs:
     modules/Octokit/Octokit.fsx (8c077f35f8cd0350485109ddd1810dafe9885d1a)
       Octokit
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
-  specs:
     MySql.Data (6.9.8)
     Newtonsoft.Json (8.0.3)
     Npgsql (3.1.2)
+    Oracle.ManagedDataAccess (12.1.24160419)

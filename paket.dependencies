@@ -18,3 +18,7 @@ group Scripts
     nuget MySql.Data
     nuget Newtonsoft.Json
     nuget Npgsql
+    nuget Oracle.ManagedDataAccess
+
+
+    

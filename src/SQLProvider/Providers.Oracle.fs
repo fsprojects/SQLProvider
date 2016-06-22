@@ -302,12 +302,19 @@ module internal Oracle =
     
     let getPackageSprocs (con:IDbConnection) packageName = 
         let sql = 
-            sprintf "SELECT * FROM SYS.DBA_PROCEDURES WHERE OBJECT_TYPE = 'PACKAGE' AND OBJECT_NAME = '%s'" packageName
+            sprintf "SELECT * FROM SYS.ALL_PROCEDURES WHERE OBJECT_TYPE = 'PACKAGE' AND OBJECT_NAME = '%s' AND PROCEDURE_NAME IS NOT NULL" packageName
 
         Sql.executeSqlAsDataTable createCommand sql con
         |> DataTable.map (fun row -> 
-            let name = getSprocName row
+            let name = 
+                let owner = Sql.dbUnbox row.["OWNER"]
+                let procName = Sql.dbUnbox row.["PROCEDURE_NAME"]
+                let packageName = Sql.dbUnbox row.["OBJECT_NAME"]
+                   
+                { ProcName = procName; Owner = owner; PackageName = packageName }
+
             { Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
+        
         )
         |> Seq.toList
 
@@ -331,9 +338,9 @@ module internal Oracle =
 
         let packages = 
             (getSchema "Packages" [|owner|] con)
-            |> DataTable.map (fun row -> buildDef "Packages" row)
+            |> DataTable.map (fun row -> buildPackageDef "Packages" row)
 
-        functions @ procs
+        functions @ procs @ packages
 
     let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
