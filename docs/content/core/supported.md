@@ -1,14 +1,14 @@
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
-|contains                |  |                                                       | 
+|contains                |X |                                                       | 
 count                    |  |                                                       | 
 last                     |  |                                                       | 
 lastOrDefault            |  |                                                       | 
 exactlyOne               |  |                                                       | 
 exactlyOneOrDefault      |  |                                                       | 
 headOrDefault            |  |                                                       | 
-select                   |  |                                                       | 
-where                    |  |                                                       | 
+select                   |X |                                                       | 
+where                    |X | Server side variables must be on left side and only left side of predicates  | 
 minBy                    |  |                                                       | 
 maxBy                    |  |                                                       | 
 groupBy                  |  |                                                       | 
@@ -17,7 +17,7 @@ sortByDescending	       |  |                                                    
 thenBy	                 |  |                                                       |     
 thenByDescending	       |  |                                                       |   
 groupValBy	             |  |                                                       | 
-join                     |  |                                                       | 
+join                     |X |                                                       | 
 groupJoin                |  |                                                       | 
 leftOuterJoin            |  |                                                       | 
 sumByNullable            |  |                                                       | 
@@ -26,7 +26,7 @@ maxByNullable            |  |                                                   
 averageByNullable        |  |                                                       | 
 averageBy                |  |                                                       | 
 distinct                 |  |                                                       | 
-exists                   |  |                                                       | 
+exists                   |X |                                                       | 
 find                     |  |                                                       | 
 all	                     |  |                                                       | 
 head                     |  |                                                       | 
@@ -34,7 +34,7 @@ nth                      |  |                                                   
 skip                     |  |                                                       | 
 skipWhile                |  |                                                       | 
 sumBy                    |  |                                                       | 
-take                     |  |                                                       | 
+take                     |X |                                                       | 
 takeWhile                |  |                                                       | 
 sortByNullable           |  |                                                       | 
 sortByNullableDescending |  |                                                       | 
