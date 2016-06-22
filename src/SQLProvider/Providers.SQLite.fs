@@ -372,6 +372,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+//                                     | Some(x) when (box x :? System.Linq.IQueryable) ->
+//                                        x
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
@@ -387,6 +389,11 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                     | FSharp.Data.Sql.IsNull -> (sprintf "[%s].[%s] IS NULL") alias col
                                     | FSharp.Data.Sql.NotNull -> (sprintf "[%s].[%s] IS NOT NULL") alias col
                                     | FSharp.Data.Sql.In ->
+                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                        Array.iter parameters.Add paras
+                                        (sprintf "[%s].[%s] IN (%s)") alias col text
+                                    | FSharp.Data.Sql.NestedIn ->
+                                        // Todo: data is the SqlQueryable of the inner query. Now we should get it's SQL clause and merge it to the existing one.
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "[%s].[%s] IN (%s)") alias col text

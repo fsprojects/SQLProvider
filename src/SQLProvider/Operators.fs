@@ -15,6 +15,7 @@ type ConditionOperator =
     | NotNull
     | In
     | NotIn
+    | NestedIn
     with 
     override x.ToString() =
         // NOTE: these are MS SQL Server textual representations of the operators.
@@ -31,6 +32,7 @@ type ConditionOperator =
         | IsNull        -> "IS NULL"
         | NotNull       -> "IS NOT NULL"
         | In            -> "IN"
+        | NestedIn      -> "IN"
         | NotIn         -> "NOT IN"
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
