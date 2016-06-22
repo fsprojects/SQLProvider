@@ -1,15 +1,15 @@
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
-all	                     |  |                                                       | 
+all	                     |X |                                                       | 
 averageBy                |X |                                                       | 
 averageByNullable        |  |                                                       | 
 contains                |X |                                                       | 
 count                    |X |                                                       | 
 distinct                 |X |                                                       | 
-exactlyOne               |  |                                                       | 
+exactlyOne               |X |                                                       | 
 exactlyOneOrDefault      |  |                                                       | 
 exists                   |X |                                                       | 
-find                     |  |                                                       | 
+find                     |X |                                                       | 
 groupBy                  |  |                                                       | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
