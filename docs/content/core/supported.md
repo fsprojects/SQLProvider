@@ -39,4 +39,4 @@ takeWhile                |  |                                                   
 sortByNullable           |  |                                                       | 
 sortByNullableDescending |  |                                                       | 
 thenByNullable           |  |                                                       | 
-thenByNullableDescending
+thenByNullableDescending |  |                                                       |
