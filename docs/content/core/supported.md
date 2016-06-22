@@ -1,7 +1,7 @@
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
 |contains                |X |                                                       | 
-count                    |  |                                                       | 
+count                    |X |                                                       | 
 last                     |  |                                                       | 
 lastOrDefault            |  |                                                       | 
 exactlyOne               |  |                                                       | 
@@ -9,12 +9,12 @@ exactlyOneOrDefault      |  |                                                   
 headOrDefault            |  |                                                       | 
 select                   |X |                                                       | 
 where                    |X | Server side variables must be on left side and only left side of predicates  | 
-minBy                    |  |                                                       | 
-maxBy                    |  |                                                       | 
+minBy                    |X |                                                       | 
+maxBy                    |X |                                                       | 
 groupBy                  |  |                                                       | 
-sortBy                   |  |                                                       | 
-sortByDescending	       |  |                                                       | 
-thenBy	                 |  |                                                       |     
+sortBy                   |X |                                                       | 
+sortByDescending	       |X |                                                       | 
+thenBy	                 |X |                                                       |     
 thenByDescending	       |  |                                                       |   
 groupValBy	             |  |                                                       | 
 join                     |X |                                                       | 
@@ -24,19 +24,21 @@ sumByNullable            |  |                                                   
 minByNullable            |  |                                                       | 
 maxByNullable            |  |                                                       | 
 averageByNullable        |  |                                                       | 
-averageBy                |  |                                                       | 
-distinct                 |  |                                                       | 
+averageBy                |X |                                                       | 
+distinct                 |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |  |                                                       | 
 all	                     |  |                                                       | 
-head                     |  |                                                       | 
+head                     |X |                                                       | 
 nth                      |  |                                                       | 
-skip                     |  |                                                       | 
+skip                     |X |                                                       | 
 skipWhile                |  |                                                       | 
-sumBy                    |  |                                                       | 
+sumBy                    |X |                                                       | 
 take                     |X |                                                       | 
 takeWhile                |  |                                                       | 
 sortByNullable           |  |                                                       | 
 sortByNullableDescending |  |                                                       | 
 thenByNullable           |  |                                                       | 
 thenByNullableDescending |  |                                                       |
+if                       |X |                                                       |
+let                      |  |                                                       |
