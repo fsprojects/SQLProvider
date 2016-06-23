@@ -1,3 +1,6 @@
+### 1.0.20 - 23.06.2016
+* Nested IN-queries
+
 ### 1.0.19 - 23.06.2016
 * More query operators
 
