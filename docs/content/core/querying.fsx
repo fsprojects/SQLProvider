@@ -79,19 +79,19 @@ let itemAsync =
 | --------------------- |:-:|---------------------------------------|
 all	                     |X |                                                       | 
 averageBy                |X |                                                       | 
-averageByNullable        |  |                                                       | 
-contains                |X |                                                       | 
+averageByNullable        |X |                                                       | 
+contains                 |X |                                                       | 
 count                    |X |                                                       | 
 distinct                 |X |                                                       | 
 exactlyOne               |X |                                                       | 
-exactlyOneOrDefault      |  |                                                       | 
+exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
 groupBy                  |  |                                                       | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 
-headOrDefault            |  |                                                       | 
+headOrDefault            |X |                                                       | 
 if                       |X |                                                       |
 join                     |X |                                                       | 
 last                     |  |                                                       | 
@@ -99,25 +99,25 @@ lastOrDefault            |  |                                                   
 leftOuterJoin            |  |                                                       | 
 let                      |  |                                                       |
 maxBy                    |X |                                                       | 
-maxByNullable            |  |                                                       | 
+maxByNullable            |X |                                                       | 
 minBy                    |X |                                                       | 
-minByNullable            |  |                                                       | 
+minByNullable            |X |                                                       | 
 nth                      |  |                                                       | 
 select                   |X |                                                       | 
 skip                     |X |Broken on SQLServer when combined with sortByDescending + take     | 
 skipWhile                |  |                                                       | 
 sortBy                   |X |                                                       | 
-sortByDescending	       |X |Broken on SQLServer when combined with skip+take       | 
-sortByNullable           |  |                                                       | 
-sortByNullableDescending |  |                                                       | 
+sortByDescending	     |X |Broken on SQLServer when combined with skip+take       | 
+sortByNullable           |X |                                                       | 
+sortByNullableDescending |X |                                                       | 
 sumBy                    |X |                                                       | 
-sumByNullable            |  |                                                       | 
+sumByNullable            |X |                                                       | 
 take                     |X |Broken on SQLServer when combined with skip+sortByDescending      | 
 takeWhile                |  |                                                       | 
 thenBy	                 |X |                                                       |     
-thenByDescending	       |  |                                                       |   
-thenByNullable           |  |                                                       | 
-thenByNullableDescending |  |                                                       |
+thenByDescending	     |X |                                                       |   
+thenByNullable           |X |                                                       | 
+thenByNullableDescending |X |                                                       |
 where                    |X | Server side variables must be on left side and only left side of predicates  | 
 
 *)
