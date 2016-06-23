@@ -1,3 +1,4 @@
+(**
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
 all	                     |  |                                                       | 
@@ -42,3 +43,5 @@ thenByDescending	       |  |                                                    
 thenByNullable           |  |                                                       | 
 thenByNullableDescending |  |                                                       |
 where                    |X | Server side variables must be on left side and only left side of predicates  | 
+
+*)
