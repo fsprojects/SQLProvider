@@ -338,21 +338,29 @@ module internal Oracle =
     
     let getPackageSprocs (con:IDbConnection) packageName = 
         let sql = 
-            sprintf "SELECT * FROM SYS.ALL_PROCEDURES WHERE OBJECT_TYPE = 'PACKAGE' AND OBJECT_NAME = '%s' AND PROCEDURE_NAME IS NOT NULL" packageName
+            sprintf """SELECT * 
+                       FROM SYS.ALL_PROCEDURES 
+                       WHERE 
+                            OBJECT_TYPE = 'PACKAGE' 
+                            AND OBJECT_NAME = '%s' 
+                            AND PROCEDURE_NAME IS NOT NULL
+                            AND (OVERLOAD = 1 OR OVERLOAD IS NULL) 
+                   """ packageName
 
-        Sql.executeSqlAsDataTable createCommand sql con
-        |> DataTable.map (fun row -> 
-            let name = 
-                let owner = Sql.dbUnbox row.["OWNER"]
-                let procName = Sql.dbUnbox row.["PROCEDURE_NAME"]
-                let packageName = Sql.dbUnbox row.["OBJECT_NAME"]
-                   
-                { ProcName = procName; Owner = owner; PackageName = packageName }
+        let procs = 
+            Sql.executeSqlAsDataTable createCommand sql con
+            |> DataTable.map (fun row -> 
+                let name = 
+                    let owner = Sql.dbUnbox row.["OWNER"]
+                    let procName = Sql.dbUnbox row.["PROCEDURE_NAME"]
+                    let packageName = Sql.dbUnbox row.["OBJECT_NAME"]
+                       
+                    { ProcName = procName; Owner = owner; PackageName = packageName }
 
-            { Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
-        
-        )
-        |> Seq.toList
+                { Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
+            
+            )
+        procs
 
     let getSprocs con =
 

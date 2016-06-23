@@ -308,7 +308,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
                     typ.AddMembersDelayed(fun () -> Sql.ensureOpen con; (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
                     createdTypes.Add(path, typ)
-                    createdTypes 
                 | _ -> failwithf "Could not generate package path type undefined root or previous type"    
             | Sproc(sproc) ->
                     match parent with

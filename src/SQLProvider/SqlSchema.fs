@@ -69,11 +69,13 @@ type SprocName =
         member x.DbName with get() = String.Join(".", x.ToList())
         member x.FriendlyName with get() = String.Join(" ", x.ToList())
         member x.FullName with get() = String.Join("_", x.ToList())
+        override x.ToString() = x.FullName.ToString()
 
 type CompileTimeSprocDefinition =
     { Name: SprocName
       Params: (IDbConnection -> QueryParameter list)
       ReturnColumns: (IDbConnection -> QueryParameter list -> QueryParameter list) }
+    override x.ToString() = x.Name.ToString()
 
 type RunTimeSprocDefinition =
     { Name: SprocName
