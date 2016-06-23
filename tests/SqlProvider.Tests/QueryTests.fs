@@ -567,6 +567,16 @@ let ``simple averageBy``() =
         }
     Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
 
+[<Test>]
+let ``simple averageByNullable``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for od in dc.Main.OrderDetails do
+            averageByNullable (System.Nullable(od.UnitPrice))
+        }
+    Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
+
 [<Test >]
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
@@ -617,7 +627,7 @@ let ``simple select query with all``() =
     let query = 
         query {
             for ord in dc.Main.OrderDetails do
-            all (ord.Discount >= 0.)
+            all (ord.UnitPrice > 0m)
         }   
     Assert.IsTrue(query)
 
@@ -627,7 +637,7 @@ let ``simple select query with all false``() =
     let query = 
         query {
             for ord in dc.Main.OrderDetails do
-            all (ord.Discount = 0.)
+            all (ord.UnitPrice > 10m)
         }   
     Assert.IsFalse(query)
 
@@ -637,9 +647,9 @@ let ``simple select query with find``() =
     let query = 
         query {
             for ord in dc.Main.OrderDetails do
-            find (ord.Discount > 0.)
+            find (ord.UnitPrice > 10m)
         }   
-    Assert.AreEqual(15, Convert.ToInt32(query.Discount*100.))
+    Assert.AreEqual(14m, query.UnitPrice)
 
 type Simple = {First : string}
 
