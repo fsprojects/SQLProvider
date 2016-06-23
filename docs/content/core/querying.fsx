@@ -74,6 +74,55 @@ let itemAsync =
     } |> Async.StartAsTask
 
 (**
+## Supported Query Expression Keywords
+| Keyword            | Supported  |  Notes
+| --------------------- |:-:|---------------------------------------|
+all	                     |X |                                                       | 
+averageBy                |X |                                                       | 
+averageByNullable        |  |                                                       | 
+contains                |X |                                                       | 
+count                    |X |                                                       | 
+distinct                 |X |                                                       | 
+exactlyOne               |X |                                                       | 
+exactlyOneOrDefault      |  |                                                       | 
+exists                   |X |                                                       | 
+find                     |X |                                                       | 
+groupBy                  |  |                                                       | 
+groupJoin                |  |                                                       | 
+groupValBy	             |  |                                                       | 
+head                     |X |                                                       | 
+headOrDefault            |  |                                                       | 
+if                       |X |                                                       |
+join                     |X |                                                       | 
+last                     |  |                                                       | 
+lastOrDefault            |  |                                                       | 
+leftOuterJoin            |  |                                                       | 
+let                      |  |                                                       |
+maxBy                    |X |                                                       | 
+maxByNullable            |  |                                                       | 
+minBy                    |X |                                                       | 
+minByNullable            |  |                                                       | 
+nth                      |  |                                                       | 
+select                   |X |                                                       | 
+skip                     |X |Broken on SQLServer when combined with sortByDescending + take     | 
+skipWhile                |  |                                                       | 
+sortBy                   |X |                                                       | 
+sortByDescending	       |X |Broken on SQLServer when combined with skip+take       | 
+sortByNullable           |  |                                                       | 
+sortByNullableDescending |  |                                                       | 
+sumBy                    |X |                                                       | 
+sumByNullable            |  |                                                       | 
+take                     |X |Broken on SQLServer when combined with skip+sortByDescending      | 
+takeWhile                |  |                                                       | 
+thenBy	                 |X |                                                       |     
+thenByDescending	       |  |                                                       |   
+thenByNullable           |  |                                                       | 
+thenByNullableDescending |  |                                                       |
+where                    |X | Server side variables must be on left side and only left side of predicates  | 
+
+*)
+
+(**
 ## Expressions
 
 These operators perform no specific function in the code itself, rather they
