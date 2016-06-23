@@ -516,6 +516,11 @@ module internal QueryImplementation =
                             | :? Decimal as mres -> mres > 0m
                             | _ -> Convert.ToInt32(res) > 0
                         boolres |> box :?> 'T                      
+                    | MethodCall(_, (MethodWithName "ElementAt"), [SourceWithQueryData source; Int position ]) ->
+                        let skips = position - 1
+                        executeQuery source.DataContext source.Provider (Take(1,(Skip(skips,source.SqlExpression)))) source.TupleIndex
+                        |> Seq.cast<'T>
+                        |> Seq.head
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
 

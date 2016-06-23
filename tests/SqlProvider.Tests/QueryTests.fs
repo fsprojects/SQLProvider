@@ -215,6 +215,18 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", query.[0].City)
 
 [<Test >]
+let ``simple nth query``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust
+            nth 4
+        }
+    Assert.AreEqual("London", query.City)
+
+
+[<Test >]
 let ``simple select where not query``() =
     let dc = sql.GetDataContext()
     let query = 
