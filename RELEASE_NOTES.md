@@ -1,3 +1,7 @@
+### 1.0.18 - 21.06.2016
+* Oracle large table count support
+* Simple Linq contains query
+
 ### 1.0.17 - 15.06.2016
 * Fixed SQLite IN-queries (had problem with all the parameters being param1)
 * Added ys.Contains(x) to create IN-clause as well as |=|

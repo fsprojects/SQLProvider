@@ -15,7 +15,7 @@ let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=fal
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
    
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select with contains query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -25,6 +25,29 @@ let ``simple select with contains query``() =
             contains "ALFKI"
         }
     Assert.IsTrue(query)    
+
+[<Test>]
+let ``simple select with contains query with where``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City <> "")
+            select cust.CustomerId
+            contains "ALFKI"
+        }
+    Assert.IsTrue(query)    
+
+[<Test>]
+let ``simple select with contains query when not exists``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust.CustomerId
+            contains "ALFKI2"
+        }
+    Assert.IsFalse(query)    
 
 [<Test >]
 let ``simple select with count``() =
@@ -190,6 +213,19 @@ let ``simple select where query``() =
     CollectionAssert.IsNotEmpty query
     Assert.AreEqual(1, query.Length)
     Assert.AreEqual("Berlin", query.[0].City)
+
+[<Test >]
+let ``simple select where not query``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (not(cust.CustomerId = "ALFKI"))
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(90, query.Length)
 
 [<Test >]
 let ``simple select where in query``() =
@@ -531,6 +567,16 @@ let ``simple averageBy``() =
         }
     Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
 
+[<Test>]
+let ``simple averageByNullable``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for od in dc.Main.OrderDetails do
+            averageByNullable (System.Nullable(od.UnitPrice))
+        }
+    Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
+
 [<Test >]
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
@@ -574,7 +620,36 @@ let ``simple select with take``() =
     CollectionAssert.IsNotEmpty query   
     Assert.AreEqual(5, query.Length) 
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"; "Barcelona"; "Barquisimeto"|], query)  
-    
+
+[<Test>]
+let ``simple select query with all``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            all (ord.UnitPrice > 0m)
+        }   
+    Assert.IsTrue(query)
+
+[<Test>]
+let ``simple select query with all false``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            all (ord.UnitPrice > 10m)
+        }   
+    Assert.IsFalse(query)
+
+[<Test>]
+let ``simple select query with find``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            find (ord.UnitPrice > 10m)
+        }   
+    Assert.AreEqual(14m, query.UnitPrice)
 
 type Simple = {First : string}
 
