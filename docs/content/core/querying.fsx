@@ -137,6 +137,8 @@ let bergs = ctx.Main.Customers.Individuals.BERGS
 (**
 ### Operators
 
+You can find some custom operators `using FSharp.Data.Sql`:
+
 * `|=|` (In set)
 * `|<>|` (Not in set)
 * `=%` (Like)

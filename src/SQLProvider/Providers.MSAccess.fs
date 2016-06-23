@@ -301,6 +301,7 @@ type internal MSAccessProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
@@ -318,10 +319,18 @@ type internal MSAccessProvider() =
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "[%s].[%s] IN (%s)") alias col text
+                                    | FSharp.Data.Sql.NestedIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "[%s].[%s] IN (%s)") alias col innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "[%s].[%s] NOT IN (%s)") alias col text
+                                    | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "[%s].[%s] NOT IN (%s)") alias col innersql
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "[%s].[%s]%s %s") alias col
