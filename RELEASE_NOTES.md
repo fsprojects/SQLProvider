@@ -1,3 +1,6 @@
+### 1.0.19 - 23.06.2016
+* More query operators
+
 ### 1.0.18 - 21.06.2016
 * Oracle large table count support
 * Simple Linq contains query

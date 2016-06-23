@@ -172,7 +172,8 @@ module internal QueryImplementation =
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
                     match exp with
-                    | SqlSpecialOpArr(ti,op,key,value) ->
+                    | SqlSpecialOpArr(ti,op,key,value)
+                    | SqlSpecialNegativeOpArr(ti,op,key,value) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,Some (box value))
                     | SqlSpecialOp(ti,op,key,value) ->

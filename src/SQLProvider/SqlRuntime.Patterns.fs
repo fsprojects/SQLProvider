@@ -200,3 +200,11 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
         | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
         | _ -> None
     | _ -> None
+
+let (|SqlSpecialNegativeOpArr|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand with
+        | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NotIn, key, values)
+        | _ -> None
+    | _ -> None
