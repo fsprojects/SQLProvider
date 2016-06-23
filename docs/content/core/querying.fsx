@@ -104,15 +104,15 @@ minBy                    |X |                                                   
 minByNullable            |X |                                                       | 
 nth                      |  |                                                       | 
 select                   |X |                                                       | 
-skip                     |X |Broken on SQLServer when combined with sortByDescending + take     | 
+skip                     |X |                                                       | 
 skipWhile                |  |                                                       | 
 sortBy                   |X |                                                       | 
-sortByDescending	     |X |Broken on SQLServer when combined with skip+take       | 
+sortByDescending	     |X |                                                       | 
 sortByNullable           |X |                                                       | 
 sortByNullableDescending |X |                                                       | 
 sumBy                    |X |                                                       | 
 sumByNullable            |X |                                                       | 
-take                     |X |Broken on SQLServer when combined with skip+sortByDescending      | 
+take                     |X |                                                       | 
 takeWhile                |  |                                                       | 
 thenBy	                 |X |                                                       |     
 thenByDescending	     |X |                                                       |   
