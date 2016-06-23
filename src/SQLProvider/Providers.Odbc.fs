@@ -289,6 +289,7 @@ type internal OdbcProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
@@ -306,10 +307,18 @@ type internal OdbcProvider() =
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%c%s%c.%c%s%c IN (%s)") cOpen alias cClose cOpen col cClose text
+                                    | FSharp.Data.Sql.NestedIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%c%s%c.%c%s%c IN (%s)") cOpen alias cClose cOpen col cClose innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose text
+                                    | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose innersql
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col

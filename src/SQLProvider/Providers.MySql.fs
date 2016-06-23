@@ -517,6 +517,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let elements = box x :?> obj array
@@ -540,12 +541,23 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
+
+                                let operatorInQuery operator (array : IDbDataParameter[]) =
+                                    let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                    Array.iter parameters.Add innerpars
+                                    match operator with
+                                    | FSharp.Data.Sql.NestedIn -> (sprintf "`%s`.`%s` IN (%s)") alias col innersql
+                                    | FSharp.Data.Sql.NestedNotIn -> (sprintf "`%s`.`%s` NOT IN (%s)") alias col innersql
+                                    | _ -> failwith "Should not be called with any other operator"
+
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col
                                     | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col
-                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.In 
                                     | FSharp.Data.Sql.NotIn -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NestedIn 
+                                    | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "`%s`.`%s`%s %s") alias col

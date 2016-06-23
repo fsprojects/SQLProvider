@@ -172,6 +172,25 @@ module internal QueryImplementation =
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
                     match exp with
+                    | SqlSpecialOpArrQueryable(ti,op,key,qry)
+                    | SqlSpecialNegativeOpArrQueryable(ti,op,key,qry) ->
+
+                        let svc = (qry :?> IWithSqlService)
+                        use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider
+
+                        let modified = 
+                            parameters |> Seq.map(fun p ->
+                                p.ParameterName <- p.ParameterName.Replace("@param", "@paramnested")
+                                p
+                            ) |> Seq.toArray
+                        let subquery = 
+                            let paramfixed = query.Replace("@param", "@paramnested")
+                            match paramfixed.EndsWith(";") with
+                            | false -> paramfixed
+                            | true -> paramfixed.Substring(0, paramfixed.Length-1)
+                        
+                        Some(ti,key,op,Some (box (subquery, modified)))
                     | SqlSpecialOpArr(ti,op,key,value)
                     | SqlSpecialNegativeOpArr(ti,op,key,value) ->
                         paramNames.Add(ti) |> ignore

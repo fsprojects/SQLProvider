@@ -17,6 +17,8 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
 let ctx = HR.GetDataContext()
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+
         
 type Employee = {
     EmployeeId : int32
@@ -103,6 +105,20 @@ let countries =
                                          )
                )
     |> Seq.toList
+
+open System.Linq
+
+let nestedQueryTest = 
+    let qry1 = query {
+        for emp in ctx.Hr.Employees do
+        where (emp.FirstName.StartsWith("S"))
+        select (emp.FirstName)
+    }
+    query {
+        for emp in ctx.Hr.Employees do
+        where (qry1.Contains(emp.FirstName))
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.toArray
 
 //************************ CRUD *************************//
 

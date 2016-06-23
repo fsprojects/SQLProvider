@@ -583,6 +583,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let elements = box x :?> obj array
@@ -600,10 +601,18 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
+                                    | FSharp.Data.Sql.NestedIn ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text
+                                    | FSharp.Data.Sql.NestedNotIn ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) innersql
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col)
