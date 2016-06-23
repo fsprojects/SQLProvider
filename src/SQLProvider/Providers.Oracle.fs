@@ -97,11 +97,19 @@ module internal Oracle =
         findClrType <- clrMappings.TryFind
         findDbType <- oracleMappings.TryFind
 
-    let tryReadValueProperty instance =
-        let typ = instance.GetType()
-        let prop = typ.GetProperty("Value")
-        if prop <> null
-        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+    let tryReadValueProperty (instance:obj) =
+        if instance <> null
+        then
+            let typ = instance.GetType()
+            let isNull = 
+                let isNullProp = typ.GetProperty("IsNull")
+                if isNullProp <> null
+                then unbox<bool>(isNullProp.GetGetMethod().Invoke(instance, [||]))
+                else false
+            let prop = typ.GetProperty("Value")
+            if not(isNull) && prop <> null
+            then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+            else None
         else None
 
     let createConnection connectionString =
