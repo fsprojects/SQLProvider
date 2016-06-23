@@ -305,8 +305,8 @@ module internal Oracle =
         let querySprocParameters packageName sprocName =
             let sql = 
                 if String.IsNullOrWhiteSpace(packageName)
-                then sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s'" sprocName
-                else sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND PACKAGE_NAME = '%s'" sprocName packageName 
+                then sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND (OVERLOAD = 1 OR OVERLOAD IS NULL) " sprocName
+                else sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND PACKAGE_NAME = '%s' AND (OVERLOAD = 1 OR OVERLOAD IS NULL)" sprocName packageName 
 
             Sql.executeSqlAsDataTable createCommand sql con
         
