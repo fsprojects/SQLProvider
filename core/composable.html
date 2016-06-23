@@ -247,6 +247,40 @@ You can read more about that library here: <a href="http://fsprojects.github.io/
 </code></pre></td>
 </tr>
 </table>
+<h3><a name="Nested-Select-Where-Queries" class="anchor" href="#Nested-Select-Where-Queries">Nested Select Where Queries</a></h3>
+<p>You can create a query like <code>SELECT * FROM xs WHERE xs.x IN (SELECT y FROM ys))</code>
+with either LINQ Contains or custom operators: in <code>|=|</code> and not-in <code>|&lt;&gt;|</code>
+This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs17', 69)" onmouseover="showTip(event, 'fs17', 69)" class="i">System</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 70)" onmouseover="showTip(event, 'fs18', 70)" class="i">Linq</span>
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 71)" onmouseover="showTip(event, 'fs31', 71)" class="i">nestedQueryTest</span> <span class="o">=</span> 
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 72)" onmouseover="showTip(event, 'fs27', 72)" class="i">qry1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 73)" onmouseover="showTip(event, 'fs26', 73)" class="i">query</span> {
+        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span><span class="o">.</span><span class="i">StartsWith</span>(<span class="s">&quot;S&quot;</span>))
+        <span class="i">select</span> (<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span>)
+    }
+    <span onmouseout="hideTip(event, 'fs26', 74)" onmouseover="showTip(event, 'fs26', 74)" class="i">query</span> {
+        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+        <span class="i">where</span> (<span onmouseout="hideTip(event, 'fs27', 75)" onmouseover="showTip(event, 'fs27', 75)" class="i">qry1</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span>))
+        <span class="i">select</span> (<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span>, <span class="i">emp</span><span class="o">.</span><span class="i">LastName</span>)
+    } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs13', 76)" onmouseover="showTip(event, 'fs13', 76)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs14', 77)" onmouseover="showTip(event, 'fs14', 77)" class="f">toArray</span>
+</code></pre></td>
+</tr>
+</table>
 
 <div class="tip" id="fs1">Multiple items<br />type LiteralAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; LiteralAttribute<br /><br />Full name: Microsoft.FSharp.Core.LiteralAttribute<br /><br />--------------------<br />new : unit -&gt; LiteralAttribute</div>
 <div class="tip" id="fs2">val connectionString : string<br /><br />Full name: Composable.connectionString</div>
@@ -278,6 +312,7 @@ You can read more about that library here: <a href="http://fsprojects.github.io/
 <div class="tip" id="fs28">val qry2 : obj</div>
 <div class="tip" id="fs29">val qry1 : obj<br /><br />Full name: Composable.qry1</div>
 <div class="tip" id="fs30">val qry2 : obj<br /><br />Full name: Composable.qry2</div>
+<div class="tip" id="fs31">val nestedQueryTest : obj []<br /><br />Full name: Composable.nestedQueryTest</div>
 
         </div>
         <div class="span3">
