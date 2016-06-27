@@ -169,6 +169,7 @@ module internal QueryImplementation =
 
              let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
                 let paramNames = HashSet<string>()
+
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
                     match exp with
@@ -221,6 +222,9 @@ module internal QueryImplementation =
                     | SqlNegativeCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
+                    | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.Equal, Some(true |> box))
                     | _ -> None
 
                 let rec filterExpression (exp:Expression)  =
