@@ -1,3 +1,7 @@
+### 1.0.21 - 29.06.2016
+* query: where (myTable.MyBoolean) -support
+* MsSql Mono DateTime fix
+
 ### 1.0.20 - 23.06.2016
 * Nested IN-queries
 
