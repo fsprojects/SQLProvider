@@ -177,6 +177,19 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty query
 
+[<Test>]
+let ``simplest select query let temp``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y = cust.City
+            select cust.Address
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select query let temp``() = 
     let dc = sql.GetDataContext()

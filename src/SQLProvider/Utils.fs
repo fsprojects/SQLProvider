@@ -24,7 +24,9 @@ module internal Utilities =
     
     let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
-        tupleIndex.[(int <| name.Remove(0, 4)) - 1]
+        let itemid = (int <| name.Remove(0, 4))
+        if(tupleIndex.Count < itemid) then "tmp" + name
+        else tupleIndex.[itemid - 1]
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
