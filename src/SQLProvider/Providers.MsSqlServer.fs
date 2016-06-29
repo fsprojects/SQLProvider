@@ -26,7 +26,9 @@ module MSSqlServer =
 
         let getDbType(providerType:int) =
             let p = new SqlParameter()
-            p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
+            if providerType = 31 || providerType = 32
+            then p.SqlDbType <- SqlDbType.DateTime
+            else p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
             p.DbType
 
         let getClrType (input:string) =
@@ -40,6 +42,10 @@ module MSSqlServer =
                     let clrType =
                         if oleDbType = "tinyint"
                         then typeof<byte>.ToString()
+                        else if oleDbType = "date"
+                        then  typeof<DateTime>.ToString()
+                        else if oleDbType = "time"
+                        then  typeof<DateTime>.ToString()
                         else getClrType (string r.["DataType"])
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
