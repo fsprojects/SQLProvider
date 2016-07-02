@@ -1,3 +1,6 @@
+### 1.0.22 - 02.07.2016
+* Async query sort order fix on ordered query
+
 ### 1.0.21 - 29.06.2016
 * query: where (myTable.MyBoolean) -support
 * MsSql Mono DateTime fix
