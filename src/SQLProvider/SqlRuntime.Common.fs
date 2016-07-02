@@ -358,8 +358,10 @@ and internal SqlQuery =
                     if q.Skip.IsSome then failwith "skip may only be specified once"
                     else convert { q with Skip = Some(amount) } rest
                 | Take(amount, rest) ->
-                    if q.Take.IsSome then failwith "take may only be specified once"
-                    else convert { q with Take = Some(amount) } rest
+                    match q.Take with
+                    | Some x when x = 1 && amount = 1 -> q
+                    | Some x -> failwith "take may only be specified once"
+                    | None -> convert { q with Take = Some(amount) } rest
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
