@@ -63,7 +63,7 @@ let resolutionPath =
 (**
 ### IndividualsAmount
 
-Number of instances to retrieve when using the [individuals](core/individuals.html) feature.
+Number of instances to retrieve when using the [individuals](individuals.html) feature.
 Default is 1000.
 *)
 
