@@ -200,6 +200,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             try
                 Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
             with
+            | :? System.Reflection.ReflectionTypeLoadException as ex ->
+                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+                let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+                raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
                 let msg = ex.InnerException.Message + ", Path: " + (Path.GetFullPath resolutionPath)
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
