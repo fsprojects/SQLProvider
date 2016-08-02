@@ -147,7 +147,7 @@ type internal OdbcProvider() =
         let pkValue =
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+            | None -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
         cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
         ~~(sprintf "DELETE FROM %s WHERE %s = ?" entity.Table.Name pk )
         cmd.CommandText <- sb.ToString()
@@ -490,6 +490,7 @@ type internal OdbcProvider() =
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)

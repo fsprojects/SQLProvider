@@ -169,7 +169,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         let pkValue =
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+            | None -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
         let p = createParam "@id" 0 pkValue
         cmd.Parameters.Add(p) |> ignore
         ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
@@ -576,6 +576,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

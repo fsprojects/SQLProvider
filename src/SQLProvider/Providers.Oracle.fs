@@ -467,7 +467,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         let pkValue =
             match entity.GetColumnOption<obj> pk.Column with
             | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+            | None -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
         ~~(sprintf "DELETE FROM %s WHERE %s = :id" (entity.Table.FullName) pk.Column )
         let cmd = provider.CreateCommand(con, sb.ToString())
         cmd.CommandType <- CommandType.Text
@@ -800,6 +800,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

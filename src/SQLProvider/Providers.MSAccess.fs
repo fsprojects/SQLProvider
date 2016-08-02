@@ -136,7 +136,7 @@ type internal MSAccessProvider() =
         let pkValue =
             match entity.GetColumnOption<obj> pk with
             | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
+            | None -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
         cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
         ~~(sprintf "DELETE FROM [%s] WHERE %s = @id" entity.Table.Name pk )
         cmd.CommandText <- sb.ToString()
