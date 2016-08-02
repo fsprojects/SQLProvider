@@ -1,3 +1,6 @@
+### 1.0.23 - 02.08.2016
+* Fixed delete on ProcessUpdatesAsync
+
 ### 1.0.22 - 02.07.2016
 * Async query sort order fix on ordered query
 
