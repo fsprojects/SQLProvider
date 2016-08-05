@@ -1,3 +1,6 @@
+### 1.0.24 - 05.08.2016
+* Fixed exception on queries where are multiple times "take 1"
+
 ### 1.0.23 - 02.08.2016
 * Fixed delete on ProcessUpdatesAsync
 
