@@ -453,8 +453,21 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 yield! Seq.cast<MemberInfo> it
 
               yield! containers |> Seq.map(fun p ->  ProvidedProperty(p.Name.Replace("Container",""), p, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
-              yield ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)  :> MemberInfo
-              yield ProvidedMethod("SubmitUpdatesAsync",[],typeof<Async<unit>>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() @@>)  :> MemberInfo
+              let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
+              submit.AddXmlDoc("Save changes to database. Throws errors. To deal with non-saved items use GetUpdates() and ClearUpdates().")
+              yield submit :> MemberInfo
+
+              let submitasync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<Async<unit>>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() @@>)
+              submitasync.AddXmlDoc("Save changes to database. Throws errors. To deal with non-saved items use GetUpdates() and ClearUpdates().")
+              yield submitasync :> MemberInfo
+
+              let submit2 = ProvidedMethod("SubmitUpdates",[ProvidedParameter("clearFailedItems", typeof<bool>); ProvidedParameter("swallowExceptions", typeof<bool>)],typeof<string>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges(%%args.[1], %%args.[2]) @@>)
+              let submitasync2 = ProvidedMethod("SubmitUpdatesAsync",[ProvidedParameter("clearFailedItems", typeof<bool>); ProvidedParameter("swallowExceptions", typeof<bool>)],typeof<Async<string>>,     InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync(%%args.[1], %%args.[2]) @@>)
+              submit2.AddXmlDoc("Save changes to database. More detailed exceptions. Param to clear non-saved (failed) items and another to raise exeption or just return exception as a string.")
+              submitasync2.AddXmlDoc("Save changes to database. More detailed exceptions. Param to clear non-saved (failed) items and another to raise exeption or just return exception as a string.")
+              yield submit2 :> MemberInfo
+              yield submitasync2 :> MemberInfo
+
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>,InvokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
