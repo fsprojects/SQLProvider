@@ -58,7 +58,7 @@ ctx.SubmitUpdates()
 (**
 After update your item (row) is having Id property.
 
-You can also create with longer ``Create(...)``(parameters) -method like thisP:
+You can also create with longer ``Create(...)``(parameters)-method like this:
 
 *)
 
