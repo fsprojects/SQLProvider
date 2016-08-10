@@ -246,7 +246,7 @@ Target "BuildDocs" DoNothing
   ==> "BuildDocs"
 
 "All" 
-  ==> "NuGet"
+  =?> ("NuGet", not(hasBuildParam "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
 
