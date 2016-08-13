@@ -91,7 +91,10 @@ type internal MSAccessProvider() =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
-        let pk = pkLookup.[entity.Table.FullName]
+        let pk =
+            if not(pkLookup.ContainsKey entity.Table.FullName) then
+                failwith("Can't update entity: Table doesn't have a primary key: " + entity.Table.FullName)
+            pkLookup.[entity.Table.FullName]
         sb.Clear() |> ignore
 
         if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
@@ -276,6 +279,7 @@ type internal MSAccessProvider() =
                     FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                 // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
                 match extracolumns with
+                | [] when String.IsNullOrEmpty(selectcolumns) -> "*"
                 | [] -> selectcolumns
                 | h::t -> h
 
@@ -390,7 +394,7 @@ type internal MSAccessProvider() =
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
 
-            ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) baseTable.Name baseAlias)
+            ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")) baseAlias)
 
             fromBuilder(numLinks)
             // WHERE
