@@ -402,7 +402,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
 
         ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk;"
             entity.Table.Schema entity.Table.Name
-            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) ))
             pk)
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)

@@ -271,7 +271,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();"
             (entity.Table.FullName.Replace("[","`").Replace("]","`"))
-            (String.Join(",",columnNames))
+            ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
@@ -309,7 +309,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
         ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
             (entity.Table.FullName.Replace("[","`").Replace("]","`"))
-            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
+            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName )))
             pk)
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
