@@ -85,10 +85,15 @@ type Sproc =
     | Sproc of CompileTimeSprocDefinition
     | Empty
 
+type KeyColumn =
+| NoKeys
+| Key of string
+| CompositeKey of string list
+
 type PrimaryKey =
     { Name: string
       Table: string
-      Column: string
+      Column: KeyColumn
       IndexName: string }
 
 type Table =

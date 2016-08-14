@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal OdbcProvider() =
-    let pkLookup = ConcurrentDictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,KeyColumn>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
 
@@ -99,19 +99,23 @@ type internal OdbcProvider() =
         cmd.CommandText <- "SELECT @@IDENTITY AS id;"
         cmd
 
-    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
         sb.Clear() |> ignore
 
-        if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+        match pk with
+        | Key x when changedColumns |> List.exists ((=)x)
+            -> failwith "Error - you cannot change the primary key of an entity."
+        | _ -> ()
 
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
 
         let data =
             (([],0),changedColumns)
@@ -125,15 +129,23 @@ type internal OdbcProvider() =
             |> List.rev
             |> List.toArray
 
-        let pkParam = OdbcParameter(null, pkValue)
-
-        ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;"
-            entity.Table.Name
-            (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%s = %s" c "?" ) ))
-            pk)
+        match pk with
+        | NoKeys -> ()
+        | Key x ->
+            ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;"
+                entity.Table.Name
+                (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%s = %s" c "?" ) ))
+                x)
+        | CompositeKey ks -> 
+            // TODO: What is the ?-mark parameter? Look from other providers how this is done.
+            failwith ("CompositeKey items update is not Supported in Odbc. (" + entity.Table.FullName + ")")
 
         cmd.Parameters.AddRange(data |> Array.map snd)
-        cmd.Parameters.Add pkParam |> ignore
+
+        pkValues |> List.iteri(fun i pkValue ->
+            let pkParam = OdbcParameter(null, pkValue)
+            cmd.Parameters.Add pkParam |> ignore
+            )
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -142,24 +154,33 @@ type internal OdbcProvider() =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
         sb.Clear() |> ignore
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
-        cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
-        ~~(sprintf "DELETE FROM %s WHERE %s = ?" entity.Table.Name pk )
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
+
+        pkValues |> List.iteri(fun i pkValue ->
+            cmd.Parameters.AddWithValue("@id"+i.ToString(),pkValue) |> ignore)
+
+        match pk with
+        | NoKeys -> ()
+        | Key k -> ~~(sprintf "DELETE FROM %s WHERE %s = ?;" entity.Table.FullName k )
+        | CompositeKey ks -> 
+            // TODO: What is the ?-mark parameter? Look from other providers how this is done.
+            failwith ("CompositeKey items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")
         cmd.CommandText <- sb.ToString()
         cmd
 
     let checkKey id (e:SqlEntity) =
         if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetColumnOption pkLookup.[e.Table.FullName] with
-            | Some(_) -> () // if the primary key exists, do nothing
+            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
+            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
+            | _ -> () // if the primary key exists, do nothing
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
-            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
@@ -193,12 +214,12 @@ type internal OdbcProvider() =
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, v -> Some v
+            | true, Key v -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
             match columnLookup.TryGetValue table.FullName with
-            | (true,data) -> data
+            | (true,data) when data.Count > 0 -> data
             | _ ->
                 let con = con :?> OdbcConnection
                 if con.State <> ConnectionState.Open then con.Open()
@@ -216,11 +237,18 @@ type internal OdbcProvider() =
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
                                   IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false }
                             if col.IsPrimaryKey then 
-                                pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
+                                pkLookup.AddOrUpdate(table.FullName, Key(col.Name), fun key old ->
+                                    match col.Name with 
+                                    | "" -> old 
+                                    | x -> match old with
+                                           | Key o when o<>x -> CompositeKey([o;x] |> List.sort)
+                                           | CompositeKey(os) -> x::os |> Seq.distinct |> Seq.toList |> List.sort |> CompositeKey
+                                           | _ -> Key(x)
+                                ) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
-                columnLookup.GetOrAdd(table.FullName,columns)
+                columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(_,_) = ([],[]) // The ODBC type provider does not currently support GetRelationships operations.
         member __.GetSprocs(_) = []
@@ -437,7 +465,7 @@ type internal OdbcProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
@@ -489,7 +517,7 @@ type internal OdbcProvider() =
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
