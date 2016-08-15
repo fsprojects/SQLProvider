@@ -12,7 +12,7 @@ open FSharp.Data.Sql.Common
 type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
-    let pkLookup = ConcurrentDictionary<string,KeyColumn>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
@@ -125,11 +125,11 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
-        | Key x when changedColumns |> List.exists ((=)x)
+        | [x] when changedColumns |> List.exists ((=)x)
             -> failwith "Error - you cannot change the primary key of an entity."
         | _ -> ()
 
@@ -152,13 +152,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             |> List.toArray
 
         match pk with
-        | NoKeys -> ()
-        | Key x ->
-            ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk0;"
-                entity.Table.FullName
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-                x)
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 entity.Table.FullName
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
@@ -177,7 +172,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         cmd.Connection <- con
         sb.Clear() |> ignore
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -188,9 +183,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             cmd.Parameters.Add(p) |> ignore)
 
         match pk with
-        | NoKeys -> ()
-        | Key k -> ~~(sprintf "DELETE FROM %s WHERE %s = @id0;" entity.Table.FullName k )
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
@@ -258,7 +252,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, Key v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -281,13 +275,12 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = if reader.GetBoolean(5) then true else false }
                             if col.IsPrimaryKey then 
-                                pkLookup.AddOrUpdate(table.FullName, Key(col.Name), fun key old -> 
+                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
-                                           | Key o when o<>x -> CompositeKey([o;x] |> List.sort)
-                                           | CompositeKey(os) -> x::os |> Seq.distinct |> Seq.toList |> List.sort |> CompositeKey
-                                           | _ -> Key(x)
+                                           | [] -> [x]
+                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                 ) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]

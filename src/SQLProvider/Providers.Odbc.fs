@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal OdbcProvider() =
-    let pkLookup = ConcurrentDictionary<string,KeyColumn>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
 
@@ -104,11 +104,11 @@ type internal OdbcProvider() =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
-        | Key x when changedColumns |> List.exists ((=)x)
+        | [x] when changedColumns |> List.exists ((=)x)
             -> failwith "Error - you cannot change the primary key of an entity."
         | _ -> ()
 
@@ -130,15 +130,15 @@ type internal OdbcProvider() =
             |> List.toArray
 
         match pk with
-        | NoKeys -> ()
-        | Key x ->
+        | [] -> ()
+        | [x] ->
             ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;"
                 entity.Table.Name
                 (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%s = %s" c "?" ) ))
                 x)
-        | CompositeKey ks -> 
+        | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
-            failwith ("CompositeKey items update is not Supported in Odbc. (" + entity.Table.FullName + ")")
+            failwith ("Composite key items update is not Supported in Odbc. (" + entity.Table.FullName + ")")
 
         cmd.Parameters.AddRange(data |> Array.map snd)
 
@@ -155,7 +155,7 @@ type internal OdbcProvider() =
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -166,11 +166,11 @@ type internal OdbcProvider() =
             cmd.Parameters.AddWithValue("@id"+i.ToString(),pkValue) |> ignore)
 
         match pk with
-        | NoKeys -> ()
-        | Key k -> ~~(sprintf "DELETE FROM %s WHERE %s = ?;" entity.Table.FullName k )
-        | CompositeKey ks -> 
+        | [] -> ()
+        | [k] -> ~~(sprintf "DELETE FROM %s WHERE %s = ?;" entity.Table.FullName k )
+        | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
-            failwith ("CompositeKey items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")
+            failwith ("Composite key items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -214,7 +214,7 @@ type internal OdbcProvider() =
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, Key v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -237,13 +237,12 @@ type internal OdbcProvider() =
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
                                   IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false }
                             if col.IsPrimaryKey then 
-                                pkLookup.AddOrUpdate(table.FullName, Key(col.Name), fun key old ->
+                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old ->
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
-                                           | Key o when o<>x -> CompositeKey([o;x] |> List.sort)
-                                           | CompositeKey(os) -> x::os |> Seq.distinct |> Seq.toList |> List.sort |> CompositeKey
-                                           | _ -> Key(x)
+                                           | [] -> [x]
+                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                 ) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]

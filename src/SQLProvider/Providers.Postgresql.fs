@@ -328,7 +328,7 @@ module PostgreSQL =
             Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
-    let pkLookup = ConcurrentDictionary<string,KeyColumn>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
@@ -338,7 +338,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         let columnNames, values =
             (([],0),entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out,i) (k,v,c) ->
@@ -363,7 +363,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
         match haspk, pk with
-        | true, Key itm -> ~~(sprintf " RETURNING \"%s\";" itm)
+        | true, [itm] -> ~~(sprintf " RETURNING \"%s\";" itm)
         | _ -> ()
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
@@ -375,11 +375,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
-        | Key x when changedColumns |> List.exists ((=)x)
+        | [x] when changedColumns |> List.exists ((=)x)
             -> failwith "Error - you cannot change the primary key of an entity."
         | _ -> ()
 
@@ -404,13 +404,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             |> List.toArray
 
         match pk with
-        | NoKeys -> ()
-        | Key x ->
-            ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE %s = @pk0;"
-                entity.Table.Schema entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) ))
-                x)
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
@@ -429,7 +424,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         cmd.Connection <- con
         sb.Clear() |> ignore
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -441,9 +436,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             cmd.Parameters.Add(p) |> ignore)
 
         match pk with
-        | NoKeys -> ()
-        | Key k -> ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE %s = @id0" entity.Table.Schema entity.Table.Name k )
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " entity.Table.Schema entity.Table.Name)
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
 
@@ -488,7 +482,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, Key v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -538,13 +532,12 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
                                           IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
                                     if col.IsPrimaryKey then
-                                        pkLookup.AddOrUpdate(table.FullName, Key(col.Name), fun key old -> 
+                                        pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
-                                                   | Key o when o<>x -> CompositeKey([o;x] |> List.sort)
-                                                   | CompositeKey(os) -> x::os |> Seq.distinct |> Seq.toList |> List.sort |> CompositeKey
-                                                   | _ -> Key(x)
+                                                   | [] -> [x]
+                                                   | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
                                     yield (col.Name,col)
                                 | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName dataType ]

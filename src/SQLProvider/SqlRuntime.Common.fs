@@ -98,16 +98,9 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            | data -> Some(unbox data)
        else None
 
-    member __.GetPkColumnOption<'T>(pkKey:KeyColumn) : 'T list =
-       match pkKey with
-       | NoKeys -> List.Empty
-       | Key key ->
-           match __.GetColumnOption<'T>(key) with
-           | None -> List.Empty
-           | Some itms -> [itms]
-       | CompositeKey keys ->
-           keys |> List.choose(fun key -> 
-                __.GetColumnOption<'T>(key)) 
+    member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
+        keys |> List.choose(fun key -> 
+            __.GetColumnOption<'T>(key)) 
 
     member internal this.GetColumnOptionWithDefinition(key) =
         this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
@@ -126,11 +119,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.SetColumnSilent(key,value) =
         data.[key] <- value
 
-    member __.SetPkColumnSilent(key,value) =
-        match key with
-        | NoKeys -> ()
-        | Key x -> data.[x] <- value
-        | CompositeKey xs -> xs |> List.iter(fun x -> data.[x] <- value)
+    member __.SetPkColumnSilent(keys,value) =
+        keys |> List.iter(fun x -> data.[x] <- value)
 
     member e.SetColumn<'t>(key,value : 't) =
         data.[key] <- value
@@ -146,16 +136,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
           else data.[key] <- value
       | None -> data.Remove key |> ignore
 
-    member __.SetPkColumnOptionSilent(key,value) =
-        match key with
-        | NoKeys -> ()
-        | Key x -> 
-            match value with
-            | Some value ->
-                if not (data.ContainsKey x) then data.Add(x,value)
-                else data.[x] <- value
-            | None -> data.Remove x |> ignore
-        | CompositeKey xs -> xs |> List.iter(fun x -> 
+    member __.SetPkColumnOptionSilent(keys,value) =
+        keys |> List.iter(fun x -> 
             match value with
             | Some value ->
                 if not (data.ContainsKey x) then data.Add(x,value)

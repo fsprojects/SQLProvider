@@ -234,7 +234,7 @@ module internal Oracle =
                 |> Option.map (fun m ->
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = Key(columnName))
+                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = [columnName])
                       IsNullable = nullable }
                 ))
         |> Seq.choose id
@@ -253,7 +253,7 @@ module internal Oracle =
                 match primaryKeys.TryGetValue(table) with
                 | true, pks ->
                     match pks.Column, foreignKeyCols.TryFind name with
-                    | Key pk, Some(fk) ->
+                    | [pk], Some(fk) ->
                          { Name = name
                            PrimaryTable = Table.CreateFullName(Sql.dbUnbox row.[1],Sql.dbUnbox row.[2])
                            PrimaryKey = pk
@@ -395,7 +395,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
 
     let isPrimaryKey tableName columnName = 
         match primaryKeyColumn.TryGetValue tableName with
-        | true, pk when pk.Column = Key(columnName) -> true
+        | true, pk when pk.Column = [columnName] -> true
         | _ -> false
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -449,14 +449,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             |> Array.unzip
 
         match pk.Column with
-        | NoKeys -> ()
-        | Key x ->
-            ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk0"
-                (entity.Table.FullName)
-                (String.Join(",", columns))
-                (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
-                x)
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE "
                 (entity.Table.FullName)
                 (String.Join(",", columns))
@@ -481,9 +475,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             | v -> v
 
         match pk.Column with
-        | NoKeys -> ()
-        | Key k -> ~~(sprintf "DELETE FROM %s WHERE %s = :id0" (entity.Table.FullName) k )
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = :id%i" k i))))
 
@@ -523,7 +516,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
 
         member __.GetPrimaryKey(table) =
             match primaryKeyColumn.TryGetValue table.Name with
-            | true, v -> match v.Column with Key x -> Some(x) | _ -> None
+            | true, v -> match v.Column with [x] -> Some(x) | _ -> None
             | _ -> None
 
         member __.GetColumns(con,table) =

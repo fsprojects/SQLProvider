@@ -12,7 +12,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal MSAccessProvider() =
-    let pkLookup = new ConcurrentDictionary<string,KeyColumn>()
+    let pkLookup = new ConcurrentDictionary<string,string list>()
     let tableLookup = new ConcurrentDictionary<string,Table>()
     let relationshipLookup = new ConcurrentDictionary<string,Relationship list * Relationship list>()
     let columnLookup = new ConcurrentDictionary<string,ColumnLookup>()
@@ -98,7 +98,7 @@ type internal MSAccessProvider() =
         sb.Clear() |> ignore
 
         match pk with
-        | Key x when changedColumns |> List.exists ((=)x)
+        | [x] when changedColumns |> List.exists ((=)x)
             -> failwith "Error - you cannot change the primary key of an entity."
         | _ -> ()
 
@@ -121,13 +121,8 @@ type internal MSAccessProvider() =
             |> List.toArray
 
         match pk with
-        | NoKeys -> ()
-        | Key x ->
-            ~~(sprintf "UPDATE [%s] SET %s WHERE %s = @pk0;"
-                (entity.Table.Name.Replace("\"", ""))
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-                x)
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "UPDATE [%s] SET %s WHERE "
                 (entity.Table.Name.Replace("\"", ""))
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
@@ -147,7 +142,7 @@ type internal MSAccessProvider() =
         cmd.Connection <- con :?> OleDbConnection
         sb.Clear() |> ignore
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else NoKeys
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -158,9 +153,8 @@ type internal MSAccessProvider() =
             cmd.Parameters.AddWithValue(("@id"+i.ToString()),pkValue) |> ignore)
 
         match pk with
-        | NoKeys -> ()
-        | Key k -> ~~(sprintf "DELETE FROM [%s] WHERE %s = @id0" (entity.Table.Name.Replace("\"", "")) k )
-        | CompositeKey ks -> 
+        | [] -> ()
+        | ks -> 
             ~~(sprintf "DELETE FROM [%s] WHERE " (entity.Table.Name.Replace("\"", "")))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
 
@@ -203,7 +197,7 @@ type internal MSAccessProvider() =
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, Key v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -234,12 +228,9 @@ type internal MSAccessProvider() =
                 // only add to PK lookup if it's a single pk - no support for composite keys yet
                 match pks with
                 | [] -> ()
-                | pk::[] -> 
-                    pkLookup.AddOrUpdate(table.FullName, Key(pk), fun key old -> 
-                                match pks.Length with 0 -> old | _ -> Key(pk)) |> ignore
                 | c -> 
-                    pkLookup.AddOrUpdate(table.FullName, CompositeKey(c |> List.sort), fun key old -> 
-                                match pks.Length with 0 -> old | _ -> CompositeKey(c |> List.sort)) |> ignore
+                    pkLookup.AddOrUpdate(table.FullName, (c |> List.sort), fun key old -> 
+                                match pks.Length with 0 -> old | _ -> (c |> List.sort)) |> ignore
                 columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
 
