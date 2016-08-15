@@ -208,14 +208,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '204', 204)" onmouseover="showTip(event, '204', 204)">
-            HasValue(key)
+            GetPkColumnOption(keys)
           </code>
           <div class="tip" id="204">
-            <strong>Signature:</strong> key:string -&gt; bool<br />
-                      </div>
+            <strong>Signature:</strong> (keys:string list) -&gt; &#39;T list<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L141-141" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L101-101" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -226,14 +226,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '205', 205)" onmouseover="showTip(event, '205', 205)">
-            MapTo(propertyTypeMapping)
+            HasValue(key)
           </code>
           <div class="tip" id="205">
-            <strong>Signature:</strong> (propertyTypeMapping:(string * obj -&gt; obj) option) -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+            <strong>Signature:</strong> key:string -&gt; bool<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L180-180" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L156-156" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -244,14 +244,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '206', 206)" onmouseover="showTip(event, '206', 206)">
-            SetColumn(key, value)
+            MapTo(propertyTypeMapping)
           </code>
           <div class="tip" id="206">
-            <strong>Signature:</strong> (key:string * value:&#39;t) -&gt; unit<br />
-                          <strong>Type parameters:</strong> 't          </div>
+            <strong>Signature:</strong> (propertyTypeMapping:(string * obj -&gt; obj) option) -&gt; &#39;a<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L118-118" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L195-195" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -262,29 +262,11 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '207', 207)" onmouseover="showTip(event, '207', 207)">
-            SetColumnOption(key, value)
+            SetColumn(key, value)
           </code>
           <div class="tip" id="207">
-            <strong>Signature:</strong> (key:string * value:&#39;?8020 option) -&gt; unit<br />
-                          <strong>Type parameters:</strong> '?8020          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L132-132" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '208', 208)" onmouseover="showTip(event, '208', 208)">
-            SetColumnOptionSilent(key, value)
-          </code>
-          <div class="tip" id="208">
-            <strong>Signature:</strong> (key:string * value:&#39;a option) -&gt; unit<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+            <strong>Signature:</strong> (key:string * value:&#39;t) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 't          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L125-125" class="github-link">
@@ -297,15 +279,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '209', 209)" onmouseover="showTip(event, '209', 209)">
-            SetColumnSilent(key, value)
+          <code onmouseout="hideTip(event, '208', 208)" onmouseover="showTip(event, '208', 208)">
+            SetColumnOption(key, value)
           </code>
-          <div class="tip" id="209">
-            <strong>Signature:</strong> (key:string * value:&#39;b) -&gt; unit<br />
-                          <strong>Type parameters:</strong> 'b          </div>
+          <div class="tip" id="208">
+            <strong>Signature:</strong> (key:string * value:&#39;?8014 option) -&gt; unit<br />
+                          <strong>Type parameters:</strong> '?8014          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L115-115" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L147-147" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '209', 209)" onmouseover="showTip(event, '209', 209)">
+            SetColumnOptionSilent(key, value)
+          </code>
+          <div class="tip" id="209">
+            <strong>Signature:</strong> (key:string * value:&#39;?8010 option) -&gt; unit<br />
+                          <strong>Type parameters:</strong> '?8010          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L132-132" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -316,14 +316,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '210', 210)" onmouseover="showTip(event, '210', 210)">
-            SetData(data)
+            SetColumnSilent(key, value)
           </code>
           <div class="tip" id="210">
-            <strong>Signature:</strong> (data:seq&lt;string * &#39;c&gt;) -&gt; unit<br />
-                          <strong>Type parameters:</strong> 'c          </div>
+            <strong>Signature:</strong> (key:string * value:&#39;a) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L123-123" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L119-119" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -334,9 +334,63 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '211', 211)" onmouseover="showTip(event, '211', 211)">
-            Table
+            SetData(data)
           </code>
           <div class="tip" id="211">
+            <strong>Signature:</strong> (data:seq&lt;string * &#39;c&gt;) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'c          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L130-130" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '212', 212)" onmouseover="showTip(event, '212', 212)">
+            SetPkColumnOptionSilent(keys, value)
+          </code>
+          <div class="tip" id="212">
+            <strong>Signature:</strong> (keys:string list * value:&#39;a option) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'a          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L139-139" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '213', 213)" onmouseover="showTip(event, '213', 213)">
+            SetPkColumnSilent(keys, value)
+          </code>
+          <div class="tip" id="213">
+            <strong>Signature:</strong> (keys:string list * value:&#39;a) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'a          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L122-122" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '214', 214)" onmouseover="showTip(event, '214', 214)">
+            Table
+          </code>
+          <div class="tip" id="214">
             <strong>Signature:</strong> Table<br />
                       </div>
         </td>
