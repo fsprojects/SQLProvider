@@ -1,3 +1,6 @@
+### 1.0.26 - 15.08.2016
+* CRUD support for composite key tables
+
 ### 1.0.25 - 13.08.2016
 * Fixed functionality with some specially named tables and columns
 
