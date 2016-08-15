@@ -24,7 +24,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider() :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames) =
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames) as x =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -72,6 +72,48 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                     do! Async.Sleep 150 // we can't let async lock but this helps.
                 do! provider.ProcessUpdatesAsync(con, pendingChanges)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
+            }
+
+        member __.SubmitPendingChanges(clearFailedItems, swallowExceptions) =
+            try
+                (x :> ISqlDataContext).SubmitPendingChanges()
+                ""
+            with
+            | e -> 
+                let errormsg = (e.ToString() + "\r\n\r\n"+ System.Diagnostics.StackTrace(1, true).ToString())
+                let entities = (x :> ISqlDataContext).GetPendingEntities() |> List.map (fun entity -> 
+                    let fields = String.Join("\r\n  ", entity.ColumnValues |> Seq.map(fun (c,v) -> match v with null -> c | _ -> c + " " + v.ToString()) |> Seq.toArray)
+                    "Item: \r\n" + fields) |> Seq.toArray
+                let ex = new InvalidOperationException(errormsg + "\r\n\r\nDatabase commit failed for entities: " + String.Join("\r\n", entities) + "\r\n", e)
+                    
+                match clearFailedItems with
+                | true -> (x :> ISqlDataContext).ClearPendingChanges()
+                | false -> ()
+
+                match swallowExceptions with
+                | true -> ex.ToString()
+                | false -> raise ex
+
+        member __.SubmitPendingChangesAsync(clearFailedItems, swallowExceptions) =
+            async {
+                let! res = (x :> ISqlDataContext).SubmitPendingChangesAsync() |> Async.Catch
+                match res with
+                | Choice1Of2 _ -> return ""
+                | Choice2Of2 e ->
+                    let errormsg = (e.ToString() + "\r\n\r\n"+ System.Diagnostics.StackTrace(1, true).ToString())
+                    let entities = (x :> ISqlDataContext).GetPendingEntities() |> List.map (fun entity -> 
+                        let fields = String.Join("\r\n  ", entity.ColumnValues |> Seq.map(fun (c,v) -> match v with null -> c | _ -> c + " " + v.ToString()) |> Seq.toArray)
+                        "Item: \r\n" + fields) |> Seq.toArray
+                    let ex = new InvalidOperationException(errormsg + "\r\n\r\nDatabase commit failed for entities: " + String.Join("\r\n", entities) + "\r\n", e)
+                    
+                    match clearFailedItems with
+                    | true -> (x :> ISqlDataContext).ClearPendingChanges()
+                    | false -> ()
+
+                    return
+                        match swallowExceptions with
+                        | true -> ex.ToString()
+                        | false -> raise ex
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =

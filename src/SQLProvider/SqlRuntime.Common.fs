@@ -267,6 +267,8 @@ and ISqlDataContext =
     abstract SubmitChangedEntity        : SqlEntity -> unit
     abstract SubmitPendingChanges       : unit -> unit
     abstract SubmitPendingChangesAsync  : unit -> Async<unit>
+    abstract SubmitPendingChanges       : bool * bool -> string
+    abstract SubmitPendingChangesAsync  : bool * bool -> Async<string>
     abstract ClearPendingChanges        : unit -> unit
     abstract GetPendingEntities         : unit -> SqlEntity list
     abstract GetPrimaryKeyDefinition    : string -> string
