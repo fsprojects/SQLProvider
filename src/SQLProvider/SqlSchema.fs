@@ -88,7 +88,7 @@ type Sproc =
 type PrimaryKey =
     { Name: string
       Table: string
-      Column: string
+      Column: string list
       IndexName: string }
 
 type Table =

@@ -40,6 +40,10 @@ let orderDetail =
         for c in ctx.Northwind.OrderDetails do
         select c
         head }
+//orderDetail.Discount <- 0.5f
+//orderDetail.Delete()
+//ctx.SubmitUpdates()
+
 
 /// CRUD Test. To use CRUD you have to have a primary key in your table. 
 let crudops =
