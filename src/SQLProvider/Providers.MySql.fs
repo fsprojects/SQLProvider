@@ -355,14 +355,6 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         MySql.owner <- owner
         MySql.referencedAssemblies <- referencedAssemblies
 
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
-            | _ -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
@@ -666,10 +658,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -691,7 +680,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -715,10 +704,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -740,7 +726,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

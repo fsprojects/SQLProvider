@@ -425,3 +425,19 @@ and internal ISqlProvider =
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
+
+
+module internal CommonTasks =
+
+    let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
+        entities |> Seq.map(fun e -> e.Key.Table)
+                    |> Seq.distinct
+                    |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+
+    let checkKey (pkLookup:ConcurrentDictionary<string, string list>) id (e:SqlEntity) =
+        if pkLookup.ContainsKey e.Table.FullName then
+            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
+            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
+            | _  -> () // if the primary key exists, do nothing
+                            // this is because non-identity columns will have been set
+                            // manually and in that case scope_identity would bring back 0 "" or whatever

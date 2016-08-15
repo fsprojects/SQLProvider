@@ -174,14 +174,6 @@ type internal OdbcProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
-            | _ -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
@@ -427,10 +419,7 @@ type internal OdbcProvider() =
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -452,7 +441,7 @@ type internal OdbcProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         let id = (lastInsertId con).ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -475,10 +464,7 @@ type internal OdbcProvider() =
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -500,7 +486,7 @@ type internal OdbcProvider() =
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 let id = (lastInsertId con).ExecuteScalar()
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

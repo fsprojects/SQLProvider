@@ -190,14 +190,6 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
-            | _  -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) =
             //Forces relative paths to be relative to the Runtime assembly
@@ -510,10 +502,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -534,7 +523,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -557,10 +546,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -580,7 +566,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                 use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

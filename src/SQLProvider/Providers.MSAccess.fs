@@ -161,14 +161,6 @@ type internal MSAccessProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
-            | _ -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
@@ -435,10 +427,7 @@ type internal MSAccessProvider() =
             let sb = Text.StringBuilder()
 
             entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -461,7 +450,7 @@ type internal MSAccessProvider() =
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQuery cmd.CommandText
                             let id = cmd.ExecuteScalar()
-                            checkKey id e
+                            CommonTasks.checkKey pkLookup id e
                             e._State <- Unchanged
                         | Modified fields ->
                             let cmd = createUpdateCommand con sb e fields
@@ -489,10 +478,7 @@ type internal MSAccessProvider() =
             let sb = Text.StringBuilder()
 
             entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -516,7 +502,7 @@ type internal MSAccessProvider() =
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                     let id = cmd.ExecuteScalarAsync()
-                                    checkKey id e
+                                    CommonTasks.checkKey pkLookup id e
                                     e._State <- Unchanged
                                 }
                             | Modified fields ->

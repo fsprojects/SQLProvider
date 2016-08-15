@@ -714,10 +714,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -766,10 +763,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
