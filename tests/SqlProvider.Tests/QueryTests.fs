@@ -758,3 +758,17 @@ let ``simple select query async``() =
         } |> Async.StartAsTask
     task.Wait()
     CollectionAssert.IsNotEmpty task.Result
+
+
+type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
+[<Test>]
+let ``simple select with contains query with where boolean option type``() =
+    let dc = sqlOption.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City.IsSome)
+            select cust.CustomerId
+            contains "ALFKI"
+        }
+    Assert.IsTrue(query)    

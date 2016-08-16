@@ -119,3 +119,15 @@ let query2 =
       select customers.CompanyName}
     |> Seq.toArray
 
+
+type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
+let ctxOpt = sqlOpt.GetDataContext()
+let ``none option in left join`` =
+        query { 
+            for od in ctxOpt.Main.OrderDetails do
+            //  the (!!) operator will perform an outer join on a relationship
+            for prod in (!!) od.``main.Products by ProductID`` do 
+            // standard operators will work as expected; the following shows the like operator and IN operator
+            select (prod.DiscontinuedDate)
+            // arbitrarily complex projections are supported
+        } |> Seq.toList |> List.head
