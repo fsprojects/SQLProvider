@@ -1,3 +1,6 @@
+### 1.0.27 - 18.08.2016
+* Added SourceLink (for debugging possibility).
+
 ### 1.0.26 - 15.08.2016
 * CRUD support for composite key tables
 
