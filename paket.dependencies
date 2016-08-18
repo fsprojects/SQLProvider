@@ -8,6 +8,7 @@ nuget FSharp.Core >= 3.1.2.1 lowest_matching:true, redirects:force
 nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
+nuget SourceLink.Fake
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
