@@ -8,7 +8,7 @@ open System.Data
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
-open Samples.FSharp.ProvidedTypes
+open ProviderImplementation.ProvidedTypes
 open FSharp.Data.Sql.Schema
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
@@ -42,6 +42,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames
         let con = prov.CreateConnection conString
+        this.Disposing.Add(fun _ -> 
+            if con <> Unchecked.defaultof<IDbConnection> then
+                con.Dispose())
         con.Open()
         prov.CreateTypeMappings con
         

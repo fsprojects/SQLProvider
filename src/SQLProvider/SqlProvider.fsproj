@@ -53,9 +53,11 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ProvidedTypes-head.fsi" />
-    <Compile Include="ProvidedTypes-head.fs">
-      <Link>ProvidedTypes-head.fs</Link>
+    <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi">
+      <Link>ProvidedTypes.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs">
+      <Link>ProvidedTypes.fs</Link>
     </Compile>
     <Compile Include="Operators.fs" />
     <Compile Include="Utils.fs" />

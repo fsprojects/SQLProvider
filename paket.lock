@@ -28,6 +28,9 @@ GITHUB
   remote: fsharp/FAKE
     modules/Octokit/Octokit.fsx (cd7849e12cf4a6619863671828ed1b0418e90d7f)
       Octokit (>= 0.20)
+  remote: fsprojects/FSharp.TypeProviders.StarterPack
+    src/ProvidedTypes.fs (8f647a4cde71bdeda10e7f5b534ec3c879601570)
+    src/ProvidedTypes.fsi (8f647a4cde71bdeda10e7f5b534ec3c879601570)
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET

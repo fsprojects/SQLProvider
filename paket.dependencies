@@ -11,6 +11,8 @@ nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
+github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
+github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
 
 group Scripts
     framework >= 4.0
