@@ -75,16 +75,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 match caseSensitivity with
                                 | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
                                         when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...>"
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...> \r\nConnection: " + connnectionString
                                 | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
                                         when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...>"
-                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema."
+                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connnectionString
+                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connnectionString
                                 | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
                             let possibleError = "Tables not found" + hint
-                            let t = ProvidedProperty("PossibleError", typeof<String>, IsStatic=true, GetterCode = fun _ -> <@@ possibleError @@>)
-                            t.AddXmlDoc possibleError
-                            rootType.AddMember t
+                            let errInfo = 
+                                ProvidedProperty("PossibleError", typeof<String>, GetterCode = fun _ -> <@@ possibleError @@>)
+                            errInfo.AddXmlDocDelayed(fun () -> 
+                                this.Invalidate()
+                                "You have possible configuration error. \r\n " + possibleError)
+                            serviceType.AddMember errInfo
                        else                
                        for table in tablesforced do
                         let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)

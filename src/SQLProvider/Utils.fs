@@ -265,7 +265,11 @@ module internal Reflection =
                 ) |> List.filter Option.isSome
                 |> List.map(fun o -> o.Value.GetBaseException().Message)
                 |> Seq.distinct |> Seq.toList
-            Choice2Of2(folders, errors)
+            if not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists(resolutionPath)) then
+                let x = "" :: errors
+                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resolutionPath::errors))
+            else
+                Choice2Of2(folders, errors)
 
 module Sql =
     

@@ -36,7 +36,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 match errors with 
                 | [] -> "" 
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package System.Data.SQLite.Core) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
