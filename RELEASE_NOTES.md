@@ -1,3 +1,6 @@
+### 1.0.28 - 19.08.2016
+* Configuration error info improvements
+
 ### 1.0.27 - 18.08.2016
 * Added SourceLink (for debugging possibility).
 
