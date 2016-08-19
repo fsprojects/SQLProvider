@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Seq - SQLProvider</title>
+    <title>ProvidedSymbolKind - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,37 +35,36 @@
 
 
 
-<h1>Seq</h1>
+<h1>ProvidedSymbolKind</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
+<p>Represents the type constructor in a provided symbol type.</p>
+
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Union Case</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
-            executeQueryAsync 
+          <code onmouseout="hideTip(event, '354', 354)" onmouseover="showTip(event, '354', 354)">
+            Array(int)
           </code>
-          <div class="tip" id="30">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7365&gt; -&gt; Async&lt;seq&lt;&#39;?7365&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?7365          </div>
+          <div class="tip" id="354">
+            <strong>Signature:</strong> int<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L74-74" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L242-242" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query and release the OS thread while query is being executed.</p>
+          <p>Indicates that the type constructor is for a multi-dimensional array</p>
 
 
         </td>
@@ -73,20 +72,19 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
-            headAsync 
+          <code onmouseout="hideTip(event, '355', 355)" onmouseover="showTip(event, '355', 355)">
+            ByRef
           </code>
-          <div class="tip" id="31">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7369&gt; -&gt; Async&lt;&#39;?7369&gt;<br />
-                          <strong>Type parameters:</strong> '?7369          </div>
+          <div class="tip" id="355">
+            <strong>Signature:</strong> <br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L79-79" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L246-246" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
-Like normal head: Throws exception if no elements exists. See also tryHeadAsync.</p>
+          <p>Indicates that the type constructor is for byref types</p>
 
 
         </td>
@@ -94,19 +92,19 @@ Like normal head: Throws exception if no elements exists. See also tryHeadAsync.
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
-            lengthAsync 
+          <code onmouseout="hideTip(event, '356', 356)" onmouseover="showTip(event, '356', 356)">
+            FSharpTypeAbbreviation(...)
           </code>
-          <div class="tip" id="32">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7367&gt; -&gt; Async&lt;int&gt;<br />
-                          <strong>Type parameters:</strong> '?7367          </div>
+          <div class="tip" id="356">
+            <strong>Signature:</strong> Assembly * string * string []<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L76-76" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L250-250" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query to count the elements, and release the OS thread while query is being executed.</p>
+          <p>Indicates that the type constructor is for abbreviated types</p>
 
 
         </td>
@@ -114,20 +112,59 @@ Like normal head: Throws exception if no elements exists. See also tryHeadAsync.
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
-            tryHeadAsync 
+          <code onmouseout="hideTip(event, '357', 357)" onmouseover="showTip(event, '357', 357)">
+            Generic(Type)
           </code>
-          <div class="tip" id="33">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7371&gt; -&gt; Async&lt;&#39;?7371 option&gt;<br />
-                          <strong>Type parameters:</strong> '?7371          </div>
+          <div class="tip" id="357">
+            <strong>Signature:</strong> Type<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L82-82" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L248-248" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
-Returns None if no elements exists.</p>
+          <p>Indicates that the type constructor is for named generic types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '358', 358)" onmouseover="showTip(event, '358', 358)">
+            Pointer
+          </code>
+          <div class="tip" id="358">
+            <strong>Signature:</strong> <br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L244-244" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for pointer types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '359', 359)" onmouseover="showTip(event, '359', 359)">
+            SDArray
+          </code>
+          <div class="tip" id="359">
+            <strong>Signature:</strong> <br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fsi#L240-240" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for a single-dimensional array</p>
 
 
         </td>

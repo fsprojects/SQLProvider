@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedAssembly - SQLProvider</title>
+    <title>ProvidedTypeBuilder - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,91 +35,14 @@
 
 
 
-<h1>ProvidedAssembly</h1>
+<h1>ProvidedTypeBuilder</h1>
 <p>
-  <span>Namespace: Samples.FSharp.ProvidedTypes</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>A provided generated assembly</p>
+<p>Helpers to build symbolic provided types</p>
 
 </div>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '271', 271)" onmouseover="showTip(event, '271', 271)">
-            new(assemblyFileName)
-          </code>
-          <div class="tip" id="271">
-            <strong>Signature:</strong> assemblyFileName:string -&gt; ProvidedAssembly<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2027-2027" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>.ctor</code></p>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '272', 272)" onmouseover="showTip(event, '272', 272)">
-            AddNestedTypes(...)
-          </code>
-          <div class="tip" id="272">
-            <strong>Signature:</strong> (types:ProvidedTypeDefinition list * enclosingGeneratedTypeNames:string list) -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2051-2051" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '273', 273)" onmouseover="showTip(event, '273', 273)">
-            AddTypes(types)
-          </code>
-          <div class="tip" id="273">
-            <strong>Signature:</strong> (types:ProvidedTypeDefinition list) -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2052-2052" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Emit the given provided type definitions as part of the assembly
-and adjust the 'Assembly' property of all provided type definitions to return that
-assembly.</p>
-<p>The assembly is only emitted when the Assembly property on the root type is accessed for the first time.
-The host F# compiler does this when processing a generative type declaration for the type.</p>
-
-
-        </td>
-      </tr>
-    </tbody>
-  </table>
   <h3>Static members</h3>
   <table class="table table-bordered member-list">
     <thead>
@@ -129,19 +52,39 @@ The host F# compiler does this when processing a generative type declaration for
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '274', 274)" onmouseover="showTip(event, '274', 274)">
-            RegisterGenerated(fileName)
+          <code onmouseout="hideTip(event, '364', 364)" onmouseover="showTip(event, '364', 364)">
+            MakeGenericMethod(...)
           </code>
-          <div class="tip" id="274">
-            <strong>Signature:</strong> fileName:string -&gt; Assembly<br />
+          <div class="tip" id="364">
+            <strong>Signature:</strong> (genericMethodDefinition:MethodInfo * genericArguments:Type list) -&gt; MethodInfo<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2055-2055" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1897-1897" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Register that a given file is a provided generated assembly</p>
+          <p>Like methodInfo.MakeGenericMethod, but will also work with unit-annotated types and provided types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '365', 365)" onmouseover="showTip(event, '365', 365)">
+            MakeGenericType(...)
+          </code>
+          <div class="tip" id="365">
+            <strong>Signature:</strong> (genericTypeDefinition:Type * genericArguments:Type list) -&gt; Type<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1896-1896" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Like typ.MakeGenericType, but will also work with unit-annotated types</p>
 
 
         </td>

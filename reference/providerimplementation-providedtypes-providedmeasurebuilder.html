@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Sql - SQLProvider</title>
+    <title>ProvidedMeasureBuilder - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,199 +35,189 @@
 
 
 
-<h1>Sql</h1>
+<h1>ProvidedMeasureBuilder</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql.Common</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
+<p>Helps create erased provided unit-of-measure annotations.</p>
+
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Instance members</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Instance member</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '40', 40)" onmouseover="showTip(event, '40', 40)">
-            connect con f
+          <code onmouseout="hideTip(event, '313', 313)" onmouseover="showTip(event, '313', 313)">
+            AnnotateType(basic, argument)
           </code>
-          <div class="tip" id="40">
-            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;a) -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L313-313" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '41', 41)" onmouseover="showTip(event, '41', 41)">
-            connectAsync con f
-          </code>
-          <div class="tip" id="41">
-            <strong>Signature:</strong> con:DbConnection -&gt; f:(DbConnection -&gt; unit) -&gt; Async&lt;unit&gt;<br />
+          <div class="tip" id="313">
+            <strong>Signature:</strong> (basic:Type * argument:Type list) -&gt; Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L318-318" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1945-1945" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns a type where the type has been annotated with the given types and/or units-of-measure.
+e.g. float<kg>, Vector<int, kg></p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '42', 42)" onmouseover="showTip(event, '42', 42)">
-            dataReaderToArray reader
+          <code onmouseout="hideTip(event, '314', 314)" onmouseover="showTip(event, '314', 314)">
+            Inverse(denominator)
           </code>
-          <div class="tip" id="42">
-            <strong>Signature:</strong> reader:IDataReader -&gt; (string * obj) [] []<br />
+          <div class="tip" id="314">
+            <strong>Signature:</strong> denominator:Type -&gt; Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L287-287" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1923-1923" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns the measure indicating the inverse of two units of measure, e.g. 1 / s</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '43', 43)" onmouseover="showTip(event, '43', 43)">
-            dataReaderToArrayAsync reader
+          <code onmouseout="hideTip(event, '315', 315)" onmouseover="showTip(event, '315', 315)">
+            One
           </code>
-          <div class="tip" id="43">
-            <strong>Signature:</strong> reader:DbDataReader -&gt; Async&lt;(string * obj) [] []&gt;<br />
+          <div class="tip" id="315">
+            <strong>Signature:</strong> Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L293-293" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1921-1921" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Gets the measure indicating the "1" unit of measure, that is the unitless measure.</p>
+
+
+              <p>CompiledName: <code>get_One</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '44', 44)" onmouseover="showTip(event, '44', 44)">
-            dbUnbox v
+          <code onmouseout="hideTip(event, '316', 316)" onmouseover="showTip(event, '316', 316)">
+            Product(measure1, measure1)
           </code>
-          <div class="tip" id="44">
-            <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+          <div class="tip" id="316">
+            <strong>Signature:</strong> (measure1:Type * measure1:Type) -&gt; Type<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L307-307" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1922-1922" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns the measure indicating the product of two units of measure, e.g. kg * m</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '45', 45)" onmouseover="showTip(event, '45', 45)">
-            dbUnboxWithDefault def v
+          <code onmouseout="hideTip(event, '317', 317)" onmouseover="showTip(event, '317', 317)">
+            Ratio(numerator, denominator)
           </code>
-          <div class="tip" id="45">
-            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+          <div class="tip" id="317">
+            <strong>Signature:</strong> (numerator:Type * denominator:Type) -&gt; Type<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L310-310" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1924-1924" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns the measure indicating the ratio of two units of measure, e.g. kg / m</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '46', 46)" onmouseover="showTip(event, '46', 46)">
-            executeSql createCommand sql con
+          <code onmouseout="hideTip(event, '318', 318)" onmouseover="showTip(event, '318', 318)">
+            SI(unitName)
           </code>
-          <div class="tip" id="46">
-            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; IDataReader<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+          <div class="tip" id="318">
+            <strong>Signature:</strong> unitName:string -&gt; Type<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L326-326" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1930-1930" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns the measure for an SI unit from the F# core library, where the string is in capitals and US spelling, e.g. Meter</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '47', 47)" onmouseover="showTip(event, '47', 47)">
-            executeSqlAsDataTable (...)
+          <code onmouseout="hideTip(event, '319', 319)" onmouseover="showTip(event, '319', 319)">
+            Square(measure)
           </code>
-          <div class="tip" id="47">
-            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; DataTable<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+          <div class="tip" id="319">
+            <strong>Signature:</strong> measure:Type -&gt; Type<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L334-334" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1925-1925" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Returns the measure indicating the square of a unit of measure, e.g. m * m</p>
+
+
         </td>
       </tr>
+    </tbody>
+  </table>
+  <h3>Static members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Static member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '48', 48)" onmouseover="showTip(event, '48', 48)">
-            executeSqlAsDataTableAsync (...)
+          <code onmouseout="hideTip(event, '320', 320)" onmouseover="showTip(event, '320', 320)">
+            Default
           </code>
-          <div class="tip" id="48">
-            <strong>Signature:</strong> createCommand:(&#39;?8169 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8169 -&gt; con:IDbConnection -&gt; Async&lt;DataTable&gt;<br />
-                          <strong>Type parameters:</strong> '?8169          </div>
+          <div class="tip" id="320">
+            <strong>Signature:</strong> ProvidedMeasureBuilder<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L340-340" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1920-1920" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
+          <p>The ProvidedMeasureBuilder for building measures.</p>
 
-          <code onmouseout="hideTip(event, '49', 49)" onmouseover="showTip(event, '49', 49)">
-            executeSqlAsync createCommand sql con
-          </code>
-          <div class="tip" id="49">
-            <strong>Signature:</strong> createCommand:(&#39;?8165 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8165 -&gt; con:IDbConnection -&gt; Async&lt;DbDataReader&gt;<br />
-                          <strong>Type parameters:</strong> '?8165          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L330-330" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
+
+              <p>CompiledName: <code>get_Default</code></p>
         </td>
       </tr>
     </tbody>

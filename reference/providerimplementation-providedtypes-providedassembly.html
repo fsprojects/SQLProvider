@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Seq - SQLProvider</title>
+    <title>ProvidedAssembly - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,37 +35,67 @@
 
 
 
-<h1>Seq</h1>
+<h1>ProvidedAssembly</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
+<p>A provided generated assembly</p>
+
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Constructors</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Constructor</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
-            executeQueryAsync 
+          <code onmouseout="hideTip(event, '271', 271)" onmouseover="showTip(event, '271', 271)">
+            new(assemblyFileName)
           </code>
-          <div class="tip" id="30">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7365&gt; -&gt; Async&lt;seq&lt;&#39;?7365&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?7365          </div>
+          <div class="tip" id="271">
+            <strong>Signature:</strong> assemblyFileName:string -&gt; ProvidedAssembly<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L74-74" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L2777-2777" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query and release the OS thread while query is being executed.</p>
+          <p>Create a provided generated assembly</p>
+
+
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '272', 272)" onmouseover="showTip(event, '272', 272)">
+            AddNestedTypes(...)
+          </code>
+          <div class="tip" id="272">
+            <strong>Signature:</strong> (types:ProvidedTypeDefinition list * enclosingGeneratedTypeNames:string list) -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L2801-2801" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Emit the given nested provided type definitions as part of the assembly.
+and adjust the 'Assembly' property of all provided type definitions to return that
+assembly.</p>
 
 
         </td>
@@ -73,61 +103,51 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
-            headAsync 
+          <code onmouseout="hideTip(event, '273', 273)" onmouseover="showTip(event, '273', 273)">
+            AddTypes(types)
           </code>
-          <div class="tip" id="31">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7369&gt; -&gt; Async&lt;&#39;?7369&gt;<br />
-                          <strong>Type parameters:</strong> '?7369          </div>
+          <div class="tip" id="273">
+            <strong>Signature:</strong> (types:ProvidedTypeDefinition list) -&gt; unit<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L79-79" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L2802-2802" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
-Like normal head: Throws exception if no elements exists. See also tryHeadAsync.</p>
+          <p>Emit the given provided type definitions as part of the assembly
+and adjust the 'Assembly' property of all provided type definitions to return that
+assembly.</p>
+<p>The assembly is only emitted when the Assembly property on the root type is accessed for the first time.
+The host F# compiler does this when processing a generative type declaration for the type.</p>
 
 
         </td>
       </tr>
+    </tbody>
+  </table>
+  <h3>Static members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Static member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
-            lengthAsync 
+          <code onmouseout="hideTip(event, '274', 274)" onmouseover="showTip(event, '274', 274)">
+            RegisterGenerated(fileName)
           </code>
-          <div class="tip" id="32">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7367&gt; -&gt; Async&lt;int&gt;<br />
-                          <strong>Type parameters:</strong> '?7367          </div>
+          <div class="tip" id="274">
+            <strong>Signature:</strong> fileName:string -&gt; Assembly<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L76-76" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L2805-2805" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Execute SQLProvider query to count the elements, and release the OS thread while query is being executed.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
-            tryHeadAsync 
-          </code>
-          <div class="tip" id="33">
-            <strong>Signature:</strong> IQueryable&lt;&#39;?7371&gt; -&gt; Async&lt;&#39;?7371 option&gt;<br />
-                          <strong>Type parameters:</strong> '?7371          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L82-82" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Execute SQLProvider query to take one result and release the OS thread while query is being executed.
-Returns None if no elements exists.</p>
+          <p>Register that a given file is a provided generated assembly</p>
 
 
         </td>

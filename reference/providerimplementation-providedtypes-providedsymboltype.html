@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>List - SQLProvider</title>
+    <title>ProvidedSymbolType - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,40 +35,104 @@
 
 
 
-<h1>List</h1>
+<h1>ProvidedSymbolType</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
+<p>Represents an array or other symbolic type involving a provided type as the argument.
+See the type provider spec for the methods that must be implemented.
+Note that the type provider specification does not require us to implement pointer-equality for provided types.</p>
+
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Instance members</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Instance member</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '15', 15)" onmouseover="showTip(event, '15', 15)">
-            evaluateOneByOne asyncFunc entityList
+          <code onmouseout="hideTip(event, '360', 360)" onmouseover="showTip(event, '360', 360)">
+            Args
           </code>
-          <div class="tip" id="15">
-            <strong>Signature:</strong> asyncFunc:(&#39;?7955 -&gt; Async&lt;&#39;?7956&gt;) -&gt; entityList:&#39;?7955 list -&gt; Async&lt;&#39;?7956 list&gt;<br />
-                          <strong>Type parameters:</strong> '?7955, '?7956          </div>
+          <div class="tip" id="360">
+            <strong>Signature:</strong> Type list<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Async.fs#L87-87" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1797-1797" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Helper function to run async computation non-parallel style for list of objects.
-This is needed if async database opreation is executed for a list of entities.</p>
+          <p>Return the provided types used as arguments of this symbolic type</p>
 
 
+              <p>CompiledName: <code>get_Args</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '361', 361)" onmouseover="showTip(event, '361', 361)">
+            IsFSharpTypeAbbreviation
+          </code>
+          <div class="tip" id="361">
+            <strong>Signature:</strong> bool<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1799-1799" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>For example, kg</p>
+
+
+              <p>CompiledName: <code>get_IsFSharpTypeAbbreviation</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '362', 362)" onmouseover="showTip(event, '362', 362)">
+            IsFSharpUnitAnnotated
+          </code>
+          <div class="tip" id="362">
+            <strong>Signature:</strong> bool<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1801-1801" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>For example, int<kg> or int<kilogram></p>
+
+
+              <p>CompiledName: <code>get_IsFSharpUnitAnnotated</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '363', 363)" onmouseover="showTip(event, '363', 363)">
+            Kind
+          </code>
+          <div class="tip" id="363">
+            <strong>Signature:</strong> ProvidedSymbolKind<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1796-1796" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Returns the kind of this symbolic type</p>
+
+
+              <p>CompiledName: <code>get_Kind</code></p>
         </td>
       </tr>
     </tbody>

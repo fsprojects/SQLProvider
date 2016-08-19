@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>TypeProviderForNamespaces - SQLProvider</title>
+    <title>ProvidedLiteralField - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,15 +35,43 @@
 
 
 
-<h1>TypeProviderForNamespaces</h1>
+<h1>ProvidedLiteralField</h1>
 <p>
-  <span>Namespace: Samples.FSharp.ProvidedTypes</span><br />
+  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>A base type providing default implementations of type provider functionality when all provided
-types are of type ProvidedTypeDefinition.</p>
+<p>Represents an erased provided field.</p>
 
 </div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '307', 307)" onmouseover="showTip(event, '307', 307)">
+            new(fieldName, fieldType, literalValue)
+          </code>
+          <div class="tip" id="307">
+            <strong>Signature:</strong> (fieldName:string * fieldType:Type * literalValue:obj) -&gt; ProvidedLiteralField<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1571-1571" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Create a new provided field. It is not initially associated with any specific provided type definition.</p>
+
+
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
   <h3>Instance members</h3>
   <table class="table table-bordered member-list">
     <thead>
@@ -53,19 +81,19 @@ types are of type ProvidedTypeDefinition.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '275', 275)" onmouseover="showTip(event, '275', 275)">
-            Invalidate()
+          <code onmouseout="hideTip(event, '308', 308)" onmouseover="showTip(event, '308', 308)">
+            AddDefinitionLocation(...)
           </code>
-          <div class="tip" id="275">
-            <strong>Signature:</strong> unit -&gt; unit<br />
+          <div class="tip" id="308">
+            <strong>Signature:</strong> (line:int * column:int * filePath:string) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2130-2130" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1582-1582" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Invalidate the information provided by the provider</p>
+          <p>Add definition location information to the provided field.</p>
 
 
         </td>
@@ -73,19 +101,19 @@ types are of type ProvidedTypeDefinition.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '276', 276)" onmouseover="showTip(event, '276', 276)">
-            RegisterProbingFolder(folder)
+          <code onmouseout="hideTip(event, '309', 309)" onmouseover="showTip(event, '309', 309)">
+            AddObsoleteAttribute(message, isError)
           </code>
-          <div class="tip" id="276">
-            <strong>Signature:</strong> folder:string -&gt; unit<br />
+          <div class="tip" id="309">
+            <strong>Signature:</strong> (message:string * isError:bool option) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2117-2117" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1581-1581" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Registers custom probing path that can be used for probing assemblies</p>
+          <p>Add a 'Obsolete' attribute to this provided field</p>
 
 
         </td>
@@ -93,19 +121,19 @@ types are of type ProvidedTypeDefinition.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '277', 277)" onmouseover="showTip(event, '277', 277)">
-            RegisterRuntimeAssemblyLocationAsProbingFolder(...)
+          <code onmouseout="hideTip(event, '310', 310)" onmouseover="showTip(event, '310', 310)">
+            AddXmlDoc(xmlDoc)
           </code>
-          <div class="tip" id="277">
-            <strong>Signature:</strong> cfg:TypeProviderConfig -&gt; unit<br />
+          <div class="tip" id="310">
+            <strong>Signature:</strong> xmlDoc:string -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2121-2121" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1580-1580" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Registers location of RuntimeAssembly (from TypeProviderConfig) as probing folder</p>
+          <p>Add XML documentation information to this provided field</p>
 
 
         </td>
@@ -113,20 +141,40 @@ types are of type ProvidedTypeDefinition.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '278', 278)" onmouseover="showTip(event, '278', 278)">
-            ResolveAssembly(arg1)
+          <code onmouseout="hideTip(event, '311', 311)" onmouseover="showTip(event, '311', 311)">
+            AddXmlDocComputed(xmlDocFunction)
           </code>
-          <div class="tip" id="278">
-            <strong>Signature:</strong> ResolveEventArgs -&gt; Assembly<br />
-              <strong>Modifiers:</strong> abstract<br />
+          <div class="tip" id="311">
+            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/ProvidedTypes-head.fs#L2106-2106" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1578-1578" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders</p>
+          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
+The documentation is re-computed  every time it is required.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '312', 312)" onmouseover="showTip(event, '312', 312)">
+            AddXmlDocDelayed(xmlDocFunction)
+          </code>
+          <div class="tip" id="312">
+            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1579-1579" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary</p>
 
 
         </td>
