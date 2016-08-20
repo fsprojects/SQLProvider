@@ -164,6 +164,16 @@ let (|SqlColumnGet|_|) = function
         | _ -> Some(String.Empty,key,meth.ReturnType) 
     | _ -> None
 
+let (|TupleSqlColumnsGet|_|) = function 
+    | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
+        let items = args |> List.choose(function
+                            | SqlColumnGet(ti,key,t) -> Some(ti, key, t)
+                            | _-> None)
+        match items with
+        | [] -> None
+        | li -> Some li
+    | _ -> None
+
 let (|OptionIsSome|_|) = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
     | _ -> None

@@ -613,12 +613,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s `%s`.`%s` as `%s` on `%s`.`%s` = `%s`.`%s` "
-                            joinType destTable.Schema destTable.Name destAlias
+                    ~~  (sprintf "%s `%s`.`%s` as `%s` on "
+                            joinType destTable.Schema destTable.Name destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "`%s`.`%s` = `%s`.`%s`" 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

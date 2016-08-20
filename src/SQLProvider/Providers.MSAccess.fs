@@ -382,12 +382,14 @@ type internal MSAccessProvider() =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s [%s] as [%s] on [%s].[%s] = [%s].[%s]"
-                        joinType destTable.Name destAlias
-                        (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                        data.ForeignKey
-                        (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                        data.PrimaryKey)
+                    ~~  (sprintf "%s [%s] as [%s] on "
+                            joinType destTable.Name destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "[%s].[%s] = [%s].[%s]"
+                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
+                            foreignKey
+                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
+                            primaryKey)))
                     if (numLinks > 0)  then ~~ ")")//append close paren after each JOIN, if necessary
 
             let orderByBuilder() =

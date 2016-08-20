@@ -527,6 +527,26 @@ let ``simple select query with join``() =
         |], query.[0..3])
 
 [<Test >]
+let ``simple select query with join multi columns``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            join order in dc.Main.Orders on ((cust.CustomerId, cust.CustomerId) = (order.CustomerId, order.CustomerId))
+            select (cust.CustomerId, order.OrderDate)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+    CollectionAssert.AreEquivalent(
+        [|
+            "VINET", new DateTime(1996,7,4)
+            "TOMSP", new DateTime(1996,7,5)
+            "HANAR", new DateTime(1996,7,8)
+            "VICTE", new DateTime(1996,7,8)
+        |], query.[0..3])
+
+
+[<Test >]
 let ``simple select query with join using relationships``() = 
     let dc = sql.GetDataContext()
     let query = 

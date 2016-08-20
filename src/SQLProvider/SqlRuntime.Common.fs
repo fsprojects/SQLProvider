@@ -277,9 +277,9 @@ and ISqlDataContext =
 
 and LinkData =
     { PrimaryTable       : Table
-      PrimaryKey         : string
+      PrimaryKey         : string list
       ForeignTable       : Table
-      ForeignKey         : string
+      ForeignKey         : string list
       OuterJoin          : bool
       RelDirection       : RelationshipDirection      }
     with
