@@ -666,12 +666,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s %s %s on %s.%s = %s.%s "
-                            joinType destTable.FullName destAlias
+                    ~~  (sprintf "%s %s %s on "
+                            joinType destTable.FullName destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "%s.%s = %s.%s "
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering

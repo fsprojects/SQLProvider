@@ -375,12 +375,15 @@ type internal OdbcProvider() =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s %c%s%c as %c%s%c on %c%s%c.%c%s%c = %c%s%c.%c%s%c "
-                            joinType cOpen destTable.Name cClose cOpen destAlias cClose cOpen
+                    ~~  (sprintf "%s %c%s%c as %c%s%c on "
+                            joinType cOpen destTable.Name cClose cOpen destAlias cClose)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "%c%s%c.%c%s%c = %c%s%c.%c%s%c "
+                            cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            cClose cOpen data.ForeignKey cClose cOpen
+                            cClose cOpen foreignKey cClose cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            cClose cOpen data.PrimaryKey cClose))
+                            cClose cOpen primaryKey cClose))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
