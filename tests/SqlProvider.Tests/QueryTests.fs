@@ -177,6 +177,19 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty query
 
+[<Test>]
+let ``simplest select query let temp``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y = cust.City
+            select cust.Address
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select query let temp``() = 
     let dc = sql.GetDataContext()
@@ -215,6 +228,18 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", query.[0].City)
 
 [<Test >]
+let ``simple nth query``() =
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust
+            nth 4
+        }
+    Assert.AreEqual("London", query.City)
+
+
+[<Test >]
 let ``simple select where not query``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -242,6 +267,48 @@ let ``simple select where in query``() =
     CollectionAssert.IsNotEmpty query
     Assert.AreEqual(3, query.Length)
     Assert.IsTrue(query.Contains("ANATR"))
+
+    
+    
+[<Test >]
+let ``simple select where not-in query``() =
+    let dc = sql.GetDataContext()
+    let arr = ["ALFKI"; "ANATR"; "AROUT"]
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (not(arr.Contains(cust.CustomerId)))
+            select cust.CustomerId
+        } |> Seq.toArray
+    let res = query
+
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual(88, query.Length)
+    Assert.IsFalse(query.Contains("ANATR"))
+
+[<Test >]
+let ``simple select where in queryable query``() =
+
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City="London")
+            select cust.CustomerId
+        }
+
+    let query2 = 
+        query {
+            for cust in dc.Main.Customers do
+            where (query1.Contains(cust.CustomerId))
+            select cust.CustomerId
+        } |> Seq.toArray
+    let res = query
+
+    CollectionAssert.IsNotEmpty query2
+    Assert.AreEqual(6, query2.Length)
+    Assert.IsTrue(query2.Contains("EASTC"))
+
 
 [<Test >]
 let ``simple select where in query custom syntax``() =
@@ -458,6 +525,26 @@ let ``simple select query with join``() =
             "HANAR", new DateTime(1996,7,8)
             "VICTE", new DateTime(1996,7,8)
         |], query.[0..3])
+
+[<Test >]
+let ``simple select query with join multi columns``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            join order in dc.Main.Orders on ((cust.CustomerId, cust.CustomerId) = (order.CustomerId, order.CustomerId))
+            select (cust.CustomerId, order.OrderDate)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+    CollectionAssert.AreEquivalent(
+        [|
+            "VINET", new DateTime(1996,7,4)
+            "TOMSP", new DateTime(1996,7,5)
+            "HANAR", new DateTime(1996,7,8)
+            "VICTE", new DateTime(1996,7,8)
+        |], query.[0..3])
+
 
 [<Test >]
 let ``simple select query with join using relationships``() = 
@@ -691,3 +778,17 @@ let ``simple select query async``() =
         } |> Async.StartAsTask
     task.Wait()
     CollectionAssert.IsNotEmpty task.Result
+
+
+type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
+[<Test>]
+let ``simple select with contains query with where boolean option type``() =
+    let dc = sqlOption.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City.IsSome)
+            select cust.CustomerId
+            contains "ALFKI"
+        }
+    Assert.IsTrue(query)    

@@ -160,3 +160,27 @@ query { for (i,n,e) in qry1 do
         where (y > 2015)
         select (i,n,e,u,b,y)
     } |> Seq.toArray
+
+(** 
+
+### Nested Select Where Queries
+
+You can create a query like `SELECT * FROM xs WHERE xs.x IN (SELECT y FROM ys))`
+with either LINQ Contains or custom operators: in `|=|` and not-in `|<>|`
+This is done by not saying `|> Seq.toArray` to the first query:
+
+*)
+
+open System.Linq
+
+let nestedQueryTest = 
+    let qry1 = query {
+        for emp in ctx.Hr.Employees do
+        where (emp.FirstName.StartsWith("S"))
+        select (emp.FirstName)
+    }
+    query {
+        for emp in ctx.Hr.Employees do
+        where (qry1.Contains(emp.FirstName))
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.toArray

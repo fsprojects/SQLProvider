@@ -18,15 +18,19 @@ NUGET
     NuGet.CommandLine (2.8.6)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
-    Octokit (0.19)
+    Octokit (0.21.1)
       Microsoft.Net.Http  - framework: net10, net11, net20, net30, net35, net40, net40-full
     RazorEngine (3.8.2)
       Microsoft.AspNet.Razor (>= 3.0) - framework: >= net45
       Microsoft.AspNet.Razor (2.0.30506) - framework: net40
+    SourceLink.Fake (1.1)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (8c077f35f8cd0350485109ddd1810dafe9885d1a)
-      Octokit
+    modules/Octokit/Octokit.fsx (cd7849e12cf4a6619863671828ed1b0418e90d7f)
+      Octokit (>= 0.20)
+  remote: fsprojects/FSharp.TypeProviders.StarterPack
+    src/ProvidedTypes.fs (8f647a4cde71bdeda10e7f5b534ec3c879601570)
+    src/ProvidedTypes.fsi (8f647a4cde71bdeda10e7f5b534ec3c879601570)
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET

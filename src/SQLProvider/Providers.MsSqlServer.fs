@@ -26,7 +26,9 @@ module MSSqlServer =
 
         let getDbType(providerType:int) =
             let p = new SqlParameter()
-            p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
+            if providerType = 31 || providerType = 32
+            then p.SqlDbType <- SqlDbType.DateTime
+            else p.SqlDbType <- (Enum.ToObject(typeof<SqlDbType>, providerType) :?> SqlDbType)
             p.DbType
 
         let getClrType (input:string) =
@@ -40,6 +42,10 @@ module MSSqlServer =
                     let clrType =
                         if oleDbType = "tinyint"
                         then typeof<byte>.ToString()
+                        else if oleDbType = "date"
+                        then  typeof<DateTime>.ToString()
+                        else if oleDbType = "time"
+                        then  typeof<DateTime>.ToString()
                         else getClrType (string r.["DataType"])
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
@@ -268,7 +274,7 @@ module MSSqlServer =
             Set(cols |> Array.map (processReturnColumn reader))
 
 type internal MSSqlServerProvider() =
-    let pkLookup = ConcurrentDictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
@@ -279,7 +285,7 @@ type internal MSSqlServerProvider() =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else ""
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -292,13 +298,14 @@ type internal MSSqlServerProvider() =
             |> Array.unzip
 
         sb.Clear() |> ignore
-        if haspk then
+        match haspk, pk with
+        | true, [itm] ->
             ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);"
                 entity.Table.FullName
                 (String.Join(",",columnNames))
-                pk
+                itm
                 (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
-        else
+        | _ -> 
             ~~(sprintf "INSERT INTO %s (%s) VALUES (%s);"
                 entity.Table.FullName
                 (String.Join(",",columnNames))
@@ -308,20 +315,23 @@ type internal MSSqlServerProvider() =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns:string list) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
-
-        if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
-
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+        match pk with
+        | [x] when changedColumns |> List.exists ((=)x)
+            -> failwith "Error - you cannot change the primary key of an entity."
+        | _ -> ()
+        
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
 
         let data =
             (([],0),changedColumns)
@@ -336,15 +346,18 @@ type internal MSSqlServerProvider() =
             |> List.rev
             |> List.toArray
 
-        let pkParam = SqlParameter("@pk", pkValue)
-
-        ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
-            entity.Table.FullName
-            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-            pk)
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "UPDATE %s SET %s WHERE "
+                entity.Table.FullName
+                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
 
         cmd.Parameters.AddRange(data |> Array.map snd)
-        cmd.Parameters.Add pkParam |> ignore
+        pkValues |> List.iteri(fun i pkValue ->
+            let pkParam = SqlParameter(("@pk"+i.ToString()), pkValue)
+            cmd.Parameters.Add pkParam |> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -354,24 +367,25 @@ type internal MSSqlServerProvider() =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         sb.Clear() |> ignore
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        cmd.Parameters.AddWithValue("@id",pkValue) |> ignore
-        ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
+
+        pkValues |> List.iteri(fun i pkValue ->
+            cmd.Parameters.AddWithValue(("@id"+i.ToString()),pkValue) |> ignore)
+
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+
         cmd.CommandText <- sb.ToString()
         cmd
-
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetColumnOption pkLookup.[e.Table.FullName] with
-            | Some(_) -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
@@ -390,12 +404,12 @@ type internal MSSqlServerProvider() =
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
             match columnLookup.TryGetValue table.FullName with
-            | (true,data) -> data
+            | (true,data) when data.Count > 0 -> data
             | _ ->
                // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
                // pass in to filter by table name etc - we should probably swap this code to use that instead at some point
@@ -432,12 +446,18 @@ type internal MSSqlServerProvider() =
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false }
                            if col.IsPrimaryKey then
-                               pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
+                               pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                    match col.Name with 
+                                    | "" -> old 
+                                    | x -> match old with
+                                           | [] -> [x]
+                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                               ) |> ignore
                            yield (col.Name,col)
                        | _ -> ()]
                    |> Map.ofList
                con.Close()
-               columnLookup.GetOrAdd(table.FullName, columns)
+               columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
           relationshipLookup.GetOrAdd(table.FullName, fun name ->
@@ -552,6 +572,7 @@ type internal MSSqlServerProvider() =
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let elements = box x :?> obj array
@@ -575,12 +596,23 @@ type internal MSSqlServerProvider() =
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
+
+                                let operatorInQuery operator (array : IDbDataParameter[]) =
+                                    let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                    Array.iter parameters.Add innerpars
+                                    match operator with
+                                    | FSharp.Data.Sql.NestedIn -> (sprintf "[%s].[%s] IN (%s)") alias col innersql
+                                    | FSharp.Data.Sql.NestedNotIn -> (sprintf "[%s].[%s] NOT IN (%s)") alias col innersql
+                                    | _ -> failwith "Should not be called with any other operator"
+
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "[%s].[%s] IS NULL") alias col
                                     | FSharp.Data.Sql.NotNull -> (sprintf "[%s].[%s] IS NOT NULL") alias col
-                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.In 
                                     | FSharp.Data.Sql.NotIn -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NestedIn 
+                                    | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "[%s].[%s]%s %s") alias col
@@ -618,12 +650,15 @@ type internal MSSqlServerProvider() =
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] "
-                            joinType destTable.Schema destTable.Name destAlias
+                    ~~  (sprintf "%s [%s].[%s] as [%s] on "
+                            joinType destTable.Schema destTable.Name destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "[%s].[%s] = [%s].[%s]"
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey
+                        ))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
@@ -669,10 +704,7 @@ type internal MSSqlServerProvider() =
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -690,7 +722,7 @@ type internal MSSqlServerProvider() =
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -702,7 +734,7 @@ type internal MSSqlServerProvider() =
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
@@ -714,10 +746,7 @@ type internal MSSqlServerProvider() =
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -737,7 +766,7 @@ type internal MSSqlServerProvider() =
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -753,7 +782,8 @@ type internal MSSqlServerProvider() =
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

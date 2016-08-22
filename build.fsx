@@ -10,6 +10,11 @@ open Fake.ReleaseNotesHelper
 open System
 open System.IO
 
+#if MONO
+#else
+#load @"packages/SourceLink.Fake/tools/SourceLink.fsx"
+#endif
+
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
 // --------------------------------------------------------------------------------------
@@ -129,6 +134,8 @@ Target "NuGet" (fun _ ->
         (project + ".nuspec")
 
     CleanDir "Temp"
+    Branches.tag "" release.NugetVersion
+    //Branches.pushTag "" "upstream" release.NugetVersion
 )
 
 Target "PackNuGet" (fun _ -> 
@@ -208,6 +215,19 @@ Target "KeepRunning" (fun _ ->
 
 Target "GenerateDocs" DoNothing
 
+#if MONO
+Target "SourceLink" <| fun () -> ()
+#else
+open SourceLink
+Target "SourceLink" <| fun () ->
+    let baseUrl = sprintf "%s/%s/{0}/%%var2%%" gitRaw project
+    !! "src/*.fsproj"
+    |> Seq.iter (fun file ->
+        let proj = VsProj.LoadRelease file
+        SourceLink.Index proj.CompilesNotLinked proj.OutputFilePdb __SOURCE_DIRECTORY__ baseUrl
+       )
+#endif
+
 // --------------------------------------------------------------------------------------
 // Release Scripts
 
@@ -246,7 +266,11 @@ Target "BuildDocs" DoNothing
   ==> "BuildDocs"
 
 "All" 
-  ==> "NuGet"
+#if MONO
+#else
+  =?> ("SourceLink", Pdbstr.tryFind().IsSome )
+#endif
+  =?> ("NuGet", not(hasBuildParam "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
 

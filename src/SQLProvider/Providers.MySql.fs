@@ -28,7 +28,7 @@ module MySql =
                 match errors with 
                 | [] -> "" 
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package MySql.Data) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
@@ -99,6 +99,10 @@ module MySql =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
+        | :? System.Reflection.ReflectionTypeLoadException as ex ->
+            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+            let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+            raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
             let msg = ex.InnerException.Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
@@ -242,7 +246,7 @@ module MySql =
             Set(cols |> Array.map (processReturnColumn reader))
 
 type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
-    let pkLookup = ConcurrentDictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
@@ -267,26 +271,30 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();"
             (entity.Table.FullName.Replace("[","`").Replace("]","`"))
-            (String.Join(",",columnNames))
+            ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
-        if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+        match pk with
+        | [x] when changedColumns |> List.exists ((=)x)
+            -> failwith "Error - you cannot change the primary key of an entity."
+        | _ -> ()
 
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
 
         let data =
             (([],0),changedColumns)
@@ -301,15 +309,19 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             |> List.rev
             |> List.toArray
 
-        let pkParam = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam "@pk" 0 pkValue),pkValue)
-
-        ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
-            (entity.Table.FullName.Replace("[","`").Replace("]","`"))
-            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-            pk)
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "UPDATE %s SET %s WHERE "
+                (entity.Table.FullName.Replace("[","`").Replace("]","`"))
+                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
-        cmd.Parameters.Add pkParam |> ignore
+
+        pkValues |> List.iteri(fun i pkValue ->
+            let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam ("@pk"+i.ToString()) i pkValue),pkValue)
+            cmd.Parameters.Add(p) |> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -318,15 +330,23 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam "@id" 0 pkValue),pkValue)
-        cmd.Parameters.Add(p) |> ignore
-        ~~(sprintf "DELETE FROM %s WHERE %s = @id" (entity.Table.FullName.Replace("[","`").Replace("]","`")) pk )
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
+
+        pkValues |> List.iteri(fun i pkValue ->
+            let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam ("@id"+i.ToString()) i pkValue),pkValue)
+            cmd.Parameters.Add(p) |> ignore)
+
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.FullName.Replace("[","`").Replace("]","`")))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -334,14 +354,6 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         MySql.resolutionPath <- resolutionPath
         MySql.owner <- owner
         MySql.referencedAssemblies <- referencedAssemblies
-
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetColumnOption pkLookup.[e.Table.FullName] with
-            | Some(_) -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
@@ -365,12 +377,12 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
             match columnLookup.TryGetValue table.FullName with
-            | (true,data) -> data
+            | (true,data) when data.Count > 0 -> data
             | _ ->
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
@@ -405,12 +417,18 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                   IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false }
                             if col.IsPrimaryKey then 
-                                pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
+                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                    match col.Name with 
+                                    | "" -> old 
+                                    | x -> match old with
+                                           | [] -> [x]
+                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                                ) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
                 con.Close()
-                columnLookup.GetOrAdd(table.FullName,columns)
+                columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
           relationshipLookup.GetOrAdd(table.FullName, fun name ->
@@ -517,6 +535,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let elements = box x :?> obj array
@@ -540,12 +559,23 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
                                 let paras = extractData data
+
+                                let operatorInQuery operator (array : IDbDataParameter[]) =
+                                    let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                    Array.iter parameters.Add innerpars
+                                    match operator with
+                                    | FSharp.Data.Sql.NestedIn -> (sprintf "`%s`.`%s` IN (%s)") alias col innersql
+                                    | FSharp.Data.Sql.NestedNotIn -> (sprintf "`%s`.`%s` NOT IN (%s)") alias col innersql
+                                    | _ -> failwith "Should not be called with any other operator"
+
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
                                     | FSharp.Data.Sql.IsNull -> (sprintf "`%s`.`%s` IS NULL") alias col
                                     | FSharp.Data.Sql.NotNull -> (sprintf "`%s`.`%s` IS NOT NULL") alias col
-                                    | FSharp.Data.Sql.In -> operatorIn operator paras
+                                    | FSharp.Data.Sql.In 
                                     | FSharp.Data.Sql.NotIn -> operatorIn operator paras
+                                    | FSharp.Data.Sql.NestedIn 
+                                    | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "`%s`.`%s`%s %s") alias col
@@ -583,12 +613,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s `%s`.`%s` as `%s` on `%s`.`%s` = `%s`.`%s` "
-                            joinType destTable.Schema destTable.Name destAlias
+                    ~~  (sprintf "%s `%s`.`%s` as `%s` on "
+                            joinType destTable.Schema destTable.Name destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "`%s`.`%s` = `%s`.`%s`" 
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
@@ -628,10 +660,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -653,7 +682,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -665,7 +694,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
 
@@ -677,10 +706,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -702,7 +728,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -718,7 +744,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

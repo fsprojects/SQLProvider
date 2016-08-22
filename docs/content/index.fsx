@@ -74,6 +74,9 @@ type sql = SqlDataProvider<
               UseOptionTypes = true >
 let ctx = sql.GetDataContext()
 
+// To use dynamic runtime connectionString, you could use:
+// let ctx = sql.GetDataContext connectionString2
+
 // pick individual entities from the database 
 let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
 
@@ -106,7 +109,6 @@ Samples & documentation
 The library comes with comprehensible documentation.
 
  * [General](core/general.html) a high level view on the type providers' abilities and limitations
- * [Configuration & Setup](core/config.html) details on how to get the type provider up and running for your database
  * [Static Parameters](core/parameters.html) available static parameters
  * [Querying](core/querying.html) information on supported LINQ keywords and custom operators with examples
  * [Relationships](core/constraints-relationships.html) how to use automatic constraint navigation in your queries

@@ -24,7 +24,9 @@ module internal Utilities =
     
     let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
-        tupleIndex.[(int <| name.Remove(0, 4)) - 1]
+        let itemid = (int <| name.Remove(0, 4))
+        if(tupleIndex.Count < itemid) then "tmp" + name
+        else tupleIndex.[itemid - 1]
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
@@ -267,7 +269,11 @@ module internal Reflection =
                 ) |> List.filter Option.isSome
                 |> List.map(fun o -> o.Value.GetBaseException().Message)
                 |> Seq.distinct |> Seq.toList
-            Choice2Of2(folders, errors)
+            if not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists(resolutionPath)) then
+                let x = "" :: errors
+                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resolutionPath::errors))
+            else
+                Choice2Of2(folders, errors)
 
 module Sql =
     

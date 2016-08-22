@@ -10,6 +10,9 @@
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
 
 (*** hide ***)
+let connectionString2 = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+
+(*** hide ***)
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 
@@ -72,6 +75,14 @@ schema and reading its data, you create a *DataContext* value.
 *)
 
 let ctx = sql.GetDataContext()
+
+(**
+If you want to use non-literal connectionString at runtime (e.g. crypted production
+passwords), you can pass your runtime connectionString parameter to GetDataContext:
+*)
+
+let ctx2 = sql.GetDataContext connectionString2
+
 (**
 
 When you press ``.`` on ``ctx``, intellisense will display a list of properties 

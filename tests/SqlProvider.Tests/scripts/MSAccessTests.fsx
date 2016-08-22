@@ -16,6 +16,7 @@ let ctx = mdb.GetDataContext()
 
 SqlQueryEvent.Add (printfn "%s")
 
+/// Normal query
 let mattisOrderDetails =
     query { for c in ctx.Northwind.Customers do
             // you can directly enumerate relationships with no join information
@@ -33,3 +34,43 @@ let mattisOrderDetails =
             select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) } 
     |> Seq.toArray
 
+/// Query with space in table name
+let orderDetail =
+    query { 
+        for c in ctx.Northwind.OrderDetails do
+        select c
+        head }
+//orderDetail.Discount <- 0.5f
+//orderDetail.Delete()
+//ctx.SubmitUpdates()
+
+
+/// CRUD Test. To use CRUD you have to have a primary key in your table. 
+let crudops =
+    let neworder = ctx.Northwind.Customers.``Create(CompanyName)``("FSharp.org")
+    neworder.CustomerId <- Some "MyId"
+    neworder.City <- Some "London"
+    ctx.SubmitUpdates()
+    let fetched =
+        query { 
+            for c in ctx.Northwind.Customers do
+            where (c.CustomerId = Some "MyId")
+            headOrDefault }
+    fetched.Delete()
+    ctx.SubmitUpdates()
+
+/// Async contains query
+let asyncContainsQuery =
+    let contacts = ["Matti Karttunen"; "Maria Anders"]
+    let r =
+        async {
+            let! res =
+                query { 
+                    for c in ctx.Northwind.Customers do
+                    where (contacts.Contains(c.ContactName.Value))
+                    select (c.CustomerId.Value, c.ContactName.Value)
+                }|> Seq.executeQueryAsync
+            return res |> Seq.toArray
+        } |> Async.StartAsTask
+    r.Wait()
+    r.Result

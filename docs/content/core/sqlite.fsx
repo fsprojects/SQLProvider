@@ -1,20 +1,49 @@
 ﻿(*** hide ***)
 #I @"../../../bin"
-(*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
-(*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 #r "FSharp.Data.SqlProvider.dll"
 open System
 open FSharp.Data.Sql
 (**
 
-# SQLite
+# SQLite Provider
+
+## Parameters
+
+### ConnectionString
+
+Basic connection string used to connect to the SQLite database.
 
 *)
 
+[<Literal>]
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+
+(**
+### ResolutionPath
+
+Path to search for database vendor speficic assemblies. Specify the path where `System.Data.SQLite.dll` is stored. 
+If you use the System.Data.SQLite NuGet package and target .NET 4.6, the path would be something like 
+`__SOURCE_DIRECTORY__ + @"\..\packages\System.Data.SQLite.Core.<version>\lib\net46"`. 
+Both absolute and relative paths are supported.
+
+Note that `System.Data.SQLite.dll` will look for the native `SQLite.Interop.dll` in the x64 and x86 subdirectories of
+the resolution path. These are not created when the System.Data.SQLite NuGet package is added, so you might have to 
+manually copy these subdirectories from SQLite build directory, which typically is 
+`<project root>\packages\System.Data.SQLite.Core.<version>\build\net46`.
+
+If `System.Data.SQLite.dll` is in the location where NuGet places it by default, you don't have to submit
+the ResolutionPath parameter at all, but you still need to copy the x64 and x86 subdirectories as described above.
+
+*)
+
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+
+(**
+
+## Example
+
+*)
 type sql = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE, 
                 connectionString, 

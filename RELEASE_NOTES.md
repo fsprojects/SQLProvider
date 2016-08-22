@@ -1,3 +1,34 @@
+### 1.0.28 - 19.08.2016
+* Configuration error info improvements
+
+### 1.0.27 - 18.08.2016
+* Added SourceLink (for debugging possibility).
+
+### 1.0.26 - 15.08.2016
+* CRUD support for composite key tables
+
+### 1.0.25 - 13.08.2016
+* Fixed functionality with some specially named tables and columns
+
+### 1.0.24 - 05.08.2016
+* Fixed exception on queries where are multiple times "take 1"
+
+### 1.0.23 - 02.08.2016
+* Fixed delete on ProcessUpdatesAsync
+
+### 1.0.22 - 02.07.2016
+* Async query sort order fix on ordered query
+
+### 1.0.21 - 29.06.2016
+* query: where (myTable.MyBoolean) -support
+* MsSql Mono DateTime fix
+
+### 1.0.20 - 23.06.2016
+* Nested IN-queries
+
+### 1.0.19 - 23.06.2016
+* More query operators
+
 ### 1.0.18 - 21.06.2016
 * Oracle large table count support
 * Simple Linq contains query

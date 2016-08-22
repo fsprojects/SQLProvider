@@ -12,7 +12,7 @@ open FSharp.Data.Sql.Common
 type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
-    let pkLookup = ConcurrentDictionary<string,string>()
+    let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
@@ -36,7 +36,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 match errors with 
                 | [] -> "" 
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package System.Data.SQLite.Core) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
@@ -120,19 +120,23 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
-        if changedColumns |> List.exists ((=)pk) then failwith "Error - you cannot change the primary key of an entity."
+        match pk with
+        | [x] when changedColumns |> List.exists ((=)x)
+            -> failwith "Error - you cannot change the primary key of an entity."
+        | _ -> ()
 
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
 
         let data =
             (([],0),changedColumns)
@@ -147,15 +151,18 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             |> List.rev
             |> List.toArray
 
-        let pkParam = createParam "@pk" 0 pkValue
-        
-        ~~(sprintf "UPDATE %s SET %s WHERE %s = @pk;"
-            entity.Table.FullName
-            (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) ))
-            pk)
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "UPDATE %s SET %s WHERE "
+                entity.Table.FullName
+                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
-        cmd.Parameters.Add pkParam |> ignore
+        pkValues |> List.iteri(fun i pkValue ->
+            let p = createParam ("@pk"+i.ToString()) i pkValue
+            cmd.Parameters.Add(p) |> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -164,25 +171,24 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let pk = pkLookup.[entity.Table.FullName]
+        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
         sb.Clear() |> ignore
-        let pkValue =
-            match entity.GetColumnOption<obj> pk with
-            | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        let p = createParam "@id" 0 pkValue
-        cmd.Parameters.Add(p) |> ignore
-        ~~(sprintf "DELETE FROM %s WHERE %s = @id" entity.Table.FullName pk )
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
+        pkValues |> List.iteri(fun i pkValue ->
+            let p = createParam ("@id"+i.ToString()) i pkValue
+            cmd.Parameters.Add(p) |> ignore)
+
+        match pk with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
-
-    let checkKey id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetColumnOption pkLookup.[e.Table.FullName] with
-            | Some(_) -> () // if the primary key exists, do nothing
-                            // this is because non-identity columns will have been set
-                            // manually and in that case scope_identity would bring back 0 "" or whatever
-            | None ->  e.SetColumnSilent(pkLookup.[e.Table.FullName], id)
 
     interface ISqlProvider with
         member __.CreateConnection(connectionString) =
@@ -200,6 +206,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             try
                 Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
             with
+            | :? System.Reflection.ReflectionTypeLoadException as ex ->
+                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+                let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+                raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
                 let msg = ex.InnerException.Message + ", Path: " + (Path.GetFullPath resolutionPath)
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
@@ -234,12 +244,12 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
-            | true, v -> Some v
+            | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
             match columnLookup.TryGetValue table.FullName with
-            | (true,data) -> data
+            | (true,data) when data.Count > 0 -> data
             | _ ->
                 if con.State <> ConnectionState.Open then con.Open()
                 let query = sprintf "pragma table_info(%s)" table.Name
@@ -256,12 +266,19 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = if reader.GetBoolean(5) then true else false }
-                            if col.IsPrimaryKey then pkLookup.AddOrUpdate(table.FullName, col.Name, fun key old -> col.Name) |> ignore
+                            if col.IsPrimaryKey then 
+                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                    match col.Name with 
+                                    | "" -> old 
+                                    | x -> match old with
+                                           | [] -> [x]
+                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                                ) |> ignore
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
                 con.Close()
-                columnLookup.GetOrAdd(table.FullName,columns)
+                columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
           System.Threading.Monitor.Enter relationshipLookup
@@ -372,6 +389,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let strings = box x :?> obj array
@@ -390,10 +408,18 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "[%s].[%s] IN (%s)") alias col text
+                                    | FSharp.Data.Sql.NestedIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "[%s].[%s] IN (%s)") alias col innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "[%s].[%s] NOT IN (%s)") alias col text
+                                    | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "[%s].[%s] NOT IN (%s)") alias col innersql
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "[%s].[%s]%s %s") alias col
@@ -431,12 +457,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s [%s].[%s] as [%s] on [%s].[%s] = [%s].[%s] "
-                            joinType destTable.Schema destTable.Name destAlias
+                    ~~  (sprintf "%s [%s].[%s] as [%s] on "
+                            joinType destTable.Schema destTable.Name destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "[%s].[%s] = [%s].[%s] "
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
@@ -476,10 +504,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member this.ProcessUpdates(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -500,7 +525,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        checkKey id e
+                        CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -512,7 +537,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
@@ -523,10 +548,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> (this :> ISqlProvider).GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -546,7 +568,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                 use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                checkKey id e
+                                CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -562,7 +584,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

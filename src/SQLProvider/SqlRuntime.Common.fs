@@ -98,6 +98,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            | data -> Some(unbox data)
        else None
 
+    member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
+        keys |> List.choose(fun key -> 
+            __.GetColumnOption<'T>(key)) 
+
     member internal this.GetColumnOptionWithDefinition(key) =
         this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
 
@@ -115,6 +119,9 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.SetColumnSilent(key,value) =
         data.[key] <- value
 
+    member __.SetPkColumnSilent(keys,value) =
+        keys |> List.iter(fun x -> data.[x] <- value)
+
     member e.SetColumn<'t>(key,value : 't) =
         data.[key] <- value
         e.UpdateField key
@@ -128,6 +135,14 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
           if not (data.ContainsKey key) then data.Add(key,value)
           else data.[key] <- value
       | None -> data.Remove key |> ignore
+
+    member __.SetPkColumnOptionSilent(keys,value) =
+        keys |> List.iter(fun x -> 
+            match value with
+            | Some value ->
+                if not (data.ContainsKey x) then data.Add(x,value)
+                else data.[x] <- value
+            | None -> data.Remove x |> ignore)
 
     member e.SetColumnOption(key,value) =
       match value with
@@ -262,9 +277,9 @@ and ISqlDataContext =
 
 and LinkData =
     { PrimaryTable       : Table
-      PrimaryKey         : string
+      PrimaryKey         : string list
       ForeignTable       : Table
-      ForeignKey         : string
+      ForeignKey         : string list
       OuterJoin          : bool
       RelDirection       : RelationshipDirection      }
     with
@@ -358,8 +373,10 @@ and internal SqlQuery =
                     if q.Skip.IsSome then failwith "skip may only be specified once"
                     else convert { q with Skip = Some(amount) } rest
                 | Take(amount, rest) ->
-                    if q.Take.IsSome then failwith "take may only be specified once"
-                    else convert { q with Take = Some(amount) } rest
+                    match q.Take with
+                    | Some x when x = 1 && amount = 1 -> convert { q with Take = Some(amount) } rest
+                    | Some x -> failwith "take may only be specified once"
+                    | None -> convert { q with Take = Some(amount) } rest
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
@@ -408,3 +425,19 @@ and internal ISqlProvider =
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>> -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
+
+
+module internal CommonTasks =
+
+    let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
+        entities |> Seq.map(fun e -> e.Key.Table)
+                    |> Seq.distinct
+                    |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+
+    let checkKey (pkLookup:ConcurrentDictionary<string, string list>) id (e:SqlEntity) =
+        if pkLookup.ContainsKey e.Table.FullName then
+            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
+            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
+            | _  -> () // if the primary key exists, do nothing
+                            // this is because non-identity columns will have been set
+                            // manually and in that case scope_identity would bring back 0 "" or whatever

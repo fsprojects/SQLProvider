@@ -116,6 +116,10 @@ module internal Oracle =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
+        | :? System.Reflection.ReflectionTypeLoadException as ex ->
+            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+            let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+            raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
             let msg = ex.InnerException.Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
@@ -238,7 +242,7 @@ module internal Oracle =
                 |> Option.map (fun m ->
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = columnName)
+                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = [columnName])
                       IsNullable = nullable }
                 ))
         |> Seq.choose id
@@ -255,15 +259,16 @@ module internal Oracle =
             |> DataTable.mapChoose (fun row ->
                 let name = Sql.dbUnbox row.[4]
                 match primaryKeys.TryGetValue(table) with
-                | true, pk ->
-                    match foreignKeyCols.TryFind name with
-                    | Some(fk) ->
+                | true, pks ->
+                    match pks.Column, foreignKeyCols.TryFind name with
+                    | [pk], Some(fk) ->
                          { Name = name
                            PrimaryTable = Table.CreateFullName(Sql.dbUnbox row.[1],Sql.dbUnbox row.[2])
-                           PrimaryKey = pk.Column
+                           PrimaryKey = pk
                            ForeignTable = Table.CreateFullName(Sql.dbUnbox row.[3],Sql.dbUnbox row.[5])
                            ForeignKey = fk } |> Some
-                    | None -> None
+                    | _, Some(fk) -> None
+                    | _, None -> None
                 | false, _ -> None
             )
         let children =
@@ -432,14 +437,14 @@ module internal Oracle =
         entities
 
 type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) =
-    let mutable primaryKeyCache : IDictionary<string,PrimaryKey> = null
+    let mutable primaryKeyColumn : IDictionary<string,PrimaryKey> = null
     let relationshipCache = new ConcurrentDictionary<string, Relationship list * Relationship list>()
     let columnCache = new ConcurrentDictionary<string,ColumnLookup>()
     let mutable tableCache : Table list = []
 
     let isPrimaryKey tableName columnName = 
-        match primaryKeyCache.TryGetValue tableName with
-        | true, pk when pk.Column = columnName -> true
+        match primaryKeyColumn.TryGetValue tableName with
+        | true, pk when pk.Column = [columnName] -> true
         | _ -> false
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -465,18 +470,18 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd
 
-    let createUpdateCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) changedColumns =
+    let createUpdateCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
         sb.Clear() |> ignore
 
         if changedColumns |> List.exists (isPrimaryKey entity.Table.Name) 
         then failwith "Error - you cannot change the primary key of an entity."
 
-        let pk = primaryKeyCache.[entity.Table.Name]
-        let pkValue =
-            match entity.GetColumnOption<obj> pk.Column with
-            | Some v -> v
-            | None -> failwith "Error - you cannot update an entity that does not have a primary key."
+        let pk = primaryKeyColumn.[entity.Table.Name]
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk.Column with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
 
         let columns, parameters =
             (([],0),changedColumns)
@@ -492,35 +497,46 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             |> List.toArray
             |> Array.unzip
 
-        let pkParam = provider.CreateCommandParameter(QueryParameter.Create(":pk",0), pkValue)
-
-        ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE %s = :pk"
-            (entity.Table.FullName)
-            (String.Join(",", columns))
-            (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName)))
-            pk.Column)
+        match pk.Column with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE "
+                (entity.Table.FullName)
+                (String.Join(",", columns))
+                (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName))))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         parameters |> Array.iter (cmd.Parameters.Add >> ignore)
-        cmd.Parameters.Add pkParam |> ignore
+        pkValues |> List.iteri(fun i pkValue ->
+            let pkParam = provider.CreateCommandParameter(QueryParameter.Create((":pk"+i.ToString()),i), pkValue)
+            cmd.Parameters.Add pkParam |> ignore
+        )
         cmd
 
     let createDeleteCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let pk = primaryKeyCache.[entity.Table.Name]
+        let pk = primaryKeyColumn.[entity.Table.Name]
         sb.Clear() |> ignore
-        let pkValue =
-            match entity.GetColumnOption<obj> pk.Column with
-            | Some v -> v
-            | None -> failwith "Error - you cannot delete an entity that does not have a primary key."
-        ~~(sprintf "DELETE FROM %s WHERE %s = :id" (entity.Table.FullName) pk.Column )
+        let pkValues =
+            match entity.GetPkColumnOption<obj> pk.Column with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            | v -> v
+
+        match pk.Column with
+        | [] -> ()
+        | ks -> 
+            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = :id%i" k i))))
+
         let cmd = provider.CreateCommand(con, sb.ToString())
         cmd.CommandType <- CommandType.Text
-        let pkType = pkValue.GetType().ToString();
-        match Oracle.findClrType pkType with
-        | Some(m) ->
-            cmd.Parameters.Add(provider.CreateCommandParameter(QueryParameter.Create(":id",0, m), pkValue)) |> ignore
-        | None -> ()
+        pkValues |> List.iteri(fun i pkValue ->
+            let pkType = pkValue.GetType().ToString();
+            match Oracle.findClrType pkType with
+            | Some(m) ->
+                cmd.Parameters.Add(provider.CreateCommandParameter(QueryParameter.Create((":id"+i.ToString()),i, m), pkValue)) |> ignore
+            | None -> ())
         cmd
 
     do
@@ -537,7 +553,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         member __.CreateTypeMappings(con) =
             Sql.connect con (fun con ->
                 Oracle.createTypeMappings con
-                primaryKeyCache <- (Oracle.getPrimaryKeys tableNames con))
+                primaryKeyColumn <- (Oracle.getPrimaryKeys tableNames con))
 
         member __.GetTables(con,_) =
                match tableCache with
@@ -548,20 +564,20 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 | a -> a
 
         member __.GetPrimaryKey(table) =
-            match primaryKeyCache.TryGetValue table.Name with
-            | true, v -> Some v.Column
+            match primaryKeyColumn.TryGetValue table.Name with
+            | true, v -> match v.Column with [x] -> Some(x) | _ -> None
             | _ -> None
 
         member __.GetColumns(con,table) =
             match columnCache.TryGetValue table.FullName  with
-            | true, cols -> cols
-            | false, _ ->
-                let cols = Sql.connect con (Oracle.getColumns primaryKeyCache table.Name)
+            | true, cols when cols.Count > 0 -> cols
+            | _ ->
+                let cols = Sql.connect con (Oracle.getColumns primaryKeyColumn table.Name)
                 columnCache.GetOrAdd(table.FullName, cols)
 
         member __.GetRelationships(con,table) =
             relationshipCache.GetOrAdd(table.FullName, fun name ->
-                    let rels = Sql.connect con (Oracle.getRelationships primaryKeyCache table.Name)
+                    let rels = Sql.connect con (Oracle.getRelationships primaryKeyColumn table.Name)
                     rels)
 
         member __.GetSprocs(con) = Sql.connect con Oracle.getSprocs
@@ -632,6 +648,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
                                 let extractData data =
                                      match data with
+                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                      | Some(x) when (box x :? obj array) ->
                                          // in and not in operators pass an array
                                          let elements = box x :?> obj array
@@ -649,10 +666,18 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) text
+                                    | FSharp.Data.Sql.NestedIn ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%s.%s IN (%s)") alias (quoteWhiteSpace col) innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
                                         (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) text
+                                    | FSharp.Data.Sql.NestedNotIn ->
+                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                        Array.iter parameters.Add innerpars
+                                        (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) innersql
                                     | _ ->
                                         parameters.Add paras.[0]
                                         (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col)
@@ -690,12 +715,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s %s %s on %s.%s = %s.%s "
-                            joinType destTable.FullName destAlias
+                    ~~  (sprintf "%s %s %s on "
+                            joinType destTable.FullName destAlias)
+                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                        sprintf "%s.%s = %s.%s "
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            data.ForeignKey
+                            foreignKey
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            data.PrimaryKey))
+                            primaryKey))))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
@@ -738,10 +765,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 ()
@@ -762,11 +786,11 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         let cmd = createInsertCommand provider con sb e
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         let id = cmd.ExecuteScalar()
-                        match e.GetColumnOption primaryKeyCache.[e.Table.Name].Column with
-                        | Some(_) -> () // if the primary key exists, do nothing
+                        match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
+                        | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
+                        | _ -> () // if the primary key exists, do nothing
                                         // this is because non-identity columns will have been set
                                         // manually and in that case scope_identity would bring back 0 "" or whatever
-                        | None ->  e.SetColumnSilent(primaryKeyCache.[e.Table.Name].Column, id)
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand provider con sb e fields
@@ -778,7 +802,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         Common.QueryEvents.PublishSqlQuery cmd.CommandText
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
+                        e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 scope.Complete()
@@ -790,10 +814,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
-            // ensure columns have been loaded
-            entities |> Seq.map(fun e -> e.Key.Table)
-                     |> Seq.distinct
-                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
+            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
                 async { () }
@@ -815,11 +836,11 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                match e.GetColumnOption primaryKeyCache.[e.Table.Name].Column with
-                                | Some(_) -> () // if the primary key exists, do nothing
+                                match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
+                                | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
+                                | _ -> () // if the primary key exists, do nothing
                                                 // this is because non-identity columns will have been set
                                                 // manually and in that case scope_identity would bring back 0 "" or whatever
-                                | None ->  e.SetColumnSilent(primaryKeyCache.[e.Table.Name].Column, id)
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -835,7 +856,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 Common.QueryEvents.PublishSqlQuery cmd.CommandText
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetColumnOptionSilent(primaryKeyCache.[e.Table.Name].Column, None)
+                                e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
+                                e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 

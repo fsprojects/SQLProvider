@@ -183,7 +183,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
 
             async {
                 let! items = readitems []
-                return items |> List.toArray
+                return items |> List.rev |> List.toArray
             }
 
         member this.CreateEntity(tableName) =

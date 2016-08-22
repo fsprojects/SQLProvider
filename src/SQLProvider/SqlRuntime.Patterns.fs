@@ -20,6 +20,19 @@ let (|NewExpr|_|) (e:Expression) =
         Some (e.Constructor, Seq.toList e.Arguments)
     | _ -> None
 
+let (|SeqValuesQueryable|_|) (e:Expression) =
+    let rec isQueryable (ty : Type) = 
+        ty.FindInterfaces((fun ty _ -> ty = typeof<System.Linq.IQueryable>), null)
+        |> (not << Seq.isEmpty)
+
+    match (isQueryable e.Type) with
+    | false -> None
+    | true -> 
+        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
+        match values.GetType().Name = "SqlQueryable`1" with
+        | true -> Some values
+        | false -> None
+
 let (|SeqValues|_|) (e:Expression) =
     let rec isEnumerable (ty : Type) = 
         ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
@@ -151,6 +164,16 @@ let (|SqlColumnGet|_|) = function
         | _ -> Some(String.Empty,key,meth.ReturnType) 
     | _ -> None
 
+let (|TupleSqlColumnsGet|_|) = function 
+    | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
+        let items = args |> List.choose(function
+                            | SqlColumnGet(ti,key,t) -> Some(ti, key, t)
+                            | _-> None)
+        match items with
+        | [] -> None
+        | li -> Some li
+    | _ -> None
+
 let (|OptionIsSome|_|) = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
     | _ -> None
@@ -165,6 +188,14 @@ let (|SqlSpecialOpArr|_|) = function
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.NotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.In, key, values)
     | _ -> None
+
+let (|SqlSpecialOpArrQueryable|_|) = function
+    // for some crazy reason, simply using (|=|) stopped working ??
+    | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); SeqValuesQueryable values]) -> Some(ti, ConditionOperator.NestedIn, key, values)
+    | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValuesQueryable values]) -> Some(ti, ConditionOperator.NestedNotIn, key, values)
+    | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
+    | _ -> None
+
     
 let (|SqlSpecialOp|_|) = function
     | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
@@ -198,5 +229,21 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
         | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterThan,  ce.Left,ce.Right)
         | ExpressionType.LessThan,           (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterEqual, ce.Left,ce.Right)
         | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
+        | _ -> None
+    | _ -> None
+
+let (|SqlSpecialNegativeOpArr|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand with
+        | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NotIn, key, values)
+        | _ -> None
+    | _ -> None
+
+let (|SqlSpecialNegativeOpArrQueryable|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand with
+        | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
         | _ -> None
     | _ -> None
