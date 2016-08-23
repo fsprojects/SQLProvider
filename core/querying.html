@@ -251,8 +251,8 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tr>
 <tr class="odd">
 <td><p>let</p></td>
-<td align="center"></td>
-<td></td>
+<td align="center"><p>X</p></td>
+<td><p>...but not using tmp variables in where-clauses</p></td>
 </tr>
 <tr class="even">
 <td><p>maxBy</p></td>
@@ -358,6 +358,11 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 <td><p>where</p></td>
 <td align="center"><p>X</p></td>
 <td><p>Server side variables must be on left side and only left side of predicates</p></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td align="center"><p>(excluding boolean database fields and LINQ-Contains)</p></td>
+<td></td>
 </tr>
 </tbody>
 </table>
