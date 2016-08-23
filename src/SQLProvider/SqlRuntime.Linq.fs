@@ -479,7 +479,7 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
-                        if v1.Name.StartsWith "_arg" then
+                        if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> then
                             // this is the projection from a join - ignore
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else

@@ -189,8 +189,20 @@ let ``simplest select query let temp``() =
     
     CollectionAssert.IsNotEmpty query
 
+[<Test>]
+let ``simple select query let temp nested``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y1 = cust.Address
+            let y2 = cust.City
+            select (y1, y2)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query let temp``() = 
     let dc = sql.GetDataContext()
     let query = 
@@ -201,6 +213,37 @@ let ``simple select query let temp``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query
+    Assert.AreEqual("Berlintest", query.[0])
+
+
+[<Test>]
+let ``simple select query let where``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y = cust.City + "test"
+            where (cust.Address <> "")
+            select y
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual("Berlintest", query.[0])
+
+[<Test; Ignore("Not supported")>]
+let ``simple select query let temp used in where``() = 
+    let dc = sql.GetDataContext()
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            let y = cust.City + "test"
+            where (y <> "")
+            select y
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+    Assert.AreEqual("Berlintest", query.[0])
+
 
 [<Test >]
 let ``simple select query with operations in select``() = 

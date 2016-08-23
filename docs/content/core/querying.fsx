@@ -97,7 +97,7 @@ join                     |X |                                                   
 last                     |  |                                                       | 
 lastOrDefault            |  |                                                       | 
 leftOuterJoin            |  |                                                       | 
-let                      |  |                                                       |
+let                      |X | ...but not using tmp variables in where-clauses       |
 maxBy                    |X |                                                       | 
 maxByNullable            |X |                                                       | 
 minBy                    |X |                                                       | 
@@ -119,7 +119,7 @@ thenByDescending	     |X |                                                      
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
 where                    |X | Server side variables must be on left side and only left side of predicates  | 
-
+                         |  | (excluding boolean database fields and LINQ-Contains) | 
 *)
 
 (**
