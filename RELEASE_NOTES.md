@@ -1,5 +1,5 @@
 ### 1.0.29 - 23.08.2016
-* Support for composite primary key (multi-key-column-tables)
+* Support for composite (multi-key-column) table joins
 * Support for let-keywords
 
 ### 1.0.28 - 19.08.2016
