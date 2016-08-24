@@ -244,6 +244,16 @@ module internal QueryImplementation =
                         extendFilter [c1;c2] None
                     | Condition(cond) ->
                         Condition.And([cond],None)
+
+                    // Experimental support for boolean expressions.
+                    | AndAlso(Bool(b), Condition(c1)) when b = true ->
+                        And([c1], None)
+                    | AndAlso(Bool(b), (Condition(c1) as c)) when b = false ->
+                        And([c1], Some([filterExpression(Expression.Not(c))]))
+                    | OrElse(Bool(b), (Condition(c1) as c)) when b = true ->
+                        Or([c1], Some([filterExpression(Expression.Not(c))]))
+                    | OrElse(Bool(b), Condition(c1)) when b = false ->
+                        And([c1], None)
                     | _ -> failwith ("Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
                 match qual with

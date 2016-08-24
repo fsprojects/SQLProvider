@@ -808,6 +808,25 @@ let ``simple select into a generic type with pipe`` () =
     CollectionAssert.IsNotEmpty query
 
 [<Test >]
+let ``simple select with bool outside query``() = 
+    let dc = sql.GetDataContext()
+    let rnd = System.Random()
+    // Direct booleans outside LINQ:
+    let myCond1 = true
+    let myCond2 = rnd.NextDouble() > 0.5
+
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            // Experimental boolean support:
+            where (myCond1 && cust.City="London")
+            // Boolean in select fetches just either country or address, not both:
+            select (if myCond2 then cust.Country else cust.Address)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
+[<Test >]
 let ``simple select query async``() = 
     let dc = sql.GetDataContext()
     let task = 

@@ -123,7 +123,11 @@ module internal QueryExpressionTransformer =
             | ExpressionType.LeftShift,          (:? BinaryExpression as e)      -> upcast Expression.LeftShift(transform en e.Left, transform en e.Right)
             | ExpressionType.ExclusiveOr,        (:? BinaryExpression as e)      -> upcast Expression.ExclusiveOr(transform en e.Left, transform en e.Right)
             | ExpressionType.TypeIs,             (:? TypeBinaryExpression as e)  -> upcast Expression.TypeIs(transform en e.Expression, e.Type)
-            | ExpressionType.Conditional,        (:? ConditionalExpression as e) -> upcast Expression.Condition(transform en e.Test, transform en e.IfTrue, transform en e.IfFalse)
+            | ExpressionType.Conditional,        (:? ConditionalExpression as e) -> let testExp = transform en e.Test
+                                                                                    match testExp with // For now, only direct booleans conditions are optimized to select query:
+                                                                                    | :? ConstantExpression as c when c.Value = box(true) -> transform en e.IfTrue
+                                                                                    | :? ConstantExpression as c when c.Value = box(false) -> transform en e.IfFalse
+                                                                                    | _ -> upcast Expression.Condition(testExp, transform en e.IfTrue, transform en e.IfFalse)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with
                                                                                     | Some(en) when en = e.Name ->
