@@ -726,6 +726,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     match cond with
                     | Or(preds,rest) -> build "OR" preds rest
                     | And(preds,rest) ->  build "AND" preds rest
+                    | ConstantTrue -> ~~ " (1=1) "
+                    | ConstantFalse -> ~~ " (1=0) "
 
                     filterBuilder conds
 

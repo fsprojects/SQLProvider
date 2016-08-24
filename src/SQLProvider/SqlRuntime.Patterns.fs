@@ -99,10 +99,17 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
-let (|Bool|_|)   = function Constant((:? bool   as b),_) -> Some b | _ -> None
+let (|BoolStrict|_|)   = function Constant((:? bool   as b),_) -> Some b | _ -> None
 let (|String|_|) = function Constant((:? string as s),_) -> Some s | _ -> None
 let (|Int|_|)    = function Constant((:? int    as i),_) -> Some i | _ -> None
     
+let rec (|Bool|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | _, BoolStrict(b) -> Some b
+    | ExpressionType.Not, (:? UnaryExpression as ue) -> 
+        match ue.Operand with Bool x -> Some(not x) | _ -> None
+    | _ -> None
+
 let (|ParamName|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  Some pe.Name

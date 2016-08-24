@@ -813,15 +813,18 @@ let ``simple select with bool outside query``() =
     let rnd = System.Random()
     // Direct booleans outside LINQ:
     let myCond1 = true
-    let myCond2 = rnd.NextDouble() > 0.5
+    let myCond2 = false
+    let myCond3 = rnd.NextDouble() > 0.5
 
     let query = 
         query {
             for cust in dc.Main.Customers do
-            // Experimental boolean support:
-            where (myCond1 && cust.City="London")
+            // Simple booleans outside queries are supported:
+            where ((myCond1 && cust.City="Helsinki" || myCond1) 
+                   || (myCond2 && cust.Address="test" && not(myCond2))
+                   || cust.City="London")
             // Boolean in select fetches just either country or address, not both:
-            select (if myCond2 then cust.Country else cust.Address)
+            select (if myCond3 then cust.Country else cust.Address)
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query

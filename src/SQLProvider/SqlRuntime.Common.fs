@@ -299,6 +299,8 @@ and Condition =
     // changing it would be a lot of effort ;)
     | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option
     | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option
+    | ConstantTrue
+    | ConstantFalse
 
 and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected

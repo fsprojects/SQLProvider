@@ -295,6 +295,8 @@ module internal QueryExpressionTransformer =
         let rec resolveFilterList = function
             | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
             | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
+            | ConstantTrue -> ConstantTrue
+            | ConstantFalse -> ConstantFalse
 
         // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
