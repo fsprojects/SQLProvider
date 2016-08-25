@@ -182,8 +182,8 @@ module PostgreSQL =
 
     let createCommandParameter (param:QueryParameter) value =
         let value =
-            if not (isOptionValue value) then value else
-            match tryReadValueProperty value with Some(v) -> v | None -> null
+            if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
+            match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
