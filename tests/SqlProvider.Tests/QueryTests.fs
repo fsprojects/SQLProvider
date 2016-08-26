@@ -213,7 +213,8 @@ let ``simple select query let temp``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query
-    Assert.AreEqual("Berlintest", query.[0])
+    //Assert.AreEqual("Aachentest", query.[0])
+    //Assert.AreEqual("Berlintest", query.[0])
 
 
 [<Test>]
@@ -815,16 +816,37 @@ let ``simple select with bool outside query``() =
     let myCond1 = true
     let myCond2 = false
     let myCond3 = rnd.NextDouble() > 0.5
+    let myCond4 = 4
 
     let query = 
         query {
             for cust in dc.Main.Customers do
             // Simple booleans outside queries are supported:
-            where ((myCond1 && cust.City="Helsinki" || myCond1) 
-                   || (myCond2 && cust.Address="test" && not(myCond2))
-                   || cust.City="London")
+            where (((myCond1 && myCond1=true) && cust.City="Helsinki" || myCond1) || cust.City="London")
             // Boolean in select fetches just either country or address, not both:
-            select (if myCond3 then cust.Country else cust.Address)
+            select (if not(myCond3) then cust.Country else cust.Address)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty query
+
+
+[<Test >]
+let ``simple select with bool outside query2``() = 
+    let dc = sql.GetDataContext()
+    let rnd = System.Random()
+    // Direct booleans outside LINQ:
+    let myCond1 = true
+    let myCond2 = false
+    let myCond3 = rnd.NextDouble() > 0.5
+    let myCond4 = 4
+
+    let query = 
+        query {
+            for cust in dc.Main.Customers do
+            // Simple booleans outside queries are supported:
+            where (myCond4 > 3 || (myCond2 && cust.Address="test" && not(myCond2)))
+            // Boolean in select fetches just either country or address, not both:
+            select (if not(myCond4=8) then cust.Country else cust.Address)
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty query

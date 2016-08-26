@@ -56,6 +56,7 @@ module internal QueryExpressionTransformer =
 
         // this is not tail recursive but it shouldn't matter in practice ....
         let rec transform  (en:String option) (e:Expression): Expression =
+            let e = ExpressionOptimizer.doReduction e
             if e = null then null else
             match e.NodeType, e with
             | _, SourceTupleGet(alias,name,None) ->
@@ -130,7 +131,7 @@ module internal QueryExpressionTransformer =
                                                                                     | _ -> upcast Expression.Condition(testExp, transform en e.IfTrue, transform en e.IfFalse)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with
-                                                                                    | Some(en) when en = e.Name ->
+                                                                                    | Some(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
                                                                                          match projectionMap.TryGetValue en with
                                                                                          | true, values -> values.Clear()
                                                                                          | false, _ -> projectionMap.Add(en,new ResizeArray<_>())
@@ -140,7 +141,11 @@ module internal QueryExpressionTransformer =
                                                                                             replaceParams.[e].Body
                                                                                         else
                                                                                             upcast e
-            | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(transform en e.Expression, e.Member)
+            | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> let memb = Expression.MakeMemberAccess(transform en e.Expression, e.Member)
+                                                                                    // If we have merged new lambdas, just check the combination of anonymous objects
+                                                                                    if replaceParams.Count>0 then
+                                                                                        ExpressionOptimizer.``remove AnonymousType``(memb)
+                                                                                    else upcast memb
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
                                                                                     if  exType.IsGenericType
