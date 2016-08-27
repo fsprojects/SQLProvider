@@ -43,7 +43,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames
         let con = prov.CreateConnection conString
         this.Disposing.Add(fun _ -> 
-            if con <> Unchecked.defaultof<IDbConnection> then
+            if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
                 con.Dispose())
         con.Open()
         prov.CreateTypeMappings con

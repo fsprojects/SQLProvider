@@ -23,6 +23,7 @@ type internal MSAccessProvider() =
     let mutable findDbTypeByEnum : (int -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings (con:OleDbConnection) =
+        if con.State <> ConnectionState.Open then con.Open()
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
@@ -162,7 +163,11 @@ type internal MSAccessProvider() =
         cmd
 
     interface ISqlProvider with
-        member __.CreateConnection(connectionString) = upcast new OleDbConnection(connectionString)
+        member __.CreateConnection(connectionString) = 
+            // Access connections shouldn't ever be closed as that leads to Unspecified Error.
+            let con = new OleDbConnection(connectionString)
+            upcast con
+
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
 
         member __.CreateCommandParameter(param, value) =
