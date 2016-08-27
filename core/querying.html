@@ -357,23 +357,61 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 <tr class="even">
 <td><p>where</p></td>
 <td align="center"><p>X</p></td>
-<td><p>Server side variables must be on left side and only left side of predicates</p></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td align="center"><p>(excluding boolean database fields and LINQ-Contains)</p></td>
-<td></td>
+<td><p>Server side variables must be on left side and only left side of predicates (excluding boolean database fields and LINQ-Contains)</p></td>
 </tr>
 </tbody>
 </table>
 
+<p>To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs4', 91)" onmouseover="showTip(event, 'fs4', 91)" class="i">FSharp</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs5', 92)" onmouseover="showTip(event, 'fs5', 92)" class="i">Data</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs6', 93)" onmouseover="showTip(event, 'fs6', 93)" class="t">Sql</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs9', 94)" onmouseover="showTip(event, 'fs9', 94)" class="i">Common</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs48', 95)" onmouseover="showTip(event, 'fs48', 95)" class="t">QueryEvents</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 96)" onmouseover="showTip(event, 'fs49', 96)" class="i">SqlQueryEvent</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs50', 97)" onmouseover="showTip(event, 'fs50', 97)" class="t">Event</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 98)" onmouseover="showTip(event, 'fs51', 98)" class="f">add</span> (<span onmouseout="hideTip(event, 'fs52', 99)" onmouseover="showTip(event, 'fs52', 99)" class="f">printfn</span> <span class="s">&quot;Executing SQL: </span><span class="pf">%s</span><span class="s">&quot;</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>There are some limitation of complexity of your queries, but for example
+this is still ok and will give you very simple select-clause:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs53', 100)" onmouseover="showTip(event, 'fs53', 100)" class="f">randomBoolean</span> <span class="o">=</span> 
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 101)" onmouseover="showTip(event, 'fs54', 101)" class="i">r</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs55', 102)" onmouseover="showTip(event, 'fs55', 102)" class="i">System</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs56', 103)" onmouseover="showTip(event, 'fs56', 103)" class="t">Random</span>()
+    <span class="k">fun</span> () <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs54', 104)" onmouseover="showTip(event, 'fs54', 104)" class="i">r</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs57', 105)" onmouseover="showTip(event, 'fs57', 105)" class="f">NextDouble</span>() <span class="o">&gt;</span> <span class="n">0.5</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs58', 106)" onmouseover="showTip(event, 'fs58', 106)" class="i">c1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs53', 107)" onmouseover="showTip(event, 'fs53', 107)" class="f">randomBoolean</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs59', 108)" onmouseover="showTip(event, 'fs59', 108)" class="i">c2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs53', 109)" onmouseover="showTip(event, 'fs53', 109)" class="f">randomBoolean</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs60', 110)" onmouseover="showTip(event, 'fs60', 110)" class="i">c3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs53', 111)" onmouseover="showTip(event, 'fs53', 111)" class="f">randomBoolean</span>()
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs61', 112)" onmouseover="showTip(event, 'fs61', 112)" class="i">sample</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs17', 113)" onmouseover="showTip(event, 'fs17', 113)" class="i">query</span> {
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs18', 114)" onmouseover="showTip(event, 'fs18', 114)" class="i">order</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 115)" onmouseover="showTip(event, 'fs14', 115)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 116)" onmouseover="showTip(event, 'fs19', 116)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs20', 117)" onmouseover="showTip(event, 'fs20', 117)" class="i">Orders</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs21', 118)" onmouseover="showTip(event, 'fs21', 118)" class="k">where</span> ((<span onmouseout="hideTip(event, 'fs58', 119)" onmouseover="showTip(event, 'fs58', 119)" class="i">c1</span> <span class="o">||</span> <span onmouseout="hideTip(event, 'fs18', 120)" onmouseover="showTip(event, 'fs18', 120)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 121)" onmouseover="showTip(event, 'fs22', 121)" class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>) <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs59', 122)" onmouseover="showTip(event, 'fs59', 122)" class="i">c2</span>)
+        <span class="k">let</span> <span onmouseout="hideTip(event, 'fs62', 123)" onmouseover="showTip(event, 'fs62', 123)" class="i">x</span> <span class="o">=</span> <span class="s">&quot;Region: &quot;</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs18', 124)" onmouseover="showTip(event, 'fs18', 124)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs63', 125)" onmouseover="showTip(event, 'fs63', 125)" class="i">ShipAddress</span>
+        <span onmouseout="hideTip(event, 'fs27', 126)" onmouseover="showTip(event, 'fs27', 126)" class="k">select</span> (<span onmouseout="hideTip(event, 'fs62', 127)" onmouseover="showTip(event, 'fs62', 127)" class="i">x</span>, <span class="k">if</span> <span onmouseout="hideTip(event, 'fs60', 128)" onmouseover="showTip(event, 'fs60', 128)" class="i">c3</span> <span class="k">then</span> <span onmouseout="hideTip(event, 'fs18', 129)" onmouseover="showTip(event, 'fs18', 129)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs64', 130)" onmouseover="showTip(event, 'fs64', 130)" class="i">ShipCountry</span> <span class="k">else</span> <span onmouseout="hideTip(event, 'fs18', 131)" onmouseover="showTip(event, 'fs18', 131)" class="i">order</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs65', 132)" onmouseover="showTip(event, 'fs65', 132)" class="i">ShipRegion</span>)
+    } <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs29', 133)" onmouseover="showTip(event, 'fs29', 133)" class="t">Seq</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs30', 134)" onmouseover="showTip(event, 'fs30', 134)" class="f">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>It can be for example:
+SELECT [_arg1].[ShipRegion] as 'ShipRegion',[_arg1].[ShipCountry] as 'ShipCountry' FROM main.Orders as [_arg1]</p>
 <h2><a name="Expressions" class="anchor" href="#Expressions">Expressions</a></h2>
 <p>These operators perform no specific function in the code itself, rather they
 are placeholders replaced by their database-specific server-side operations.
 Their utility is in forcing the compiler to check against the correct types.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 91)" onmouseover="showTip(event, 'fs48', 91)" class="i">bergs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 92)" onmouseover="showTip(event, 'fs14', 92)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 93)" onmouseover="showTip(event, 'fs19', 93)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 94)" onmouseover="showTip(event, 'fs49', 94)" class="i">Customers</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs50', 95)" onmouseover="showTip(event, 'fs50', 95)" class="i">Individuals</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 96)" onmouseover="showTip(event, 'fs51', 96)" class="i">BERGS</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs66', 135)" onmouseover="showTip(event, 'fs66', 135)" class="i">bergs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 136)" onmouseover="showTip(event, 'fs14', 136)" class="i">ctx</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 137)" onmouseover="showTip(event, 'fs19', 137)" class="i">Main</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs67', 138)" onmouseover="showTip(event, 'fs67', 138)" class="i">Customers</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs68', 139)" onmouseover="showTip(event, 'fs68', 139)" class="i">Individuals</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs69', 140)" onmouseover="showTip(event, 'fs69', 140)" class="i">BERGS</span>
 </code></pre></td>
 </tr>
 </table>
@@ -434,10 +472,28 @@ Their utility is in forcing the compiler to check against the correct types.</p>
 <div class="tip" id="fs45">val itemAsync : System.Threading.Tasks.Task&lt;SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity&gt;<br /><br />Full name: Querying.itemAsync</div>
 <div class="tip" id="fs46">val item : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
 <div class="tip" id="fs47">val headAsync : (System.Linq.IQueryable&lt;&#39;a&gt; -&gt; Async&lt;&#39;a&gt;)<br /><br />Full name: FSharp.Data.Sql.Seq.headAsync</div>
-<div class="tip" id="fs48">val bergs : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Querying.bergs</div>
-<div class="tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
-<div class="tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals<br /><em><br /><br />&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
-<div class="tip" id="fs51">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="tip" id="fs48">module QueryEvents<br /><br />from FSharp.Data.Sql.Common</div>
+<div class="tip" id="fs49">val SqlQueryEvent : IEvent&lt;string&gt;<br /><br />Full name: FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent</div>
+<div class="tip" id="fs50">Multiple items<br />module Event<br /><br />from Microsoft.FSharp.Control<br /><br />--------------------<br />type Event&lt;&#39;T&gt; =<br />&#160;&#160;new : unit -&gt; Event&lt;&#39;T&gt;<br />&#160;&#160;member Trigger : arg:&#39;T -&gt; unit<br />&#160;&#160;member Publish : IEvent&lt;&#39;T&gt;<br /><br />Full name: Microsoft.FSharp.Control.Event&lt;_&gt;<br /><br />--------------------<br />type Event&lt;&#39;Delegate,&#39;Args (requires delegate and &#39;Delegate :&gt; Delegate)&gt; =<br />&#160;&#160;new : unit -&gt; Event&lt;&#39;Delegate,&#39;Args&gt;<br />&#160;&#160;member Trigger : sender:obj * args:&#39;Args -&gt; unit<br />&#160;&#160;member Publish : IEvent&lt;&#39;Delegate,&#39;Args&gt;<br /><br />Full name: Microsoft.FSharp.Control.Event&lt;_,_&gt;<br /><br />--------------------<br />new : unit -&gt; Event&lt;&#39;T&gt;<br /><br />--------------------<br />new : unit -&gt; Event&lt;&#39;Delegate,&#39;Args&gt;</div>
+<div class="tip" id="fs51">val add : callback:(&#39;T -&gt; unit) -&gt; sourceEvent:IEvent&lt;&#39;Del,&#39;T&gt; -&gt; unit (requires delegate and &#39;Del :&gt; System.Delegate)<br /><br />Full name: Microsoft.FSharp.Control.Event.add</div>
+<div class="tip" id="fs52">val printfn : format:Printf.TextWriterFormat&lt;&#39;T&gt; -&gt; &#39;T<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn</div>
+<div class="tip" id="fs53">val randomBoolean : (unit -&gt; bool)<br /><br />Full name: Querying.randomBoolean</div>
+<div class="tip" id="fs54">val r : System.Random</div>
+<div class="tip" id="fs55">namespace System</div>
+<div class="tip" id="fs56">Multiple items<br />type Random =<br />&#160;&#160;new : unit -&gt; Random + 1 overload<br />&#160;&#160;member Next : unit -&gt; int + 2 overloads<br />&#160;&#160;member NextBytes : buffer:byte[] -&gt; unit<br />&#160;&#160;member NextDouble : unit -&gt; float<br /><br />Full name: System.Random<br /><br />--------------------<br />System.Random() : unit<br />System.Random(Seed: int) : unit</div>
+<div class="tip" id="fs57">System.Random.NextDouble() : float</div>
+<div class="tip" id="fs58">val c1 : bool<br /><br />Full name: Querying.c1</div>
+<div class="tip" id="fs59">val c2 : bool<br /><br />Full name: Querying.c2</div>
+<div class="tip" id="fs60">val c3 : bool<br /><br />Full name: Querying.c3</div>
+<div class="tip" id="fs61">val sample : (string * string) []<br /><br />Full name: Querying.sample</div>
+<div class="tip" id="fs62">val x : string</div>
+<div class="tip" id="fs63">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: string</div>
+<div class="tip" id="fs64">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipCountry: string</div>
+<div class="tip" id="fs65">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipRegion: string</div>
+<div class="tip" id="fs66">val bergs : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: Querying.bergs</div>
+<div class="tip" id="fs67">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="tip" id="fs68">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals<br /><em><br /><br />&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
+<div class="tip" id="fs69">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 
         </div>
         <div class="span3">
