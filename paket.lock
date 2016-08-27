@@ -1,9 +1,9 @@
 NUGET
   remote: https://www.nuget.org/api/v2
-    FAKE (4.27)
+    FAKE (4.39)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Core (3.1.2.1) - redirects: force
-    FSharp.Formatting (2.14.3)
+    FSharp.Formatting (2.14.4)
       FSharp.Compiler.Service (2.0.0.6)
       FSharpVSPowerTools.Core (>= 2.3 < 2.4)
     FSharpVSPowerTools.Core (2.3)
@@ -15,18 +15,18 @@ NUGET
     Microsoft.Net.Http (2.2.29) - framework: net10, net11, net20, net30, net35, net40, net40-full
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
-    NuGet.CommandLine (2.8.6)
+    NuGet.CommandLine (2.12)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
     Octokit (0.21.1)
       Microsoft.Net.Http  - framework: net10, net11, net20, net30, net35, net40, net40-full
-    RazorEngine (3.8.2)
+    RazorEngine (3.9)
       Microsoft.AspNet.Razor (>= 3.0) - framework: >= net45
       Microsoft.AspNet.Razor (2.0.30506) - framework: net40
     SourceLink.Fake (1.1)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (cd7849e12cf4a6619863671828ed1b0418e90d7f)
+    modules/Octokit/Octokit.fsx (e5870cb85f9b500246e02c6daa94e5131dad7a6e)
       Octokit (>= 0.20)
   remote: fsprojects/FSharp.TypeProviders.StarterPack
     src/ProvidedTypes.fs (8f647a4cde71bdeda10e7f5b534ec3c879601570)
@@ -35,7 +35,7 @@ GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
-    MySql.Data (6.9.8)
-    Newtonsoft.Json (8.0.3)
-    Npgsql (3.1.2)
+    MySql.Data (6.9.9)
+    Newtonsoft.Json (9.0.1)
+    Npgsql (3.1.7)
     Oracle.ManagedDataAccess (12.1.24160419)

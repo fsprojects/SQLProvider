@@ -1,3 +1,9 @@
+### 1.0.30 - 27.08.2016
+* Oracle performance improvements
+* Postgre nullable insert fix
+* SQL generation improvements
+* MsAccess fix
+
 ### 1.0.29 - 23.08.2016
 * Support for composite (multi-key-column) table joins
 * Support for let-keywords
