@@ -1,3 +1,6 @@
+### 1.0.31 - 27.08.2016
+* Where-clause optimization and fix
+
 ### 1.0.30 - 27.08.2016
 * Oracle performance improvements
 * Postgre nullable insert fix
