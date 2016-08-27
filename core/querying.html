@@ -403,8 +403,19 @@ this is still ok and will give you very simple select-clause:</p>
 </code></pre></td>
 </tr>
 </table>
-<p>It can be for example:
-SELECT [_arg1].[ShipRegion] as 'ShipRegion',[_arg1].[ShipCountry] as 'ShipCountry' FROM main.Orders as [_arg1]</p>
+<p>It can be for example (but it can also leave [Freight]-condition away and select ShipRegion instead of ShipAddress, depending on your randon values):</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql">    <span class="k">SELECT</span> 
+        [_arg<span class="n">2</span>].[ShipAddress] <span class="k">as</span> <span class="s">'ShipAddress'</span>,
+        [_arg<span class="n">2</span>].[ShipCountry] <span class="k">as</span> <span class="s">'ShipCountry'</span> 
+    <span class="k">FROM</span> main.Orders <span class="k">as</span> [_arg<span class="n">2</span>] 
+    <span class="k">WHERE</span> (([_arg<span class="n">2</span>].[Freight]&gt; @param<span class="n">1</span>)) 
+</code></pre></td></tr></table>
 <h2><a name="Expressions" class="anchor" href="#Expressions">Expressions</a></h2>
 <p>These operators perform no specific function in the code itself, rather they
 are placeholders replaced by their database-specific server-side operations.
