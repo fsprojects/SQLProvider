@@ -1,10 +1,8 @@
 (*** hide ***)
-#I @"../../files/sqlite"
-(*** hide ***)
 #I "../../../bin"
 (*** hide ***)
 [<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"

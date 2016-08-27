@@ -49,6 +49,7 @@ let item =
     }
 
 (**
+
 Or async versions:
 *)
 
@@ -150,9 +151,15 @@ let sample =
     } |> Seq.toArray
 
 (**
-It can be for example:
-SELECT [_arg1].[ShipRegion] as 'ShipRegion',[_arg1].[ShipCountry] as 'ShipCountry' FROM main.Orders as [_arg1] 
+It can be for example (but it can also leave [Freight]-condition away and select ShipRegion instead of ShipAddress, depending on your randon values):
 
+```sql
+    SELECT 
+        [_arg2].[ShipAddress] as 'ShipAddress',
+        [_arg2].[ShipCountry] as 'ShipCountry' 
+    FROM main.Orders as [_arg2] 
+    WHERE (([_arg2].[Freight]> @param1)) 
+```
 
 ## Expressions
 

@@ -377,7 +377,7 @@ and internal SqlQuery =
                     else convert { q with Skip = Some(amount) } rest
                 | Take(amount, rest) ->
                     match q.Take with
-                    | Some x when x = 1 && amount = 1 -> convert { q with Take = Some(amount) } rest
+                    | Some x when amount <= x || amount = 1 -> convert { q with Take = Some(amount) } rest
                     | Some x -> failwith "take may only be specified once"
                     | None -> convert { q with Take = Some(amount) } rest
                 | Count(rest) ->
