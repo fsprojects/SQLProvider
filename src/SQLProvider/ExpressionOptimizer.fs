@@ -1,6 +1,5 @@
-﻿/// This is just light-weight expression optimizer.
-/// It is not a visitor pattern: It won't run through sub-expressions. As it was made just for usage inside a visitorn-patter.
-/// Also, it won't Compile() or do any heavy stuff.
+/// This is just a light-weight expression optimizer.
+/// It won't Compile() or do any heavy stuff.
 module ExpressionOptimizer
 
 open System.Linq.Expressions
