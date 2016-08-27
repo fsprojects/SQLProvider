@@ -10,12 +10,12 @@ open System.Reflection
 /// Purpose of this is optimize away already known constant=constant style expressions.
 ///   7 > 8      -->   False
 /// "G" = "G"    -->   True
-let rec ``replace constant comparison`` (e:Expression) =
+let ``replace constant comparison`` (e:Expression) =
     match e with
     | (:? BinaryExpression as ce) -> 
         let (|Constant|_|) (e:Expression) = 
             match e.NodeType, e with 
-            | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value :?> IComparable)
+            | ExpressionType.Constant, (:? ConstantExpression as ce) when (ce.Value :? IComparable) -> Some (ce.Value :?> IComparable)
             | _ -> None
         let createbool b = Expression.Constant(b,  typeof<bool>) :> Expression
         match ce.Left, ce.Right with
@@ -28,10 +28,6 @@ let rec ``replace constant comparison`` (e:Expression) =
             | ExpressionType.GreaterThanOrEqual -> createbool (l>=r)
             | ExpressionType.NotEqual           -> createbool (l<>r)
             | _ -> e
-        | (:? BinaryExpression as cl), (:? BinaryExpression as cr) -> 
-            match (``replace constant comparison`` cl), (``replace constant comparison`` cr) with
-            | ll, rr when ce.Left <> ll || ce.Right <> rr -> Expression.MakeBinary(ce.NodeType, ll, rr) :> Expression
-            | _ -> e
         | _ -> e
     | _ -> e
 
@@ -39,6 +35,7 @@ let rec ``replace constant comparison`` (e:Expression) =
 /// Purpose of this is to replace non-used anonymous types:
 /// new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
 let ``remove AnonymousType`` (e:Expression) =
+    if e = Unchecked.defaultof<Expression> then e else 
     match e.NodeType, e with
     | ExpressionType.MemberAccess, ( :? MemberExpression as me)
         when me.Member.DeclaringType.Name.ToUpper().StartsWith("ANONYMOUSOBJECT") || me.Member.DeclaringType.Name.ToUpper().StartsWith("TUPLE") ->
@@ -203,13 +200,62 @@ let deMorgan = function
 
 /// ------------------------------------- ///
 
+/// This is just helping to work with FSI:
+let ``evaluate FSI constants`` (e:Expression) =
+    match e.NodeType, e with
+    // Also we don't want FSharp interactive debugging to mess our expressions:
+    | ExpressionType.MemberAccess, ( :? MemberExpression as me) 
+        when me <> null && me.Expression=null && me.Member.DeclaringType.Name.ToUpper().StartsWith("FSI_") -> 
+            match me.Member with 
+            | :? PropertyInfo as p when p.PropertyType.IsValueType -> Expression.Constant(p.GetValue(p) :?> IComparable, p.PropertyType) :> Expression
+            | _ -> e
+    | _ -> e
+
+/// ------------------------------------- ///
+
 let reductionMethods = 
-    [``replace constant comparison``; ``remove AnonymousType``; ``cut not used condition``; ``not false is true``;
+    [``evaluate FSI constants``; 
+     ``replace constant comparison``; ``remove AnonymousType``; ``cut not used condition``; ``not false is true``;
      (*associate;*) commute; (*distribute;*) gather; identity; annihilate; absorb; idempotence; complement; doubleNegation; deMorgan]
 
-/// And then the starting point:
+/// Does reductions just for a current node.
 let rec doReduction (exp:Expression) =
+    if exp = Unchecked.defaultof<Expression> then exp else 
     let opt = reductionMethods |> Seq.fold(fun acc f -> f(acc)) exp
     match opt = exp with
     | true -> exp
     | false -> doReduction opt
+
+ /// ------------------------------------- ///
+
+/// Expression tree visitor: go through the whole expression tree.
+let rec visit (exp:Expression): Expression =
+    //bottom up:
+    if exp = null then null else
+    let e1 = visitchilds exp
+    let e2 = doReduction e1
+    e2
+
+and visitchilds (e:Expression): Expression =
+    if e = null then null else
+    match e with
+    | (:? UnaryExpression as e)       -> upcast Expression.MakeUnary(e.NodeType, visit e.Operand,e.Type,e.Method)
+    | (:? BinaryExpression as e)      -> upcast Expression.MakeBinary(e.NodeType, visit e.Left, visit e.Right)
+    | (:? TypeBinaryExpression as e)  -> upcast Expression.TypeIs(visit e.Expression, e.TypeOperand)
+    | (:? ConditionalExpression as e) -> upcast Expression.Condition(visit e.Test, visit e.IfTrue, visit e.IfFalse)
+    | (:? ConstantExpression as e)    -> upcast e
+    | (:? ParameterExpression as e)   -> upcast e
+    | (:? MemberExpression as e)      -> upcast Expression.MakeMemberAccess(visit e.Expression, e.Member)
+    | (:? MethodCallExpression as e)  -> upcast Expression.Call(visit e.Object, e.Method, e.Arguments |> Seq.map(fun a -> visit a))
+    | (:? LambdaExpression as e)      -> upcast Expression.Lambda(e.Type, visit e.Body, e.Parameters)
+    | (:? NewExpression as e) when e.Members = null -> 
+                                         upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> visit a))
+    | (:? NewExpression as e) when e.Members <> null -> 
+                                         upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> visit a), e.Members)
+    | (:? NewArrayExpression as e) when e.NodeType = ExpressionType.NewArrayInit ->
+                                         upcast Expression.NewArrayBounds(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> visit e))
+    | (:? NewArrayExpression as e)    -> upcast Expression.NewArrayInit(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> visit e))
+    | (:? InvocationExpression as e)  -> upcast Expression.Invoke(visit e.Expression, e.Arguments |> Seq.map(fun a -> visit a))
+    | (:? MemberInitExpression as e)  -> upcast Expression.MemberInit( (visit e.NewExpression) :?> NewExpression , e.Bindings) //probably shoud visit also bindings
+    | (:? ListInitExpression as e)    -> upcast Expression.ListInit( (visit e.NewExpression) :?> NewExpression, e.Initializers) //probably shoud visit also initialixers
+    | _ -> failwith ("encountered unknown LINQ expression: " + e.NodeType.ToString() + " " + e.ToString())

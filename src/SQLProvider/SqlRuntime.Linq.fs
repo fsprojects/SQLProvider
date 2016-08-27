@@ -228,7 +228,6 @@ module internal QueryImplementation =
                     | _ -> None
 
                 let rec filterExpression (exp:Expression)  =
-                    let exp = ExpressionOptimizer.doReduction exp
                     let extendFilter conditions nextFilter =
                         match exp with
                         | AndAlso(_) -> And(conditions,nextFilter)
@@ -241,8 +240,9 @@ module internal QueryImplementation =
                         extendFilter [c] (Some ([filterExpression left]))
                     | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_,_) as right))  ->
                         extendFilter [c] (Some ([filterExpression right]))
-                    | AndAlsoOrElse(Condition(c1) ,Condition(c2)) ->
-                        extendFilter [c1;c2] None
+                    | AndAlsoOrElse(Condition(c1) as cc1 ,Condition(c2)) as cc2 ->
+                        if cc1 = cc2 then extendFilter [c1] None
+                        else extendFilter [c1;c2] None
                     | Condition(cond) ->
                         Condition.And([cond],None)
 
@@ -258,6 +258,7 @@ module internal QueryImplementation =
                     // name here will either be the alias the user entered in the where clause if no joining / select many has happened before this
                     // otherwise, it will be the compiler-generated alias eg _arg2.  this might be the first method called in which case set the
                     // base entity alias to this name.
+                    let ex = ExpressionOptimizer.visit ex
                     let filter = filterExpression ex
                     let sqlExpression =
                         match source.SqlExpression with

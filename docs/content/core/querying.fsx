@@ -118,11 +118,42 @@ thenBy	                 |X |                                                    
 thenByDescending	     |X |                                                       |   
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
-where                    |X | Server side variables must be on left side and only left side of predicates  | 
-                         |  | (excluding boolean database fields and LINQ-Contains) | 
+where                    |X | Server side variables must be on left side and only left side of predicates (excluding boolean database fields and LINQ-Contains) | 
 *)
 
 (**
+To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:
+*)
+
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+
+(**
+
+There are some limitation of complexity of your queries, but for example
+this is still ok and will give you very simple select-clause:
+
+*)
+
+let randomBoolean = 
+    let r = System.Random()
+    fun () -> r.NextDouble() > 0.5
+let c1 = randomBoolean()
+let c2 = randomBoolean()
+let c3 = randomBoolean()
+
+let sample =
+    query {
+        for order in ctx.Main.Orders do
+        where ((c1 || order.Freight > 0m) && c2)
+        let x = "Region: " + order.ShipAddress
+        select (x, if c3 then order.ShipCountry else order.ShipRegion)
+    } |> Seq.toArray
+
+(**
+It can be for example:
+SELECT [_arg1].[ShipRegion] as 'ShipRegion',[_arg1].[ShipCountry] as 'ShipCountry' FROM main.Orders as [_arg1] 
+
+
 ## Expressions
 
 These operators perform no specific function in the code itself, rather they
