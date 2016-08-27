@@ -38,3 +38,4 @@ NUGET
     MySql.Data (6.9.8)
     Newtonsoft.Json (8.0.3)
     Npgsql (3.1.2)
+    Oracle.ManagedDataAccess (12.1.24160419)

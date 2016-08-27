@@ -232,8 +232,12 @@ module internal Reflection =
 
         let currentPaths =
             let myPath = 
+#if INTERACTIVE
+                __SOURCE_DIRECTORY__
+#else
                 System.Reflection.Assembly.GetExecutingAssembly().Location
                 |> System.IO.Path.GetDirectoryName
+#endif
             assemblyNames 
             |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm))
 
@@ -344,3 +348,7 @@ module Sql =
             dt.Load(r)
             return dt
         }
+
+    let ensureOpen (con:IDbConnection) =
+        if con.State <> ConnectionState.Open
+        then con.Open()

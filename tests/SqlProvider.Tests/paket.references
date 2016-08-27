@@ -1,3 +1,7 @@
 NUnit
 FSharp.Core
 Fake
+
+group Scripts
+
+      Oracle.ManagedDataAccess

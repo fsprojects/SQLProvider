@@ -19,36 +19,36 @@ open FSharp.Data.Sql.Common
 open Oracle
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
-let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.56.101)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=pdb1)));User Id=HR;Password=oracle;"
-Oracle.resolutionPath <- @"D:\Oracle\product\12.1.0\client_1\odp.net\managed\common"
+let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.1.90)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
+Oracle.resolutionPath <- "/Users/colinbull/appdev/SqlProvider/packages/scripts/Oracle.ManagedDataAccess/lib/net40"
 
 
-Oracle.owner <- "MOPDC"
+Oracle.owner <- "HR"
 let connection = Oracle.createConnection connectionString
 Sql.connect connection Oracle.createTypeMappings
 
-Sql.connect connection (Oracle.getSchema "Packages" [|"MOPDC"|])
+Sql.connect connection (Oracle.getSchema "Packages" [|"HR"|])
 |> DataTable.printDataTable
 
 Sql.connect connection (Oracle.getSchema "DataTypes" [||])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "ForeignKeys" [|"MOPDC"; "AUDIT_TRAIL"|])
+Sql.connect connection (Oracle.getSchema "ForeignKeys" [|"HR"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "ForeignKeyColumns" [|"MOPDC"; "AUDIT_TRAIL"|])
+Sql.connect connection (Oracle.getSchema "ForeignKeyColumns" [|"HR"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "PackageBodies" [|"MOPDC"|])
+Sql.connect connection (Oracle.getSchema "PackageBodies" [|"HR"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "Functions" [|"MOPDC"|])
+Sql.connect connection (Oracle.getSchema "Functions" [|"HR"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "Procedures" [|"MOPDC"|])
+Sql.connect connection (Oracle.getSchema "Procedures" [|"HR"|])
 |> DataTable.printDataTable
 
-Sql.connect connection (Oracle.getSchema "ProcedureParameters" [|"MOPDC"|])
+Sql.connect connection (Oracle.getSchema "ProcedureParameters" [|"HR"|])
 |> DataTable.printDataTable
 
 Sql.connect connection (fun c ->
@@ -63,4 +63,12 @@ Sql.connect connection (fun c ->
 
 Oracle.typeMappings
 
-Sql.connect connection Oracle.getSprocs
+seq {
+    for sproc in  Sql.connect connection Oracle.getSprocs do
+        match sproc with
+        | Schema.Root("Packages", Schema.Package(name, x)) ->
+            Sql.ensureOpen connection
+            yield! x.Sprocs connection
+        | _ -> ()           
+} |> Seq.toArray
+        
