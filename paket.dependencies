@@ -13,6 +13,7 @@ nuget SourceLink.Fake
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
 github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
+github Thorium/Linq.Expression.Optimizer src/Linq.Expression.Optimizer/ExpressionOptimizer.fs
 
 group Scripts
     framework >= 4.0
