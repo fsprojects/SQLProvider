@@ -32,7 +32,7 @@ GITHUB
     src/ProvidedTypes.fs (8f647a4cde71bdeda10e7f5b534ec3c879601570)
     src/ProvidedTypes.fsi (8f647a4cde71bdeda10e7f5b534ec3c879601570)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (f97dbdc989c9f125f2897d9f01c964fdb40c00ed)
+    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (7ac6f0e4318b6ea1236b97c272f75db4f8212442)
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
