@@ -59,11 +59,11 @@
     <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs">
       <Link>ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="Operators.fs" />
-    <Compile Include="Utils.fs" />
     <Compile Include="..\..\paket-files\Thorium\Linq.Expression.Optimizer\src\Linq.Expression.Optimizer\ExpressionOptimizer.fs">
       <Link>ExpressionOptimizer.fs</Link>
     </Compile>
+    <Compile Include="Operators.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="SqlSchema.fs" />
     <Compile Include="DataTable.fs" />
     <Compile Include="SqlRuntime.Patterns.fs" />
