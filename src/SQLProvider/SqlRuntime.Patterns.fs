@@ -134,6 +134,9 @@ let (|OptionalConvertOrTypeAs|) (e:Expression) =
     match e.NodeType, e with 
     | ExpressionType.Convert, (:? UnaryExpression as ue ) 
     | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> ue.Operand
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
+        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
+        e.Arguments.[0]
     | _ -> e
 
 let (|OptionalFSharpOptionValue|) (e:Expression) = 
