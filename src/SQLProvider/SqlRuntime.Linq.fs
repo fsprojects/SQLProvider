@@ -213,13 +213,13 @@ module internal QueryImplementation =
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.NotNull,None)
                     // matches column to constant with any operator eg c.name = "john", c.age > 42
-                    | SqlCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) 
-                    | SqlNegativeCondOp(op,(SqlColumnGet(ti,key,_)),OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) ->
+                    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
+                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,c)
                     // matches to another property getter, method call or new expression
-                    | SqlCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))
-                    | SqlNegativeCondOp(op,SqlColumnGet(ti,key,_),OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))) ->
+                    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
                     | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
