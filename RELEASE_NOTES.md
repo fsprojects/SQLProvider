@@ -1,3 +1,7 @@
+### 1.0.32 - 05.09.2016
+* SQLite text-format date comparison fix #328
+* Odbc quote characters option #327
+
 ### 1.0.31 - 27.08.2016
 * Where-clause optimization and fix
 
