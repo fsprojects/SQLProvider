@@ -35,14 +35,14 @@ let ctx = db.GetDataContext()
 
 (**
 
-Because there are a lot of different kind of ODBC connections, you can set
+Because there are a lot of different kind of ODBC connection types, you can set
 quote characters for SQL-clauses with optional parameter OdbcQuote.
 
-- OdbcQuoteCharacter.SQUARE_BRACKETS
-- OdbcQuoteCharacter.GRAVE_ACCENT
-- OdbcQuoteCharacter.NO_QUOTES
+- `OdbcQuoteCharacter.SQUARE_BRACKETS`
+- `OdbcQuoteCharacter.GRAVE_ACCENT`
+- `OdbcQuoteCharacter.NO_QUOTES`
 
-and the difference in executed SQL:
+and the difference in executed SQL is:
 
 ```sql
 SELECT [CourseID], [CourseName] FROM [Course] as [q] 
@@ -52,7 +52,6 @@ SELECT  CourseID ,  CourseName  FROM  Course  as  q
 
 *)
 
-FSharp.Data.Sql.Common.OdbcQuoteCharacter.SQUARE_BRACKETS 
 [<Literal>] 
 let quotechar = FSharp.Data.Sql.Common.OdbcQuoteCharacter.DEFAULT_QUOTE
 type db2 = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, dnsConn, OdbcQuote = quotechar>
