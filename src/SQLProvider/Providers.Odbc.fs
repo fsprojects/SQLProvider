@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal OdbcProvider() =
+type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
@@ -18,12 +18,18 @@ type internal OdbcProvider() =
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let mutable cOpen = '`' //char separator in query for table aliases `alias` or [alias]
-    let mutable cClose = '`' 
+    let quotes =
+        if quotehcar = OdbcQuoteCharacter.NO_QUOTES then ' ',' '
+        elif quotehcar = OdbcQuoteCharacter.GRAVE_ACCENT then '`', '`'
+        elif quotehcar = OdbcQuoteCharacter.SQUARE_BRACKETS then '[', ']'
+        else '`', '`'
+
+    let mutable cOpen = fst quotes //char separator in query for table aliases `alias` or [alias]
+    let mutable cClose = snd quotes
 
     let createTypeMappings (con:OdbcConnection) =
 
-        if con.Driver.Contains("sql") then
+        if quotehcar = OdbcQuoteCharacter.DEFAULT_QUOTE && con.Driver.Contains("sql") then
             cOpen <- '['
             cClose <- ']'
 

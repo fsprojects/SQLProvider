@@ -28,6 +28,14 @@ type CaseSensitivityChange =
     | TOUPPER = 1
     | TOLOWER = 2
 
+type OdbcQuoteCharacter =
+    | DEFAULT_QUOTE = 0
+    /// MySQL/Postgre style: `alias` 
+    | GRAVE_ACCENT = 1
+    /// Microsoft SQL style: [alias]
+    | SQUARE_BRACKETS = 2
+    | NO_QUOTES = 3 // alias
+
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
    let private sqlEvent = new Event<string>()

@@ -24,3 +24,9 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.ORACLE, connectionString
 let ctx = sql.GetDataContext()
 
 let customers = ctx.Customers |> Seq.toArray
+
+(**
+
+Because Oracle databases can be huge, there is an optional constructor parameter `TableNames` that can be used as a filter.
+
+*)
