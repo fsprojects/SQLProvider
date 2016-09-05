@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedStaticParameter - SQLProvider</title>
+    <title>OdbcQuoteCharacter - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,63 +35,54 @@
 
 
 
-<h1>ProvidedStaticParameter</h1>
+<h1>OdbcQuoteCharacter</h1>
 <p>
-  <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
+  <span>Namespace: FSharp.Data.Sql.Common</span><br />
 </p>
 <div class="xmldoc">
-<p>Represents a provided static parameter.</p>
-
 </div>
-  <h3>Constructors</h3>
+  <h3>Record Fields</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Record Field</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '363', 363)" onmouseover="showTip(event, '363', 363)">
-            new(...)
+          <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
+            DEFAULT_QUOTE
           </code>
-          <div class="tip" id="363">
-            <strong>Signature:</strong> (parameterName:string * parameterType:Type * parameterDefaultValue:obj option) -&gt; ProvidedStaticParameter<br />
+          <div class="tip" id="194">
+            <strong>Signature:</strong> OdbcQuoteCharacter<br />
+              <strong>Modifiers:</strong> static<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1234-1234" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L32-32" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-              <p>CompiledName: <code>.ctor</code></p>
         </td>
       </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '364', 364)" onmouseover="showTip(event, '364', 364)">
-            AddXmlDoc(xmlDoc)
+          <code onmouseout="hideTip(event, '195', 195)" onmouseover="showTip(event, '195', 195)">
+            GRAVE_ACCENT
           </code>
-          <div class="tip" id="364">
-            <strong>Signature:</strong> xmlDoc:string -&gt; unit<br />
+          <div class="tip" id="195">
+            <strong>Signature:</strong> OdbcQuoteCharacter<br />
+              <strong>Modifiers:</strong> static<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1241-1241" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L34-34" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Add XML documentation information to this provided constructor</p>
+          <p>MySQL/Postgre style: <a href="fsharp-data-sql-common-alias.html" title="alias"><code>alias</code></a></p>
 
 
         </td>
@@ -99,19 +90,39 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '365', 365)" onmouseover="showTip(event, '365', 365)">
-            AddXmlDocDelayed(xmlDocFunction)
+          <code onmouseout="hideTip(event, '196', 196)" onmouseover="showTip(event, '196', 196)">
+            NO_QUOTES
           </code>
-          <div class="tip" id="365">
-            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
+          <div class="tip" id="196">
+            <strong>Signature:</strong> OdbcQuoteCharacter<br />
+              <strong>Modifiers:</strong> static<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/fsprojects/FSharp.TypeProviders.StarterPack/src/ProvidedTypes.fs#L1239-1239" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L37-37" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary</p>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '197', 197)" onmouseover="showTip(event, '197', 197)">
+            SQUARE_BRACKETS
+          </code>
+          <div class="tip" id="197">
+            <strong>Signature:</strong> OdbcQuoteCharacter<br />
+              <strong>Modifiers:</strong> static<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L36-36" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Microsoft SQL style: <a href="fsharp-data-sql-common-alias.html" title="alias">alias</a></p>
 
 
         </td>
