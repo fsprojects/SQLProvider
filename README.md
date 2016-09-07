@@ -26,7 +26,7 @@ The provider currently has explicit implementations for the following database v
 * SQLite
 * PostgreSQL
 * Oracle
-* MySQL
+* MySQL (& MariaDB)
 * MsAccess
 
 There is also an ODBC provider that will let you connect to any ODBC source with limited features. 
