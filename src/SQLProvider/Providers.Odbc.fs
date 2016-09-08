@@ -22,6 +22,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         if quotehcar = OdbcQuoteCharacter.NO_QUOTES then ' ',' '
         elif quotehcar = OdbcQuoteCharacter.GRAVE_ACCENT then '`', '`'
         elif quotehcar = OdbcQuoteCharacter.SQUARE_BRACKETS then '[', ']'
+        elif quotehcar = OdbcQuoteCharacter.DOUBLE_QUOTES then '"', '"'
+        elif quotehcar = OdbcQuoteCharacter.APHOSTROPHE then ''', '''
         else '`', '`'
 
     let mutable cOpen = fst quotes //char separator in query for table aliases `alias` or [alias]

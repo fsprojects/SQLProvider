@@ -34,7 +34,12 @@ type OdbcQuoteCharacter =
     | GRAVE_ACCENT = 1
     /// Microsoft SQL style: [alias]
     | SQUARE_BRACKETS = 2
+    /// Plain, no special names: alias
     | NO_QUOTES = 3 // alias
+    /// Amazon Redshift style: "alias"
+    | DOUBLE_QUOTES = 4
+    /// Single quote: 'alias'
+    | APHOSTROPHE = 5 
 
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
