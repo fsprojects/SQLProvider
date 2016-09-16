@@ -1,4 +1,4 @@
-### Unreleased
+### 1.0.33 - 16.09.2016
 * Fix for primary key discovery on oracle #331
 
 ### 1.0.32 - 05.09.2016
