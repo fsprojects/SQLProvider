@@ -212,7 +212,7 @@ module internal Oracle =
         |> read conn (fun row -> 
             let pkName     = Sql.dbUnbox row.[0]
             let tableName  = Sql.dbUnbox row.[1]
-            let columnName = Sql.dbUnbox row.[2]
+            let columnName = [Sql.dbUnbox row.[2]]
             let indexName  = Sql.dbUnbox row.[3]
             tableName, { PrimaryKey.Name = pkName
                          Table = tableName
