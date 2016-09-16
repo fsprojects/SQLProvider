@@ -1,3 +1,6 @@
+### Unreleased
+* Fix for primary key discovery on oracle #331
+
 ### 1.0.32 - 05.09.2016
 * SQLite text-format date comparison fix #328
 * Odbc quote characters option #327
