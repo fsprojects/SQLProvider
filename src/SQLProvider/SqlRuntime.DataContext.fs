@@ -13,10 +13,10 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote =
+    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote sqliteLibrary =
         match vendor with
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
-        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) :> ISqlProvider
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
@@ -24,7 +24,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote) =
+type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -32,7 +32,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
     let provider =
         providerCache.GetOrAdd(typeName,
             fun typeName -> 
-                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote
+                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote sqliteLibrary
                 use con = prov.CreateConnection(connectionString)
                 con.Open()
                 // create type mappings and also trigger the table info read so the provider has

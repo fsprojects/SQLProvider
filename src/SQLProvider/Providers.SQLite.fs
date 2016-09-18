@@ -9,20 +9,26 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly) as this =
+type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) as this =
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
-    let isMono = Type.GetType ("Mono.Runtime") <> null
+
+    let useMono = 
+        match sqliteLibrary with
+        | SQLiteLibrary.SystemDataSQLite -> false
+        | SQLiteLibrary.MonoDataSQLite -> true
+        | SQLiteLibrary.AutoSelect -> Type.GetType ("Mono.Runtime") <> null
+        | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assemblyNames =
         [
-           (if isMono then "Mono" else "System") + ".Data.SQLite.dll"
-           (if isMono then "Mono" else "System") + ".Data.Sqlite.dll"
+           (if useMono then "Mono" else "System") + ".Data.SQLite.dll"
+           (if useMono then "Mono" else "System") + ".Data.Sqlite.dll"
         ]
 
     let assembly =
@@ -42,9 +48,9 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
                 details
 
-    let connectionType =  (findType (fun t -> t.Name = if isMono then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (findType (fun t -> t.Name = if isMono then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (findType (fun t -> t.Name = if isMono then "SqliteParameter" else "SQLiteParameter"))
+    let connectionType =  (findType (fun t -> t.Name = if useMono then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     (findType (fun t -> t.Name = if useMono then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    (findType (fun t -> t.Name = if useMono then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
 
