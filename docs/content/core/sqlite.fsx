@@ -40,13 +40,23 @@ the ResolutionPath parameter at all, but you still need to copy the x64 and x86 
 let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
 
 (**
+### SQLiteLibrary
+
+Specifies what SQLite library to use. This is an `SQLiteLibrary` enumeration, defined in the `FSharp.Data.Sql.Common`
+namespace, which has the following members:
+
+- **`AutoSelect`** - Uses System.Data.SQLite under .NET and Mono.Data.SQLite under Mono. This is the default.
+- **`MonoDataSQLite`** - Always uses Mono.Data.SQLite.
+- **`SystemDataSQLite`** - Always uses System.Data.SQLite.
+
 
 ## Example
 
 *)
 type sql = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE, 
-                connectionString, 
+                SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite,
+                ConnectionString = connectionString, 
                 ResolutionPath = resolutionPath, 
                 CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
