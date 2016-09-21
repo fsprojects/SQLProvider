@@ -41,6 +41,11 @@ type OdbcQuoteCharacter =
     /// Single quote: 'alias'
     | APHOSTROPHE = 5 
 
+type SQLiteLibrary =
+    | SystemDataSQLite = 0
+    | MonoDataSQLite = 1
+    | AutoSelect = 2
+
 module public QueryEvents =
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
    let private sqlEvent = new Event<string>()
