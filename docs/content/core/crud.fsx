@@ -28,10 +28,15 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
 let ctx = sql.GetDataContext()
 
 let orders = ctx.Main.Orders
+let employees = ctx.Main.Employees
 
 let customer = ctx.Main.Customers |> Seq.head 
 let employee = ctx.Main.Employees |> Seq.head
 let now = DateTime.Now
+
+(**
+Create() has various overloads to make inserting records simple.
+*)
 
 (**
 Create a new row
@@ -56,9 +61,11 @@ Submit updates to the database
 ctx.SubmitUpdates()
 
 (**
-After update your item (row) is having Id property.
+After updating your item (row) will have the Id property.
 
-You can also create with longer ``Create(...)``(parameters)-method like this:
+
+
+You can also create with the longer ``Create(...)``(parameters)-method like this:
 
 *)
 
@@ -75,11 +82,65 @@ Submit updates to the database
 *)
 ctx.SubmitUpdates()
 
+
+(**Insert a list of records:
+*)
+
+type Employee = {
+    FirstName:string
+    LastName:string
+}
+
+let mvps1 = [
+    {FirstName="Andrew"; LastName="Kennedy"};
+    {FirstName="Mads"; LastName="Torgersen"};
+    {FirstName="Martin";LastName="Odersky"};
+]
+
+mvps1 
+    |> List.map (fun x ->
+                    let row = employees.Create()
+                    row.FirstName <- x.FirstName
+                    row.LastName <- x.LastName)
+
+ctx.SubmitUpdates()
+
+(**Or directly specify the fields:
+*)
+
+let mvps2 = [
+    {FirstName="Byron"; LastName="Cook"};
+    {FirstName="James"; LastName="Huddleston"};
+    {FirstName="Xavier";LastName="Leroy"};
+]
+
+mvps2
+    |> List.map (fun x ->                                 
+                   employees.Create(x.FirstName, x.LastName)                  
+                    )
+
+ctx.SubmitUpdates()
+
+(**Finally it is also possible to specify a seq of `string * obj` which is exactly the 
+output of .ColumnValues:
+*)
+
+employees 
+    |> Seq.map (fun x ->
+                employee.Create(x.ColumnValues)) // create twins
+    |>  Seq.toList
+
+let twins = ctx.GetUpdates() // Retrieve the FSharp.Data.Sql.Common.SqlEntity objects
+
+ctx.ClearUpdates() // delete the updates
+ctx.GetUpdates() // Get the updates
+ctx.SubmitUpdates() // no record is added
+
 (** 
 
-Inside SubmitUpdate transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
+Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
 
-SQLProvider also support also async database operations: 
+SQLProvider also supports async database operations: 
 
 *)
 
