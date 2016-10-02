@@ -10,14 +10,14 @@ A general .NET/Mono SQL database type provider. Current features:
 * [LINQ queries](core/querying.html)
 * Lazy schema exploration 
 * Automatic constraint navigation
-* [Individuals](Individuals.html)
+* [Individuals](core/Individuals.html)
 * Transactional [CRUD](core/crud.html) operations with identity support
 * [Stored Procedures](core/programmability.html)
 * [Functions](core/programmability.html)
 * Packages (Oracle)
-* [Composable Query](core/composable.html) integration
+* [Composable Query](composable.html) integration
 * Optional option types
-* Mapping to record types
+* [Mapping to record types](core/mappers.html)
 * Custom Operators
 * Supports [Asynchronous Operations](core/async.html)
   
@@ -106,7 +106,7 @@ let mattisOrderDetails =
 Samples & documentation
 -----------------------
 
-The library comes with comprehensible documentation.
+The library comes with comprehensive documentation.
 
  * [General](core/general.html) a high level view on the type providers' abilities and limitations
  * [Static Parameters](core/parameters.html) available static parameters
@@ -116,6 +116,7 @@ The library comes with comprehensible documentation.
  * [Programmability](core/programmability.html) usage and limitations of stored procedures and functions
  * [Individuals](core/individuals.html) usage and limitations of this unique feature
  * [Composable Query](core/composable.html) information on integrating this project with the SQL provider
+ * [Mapping to record types](core/mappers.html)
  * [API Reference](reference/index.html) contains automatically generated documentation for all types, modules
    and functions in the library. 
 
