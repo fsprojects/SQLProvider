@@ -504,7 +504,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 (entity.Table.FullName)
                 (String.Join(",", columns))
                 (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName))))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = :pk%i" k i))))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         parameters |> Array.iter (cmd.Parameters.Add >> ignore)

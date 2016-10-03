@@ -142,7 +142,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         | [x] ->
             ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;"
                 entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%s = %s" c "?" ) ))
+                (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
                 x)
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.

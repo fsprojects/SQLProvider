@@ -315,7 +315,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 (entity.Table.FullName.Replace("[","`").Replace("]","`"))
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "`%s` = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
 

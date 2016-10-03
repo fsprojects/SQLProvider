@@ -11,9 +11,13 @@ nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
-github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
-github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
-github Thorium/Linq.Expression.Optimizer src/Linq.Expression.Optimizer/ExpressionOptimizer.fs
+
+group SourceFiles
+    source https://nuget.org/api/v2
+
+    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
+    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
+    github Thorium/Linq.Expression.Optimizer src/Linq.Expression.Optimizer/ExpressionOptimizer.fs
 
 group Scripts
     framework >= 4.0

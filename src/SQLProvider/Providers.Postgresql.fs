@@ -409,7 +409,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->

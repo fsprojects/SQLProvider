@@ -28,11 +28,6 @@ GITHUB
   remote: fsharp/FAKE
     modules/Octokit/Octokit.fsx (e5870cb85f9b500246e02c6daa94e5131dad7a6e)
       Octokit
-  remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/ProvidedTypes.fs (8f647a4cde71bdeda10e7f5b534ec3c879601570)
-    src/ProvidedTypes.fsi (8f647a4cde71bdeda10e7f5b534ec3c879601570)
-  remote: Thorium/Linq.Expression.Optimizer
-    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (cb1ff05d0eb8f0ae2362ff7ad77b0037b988ea12)
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
@@ -41,3 +36,12 @@ NUGET
     Newtonsoft.Json (9.0.1)
     Npgsql (3.1.7)
     Oracle.ManagedDataAccess (12.1.24160419)
+
+GROUP SourceFiles
+
+GITHUB
+  remote: fsprojects/FSharp.TypeProviders.StarterPack
+    src/ProvidedTypes.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
+    src/ProvidedTypes.fsi (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
+  remote: Thorium/Linq.Expression.Optimizer
+    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (6172a52c426918c9c4a9d397feac28c1def8e428)

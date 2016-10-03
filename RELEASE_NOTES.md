@@ -1,3 +1,6 @@
+### 1.0.34 - 04.10.2016
+* Fix for contains search
+
 ### 1.0.33 - 16.09.2016
 * Fix for primary key discovery on oracle #331
 
