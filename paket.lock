@@ -44,4 +44,4 @@ GITHUB
     src/ProvidedTypes.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
     src/ProvidedTypes.fsi (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (6172a52c426918c9c4a9d397feac28c1def8e428)
+    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (8ea4ca7069517afaca5e74df1f2fe4451f574807)

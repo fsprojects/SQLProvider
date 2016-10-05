@@ -1,5 +1,5 @@
 source https://nuget.org/api/v2
-
+framework >= 4.0
 
 nuget Nuget.CommandLine ~> 2
 nuget FAKE
