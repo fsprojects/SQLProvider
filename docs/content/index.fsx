@@ -10,12 +10,12 @@ A general .NET/Mono SQL database type provider. Current features:
 * [LINQ queries](core/querying.html)
 * Lazy schema exploration 
 * Automatic constraint navigation
-* [Individuals](core/Individuals.html)
+* [Individuals](core/individuals.html)
 * Transactional [CRUD](core/crud.html) operations with identity support
 * [Stored Procedures](core/programmability.html)
 * [Functions](core/programmability.html)
 * Packages (Oracle)
-* [Composable Query](composable.html) integration
+* [Composable Query](core/composable.html) integration
 * Optional option types
 * [Mapping to record types](core/mappers.html)
 * Custom Operators
