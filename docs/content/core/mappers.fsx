@@ -65,4 +65,18 @@ let qry = query { for row in employees do
                   select row} |> Seq.map (fun x -> x.MapTo<Employee2>())
 
 
+(**
+Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
+column as a key:
+*)
+
+let rows = query { for row in employees do
+                  select row} |> Seq.toArray
+
+let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
+let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])
+
+
+
+
 
