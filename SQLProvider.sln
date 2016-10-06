@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 		docs\content\core\crud.fsx = docs\content\core\crud.fsx
 		docs\content\core\general.fsx = docs\content\core\general.fsx
 		docs\content\core\individuals.fsx = docs\content\core\individuals.fsx
+		docs\content\core\mappers.fsx = docs\content\core\mappers.fsx
 		docs\content\core\msaccess.fsx = docs\content\core\msaccess.fsx
 		docs\content\core\mssql.fsx = docs\content\core\mssql.fsx
 		docs\content\core\mysql.fsx = docs\content\core\mysql.fsx
