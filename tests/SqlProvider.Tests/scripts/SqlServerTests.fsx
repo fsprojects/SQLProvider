@@ -135,12 +135,12 @@ open System.Linq
 
 let nestedQueryTest = 
     let qry1 = query {
-        for emp in ctx.Hr.Employees do
+        for emp in ctx.Dbo.Employees do
         where (emp.FirstName.StartsWith("S"))
         select (emp.FirstName)
     }
     query {
-        for emp in ctx.Hr.Employees do
+        for emp in ctx.Dbo.Employees do
         where (qry1.Contains(emp.FirstName))
         select (emp.FirstName, emp.LastName)
     } |> Seq.toArray

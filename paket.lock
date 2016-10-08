@@ -1,6 +1,7 @@
+FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
-    FAKE (4.39)
+    FAKE (4.41.1)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Core (3.1.2.1) - redirects: force
     FSharp.Formatting (2.14.4)
@@ -8,26 +9,26 @@ NUGET
       FSharpVSPowerTools.Core (>= 2.3 < 2.4)
     FSharpVSPowerTools.Core (2.3)
       FSharp.Compiler.Service (>= 2.0.0.3)
-    Microsoft.AspNet.Razor (3.2.3) - framework: >= net45
-    Microsoft.Bcl (1.1.10) - framework: net10, net11, net20, net30, net35, net40, net40-full
+    Microsoft.AspNet.Razor (2.0.30506) - framework: net40
+    Microsoft.Bcl (1.1.10) - framework: net40, net40-full
       Microsoft.Bcl.Build (>= 1.0.14)
-    Microsoft.Bcl.Build (1.0.21) - import_targets: false, framework: net10, net11, net20, net30, net35, net40, net40-full
-    Microsoft.Net.Http (2.2.29) - framework: net10, net11, net20, net30, net35, net40, net40-full
+    Microsoft.Bcl.Build (1.0.21) - import_targets: false
+    Microsoft.Net.Http (2.2.29) - framework: net40, net40-full
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
     NuGet.CommandLine (2.12)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
     Octokit (0.21.1)
-      Microsoft.Net.Http  - framework: net10, net11, net20, net30, net35, net40, net40-full
+      Microsoft.Net.Http  - framework: net40, net40-full
     RazorEngine (3.9)
       Microsoft.AspNet.Razor (>= 3.0) - framework: >= net45
       Microsoft.AspNet.Razor (2.0.30506) - framework: net40
     SourceLink.Fake (1.1)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (e5870cb85f9b500246e02c6daa94e5131dad7a6e)
-      Octokit
+    modules/Octokit/Octokit.fsx (37a3454a242976c83d7f1169a2fcd106271c95b9)
+      Octokit (>= 0.20)
 GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
@@ -44,4 +45,4 @@ GITHUB
     src/ProvidedTypes.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
     src/ProvidedTypes.fsi (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Linq.Expression.Optimizer/ExpressionOptimizer.fs (8ea4ca7069517afaca5e74df1f2fe4451f574807)
+    src/Code/ExpressionOptimizer.fs (2173f03990cb4702785d01f93ea42af17126d312)

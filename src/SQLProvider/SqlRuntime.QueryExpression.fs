@@ -144,7 +144,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> let memb = Expression.MakeMemberAccess(transform en e.Expression, e.Member)
                                                                                     // If we have merged new lambdas, just check the combination of anonymous objects
                                                                                     if replaceParams.Count>0 then
-                                                                                        ExpressionOptimizer.``remove AnonymousType``(memb)
+                                                                                        ExpressionOptimizer.Methods.``remove AnonymousType`` memb
                                                                                     else upcast memb
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> upcast Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
