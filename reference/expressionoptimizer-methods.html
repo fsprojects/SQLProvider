@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>MSSqlServer - SQLProvider</title>
+    <title>Methods - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,9 +35,10 @@
 
 
 
-<h1>MSSqlServer</h1>
+<h1>Methods</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql.Providers</span><br />
+  <span>Namespace: global</span><br />
+  <span>Parent Module: <a href="global-expressionoptimizer.html">ExpressionOptimizer</a></span>
 </p>
 <div class="xmldoc">
 </div>
@@ -53,141 +54,123 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '51', 51)" onmouseover="showTip(event, '51', 51)">
-            connect con f
+          <code onmouseout="hideTip(event, '130', 130)" onmouseover="showTip(event, '130', 130)">
+            ( cut not used condition ) e
           </code>
-          <div class="tip" id="51">
-            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;?7904) -&gt; &#39;?7904<br />
-                          <strong>Type parameters:</strong> '?7904          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L80-80" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '52', 52)" onmouseover="showTip(event, '52', 52)">
-            createCommand commandText connection
-          </code>
-          <div class="tip" id="52">
-            <strong>Signature:</strong> commandText:string -&gt; connection:IDbConnection -&gt; IDbCommand<br />
+          <div class="tip" id="130">
+            <strong>Signature:</strong> e:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L72-72" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L109-109" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>if false then x else y -&gt; y</p>
+
+
+              <p>CompiledName: <code>cut not used condition</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '53', 53)" onmouseover="showTip(event, '53', 53)">
-            createCommandParameter param value
+          <code onmouseout="hideTip(event, '131', 131)" onmouseover="showTip(event, '131', 131)">
+            ( evaluate constants ) e
           </code>
-          <div class="tip" id="53">
-            <strong>Signature:</strong> param:QueryParameter -&gt; value:obj -&gt; IDbDataParameter<br />
+          <div class="tip" id="131">
+            <strong>Signature:</strong> e:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L104-104" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L267-267" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Evaluating constants to not mess with our expressions:</p>
+
+
+              <p>CompiledName: <code>evaluate constants</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '54', 54)" onmouseover="showTip(event, '54', 54)">
-            createConnection connectionString
+          <code onmouseout="hideTip(event, '132', 132)" onmouseover="showTip(event, '132', 132)">
+            ( not false is true ) e
           </code>
-          <div class="tip" id="54">
-            <strong>Signature:</strong> connectionString:string -&gt; IDbConnection<br />
+          <div class="tip" id="132">
+            <strong>Signature:</strong> e:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L70-70" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L119-119" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>not(false) -&gt; true</p>
+
+
+              <p>CompiledName: <code>not false is true</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '55', 55)" onmouseover="showTip(event, '55', 55)">
-            createTypeMappings con
+          <code onmouseout="hideTip(event, '133', 133)" onmouseover="showTip(event, '133', 133)">
+            ( remove AnonymousType ) e
           </code>
-          <div class="tip" id="55">
-            <strong>Signature:</strong> con:IDbConnection -&gt; unit<br />
+          <div class="tip" id="133">
+            <strong>Signature:</strong> e:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L24-24" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L63-63" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Purpose of this is to replace non-used anonymous types:
+new AnonymousObject(Item1 = x, Item2 = "").Item1    --&gt;   x</p>
+
+
+              <p>CompiledName: <code>remove AnonymousType</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '56', 56)" onmouseover="showTip(event, '56', 56)">
-            dbUnbox v
+          <code onmouseout="hideTip(event, '134', 134)" onmouseover="showTip(event, '134', 134)">
+            ( replace constant comparison ) e
           </code>
-          <div class="tip" id="56">
-            <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L74-74" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '57', 57)" onmouseover="showTip(event, '57', 57)">
-            dbUnboxWithDefault def v
-          </code>
-          <div class="tip" id="57">
-            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L77-77" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '58', 58)" onmouseover="showTip(event, '58', 58)">
-            executeSprocCommand (...)
-          </code>
-          <div class="tip" id="58">
-            <strong>Signature:</strong> com:IDbCommand -&gt; inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; ReturnValueType<br />
+          <div class="tip" id="134">
+            <strong>Signature:</strong> e:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L220-220" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L38-38" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Purpose of this is optimize away already known constant=constant style expressions.
+7 &gt; 8      --&gt;   False
+"G" = "G"    --&gt;   True</p>
+
+
+              <p>CompiledName: <code>replace constant comparison</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '135', 135)" onmouseover="showTip(event, '135', 135)">
+            absorb _arg1
+          </code>
+          <div class="tip" id="135">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L220-220" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -197,15 +180,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '59', 59)" onmouseover="showTip(event, '59', 59)">
-            executeSql sql con
+          <code onmouseout="hideTip(event, '136', 136)" onmouseover="showTip(event, '136', 136)">
+            annihilate _arg1
           </code>
-          <div class="tip" id="59">
-            <strong>Signature:</strong> sql:string -&gt; con:IDbConnection -&gt; SqlDataReader<br />
+          <div class="tip" id="136">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L85-85" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L213-213" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -215,15 +198,56 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '60', 60)" onmouseover="showTip(event, '60', 60)">
-            findClrType 
+          <code onmouseout="hideTip(event, '137', 137)" onmouseover="showTip(event, '137', 137)">
+            associate _arg1
           </code>
-          <div class="tip" id="60">
-            <strong>Signature:</strong> string -&gt; TypeMapping option<br />
+          <div class="tip" id="137">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L21-21" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L181-181" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Not in use, would cause looping...</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '138', 138)" onmouseover="showTip(event, '138', 138)">
+            balancetree _arg1
+          </code>
+          <div class="tip" id="138">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L256-256" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Balance tree that is too much weighted to other side.
+The real advantage is not-so-nested-stack</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '139', 139)" onmouseover="showTip(event, '139', 139)">
+            commute _arg1
+          </code>
+          <div class="tip" id="139">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L189-189" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -233,15 +257,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '61', 61)" onmouseover="showTip(event, '61', 61)">
-            findDbType 
+          <code onmouseout="hideTip(event, '140', 140)" onmouseover="showTip(event, '140', 140)">
+            complement _arg1
           </code>
-          <div class="tip" id="61">
-            <strong>Signature:</strong> string -&gt; TypeMapping option<br />
+          <div class="tip" id="140">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L22-22" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L236-236" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -251,15 +275,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '62', 62)" onmouseover="showTip(event, '62', 62)">
-            getSchema name args con
+          <code onmouseout="hideTip(event, '141', 141)" onmouseover="showTip(event, '141', 141)">
+            deMorgan _arg1
           </code>
-          <div class="tip" id="62">
-            <strong>Signature:</strong> name:string -&gt; args:string [] -&gt; con:IDbConnection -&gt; DataTable<br />
+          <div class="tip" id="141">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L13-13" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L247-247" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -269,15 +293,35 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '63', 63)" onmouseover="showTip(event, '63', 63)">
-            getSprocName row
+          <code onmouseout="hideTip(event, '142', 142)" onmouseover="showTip(event, '142', 142)">
+            distribute _arg1
           </code>
-          <div class="tip" id="63">
-            <strong>Signature:</strong> row:DataRow -&gt; SprocName<br />
+          <div class="tip" id="142">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L148-148" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L195-195" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Not in use, would cause looping...</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '143', 143)" onmouseover="showTip(event, '143', 143)">
+            doubleNegation _arg1
+          </code>
+          <div class="tip" id="143">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L243-243" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -287,15 +331,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '64', 64)" onmouseover="showTip(event, '64', 64)">
-            getSprocParameters con name
+          <code onmouseout="hideTip(event, '144', 144)" onmouseover="showTip(event, '144', 144)">
+            gather _arg1
           </code>
-          <div class="tip" id="64">
-            <strong>Signature:</strong> con:IDbConnection -&gt; name:SprocName -&gt; QueryParameter list<br />
+          <div class="tip" id="144">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L153-153" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L200-200" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -305,15 +349,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '65', 65)" onmouseover="showTip(event, '65', 65)">
-            getSprocReturnCols con sname sparams
+          <code onmouseout="hideTip(event, '145', 145)" onmouseover="showTip(event, '145', 145)">
+            idempotence _arg1
           </code>
-          <div class="tip" id="65">
-            <strong>Signature:</strong> con:IDbConnection -&gt; sname:SprocName -&gt; sparams:QueryParameter list -&gt; QueryParameter list<br />
+          <div class="tip" id="145">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L112-112" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L231-231" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -323,69 +367,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '66', 66)" onmouseover="showTip(event, '66', 66)">
-            getSprocs con
+          <code onmouseout="hideTip(event, '146', 146)" onmouseover="showTip(event, '146', 146)">
+            identity _arg1
           </code>
-          <div class="tip" id="66">
-            <strong>Signature:</strong> con:IDbConnection -&gt; Sproc list<br />
+          <div class="tip" id="146">
+            <strong>Signature:</strong> _arg1:Expression -&gt; Expression<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L184-184" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '67', 67)" onmouseover="showTip(event, '67', 67)">
-            isSQL2012Orlater con
-          </code>
-          <div class="tip" id="67">
-            <strong>Signature:</strong> con:IDbConnection -&gt; bool<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L95-95" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '68', 68)" onmouseover="showTip(event, '68', 68)">
-            readParameter parameter
-          </code>
-          <div class="tip" id="68">
-            <strong>Signature:</strong> parameter:IDbDataParameter -&gt; obj<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L89-89" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '69', 69)" onmouseover="showTip(event, '69', 69)">
-            typeMappings 
-          </code>
-          <div class="tip" id="69">
-            <strong>Signature:</strong> TypeMapping list<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L20-20" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L205-205" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
