@@ -93,8 +93,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             |> Array.unzip
 
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO %s (%s) VALUES (%s);"
-            entity.Table.Name
+        ~~(sprintf "INSERT INTO %c%s%c (%s) VALUES (%s);"
+            cOpen entity.Table.Name cClose
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun _ -> "?"))))
         cmd.Parameters.AddRange(values)
@@ -140,8 +140,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         match pk with
         | [] -> ()
         | [x] ->
-            ~~(sprintf "UPDATE %s SET %s WHERE %s = ?;"
-                entity.Table.Name
+            ~~(sprintf "UPDATE %c%s%c SET %s WHERE %s = ?;"
+                cOpen entity.Table.Name cClose
                 (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
                 x)
         | ks -> 
@@ -175,7 +175,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
 
         match pk with
         | [] -> ()
-        | [k] -> ~~(sprintf "DELETE FROM %s WHERE %s = ?;" entity.Table.FullName k )
+        | [k] -> ~~(sprintf "DELETE FROM %c%s%c WHERE %s = ?;" cOpen entity.Table.FullName cClose k )
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
             failwith ("Composite key items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")

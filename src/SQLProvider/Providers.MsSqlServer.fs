@@ -300,14 +300,14 @@ type internal MSSqlServerProvider() =
         sb.Clear() |> ignore
         match haspk, pk with
         | true, [itm] ->
-            ~~(sprintf "INSERT INTO %s (%s) OUTPUT inserted.%s VALUES (%s);"
-                entity.Table.FullName
+            ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.%s VALUES (%s);"
+                entity.Table.Schema entity.Table.Name
                 (String.Join(",",columnNames))
                 itm
                 (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
         | _ -> 
-            ~~(sprintf "INSERT INTO %s (%s) VALUES (%s);"
-                entity.Table.FullName
+            ~~(sprintf "INSERT INTO [%s].[%s] (%s) VALUES (%s);"
+                entity.Table.Schema entity.Table.Name
                 (String.Join(",",columnNames))
                 (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -349,8 +349,8 @@ type internal MSSqlServerProvider() =
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "UPDATE %s SET %s WHERE "
-                entity.Table.FullName
+            ~~(sprintf "UPDATE [%s].[%s] SET %s WHERE "
+                entity.Table.Schema entity.Table.Name
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
@@ -381,7 +381,7 @@ type internal MSSqlServerProvider() =
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(sprintf "DELETE FROM [%s].[%s] WHERE " entity.Table.Schema entity.Table.Name)
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
