@@ -1,3 +1,6 @@
+### 1.0.35 - 08.10.2016
+* Fix for SQL CRUD operations, #338
+
 ### 1.0.34 - 04.10.2016
 * Fix for contains search
 
