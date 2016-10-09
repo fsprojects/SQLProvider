@@ -24,6 +24,7 @@ Please provide a description of any known workarounds.
 
 ### Related information 
 
+* Used database
 * Operating system
 * Branch
 * .NET Runtime, CoreCLR or Mono Version
