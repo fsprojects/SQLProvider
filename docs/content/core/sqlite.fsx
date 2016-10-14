@@ -16,7 +16,10 @@ Basic connection string used to connect to the SQLite database.
 *)
 
 [<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+let connectionString = 
+    "Data Source=" + 
+    __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;" + 
+    "Version=3;foreign keys=true"
 
 (**
 ### ResolutionPath
