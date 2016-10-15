@@ -98,7 +98,8 @@ This sets the owner of the scheme when running queries against the server.
 
 ### SQLite
 
-No extra parameters.
+The additional [SQLiteLibrary parameter](sqlite.html#SQLiteLibrary) can be used to specify
+which SQLite library to load.
 
 ### PostgreSQL
 
