@@ -54,6 +54,14 @@ let employeesJob =
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
+//Can select from views
+let empDetails =
+    query {
+        for empd in ctx.Hr.EmpDetailsView do
+        select (empd.EmployeeId, empd.ManagerId, empd.DepartmentId, empd.JobId)
+    }
+    |> Seq.toList
+
 //Can map SQLEntities to a domain type
 let topSales5ByCommission =
     query {

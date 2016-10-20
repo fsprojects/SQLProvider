@@ -222,9 +222,10 @@ module internal Oracle =
 
     let getTables tableNames conn = 
         let whereTableName = buildTableNameWhereFilter "table_name" tableNames
-        sprintf """select owner, table_name, tablespace_name
-                   from all_tables
+        sprintf """select owner, table_name, table_type
+                   from all_catalog
                    where owner != 'System'
+                     and table_type in ('TABLE', 'VIEW')
                    %s""" whereTableName
         |> read conn (fun row -> 
             { Schema = Sql.dbUnbox row.[0];
