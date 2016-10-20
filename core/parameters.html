@@ -113,8 +113,11 @@ the provider will return 0 instead of null, which might cause problems in some s
 <p>No extra parameters.</p>
 <h3><a name="Oracle" class="anchor" href="#Oracle">Oracle</a></h3>
 <p>Currently there is only one added parameter.</p>
-<h4><a name="Owner-Oracle-only" class="anchor" href="#Owner-Oracle-only">Owner (Oracle only)</a></h4>
-<p>This sets the owner of the scheme when running queries against the server.</p>
+<h4><a name="Owner-Used-by-Oracle-MySQL-and-PostgreSQL" class="anchor" href="#Owner-Used-by-Oracle-MySQL-and-PostgreSQL">Owner (Used by Oracle, MySQL and PostgreSQL)</a></h4>
+<p>This has different meanings when running queries against different database vendors</p>
+<p>For PostgreSQL, this sets the schema name where the target tables belong to
+For MySQL, this sets the database name (Or schema name, for MySQL, it's the same thing)
+For Oracle, this sets the owner of the scheme</p>
 <h3><a name="SQLite" class="anchor" href="#SQLite">SQLite</a></h3>
 <p>The additional <a href="sqlite.html#SQLiteLibrary">SQLiteLibrary parameter</a> can be used to specify
 which SQLite library to load.</p>
