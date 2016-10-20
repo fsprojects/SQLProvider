@@ -38,7 +38,7 @@ for a complete list of connection string options.
 
 *)
 
-let [<Literal>] connString = "Server=localhost;Database=test;User Id=test;Password=test"
+let [<Literal>] connString = "Host=localhost;Database=test;Username=test;Password=test"
 
 (**
 ### ConnectionStringName
