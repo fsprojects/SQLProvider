@@ -5,7 +5,17 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
+let connStr =
+      "User Id=HR;"
+    + "Password=password;"
+    + "Data Source=
+       (DESCRIPTION=
+         (ADDRESS_LIST=
+           (ADDRESS=(PROTOCOL=TCP)
+                    (HOST=192.168.99.100)
+                    (PORT=1521)))
+       (CONNECT_DATA=(SERVER=DEDICATED)
+                     (SERVICE_NAME=XE.ORACLE.DOCKER)));"
 
 [<Literal>]
 let resolutionFolder = "/Users/colinbull/appdev/SqlProvider/tests/SqlProvider.Tests/libs/"
