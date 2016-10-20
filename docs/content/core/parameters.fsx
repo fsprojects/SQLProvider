@@ -92,9 +92,13 @@ No extra parameters.
 
 Currently there is only one added parameter.
 
-#### Owner (Oracle only)
+#### Owner (Used by Oracle, MySQL and PostgreSQL)
 
-This sets the owner of the scheme when running queries against the server.
+This has different meanings when running queries against different database vendors
+
+For PostgreSQL, this sets the schema name where the target tables belong to
+For MySQL, this sets the database name (Or schema name, for MySQL, it's the same thing)
+For Oracle, this sets the owner of the scheme
 
 ### SQLite
 
