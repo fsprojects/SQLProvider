@@ -18,7 +18,7 @@ let connStr =
                      (SERVICE_NAME=XE.ORACLE.DOCKER)));"
 
 [<Literal>]
-let resolutionFolder = "/Users/colinbull/appdev/SqlProvider/tests/SqlProvider.Tests/libs/"
+let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
