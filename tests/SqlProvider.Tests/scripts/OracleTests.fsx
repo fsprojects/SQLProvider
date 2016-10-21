@@ -137,7 +137,7 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-
+ctx.Procedures.ClearJobHistory.Invoke(100M)
 ctx.Procedures.AddJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //Support for sprocs with no parameters
@@ -189,6 +189,7 @@ let fullName = ctx.Functions.EmpFullname.Invoke(100M).ReturnValue
 
 //********************** Packaged Procs **********************//
 
+ctx.Procedures.ClearJobHistory.Invoke(100M)
 ctx.Packages.TestPackage.InsertJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //********************** Packaged Funcs **********************//

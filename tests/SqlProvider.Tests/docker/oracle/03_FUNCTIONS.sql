@@ -77,4 +77,12 @@ BEGIN
 END ADD_JOB_HISTORY;
 /
 
+CREATE OR REPLACE PROCEDURE CLEAR_JOB_HISTORY
+( p_emp_id job_history.employee_id%type
+) IS
+BEGIN
+  DELETE FROM job_history WHERE employee_id = p_emp_id;
+END CLEAR_JOB_HISTORY;
+/
+
 COMMIT;
