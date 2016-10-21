@@ -1,8 +1,10 @@
 ﻿#I @"../../../bin"
 #r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../libs/Oracle.ManagedDataAccess.dll"
 
 open System
 open FSharp.Data.Sql
+open Oracle.ManagedDataAccess.Client
 
 [<Literal>]
 let connStr =
@@ -139,7 +141,12 @@ ctx.SubmitUpdates()
 ctx.Procedures.AddJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //Support for sprocs with no parameters
-ctx.Procedures.SecureDml.Invoke()
+try
+  ctx.Procedures.SecureDml.Invoke()
+with
+  | :? OracleException as e ->
+        if e.Number <> 20205 then
+          reraise()
 
 //Support for sprocs that return ref cursors
 let employees =
