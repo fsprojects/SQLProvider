@@ -1,14 +1,26 @@
 ﻿#I @"../../../bin"
 #r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../libs/Oracle.ManagedDataAccess.dll"
 
 open System
 open FSharp.Data.Sql
+open Oracle.ManagedDataAccess.Client
 
 [<Literal>]
-let connStr = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=ORACLE)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
+let connStr =
+      "User Id=HR;"
+    + "Password=password;"
+    + "Data Source=
+       (DESCRIPTION=
+         (ADDRESS_LIST=
+           (ADDRESS=(PROTOCOL=TCP)
+                    (HOST=192.168.99.100)
+                    (PORT=1521)))
+       (CONNECT_DATA=(SERVER=DEDICATED)
+                     (SERVICE_NAME=XE.ORACLE.DOCKER)));"
 
 [<Literal>]
-let resolutionFolder = "/Users/colinbull/appdev/SqlProvider/tests/SqlProvider.Tests/libs/"
+let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs/"
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -85,6 +97,7 @@ type OtherCountryInformation = {
 type Country = {
     CountryId : string
     CountryName : string
+    RegionId : decimal
     Other : OtherCountryInformation
 }
 
@@ -132,11 +145,16 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
-
+ctx.Procedures.ClearJobHistory.Invoke(100M)
 ctx.Procedures.AddJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //Support for sprocs with no parameters
-ctx.Procedures.SecureDml.Invoke()
+try
+  ctx.Procedures.SecureDml.Invoke()
+with
+  | :? OracleException as e ->
+        if e.Number <> 20205 then
+          reraise()
 
 //Support for sprocs that return ref cursors
 let employees =
@@ -179,6 +197,7 @@ let fullName = ctx.Functions.EmpFullname.Invoke(100M).ReturnValue
 
 //********************** Packaged Procs **********************//
 
+ctx.Procedures.ClearJobHistory.Invoke(100M)
 ctx.Packages.TestPackage.InsertJobHistory.Invoke(100M, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60M)
 
 //********************** Packaged Funcs **********************//
