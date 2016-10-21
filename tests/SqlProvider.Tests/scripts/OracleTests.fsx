@@ -87,6 +87,7 @@ type OtherCountryInformation = {
 type Country = {
     CountryId : string
     CountryName : string
+    RegionId : decimal
     Other : OtherCountryInformation
 }
 
