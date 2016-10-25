@@ -270,7 +270,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();"
-            (entity.Table.FullName.Replace("[","`").Replace("]","`"))
+            (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))
             ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -313,7 +313,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE %s SET %s WHERE "
-                (entity.Table.FullName.Replace("[","`").Replace("]","`"))
+                (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "`%s` = @pk%i" k i))) + ";")
 
@@ -345,7 +345,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.FullName.Replace("[","`").Replace("]","`")))
+            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`")))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
@@ -463,7 +463,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             res)
 
         member __.GetSprocs(con) = Sql.connect con MySql.getSprocs
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("[","`").Replace("]","`")) amount
+        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`")) amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema table.Name table.Schema table.Name column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
@@ -635,7 +635,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as `%s` " (baseTable.FullName.Replace("[","`").Replace("]","`"))  baseAlias)
+            ~~(sprintf "FROM %s as `%s` " (baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))  baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
