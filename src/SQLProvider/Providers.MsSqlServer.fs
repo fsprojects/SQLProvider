@@ -291,8 +291,8 @@ type internal MSSqlServerProvider() =
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
                 let p = SqlParameter(name,v)
-                (k,p)::out,i+1)
-            |> fun (x,_)-> x
+                (sprintf "[%s]" k,p)::out,i+1)
+            |> fst
             |> List.rev
             |> List.toArray
             |> Array.unzip
@@ -342,7 +342,7 @@ type internal MSSqlServerProvider() =
                     | Some v -> SqlParameter(name,v)
                     | None -> SqlParameter(name,DBNull.Value)
                 (col,p)::out,i+1)
-            |> fun (x,_)-> x
+            |> fst
             |> List.rev
             |> List.toArray
 
