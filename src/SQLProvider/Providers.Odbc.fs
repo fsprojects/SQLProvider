@@ -426,6 +426,11 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 ~~"ORDER BY "
                 orderByBuilder()
 
+            match sqlQuery.Union with
+            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | None -> ()
+
             let sql = sb.ToString()
             (sql,parameters)
 

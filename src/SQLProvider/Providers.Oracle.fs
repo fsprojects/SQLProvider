@@ -753,6 +753,11 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 ~~"ORDER BY "
                 orderByBuilder()
 
+            match sqlQuery.Union with
+            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | None -> ()
+
             //I think on oracle this will potentially impact the ordering as the row num is generated before any
             //filters or ordering is applied hance why this produces a nested query. something like
             //select * from (select ....) where ROWNUM <= 5.

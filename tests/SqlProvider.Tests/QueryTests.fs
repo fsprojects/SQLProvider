@@ -884,3 +884,43 @@ let ``simple select with contains query with where boolean option type``() =
             contains "ALFKI"
         }
     Assert.IsTrue(query)    
+
+[<Test>]
+let ``simple union query test``() = 
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cus in dc.Main.Customers do
+            select (cus.City)
+        }
+    let query2 = 
+        query {
+            for emp in dc.Main.Employees do
+            select (emp.City)
+        } 
+
+    // Union: query1 contains 69 distinct values, query2 distinct 5 and res1 is 71 distinct values
+    let res1 = query1.Union(query2) |> Seq.toArray
+    Assert.IsNotEmpty(res1)
+    
+
+[<Test>]
+let ``simple union all query test``() = 
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cus in dc.Main.Customers do
+            select (cus.City)
+        }
+    let query2 = 
+        query {
+            for emp in dc.Main.Employees do
+            select (emp.City)
+        } 
+
+    // Union all:
+    // query1 contains 91 values and query2 contains 8 so res2 contains 99 values.
+    let res2 = query1.Concat(query2) |> Seq.toArray
+    Assert.IsNotEmpty(res2)
+    
+

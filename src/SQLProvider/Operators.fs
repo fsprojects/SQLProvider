@@ -17,6 +17,7 @@ type ConditionOperator =
     | NotIn
     | NestedIn
     | NestedNotIn
+    | Union
     with 
     override x.ToString() =
         // NOTE: these are MS SQL Server textual representations of the operators.
@@ -34,6 +35,7 @@ type ConditionOperator =
         | NotNull       -> "IS NOT NULL"
         | In            -> "IN"
         | NestedIn      -> "IN"
+        | Union         -> "UNION"
         | NotIn         -> "NOT IN"
         | NestedNotIn      -> "NOT IN"
 

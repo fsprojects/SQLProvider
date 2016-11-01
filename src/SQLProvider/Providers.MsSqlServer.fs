@@ -690,6 +690,11 @@ type internal MSSqlServerProvider() =
                 ~~"ORDER BY "
                 orderByBuilder()
 
+            match sqlQuery.Union with
+            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | None -> ()
+
             match sqlQuery.Skip, sqlQuery.Take with
             | Some skip, Some take ->
                 // Note: this only works in >=SQL2012

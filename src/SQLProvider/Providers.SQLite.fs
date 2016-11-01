@@ -500,6 +500,11 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 ~~" ORDER BY "
                 orderByBuilder()
 
+            match sqlQuery.Union with
+            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | None -> ()
+
             match sqlQuery.Take, sqlQuery.Skip with
             | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
             | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
