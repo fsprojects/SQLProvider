@@ -492,6 +492,29 @@ module internal QueryImplementation =
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
+
+                    | MethodCall(None,(MethodWithName("Concat") as meth), [SourceWithQueryData source; SeqValuesQueryable values])
+                    | MethodCall(None,(MethodWithName("Union") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
+
+                        let subquery = values :?> IWithSqlService
+                        use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider
+
+                        let modified = 
+                            parameters |> Seq.map(fun p ->
+                                p.ParameterName <- p.ParameterName.Replace("@param", "@paramnested")
+                                p
+                            ) |> Seq.toArray
+                        let subquery = 
+                            let paramfixed = query.Replace("@param", "@paramnested")
+                            match paramfixed.EndsWith(";") with
+                            | false -> paramfixed
+                            | true -> paramfixed.Substring(0, paramfixed.Length-1)
+
+                        let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
+                        let all = meth.Name = "Concat"
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(all,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+
                     | x -> failwith ("unrecognised method call" + x.ToString())
 
                 member __.Execute(_: Expression) : obj =

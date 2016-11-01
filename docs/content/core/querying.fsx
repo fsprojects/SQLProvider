@@ -78,6 +78,9 @@ let itemAsync =
 ## Supported Query Expression Keywords
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
+.Contains()              |X | System.Linq, in where, SQL IN-clause, nested query    | 
+.Concat()                |X | System.Linq, SQL UNION ALL-clause                     | 
+.Union()                 |X | System.Linq, SQL UNION-clause                         | 
 all	                     |X |                                                       | 
 averageBy                |X |                                                       | 
 averageByNullable        |X |                                                       | 
