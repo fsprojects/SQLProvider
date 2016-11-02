@@ -493,8 +493,7 @@ module internal QueryImplementation =
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
 
-                    | MethodCall(None,(MethodWithName("Concat") as meth), [SourceWithQueryData source; SeqValuesQueryable values])
-                    | MethodCall(None,(MethodWithName("Union") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
+                    | MethodCall(None,(MethodWithName("Union") | MethodWithName("Concat") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
 
                         let subquery = values :?> IWithSqlService
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
@@ -515,7 +514,7 @@ module internal QueryImplementation =
                         let all = meth.Name = "Concat"
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(all,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
-                    | x -> failwith ("unrecognised method call" + x.ToString())
+                    | x -> failwith ("unrecognised method call " + x.ToString())
 
                 member __.Execute(_: Expression) : obj =
                     failwith "Execute not implemented"

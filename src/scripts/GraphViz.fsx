@@ -225,7 +225,7 @@ module GraphViz  =
             let pName = eval ue.Operand
             ~~~ (sprintf "%s:0 -> %s:0;" name pName)
             name
-         | _ ->  "UnrecognisedNode" + (nextIndex())  + e.NodeType.ToString()
+         | _ ->  "UnrecognisedNode " + (nextIndex())  + e.NodeType.ToString()
 
       eval e |> ignore
       ~~ "}"
