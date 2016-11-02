@@ -451,8 +451,8 @@ type internal MSAccessProvider() =
 
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
-                if con.State = ConnectionState.Open then con.Close()
-                con.Open()
+                // ...but if access connection is ever closed, it will start to give unknown errors!
+                // if con.State = ConnectionState.Open then con.Close()
                 use trnsx = con.BeginTransaction()
                 try
                     // initially supporting update/create/delete of single entities, no hierarchies yet
@@ -486,7 +486,8 @@ type internal MSAccessProvider() =
                 with _ ->
                     trnsx.Rollback()
             finally
-                con.Close()
+                ()
+                //con.Close()
 
         member this.ProcessUpdatesAsync(con, entities) =
             let sb = Text.StringBuilder()
@@ -498,13 +499,13 @@ type internal MSAccessProvider() =
                 async { () }
             else
 
-            use scope = Utilities.ensureTransaction()
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
-                if con.State = ConnectionState.Open then con.Close()
+                // ...but if access connection is ever closed, it will start to give unknown errors!
+                // if con.State = ConnectionState.Open then con.Close()
                 async {
-
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    if con.State = ConnectionState.Closed then
+                        do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                     use trnsx = con.BeginTransaction()
                     try
                         // initially supporting update/create/delete of single entities, no hierarchies yet
@@ -541,10 +542,10 @@ type internal MSAccessProvider() =
 
                         do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
                         trnsx.Commit()
-                        scope.Complete()
 
                     with _ ->
                         trnsx.Rollback()
                 }
             finally
-                con.Close()
+                //con.Close()
+                ()
