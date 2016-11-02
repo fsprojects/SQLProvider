@@ -204,6 +204,18 @@ module internal SchemaProjections =
     
     let buildSprocName (sprocName:string) = nicePascalName sprocName
 
+    let buildTableNameWhereFilter columnName (tableNames : string) =
+        let trim (s:string) = s.Trim()
+        let names = tableNames.Split([|","|], StringSplitOptions.RemoveEmptyEntries)
+                    |> Seq.map trim
+                    |> Seq.toArray
+        match names with
+        | [||] -> ""
+        | [|name|] -> sprintf "and %s like '%s'" columnName name
+        | _ -> names |> Array.map (sprintf "%s like '%s'" columnName)
+                     |> String.concat " or "
+                     |> sprintf "and (%s)"
+
 module internal Reflection = 
     
     open System.Reflection

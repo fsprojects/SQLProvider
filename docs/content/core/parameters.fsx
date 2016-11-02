@@ -86,11 +86,11 @@ let useOptionTypes = true
 
 ### MSSQL
 
-No extra parameters.
+TableNames to filter amount of tables.
 
 ### Oracle
 
-Currently there is only one added parameter.
+TableNames to filter amount of tables, and Owner.
 
 #### Owner (Used by Oracle, MySQL and PostgreSQL)
 

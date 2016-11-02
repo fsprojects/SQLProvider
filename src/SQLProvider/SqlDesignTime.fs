@@ -538,7 +538,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>The owner of the schema for this provider to resolve (Oracle Only)</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>
-                    <param name='TableNames'>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle Only)</param>
+                    <param name='TableNames'>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)</param>
                     <param name='OdbcQuote'>Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]</param>
                     <param name='SQLiteLibrary'>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</param>
                     "
@@ -552,7 +552,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     args.[5] :?> bool,                    // Use option types?
                     args.[6] :?> string,                  // Schema owner currently only used for oracle
                     args.[7] :?> CaseSensitivityChange,   // Should we do ToUpper or ToLower when generating table names?
-                    args.[8] :?> string,                  // Table names list (Oracle Only)
+                    args.[8] :?> string,                  // Table names list (Oracle and MSSQL Only)
                     args.[9] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
                     args.[10] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
                     typeName))

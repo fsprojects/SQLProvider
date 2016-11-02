@@ -273,7 +273,7 @@ module MSSqlServer =
             use reader = com.ExecuteReader() :?> SqlDataReader
             Set(cols |> Array.map (processReturnColumn reader))
 
-type internal MSSqlServerProvider() =
+type internal MSSqlServerProvider(tableNames:string) =
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
@@ -393,10 +393,14 @@ type internal MSSqlServerProvider() =
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con
-
+        
         member __.GetTables(con,_) =
+            let tableNamesFilter =
+                match tableNames with 
+                | "" -> ""
+                | x -> " where 1=1 " + (SchemaProjections.buildTableNameWhereFilter "TABLE_NAME" tableNames)
             MSSqlServer.connect con (fun con ->
-            use reader = MSSqlServer.executeSql "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" con
+            use reader = MSSqlServer.executeSql ("select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" + tableNamesFilter) con
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
                 yield tableLookup.GetOrAdd(table.FullName,table)

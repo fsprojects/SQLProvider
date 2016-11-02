@@ -15,7 +15,7 @@ module internal ProviderBuilder =
 
     let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote sqliteLibrary =
         match vendor with
-        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider() :> ISqlProvider
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(tableNames) :> ISqlProvider
         | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) :> ISqlProvider
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider

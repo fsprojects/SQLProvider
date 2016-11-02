@@ -85,3 +85,9 @@ let sql =
         resPath,
         indivAmount,
         useOptTypes>
+
+(**
+
+Because MSSQL databases can be huge, there is an optional constructor parameter `TableNames` that can be used as a filter.
+
+*)
