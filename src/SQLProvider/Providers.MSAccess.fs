@@ -291,8 +291,14 @@ type internal MSAccessProvider() =
                         match String.IsNullOrEmpty(al) with
                         | true -> sprintf "[%s]" col
                         | false -> sprintf "[%s_%s]" al col
-                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
-                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+
+                    match sqlQuery.Grouping with
+                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                    | g  -> 
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fieldNotation)
+                        let aggs = g |> List.map(snd) |> List.concat
+                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
+                        [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] when String.IsNullOrEmpty(selectcolumns) -> "*"
                 | [] -> selectcolumns
@@ -399,6 +405,12 @@ type internal MSAccessProvider() =
                             primaryKey)))
                     if (numLinks > 0)  then ~~ ")")//append close paren after each JOIN, if necessary
 
+            let groupByBuilder() =
+                sqlQuery.Grouping |> List.map(fst) |> List.concat
+                |> List.iteri(fun i (alias,column) ->
+                    if i > 0 then ~~ ", "
+                    ~~ (sprintf "[%s].[%s]" alias column))
+
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
@@ -425,6 +437,12 @@ type internal MSAccessProvider() =
                 ~~"WHERE "
                 filterBuilder f
 
+            // GROUP BY
+            if sqlQuery.Grouping.Length > 0 then
+                ~~" GROUP BY "
+                groupByBuilder()
+
+            // ORDER BY
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()

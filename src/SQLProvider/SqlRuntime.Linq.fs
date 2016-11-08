@@ -25,25 +25,54 @@ module internal QueryImplementation =
         abstract SqlExpression : SqlExp
         abstract TupleIndex : string ResizeArray // indexes where in the anonymous object created by the compiler during a select many that each entity alias appears
         abstract Provider : ISqlProvider
+    
+    type IAsyncEnumerable<'T> =
+        abstract GetAsyncEnumerator : unit -> Async<IEnumerator<'T>>
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
 
+    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
+        let args = projector.GetType().GenericTypeArguments
+        seq { 
+            if args.Length > 0 && args.[0].Name.StartsWith("IGrouping") then
+                // do group-read
+                let collected = 
+                    results |> Array.map(fun (e:SqlEntity) ->
+                        let aggregates = [|"[COUNT]"; "[MIN]"; "[MAX]"; "[SUM]"; "[AVG]"|]
+                        let data = e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                        let results =
+                            data |> Array.map(fun (keyname, keyvalueb) ->
+                                let keyvalue = unbox(keyvalueb)
+                                let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
+                                let grp = ty.GetConstructors().[0].Invoke [|keyname; keyvalue; e;|]
+                                grp)
+                        match results with
+                        | [||] -> failwith "aggregate not found"
+                        | [|x|] -> x
+                        | lst -> failwith "multiple key columns not supported yet"
+                    )// :?> IGrouping<_, _>)
+
+                for e in collected -> projector.DynamicInvoke(e) 
+            else
+                for e in results -> projector.DynamicInvoke(e) 
+        } |> Seq.cache :> System.Collections.IEnumerable
+
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
-       use con = provider.CreateConnection(dc.ConnectionString)
-       let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
-       let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
-       Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
-       // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
-       use cmd = provider.CreateCommand(con,query)
-       for p in parameters do cmd.Parameters.Add p |> ignore
-       let columns = provider.GetColumns(con, baseTable)
-       if con.State <> ConnectionState.Open then con.Open()
-       use reader = cmd.ExecuteReader()
-       let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-       let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-       results
+        use con = provider.CreateConnection(dc.ConnectionString)
+        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+        let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
+        Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
+        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
+        use cmd = provider.CreateCommand(con,query)
+        for p in parameters do cmd.Parameters.Add p |> ignore
+        let columns = provider.GetColumns(con, baseTable)
+        if con.State <> ConnectionState.Open then con.Open()
+        use reader = cmd.ExecuteReader()
+        let results = dc.ReadEntities(baseTable.FullName, columns, reader)
+        let results = parseQueryResults projector results
+        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+        results
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
@@ -59,7 +88,7 @@ module internal QueryImplementation =
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+           let results = parseQueryResults projector results
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return results
        }
@@ -132,11 +161,12 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
-        member __.GetAsyncEnumerator() =
-            async {
-                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                return (Seq.cast<'T> (executeSql)).GetEnumerator()
-            }
+        interface IAsyncEnumerable<'T> with
+             member __.GetAsyncEnumerator() =
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    return (Seq.cast<'T> (executeSql)).GetEnumerator()
+                }
 
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         static member Create(table,conString,provider) =
@@ -158,11 +188,48 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
-        member __.GetAsyncEnumerator() =
-            async {
-                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                return (Seq.cast<'T> (executeSql)).GetEnumerator()
-            }
+        interface IAsyncEnumerable<'T> with
+             member __.GetAsyncEnumerator() =
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    return (Seq.cast<'T> (executeSql)).GetEnumerator()
+                }
+
+    and SqlGroupingQueryable<'TKey, 'TEntity>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
+        static member Create(table,conString,provider) =
+            let res = SqlGroupingQueryable<'TKey, 'TEntity>(conString,provider,BaseTable("",table),ResizeArray<_>())
+            res :> IQueryable<IGrouping<'TKey, 'TEntity>>
+        interface IQueryable<IGrouping<'TKey, 'TEntity>>
+        interface IQueryable with
+            member __.Provider = 
+                SqlQueryProvider.Provider
+            member x.Expression =  
+                Expression.Constant(x,typeof<SqlGroupingQueryable<'TKey, 'TEntity>>) :> Expression
+            member __.ElementType = 
+                typeof<IGrouping<'TKey, 'TEntity>>
+        interface seq<IGrouping<'TKey, 'TEntity>> with
+             member __.GetEnumerator() = 
+                executeQuery dc provider sqlQuery tupleIndex
+                |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                |> fun res -> res.GetEnumerator()
+        interface IEnumerable with
+             member x.GetEnumerator() = 
+                let itms = (x :> seq<IGrouping<'TKey, 'TEntity>>)
+                itms.GetEnumerator() :> IEnumerator
+        interface IWithDataContext with
+             member __.DataContext = dc
+        interface IWithSqlService with
+             member __.DataContext = dc
+             member __.SqlExpression = sqlQuery
+             member __.TupleIndex = tupleIndex
+             member __.Provider = provider
+        interface IAsyncEnumerable<IGrouping<'TKey, 'TEntity>> with
+             member __.GetAsyncEnumerator() =
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    let toseq = executeSql |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                    return toseq.GetEnumerator()
+                }
 
     and SqlQueryProvider() =
          static member val Provider =
@@ -274,6 +341,42 @@ module internal QueryImplementation =
                     ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                 | _ -> failwith "only support lambdas in a where"
 
+             let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
+                let sourceEntity =
+                    match source.SqlExpression with
+                    | BaseTable(alias,sourceEntity) ->
+                        if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                        if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                        sourceEntity
+
+                    | SelectMany(a1, a2,selectdata,sqlExp)  ->
+                        let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                        if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                        if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                        failwithf "Grouping over multiple tables is not supported yet"
+                    | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
+
+                let getAlias ti =
+                        match ti with
+                        | "" when source.SqlExpression.HasAutoTupled() -> sourceAlias
+                        | "" -> ""
+                        | _ -> resolveTuplePropertyName ti source.TupleIndex
+
+                let keycols = 
+                    match exp with
+                    | SqlColumnGet(sourceTi,sourceKey,_) -> [getAlias sourceTi, sourceKey]
+                    | TupleSqlColumnsGet itms -> itms |> List.map(fun (ti,key,typ) -> getAlias ti, key)
+                    | _ -> []
+
+                let data =  {
+                    PrimaryTable = sourceEntity
+                    KeyColumns = keycols
+                    AggregateColumns = [] // Aggregates will be populated later: [CountOp,alias,"City"]
+                    Projection = None //lambda2 ?
+                }
+                let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
+                ty, data, sourceEntity.Name
+
              { new System.Linq.IQueryProvider with
                 member __.CreateQuery(e:Expression) : IQueryable = failwithf "CreateQuery, e = %A" e
                 member __.CreateQuery<'T>(e:Expression) : IQueryable<'T> =
@@ -322,6 +425,24 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         parseWhere meth source qual
+//                    | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+//                                    [ SourceWithQueryData source;
+//                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
+//                                      OptionalQuote (Lambda([ParamName _], _))
+//                                      OptionalQuote (Lambda([ParamName _], _))]) 
+//                    | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+//                                    [ SourceWithQueryData source;
+//                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
+//                                      OptionalQuote (Lambda([ParamName _], _))]) 
+                    | MethodCall(None, (MethodWithName "GroupBy" as meth),
+                                    [ SourceWithQueryData source;
+                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1)]) ->
+                        let lambda = lambda1 :?> LambdaExpression
+                        let ty, data, sourceEntityName = parseGroupBy meth source lambdaparam "" [lambda] exp ""
+                        let expr = SelectMany(sourceEntityName,"grp",GroupQuery(data), source.SqlExpression)
+
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; expr; source.TupleIndex;|] :?> IQueryable<'T>
+
                     | MethodCall(None, (MethodWithName "Join"),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
@@ -331,7 +452,7 @@ module internal QueryImplementation =
                         let destEntity =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity
-                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
+                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
@@ -339,7 +460,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey]; ForeignTable = entity; OuterJoin = false; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
-                                SelectMany(sourceAlias,destAlias, data,BaseTable(sourceAlias,entity))
+                                SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
                             | _ ->
                                 let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
@@ -349,7 +470,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey];
                                              ForeignTable = {Schema="";Name="";Type=""};
                                              OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,data,source.SqlExpression)
+                                SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let ty =
                             match projection with
@@ -365,7 +486,7 @@ module internal QueryImplementation =
                         let destEntity =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity
-                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
+                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let destKeys = multidest |> List.map(fun(_,dest,_)->dest)
                         let sourceKeys = multisource |> List.map(fun(_,source,_)->source)
                         let sqlExpression =
@@ -375,7 +496,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys; ForeignTable = entity; OuterJoin = false; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
-                                SelectMany(sourceAlias,destAlias, data,BaseTable(sourceAlias,entity))
+                                SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
                             | _ ->
                                 let sourceTi = multisource |> List.tryPick(fun(ti,_,_)->match ti with "" -> None | x -> Some x)
                                 let sourceAlias = match sourceTi with None -> sourceAlias | Some x -> Utilities.resolveTuplePropertyName x source.TupleIndex
@@ -386,7 +507,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys;
                                              ForeignTable = {Schema="";Name="";Type=""};
                                              OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,data,source.SqlExpression)
+                                SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let ty =
                             match projection with
@@ -413,6 +534,30 @@ module internal QueryImplementation =
                             | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
                                 let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
                                 processSelectManys projectionParams.[1].Name inner outExp
+//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+//                                                    [createRelated
+//                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
+//                                                     OptionalQuote (Lambda(_,_))])
+//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+//                                                    [createRelated
+//                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
+//                                                     OptionalQuote (Lambda(_,_))]) 
+//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+//                                                    [createRelated
+//                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)])
+                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+                                                    [createRelated
+                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)]) ->
+
+                                let lambda = lambda1 :?> LambdaExpression
+                                let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
+                                let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
+                                SelectMany(sourceAlias,destEntity,GroupQuery(data), outExp)
+
                             | MethodCall(None, (MethodWithName "Join"),
                                                     [createRelated
                                                      ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
@@ -437,7 +582,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = [destKey]; PrimaryTable = Table.FromFullName destEntity; ForeignKey = [sourceKey];
                                                 ForeignTable = {Schema="";Name="";Type=""};
                                                 OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,data,outExp)
+                                SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                             | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
                                 let fromAlias =
                                     match param with
@@ -449,9 +594,9 @@ module internal QueryImplementation =
                                     match outExp with
                                     | BaseTable(alias,entity) when alias = "" ->
                                         // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the select many
-                                        SelectMany(fromAlias,toAlias,data,BaseTable(alias,entity))
+                                        SelectMany(fromAlias,toAlias,LinkQuery(data),BaseTable(alias,entity))
                                     | _ ->
-                                        SelectMany(fromAlias,toAlias,data,outExp)
+                                        SelectMany(fromAlias,toAlias,LinkQuery(data),outExp)
                                 // add new aliases to the tuple index
                                 if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
                                 if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
@@ -479,7 +624,7 @@ module internal QueryImplementation =
                                 let data = { PrimaryKey = destKeys; PrimaryTable = Table.FromFullName destEntity; ForeignKey = sourceKeys;
                                                 ForeignTable = {Schema="";Name="";Type=""};
                                                 OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,data,outExp)
+                                SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                             | _ -> failwith ("Unknown: " + inExp.ToString())
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression
@@ -487,7 +632,7 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
-                        if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> then
+                        if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> && not(v1.Type.Name.StartsWith("IGrouping")) then
                             // this is the projection from a join - ignore
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else

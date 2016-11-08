@@ -295,8 +295,14 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         match String.IsNullOrEmpty(al) with
                         | true -> sprintf "%c%s%c" cOpen col cClose
                         | false -> sprintf "%c%s_%s%c" cOpen al col cClose
-                    FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
-                // Currently we support only aggregate or select. selectcolumns + String.Join(",", extracolumns) when groupBy is ready
+
+                    match sqlQuery.Grouping with
+                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                    | g  -> 
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fieldNotation)
+                        let aggs = g |> List.map(snd) |> List.concat
+                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
+                        [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
@@ -395,6 +401,12 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
                             cClose cOpen primaryKey cClose))))
 
+            let groupByBuilder() =
+                sqlQuery.Grouping |> List.map(fst) |> List.concat
+                |> List.iteri(fun i (alias,column) ->
+                    if i > 0 then ~~ ", "
+                    ~~ (sprintf "%c%s%c.%c%s%c" cOpen alias cClose cOpen column cClose ))
+
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
@@ -422,6 +434,12 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 ~~"WHERE "
                 filterBuilder f
 
+            // GROUP BY
+            if sqlQuery.Grouping.Length > 0 then
+                ~~" GROUP BY "
+                groupByBuilder()
+
+            // ORDER BY
             if sqlQuery.Ordering.Length > 0 then
                 ~~"ORDER BY "
                 orderByBuilder()

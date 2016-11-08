@@ -306,6 +306,12 @@ and LinkData =
         member x.Rev() =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
+and GroupData =
+    { PrimaryTable       : Table
+      KeyColumns         : (alias * string) list
+      AggregateColumns   : (AggregateOperation * alias * string) list
+      Projection         : Expression option }
+
 and alias = string
 and table = string
 
@@ -320,9 +326,10 @@ and Condition =
     | ConstantTrue
     | ConstantFalse
 
+and SelectData = LinkQuery of LinkData | GroupQuery of GroupData
 and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
-    | SelectMany   of alias * alias * LinkData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
+    | SelectMany   of alias * alias * SelectData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es)
     | Projection   of Expression * SqlExp                // entire LINQ projection expression tree
     | Distinct     of SqlExp                             // distinct indicator
@@ -331,7 +338,7 @@ and internal SqlExp =
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
-    | AggregateOp  of Utilities.AggregateOperation * alias * string * SqlExp
+    | AggregateOp  of AggregateOperation * alias * string * SqlExp
     with member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
@@ -353,15 +360,16 @@ and internal SqlQuery =
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
       Projection    : Expression list
+      Grouping      : (list<alias * string> * list<AggregateOperation * alias * string>) list //key columns, aggregate columns
       Distinct      : bool
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
       Union         : (bool*string) option
       Count         : bool 
-      AggregateOp   : (Utilities.AggregateOperation * alias * string) list }
+      AggregateOp   : (AggregateOperation * alias * string) list }
     with
-        static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
+        static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
                                 Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -377,14 +385,24 @@ and internal SqlQuery =
                                                 // but rather the later alias of the same object after it has been tupled.
                                                   { q with UltimateChild = Some(legaliseName entityIndex.[0], e) }
                                         | None -> { q with UltimateChild = Some(legaliseName a,e) }
-                | SelectMany(a,b,link,rest) ->
-                   match link.RelDirection with
-                   | RelationshipDirection.Children ->
+                | SelectMany(a,b,dat,rest) ->
+                   match dat with
+                   | LinkQuery(link) when link.RelDirection = RelationshipDirection.Children ->
                          convert { q with Aliases = q.Aliases.Add(legaliseName b,link.ForeignTable).Add(legaliseName a,link.PrimaryTable);
                                           Links = (legaliseName a, link, legaliseName b)  :: q.Links } rest
-                   | _ ->
+                   | LinkQuery(link) ->
                          convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
                                          Links = (legaliseName a, link, legaliseName b) :: q.Links  } rest
+                   | GroupQuery(grp) ->
+                         convert { q with 
+                                    Aliases = q.Aliases.Add(legaliseName a,grp.PrimaryTable).Add(legaliseName b,grp.PrimaryTable);
+                                    Links = q.Links  
+                                    Grouping = 
+                                        let baseAlias:alias = grp.PrimaryTable.Name
+                                        let f = grp.KeyColumns |> List.map (fun (a,k) -> legaliseName (match a<>"" with true -> a | false -> baseAlias), k)
+                                        let s = grp.AggregateColumns |> List.map (fun (op,a,key) -> op, legaliseName (match a<>"" with true -> a | false -> baseAlias), key)
+                                        (f,s)::q.Grouping
+                                    Projection = match grp.Projection with Some p -> p::q.Projection | None -> q.Projection } rest
                 | FilterClause(c,rest) ->  convert { q with Filters = (c)::q.Filters } rest
                 | Projection(exp,rest) ->
                     convert { q with Projection = exp::q.Projection } rest
@@ -455,6 +473,34 @@ and internal ISqlProvider =
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
 
+
+type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
+    inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
+    let fetchItem itemType =
+        let itm =
+            distinctItem.ColumnValues 
+            |> Seq.filter(fun (s,k) -> 
+                let sUp = s.ToUpperInvariant()
+                sUp.Contains(keyname.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
+        match itm with
+        | :? string as s when Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | :? string as s when Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? string as s when DateTime.TryParse s |> fst -> DateTime.Parse s |> box
+        | :? int as i -> i |> box
+        | :? int16 as i -> int32 i |> box
+        | :? int64 as i -> int32 i |> box  
+        | :? float as i -> decimal i |> box
+        | :? decimal as i -> decimal i |> box
+        | :? double as i -> decimal i |> box
+        | i -> i |> box
+    member __.Values = [|distinctItem|]
+    interface System.Linq.IGrouping<'key, SqlEntity> with
+        member __.Key = keyval
+    member __.AggregateCount<'T>() = fetchItem "[COUNT]" :?> 'T
+    member __.AggregateSum<'T>() = fetchItem "[SUM]" :?> 'T
+    member __.AggregateAvg<'T>() = fetchItem "[AVG]" :?> 'T
+    member __.AggregateMin<'T>() = fetchItem "[MIN]" :?> 'T
+    member __.AggregateMax<'T>() = fetchItem "[MAX]" :?> 'T
 
 module internal CommonTasks =
 

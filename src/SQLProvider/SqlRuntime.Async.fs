@@ -16,10 +16,7 @@ module AsyncOperations =
             }
         async {
             match s with
-            | :? SqlQueryable<'T> as coll ->
-                let! en = coll.GetAsyncEnumerator()
-                return yieldseq en
-            | :? SqlOrderedQueryable<'T> as coll ->
+            | :? IAsyncEnumerable<'T> as coll ->
                 let! en = coll.GetAsyncEnumerator()
                 return yieldseq en
             | c ->
@@ -30,11 +27,7 @@ module AsyncOperations =
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =
         async {
             match s with
-            | :? SqlQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
-                return! executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
-            | :? SqlOrderedQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
+            | :? IWithSqlService as svc ->
                 return! executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
             | c ->
                 return c :> Collections.IEnumerable
@@ -55,12 +48,7 @@ module AsyncOperations =
     let getCountAsync (s:Linq.IQueryable<'T>) =
         async {
             match s with
-            | :? SqlQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
-                let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
-                return res |> unbox
-            | :? SqlOrderedQueryable<'T> as coll ->
-                let svc = (coll :> IWithSqlService)
+            | :? IWithSqlService as svc ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
                 return res |> unbox
             | c ->

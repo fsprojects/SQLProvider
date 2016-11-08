@@ -24,9 +24,13 @@ module internal Utilities =
     
     let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
-        let itemid = (int <| name.Remove(0, 4))
+        let itemid = 
+            if name.Length > 4 then
+                (int <| name.Remove(0, 4))
+            else Int32.MaxValue
         if(tupleIndex.Count < itemid) then ""
         else tupleIndex.[itemid - 1]
+
 
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
@@ -67,23 +71,18 @@ module internal Utilities =
             let transaction = typeof<System.Transactions.TransactionScope>.GetConstructor [|asynctype|]
             transaction.Invoke [|1|] :?> System.Transactions.TransactionScope
 
-    type internal AggregateOperation =
-    | Max
-    | Min
-    | Sum
-    | Avg
-
     let parseAggregates fieldNotation fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
             match query with
             | [] -> selectColumns
             | (agop, opAlias, sumCol)::tail ->
                 let aggregate = 
-                    match agop with
-                    | Sum -> "SUM"
-                    | Max -> "MAX"
-                    | Min -> "MIN"
-                    | Avg -> "AVG"
+                    match (agop) with
+                    | FSharp.Data.Sql.AggregateOperation.Sum -> "SUM"
+                    | FSharp.Data.Sql.AggregateOperation.Max -> "MAX"
+                    | FSharp.Data.Sql.AggregateOperation.Min -> "MIN"
+                    | FSharp.Data.Sql.AggregateOperation.Avg -> "AVG"
+                    | FSharp.Data.Sql.AggregateOperation.CountOp -> "COUNT"
                 let parsed = 
                          (aggregate + "(" + fieldNotation(opAlias, sumCol) + ") as " + fieldNotationAlias(sumCol, aggregate)) :: selectColumns
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed

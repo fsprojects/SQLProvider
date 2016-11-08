@@ -91,7 +91,7 @@ exactlyOne               |X |                                                   
 exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
-groupBy                  |  |                                                       | 
+groupBy                  |  | Initially only very simple groupBy is supported       | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 

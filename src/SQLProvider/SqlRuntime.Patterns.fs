@@ -175,7 +175,7 @@ let (|SqlColumnGet|_|) = function
     | _ -> None
 
 let (|TupleSqlColumnsGet|_|) = function 
-    | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
+    | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("Tuple") || cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
         let items = args |> List.choose(function
                             | SqlColumnGet(ti,key,t) -> Some(ti, key, t)
                             | _-> None)
