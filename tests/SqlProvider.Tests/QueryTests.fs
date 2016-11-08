@@ -758,7 +758,7 @@ let ``simple sumBy``() =
             for od in dc.Main.OrderDetails do
             sumBy od.UnitPrice
         }
-    Assert.That(query, Is.EqualTo(56500.91M).Within(0.001M))
+    Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
 
 [<Test>]
 let ``simple averageBy``() = 
@@ -768,7 +768,7 @@ let ``simple averageBy``() =
             for od in dc.Main.OrderDetails do
             averageBy od.UnitPrice
         }
-    Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
+    Assert.That(qry, Is.EqualTo(26.2185m).Within(0.001M))
 
 [<Test>]
 let ``simple averageByNullable``() = 
@@ -778,7 +778,7 @@ let ``simple averageByNullable``() =
             for od in dc.Main.OrderDetails do
             averageByNullable (System.Nullable(od.UnitPrice))
         }
-    Assert.That(query, Is.EqualTo(26.2185m).Within(0.001M))
+    Assert.That(qry, Is.EqualTo(26.2185m).Within(0.001M))
 
 [<Test >]
 let ``simple select with distinct``() =
