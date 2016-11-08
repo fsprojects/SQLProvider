@@ -295,6 +295,7 @@ and ISqlDataContext =
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
     abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> Async<SqlEntity[]>
 
+// LinkData is for joins with SelectMany
 and LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : string list
@@ -306,6 +307,7 @@ and LinkData =
         member x.Rev() =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
+// GroupData is for group-by projections
 and GroupData =
     { PrimaryTable       : Table
       KeyColumns         : (alias * string) list
@@ -474,6 +476,10 @@ and internal ISqlProvider =
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
 
 
+/// GroupResultItems is an item to create key-igrouping-structure.
+/// From the select group-by projection, aggregate operations like Enumerable.Count() 
+/// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
+/// SQL result instead of actually counting anything
 type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
     inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
     let fetchItem itemType =

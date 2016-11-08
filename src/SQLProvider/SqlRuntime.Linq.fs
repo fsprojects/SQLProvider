@@ -26,6 +26,7 @@ module internal QueryImplementation =
         abstract TupleIndex : string ResizeArray // indexes where in the anonymous object created by the compiler during a select many that each entity alias appears
         abstract Provider : ISqlProvider
     
+    /// Interface for async enumerations as .NET doesn't have it out-of-the-box
     type IAsyncEnumerable<'T> =
         abstract GetAsyncEnumerator : unit -> Async<IEnumerator<'T>>
 
@@ -47,6 +48,9 @@ module internal QueryImplementation =
                                 let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
                                 let grp = ty.GetConstructors().[0].Invoke [|keyname; keyvalue; e;|]
                                 grp)
+                        // database will give distinct SqlEntities to have groups.
+                        // If multi-key-columns, the aggregation values of 
+                        // GroupResultItems distinctItem.ColumnValues should be handled.
                         match results with
                         | [||] -> failwith "aggregate not found"
                         | [|x|] -> x
@@ -195,6 +199,7 @@ module internal QueryImplementation =
                     return (Seq.cast<'T> (executeSql)).GetEnumerator()
                 }
 
+    /// Structure to make it easier to return IGrouping from GroupBy
     and SqlGroupingQueryable<'TKey, 'TEntity>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         static member Create(table,conString,provider) =
             let res = SqlGroupingQueryable<'TKey, 'TEntity>(conString,provider,BaseTable("",table),ResizeArray<_>())
@@ -377,6 +382,9 @@ module internal QueryImplementation =
                 let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
                 ty, data, sourceEntity.Name
 
+             // Possible Linq method overrides are available here: 
+             // https://referencesource.microsoft.com/#System.Core/System/Linq/IQueryable.cs
+             // https://msdn.microsoft.com/en-us/library/system.linq.enumerable_methods(v=vs.110).aspx
              { new System.Linq.IQueryProvider with
                 member __.CreateQuery(e:Expression) : IQueryable = failwithf "CreateQuery, e = %A" e
                 member __.CreateQuery<'T>(e:Expression) : IQueryable<'T> =
@@ -634,6 +642,7 @@ module internal QueryImplementation =
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
                         if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> && not(v1.Type.Name.StartsWith("IGrouping")) then
                             // this is the projection from a join - ignore
+                            // causing the ignore here will give us wrong return tyoe to deal with in convertExpression lambda handling
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>

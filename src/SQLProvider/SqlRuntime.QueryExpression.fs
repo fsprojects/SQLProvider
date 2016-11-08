@@ -314,6 +314,7 @@ module internal QueryExpressionTransformer =
                         let gatheredAggregations = 
                             sqlQuery.Grouping |> List.map(fun (group,_) ->
                                 // GroupBy: collect aggreagte operations
+                                // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(AggregateOperation * alias * string) list =
                                     groupProjectionMap 
                                     |> Seq.map(fun op -> 
