@@ -49,6 +49,9 @@ module MySql =
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
+    let ripQuotes (str:String) = 
+        (if str.Contains(" ") then str.Replace("\"","") else str)
+
     let createParam name i v = 
         match v with
         | null -> QueryParameter.Create(name, i) 
@@ -270,7 +273,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();"
-            (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))
+            (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`"))
             ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -313,7 +316,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE %s SET %s WHERE "
-                (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))
+                (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`"))
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "`%s` = @pk%i" k i))) + ";")
 
@@ -345,7 +348,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`")))
+            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
@@ -403,7 +406,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                   WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table"
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
-                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), table.Name)) |> ignore
+                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes table.Name))) |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
                 let columns =
@@ -448,13 +451,13 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
             let res = Sql.connect con (fun con ->
-                use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery table.Name ) con)
+                use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery (MySql.ripQuotes table.Name) ) con)
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
                                 ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
                 reader.Dispose()
-                use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery table.Name ) con
+                use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery (MySql.ripQuotes table.Name) ) con
                 let parents =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
@@ -463,8 +466,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             res)
 
         member __.GetSprocs(con) = Sql.connect con MySql.getSprocs
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`")) amount
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema table.Name table.Schema table.Name column
+        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")) amount
+        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema (MySql.ripQuotes table.Name) table.Schema (MySql.ripQuotes table.Name) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let sb = System.Text.StringBuilder()
@@ -635,7 +638,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
             else  ~~(sprintf "SELECT %s " columns)
             // FROM
-            ~~(sprintf "FROM %s as `%s` " (baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`"))  baseAlias)
+            ~~(sprintf "FROM %s as `%s` " (baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`"))  baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
