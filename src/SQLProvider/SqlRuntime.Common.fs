@@ -331,7 +331,7 @@ and internal SqlExp =
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
-    | AggregateOp  of Utilities.AggregateOperation * alias * string * SqlExp
+    | AggregateOp  of AggregateOperation * alias * string * SqlExp
     with member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
@@ -359,7 +359,7 @@ and internal SqlQuery =
       Take          : int option
       Union         : (bool*string) option
       Count         : bool 
-      AggregateOp   : (Utilities.AggregateOperation * alias * string) list }
+      AggregateOp   : (AggregateOperation * alias * string) list }
     with
         static member Empty = { Filters = []; Links = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
                                 Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None }

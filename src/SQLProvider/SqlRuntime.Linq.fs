@@ -25,25 +25,34 @@ module internal QueryImplementation =
         abstract SqlExpression : SqlExp
         abstract TupleIndex : string ResizeArray // indexes where in the anonymous object created by the compiler during a select many that each entity alias appears
         abstract Provider : ISqlProvider
+    
+    /// Interface for async enumerations as .NET doesn't have it out-of-the-box
+    type IAsyncEnumerable<'T> =
+        abstract GetAsyncEnumerator : unit -> Async<IEnumerator<'T>>
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
 
+    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
+        seq { 
+                for e in results -> projector.DynamicInvoke(e) 
+        } |> Seq.cache :> System.Collections.IEnumerable
+
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
-       use con = provider.CreateConnection(dc.ConnectionString)
-       let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
-       let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
-       Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
-       // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
-       use cmd = provider.CreateCommand(con,query)
-       for p in parameters do cmd.Parameters.Add p |> ignore
-       let columns = provider.GetColumns(con, baseTable)
-       if con.State <> ConnectionState.Open then con.Open()
-       use reader = cmd.ExecuteReader()
-       let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-       let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-       results
+        use con = provider.CreateConnection(dc.ConnectionString)
+        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+        let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
+        Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
+        // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
+        use cmd = provider.CreateCommand(con,query)
+        for p in parameters do cmd.Parameters.Add p |> ignore
+        let columns = provider.GetColumns(con, baseTable)
+        if con.State <> ConnectionState.Open then con.Open()
+        use reader = cmd.ExecuteReader()
+        let results = dc.ReadEntities(baseTable.FullName, columns, reader)
+        let results = parseQueryResults projector results
+        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+        results
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
@@ -59,7 +68,7 @@ module internal QueryImplementation =
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results = seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+           let results = parseQueryResults projector results
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return results
        }
@@ -132,11 +141,12 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
-        member __.GetAsyncEnumerator() =
-            async {
-                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                return (Seq.cast<'T> (executeSql)).GetEnumerator()
-            }
+        interface IAsyncEnumerable<'T> with
+             member __.GetAsyncEnumerator() =
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    return (Seq.cast<'T> (executeSql)).GetEnumerator()
+                }
 
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         static member Create(table,conString,provider) =
@@ -158,11 +168,12 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
-        member __.GetAsyncEnumerator() =
-            async {
-                let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                return (Seq.cast<'T> (executeSql)).GetEnumerator()
-            }
+        interface IAsyncEnumerable<'T> with
+             member __.GetAsyncEnumerator() =
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    return (Seq.cast<'T> (executeSql)).GetEnumerator()
+                }
 
     and SqlQueryProvider() =
          static member val Provider =
@@ -331,7 +342,7 @@ module internal QueryImplementation =
                         let destEntity =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity
-                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
+                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
@@ -365,7 +376,7 @@ module internal QueryImplementation =
                         let destEntity =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity
-                            | _ -> failwithf "Unexpected destination entity expression (%A)." dest.SqlExpression
+                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let destKeys = multidest |> List.map(fun(_,dest,_)->dest)
                         let sourceKeys = multisource |> List.map(fun(_,source,_)->source)
                         let sqlExpression =

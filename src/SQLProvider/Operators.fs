@@ -37,6 +37,13 @@ type ConditionOperator =
         | NotIn         -> "NOT IN"
         | NestedNotIn      -> "NOT IN"
 
+type AggregateOperation =
+| Max
+| Min
+| Sum
+| Avg
+| CountOp
+
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types
 [<AutoOpenAttribute>]
