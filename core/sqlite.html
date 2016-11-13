@@ -56,12 +56,25 @@
 If you use the System.Data.SQLite NuGet package and target .NET 4.6, the path would be something like
 <code>__SOURCE_DIRECTORY__ + @"\..\packages\System.Data.SQLite.Core.&lt;version&gt;\lib\net46"</code>.
 Both absolute and relative paths are supported.</p>
-<p>Note that <code>System.Data.SQLite.dll</code> will look for the native <code>SQLite.Interop.dll</code> in the x64 and x86 subdirectories of
-the resolution path. These are not created when the System.Data.SQLite NuGet package is added, so you might have to
-manually copy these subdirectories from SQLite build directory, which typically is
-<code>&lt;project root&gt;\packages\System.Data.SQLite.Core.&lt;version&gt;\build\net46</code>.</p>
+<p>Note that <code>System.Data.SQLite.dll</code> will look for the native interop library:</p>
+<ul>
+<li>on Windows: <code>SQLite.Interop.dll</code> in the <code>x64</code> and <code>x86</code> subdirectories of the resolution path.</li>
+<li>on Linux: <code>libSQLite.Interop.so</code> in the resolution path directory.</li>
+</ul>
+<p>The interop libraries are not properly placed afer the System.Data.SQLite NuGet package is added, so you might have to
+manually copy the interop libraries:</p>
+<ul>
+<li>
+on Windows: copy <code>x64</code> and <code>x86</code> subdirectories from SQLite build directory, which typically is 
+<code>&lt;project root&gt;\packages\System.Data.SQLite.Core.&lt;version&gt;\build\net46</code>.
+</li>
+<li>
+on Linux: first build the <code>libSQLite.Interop.so</code> using <code>&lt;srcDir&gt;/Setup/compile-interop-assembly-release.sh</code> script from System.Data.SQLite
+source distribution <code>sqlite-netFx-source-1.x.xxx.x.zip</code>. And then copy it from <code>&lt;srcDir&gt;/bin/2013/Release/bin/</code>.
+</li>
+</ul>
 <p>If <code>System.Data.SQLite.dll</code> is in the location where NuGet places it by default, you don't have to submit
-the ResolutionPath parameter at all, but you still need to copy the x64 and x86 subdirectories as described above.</p>
+the ResolutionPath parameter at all, but you still need to copy the interop libraries as described above.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
