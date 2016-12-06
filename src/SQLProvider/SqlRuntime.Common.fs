@@ -91,6 +91,9 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member internal __.ColumnValuesWithDefinition = seq { for kvp in data -> kvp.Key, kvp.Value, columns.TryFind(kvp.Key) }
 
     member __.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
+    member __.HasColumn(key, ?comparison)= 
+        let comparisonOption = defaultArg comparison StringComparison.InvariantCulture
+        columns |> Seq.exists(fun kp -> (kp.Key |> SchemaProjections.buildFieldName).Equals(key, comparisonOption))
     member __.Table= table
     member __.DataContext with get() = dc
 
