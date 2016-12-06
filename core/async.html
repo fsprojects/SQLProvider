@@ -38,7 +38,7 @@
 is to release the business logics thread while the database is doing its job.
 This can lead a huge performance difference on heavy traffic environment
 (basically, will your business logics server / web-server crash or not).</p>
-<p><img src="http://i.imgur.com/DBPLRlP.png" alt="" /></p>
+<p><img src="https://i.imgur.com/DBPLRlP.png" alt="" /></p>
 <p>In the picture, we talk about the red block, which can be released to serve other customers.
 As usual with async operations, there will be more thread context switching,
 which may cause minor performance delays, but concurrency benefits should outweigh the
