@@ -126,10 +126,10 @@ Contributing and copyright
 --------------------------
 
 The project is hosted on [GitHub][gh] where you can [report issues][issues], fork 
-the project and submit pull requests. If you're adding new public API, please also 
+the project and submit [pull requests][contributing]. If you're adding new public API, please also 
 consider adding [samples][content] that can be turned into a documentation. You might
 also want to read [library design notes][readme] to understand how it works.
-Our tests have [more samples][tests].
+Our tests have [more samples][tests]. If you are new to GitHub see [contributing](core/contributing.html).
 
 The library is available under Public Domain license, which allows modification and 
 redistribution for both commercial and non-commercial purposes. For more information see the 
