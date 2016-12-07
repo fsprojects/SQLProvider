@@ -38,6 +38,14 @@
 <h3><a name="1-Download-or-clone-the-repository-to-your-computer" class="anchor" href="#1-Download-or-clone-the-repository-to-your-computer">1. Download or clone the repository to your computer.</a></h3>
 <p>(Or take <code>git pull</code> if you already have the repository.)</p>
 <p><img src="https://imgur.com/FFSDb0L.png" alt="Download" /></p>
+<p>You need to get the .git folder inside the repository.
+If the download doesn't work you can use clone, which creates a separate folder and downloads the repository:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">   <span class="i">git</span> <span class="i">clone</span> <span class="i">https</span><span class="o">:</span><span class="c">//github.com/fsprojects/SQLProvider.git</span>
+</code></pre></td>
+</tr>
+</table>
 <h3><a name="2-Edit-and-Commit" class="anchor" href="#2-Edit-and-Commit">2. Edit and Commit</a></h3>
 <p>Do the modifications, check the build and tests are working. Commit the modifications to your local repository.</p>
 <h3><a name="3-Fork-the-GitHub-repository" class="anchor" href="#3-Fork-the-GitHub-repository">3. Fork the GitHub repository.</a></h3>
@@ -57,11 +65,12 @@
 <h3><a name="6-Push-to-Your-Remote" class="anchor" href="#6-Push-to-Your-Remote">6. Push to Your Remote</a></h3>
 <p>Push the latest version to your repository with
 <code>git push myrepo</code>. You should see the modifications in GitHub under your repository.</p>
-<h3><a name="7-Create-Pull-Request" class="anchor" href="#7-Create-Pull-Request">7. Create Pull Request</a></h3>
+<h3><a name="7-Create-a-Pull-Request" class="anchor" href="#7-Create-a-Pull-Request">7. Create a Pull Request</a></h3>
 <p>In GitHub under <strong>your</strong> repository press the Create pull request -button. By default, everything should be correct: Base-fork is the one where you want to send the modifications and head fork is your fork, so follow the wizard.</p>
 <p><img src="https://imgur.com/CD525AG.png" alt="PullRequest" /></p>
 <h3><a name="8-Done" class="anchor" href="#8-Done">8. Done.</a></h3>
 <p>Your pull request should be visible under "Pull requests" -tab in original repository. When you do more commits, you can ignore parts 3, 4 and 5, they has to be done just once.</p>
+<p><img src="https://i.imgur.com/BrngItg.png" alt="The process" /></p>
 
 
         </div>
