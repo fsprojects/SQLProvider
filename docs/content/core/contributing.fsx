@@ -2,7 +2,7 @@
 
 # How to make a contribution #
 
-This is how you can make a "pull request", to suggest your modifications to be accepted to the code base.
+This is how you can make a "pull request", to suggest your modifications to be accepted to the code base. 
 
 ### 1. Download or clone the repository to your computer. ###
 
@@ -10,6 +10,12 @@ This is how you can make a "pull request", to suggest your modifications to be a
 
    ![Download](https://imgur.com/FFSDb0L.png)
 
+   You need to get the .git folder inside the repository. 
+   If the download doesn't work you can use clone, which creates a separate folder and downloads the repository:
+
+```
+   git clone https://github.com/fsprojects/SQLProvider.git
+```
    
 ### 2. Edit and Commit ###
 
@@ -45,7 +51,7 @@ This is how you can make a "pull request", to suggest your modifications to be a
    `git push myrepo`. You should see the modifications in GitHub under your repository.
 
 
-### 7. Create Pull Request ###
+### 7. Create a Pull Request ###
 
    In GitHub under **your** repository press the Create pull request -button. By default, everything should be correct: Base-fork is the one where you want to send the modifications and head fork is your fork, so follow the wizard.
 
@@ -56,4 +62,6 @@ This is how you can make a "pull request", to suggest your modifications to be a
 
    Your pull request should be visible under "Pull requests" -tab in original repository. When you do more commits, you can ignore parts 3, 4 and 5, they has to be done just once.
 
+   ![The process](https://i.imgur.com/BrngItg.png)
+   
 *)
