@@ -31,6 +31,7 @@ module internal Utilities =
         if(tupleIndex.Count < itemid) then ""
         else tupleIndex.[itemid - 1]
 
+
     let quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
@@ -75,15 +76,17 @@ module internal Utilities =
             match query with
             | [] -> selectColumns
             | (agop, opAlias, sumCol)::tail ->
-                let aggregate = 
+                let aggregate, selCol = 
                     match (agop) with
-                    | FSharp.Data.Sql.AggregateOperation.Sum -> "SUM"
-                    | FSharp.Data.Sql.AggregateOperation.Max -> "MAX"
-                    | FSharp.Data.Sql.AggregateOperation.Min -> "MIN"
-                    | FSharp.Data.Sql.AggregateOperation.Avg -> "AVG"
-                    | FSharp.Data.Sql.AggregateOperation.CountOp -> "COUNT"
+                    | FSharp.Data.Sql.AggregateOperation.Sum x -> "SUM", x
+                    | FSharp.Data.Sql.AggregateOperation.Max x -> "MAX", x
+                    | FSharp.Data.Sql.AggregateOperation.Min x -> "MIN", x
+                    | FSharp.Data.Sql.AggregateOperation.Avg x -> "AVG", x
+                    | FSharp.Data.Sql.AggregateOperation.CountOp x -> "COUNT", x
+
+                let col = match selCol with None -> sumCol | Some x -> x
                 let parsed = 
-                         (aggregate + "(" + fieldNotation(opAlias, sumCol) + ") as " + fieldNotationAlias(sumCol, aggregate)) :: selectColumns
+                         (aggregate + "(" + fieldNotation(opAlias, col) + ") as " + fieldNotationAlias(col, aggregate)) :: selectColumns
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotation fieldNotationAlias query []
 

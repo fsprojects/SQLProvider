@@ -37,12 +37,12 @@ type ConditionOperator =
         | NotIn         -> "NOT IN"
         | NestedNotIn      -> "NOT IN"
 
-type AggregateOperation =
-| Max
-| Min
-| Sum
-| Avg
-| CountOp
+type AggregateOperation = // Aggregate (column name if not default)
+| Max of string Option
+| Min of string Option
+| Sum of string Option
+| Avg of string Option
+| CountOp of string Option
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types

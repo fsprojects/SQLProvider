@@ -174,6 +174,18 @@ let (|SqlColumnGet|_|) = function
         | _ -> Some(String.Empty,key,meth.ReturnType) 
     | _ -> None
 
+let (|SqlGroupingColumnGet|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
+        match e.Member with 
+        | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, "{KEY}", p.DeclaringType) 
+        | _ -> None
+    | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments.Count = 1 && e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
+        if e.Method.Name = "Count" || e.Method.Name = "Average" || e.Method.Name = "Min" || e.Method.Name = "Max"
+        then Some(String.Empty, "{" + e.Method.Name.ToUpper() + "}", e.Method.DeclaringType)
+        else None
+    | _ -> None
+
 let (|TupleSqlColumnsGet|_|) = function 
     | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("Tuple") || cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
         let items = args |> List.choose(function

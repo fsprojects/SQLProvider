@@ -91,7 +91,7 @@ exactlyOne               |X |                                                   
 exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
-groupBy                  |  |                                                       | 
+groupBy                  |x | Initially only very simple groupBy (and having) is supported: On single-table with single-key-column and direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`. | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 
@@ -101,7 +101,7 @@ join                     |X |                                                   
 last                     |  |                                                       | 
 lastOrDefault            |  |                                                       | 
 leftOuterJoin            |  |                                                       | 
-let                      |X | ...but not using tmp variables in where-clauses       |
+let                      |x | ...but not using tmp variables in where-clauses       |
 maxBy                    |X |                                                       | 
 maxByNullable            |X |                                                       | 
 minBy                    |X |                                                       | 
@@ -122,7 +122,7 @@ thenBy	                 |X |                                                    
 thenByDescending	     |X |                                                       |   
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
-where                    |X | Server side variables must be on left side and only left side of predicates (excluding boolean database fields and LINQ-Contains) | 
+where                    |x | Server side variables must be on left side and only left side of predicates (excluding parentheses, boolean database fields and LINQ-Contains) | 
 *)
 
 (**

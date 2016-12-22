@@ -421,7 +421,7 @@ let ``simple select query with minBy DateTime``() =
     Assert.AreEqual(DateTime(1937, 09, 19), qry)
 
 [<Test>]
-let ``simple select query with maxBy``() = 
+let ``simple select query with sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -442,7 +442,7 @@ let ``simple select query with averageBy``() =
     Assert.Greater(27m, qry)
     Assert.Less(26m, qry)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simplest select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -453,7 +453,7 @@ let ``simplest select query with groupBy``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -465,9 +465,54 @@ let ``simple select query with groupBy``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
-    
 
-[<Test; Ignore("Not Supported")>]
+
+[<Test>]
+let ``simple select query with groupBy sum``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            groupBy od.ProductId into p
+            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
+        } |> Seq.toList
+    
+    let _,fstUnitPrice, fstDiscount = qry.[0]
+    Assert.Greater(652m, fstUnitPrice)
+    Assert.Less(651m, fstUnitPrice)
+    Assert.Greater(2.96m, fstDiscount)
+    Assert.Less(2.95m, fstDiscount)
+        
+[<Test>]
+let ``simple select query with groupBy having count``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Count() > 1)
+            where (c.Count() < 6)
+            select (c.Key, c.Count())
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(3, res.["Buenos Aires"])
+
+[<Test>]
+let ``simple select query with groupBy having key``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Key = "London") 
+            select (c.Key, c.Count()) 
+        } |> Seq.toList
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(6, res.["London"])
+
+[<Test>]
 let ``simple select query with groupBy date``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -990,7 +1035,7 @@ let ``simple union all query test``() =
     let res2 = query1.Concat(query2) |> Seq.toArray
     Assert.IsNotEmpty(res2)
     
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``verify groupBy results``() = 
     let dc = sql.GetDataContext()
     let enumtest =
