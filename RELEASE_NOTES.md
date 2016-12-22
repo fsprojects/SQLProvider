@@ -1,3 +1,13 @@
+### 1.0.37 - 09.11.2016
+* UNION queries
+* Support Space in MSSQL inserts
+* Support Space in MySQL table names #347
+* TableNames parameter for MSSQL
+* Fix Access unknown error #340
+
+### 1.0.36 - 25.10.2016
+Support views in Oracle table list
+
 ### 1.0.35 - 08.10.2016
 * Fix for SQL CRUD operations, #338
 
