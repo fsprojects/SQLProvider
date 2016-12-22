@@ -421,7 +421,7 @@ let ``simple select query with minBy DateTime``() =
     Assert.AreEqual(DateTime(1937, 09, 19), qry)
 
 [<Test>]
-let ``simple select query with maxBy``() = 
+let ``simple select query with sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -465,7 +465,24 @@ let ``simple select query with groupBy``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
+
+
+[<Test>]
+let ``simple select query with groupBy sum``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            groupBy od.ProductId into p
+            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
+        } |> Seq.toList
     
+    let _,fstUnitPrice, fstDiscount = qry.[0]
+    Assert.Greater(652m, fstUnitPrice)
+    Assert.Less(651m, fstUnitPrice)
+    Assert.Greater(2.96m, fstDiscount)
+    Assert.Less(2.95m, fstDiscount)
+        
 [<Test>]
 let ``simple select query with groupBy having count``() = 
     let dc = sql.GetDataContext()
@@ -490,8 +507,7 @@ let ``simple select query with groupBy having key``() =
             groupBy cust.City into c
             where (c.Key = "London") 
             select (c.Key, c.Count()) 
-            // Not supported: select (c.Key, c.Count(fun c -> c.City = "London"))
-        }
+        } |> Seq.toList
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])

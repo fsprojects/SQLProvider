@@ -59,31 +59,58 @@ module internal QueryExpressionTransformer =
             | _ -> None
 
         let (|GroupByAggregate|_|) (e:Expression) =
+            // On group-by aggregates we support currently only direct calls like .Count() or .Sum()
+            // and direct parameter calls like .Sum(fun entity -> entity.UnitPrice)
             match e.NodeType, e with
             | ExpressionType.Call, (:? MethodCallExpression as e) -> 
                 let isGrouping = 
-                    e.Arguments.Count = 1 &&
+                    e.Arguments.Count > 0 && //= 1 &&
                     e.Arguments.[0].Type.Name.StartsWith("IGrouping")
-                let op =
-                    match e.Method.Name with
-                    | "Count" -> Some CountOp
-                    | "Sum" -> Some Sum
-                    | "Avg" -> Some Avg
-                    | "Min" -> Some Min
-                    | "Max" -> Some Max
-                    | _ -> None
                 
+                let op =
+                    if e.Arguments.Count = 1 then
+                        match e.Method.Name with
+                        | "Count" -> Some (CountOp None)
+                        | "Sum" -> Some (Sum None)
+                        | "Avg" -> Some (Avg None)
+                        | "Min" -> Some (Min None)
+                        | "Max" -> Some (Max None)
+                        | _ -> None
+                    elif e.Arguments.Count = 2 then
+                        match e.Arguments.[1] with
+                        | :? LambdaExpression as la ->
+                            let rec directAggregate (exp:Expression) =
+                                match exp.NodeType, exp with
+                                | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) ->
+                                    match e.Method.Name with
+                                    | "Count" -> Some (CountOp (Some key))
+                                    | "Sum" -> Some (Sum (Some key))
+                                    | "Avg" -> Some (Avg (Some key))
+                                    | "Min" -> Some (Min (Some key))
+                                    | "Max" -> Some (Max (Some key))
+                                    | _ -> None
+                                | ExpressionType.Quote, (:? UnaryExpression as ce) 
+                                | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
+
+                                | _ -> None
+                            directAggregate la.Body
+                        | _ -> None
+                    else None
+
                 match isGrouping, op with
                 | true, Some o when not(groupProjectionMap.Contains(o)) -> 
                     let methodname = "Aggregate"+e.Method.Name
+                    
+                    let v = match o with CountOp x | Sum x | Avg x | Min x | Max x -> x
 
                     let ty = typedefof<GroupResultItems<_>>.MakeGenericType(e.Arguments.[0].Type.GetGenericArguments().[0])
+                    let aggregateColumn = Expression.Constant(v, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(e.Method.ReturnType);
                     let replacementExpr = 
                             Expression.Call(
                                 Expression.Convert(e.Arguments.[0], ty),
-                                generic)
+                                generic, aggregateColumn)
                     Some (o, replacementExpr)
                 | _ -> None
             | _ -> None
@@ -115,7 +142,9 @@ module internal QueryExpressionTransformer =
                 | true, values when values.Count > 0 -> values.Add(key)
                 | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield key}))
                 | _ -> ()
-                upcast Expression.Call(databaseParam,mi,Expression.Constant(key))
+                match databaseParam.Type.Name.StartsWith("IGrouping") with
+                | false -> upcast Expression.Call(databaseParam,mi,Expression.Constant(key))
+                | true -> upcast Expression.Call(Expression.Parameter(typeof<SqlEntity>,name),mi,Expression.Constant(key))
 
             | ExpressionType.Negate,             (:? UnaryExpression as e)       -> upcast Expression.Negate(transform en e.Operand,e.Method)
             | ExpressionType.NegateChecked,      (:? UnaryExpression as e)       -> upcast Expression.NegateChecked(transform en e.Operand,e.Method)

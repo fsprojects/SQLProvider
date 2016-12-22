@@ -794,14 +794,14 @@ module internal QueryImplementation =
                         let sqlExpression =
                                
                                match meth.Name, source.SqlExpression with
-                               | "Sum", BaseTable("",entity)  -> AggregateOp(Sum,"",key,BaseTable(alias,entity))
-                               | "Sum", _ ->  AggregateOp(Sum,alias,key,source.SqlExpression)
-                               | "Max", BaseTable("",entity)  -> AggregateOp(Max,"",key,BaseTable(alias,entity))
-                               | "Max", _ ->  AggregateOp(Max,alias,key,source.SqlExpression)
-                               | "Min", BaseTable("",entity)  -> AggregateOp(Min,"",key,BaseTable(alias,entity))
-                               | "Min", _ ->  AggregateOp(Min,alias,key,source.SqlExpression)
-                               | "Average", BaseTable("",entity)  -> AggregateOp(Avg,"",key,BaseTable(alias,entity))
-                               | "Average", _ ->  AggregateOp(Avg,alias,key,source.SqlExpression)
+                               | "Sum", BaseTable("",entity)  -> AggregateOp(Sum(None),"",key,BaseTable(alias,entity))
+                               | "Sum", _ ->  AggregateOp(Sum(None),alias,key,source.SqlExpression)
+                               | "Max", BaseTable("",entity)  -> AggregateOp(Max(None),"",key,BaseTable(alias,entity))
+                               | "Max", _ ->  AggregateOp(Max(None),alias,key,source.SqlExpression)
+                               | "Min", BaseTable("",entity)  -> AggregateOp(Min(None),"",key,BaseTable(alias,entity))
+                               | "Min", _ ->  AggregateOp(Min(None),alias,key,source.SqlExpression)
+                               | "Average", BaseTable("",entity)  -> AggregateOp(Avg(None),"",key,BaseTable(alias,entity))
+                               | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
                                | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
                         match box Unchecked.defaultof<'T>, res with 

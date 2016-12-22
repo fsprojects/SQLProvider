@@ -91,7 +91,7 @@ exactlyOne               |X |                                                   
 exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
-groupBy                  |x | Initially only very simple groupBy (and having) is supported: on single-table with single-key-column. | 
+groupBy                  |x | Initially only very simple groupBy (and having) is supported: On single-table with single-key-column and direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`. | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 

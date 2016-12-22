@@ -489,31 +489,52 @@ and internal ISqlProvider =
 /// SQL result instead of actually counting anything
 type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
     inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
-    let fetchItem itemType =
+    let fetchItem (returnType:Type) itemType (columnName:Option<string>) =
+        let fetchCol =
+            match columnName with
+            | None -> keyname.ToUpperInvariant()
+            | Some c -> c.ToUpperInvariant()
         let itm =
             distinctItem.ColumnValues 
             |> Seq.filter(fun (s,k) -> 
                 let sUp = s.ToUpperInvariant()
-                sUp.Contains(keyname.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
-        match itm with
-        | :? string as s when Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s when Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s when DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? int as i -> i |> box
-        | :? int16 as i -> int32 i |> box
-        | :? int64 as i -> int32 i |> box  
-        | :? float as i -> decimal i |> box
-        | :? decimal as i -> decimal i |> box
-        | :? double as i -> decimal i |> box
-        | i -> i |> box
+                sUp.Contains(fetchCol.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
+        match itm, returnType with
+        | :? string as s, t when t = typeof<Int32> && Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | :? string as s, t when t = typeof<Decimal> && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
+        | :? int as i, t when t = typeof<Int32> -> i |> box
+        | :? int as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
+        | :? int as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
+        | :? float as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
+        | :? float as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
+        | :? float as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
+        | :? float as i, t when t = typeof<float32> -> i |> box
+        | :? decimal as i, t when t = typeof<decimal> -> i |> box
+        | :? decimal as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
+        | :? decimal as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
+        | :? double as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
+        | :? double as i, t when t = typeof<double> -> i |> box
+        | :? double as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
+        | :? int16 as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
+        | :? int16 as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
+        | :? int16 as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
+        | :? int64 as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
+        | :? int64 as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
+        | :? int64 as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
+        | :? int16 as i, t -> int32 i |> box
+        | :? int64 as i, t -> int32 i |> box  
+        | i, t -> i |> box
     member __.Values = [|distinctItem|]
     interface System.Linq.IGrouping<'key, SqlEntity> with
         member __.Key = keyval
-    member __.AggregateCount<'T>() = fetchItem "[COUNT]" :?> 'T
-    member __.AggregateSum<'T>() = fetchItem "[SUM]" :?> 'T
-    member __.AggregateAvg<'T>() = fetchItem "[AVG]" :?> 'T
-    member __.AggregateMin<'T>() = fetchItem "[MIN]" :?> 'T
-    member __.AggregateMax<'T>() = fetchItem "[MAX]" :?> 'T
+    member __.AggregateCount<'T>(columnName) = fetchItem typeof<'T> "[COUNT]" columnName :?> 'T
+    member __.AggregateSum<'T>(columnName) = 
+        let x = fetchItem typeof<'T> "[SUM]" columnName 
+        x :?> 'T
+    member __.AggregateAvg<'T>(columnName) = fetchItem typeof<'T> "[AVG]" columnName :?> 'T
+    member __.AggregateMin<'T>(columnName) = fetchItem typeof<'T> "[MIN]" columnName :?> 'T
+    member __.AggregateMax<'T>(columnName) = fetchItem typeof<'T> "[MAX]" columnName :?> 'T
 
 module internal CommonTasks =
 
