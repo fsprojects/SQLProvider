@@ -62,7 +62,7 @@ module internal QueryExpressionTransformer =
             match e.NodeType, e with
             | ExpressionType.Call, (:? MethodCallExpression as e) -> 
                 let isGrouping = 
-                    e.Arguments.Count > 0 &&
+                    e.Arguments.Count = 1 &&
                     e.Arguments.[0].Type.Name.StartsWith("IGrouping")
                 let op =
                     match e.Method.Name with

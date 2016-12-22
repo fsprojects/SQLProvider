@@ -336,6 +336,7 @@ and internal SqlExp =
     | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                 // filters from the where clause(es)
+    | HavingClause of Condition * SqlExp                 // filters from the where clause(es)
     | Projection   of Expression * SqlExp                // entire LINQ projection expression tree
     | Distinct     of SqlExp                             // distinct indicator
     | OrderBy      of alias * string * bool * SqlExp     // alias and column name, bool indicates ascending sort
@@ -349,6 +350,7 @@ and internal SqlExp =
                 | BaseTable(_) -> false
                 | SelectMany(_) -> true
                 | FilterClause(_,rest)
+                | HavingClause(_,rest)
                 | Projection(_,rest)
                 | Distinct rest
                 | OrderBy(_,_,_,rest)
@@ -361,6 +363,7 @@ and internal SqlExp =
 
 and internal SqlQuery =
     { Filters       : Condition list
+      HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
       Aliases       : Map<string, Table>
       Ordering      : (alias * string * bool) list
@@ -375,7 +378,7 @@ and internal SqlQuery =
       AggregateOp   : (AggregateOperation * alias * string) list }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
-                                Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None }
+                                Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None; HavingFilters = [] }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
             let legaliseName (alias:alias) =
@@ -409,6 +412,7 @@ and internal SqlQuery =
                                         (f,s)::q.Grouping
                                     Projection = match grp.Projection with Some p -> p::q.Projection | None -> q.Projection } rest
                 | FilterClause(c,rest) ->  convert { q with Filters = (c)::q.Filters } rest
+                | HavingClause(c,rest) ->  convert { q with HavingFilters = (c)::q.HavingFilters } rest
                 | Projection(exp,rest) ->
                     convert { q with Projection = exp::q.Projection } rest
                 | Distinct(rest) ->
@@ -525,3 +529,31 @@ module internal CommonTasks =
             | _  -> () // if the primary key exists, do nothing
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
+
+    let parseHaving (keys:(alias*string) list) (conditionList : Condition list) =
+        if keys.Length <> 1 then
+            failwithf "Unsupported having. Expected 1 key column, found: %i" keys.Length
+        else
+            let basealias, key = keys.[0]
+            let replaceAlias = function "" -> basealias | x -> x
+            let replacefunc (alias:alias,itm:string,op,i) =
+                let a, k = 
+                    match itm with
+                    | "{KEY}" -> replaceAlias alias, key
+                    | "{COUNT}" -> String.Empty, "COUNT( 1 )"
+                    | "{AVG}" -> String.Empty, "AVG(" + key + ")"
+                    | "{MIN}" -> String.Empty, "MIN(" + key + ")"
+                    | "{MAX}" -> String.Empty, "MAX(" + key + ")"
+                    | x -> replaceAlias alias, x
+                a,k,op,i
+
+            let rec parseFilters conditionList = 
+                conditionList |> List.map(function 
+                    | Condition.And(curr, tail) -> 
+                        let converted = curr |> List.map replacefunc
+                        Condition.And(converted, tail |> Option.map parseFilters)
+                    | Condition.Or(curr,tail) -> 
+                        let converted = curr |> List.map replacefunc
+                        Condition.Or(curr, tail |> Option.map parseFilters)
+                    | x -> x)
+            parseFilters conditionList

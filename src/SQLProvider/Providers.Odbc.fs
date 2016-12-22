@@ -354,6 +354,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                                         (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose innersql
                                     | _ ->
                                         parameters.Add paras.[0]
+                                        if alias="" then (sprintf "%s %s %s") col (operator.ToString()) paras.[0].ParameterName
+                                        else
                                         (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
@@ -438,6 +440,13 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             if sqlQuery.Grouping.Length > 0 then
                 ~~" GROUP BY "
                 groupByBuilder()
+
+            if sqlQuery.HavingFilters.Length > 0 then
+                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving keys))]
+                ~~" HAVING "
+                filterBuilder f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then

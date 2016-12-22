@@ -466,6 +466,35 @@ let ``simple select query with groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
     
+[<Test>]
+let ``simple select query with groupBy having count``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Count() > 1)
+            where (c.Count() < 6)
+            select (c.Key, c.Count())
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(3, res.["Buenos Aires"])
+
+[<Test>]
+let ``simple select query with groupBy having key``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Key = "London") 
+            select (c.Key, c.Count()) 
+            // Not supported: select (c.Key, c.Count(fun c -> c.City = "London"))
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(6, res.["London"])
 
 [<Test>]
 let ``simple select query with groupBy date``() = 

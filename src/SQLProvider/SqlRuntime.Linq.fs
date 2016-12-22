@@ -171,7 +171,7 @@ module internal QueryImplementation =
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     return (Seq.cast<'T> (executeSql)).GetEnumerator()
                 }
-
+    
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         static member Create(table,conString,provider) =
             SqlOrderedQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
@@ -235,12 +235,19 @@ module internal QueryImplementation =
                     let toseq = executeSql |> Seq.cast<IGrouping<'TKey, 'TEntity>>
                     return toseq.GetEnumerator()
                 }
-
+    and SqlWhereType = NormalWhere | HavingWhere
     and SqlQueryProvider() =
          static member val Provider =
 
              let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
                 let paramNames = HashSet<string>()
+
+                let isHaving =
+                    let rec checkExpression = function
+                        | SelectMany(_, _,GroupQuery(_),_) -> true
+                        | HavingClause(f,ex) -> true
+                        | _ -> false
+                    checkExpression source.SqlExpression
 
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
@@ -299,6 +306,36 @@ module internal QueryImplementation =
                         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
                     | _ -> None
 
+                let (|HavingCondition|_|) exp =
+                    // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
+                    match exp with
+                    | OptionIsSome(SqlGroupingColumnGet(ti,key,_)) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.NotNull,None)
+                    | OptionIsNone(SqlGroupingColumnGet(ti,key,_))
+                    | SqlCondOp(ConditionOperator.Equal,(SqlGroupingColumnGet(ti,key,_)),OptionNone) 
+                    | SqlNegativeCondOp(ConditionOperator.Equal,(SqlGroupingColumnGet(ti,key,_)),OptionNone) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.IsNull,None)
+                    | SqlCondOp(ConditionOperator.NotEqual,(SqlGroupingColumnGet(ti,key,_)),OptionNone) 
+                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(SqlGroupingColumnGet(ti,key,_)),OptionNone) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.NotNull,None)
+                    // matches column to constant with any operator eg c.name = "john", c.age > 42
+                    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
+                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,c)
+                    // matches to another property getter, method call or new expression
+                    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))) ->
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
+                    | SqlGroupingColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
+                        paramNames.Add(ti) |> ignore
+                        Some(ti,key,ConditionOperator.Equal, Some(true |> box))
+                    | _ -> None
+
                 let rec filterExpression (exp:Expression)  =
                     let extendFilter conditions nextFilter =
                         match exp with
@@ -323,7 +360,13 @@ module internal QueryImplementation =
                     | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
-                    | _ -> failwith ("Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax. " + exp.ToString())
+                    | _ -> 
+                        if isHaving then
+                            match exp with
+                            | HavingCondition(cond) -> Condition.And([cond],None)
+                            | _ -> failwith ("Unsupported group having expression. " + exp.ToString())
+                        else
+                        failwith ("Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
                 match qual with
                 | Lambda([name],ex) ->
@@ -338,6 +381,9 @@ module internal QueryImplementation =
                             // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the filter
                             FilterClause(filter,BaseTable(name.Name,entity))
                         | current ->
+                            if isHaving then HavingClause(filter,current)
+                            else
+
                             // the following case can happen with multiple where clauses when only a single entity is selected
                             if paramNames.First() = "" || source.TupleIndex.Count = 0 then FilterClause(filter,current)
                             else FilterClause(filter,current)

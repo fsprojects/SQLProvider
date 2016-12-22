@@ -625,6 +625,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                                     | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                     | _ ->
                                         parameters.Add paras.[0]
+                                        if alias="" then (sprintf "%s %s %s") col (operator.ToString()) paras.[0].ParameterName
+                                        else
                                         (sprintf "[%s].[%s]%s %s") alias col
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
@@ -706,6 +708,13 @@ type internal MSSqlServerProvider(tableNames:string) =
             if sqlQuery.Grouping.Length > 0 then
                 ~~" GROUP BY "
                 groupByBuilder()
+
+            if sqlQuery.HavingFilters.Length > 0 then
+                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving keys))]
+                ~~" HAVING "
+                filterBuilder f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then

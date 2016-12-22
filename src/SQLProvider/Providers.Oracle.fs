@@ -675,6 +675,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                         (sprintf "%s.%s NOT IN (%s)") alias (quoteWhiteSpace col) innersql
                                     | _ ->
                                         parameters.Add paras.[0]
+                                        if alias="" then (sprintf "%s %s %s") (quoteWhiteSpace col) (operator.ToString()) paras.[0].ParameterName
+                                        else
                                         (sprintf "%s.%s %s %s") alias (quoteWhiteSpace col)
                                          (operator.ToString()) paras.[0].ParameterName)
                         )
@@ -753,6 +755,13 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             if sqlQuery.Grouping.Length > 0 then
                 ~~" GROUP BY "
                 groupByBuilder()
+
+            if sqlQuery.HavingFilters.Length > 0 then
+                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving keys))]
+                ~~" HAVING "
+                filterBuilder f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then
