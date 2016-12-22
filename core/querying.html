@@ -216,8 +216,8 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tr>
 <tr class="even">
 <td><p>groupBy</p></td>
-<td align="center"></td>
-<td></td>
+<td align="center"><p>x</p></td>
+<td><p>Initially only very simple groupBy (and having) is supported: On single-table with single-key-column and direct aggregates like <code>.Count()</code> or direct parameter calls like <code>.Sum(fun entity -&gt; entity.UnitPrice)</code>.</p></td>
 </tr>
 <tr class="odd">
 <td><p>groupJoin</p></td>
@@ -266,7 +266,7 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tr>
 <tr class="even">
 <td><p>let</p></td>
-<td align="center"><p>X</p></td>
+<td align="center"><p>x</p></td>
 <td><p>...but not using tmp variables in where-clauses</p></td>
 </tr>
 <tr class="odd">
@@ -371,8 +371,8 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tr>
 <tr class="odd">
 <td><p>where</p></td>
-<td align="center"><p>X</p></td>
-<td><p>Server side variables must be on left side and only left side of predicates (excluding boolean database fields and LINQ-Contains)</p></td>
+<td align="center"><p>x</p></td>
+<td><p>Server side variables must be on left side and only left side of predicates (excluding parentheses, boolean database fields and LINQ-Contains)</p></td>
 </tr>
 </tbody>
 </table>
