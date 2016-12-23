@@ -1,3 +1,7 @@
+### 1.0.38 - 22.12.2016
+* One table one key-column GROUP-BY support. #358
+* HasColumn(niceName) method for entities
+
 ### 1.0.37 - 09.11.2016
 * UNION queries
 * Support Space in MSSQL inserts

@@ -466,6 +466,17 @@ let ``simple select query with groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+[<Test; Ignore("Not Supported")>]
+let ``simple select query with groupBy multiple columns``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for p in dc.Main.Products do
+            groupBy (p.ReorderLevel, p.CategoryId) into c
+            select (c.Key, c.Sum(fun i -> i.UnitPrice))
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
 
 [<Test>]
 let ``simple select query with groupBy sum``() = 
