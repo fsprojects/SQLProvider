@@ -91,7 +91,8 @@ module internal QueryExpressionTransformer =
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
-
+                                // This lamda could be parsed more if we would want to support
+                                // more complex aggregate scenarios.
                                 | _ -> None
                             directAggregate la.Body
                         | _ -> None

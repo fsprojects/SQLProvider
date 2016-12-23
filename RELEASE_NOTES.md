@@ -1,3 +1,6 @@
+### 1.0.39 - 23.12.2016
+* Breaking change for number-columns: naming fixed. #355
+
 ### 1.0.38 - 22.12.2016
 * One table one key-column GROUP-BY support. #358
 * HasColumn(niceName) method for entities
