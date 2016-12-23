@@ -143,14 +143,14 @@ module internal SchemaProjections =
     let private sat f (c:option<char>) = match c with Some c when f c -> Some c | _ -> None
     let private (|EOF|_|) c = match c with Some _ -> None | _ -> Some ()
     let private (|LetterDigit|_|) = sat Char.IsLetterOrDigit
-    let private (|Upper|_|) = sat Char.IsUpper
-    let private (|Lower|_|) = sat Char.IsLower
+    let private (|Upper|_|) = sat (fun c -> Char.IsUpper c || Char.IsDigit c)
+    let private (|Lower|_|) = sat (fun c -> Char.IsLower c || Char.IsDigit c)
     
     // --------------------------------------------------------------------------------------
     
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
     let nicePascalName (s:string) = 
-      if s.Length = 1 then s.ToUpper() else
+      if s.Length = 1 then s.ToUpperInvariant() else
       // Starting to parse a new segment 
       let rec restart i = seq {
         match tryAt s i with 
@@ -182,7 +182,7 @@ module internal SchemaProjections =
       seq { for i1, i2 in restart 0 do 
               let sub = s.Substring(i1, i2 - i1) 
               if Array.forall Char.IsLetterOrDigit (sub.ToCharArray()) then
-                yield sub.[0].ToString().ToUpper() + sub.ToLower().Substring(1) }
+                yield sub.[0].ToString().ToUpperInvariant() + sub.ToLowerInvariant().Substring(1) }
       |> String.concat ""
     
     /// Turns a given non-empty string into a nice 'camelCase' identifier
