@@ -152,17 +152,17 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 <tr class="odd">
 <td><p>.Contains()</p></td>
 <td align="center"><p>X</p></td>
-<td><p>System.Linq, in where, SQL IN-clause, nested query</p></td>
+<td><p><code>open System.Linq</code>, in where, SQL IN-clause, nested query</p></td>
 </tr>
 <tr class="even">
 <td><p>.Concat()</p></td>
 <td align="center"><p>X</p></td>
-<td><p>System.Linq, SQL UNION ALL-clause</p></td>
+<td><p><code>open System.Linq</code>, SQL UNION ALL-clause</p></td>
 </tr>
 <tr class="odd">
 <td><p>.Union()</p></td>
 <td align="center"><p>X</p></td>
-<td><p>System.Linq, SQL UNION-clause</p></td>
+<td><p><code>open System.Linq</code>, SQL UNION-clause</p></td>
 </tr>
 <tr class="even">
 <td><p>all</p></td>
@@ -384,6 +384,7 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </code></pre></td>
 </tr>
 </table>
+<p>By default <code>query { ... }</code> is <code>IQueryable&lt;T&gt;</code> which is lazy. To execute the query you have to do <code>Seq.toList</code>, <code>Seq.toArray</code>, or some corresponding operation. If you don't do that but just continue inside another <code>query { ... }</code> or use System.Linq <code>.Where(...)</code> etc, that will still be combined to the same SQL-query.</p>
 <p>There are some limitation of complexity of your queries, but for example
 this is still ok and will give you very simple select-clause:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
