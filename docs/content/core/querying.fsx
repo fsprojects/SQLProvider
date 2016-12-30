@@ -78,9 +78,9 @@ let itemAsync =
 ## Supported Query Expression Keywords
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
-.Contains()              |X | System.Linq, in where, SQL IN-clause, nested query    | 
-.Concat()                |X | System.Linq, SQL UNION ALL-clause                     | 
-.Union()                 |X | System.Linq, SQL UNION-clause                         | 
+.Contains()              |X | `open System.Linq`, in where, SQL IN-clause, nested query    | 
+.Concat()                |X | `open System.Linq`, SQL UNION ALL-clause                     | 
+.Union()                 |X | `open System.Linq`, SQL UNION-clause                         | 
 all	                     |X |                                                       | 
 averageBy                |X |                                                       | 
 averageByNullable        |X |                                                       | 
@@ -132,6 +132,8 @@ To debug your SQL-clauses you can add listener for your logging framework to Sql
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 (**
+
+By default `query { ... }` is `IQueryable<T>` which is lazy. To execute the query you have to do `Seq.toList`, `Seq.toArray`, or some corresponding operation. If you don't do that but just continue inside another `query { ... }` or use System.Linq `.Where(...)` etc, that will still be combined to the same SQL-query.
 
 There are some limitation of complexity of your queries, but for example
 this is still ok and will give you very simple select-clause:
