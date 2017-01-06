@@ -489,7 +489,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         match pk.Column with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "UPDATE %s SET (%s) = (%s) WHERE "
+            ~~(sprintf "UPDATE %s SET (%s) = (SELECT %s FROM DUAL) WHERE "
                 (entity.Table.FullName)
                 (String.Join(",", columns))
                 (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName))))
