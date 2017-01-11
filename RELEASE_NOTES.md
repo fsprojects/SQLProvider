@@ -1,3 +1,6 @@
+### 1.0.41 - 11.01.2017
+* Oracle update fix. #367
+
 ### 1.0.40 - 23.12.2016
 * Breaking change for number-columns: naming fixed. #355
 
