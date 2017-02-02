@@ -265,6 +265,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     [ while reader.Read() do
                         let dt = reader.GetString(2).ToLower()
                         let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
+                        let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
                             let col =
