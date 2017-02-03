@@ -411,6 +411,17 @@ let ``simple select query with minBy``() =
     Assert.AreEqual(0m, qry)
 
 [<Test>]
+let ``simple select query with minBy2``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for ord in dc.Main.OrderDetails do
+            minBy (ord.Discount)
+        }   
+    Assert.AreEqual(0., qry)
+
+
+[<Test>]
 let ``simple select query with minBy DateTime``() = 
     let dc = sql.GetDataContext()
     let qry = 

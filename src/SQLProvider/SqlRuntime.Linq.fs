@@ -106,19 +106,7 @@ module internal QueryImplementation =
        for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
        if con.State <> ConnectionState.Open then con.Open()
-       let result =
-        match cmd.ExecuteScalar() with
-        | :? string as s when Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s when Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s when DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? int as i -> i |> box
-        | :? int16 as i -> int32 i |> box
-        | :? int64 as i -> int32 i |> box  // LINQ says we must return a 32bit int
-        | :? float as i -> decimal i |> box
-        | :? decimal as i -> decimal i |> box
-        | :? double as i -> decimal i |> box
-        | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-               failwithf "Scalar operation returned something other than a numeric value : %s " (x.GetType().ToString())
+       let result = cmd.ExecuteScalar()
        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        result
 
@@ -134,16 +122,8 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-           let result =
-            match executed with
-            | :? string as s -> Int32.Parse s
-            | :? int as i -> i
-            | :? int16 as i -> int32 i
-            | :? int64 as i -> int32 i  // LINQ says we must return a 32bit int
-            | x -> if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
-                   failwithf "Count returned something other than a 32 bit integer : %s " (x.GetType().ToString())
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-           return box result
+           return executed
        }
 
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
@@ -746,10 +726,7 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
                         let res = executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex 
-                        match res with 
-                        | :? Decimal -> let r:decimal = res |> unbox
-                                        Convert.ToInt32(r) |> box :?> 'T
-                        | _ ->  res :?> 'T
+                        (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(None, (MethodWithName "Any" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let limitedSource = 
                             {new IWithSqlService with 
@@ -804,13 +781,7 @@ module internal QueryImplementation =
                                | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
                                | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
-                        match box Unchecked.defaultof<'T>, res with 
-                        | :? Int32, :? Int32 -> res :?> 'T
-                        | :? Decimal, :? Decimal -> res :?> 'T
-                        | :? Int32, :? Decimal -> let r:decimal = res |> unbox
-                                                  Convert.ToInt32(r) |> box :?> 'T
-                        | :? Decimal, :? Int32 -> decimal(unbox(res)) |> box :?> 'T
-                        | _ ->  res :?> 'T
+                        (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(None, (MethodWithName "Contains"), [SourceWithQueryData source; 
                              OptionalQuote(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) 
                              ]) ->
@@ -825,12 +796,7 @@ module internal QueryImplementation =
                                 failwithf "Unsupported execution of contains expression `%s`" (e.ToString())
 
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
-                        let boolres =
-                            match res with 
-                            | :? Int32 as ires -> ires > 0
-                            | :? Decimal as mres -> mres > 0m
-                            | _ -> Convert.ToInt32(res) > 0
-                        boolres |> box :?> 'T                      
+                        (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(_, (MethodWithName "ElementAt"), [SourceWithQueryData source; Int position ]) ->
                         let skips = position - 1
                         executeQuery source.DataContext source.Provider (Take(1,(Skip(skips,source.SqlExpression)))) source.TupleIndex

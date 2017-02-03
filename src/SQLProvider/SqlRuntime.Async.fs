@@ -50,7 +50,7 @@ module AsyncOperations =
             match s with
             | :? IWithSqlService as svc ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
-                return res |> unbox
+                return (Utilities.convertTypes res typeof<'T>) |> unbox
             | c ->
                 return c |> Seq.length
         }

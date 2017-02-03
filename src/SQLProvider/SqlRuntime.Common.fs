@@ -482,7 +482,6 @@ and internal ISqlProvider =
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
 
-
 /// GroupResultItems is an item to create key-igrouping-structure.
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
 /// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
@@ -499,32 +498,7 @@ type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
             |> Seq.filter(fun (s,k) -> 
                 let sUp = s.ToUpperInvariant()
                 sUp.Contains(fetchCol.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
-        match itm, returnType with
-        | :? string as s, t when t = typeof<Int32> && Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s, t when t = typeof<Decimal> && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? int as i, t when t = typeof<Int32> -> i |> box
-        | :? int as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
-        | :? int as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
-        | :? float as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
-        | :? float as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
-        | :? float as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
-        | :? float as i, t when t = typeof<float32> -> i |> box
-        | :? decimal as i, t when t = typeof<decimal> -> i |> box
-        | :? decimal as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
-        | :? decimal as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
-        | :? double as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
-        | :? double as i, t when t = typeof<double> -> i |> box
-        | :? double as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
-        | :? int16 as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
-        | :? int16 as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
-        | :? int16 as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
-        | :? int64 as i, t when t = typeof<Int32> -> Convert.ToInt32(i) |> box
-        | :? int64 as i, t when t = typeof<decimal> -> Convert.ToDecimal(i) |> box
-        | :? int64 as i, t when t = typeof<double> -> Convert.ToDouble(i) |> box
-        | :? int16 as i, t -> int32 i |> box
-        | :? int64 as i, t -> int32 i |> box  
-        | i, t -> i |> box
+        Utilities.convertTypes itm returnType
     member __.Values = [|distinctItem|]
     interface System.Linq.IGrouping<'key, SqlEntity> with
         member __.Key = keyval
