@@ -1,3 +1,7 @@
+### 1.0.42 - 03.02.2017
+* SQLite spacing fix #371
+* Cast fixes #370
+
 ### 1.0.41 - 11.01.2017
 * Oracle update fix. #367
 
