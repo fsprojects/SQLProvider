@@ -49,15 +49,6 @@ connectionString key/value pair stored in App.config.
 let [<Literal>] connexStringName = "DefaultConnectionString"
 
 (**
-### Resolution Path
-Path to search for assemblies containing database vendor specific connections 
-and custom types. Type the path where SQL Server dll is stored.
-*)
-
-let [<Literal>] resPath = @"C:\Projects\Libs\YourPathHere"
-
-
-(**
 ### IndividualsAmount
 
 Sets the count to load for each individual. See [individuals](individuals.html)
