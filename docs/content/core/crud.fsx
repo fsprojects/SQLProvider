@@ -121,6 +121,27 @@ mvps2
 
 ctx.SubmitUpdates()
 
+(** update a single row 
+*)
+
+type Employee2 = {
+    Id:int
+    FirstName:string
+    LastName:string
+}
+
+let updateEmployee (employee: Employee2) =
+    query {
+        for p in ctx.Public.Employee2 do
+        where (p.Id = employee.Id)
+    }
+    |> Seq.iter( fun e ->
+        e.FirstName <- post.FirstName
+        e.LastName <- post.LastName
+    )
+    ctx.SubmitUpdates()
+
+
 (**Finally it is also possible to specify a seq of `string * obj` which is exactly the 
 output of .ColumnValues:
 *)
