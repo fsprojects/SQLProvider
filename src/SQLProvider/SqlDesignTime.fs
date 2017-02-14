@@ -18,6 +18,7 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces()
+    let myLock3 = new Object();
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let ns = "FSharp.Data.Sql"
      
@@ -37,16 +38,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
             | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
             | cs -> cs
-            
-        let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
-
-        let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
-        let con = prov.CreateConnection conString
-        this.Disposing.Add(fun _ -> 
-            if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
-                con.Dispose())
-        con.Open()
-        prov.CreateTypeMappings con
+                    
+        let rootType, prov, con = 
+            lock myLock3 (fun () ->
+                let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
+                let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
+                let con = prov.CreateConnection conString
+                this.Disposing.Add(fun _ -> 
+                    if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
+                        con.Dispose())
+                con.Open()
+                prov.CreateTypeMappings con
+                rootType, prov, con)
         
         let tables = lazy prov.GetTables(con,caseSensitivity)
         let tableColumns =
