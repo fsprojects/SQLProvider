@@ -136,8 +136,8 @@ let updateEmployee (employee: Employee2) =
         where (p.Id = employee.Id)
     }
     |> Seq.iter( fun e ->
-        e.FirstName <- post.FirstName
-        e.LastName <- post.LastName
+        e.FirstName <- employee.FirstName
+        e.LastName <- employee.LastName
     )
     ctx.SubmitUpdates()
 
