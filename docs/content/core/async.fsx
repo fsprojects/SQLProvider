@@ -86,12 +86,16 @@ type MyWebServer() =
 
 The functions to work with asynchrony are:
 
+* Array.executeQueryAsync : IQueryable<'a> -> Async<<'a> []>
+* List.executeQueryAsync : IQueryable<'a> -> Async<'a list>
 * Seq.executeQueryAsync : IQueryable<'a> -> Async<seq<'a>>
 * Seq.lengthAsync : IQueryable<'a> -> Async<int>
 * Seq.headAsync : IQueryable<'a> -> Async<'a>
 * Seq.tryHeadAsync : IQueryable<'a> -> Async<'a option>
 * and for your data context: SubmitUpdatesAsync : unit -> Async<Unit>
 
+Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync 
+to not execute your queries several times.
 
 #### Database asynchrony can't be used as a way to do parallelism inside one context. 
 
