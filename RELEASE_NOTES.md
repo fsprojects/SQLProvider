@@ -1,3 +1,6 @@
+### 1.0.43 - 22.02.2017
+* Added Array.executeQueryAsync and List.executeQueryAsync
+
 ### 1.0.42 - 03.02.2017
 * SQLite spacing fix #371
 * Cast fixes #370
