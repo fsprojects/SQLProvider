@@ -36,7 +36,7 @@ All database vendors except SQL Server and MS Access will require 3rd party ADO.
 
 SQLite is based on the .NET drivers found [here](http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki). You will need the correct version for your specific architecture and setup.
 
-PostgreSQL is based on the .NET drivers found [here](http://npgsql.projects.pgfoundry.org/).  The type provider will make frequent calls to the database. I found that using the default settings for the PostgreSQL server on my Windows machine would deny the provider constant access - you may need to try setting  `Pooling=false` in the connection string, increasing timeouts or setting other relevant security settings to enable a frictionless experience.
+PostgreSQL is based on the Npgsql .NET drivers found [here](http://www.npgsql.org/doc/). The type provider will make frequent calls to the database. Npgsql provides a set of [performance related connection strings parameters](http://www.npgsql.org/doc/connection-string-parameters.html#performance) for tweaking its performance
 
 MySQL is based on the .NET drivers found [here](http://dev.mysql.com/downloads/connector/net/1.0.html). You will need the correct version for your specific architecture and setup. You also need to specify ResolutionPath, which points to the folder containing the dll files for the MySQL driver.
 
