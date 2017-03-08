@@ -121,6 +121,47 @@ mvps2
 
 ctx.SubmitUpdates()
 
+(** update a single row
+    assuming Id is unique
+*)
+
+type Employee2 = {
+    Id:int
+    FirstName:string
+    LastName:string
+}
+
+let updateEmployee (employee: Employee2) =
+    let foundEmployee = query {
+        for p in ctx.Public.Employee2 do
+        where (p.Id = employee.Id)
+        exactlyOneOrDefault
+    }
+    if not (isNull foundEmployee) then
+        foundEmployee.FirstName <- employee.FirstName
+        foundEmployee.LastName <- employee.LastName
+    ctx.SubmitUpdates()
+
+let updateEmployee' (employee: Employee2) =
+    query {
+        for p in ctx.Public.Employee2 do
+        where (p.Id = employee.Id)
+    }
+    |> Seq.iter( fun e ->
+        e.FirstName <- employee.FirstName
+        e.LastName <- employee.LastName
+    )
+    ctx.SubmitUpdates()
+
+let john = {
+  Id = 1
+  FirstName = "John"
+  LastName = "Doe" }
+
+updateEmployee john
+updateEmployee' john
+
+
 (**Finally it is also possible to specify a seq of `string * obj` which is exactly the 
 output of .ColumnValues:
 *)
