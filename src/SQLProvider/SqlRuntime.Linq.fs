@@ -273,12 +273,20 @@ module internal QueryImplementation =
                         Some(ti,key,ConditionOperator.NotNull,None)
                     // matches column to constant with any operator eg c.name = "john", c.age > 42
                     | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
-                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) ->
+                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))))
+                    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) 
+                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,c)
+                    // matches column to column e.g. c.col1 > c.col2
+                    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) 
+                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) ->
+                        Some(ti,key,op,Some((ti2,key2) |> box))
                     // matches to another property getter, method call or new expression
                     | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))) ->
+                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+                    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
+                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
                     | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
@@ -346,7 +354,7 @@ module internal QueryImplementation =
                             | HavingCondition(cond) -> Condition.And([cond],None)
                             | _ -> failwith ("Unsupported group having expression. " + exp.ToString())
                         else
-                        failwith ("Unsupported expression. Ensure all server-side objects appear on the left hand side of predicates.  The In and Not In operators only support the inline array syntax. " + exp.ToString())
+                        failwith ("Unsupported expression. Ensure all server-side objects won't have any .NET-operators/methods that can't be converted to SQL. The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
                 match qual with
                 | Lambda([name],ex) ->
