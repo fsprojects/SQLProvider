@@ -171,7 +171,8 @@ let (|SqlColumnGet|_|) = function
     | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
         match o with
         | :? MemberExpression as m  -> Some(m.Member.Name,key,meth.ReturnType) 
-        | _ -> Some(String.Empty,key,meth.ReturnType) 
+        | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,key,meth.ReturnType) 
+        | _ -> None
     | _ -> None
 
 let (|SqlGroupingColumnGet|_|) (e:Expression) = 

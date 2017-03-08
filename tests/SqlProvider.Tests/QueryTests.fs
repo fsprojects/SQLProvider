@@ -277,6 +277,33 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", qry.[0].City)
 
 [<Test >]
+let ``simple select where query right side``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where ("ALFKI" = cust.CustomerId)
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(1, qry.Length)
+    Assert.AreEqual("Berlin", qry.[0].City)
+
+[<Test >]
+let ``simple select where query between col properties``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for order in dc.Main.Orders do
+            where (order.ShippedDate > order.RequiredDate)
+            select (order.ShippedDate, order.RequiredDate)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(37, qry.Length)
+
+[<Test >]
 let ``simple nth query``() =
     let dc = sql.GetDataContext()
     let qry = 

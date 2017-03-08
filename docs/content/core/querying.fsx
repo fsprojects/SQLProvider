@@ -122,7 +122,7 @@ thenBy	                 |X |                                                    
 thenByDescending	     |X |                                                       |   
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
-where                    |x | Server side variables must be on left side and only left side of predicates (excluding parentheses, boolean database fields and LINQ-Contains) | 
+where                    |x | Server side variables must be plain without .NET operations, so you can't say where (col.Days(+1)>2)  | 
 *)
 
 (**

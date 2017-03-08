@@ -353,12 +353,16 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                                         Array.iter parameters.Add innerpars
                                         (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose innersql
                                     | _ ->
-                                        parameters.Add paras.[0]
-                                        if alias="" then (sprintf "%s %s %s") col (operator.ToString()) paras.[0].ParameterName
-                                        else
-                                        (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col
-                                         (operator.ToString()) paras.[0].ParameterName)
-                        )
+                                        let aliasformat = if alias<>"" then (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col else (sprintf "%s %s %s") col
+                                        match data with 
+                                        | Some d when (box d :? alias * string) ->
+                                            let alias2, col2 = box d :?> (alias * string)
+                                            let alias2f = if alias2<>"" then (sprintf "%c%s%c.%s") cOpen alias2 cClose col2 else col2
+                                            aliasformat (operator.ToString()) alias2f
+                                        | _ ->
+                                            parameters.Add paras.[0]
+                                            aliasformat (operator.ToString()) paras.[0].ParameterName
+                        ))
                         // there's probably a nicer way to do this
                         let rec aux = function
                             | x::[] when preds.Length > 0 ->
