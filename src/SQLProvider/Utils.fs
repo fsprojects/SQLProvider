@@ -64,12 +64,8 @@ module internal Utilities =
         match isMono with
         | true -> new Transactions.TransactionScope()
         | false ->
-            // Mono would fail to compilation, so we have to construct this via reflection:
-            // new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
-            let transactionAssembly = System.Reflection.Assembly.GetAssembly typeof<System.Transactions.TransactionScope>
-            let asynctype = transactionAssembly.GetType "System.Transactions.TransactionScopeAsyncFlowOption"
-            let transaction = typeof<System.Transactions.TransactionScope>.GetConstructor [|asynctype|]
-            transaction.Invoke [|1|] :?> System.Transactions.TransactionScope
+            // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
+            new Transactions.TransactionScope(System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
 
     let parseAggregates fieldNotation fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
