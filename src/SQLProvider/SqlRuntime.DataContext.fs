@@ -24,7 +24,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName,connectionString:string,providerType,resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary) =
+type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -60,7 +60,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
-                provider.ProcessUpdates(con, pendingChanges)
+                provider.ProcessUpdates(con, pendingChanges, transactionOptions)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             )
 
@@ -70,7 +70,7 @@ type public SqlDataContext (typeName,connectionString:string,providerType,resolu
                 let maxWait = DateTime.Now.AddSeconds(3.)
                 while (pendingChanges |> Seq.exists(fun e -> match e.Key._State with Unchanged | Deleted -> true | _ -> false)) && DateTime.Now < maxWait do
                     do! Async.Sleep 150 // we can't let async lock but this helps.
-                do! provider.ProcessUpdatesAsync(con, pendingChanges)
+                do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             }
 
