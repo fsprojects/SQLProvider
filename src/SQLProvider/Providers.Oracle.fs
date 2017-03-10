@@ -788,7 +788,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 let sql = sb.ToString()
                 (sql,parameters)
 
-        member this.ProcessUpdates(con, entities) =
+        member this.ProcessUpdates(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
@@ -800,7 +800,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
 
             con.Open()
 
-            use scope = Utilities.ensureTransaction()
+            use scope = Utilities.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -837,7 +837,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
@@ -848,7 +848,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             else
 
             async {
-                use scope = Utilities.ensureTransaction()
+                use scope = Utilities.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()

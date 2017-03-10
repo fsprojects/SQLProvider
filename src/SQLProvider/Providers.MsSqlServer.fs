@@ -742,7 +742,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities) =
+        member this.ProcessUpdates(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -750,7 +750,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             if entities.Count = 0 then 
                 ()
             else
-            use scope = Utilities.ensureTransaction()
+            use scope = Utilities.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -784,7 +784,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -794,7 +794,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             else
 
             async {
-                use scope = Utilities.ensureTransaction()
+                use scope = Utilities.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()

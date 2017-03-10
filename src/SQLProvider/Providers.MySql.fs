@@ -699,7 +699,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities) =
+        member this.ProcessUpdates(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -710,7 +710,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             con.Open()
 
-            use scope = Utilities.ensureTransaction()
+            use scope = Utilities.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -745,7 +745,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -756,7 +756,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
             async {
 
-                use scope = Utilities.ensureTransaction()
+                use scope = Utilities.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
