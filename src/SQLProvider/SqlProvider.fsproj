@@ -68,6 +68,7 @@
     <Compile Include="DataTable.fs" />
     <Compile Include="SqlRuntime.Patterns.fs" />
     <Compile Include="QuotationHelpers.fs" />
+    <Compile Include="SqlRuntime.Transactions.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MSAccess.fs" />

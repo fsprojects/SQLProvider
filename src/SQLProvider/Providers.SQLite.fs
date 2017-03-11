@@ -6,6 +6,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
 open FSharp.Data.Sql
+open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
@@ -557,7 +558,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
             con.Open()
 
-            use scope = Utilities.ensureTransaction transactionOptions
+            use scope = TransactionUtils.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -600,7 +601,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             else
 
             async {
-                use scope = Utilities.ensureTransaction transactionOptions
+                use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
