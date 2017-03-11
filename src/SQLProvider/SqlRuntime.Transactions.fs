@@ -28,7 +28,7 @@ module internal TransactionUtils =
         | IsolationLevel.Snapshot -> System.Transactions.IsolationLevel.Snapshot
         | IsolationLevel.Chaos -> System.Transactions.IsolationLevel.Chaos
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
-        | _ -> failwithf "Unhandled TransactionIsolationLevel value: %A." isolationLevel
+        | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
     let fromSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
