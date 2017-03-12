@@ -54,21 +54,6 @@ module internal Utilities =
             }
         | [] -> async { () }
 
-
-    let ensureTransaction (transactionOptions : Transactions.TransactionOptions) =
-        // Todo: Take TransactionScopeAsyncFlowOption into use when implemented in Mono.
-        // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
-        // However, default option for TransactionScopeOption is Required, so you can create top level transaction
-        // and this Mono-transaction will have its properties.
-        let transactionScopeOption = Transactions.TransactionScopeOption.Required
-
-        let isMono = Type.GetType ("Mono.Runtime") <> null
-        match isMono with
-        | true -> new Transactions.TransactionScope(transactionScopeOption, transactionOptions)
-        | false ->
-            // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
-            new Transactions.TransactionScope(transactionScopeOption, transactionOptions, Transactions.TransactionScopeAsyncFlowOption.Enabled)
-
     let parseAggregates fieldNotation fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
             match query with

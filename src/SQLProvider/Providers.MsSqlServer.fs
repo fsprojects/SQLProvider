@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Data
 open System.Data.SqlClient
 open FSharp.Data.Sql
+open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
@@ -750,7 +751,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             if entities.Count = 0 then 
                 ()
             else
-            use scope = Utilities.ensureTransaction transactionOptions
+            use scope = TransactionUtils.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -794,7 +795,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             else
 
             async {
-                use scope = Utilities.ensureTransaction transactionOptions
+                use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()

@@ -1,15 +1,15 @@
 ﻿namespace FSharp.Data.Sql
 
-open FSharp.Data.Sql.Runtime
-open FSharp.Data.Sql.Common
-
 open System
 open System.Data
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
+open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
+open FSharp.Data.Sql.Runtime
+open FSharp.Data.Sql.Common
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
@@ -68,7 +68,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
-        let transactionOptions = new System.Transactions.TransactionOptions()
+        let transactionOptions = TransactionOptions.Default
         let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
@@ -477,7 +477,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
              ])
         
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
-        let defaultTransactionOptionsExpr = <@@ new System.Transactions.TransactionOptions() @@>
+        let defaultTransactionOptionsExpr = <@@ TransactionOptions.Default @@>
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
             [ let meth = 
@@ -518,7 +518,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
               yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("transactionOptions", typeof<System.Transactions.TransactionOptions>)],
+              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
                                                                 let runtimePath = config.ResolutionFolder
@@ -534,28 +534,28 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    
               yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("transactionOptions", typeof<System.Transactions.TransactionOptions>); ProvidedParameter("connectionString",typeof<string>)], 
+              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)], 
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args ->
                                                                 let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[1], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0]) :> ISqlDataContext @@> ))
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1]) :> ISqlDataContext @@> ))
                       
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>
-                              <param name='connectionString'>The database connection string</param>"
+                              <param name='connectionString'>The database connection string</param>
+                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>"
               yield meth
 
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("transactionOptions", typeof<System.Transactions.TransactionOptions>); ProvidedParameter("connectionString",typeof<string>); ProvidedParameter("resolutionPath",typeof<string>)],
+              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("resolutionPath", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
                                                             serviceType, IsStaticMethod=true,
                                                             InvokeCode = (fun args -> 
                                                                 let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[1], dbVendor, %%args.[2], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0]) :> ISqlDataContext  @@>))
+                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2]) :> ISqlDataContext  @@>))
 
               meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>
                               <param name='connectionString'>The database connection string</param>
-                              <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
+                              <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>
+                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>"
               yield meth
 
             ])
