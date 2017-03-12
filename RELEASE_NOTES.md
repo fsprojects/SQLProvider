@@ -1,3 +1,7 @@
+### 1.0.44 - 12.03.2017
+* GetDataContext overload for passing in the TransactionOptions instance
+* On where-clauses plain SQL-columns can be now on both sides of operations
+
 ### 1.0.43 - 22.02.2017
 * Added Array.executeQueryAsync and List.executeQueryAsync
 
