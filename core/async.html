@@ -123,6 +123,10 @@ situation is that MS-SQL-server handles async well and MySQL not so.)</p>
 <li>Seq.headAsync : IQueryable<'a> -&gt; Async<'a></li>
 <li>Seq.tryHeadAsync : IQueryable<'a> -&gt; Async<'a option></li>
 <li>and for your data context: SubmitUpdatesAsync : unit -&gt; Async<Unit></li>
+<li>Seq.sumAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.minAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.maxAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.averageAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
 </ul>
 <p>Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync
 to not execute your queries several times.</p>
