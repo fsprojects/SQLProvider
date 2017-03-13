@@ -1,3 +1,6 @@
+### 1.0.45 - 13.03.2017
+* More async operations.
+
 ### 1.0.44 - 12.03.2017
 * GetDataContext overload for passing in the TransactionOptions instance
 * On where-clauses plain SQL-columns can be now on both sides of operations
