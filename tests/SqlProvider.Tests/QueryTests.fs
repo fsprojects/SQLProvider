@@ -855,6 +855,16 @@ let ``simple sumBy``() =
     Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
 
 [<Test>]
+let ``simple async sum``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            select od.UnitPrice
+        } |> Seq.sumAsync |> Async.RunSynchronously
+    Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
+
+[<Test>]
 let ``simple averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 

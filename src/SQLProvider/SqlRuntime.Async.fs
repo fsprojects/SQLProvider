@@ -5,6 +5,7 @@ open System
 open System.Collections.Generic
 open QueryImplementation
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql.Patterns
 
 module AsyncOperations =
 
@@ -55,6 +56,34 @@ module AsyncOperations =
                 return c |> Seq.length
         }
 
+    let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : Async<'T> =
+        async {
+            match s with
+            | :? IWithSqlService as svc ->
+                match svc.SqlExpression with
+                | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]),_) ->
+                    let alias =
+                            match entity with
+                            | "" when source.SqlExpression.HasAutoTupled() -> param
+                            | "" -> ""
+                            | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                    let sqlExpression =
+                            match agg, source.SqlExpression with
+                            | "Sum", BaseTable("",entity)  -> AggregateOp(Sum(None),"",key,BaseTable(alias,entity))
+                            | "Sum", _ ->  AggregateOp(Sum(None),alias,key,source.SqlExpression)
+                            | "Max", BaseTable("",entity)  -> AggregateOp(Max(None),"",key,BaseTable(alias,entity))
+                            | "Max", _ ->  AggregateOp(Max(None),alias,key,source.SqlExpression)
+                            | "Min", BaseTable("",entity)  -> AggregateOp(Min(None),"",key,BaseTable(alias,entity))
+                            | "Min", _ ->  AggregateOp(Min(None),alias,key,source.SqlExpression)
+                            | "Average", BaseTable("",entity)  -> AggregateOp(Avg(None),"",key,BaseTable(alias,entity))
+                            | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
+                            | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
+                    let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex 
+                    return (Utilities.convertTypes res typeof<'T>) |> unbox
+                | _ -> return failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+            | c -> return failwithf "Supported only on SQLProvider dataase IQueryables"
+        }
+
 open AsyncOperations
 
 module Seq =
@@ -68,6 +97,14 @@ module Seq =
     /// Execute SQLProvider query to take one result and release the OS thread while query is being executed.
     /// Returns None if no elements exists.
     let tryHeadAsync = getTryHeadAsync
+    /// Execute SQLProvider query to get the sum of elements, and release the OS thread while query is being executed.
+    let sumAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Sum"
+    /// Execute SQLProvider query to get the max of elements, and release the OS thread while query is being executed.
+    let maxAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Max"
+    /// Execute SQLProvider query to get the min of elements, and release the OS thread while query is being executed.
+    let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Min"
+    /// Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
+    let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Average"
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.
