@@ -400,7 +400,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                                   ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
                                                   AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
                                            )   pk
-                                  ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
+                                  ON (c.TABLE_CATALOG = pk.TABLE_CATALOG OR pk.TABLE_CATALOG IS NULL)
                                               AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
                                               AND c.TABLE_NAME = pk.TABLE_NAME
                                               AND c.COLUMN_NAME = pk.COLUMN_NAME
