@@ -1,3 +1,6 @@
+### 1.0.47 - 18.03.2017
+* Support for updating records on MySQL before 5.5 #384
+
 ### 1.0.46 - 14.03.2017
 * Fix for #380, where-conditions on joined tables with itm.x > itm.y
 
