@@ -1,3 +1,6 @@
+### 1.0.46 - 14.03.2017
+* Fix for #380, where-conditions on joined tables with itm.x > itm.y
+
 ### 1.0.45 - 13.03.2017
 * More async operations.
 
