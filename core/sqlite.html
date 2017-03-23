@@ -68,10 +68,7 @@ manually copy the interop libraries:</p>
 on Windows: copy <code>x64</code> and <code>x86</code> subdirectories from SQLite build directory, which typically is 
 <code>&lt;project root&gt;\packages\System.Data.SQLite.Core.&lt;version&gt;\build\net46</code>.
 </li>
-<li>
-on Linux: first build the <code>libSQLite.Interop.so</code> using <code>&lt;srcDir&gt;/Setup/compile-interop-assembly-release.sh</code> script from System.Data.SQLite
-source distribution <code>sqlite-netFx-source-1.x.xxx.x.zip</code>. And then copy it from <code>&lt;srcDir&gt;/bin/2013/Release/bin/</code>.
-</li>
+<li>on Linux: first build the <code>libSQLite.Interop.so</code> using <code>&lt;srcDir&gt;/Setup/compile-interop-assembly-release.sh</code> script from <a href="https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki">System.Data.SQLite source distribution</a> <code>sqlite-netFx-source-1.x.xxx.x.zip</code>. And then copy it from <code>&lt;srcDir&gt;/bin/2013/Release/bin/</code>.</li>
 </ul>
 <p>If <code>System.Data.SQLite.dll</code> is in the location where NuGet places it by default, you don't have to submit
 the ResolutionPath parameter at all, but you still need to copy the interop libraries as described above.</p>
