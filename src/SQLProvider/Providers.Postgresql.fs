@@ -47,7 +47,7 @@ module PostgreSQL =
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())   
 
-    let getDbType(providerType) =
+    let getDbType(providerType : int) =
         let parameterType = parameterType.Value
         let p = Activator.CreateInstance(parameterType, [| |]) :?> IDbDataParameter
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
@@ -120,9 +120,13 @@ module PostgreSQL =
     // store the enum value for Array; it will be combined later with the generic argument
     let arrayProviderDbType = lazy (Option.get <| parseDbType "Array")        
     
+    /// Pairs a CLR type with a value of Npgsql's type enumeration
     let typemap' t = List.tryPick parseDbType >> Option.map (fun dbType -> t, dbType)
-    let typemap<'t> = typemap' typeof<'t>
 
+    /// Pairs a CLR type with a value of Npgsql's type enumeration
+    let typemap<'t> = typemap' typeof<'t>
+    
+    /// Pairs a CLR type with a value of Npgsql's type enumeration
     let namemap name dbTypes = findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
 
     let createTypeMappings () =
@@ -132,7 +136,6 @@ module PostgreSQL =
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
-              "int8"                        , typemap<int64>                      ["Bigint"]
 
               "bit",                    (if isLegacyVersion.Value
                                          then typemap<bool>                       ["Bit"]
@@ -157,7 +160,6 @@ module PostgreSQL =
               "inet"                        , typemap<IPAddress>                  ["Inet"]
             //"int2vector"                  , typemap<short[]>                    ["Int2Vector"]
               "integer"                     , typemap<int32>                      ["Integer"]
-              "int4"                        , typemap<int32>                      ["Integer"]
 
               "interval"                    , typemap<TimeSpan>                   ["Interval"]
               "json"                        , typemap<string>                     ["Json"]
@@ -183,11 +185,10 @@ module PostgreSQL =
               "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
               
               "smallint"                    , typemap<int16>                      ["Smallint"]
-              "int2"                        , typemap<int16>                      ["Smallint"]
 
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
-              "time without time zone"      , typemap<TimeSpan>                   ["Time"]
+              "time without time zone"      , typemap<TimeSpan>                   ["Time"]              
               "time with time zone",    (if isLegacyVersion.Value
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
                                          else typemap<DateTimeOffset>             ["TimeTZ"])
@@ -204,19 +205,33 @@ module PostgreSQL =
             //"enum"                        , typemap<obj>                        ["Enum"]
             //"range"                       , typemap<Array>                      ["Range"]
               ]
-            |> List.choose (fun (name,dbt) ->
-                dbt |> Option.map (fun (clrType,providerType) ->
-                    { ProviderTypeName = Some(name)
-                      ClrType = clrType.AssemblyQualifiedName
-                      DbType = getDbType providerType
-                      ProviderType = Some(providerType) }))
-
-        let dbMappings =
-            mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.choose 
+                   (function
+                   | name, Some(clrType, providerType) -> 
+                       Some (name, { ProviderTypeName = Some(name)
+                                     ClrType = clrType.AssemblyQualifiedName
+                                     DbType = getDbType providerType
+                                     ProviderType = Some(providerType) })    
+                   | _ -> None
+                   )
             |> Map.ofList
+        
+        let resolveAlias = function
+            | "int8" -> "bigint"
+            | "bool" -> "boolean"
+            | "varbit" -> "bit varying"
+            | "char" -> "character"
+            | "varchar" -> "character varying"
+            | "float8" -> "double precision"
+            | "int" | "int4" -> "integer"
+            | "float4" -> "real"
+            | "decimal" -> "numeric"
+            | "int2" -> "smallint"
+            | "timetz" -> "time with time zone"
+            | "timestamptz" -> "timestamp with time zone"
+            | x -> x                
 
-        findDbType <- dbMappings.TryFind
+        findDbType <- resolveAlias >> mappings.TryFind
 
     let createConnection connectionString =
         try
@@ -709,10 +724,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                             | None -> failwithf "Could not get columns for `%s`, the array type `%s` is unknown to Npgsql type mapping" table.FullName arrayTypeName
                                             // then we convert it to a type mapping for the array
                                             | Some t ->
+                                                // binary-add the array type to the bitflag
+                                                let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                                                
+
                                                 { ProviderTypeName = Some "array"
                                                 ; ClrType = Type.GetType(m.ClrType).MakeArrayType().AssemblyQualifiedName
-                                                ; ProviderType = Some (t ||| PostgreSQL.arrayProviderDbType.Value) // add the array type to the bitflag
-                                                ; DbType = PostgreSQL.getDbType PostgreSQL.arrayProviderDbType.Value                          }
+                                                ; ProviderType = Some providerType
+                                                ; DbType = PostgreSQL.getDbType providerType
+                                                }
                                            )
                                         
                                 match typeMapping with
