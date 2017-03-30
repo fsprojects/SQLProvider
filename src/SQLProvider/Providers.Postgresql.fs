@@ -453,6 +453,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             PostgreSQL.owner <- owner
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = t
+        member __.GetColumnDescription(con,t,c) = c + t
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value

@@ -389,6 +389,48 @@ type internal MSSqlServerProvider(tableNames:string) =
         cmd
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = 
+            let tn = t.Substring(t.LastIndexOf(".")+1) 
+            let baseq =
+                """select sep.value
+                from sys.tables st
+                left join sys.extended_properties sep on st.object_id = sep.major_id
+                                                        and (sep.minor_id is null or sep.minor_id =0)
+                                                        and sep.name = 'MS_Description'
+                where st.name = @TableName"""
+            use com = new SqlCommand(baseq,con:?>SqlConnection)
+            com.Parameters.AddWithValue("@TableName",tn) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            if reader.Read() then
+                let itm = reader.GetSqlString(0)
+                if itm.Value <> null then
+                    ": " + reader.GetSqlString(0).Value.ToString()
+                else ""
+            else ""
+
+        member __.GetColumnDescription(con,t,c) =
+            let tn = t.Substring(t.LastIndexOf(".")+1) 
+            let baseq =
+                """select sep.value
+                from sys.tables st
+                inner join sys.columns sc on st.object_id = sc.object_id
+                left join sys.extended_properties sep on st.object_id = sep.major_id
+                                                        and sc.column_id = sep.minor_id
+                                                        and sep.name = 'MS_Description'
+                where st.name = @TableName
+                and sc.name = @ColumnName"""
+            use com = new SqlCommand(baseq,con:?>SqlConnection)
+            com.Parameters.AddWithValue("@TableName",tn) |> ignore
+            com.Parameters.AddWithValue("@ColumnName",c) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            if reader.Read() then
+                try
+                    reader.GetSqlString(0).Value.ToString()
+                with 
+                | :? InvalidCastException -> ""
+            else ""
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value

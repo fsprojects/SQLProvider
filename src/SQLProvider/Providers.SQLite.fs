@@ -198,6 +198,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         cmd
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = t
+        member __.GetColumnDescription(con,t,c) = c + t
         member __.CreateConnection(connectionString) =
             //Forces relative paths to be relative to the Runtime assembly
             let basePath =

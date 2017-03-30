@@ -212,6 +212,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
+                        prop.AddXmlDocDelayed(fun () -> "<summary>" + prov.GetColumnDescription(con, key, c.Name) + "</summary>")
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
@@ -449,11 +450,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
-                prop.AddXmlDoc (sprintf "<summary>%s</summary>" desc)
+
+                prop.AddXmlDocDelayed (fun () -> sprintf "<summary>%s</summary>" (desc + (prov.GetTableDescription(con, ct.Name))))
                 schemaType.AddMember ct
                 schemaType.AddMember prop
-
-
 
                 yield entityType :> MemberInfo
                 //yield ct         :> MemberInfo                

@@ -535,6 +535,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         Oracle.resolutionPath <- resolutionPath
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = t
+        member __.GetColumnDescription(con,t,c) = c + t
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value

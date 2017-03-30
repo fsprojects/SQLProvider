@@ -360,6 +360,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         MySql.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = t
+        member __.GetColumnDescription(con,t,c) = c + t
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter false param value

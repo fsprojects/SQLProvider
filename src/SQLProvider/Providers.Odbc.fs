@@ -184,6 +184,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         cmd
 
     interface ISqlProvider with
+        member __.GetTableDescription(con,t) = t
+        member __.GetColumnDescription(con,t,c) = c + t
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
 
