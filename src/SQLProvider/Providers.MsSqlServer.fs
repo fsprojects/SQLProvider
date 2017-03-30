@@ -493,13 +493,21 @@ type internal MSSqlServerProvider(tableNames:string) =
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
             let res = MSSqlServer.connect con (fun con ->
-                use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let baseq1 = sprintf "%s WHERE KCU2.TABLE_NAME = @tblName" baseQuery 
+                use com1 = new SqlCommand(baseq1,con:?>SqlConnection)
+                com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore
+                if con.State <> ConnectionState.Open then con.Open()
+                use reader = com1.ExecuteReader()
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
                                 ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
                 reader.Dispose()
-                use reader = MSSqlServer.executeSql (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
+                let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
+                use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
+                com2.Parameters.AddWithValue("@tblName",table.Name) |> ignore
+                if con.State <> ConnectionState.Open then con.Open()
+                use reader = com2.ExecuteReader()
                 let parents =
                     [ while reader.Read() do
                         yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
