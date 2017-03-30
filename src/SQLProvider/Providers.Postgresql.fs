@@ -45,7 +45,7 @@ module PostgreSQL =
     let parameterType = lazy (getType "NpgsqlParameter")
     let dbType = lazy (getType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
-    let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
+    let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())   
 
     let getDbType(providerType) =
         let parameterType = parameterType.Value
@@ -55,8 +55,8 @@ module PostgreSQL =
 
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let parseDbType (ty: Type) dbt =
-        try Some(ty, Enum.Parse(dbType.Value, dbt) |> unbox<int>)
+    let parseDbType dbTypeName =
+        try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
         with _ -> None
 
     let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
@@ -117,12 +117,23 @@ module PostgreSQL =
             | false -> sprintf "\"%s.%s\"" al
         Utilities.genericAliasNotation aliasSprint col
 
+    // store the enum value for Array; it will be combined later with the generic argument
+    let arrayProviderDbType = lazy (Option.get <| parseDbType "Array")        
+    
+    let typemap' t = List.tryPick parseDbType >> Option.map (fun dbType -> t, dbType)
+    let typemap<'t> = typemap' typeof<'t>
+
+    let namemap name dbTypes = findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
+
     let createTypeMappings () =
+            
         // http://www.npgsql.org/doc/2.2/
         // http://www.npgsql.org/doc/3.0/types.html
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
+              "int8"                        , typemap<int64>                      ["Bigint"]
+
               "bit",                    (if isLegacyVersion.Value
                                          then typemap<bool>                       ["Bit"]
                                          else typemap<BitArray>                   ["Bit"])
@@ -146,6 +157,8 @@ module PostgreSQL =
               "inet"                        , typemap<IPAddress>                  ["Inet"]
             //"int2vector"                  , typemap<short[]>                    ["Int2Vector"]
               "integer"                     , typemap<int32>                      ["Integer"]
+              "int4"                        , typemap<int32>                      ["Integer"]
+
               "interval"                    , typemap<TimeSpan>                   ["Interval"]
               "json"                        , typemap<string>                     ["Json"]
               "jsonb"                       , typemap<string>                     ["Jsonb"]
@@ -168,7 +181,10 @@ module PostgreSQL =
               "refcursor"                   , typemap<SqlEntity[]>                ["Refcursor"]
               "regtype"                     , typemap<uint32>                     ["Regtype"]
               "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
+              
               "smallint"                    , typemap<int16>                      ["Smallint"]
+              "int2"                        , typemap<int16>                      ["Smallint"]
+
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
               "time without time zone"      , typemap<TimeSpan>                   ["Time"]
@@ -184,7 +200,6 @@ module PostgreSQL =
               "uuid"                        , typemap<Guid>                       ["Uuid"]
               "xid"                         , typemap<uint32>                     ["Xid"]
               "xml"                         , typemap<string>                     ["Xml"]
-            //"array"                       , typemap<Array>                      ["Array"]
             //"composite"                   , typemap<obj>                        ["Composite"]
             //"enum"                        , typemap<obj>                        ["Enum"]
             //"range"                       , typemap<Array>                      ["Range"]
@@ -636,6 +651,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
 
         member __.GetColumns(con,table) =
             Monitor.Enter columnLookup
+
+            let (|ArrayColumn|AtomicColumn|) (reader : IDataReader) = 
+                let dataType = Sql.dbUnbox<string> reader.["data_type"]
+                if dataType.ToLower() = "array"
+                    // for array columns, the actual data type is stored in [udt_name] with a "_" prefix, e.g. "_numeric"
+                    then ArrayColumn ((Sql.dbUnbox<string> reader.["udt_name"]).ToLower().Substring(1))
+                    else AtomicColumn dataType
+
             try
                 match columnLookup.TryGetValue table.FullName with
                 | (true,data) when data.Count > 0 -> data
@@ -645,6 +668,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                               c.character_maximum_length,
                                               c.numeric_precision,
                                               c.is_nullable,
+                                              c.udt_name,
                                               (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
                                         FROM  information_schema.columns c
                                               LEFT JOIN  (SELECT  ku.table_catalog,
@@ -672,6 +696,26 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do
+                                
+                                let typeMapping = 
+                                    match reader with
+                                    | AtomicColumn typeName ->
+                                        PostgreSQL.findDbType (typeName.ToLower())
+                                    | ArrayColumn arrayTypeName ->
+                                        // first we get the type mapping for the data type
+                                        PostgreSQL.findDbType (arrayTypeName.ToLower())
+                                        |> Option.map (fun m ->
+                                            match m.ProviderType  with  
+                                            | None -> failwithf "Could not get columns for `%s`, the array type `%s` is unknown to Npgsql type mapping" table.FullName arrayTypeName
+                                            // then we convert it to a type mapping for the array
+                                            | Some t ->
+                                                { ProviderTypeName = Some "array"
+                                                ; ClrType = Type.GetType(m.ClrType).MakeArrayType().AssemblyQualifiedName
+                                                ; ProviderType = Some (t ||| PostgreSQL.arrayProviderDbType.Value) // add the array type to the bitflag
+                                                ; DbType = PostgreSQL.getDbType PostgreSQL.arrayProviderDbType.Value                          }
+                                           )
+                                        
+                                match typeMapping with
                                 let dataType = Sql.dbUnbox<string> reader.["data_type"]
                                 let charlen = 
                                     let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
@@ -689,11 +733,13 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
-                                                   | [] -> [x]
-                                                   | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                                                    | [] -> [x]
+                                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
                                     yield (col.Name,col)
-                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName dataType ]
+                                | _ -> 
+                                    let typeName = match reader with | AtomicColumn t -> t | ArrayColumn t -> "array|" + t                                                    
+                                    failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName typeName ]
                             |> Map.ofList
                         columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns))
             finally
