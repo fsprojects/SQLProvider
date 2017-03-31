@@ -360,8 +360,37 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         MySql.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = t
-        member __.GetColumnDescription(con,t,c) = c + t
+        member __.GetTableDescription(con,tableName) = 
+            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let baseQuery = @"SELECT TABLE_COMMENT
+                                FROM INFORMATION_SCHEMA.TABLES
+                                WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table"
+            use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes tn))) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            if reader.Read() then 
+                let comm = reader.GetString(0)
+                if comm <> null then comm else ""
+            else ""
+        member __.GetColumnDescription(con,tableName,columnName) = 
+            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let baseQuery = @"SELECT COLUMN_COMMENT
+                                FROM INFORMATION_SCHEMA.COLUMNS
+                                WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table AND COLUMN_NAME = @column"
+            use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes tn))) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@column", 2), (MySql.ripQuotes columnName))) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            if reader.Read() then 
+                let comm = reader.GetString(0)
+                if comm <> null then comm else ""
+            else ""
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter false param value
@@ -454,13 +483,19 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                                 AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
 
             let res = Sql.connect con (fun con ->
-                use reader = (Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.TABLE_NAME = '%s'" baseQuery (MySql.ripQuotes table.Name) ) con)
+                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s WHERE RC.TABLE_NAME = @table" baseQuery))
+                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
+                if con.State <> ConnectionState.Open then con.Open()
+                use reader = com.ExecuteReader()
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
                                 ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
                 reader.Dispose()
-                use reader = Sql.executeSql MySql.createCommand (sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = '%s'" baseQuery (MySql.ripQuotes table.Name) ) con
+                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = @table" baseQuery))
+                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
+                if con.State <> ConnectionState.Open then con.Open()
+                use reader = com.ExecuteReader()
                 let parents =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)

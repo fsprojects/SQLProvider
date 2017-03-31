@@ -184,8 +184,32 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         cmd
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = t
-        member __.GetColumnDescription(con,t,c) = c + t
+        member __.GetTableDescription(con,tableName) = 
+            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let desc = 
+                (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
+                |> Seq.map(fun row ->
+                    try row.["REMARKS"].ToString() with :? KeyNotFoundException -> 
+                    try row.["DESCRIPTION"].ToString() with :? KeyNotFoundException -> 
+                    try row.["COMMENTS"].ToString() with :? KeyNotFoundException -> ""
+                ) |> Seq.toList
+            match desc with
+            | [x] -> x
+            | _ -> ""
+
+        member __.GetColumnDescription(con,tableName,columnName) = 
+            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let desc = 
+                (con:?>OdbcConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
+                |> Seq.map(fun row ->
+                    try row.["REMARKS"].ToString() with :? KeyNotFoundException -> 
+                    try row.["DESCRIPTION"].ToString() with :? KeyNotFoundException -> 
+                    try row.["COMMENTS"].ToString() with :? KeyNotFoundException -> ""
+                ) |> Seq.toList
+            match desc with
+            | [x] -> x
+            | _ -> ""
+
         member __.CreateConnection(connectionString) = upcast new OdbcConnection(connectionString)
         member __.CreateCommand(connection,commandText) = upcast new OdbcCommand(commandText, connection:?>OdbcConnection)
 

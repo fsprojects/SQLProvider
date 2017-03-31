@@ -535,8 +535,39 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         Oracle.resolutionPath <- resolutionPath
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = t
-        member __.GetColumnDescription(con,t,c) = c + t
+        member __.GetTableDescription(con,tableName) = 
+//            // Todo: Un-comment to fetch the description
+//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+//            let comment =
+//                sprintf """SELECT COMMENTS 
+//                            FROM user_tab_comments 
+//                            WHERE TABLE_NAME = '%s'
+//                        """ tn 
+//                |> Oracle.read con (fun row -> 
+//                    Sql.dbUnbox row.[0])
+//                |> Seq.toList
+//            match comment with
+//            | [x] -> x
+//            | _ -> 
+                ""
+        member __.GetColumnDescription(con,tableName,columnName) = 
+//            // Todo: Un-comment to fetch the description
+//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+//            let comment =
+//                sprintf """SELECT COMMENTS 
+//                            FROM user_col_comments 
+//                            WHERE TABLE_NAME = '%s'
+//                            AND COLUMN_NAME = '%s'
+//                        """ tn columnName
+//                |> Oracle.read con (fun row -> 
+//                    Sql.dbUnbox row.[0])
+//                |> Seq.toList
+//            match comment with
+//            | [x] -> x
+//            | _ -> 
+                ""
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value

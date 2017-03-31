@@ -8,7 +8,7 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
         
 [<Literal>]
-let connStr = "Server=192.168.99.100;Database=HR;Uid=admin;Pwd=password;"
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 
@@ -44,9 +44,10 @@ let employeesFirstName =
 let employeesFirstNameAsync = 
     query {
         for emp in ctx.Hr.Employees do
-        select (emp.FirstName, emp.LastName)
+        select (emp.FirstName, emp.LastName, emp.PhoneNumber)
     } |> Seq.executeQueryAsync |> Async.RunSynchronously
 
+// Note that Employees-table and PhoneNumber should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
 let salesNamedDavid = 
     query {

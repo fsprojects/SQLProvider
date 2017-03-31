@@ -453,8 +453,35 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             PostgreSQL.owner <- owner
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = t
-        member __.GetColumnDescription(con,t,c) = c + t
+        member __.GetTableDescription(con,tableName) = 
+//            // Todo: Un-comment to fetch the description
+//            use reader = 
+//                Sql.executeSql PostgreSQL.createCommand (
+//                    sprintf """SELECT description
+//                                FROM   pg_description
+//                                WHERE  objoid = '%s'::regclass;
+//                            """ tableName) con
+//            if reader.Read() then
+//                let comment = Sql.dbUnbox<string> reader.["description"]
+//                if comment <> null then comment else ""
+//            else
+            ""
+        member __.GetColumnDescription(con,tableName,columnName) = 
+//            // Todo: Un-comment to fetch the description
+//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+//            use reader = 
+//                Sql.executeSql PostgreSQL.createCommand (
+//                    sprintf """SELECT d.description as "description"
+//                                FROM pg_description d 
+//                                JOIN information_schema.columns c ON ( c.table_schema = '%s' AND '%s'||'.'||c.table_name)::regclass = d.objoid AND c.ordinal_position = d.objsubid )
+//                                WHERE c.table_name = '%s' AND c.column_name = '%s';
+//                            """ sn sn tableName columnName) con
+//            if reader.Read() then
+//                let comment = Sql.dbUnbox<string> reader.["description"]
+//                if comment <> null then comment else ""
+//            else
+            ""
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value

@@ -389,8 +389,8 @@ type internal MSSqlServerProvider(tableNames:string) =
         cmd
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = 
-            let tn = t.Substring(t.LastIndexOf(".")+1) 
+        member __.GetTableDescription(con,tableName) = 
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -405,12 +405,12 @@ type internal MSSqlServerProvider(tableNames:string) =
             if reader.Read() then
                 let itm = reader.GetSqlString(0)
                 if itm.Value <> null then
-                    ": " + reader.GetSqlString(0).Value.ToString()
+                    reader.GetSqlString(0).Value.ToString()
                 else ""
             else ""
 
-        member __.GetColumnDescription(con,t,c) =
-            let tn = t.Substring(t.LastIndexOf(".")+1) 
+        member __.GetColumnDescription(con,tableName,columnName) =
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -422,7 +422,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                 and sc.name = @ColumnName"""
             use com = new SqlCommand(baseq,con:?>SqlConnection)
             com.Parameters.AddWithValue("@TableName",tn) |> ignore
-            com.Parameters.AddWithValue("@ColumnName",c) |> ignore
+            com.Parameters.AddWithValue("@ColumnName",columnName) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then

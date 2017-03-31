@@ -66,6 +66,8 @@ CREATE TABLE EMPLOYEES
 	CONSTRAINT "EMP_MANAGER_FK" FOREIGN KEY ("MANAGER_ID") REFERENCES EMPLOYEES ("EMPLOYEE_ID")
 );
 
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Employees is a very important table, used in many places.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'EMPLOYEES'
+
 ALTER TABLE DEPARTMENTS ADD CONSTRAINT "DEPT_MGR_FK" FOREIGN KEY ("MANAGER_ID") REFERENCES "EMPLOYEES" ("EMPLOYEE_ID")
  
 CREATE TABLE JOB_HISTORY 

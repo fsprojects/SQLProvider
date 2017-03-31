@@ -35,6 +35,8 @@ CREATE TABLE  "REGIONS"
      CONSTRAINT "EMP_EMAIL_UK" UNIQUE ("EMAIL") ENABLE, 
      CONSTRAINT "EMP_EMP_ID_PK" PRIMARY KEY ("EMPLOYEE_ID") ENABLE
    ) ;
+   COMMENT ON TABLE "EMPLOYEES" IS 'Employees is a very important table, used in many places.';
+   COMMENT ON COLUMN EMPLOYEES.EMAIL IS 'Email is a max-25-char item, having at-sign and a dot';
    
    CREATE TABLE  "LOCATIONS" 
    (    "LOCATION_ID" NUMBER(4,0), 

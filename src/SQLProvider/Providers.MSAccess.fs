@@ -163,8 +163,25 @@ type internal MSAccessProvider() =
         cmd
 
     interface ISqlProvider with
-        member __.GetTableDescription(con,t) = t
-        member __.GetColumnDescription(con,t,c) = c + t
+        member __.GetTableDescription(con,tableName) = 
+            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let desc = 
+                (con:?>OleDbConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
+                |> Seq.map(fun row ->row.["DESCRIPTION"].ToString()) |> Seq.toList
+            match desc with
+            | [x] -> x
+            | _ -> ""
+
+        member __.GetColumnDescription(con,tableName,columnName) = 
+            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let desc = 
+                (con:?>OleDbConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
+                |> Seq.map(fun row ->row.["DESCRIPTION"].ToString())
+                |> Seq.toList
+            match desc with
+            | [x] -> x
+            | _ -> ""
+
         member __.CreateConnection(connectionString) = 
             // Access connections shouldn't ever be closed as that leads to Unspecified Error.
             let con = new OleDbConnection(connectionString)

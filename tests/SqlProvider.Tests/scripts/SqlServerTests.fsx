@@ -43,6 +43,9 @@ let employeesFirstNameAsync =
         select emp.FirstName
     } |> Seq.executeQueryAsync |> Async.RunSynchronously
 
+// Note that Employees-table should have a Description-field in database, visible as XML-tooltip in your IDE.
+// Column-level descriptions work also, but they are not included to exported SQL-scripts by SQL-server.
+
 //Ref issue #92
 let employeesFirstNameEmptyList = 
     query {

@@ -106,6 +106,10 @@ let name = firstCustomer.ContactName
 (**
 Each property is correctly typed depending on the database column 
 definitions.  In this example, ``firstCustomer.ContactName`` is a string.
+
+Most of the databases support some kind of comments/descriptions/remarks to
+tables and columns for documentation purposes. These descriptions are fetched
+to tooltips for the tables and columns.
 *)
 
 (**

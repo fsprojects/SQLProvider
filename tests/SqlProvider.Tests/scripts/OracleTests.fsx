@@ -46,8 +46,10 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 let employeesFirstName = 
     query {
         for emp in ctx.Hr.Employees do
-        select (emp.FirstName, emp.LastName)
+        select (emp.FirstName, emp.LastName, emp.Email)
     } |> Seq.toList
+
+// Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
 let salesNamedDavid = 
     query {

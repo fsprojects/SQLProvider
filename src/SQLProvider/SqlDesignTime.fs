@@ -451,7 +451,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
 
-                prop.AddXmlDocDelayed (fun () -> sprintf "<summary>%s</summary>" (desc + (prov.GetTableDescription(con, ct.Name))))
+                prop.AddXmlDocDelayed (fun () -> sprintf "<summary>%s</summary>" ((prov.GetTableDescription(con, ct.Name) + "<br/>\r\n" + desc)))
                 schemaType.AddMember ct
                 schemaType.AddMember prop
 

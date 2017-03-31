@@ -34,6 +34,8 @@ let mattisOrderDetails =
             select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) } 
     |> Seq.toArray
 
+// Note that Orders and ShipName are having Description-field in Access, so they are displayed as XML-tooltips.
+
 /// Query with space in table name
 let orderDetail =
     query { 
