@@ -485,13 +485,15 @@ type internal MSSqlServerProvider(tableNames:string) =
                let columns =
                    [ while reader.Read() do
                        let dt = reader.GetSqlString(1).Value
+                       let ok, maxlen = Int32.TryParse (reader.GetSqlString(2).Value)
                        match MSSqlServer.findDbType dt with
                        | Some(m) ->
                            let col =
                              { Column.Name = reader.GetSqlString(0).Value;
                                TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                               IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false }
+                               IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
+                               TypeInfo = if ok then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
@@ -830,7 +832,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                scope.Complete()
+                if scope<>null then scope.Complete()
 
             finally
                 con.Close()
@@ -880,7 +882,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()

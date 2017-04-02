@@ -552,7 +552,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY" }
+                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY"
+                                          TypeInfo = Some dataType }
                                     if col.IsPrimaryKey then
                                         pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                             match col.Name with 
@@ -887,7 +888,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                scope.Complete()
+                if scope<>null then scope.Complete()
 
             finally
                 con.Close()
@@ -939,7 +940,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()

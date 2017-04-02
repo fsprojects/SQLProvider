@@ -266,8 +266,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 use reader = com.ExecuteReader()
                 let columns =
                     [ while reader.Read() do
-                        let dt = reader.GetString(2).ToLower()
-                        let dt = if dt.Contains("(") then dt.Substring(0,dt.IndexOf("(")) else dt
+                        let dtv = reader.GetString(2).ToLower()
+                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf("(")) else dtv
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
@@ -275,7 +275,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                 { Column.Name = reader.GetString(1);
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
-                                  IsPrimaryKey = if reader.GetBoolean(5) then true else false }
+                                  IsPrimaryKey = if reader.GetBoolean(5) then true else false
+                                  TypeInfo = Some dtv }
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
@@ -588,7 +589,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                scope.Complete()
+                if scope<>null then scope.Complete()
 
             finally
                 con.Close()
@@ -638,7 +639,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()

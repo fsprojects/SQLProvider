@@ -176,7 +176,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
 
         match pk with
         | [] -> ()
-        | [k] -> ~~(sprintf "DELETE FROM %c%s%c WHERE %s = ?;" cOpen entity.Table.FullName cClose k )
+        | [k] -> ~~(sprintf "DELETE FROM %c%s%c WHERE %s = ?;" cOpen entity.Table.Name cClose k )
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
             failwith ("Composite key items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")
@@ -189,7 +189,11 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             let desc = 
                 (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
                 |> Seq.map(fun row ->
-                    try row.["REMARKS"].ToString() with :? KeyNotFoundException -> 
+                    try 
+                        let remarks = row.["REMARKS"].ToString()
+                        let endpos = remarks.IndexOf('\000')
+                        if endpos = -1 then remarks else remarks.Substring(0, endpos-1) 
+                    with :? KeyNotFoundException -> 
                     try row.["DESCRIPTION"].ToString() with :? KeyNotFoundException -> 
                     try row.["COMMENTS"].ToString() with :? KeyNotFoundException -> ""
                 ) |> Seq.toList
@@ -202,7 +206,11 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             let desc = 
                 (con:?>OdbcConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
                 |> Seq.map(fun row ->
-                    try row.["REMARKS"].ToString() with :? KeyNotFoundException -> 
+                    try 
+                        let remarks = row.["REMARKS"].ToString()
+                        let endpos = remarks.IndexOf('\000')
+                        if endpos = -1 then remarks else remarks.Substring(0, endpos-1) 
+                    with :? KeyNotFoundException -> 
                     try row.["DESCRIPTION"].ToString() with :? KeyNotFoundException -> 
                     try row.["COMMENTS"].ToString() with :? KeyNotFoundException -> ""
                 ) |> Seq.toList
@@ -258,11 +266,17 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         match findDbType dt with
                         | Some(m) ->
                             let name = i.[3] :?> string
+                            let maxlen = i.[6] :?> int
+
                             let col =
                                 { Column.Name = name
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
-                                  IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false }
+                                  IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
+                                  TypeInfo = 
+                                    if maxlen < 1 then Some dt
+                                    else Some (dt + "(" + maxlen.ToString() + ")")
+                                  }
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old ->
                                     match col.Name with 
@@ -283,10 +297,12 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             sprintf "SELECT * FROM %c%s%c" cOpen table.Name cClose
 
         member __.GetIndividualQueryText(table,column) =
-            sprintf "SELECT * FROM %c%s%c WHERE %c%s%c.%c%s%c = ?" 
-                     cOpen table.Name cClose cOpen table.Name cClose cOpen column cClose
+            let separator = (sprintf "%c.%c" cClose cOpen).Trim()
+            sprintf "SELECT * FROM %c%s%c WHERE %c%s%s%s%c = ?" 
+                        cOpen table.Name cClose cOpen table.Name separator column cClose
 
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+            let separator = (sprintf "%c.%c" cClose cOpen).Trim()
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -305,11 +321,13 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
-                                else yield sprintf "%c%s%c.%c%s%c as %c%s_%s%c" cOpen k cClose cOpen col cClose cOpen k col cClose
+                                else 
+                                    yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose
                         else
                             for col in v do
                                 if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
-                                else yield sprintf "%c%s%c.%c%s%c as %c%s_%s%c" cOpen k cClose cOpen col cClose cOpen k col cClose |]) // F# makes this so easy :)
+                                else
+                                    yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose |]) // F# makes this so easy :)
 
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
@@ -317,7 +335,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     let fieldNotation(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
                         | true -> sprintf "%c%s%c" cOpen col cClose
-                        | false -> sprintf "%c%s%c.%c%s%c" cOpen al cClose cOpen col cClose
+                        | false -> sprintf "%c%s%s%s%c" cOpen al separator col cClose
                     let fieldNotationAlias(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
                         | true -> sprintf "%c%s%c" cOpen col cClose
@@ -361,24 +379,24 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%c%s%c.%c%s%c IS NULL") cOpen alias cClose cOpen col cClose
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%c%s%c.%c%s%c IS NOT NULL") cOpen alias cClose cOpen col cClose
+                                    | FSharp.Data.Sql.IsNull -> (sprintf "%c%s%s%s%c IS NULL") cOpen alias separator col cClose
+                                    | FSharp.Data.Sql.NotNull -> (sprintf "%c%s%s%s%c IS NOT NULL") cOpen alias separator col cClose
                                     | FSharp.Data.Sql.In ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%c%s%c.%c%s%c IN (%s)") cOpen alias cClose cOpen col cClose text
+                                        (sprintf "%c%s%s%s%c IN (%s)") cOpen alias separator col cClose text
                                     | FSharp.Data.Sql.NestedIn when data.IsSome ->
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
-                                        (sprintf "%c%s%c.%c%s%c IN (%s)") cOpen alias cClose cOpen col cClose innersql
+                                        (sprintf "%c%s%s%s%c IN (%s)") cOpen alias separator col cClose innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose text
+                                        (sprintf "%c%s%s%s%c NOT IN (%s)") cOpen alias separator col cClose text
                                     | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
-                                        (sprintf "%c%s%c.%c%s%c NOT IN (%s)") cOpen alias cClose cOpen col cClose innersql
+                                        (sprintf "%c%s%s%s%c NOT IN (%s)") cOpen alias separator col cClose innersql
                                     | _ ->
                                         let aliasformat = if alias<>"" then (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col else (sprintf "%s %s %s") col
                                         match data with 
@@ -427,24 +445,24 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     ~~  (sprintf "%s %c%s%c as %c%s%c on "
                             joinType cOpen destTable.Name cClose cOpen destAlias cClose)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
-                        sprintf "%c%s%c.%c%s%c = %c%s%c.%c%s%c "
+                        sprintf "%c%s%s%s%c = %c%s%s%s%c "
                             cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            cClose cOpen foreignKey cClose cOpen
+                            separator foreignKey cClose cOpen
                             (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            cClose cOpen primaryKey cClose))))
+                            separator primaryKey cClose))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%c%s%c.%c%s%c" cOpen alias cClose cOpen column cClose ))
+                    ~~ (sprintf "%c%s%s%s%c" cOpen alias separator column cClose ))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%c%s%c.%c%s%c %s" cOpen alias cClose cOpen column cClose (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%c%s%s%s%c %s" cOpen alias separator column cClose (if not desc then "DESC" else "")))
 
             // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
             // or else it will fail
@@ -452,11 +470,12 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 String(s.ToCharArray() |> Array.filter(fun c -> Char.IsLetterOrDigit c || c = ' ' || c = '_'))
 
             // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+            let columnsFixed = if String.IsNullOrEmpty columns then "*" else columns
+            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
             elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s " columns)
+            else  ~~(sprintf "SELECT %s " columnsFixed)
             // FROM
-            ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen baseTable.Name cClose cOpen (stripSpecialCharacters baseAlias) cClose)
+            ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters baseAlias) cClose)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -509,7 +528,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                let keyLst = entities.Keys
+                keyLst
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -532,7 +552,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                scope.Complete()
+                if scope<>null then scope.Complete()
 
             finally
                 con.Close()
@@ -583,7 +603,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()

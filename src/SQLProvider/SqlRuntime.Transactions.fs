@@ -11,6 +11,7 @@ type IsolationLevel =
     | Snapshot = 4
     | Chaos = 5
     | Unspecified = 6
+    | DontCreateTransaction = 99
 
 /// Corresponds to the System.Transactions.TransactionOptions.
 type TransactionOptions = {
@@ -42,6 +43,9 @@ module internal TransactionUtils =
         | _ -> failwithf "Unhandled System.Transactions.IsolationLevel value: %A." isolationLevel
 
     let ensureTransaction (transactionOptions : TransactionOptions) =
+        if transactionOptions.IsolationLevel = IsolationLevel.DontCreateTransaction then
+            Unchecked.defaultof<Transactions.TransactionScope>
+        else
         let transactionOptions =
             new Transactions.TransactionOptions(
                 Timeout = transactionOptions.Timeout,

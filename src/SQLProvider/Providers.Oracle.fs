@@ -233,7 +233,8 @@ module internal Oracle =
                     { Name = columnName
                       TypeMapping = m
                       IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = [columnName])
-                      IsNullable = nullable }
+                      IsNullable = nullable
+                      TypeInfo = Some columnType }
                 ))
         |> Seq.choose id
         |> Seq.map (fun c -> c.Name, c)
@@ -866,7 +867,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                scope.Complete()
+                if scope<>null then scope.Complete()
 
             finally
                 con.Close()
@@ -923,7 +924,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()

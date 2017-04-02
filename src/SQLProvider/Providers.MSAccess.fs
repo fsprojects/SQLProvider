@@ -236,7 +236,14 @@ type internal MSAccessProvider() =
                                 { Column.Name = row.["COLUMN_NAME"].ToString();
                                   TypeMapping = m
                                   IsPrimaryKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
-                                  IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString()) }
+                                  IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
+                                  TypeInfo = 
+                                    try 
+                                        let ti = row.["CHARACTER_MAXIMUM_LENGTH"].ToString()
+                                        if String.IsNullOrEmpty ti then None
+                                        else Some ("Max length: " + ti)
+                                    with :? KeyNotFoundException -> None
+                                }
                             (col.Name,col)
                         |_ -> failwith "failed to map datatypes")
                     |> Map.ofSeq

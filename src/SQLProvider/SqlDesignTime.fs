@@ -212,7 +212,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
-                        prop.AddXmlDocDelayed(fun () -> "<summary>" + prov.GetColumnDescription(con, key, c.Name) + "</summary>")
+                        prop.AddXmlDocDelayed(fun () -> 
+                            let typeInfo = match c.TypeInfo with None -> "" | Some x -> " " + x.ToString() 
+                            "<summary>" + prov.GetColumnDescription(con, key, c.Name) + typeInfo + "</summary>")
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 

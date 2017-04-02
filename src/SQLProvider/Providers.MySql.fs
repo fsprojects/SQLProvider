@@ -444,13 +444,17 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 let columns =
                     [ while reader.Read() do
                         let dt = reader.GetString(1)
+                        let maxlen = 
+                            if reader.IsDBNull(2) then ""
+                            else reader.GetString(2)
                         match MySql.findDbType dt with
                         | Some(m) ->
                             let col =
                                 { Column.Name = reader.GetString(0)
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                                  IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false }
+                                  IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
+                                  TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
@@ -778,7 +782,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
 
-                scope.Complete()
+                if scope<>null then scope.Complete()
                 
             finally
                 con.Close()
@@ -831,7 +835,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
                     do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
 
-                    scope.Complete()
+                    if scope<>null then scope.Complete()
 
                 finally
                     con.Close()
