@@ -228,13 +228,20 @@ module internal Oracle =
                 let columnType = Sql.dbUnbox row.[0]
                 let nullable   = (Sql.dbUnbox row.[1]) = "Y"
                 let columnName = Sql.dbUnbox row.[2]
+                let typeinfo = 
+                    let datalength = 
+                        // Todo: Add data_length to sql above, after column_name, and replace "0" with this:
+                        //if Sql.dbUnbox row.[3] <> DBNull.Value then (Sql.dbUnbox row.[3]).ToString()
+                        "0"
+                    if datalength <> "0" then columnType
+                    else columnType + "(" + datalength + ")"
                 findDbType columnType
                 |> Option.map (fun m ->
                     { Name = columnName
                       TypeMapping = m
                       IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = [columnName])
                       IsNullable = nullable
-                      TypeInfo = Some columnType }
+                      TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id
         |> Seq.map (fun c -> c.Name, c)

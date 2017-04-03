@@ -454,34 +454,38 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
 
     interface ISqlProvider with
         member __.GetTableDescription(con,tableName) = 
-//            // Todo: Un-comment to fetch the description
-//            use reader = 
-//                Sql.executeSql PostgreSQL.createCommand (
-//                    sprintf """SELECT description
-//                                FROM   pg_description
-//                                WHERE  objoid = '%s'::regclass;
-//                            """ tableName) con
-//            if reader.Read() then
-//                let comment = Sql.dbUnbox<string> reader.["description"]
-//                if comment <> null then comment else ""
-//            else
-            ""
+            Sql.connect con (fun _ ->
+                use reader = 
+                    Sql.executeSql PostgreSQL.createCommand (
+                        sprintf """SELECT description
+                                    FROM   pg_description
+                                    WHERE  objoid = '%s'::regclass AND objsubid=0;
+                                """ tableName) con
+                if reader.Read() then
+                    let comment = Sql.dbUnbox<string> reader.["description"]
+                    if comment <> null then comment else ""
+                else
+                "")
         member __.GetColumnDescription(con,tableName,columnName) = 
-//            // Todo: Un-comment to fetch the description
-//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
-//            use reader = 
-//                Sql.executeSql PostgreSQL.createCommand (
-//                    sprintf """SELECT d.description as "description"
-//                                FROM pg_description d 
-//                                JOIN information_schema.columns c ON ( c.table_schema = '%s' AND '%s'||'.'||c.table_name)::regclass = d.objoid AND c.ordinal_position = d.objsubid )
-//                                WHERE c.table_name = '%s' AND c.column_name = '%s';
-//                            """ sn sn tableName columnName) con
-//            if reader.Read() then
-//                let comment = Sql.dbUnbox<string> reader.["description"]
-//                if comment <> null then comment else ""
-//            else
-            ""
+            Sql.connect con (fun _ ->
+                let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+                let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+                use reader = 
+                    Sql.executeSql PostgreSQL.createCommand (
+                        sprintf """SELECT description
+                                    FROM pg_description d 
+                                    LEFT JOIN information_schema.columns c 
+                                    ON c.ordinal_position = d.objsubid
+                                    WHERE objoid = '%s'::regclass
+                                    AND c.table_schema = '%s'
+                                    AND c.table_name = '%s'
+                                    AND c.column_name = '%s';
+                                """ tableName sn tn columnName) con
+                if reader.Read() then
+                    let comment = Sql.dbUnbox<string> reader.["description"]
+                    if comment <> null then comment else ""
+                else
+                "")
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
@@ -546,6 +550,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         let columns =
                             [ while reader.Read() do
                                 let dataType = Sql.dbUnbox<string> reader.["data_type"]
+                                let charlen = 
+                                    let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
+                                    if c <> 0 then c.ToString() else ""
                                 match PostgreSQL.findDbType (dataType.ToLower()) with
                                 | Some m ->
                                     let col =
@@ -553,7 +560,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
                                           IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY"
-                                          TypeInfo = Some dataType }
+                                          TypeInfo = if charlen <> "" then Some (dataType + "(" + charlen + ")") else Some dataType }
                                     if col.IsPrimaryKey then
                                         pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                             match col.Name with 
@@ -599,7 +606,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
                                         AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
                     if con.State <> ConnectionState.Open then con.Open()
-                    use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = '%s'" baseQuery table.Name ) con
+
+                    use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = @table" baseQuery) con
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
+                    use reader = command.ExecuteReader()
+
                     let children : Relationship list =
                         [ while reader.Read() do
                             yield {
@@ -610,7 +621,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     ForeignKey=reader.GetString(2)
                                   } ]
                     reader.Dispose()
-                    use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = '%s'" baseQuery table.Name ) con
+
+                    use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = @table" baseQuery) con
+                    PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
+                    use reader = command.ExecuteReader()
+
                     let parents : Relationship list =
                         [ while reader.Read() do
                             yield {
