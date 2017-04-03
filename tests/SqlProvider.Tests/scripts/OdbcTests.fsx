@@ -29,7 +29,7 @@ let connectionStringAccess = @"Driver={Microsoft Access Driver (*.mdb, *.accdb)}
 
 type dbOdbcAccess = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, connectionStringAccess, Owner="", UseOptionTypes = true, OdbcQuote=Common.OdbcQuoteCharacter.DOUBLE_QUOTES>
 
-// Sadly ODBC doesn't support DTC at all.
+// Sadly MS-Access ODBC driver doesn't support DTC at all.
 let odbcaContext = 
     dbOdbcAccess.GetDataContext(
         {Timeout = TimeSpan.MaxValue; IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction})
