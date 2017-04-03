@@ -76,7 +76,7 @@ let ctx2 = db2.GetDataContext()
 
 ### DTC Transactions
 
-By default SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
+SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
 that all the database operations will either success of fail at once, when you do
 `ctx.SubmitUpdates()`. 
 
