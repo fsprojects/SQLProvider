@@ -223,16 +223,13 @@ module internal Oracle =
         |> Seq.toList
 
     let getColumns (primaryKeys:IDictionary<_,_>) tableName conn = 
-        sprintf """select data_type, nullable, column_name from all_tab_columns where table_name = '%s'""" tableName
+        sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s'""" tableName
         |> read conn (fun row ->
                 let columnType = Sql.dbUnbox row.[0]
                 let nullable   = (Sql.dbUnbox row.[1]) = "Y"
                 let columnName = Sql.dbUnbox row.[2]
                 let typeinfo = 
-                    let datalength = 
-                        // Todo: Add data_length to sql above, after column_name, and replace "0" with this:
-                        //if Sql.dbUnbox row.[3] <> DBNull.Value then (Sql.dbUnbox row.[3]).ToString()
-                        "0"
+                    let datalength = (Sql.dbUnbox row.[3]).ToString()
                     if datalength <> "0" then columnType
                     else columnType + "(" + datalength + ")"
                 findDbType columnType
@@ -544,37 +541,37 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
 
     interface ISqlProvider with
         member __.GetTableDescription(con,tableName) = 
-//            // Todo: Un-comment to fetch the description
-//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
-//            let comment =
-//                sprintf """SELECT COMMENTS 
-//                            FROM user_tab_comments 
-//                            WHERE TABLE_NAME = '%s'
-//                        """ tn 
-//                |> Oracle.read con (fun row -> 
-//                    Sql.dbUnbox row.[0])
-//                |> Seq.toList
-//            match comment with
-//            | [x] -> x
-//            | _ -> 
+            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let comment =
+                sprintf """SELECT COMMENTS 
+                            FROM user_tab_comments 
+                            WHERE TABLE_NAME = '%s'
+                            AND COMMENTS <> '-'
+                        """ tn 
+                |> Oracle.read con (fun row -> 
+                    Sql.dbUnbox row.[0])
+                |> Seq.toList
+            match comment with
+            | [x] -> x
+            | _ -> 
                 ""
         member __.GetColumnDescription(con,tableName,columnName) = 
-//            // Todo: Un-comment to fetch the description
-//            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-//            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
-//            let comment =
-//                sprintf """SELECT COMMENTS 
-//                            FROM user_col_comments 
-//                            WHERE TABLE_NAME = '%s'
-//                            AND COLUMN_NAME = '%s'
-//                        """ tn columnName
-//                |> Oracle.read con (fun row -> 
-//                    Sql.dbUnbox row.[0])
-//                |> Seq.toList
-//            match comment with
-//            | [x] -> x
-//            | _ -> 
+            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
+            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let comment =
+                sprintf """SELECT COMMENTS 
+                            FROM user_col_comments 
+                            WHERE TABLE_NAME = '%s'
+                            AND COLUMN_NAME = '%s'
+                            AND COMMENTS <> '-'
+                        """ tn columnName
+                |> Oracle.read con (fun row -> 
+                    Sql.dbUnbox row.[0])
+                |> Seq.toList
+            match comment with
+            | [x] -> x
+            | _ -> 
                 ""
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
