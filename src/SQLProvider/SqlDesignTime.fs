@@ -213,8 +213,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
                         prop.AddXmlDocDelayed(fun () -> 
-                            let typeInfo = match c.TypeInfo with None -> "" | Some x -> " " + x.ToString() 
-                            "<summary>" + prov.GetColumnDescription(con, key, c.Name) + typeInfo + "</summary>")
+                            let typeInfo = match c.TypeInfo with None -> "" | Some x -> x.ToString() 
+                            let details = prov.GetColumnDescription(con, key, c.Name)
+                            let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                            sprintf "<summary>%s %s %s</summary>" details separator typeInfo)
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
@@ -453,7 +455,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
 
-                prop.AddXmlDocDelayed (fun () -> sprintf "<summary>%s</summary>" ((prov.GetTableDescription(con, ct.Name) + "<br/>\r\n" + desc)))
+                prop.AddXmlDocDelayed (fun () -> 
+                    let details = prov.GetTableDescription(con, ct.Name)
+                    let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                    sprintf "<summary>%s %s %s</summary>" details separator desc)
                 schemaType.AddMember ct
                 schemaType.AddMember prop
 
