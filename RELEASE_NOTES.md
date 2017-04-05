@@ -1,3 +1,6 @@
+### 1.0.50 - 05.04.2017
+* Fixed: Support for group-by where condition outside group-by operation
+
 ### 1.0.49 - 05.04.2017
 * Database table and column descriptions to editor tooltips. #385 
 * ODBC fixes.

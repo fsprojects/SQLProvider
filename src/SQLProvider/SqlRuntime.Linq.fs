@@ -384,9 +384,10 @@ module internal QueryImplementation =
              let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
                 let sourceEntity =
                     match source.SqlExpression with
-                    | BaseTable(alias,sourceEntity) ->
-                        if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                        if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                    | BaseTable(alias,sourceEntity)
+                    | FilterClause(_, BaseTable(alias,sourceEntity)) ->
+                        if sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                        if destAlias <> "" && source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                         sourceEntity
 
                     | SelectMany(a1, a2,selectdata,sqlExp)  ->
@@ -397,9 +398,10 @@ module internal QueryImplementation =
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 
                 let getAlias ti =
-                        match ti with
-                        | "" when source.SqlExpression.HasAutoTupled() -> sourceAlias
-                        | "" -> ""
+                        match ti, source.SqlExpression with
+                        | "", _ when source.SqlExpression.HasAutoTupled() -> sourceAlias
+                        | "", FilterClause(alias,sourceEntity) -> sourceAlias
+                        | "", _ -> ""
                         | _ -> resolveTuplePropertyName ti source.TupleIndex
 
                 let keycols = 
@@ -415,7 +417,7 @@ module internal QueryImplementation =
                     Projection = None //lambda2 ?
                 }
                 let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
-                ty, data, sourceEntity.Name
+                ty, data, sourceAlias
 
              // Possible Linq method overrides are available here: 
              // https://referencesource.microsoft.com/#System.Core/System/Linq/IQueryable.cs
@@ -599,7 +601,7 @@ module internal QueryImplementation =
                                 let lambda = lambda1 :?> LambdaExpression
                                 let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
                                 let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
-                                SelectMany(sourceAlias,destEntity,GroupQuery(data), outExp)
+                                SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
 
                             | MethodCall(None, (MethodWithName "Join"),
                                                     [createRelated

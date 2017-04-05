@@ -182,7 +182,7 @@ let (|SqlGroupingColumnGet|_|) (e:Expression) =
         | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, "{KEY}", p.DeclaringType) 
         | _ -> None
     | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments.Count = 1 && e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
-        if e.Method.Name = "Count" || e.Method.Name = "Average" || e.Method.Name = "Min" || e.Method.Name = "Max"
+        if e.Method.Name = "Count" || e.Method.Name = "Average" || e.Method.Name = "Min" || e.Method.Name = "Max" || e.Method.Name = "Sum"
         then Some(String.Empty, "{" + e.Method.Name.ToUpper() + "}", e.Method.DeclaringType)
         else None
     | _ -> None

@@ -408,8 +408,8 @@ and internal SqlQuery =
                                     Links = q.Links  
                                     Grouping = 
                                         let baseAlias:alias = grp.PrimaryTable.Name
-                                        let f = grp.KeyColumns |> List.map (fun (a,k) -> legaliseName (match a<>"" with true -> a | false -> baseAlias), k)
-                                        let s = grp.AggregateColumns |> List.map (fun (op,a,key) -> op, legaliseName (match a<>"" with true -> a | false -> baseAlias), key)
+                                        let f = grp.KeyColumns |> List.map (fun (al,k) -> legaliseName (match al<>"" with true -> al | false -> baseAlias), k)
+                                        let s = grp.AggregateColumns |> List.map (fun (op,al,key) -> op, legaliseName (match al<>"" with true -> al | false -> baseAlias), key)
                                         (f,s)::q.Grouping
                                     Projection = match grp.Projection with Some p -> p::q.Projection | None -> q.Projection } rest
                 | FilterClause(c,rest) ->  convert { q with Filters = (c)::q.Filters } rest

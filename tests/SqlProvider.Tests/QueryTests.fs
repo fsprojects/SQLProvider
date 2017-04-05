@@ -548,6 +548,24 @@ let ``simple select query with groupBy having count``() =
     Assert.AreEqual(3, res.["Buenos Aires"])
 
 [<Test>]
+let ``simple select query with groupBy where and having``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            where (emp.Country = "USA")
+            groupBy emp.City into grp
+            where (grp.Count() > 0)
+            select (grp.Key, grp.Sum(fun e -> e.EmployeeId))
+        }
+    let res = qry |> dict
+    Assert.IsFalse(res.ContainsKey("London"))
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(4, res |> Seq.length)
+    Assert.AreEqual(9L, res.["Seattle"])
+
+
+[<Test>]
 let ``simple select query with groupBy having key``() = 
     let dc = sql.GetDataContext()
     let qry = 
