@@ -239,7 +239,9 @@ type internal MSAccessProvider() =
                                   IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
                                   TypeInfo = 
                                     try 
-                                        let ti = row.["CHARACTER_MAXIMUM_LENGTH"].ToString()
+                                        let ti = 
+                                            if row.IsNull("CHARACTER_MAXIMUM_LENGTH") then ""
+                                            else row.["CHARACTER_MAXIMUM_LENGTH"].ToString()
                                         if String.IsNullOrEmpty ti then None
                                         else Some ("Max length: " + ti)
                                     with :? KeyNotFoundException -> None

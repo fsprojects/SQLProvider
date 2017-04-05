@@ -266,7 +266,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         match findDbType dt with
                         | Some(m) ->
                             let name = i.[3] :?> string
-                            let maxlen = i.[6] :?> int
+                            let maxlen = if i.[6] = box(DBNull.Value) then 0 else i.[6] :?> int
 
                             let col =
                                 { Column.Name = name

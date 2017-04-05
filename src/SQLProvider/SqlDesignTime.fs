@@ -214,7 +214,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                  )
                         prop.AddXmlDocDelayed(fun () -> 
                             let typeInfo = match c.TypeInfo with None -> "" | Some x -> x.ToString() 
-                            let details = prov.GetColumnDescription(con, key, c.Name)
+                            let details = prov.GetColumnDescription(con, key, c.Name).Replace("<","&lt;").Replace(">","&gt;")
                             let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
                             sprintf "<summary>%s %s %s</summary>" details separator typeInfo)
                         prop
@@ -456,7 +456,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
 
                 prop.AddXmlDocDelayed (fun () -> 
-                    let details = prov.GetTableDescription(con, ct.Name)
+                    let details = prov.GetTableDescription(con, ct.Name).Replace("<","&lt;").Replace(">","&gt;")
                     let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
                     sprintf "<summary>%s %s %s</summary>" details separator desc)
                 schemaType.AddMember ct

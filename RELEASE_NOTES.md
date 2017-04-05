@@ -1,4 +1,4 @@
-### 1.0.48 - 05.04.2017
+### 1.0.49 - 05.04.2017
 * Database table and column descriptions to editor tooltips. #385 
 * ODBC fixes.
 

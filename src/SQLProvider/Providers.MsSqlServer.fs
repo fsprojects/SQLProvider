@@ -485,7 +485,9 @@ type internal MSSqlServerProvider(tableNames:string) =
                let columns =
                    [ while reader.Read() do
                        let dt = reader.GetSqlString(1).Value
-                       let ok, maxlen = Int32.TryParse (reader.GetSqlString(2).Value)
+                       let maxlen = 
+                            let x = reader.GetSqlInt32(2)
+                            if x.IsNull then 0 else (x.Value)
                        match MSSqlServer.findDbType dt with
                        | Some(m) ->
                            let col =
@@ -493,7 +495,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
-                               TypeInfo = if ok then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
+                               TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
