@@ -1,3 +1,7 @@
+### 1.0.48 - 05.04.2017
+* Database table and column descriptions to editor tooltips. #385 
+* ODBC fixes.
+
 ### 1.0.47 - 18.03.2017
 * Support for updating records on MySQL before 5.5 #384
 
