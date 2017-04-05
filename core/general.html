@@ -130,6 +130,9 @@ entities will contain properties relating to each column name from the table.</p
 </table>
 <p>Each property is correctly typed depending on the database column
 definitions.  In this example, <code>firstCustomer.ContactName</code> is a string.</p>
+<p>Most of the databases support some kind of comments/descriptions/remarks to
+tables and columns for documentation purposes. These descriptions are fetched
+to tooltips for the tables and columns.</p>
 <h2><a name="Constraints-and-Relationships" class="anchor" href="#Constraints-and-Relationships">Constraints and Relationships</a></h2>
 <p>A typical relational database will have many connected tables and views
 through foreign key constraints.  The SQL provider is able to show you these
@@ -345,12 +348,12 @@ using both the primary key and the text of the column you have selected.</p>
 <div class="tip" id="fs17">val ctx2 : SqlDataProvider&lt;...&gt;.dataContext<br /><br />Full name: General.ctx2</div>
 <div class="tip" id="fs18">val customers : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity []<br /><br />Full name: General.customers</div>
 <div class="tip" id="fs19">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema</div>
-<div class="tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers<br /><em><br /><br />&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div class="tip" id="fs21">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
 <div class="tip" id="fs22">val toArray : source:seq&lt;&#39;T&gt; -&gt; &#39;T []<br /><br />Full name: Microsoft.FSharp.Collections.Seq.toArray</div>
 <div class="tip" id="fs23">val firstCustomer : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: General.firstCustomer</div>
 <div class="tip" id="fs24">val name : string<br /><br />Full name: General.name</div>
-<div class="tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string</div>
+<div class="tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string<br /><em><br /><br />&lt;summary&gt;  nvarchar(30)&lt;/summary&gt;</em></div>
 <div class="tip" id="fs26">val orders : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity []<br /><br />Full name: General.orders</div>
 <div class="tip" id="fs27">val customersQuery : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity []<br /><br />Full name: General.customersQuery</div>
 <div class="tip" id="fs28">val query : Linq.QueryBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.query</div>
@@ -363,16 +366,16 @@ using both the primary key and the text of the column you have selected.</p>
 <div class="tip" id="fs35">val filteredQuery : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity []<br /><br />Full name: General.filteredQuery</div>
 <div class="tip" id="fs36">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where </div>
 <div class="tip" id="fs37">val multipleFilteredQuery : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity []<br /><br />Full name: General.multipleFilteredQuery</div>
-<div class="tip" id="fs38">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.Country: string</div>
+<div class="tip" id="fs38">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.Country: string<br /><em><br /><br />&lt;summary&gt;  nvarchar(15)&lt;/summary&gt;</em></div>
 <div class="tip" id="fs39">val automaticJoinQuery : (SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity * SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity) []<br /><br />Full name: General.automaticJoinQuery</div>
 <div class="tip" id="fs40">val order : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
 <div class="tip" id="fs41">val explicitJoinQuery : (SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity * SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity) []<br /><br />Full name: General.explicitJoinQuery</div>
 <div class="tip" id="fs42">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;<br /><br />Calls Linq.QueryBuilder.Join </div>
-<div class="tip" id="fs43">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders<br /><em><br /><br />&lt;summary&gt;The table Orders belonging to schema main&lt;/summary&gt;</em></div>
-<div class="tip" id="fs44">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.CustomerId: string</div>
+<div class="tip" id="fs43">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders<br /><em><br /><br />&lt;summary&gt;  The table Orders belonging to schema main&lt;/summary&gt;</em></div>
+<div class="tip" id="fs44">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.CustomerId: string<br /><em><br /><br />&lt;summary&gt;  nchar(5)&lt;/summary&gt;</em></div>
 <div class="tip" id="fs45">val ordersQuery : (string * System.DateTime * string) []<br /><br />Full name: General.ordersQuery</div>
-<div class="tip" id="fs46">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderDate: System.DateTime</div>
-<div class="tip" id="fs47">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: string</div>
+<div class="tip" id="fs46">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderDate: System.DateTime<br /><em><br /><br />&lt;summary&gt;  datetime&lt;/summary&gt;</em></div>
+<div class="tip" id="fs47">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: string<br /><em><br /><br />&lt;summary&gt;  nvarchar(60)&lt;/summary&gt;</em></div>
 <div class="tip" id="fs48">val BERGS : SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity<br /><br />Full name: General.BERGS</div>
 <div class="tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals<br /><em><br /><br />&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
 <div class="tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
