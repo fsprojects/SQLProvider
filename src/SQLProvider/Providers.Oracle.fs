@@ -543,36 +543,40 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         member __.GetTableDescription(con,tableName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
-            let comment =
-                sprintf """SELECT COMMENTS 
-                            FROM user_tab_comments 
-                            WHERE TABLE_NAME = '%s'
-                            AND COMMENTS <> '-'
-                        """ tn 
-                |> Oracle.read con (fun row -> 
-                    Sql.dbUnbox row.[0])
-                |> Seq.toList
-            match comment with
-            | [x] -> x
-            | _ -> 
-                ""
+            Sql.connect con (fun con -> 
+                let comment =
+                    sprintf """SELECT COMMENTS 
+                                FROM user_tab_comments 
+                                WHERE TABLE_NAME = '%s'
+                                AND COMMENTS <> '-'
+                            """ tn 
+                    |> Oracle.read con (fun row -> 
+                        Sql.dbUnbox row.[0])
+                    |> Seq.toList
+                match comment with
+                | [x] -> x
+                | _ -> 
+                    ""
+            )
         member __.GetColumnDescription(con,tableName,columnName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
-            let comment =
-                sprintf """SELECT COMMENTS 
-                            FROM user_col_comments 
-                            WHERE TABLE_NAME = '%s'
-                            AND COLUMN_NAME = '%s'
-                            AND COMMENTS <> '-'
-                        """ tn columnName
-                |> Oracle.read con (fun row -> 
-                    Sql.dbUnbox row.[0])
-                |> Seq.toList
-            match comment with
-            | [x] -> x
-            | _ -> 
-                ""
+            Sql.connect con (fun con -> 
+                let comment =
+                    sprintf """SELECT COMMENTS 
+                                FROM user_col_comments 
+                                WHERE TABLE_NAME = '%s'
+                                AND COLUMN_NAME = '%s'
+                                AND COMMENTS <> '-'
+                            """ tn columnName
+                    |> Oracle.read con (fun row -> 
+                        Sql.dbUnbox row.[0])
+                    |> Seq.toList
+                match comment with
+                | [x] -> x
+                | _ -> 
+                    ""
+            )
         member __.CreateConnection(connectionString) = Oracle.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
