@@ -37,6 +37,16 @@ module internal QueryImplementation =
         let args = projector.GetType().GenericTypeArguments
         seq { 
             if args.Length > 0 && args.[0].Name.StartsWith("IGrouping") then
+                let dict = Concurrent.ConcurrentDictionary<Type,Reflection.ConstructorInfo>()
+                let createReturnType(keyname, keyvalueb, e) =
+                    let keyvalue = unbox(keyvalueb)
+                    let kvType = keyvalue.GetType()
+                    dict.GetOrAdd(kvType,
+                        fun kv -> 
+                            let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kv)
+                            let constr = tyo.GetConstructors().[0]
+                            constr
+                    ).Invoke [|keyname; keyvalue; e;|]
                 // do group-read
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
@@ -44,9 +54,7 @@ module internal QueryImplementation =
                         let data = e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         let results =
                             data |> Array.map(fun (keyname, keyvalueb) ->
-                                let keyvalue = unbox(keyvalueb)
-                                let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
-                                let grp = ty.GetConstructors().[0].Invoke [|keyname; keyvalue; e;|]
+                                let grp = createReturnType(keyname, keyvalueb,e)
                                 grp)
                         // database will give distinct SqlEntities to have groups.
                         // If multi-key-columns, the aggregation values of 
