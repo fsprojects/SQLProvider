@@ -120,6 +120,17 @@ let nestedQueryTest =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toArray
 
+// Simple group-by test
+open System.Linq
+let qry = 
+    query {
+        for e in ctx.Hr.Employees do
+        groupBy e.DepartmentId into p
+        select (p.Key, p.Sum(fun f -> f.Salary))
+    } |> Seq.toList
+    
+
+
 //************************ CRUD *************************//
 
 

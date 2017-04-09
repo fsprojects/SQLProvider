@@ -46,6 +46,14 @@ let orderDetail =
 //orderDetail.Delete()
 //ctx.SubmitUpdates()
 
+// Simple group-by test
+let qry = 
+    query {
+        for od in ctx.Northwind.OrderDetails do
+        groupBy od.ProductId into p
+        select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
+    } |> Seq.toList
+    
 
 /// CRUD Test. To use CRUD you have to have a primary key in your table. 
 let crudops =

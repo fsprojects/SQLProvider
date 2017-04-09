@@ -491,12 +491,12 @@ and internal ISqlProvider =
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
 /// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
 /// SQL result instead of actually counting anything
-type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
+type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntity) =
     inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
     let fetchItem (returnType:Type) itemType (columnName:Option<string>) =
         let fetchCol =
             match columnName with
-            | None -> keyname.ToUpperInvariant()
+            | None -> fst(keyname).ToUpperInvariant()
             | Some c -> c.ToUpperInvariant()
         let itm =
             distinctItem.ColumnValues 
@@ -504,6 +504,7 @@ type GroupResultItems<'key>(keyname:String, keyval, distinctItem:SqlEntity) =
                 let sUp = s.ToUpperInvariant()
                 sUp.Contains(fetchCol.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
         Utilities.convertTypes itm returnType
+    new(keyname, keyval, distinctItem:SqlEntity) = GroupResultItems((keyname,""), keyval, distinctItem)
     member __.Values = [|distinctItem|]
     interface System.Linq.IGrouping<'key, SqlEntity> with
         member __.Key = keyval

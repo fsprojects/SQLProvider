@@ -338,8 +338,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                         | false -> sprintf "%c%s%s%s%c" cOpen al separator col cClose
                     let fieldNotationAlias(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "%c%s%c" cOpen col cClose
-                        | false -> sprintf "%c%s_%s%c" cOpen al col cClose
+                        | true -> sprintf "%c[%s]%c" cOpen col cClose
+                        | false -> sprintf "%c[%s][%s]%c" cOpen al col cClose
 
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp

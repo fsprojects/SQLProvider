@@ -375,8 +375,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | false -> sprintf "[%s].[%s]" al col
                     let fieldNotationAlias(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "'%s'" col
-                        | false -> sprintf "'[%s].[%s]'" al col
+                        | true -> sprintf "'[%s]'" col
+                        | false -> sprintf "'[%s][%s]'" al col
                     
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp

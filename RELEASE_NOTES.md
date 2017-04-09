@@ -1,3 +1,9 @@
+### 1.0.52 - 09.04.2017
+* Initial support for 2 column key on group-by
+
+### 1.0.51 - 06.04.2017
+* Oracle comments fix
+
 ### 1.0.50 - 05.04.2017
 * Fixed: Support for group-by where condition outside group-by operation
 

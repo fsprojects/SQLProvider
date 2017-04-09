@@ -591,16 +591,18 @@ let ``simple select query with groupBy date``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with groupBy2``() = 
     let dc = sql.GetDataContext()
     let qry = 
         query {
             for cust in dc.Main.Customers do
-            groupBy (cust.City, cust.Country) into c
+            where (cust.City = "London")
+            groupBy (cust.Country, cust.City) into c
             select (c.Key, c.Count()+1)
         } |> dict  
     Assert.IsNotNull(qry)
+    Assert.AreEqual(7, qry.Sum(fun k -> k.Value))
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with groupValBy``() = 

@@ -15,6 +15,12 @@ open FSharp.Data.Sql.Schema
 type IWithDataContext =
     abstract DataContext : ISqlDataContext
 
+type CastTupleMaker<'T1,'T2,'T3> = 
+    static member makeTuple2(t1:obj, t2:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2) |> box
+    static member makeTuple3(t1:obj, t2:obj, t3:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3) |> box
+
 module internal QueryImplementation =
     open System.Linq
     open System.Linq.Expressions
@@ -37,32 +43,54 @@ module internal QueryImplementation =
         let args = projector.GetType().GenericTypeArguments
         seq { 
             if args.Length > 0 && args.[0].Name.StartsWith("IGrouping") then
-                let dict = Concurrent.ConcurrentDictionary<Type,Reflection.ConstructorInfo>()
-                let createReturnType(keyname, keyvalueb, e) =
-                    let keyvalue = unbox(keyvalueb)
-                    let kvType = keyvalue.GetType()
-                    dict.GetOrAdd(kvType,
-                        fun kv -> 
-                            let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kv)
-                            let constr = tyo.GetConstructors().[0]
-                            constr
-                    ).Invoke [|keyname; keyvalue; e;|]
+                let keyType = 
+                    if args.[0].GenericTypeArguments.Length = 0 then None
+                    else 
+                        let kt = args.[0].GenericTypeArguments.[0]
+                        if kt = typeof<obj> then None else Some kt
+                let keyConstructor = 
+                    keyType |> Option.map(fun kt ->
+                        let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kt)
+                        tyo.GetConstructors())
+
+                let getval (key:obj) idx = Utilities.convertTypes key keyType.Value.GenericTypeArguments.[idx]
+                
+                let tup2, tup3 = 
+                    let genArg idx = 
+                        if keyType.IsSome && keyType.Value.GenericTypeArguments.Length > idx then
+                            keyType.Value.GenericTypeArguments.[idx]
+                        else typeof<Object>
+                    let tup =
+                        typedefof<CastTupleMaker<_,_,_>>.MakeGenericType(
+                            genArg 0, genArg 1, genArg 2
+                        )
+                    tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3")
+
                 // do group-read
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
                         let aggregates = [|"[COUNT]"; "[MIN]"; "[MAX]"; "[SUM]"; "[AVG]"|]
-                        let data = e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
-                        let results =
-                            data |> Array.map(fun (keyname, keyvalueb) ->
-                                let grp = createReturnType(keyname, keyvalueb,e)
-                                grp)
-                        // database will give distinct SqlEntities to have groups.
-                        // If multi-key-columns, the aggregation values of 
-                        // GroupResultItems distinctItem.ColumnValues should be handled.
-                        match results with
+                        let data = 
+                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                        match data with
                         | [||] -> failwith "aggregate not found"
-                        | [|x|] -> x
-                        | lst -> failwith "multiple key columns not supported yet"
+                        | [|keyname, keyvalue|] -> 
+                            match keyType with
+                            | Some keyTypev ->
+                                let x = 
+                                    let b = Utilities.convertTypes keyvalue keyTypev |> unbox
+                                    if b.GetType() = typeof<obj> then unbox b else b
+                                keyConstructor.Value.[1].Invoke [|keyname; x; e;|]
+                            | None ->
+                                let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
+                                ty.GetConstructors().[1].Invoke [|keyname; keyvalue; e;|]
+                        | [|kn1, kv1; kn2, kv2|] when keyType.IsSome ->
+                            let v1, v2 = getval kv1 0, getval kv2 1
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); e;|]
+                        | [|kn1, kv1; kn2, kv2; kn3; kv3|] when keyType.IsSome ->
+                            let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup3.Invoke(null, [|v1;v2;v3|]); e;|]
+                        | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
 
                 for e in collected -> projector.DynamicInvoke(e) 
