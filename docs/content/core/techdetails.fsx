@@ -8,11 +8,11 @@ Git information is in a separate [document](http://fsprojects.github.io/SQLProvi
 
 Databases that you should need for development:
 
- - Demo-data database scripts are at: `/src/DatabaseScripts/`
- - Access database is at: `/docs/files/msaccess/Northwind.MDB`
- - SQLite database is at: `/tests/SqlProvider.Tests/db/northwindEF.db`
+ - Demo-data database scripts are at: [/src/DatabaseScripts/](https://github.com/fsprojects/SQLProvider/tree/master/src/DatabaseScripts)
+ - Access database is at: [/docs/files/msaccess/Northwind.MDB](https://github.com/fsprojects/SQLProvider/blob/master/docs/files/msaccess/Northwind.MDB)
+ - SQLite database is at: [/tests/SqlProvider.Tests/db/northwindEF.db](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/db/northwindEF.db)
  
-Even though our test run will run modifications to the test databases, don't check in these *.mdb and *.db files with your commit, to avoid bad merge-cases.
+Even though our test run will run modifications to the test databases, don't check in these `*.mdb` and `*.db` files with your commit, to avoid bad merge-cases.
 
 ### Solution structure
 
@@ -31,12 +31,12 @@ The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you
 
 ### Referenced Files
 
- - Documentation is located at `SQLProvider/docs/content/core` and it's converted directly to *.html help files by the build-script.
- - `src/ProvidedTypes.fsi`, `src/ProvidedTypes.fs` and `src/Code/ExpressionOptimizer.fs` are coming from other repositoried restored by first build. Location is at `packet.dependencies`. Don't edit them manually.
+ - Documentation is located at [SQLProvider/docs/content/core](https://github.com/fsprojects/SQLProvider/tree/master/docs/content/core) and it's converted directly to `*.html` help files by the build-script.
+ - `src/ProvidedTypes.fsi`, `src/ProvidedTypes.fs` and `src/Code/ExpressionOptimizer.fs` are coming from other repositoried restored by first build. Location is at [packet.dependencies](https://github.com/fsprojects/SQLProvider/blob/master/paket.dependencies). Don't edit them manually.
 
 ### Test cases
 
-There are database specific test files as scripts in the test solution, `/tests/SqlProvider.Tests/scripts/`, but also one generic `/tests/SqlProvider.Tests/QueryTests.fs` which is running all the SQLite tests in the build script.
+There are database specific test files as scripts in the test solution, [/tests/SqlProvider.Tests/scripts/](https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Tests/scripts), but also one generic [/tests/SqlProvider.Tests/QueryTests.fs](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs) which is running all the SQLite tests in the build script.
 
 ## High level description of the provider
 
@@ -52,13 +52,13 @@ let dc = sql.GetDataContext()
 
 (**
 
-What will first happen in the design-time, is that this will call `createTypes` of `SqlDesignTime.fs` and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the `sql.datacontext` and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.
+What will first happen in the design-time, is that this will call `createTypes` of [SqlDesignTime.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlDesignTime.fs) and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the `sql.datacontext` and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.
 
-`GetDataContext()` will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file `SqlRuntime.DataContext.fs` through interface `ISqlDataContext`. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented `ISqlProvider` in file `SqlRuntime.Common.fs`.
+`GetDataContext()` will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file [SqlRuntime.DataContext.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.DataContext.fs) through interface `ISqlDataContext`. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented `ISqlProvider` in file [SqlRuntime.Common.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs).
 
 ### Querying
 
-The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of `SqlEntity`, base-class in file `SqlRuntime.Common.fs` which can be basically think of as wrapper for `Dictionary<string,obj>` (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as `SqlQueryable<SqlEntity>`, or `SqlQueryable<'T>` which is a SQLProvider's class for `IQueryable<'T>` items.
+The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of `SqlEntity`, base-class in file [SqlRuntime.Common.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs) which can be basically think of as wrapper for `Dictionary<string,obj>` (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as `SqlQueryable<SqlEntity>`, or `SqlQueryable<'T>` which is a SQLProvider's class for `IQueryable<'T>` items.
 
 *)
 
@@ -87,7 +87,7 @@ Our example the LINQ-expression tree is:
 }
 ```
 
-so it would hit this in `SqlRuntime.Linq.fs`:
+so it would hit this in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs):
 
 ```fsharp
 | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
@@ -101,6 +101,7 @@ We collect all the known patterns to `IWithSqlService`s field SqlExpression, bei
 ### Execution of the query
 
 Eventually there also comes the call `executeQuery` (or `executeQueryScalar` for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call `QueryExpressionTransformer.convertExpression`. What happens there:
+
  - We create a Selection-lambda. This is described in detail below.
  - We convert our `SqlExp` to real SQL-clause with `QueryExpressionTransformer.convertExpression` calling provider's `GenerateQueryText`-method. Each provider may have some differences in their SQL-syntax.
  - We gather the results as `IEnumerable<SqlEntity>` (or a single return value like count).
@@ -153,7 +154,7 @@ We don't know the function of DayOfYear for each different SQL-providers (Oracle
 }
 ```
 
-What happens now, is that in `SqlRuntime.QueryExpression.fs` we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
+What happens now, is that in [SqlRuntime.QueryExpression.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.QueryExpression.fs) we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
 the SqlEntity's `emp.GetColumn("BirthDate")`, and create a lambda-expression where this is replaced with a parameter:
 
 ```fsharp
@@ -166,5 +167,7 @@ Now when we get the empBirthDate from the SQL result, we can execute this lambda
 
  - SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees
  - If you do IN-query (LINQ-Contains) to IEnumerable, it's as normal IN-query, but if the source collection is SqlQueryable<SqlEntity>, then the query is serialized as a nested query, where we have to check that the parameter names won't collide (i.e. param1 can be used only once).
+
+ This documentation was written on 2017-04-11.
 
 *)
