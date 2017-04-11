@@ -19,6 +19,8 @@ This is how you can make a "pull request", to suggest your modifications to be a
    
 ### 2. Edit and Commit ###
 
+   Here are some [tech details](techdetails.html).
+
    Do the modifications, check the build and tests are working. Commit the modifications to your local repository.
 
 
