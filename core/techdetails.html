@@ -37,11 +37,11 @@
 <h2><a name="The-environment" class="anchor" href="#The-environment">The environment</a></h2>
 <p>Databases that you should need for development:</p>
 <ul>
-<li>Demo-data database scripts are at: <code>/src/DatabaseScripts/</code></li>
-<li>Access database is at: <code>/docs/files/msaccess/Northwind.MDB</code></li>
-<li>SQLite database is at: <code>/tests/SqlProvider.Tests/db/northwindEF.db</code></li>
+<li>Demo-data database scripts are at: <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/DatabaseScripts">/src/DatabaseScripts/</a></li>
+<li>Access database is at: <a href="https://github.com/fsprojects/SQLProvider/blob/master/docs/files/msaccess/Northwind.MDB">/docs/files/msaccess/Northwind.MDB</a></li>
+<li>SQLite database is at: <a href="https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/db/northwindEF.db">/tests/SqlProvider.Tests/db/northwindEF.db</a></li>
 </ul>
-<p>Even though our test run will run modifications to the test databases, don't check in these <em>.mdb and </em>.db files with your commit, to avoid bad merge-cases.</p>
+<p>Even though our test run will run modifications to the test databases, don't check in these <code>*.mdb</code> and <code>*.db</code> files with your commit, to avoid bad merge-cases.</p>
 <h3><a name="Solution-structure" class="anchor" href="#Solution-structure">Solution structure</a></h3>
 <p>We use Fake and Paket. You have to run <code>build.cmd</code> on Windows (or <code>sh ./build.sh</code> on Mac/Linux) before opening the solutions.</p>
 <p>The main source solution is <code>SQLProvider.sln</code>.
@@ -57,11 +57,11 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 </ul>
 <h3><a name="Referenced-Files" class="anchor" href="#Referenced-Files">Referenced Files</a></h3>
 <ul>
-<li>Documentation is located at <code>SQLProvider/docs/content/core</code> and it's converted directly to *.html help files by the build-script.</li>
-<li><code>src/ProvidedTypes.fsi</code>, <code>src/ProvidedTypes.fs</code> and <code>src/Code/ExpressionOptimizer.fs</code> are coming from other repositoried restored by first build. Location is at <code>packet.dependencies</code>. Don't edit them manually.</li>
+<li>Documentation is located at <a href="https://github.com/fsprojects/SQLProvider/tree/master/docs/content/core">SQLProvider/docs/content/core</a> and it's converted directly to <code>*.html</code> help files by the build-script.</li>
+<li><code>src/ProvidedTypes.fsi</code>, <code>src/ProvidedTypes.fs</code> and <code>src/Code/ExpressionOptimizer.fs</code> are coming from other repositoried restored by first build. Location is at <a href="https://github.com/fsprojects/SQLProvider/blob/master/paket.dependencies">packet.dependencies</a>. Don't edit them manually.</li>
 </ul>
 <h3><a name="Test-cases" class="anchor" href="#Test-cases">Test cases</a></h3>
-<p>There are database specific test files as scripts in the test solution, <code>/tests/SqlProvider.Tests/scripts/</code>, but also one generic <code>/tests/SqlProvider.Tests/QueryTests.fs</code> which is running all the SQLite tests in the build script.</p>
+<p>There are database specific test files as scripts in the test solution, <a href="https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Tests/scripts">/tests/SqlProvider.Tests/scripts/</a>, but also one generic <a href="https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs">/tests/SqlProvider.Tests/QueryTests.fs</a> which is running all the SQLite tests in the build script.</p>
 <h2><a name="High-level-description-of-the-provider" class="anchor" href="#High-level-description-of-the-provider">High level description of the provider</a></h2>
 <h3><a name="Context-and-design-time" class="anchor" href="#Context-and-design-time">Context and design time</a></h3>
 <p>You have a source code like:</p>
@@ -73,10 +73,10 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 </code></pre></td>
 </tr>
 </table>
-<p>What will first happen in the design-time, is that this will call <code>createTypes</code> of <code>SqlDesignTime.fs</code> and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the <code>sql.datacontext</code> and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.</p>
-<p><code>GetDataContext()</code> will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file <code>SqlRuntime.DataContext.fs</code> through interface <code>ISqlDataContext</code>. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented <code>ISqlProvider</code> in file <code>SqlRuntime.Common.fs</code>.</p>
+<p>What will first happen in the design-time, is that this will call <code>createTypes</code> of <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlDesignTime.fs">SqlDesignTime.fs</a> and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the <code>sql.datacontext</code> and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.</p>
+<p><code>GetDataContext()</code> will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.DataContext.fs">SqlRuntime.DataContext.fs</a> through interface <code>ISqlDataContext</code>. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented <code>ISqlProvider</code> in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a>.</p>
 <h3><a name="Querying" class="anchor" href="#Querying">Querying</a></h3>
-<p>The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of <code>SqlEntity</code>, base-class in file <code>SqlRuntime.Common.fs</code> which can be basically think of as wrapper for <code>Dictionary&lt;string,obj&gt;</code> (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as <code>SqlQueryable&lt;SqlEntity&gt;</code>, or <code>SqlQueryable&lt;'T&gt;</code> which is a SQLProvider's class for <code>IQueryable&lt;'T&gt;</code> items.</p>
+<p>The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of <code>SqlEntity</code>, base-class in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a> which can be basically think of as wrapper for <code>Dictionary&lt;string,obj&gt;</code> (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as <code>SqlQueryable&lt;SqlEntity&gt;</code>, or <code>SqlQueryable&lt;'T&gt;</code> which is a SQLProvider's class for <code>IQueryable&lt;'T&gt;</code> items.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 <span class="l">3: </span>
@@ -109,7 +109,7 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
     .Call $cust.GetColumn(<span class="s">"CustomerID"</span>) <span class="o">=</span><span class="o">=</span> <span class="s">"ALFKI"</span>
 }
 </code></pre></td></tr></table>
-<p>so it would hit this in <code>SqlRuntime.Linq.fs</code>:</p>
+<p>so it would hit this in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">| <span class="i">MethodCall</span>(<span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="i">None</span>, (<span class="i">MethodWithName</span> <span class="s">&quot;Where&quot;</span> <span class="k">as</span> <span class="i">meth</span>), [ <span class="i">SourceWithQueryData</span> <span class="i">source</span>; <span class="i">OptionalQuote</span> <span class="i">qual</span> ]) <span class="k">-&gt;</span>
@@ -120,11 +120,13 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 What happens then is parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern <code>Condition</code>). If the conditions are having <code>SqlColumnGet</code>s, a pattern that says that it's <code>SqlEntity</code> with method <code>GetColumn</code>, we know that it has to be part of SQL-clause.</p>
 <p>We collect all the known patterns to <code>IWithSqlService</code>s field SqlExpression, being a type <code>SqlExp</code>, our non-complete known recursive model-tree of SQL clauses.</p>
 <h3><a name="Execution-of-the-query" class="anchor" href="#Execution-of-the-query">Execution of the query</a></h3>
-<p>Eventually there also comes the call <code>executeQuery</code> (or <code>executeQueryScalar</code> for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call <code>QueryExpressionTransformer.convertExpression</code>. What happens there:
-- We create a Selection-lambda. This is described in detail below.
-- We convert our <code>SqlExp</code> to real SQL-clause with <code>QueryExpressionTransformer.convertExpression</code> calling provider's <code>GenerateQueryText</code>-method. Each provider may have some differences in their SQL-syntax.
-- We gather the results as <code>IEnumerable&lt;SqlEntity&gt;</code> (or a single return value like count).
-- We execute the selection lambda to the results.</p>
+<p>Eventually there also comes the call <code>executeQuery</code> (or <code>executeQueryScalar</code> for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call <code>QueryExpressionTransformer.convertExpression</code>. What happens there:</p>
+<ul>
+<li>We create a Selection-lambda. This is described in detail below.</li>
+<li>We convert our <code>SqlExp</code> to real SQL-clause with <code>QueryExpressionTransformer.convertExpression</code> calling provider's <code>GenerateQueryText</code>-method. Each provider may have some differences in their SQL-syntax.</li>
+<li>We gather the results as <code>IEnumerable&lt;SqlEntity&gt;</code> (or a single return value like count).</li>
+<li>We execute the selection lambda to the results.</li>
+</ul>
 <p>In our example the whole cust object was selected.
 For security reasons we don't do <code>SELECT *</code> but we actually list the columns that are there at compile time.</p>
 <p>The <code>TupleIndex</code> of IWithSqlService is a way to collect joined tables to match the sql-aliasses, here the <code>[cust]</code>.</p>
@@ -189,7 +191,7 @@ For security reasons we don't do <code>SELECT *</code> but we actually list the 
     (.Call $emp.GetColumn(<span class="s">"BirthDate"</span>)).DayOfYear <span class="o">+</span> <span class="n">3</span>
 }
 </code></pre></td></tr></table>
-<p>What happens now, is that in <code>SqlRuntime.QueryExpression.fs</code> we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
+<p>What happens now, is that in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.QueryExpression.fs">SqlRuntime.QueryExpression.fs</a> we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
 the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-expression where this is replaced with a parameter:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
@@ -201,7 +203,10 @@ the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-exp
 <h3><a name="Other-things-to-know" class="anchor" href="#Other-things-to-know">Other things to know</a></h3>
 <ul>
 <li>SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees</li>
-<li>If you do IN-query (LINQ-Contains) to IEnumerable, it's as normal IN-query, but if the source collection is SqlQueryable<SqlEntity>, then the query is serialized as a nested query, where we have to check that the parameter names won't collide (i.e. param1 can be used only once).</li>
+<li>
+<p>If you do IN-query (LINQ-Contains) to IEnumerable, it's as normal IN-query, but if the source collection is SqlQueryable<SqlEntity>, then the query is serialized as a nested query, where we have to check that the parameter names won't collide (i.e. param1 can be used only once).</p>
+<p>This documentation was written on 2017-04-11.</p>
+</li>
 </ul>
 
 <div class="tip" id="fs1">val query : Linq.QueryBuilder<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.query</div>
