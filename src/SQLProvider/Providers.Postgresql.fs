@@ -120,23 +120,21 @@ module PostgreSQL =
     // store the enum value for Array; it will be combined later with the generic argument
     let arrayProviderDbType = lazy (Option.get <| parseDbType "Array")        
     
-    /// Pairs a CLR type with a value of Npgsql's type enumeration
+    /// Pairs a CLR type by type object with a value of Npgsql's type enumeration
     let typemap' t = List.tryPick parseDbType >> Option.map (fun dbType -> t, dbType)
 
-    /// Pairs a CLR type with a value of Npgsql's type enumeration
+    /// Pairs a CLR type by type parameter with a value of Npgsql's type enumeration
     let typemap<'t> = typemap' typeof<'t>
     
-    /// Pairs a CLR type with a value of Npgsql's type enumeration
+    /// Pairs a CLR type by name with a value of Npgsql's type enumeration
     let namemap name dbTypes = findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
 
-    let createTypeMappings () =
-            
+    let createTypeMappings () =            
         // http://www.npgsql.org/doc/2.2/
         // http://www.npgsql.org/doc/3.0/types.html
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
-
               "bit",                    (if isLegacyVersion.Value
                                          then typemap<bool>                       ["Bit"]
                                          else typemap<BitArray>                   ["Bit"])
@@ -160,7 +158,6 @@ module PostgreSQL =
               "inet"                        , typemap<IPAddress>                  ["Inet"]
             //"int2vector"                  , typemap<short[]>                    ["Int2Vector"]
               "integer"                     , typemap<int32>                      ["Integer"]
-
               "interval"                    , typemap<TimeSpan>                   ["Interval"]
               "json"                        , typemap<string>                     ["Json"]
               "jsonb"                       , typemap<string>                     ["Jsonb"]
@@ -182,10 +179,8 @@ module PostgreSQL =
               "record"                      , typemap<SqlEntity[]>                ["Refcursor"]
               "refcursor"                   , typemap<SqlEntity[]>                ["Refcursor"]
               "regtype"                     , typemap<uint32>                     ["Regtype"]
-              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
-              
+              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]              
               "smallint"                    , typemap<int16>                      ["Smallint"]
-
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
               "time without time zone"      , typemap<TimeSpan>                   ["Time"]              
@@ -671,7 +666,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 let dataType = Sql.dbUnbox<string> reader.["data_type"]
                 if dataType.ToLower() = "array"
                     // for array columns, the actual data type is stored in [udt_name] with a "_" prefix, e.g. "_numeric"
-                    then ArrayColumn ((Sql.dbUnbox<string> reader.["udt_name"]).ToLower().Substring(1))
+                    then ArrayColumn ((Sql.dbUnbox<string> reader.["udt_name"]).Substring(1))
                     else AtomicColumn dataType
 
             try

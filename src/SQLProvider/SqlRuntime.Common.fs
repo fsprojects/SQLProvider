@@ -127,13 +127,14 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            match data.[key] with
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
-           // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...
-           // Added exception for Postgres multi-dimensional arrays which would otherwise get caught
+           // Postgres array types
+           | :? Array as arr -> 
+                unbox arr
+           // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
            | data when typeof<'T> <> data.GetType() && 
-                       typeof<'T> <> typeof<obj> &&
-                       not (data.GetType().IsArray)
+                       typeof<'T> <> typeof<obj>
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
-           | data -> unbox data // TODO: gestire conversione da T[,] a T[]
+           | data -> unbox data
         else defaultValue()
 
     member __.GetColumnOption<'T>(key) : Option<'T> =

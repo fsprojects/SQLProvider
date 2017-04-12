@@ -139,11 +139,26 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                  
                    // special case for guids as they are not a supported quotable constant in the TP mechanics,
                    // but we can deal with them as strings.
-                   let (|FixedType|_|) (o:obj) = 
+                   let rec (|FixedType|_|) (o:obj) = 
                       match o, o.GetType().IsValueType with
                       // watch out for normal strings
                       | :? string, _ -> Some o
-                      | :? Guid, _ -> Some (box (o.ToString()))                      
+                      | :? Guid, _ -> Some (box (o.ToString()))
+                      | :? Array as arr, _ -> 
+                          printfn "fix"
+                          printfn "%A" arr
+                          match o.GetType().GetGenericArguments() with
+                          | [| t |] -> 
+                              let elements = Seq.choose id <| seq {
+                                      for i in arr do
+                                          match i with
+                                          | FixedType iTxt -> yield Some iTxt
+                                          | _ -> yield None
+                                  }
+                                         
+                              Some (box <| "{" + String.Join(",", elements) + "}")
+                                              
+                          | _ -> None
                       | _, true -> Some o
                       // can't support any other types
                       | _, _ -> None
@@ -152,6 +167,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    let props =
                       entities
                       |> Array.choose(fun e -> 
+                         printfn "props"
+                         printfn "%s" <| (e.GetColumn pk).ToString()
                          match e.GetColumn pk with
                          | FixedType pkValue -> 
                             let name = table.FullName

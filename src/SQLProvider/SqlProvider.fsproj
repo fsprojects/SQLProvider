@@ -28,7 +28,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <StartAction>Program</StartAction>
-    <StartProgram>D:\Appdev\SqlProvider\tests\SqlProvider.Tests\Test.Console\bin\Debug\Test.Console.exe</StartProgram>
+    <StartProgram>C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe</StartProgram>
     <StartArguments>
     </StartArguments>
   </PropertyGroup>
@@ -40,6 +40,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <StartAction>Program</StartAction>
+    <StartProgram>C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe</StartProgram>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
