@@ -100,12 +100,13 @@ We collect all the known patterns to `IWithSqlService`s field SqlExpression, bei
 
 ### Execution of the query
 
-Eventually there also comes the call `executeQuery` (or `executeQueryScalar` for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call `QueryExpressionTransformer.convertExpression`. What happens there:
+Eventually there also comes the call `executeQuery` (or `executeQueryScalar` for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call `QueryExpressionTransformer.convertExpression`. What happens there (in 
+[SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs)):
 
- - We create a Selection-lambda. This is described in detail below.
+ - We create a projection-lambda. This is described in detail below.
  - We convert our `SqlExp` to real SQL-clause with `QueryExpressionTransformer.convertExpression` calling provider's `GenerateQueryText`-method. Each provider may have some differences in their SQL-syntax.
  - We gather the results as `IEnumerable<SqlEntity>` (or a single return value like count).
- - We execute the selection lambda to the results.
+ - We execute the projection-lambda to the results.
 
 In our example the whole cust object was selected.
 For security reasons we don't do `SELECT *` but we actually list the columns that are there at compile time.
@@ -130,7 +131,7 @@ WHERE (([cust].[CustomerID]= @param1))
 -- params @param1 - "ALFKI";
 ```
 
-### Selection-lambda
+### Projection-lambda
  
 Now, if the select-clause would have been complex:
 
@@ -161,7 +162,7 @@ the SqlEntity's `emp.GetColumn("BirthDate")`, and create a lambda-expression whe
 fun empBirthDate -> empBirthDate.DayOfYear + 3
 ```
 
-Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result.
+Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with `for e in results -> projector.DynamicInvoke(e)` in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs).
 
 ### Other things to know
 
