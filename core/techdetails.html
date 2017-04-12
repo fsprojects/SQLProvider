@@ -120,12 +120,13 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 What happens then is parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern <code>Condition</code>). If the conditions are having <code>SqlColumnGet</code>s, a pattern that says that it's <code>SqlEntity</code> with method <code>GetColumn</code>, we know that it has to be part of SQL-clause.</p>
 <p>We collect all the known patterns to <code>IWithSqlService</code>s field SqlExpression, being a type <code>SqlExp</code>, our non-complete known recursive model-tree of SQL clauses.</p>
 <h3><a name="Execution-of-the-query" class="anchor" href="#Execution-of-the-query">Execution of the query</a></h3>
-<p>Eventually there also comes the call <code>executeQuery</code> (or <code>executeQueryScalar</code> for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call <code>QueryExpressionTransformer.convertExpression</code>. What happens there:</p>
+<p>Eventually there also comes the call <code>executeQuery</code> (or <code>executeQueryScalar</code> for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call <code>QueryExpressionTransformer.convertExpression</code>. What happens there (in
+<a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>):</p>
 <ul>
-<li>We create a Selection-lambda. This is described in detail below.</li>
+<li>We create a projection-lambda. This is described in detail below.</li>
 <li>We convert our <code>SqlExp</code> to real SQL-clause with <code>QueryExpressionTransformer.convertExpression</code> calling provider's <code>GenerateQueryText</code>-method. Each provider may have some differences in their SQL-syntax.</li>
 <li>We gather the results as <code>IEnumerable&lt;SqlEntity&gt;</code> (or a single return value like count).</li>
-<li>We execute the selection lambda to the results.</li>
+<li>We execute the projection-lambda to the results.</li>
 </ul>
 <p>In our example the whole cust object was selected.
 For security reasons we don't do <code>SELECT *</code> but we actually list the columns that are there at compile time.</p>
@@ -162,7 +163,7 @@ For security reasons we don't do <code>SELECT *</code> but we actually list the 
 
 <span class="c">-- params @param1 - "ALFKI";</span>
 </code></pre></td></tr></table>
-<h3><a name="Selection-lambda" class="anchor" href="#Selection-lambda">Selection-lambda</a></h3>
+<h3><a name="Projection-lambda" class="anchor" href="#Projection-lambda">Projection-lambda</a></h3>
 <p>Now, if the select-clause would have been complex:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -199,7 +200,7 @@ the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-exp
 </code></pre></td>
 </tr>
 </table>
-<p>Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result.</p>
+<p>Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with <code>for e in results -&gt; projector.DynamicInvoke(e)</code> in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>.</p>
 <h3><a name="Other-things-to-know" class="anchor" href="#Other-things-to-know">Other things to know</a></h3>
 <ul>
 <li>SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees</li>
