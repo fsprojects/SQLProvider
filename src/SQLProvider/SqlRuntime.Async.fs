@@ -51,7 +51,8 @@ module AsyncOperations =
             match s with
             | :? IWithSqlService as svc ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
-                return (Utilities.convertTypes res typeof<'T>) |> unbox
+                if res = box(DBNull.Value) then return 0 else
+                return (Utilities.convertTypes res typeof<int>) |> unbox
             | c ->
                 return c |> Seq.length
         }
@@ -79,6 +80,7 @@ module AsyncOperations =
                             | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
                             | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
                     let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex 
+                    if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
                     return (Utilities.convertTypes res typeof<'T>) |> unbox
                 | _ -> return failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
             | c -> return failwithf "Supported only on SQLProvider dataase IQueryables"

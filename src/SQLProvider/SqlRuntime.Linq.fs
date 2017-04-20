@@ -773,6 +773,7 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
                         let res = executeQueryScalar svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex 
+                        if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                         (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(None, (MethodWithName "Any" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let limitedSource = 
@@ -828,6 +829,7 @@ module internal QueryImplementation =
                                | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
                                | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                        if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                         (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(None, (MethodWithName "Contains"), [SourceWithQueryData source; 
                              OptionalQuote(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))) 
@@ -843,6 +845,7 @@ module internal QueryImplementation =
                                 failwithf "Unsupported execution of contains expression `%s`" (e.ToString())
 
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                        if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                         (Utilities.convertTypes res typeof<'T>) :?> 'T
                     | MethodCall(_, (MethodWithName "ElementAt"), [SourceWithQueryData source; Int position ]) ->
                         let skips = position - 1
