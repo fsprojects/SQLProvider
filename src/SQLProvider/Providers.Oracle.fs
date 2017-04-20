@@ -522,16 +522,13 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = :id%i" k i))))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
-        cmd.CommandType <- CommandType.Text
         pkValues |> List.iteri(fun i pkValue ->
-            let pkType = pkValue.GetType().ToString();
-            match Oracle.findClrType pkType with
-            | Some(m) ->
-                cmd.Parameters.Add(provider.CreateCommandParameter(QueryParameter.Create((":id"+i.ToString()),i, m), pkValue)) |> ignore
-            | None -> ())
+            let pkParam = provider.CreateCommandParameter(QueryParameter.Create((":pk"+i.ToString()),i), pkValue)
+            cmd.Parameters.Add pkParam |> ignore
+        )
         cmd
 
     do
