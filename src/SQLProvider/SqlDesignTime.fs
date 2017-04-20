@@ -15,10 +15,12 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
     member __.RuntimeAssembly = runtimeAssembly 
 
+module internal DesignTimeCache = 
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,ProvidedTypeDefinition>()
+
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces()
-    let myLock3 = new Object();
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let ns = "FSharp.Data.Sql"
      
@@ -40,16 +42,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | cs -> cs
                     
         let rootType, prov, con = 
-            lock myLock3 (fun () ->
-                let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
-                let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
-                let con = prov.CreateConnection conString
-                this.Disposing.Add(fun _ -> 
-                    if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
-                        con.Dispose())
-                con.Open()
-                prov.CreateTypeMappings con
-                rootType, prov, con)
+            let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
+            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
+            let con = prov.CreateConnection conString
+            this.Disposing.Add(fun _ -> 
+                if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
+                    con.Dispose())
+            con.Open()
+            prov.CreateTypeMappings con
+            rootType, prov, con
         
         let tables = lazy prov.GetTables(con,caseSensitivity)
         let tableColumns =
@@ -597,18 +598,34 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     "
         
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; odbcquote; sqliteLibrary], fun typeName args -> 
-        createTypes(args.[1] :?> string,                  // ConnectionString URL
-                    args.[2] :?> string,                  // ConnectionString Name
-                    args.[0] :?> DatabaseProviderTypes,   // db vendor
-                    args.[3] :?> string,                  // Assembly resolution path for db connectors and custom types
-                    args.[4] :?> int,                     // Individuals Amount
-                    args.[5] :?> bool,                    // Use option types?
-                    args.[6] :?> string,                  // Schema owner currently only used for oracle
-                    args.[7] :?> CaseSensitivityChange,   // Should we do ToUpper or ToLower when generating table names?
-                    args.[8] :?> string,                  // Table names list (Oracle and MSSQL Only)
-                    args.[9] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
-                    args.[10] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
-                    typeName))
+        
+        let arguments =
+            args.[1] :?> string,                  // ConnectionString URL
+            args.[2] :?> string,                  // ConnectionString Name
+            args.[0] :?> DatabaseProviderTypes,   // db vendor
+            args.[3] :?> string,                  // Assembly resolution path for db connectors and custom types
+            args.[4] :?> int,                     // Individuals Amount
+            args.[5] :?> bool,                    // Use option types?
+            args.[6] :?> string,                  // Schema owner currently only used for oracle
+            args.[7] :?> CaseSensitivityChange,   // Should we do ToUpper or ToLower when generating table names?
+            args.[8] :?> string,                  // Table names list (Oracle and MSSQL Only)
+            args.[9] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
+            args.[10] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+            typeName
+
+        DesignTimeCache.cache.GetOrAdd(arguments, fun args ->
+            let types = createTypes args
+            
+            // This is not a perfect cache-invalidation solution, it can remove a valid item from
+            // cache after the time-out, causing one extra hit, but this is only a design-time cache 
+            // and it will work well enough to deal with Visual Studio's multi-threading problems
+            async {
+                do! Async.Sleep 30000
+                DesignTimeCache.cache.TryRemove args |> ignore
+            } |> Async.Start
+            types
+            )
+        )
 
     do paramSqlType.AddXmlDoc helpText               
     
