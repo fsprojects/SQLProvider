@@ -575,7 +575,7 @@ type internal MSAccessProvider() =
                                     let cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                    let id = cmd.ExecuteScalarAsync()
+                                    let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                     CommonTasks.checkKey pkLookup id e
                                     e._State <- Unchanged
                                 }
@@ -584,7 +584,7 @@ type internal MSAccessProvider() =
                                     let cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                    cmd.ExecuteNonQuery() |> ignore
+                                    do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                     e._State <- Unchanged
                                 }
                             | Delete ->
@@ -592,7 +592,7 @@ type internal MSAccessProvider() =
                                     let cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                    cmd.ExecuteNonQuery() |> ignore
+                                    do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                     // remove the pk to prevent this attempting to be used again
                                     e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
                                     e._State <- Deleted
