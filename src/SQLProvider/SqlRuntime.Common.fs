@@ -491,9 +491,10 @@ and internal ISqlProvider =
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
 /// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
 /// SQL result instead of actually counting anything
-type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntity) =
+type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntity) as this =
     inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
-    let fetchItem (returnType:Type) itemType (columnName:Option<string>) =
+    new(keyname, keyval, distinctItem:SqlEntity) = GroupResultItems((keyname,""), keyval, distinctItem)
+    member private __.fetchItem<'ret> itemType (columnName:Option<string>) =
         let fetchCol =
             match columnName with
             | None -> fst(keyname).ToUpperInvariant()
@@ -502,19 +503,22 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
             distinctItem.ColumnValues 
             |> Seq.filter(fun (s,k) -> 
                 let sUp = s.ToUpperInvariant()
-                sUp.Contains(fetchCol.ToUpperInvariant()) && sUp.Contains(itemType)) |> Seq.head |> snd
-        Utilities.convertTypes itm returnType
-    new(keyname, keyval, distinctItem:SqlEntity) = GroupResultItems((keyname,""), keyval, distinctItem)
+                (sUp.Contains("["+fetchCol+"]") || sUp.Contains("-"+fetchCol+"-")) && 
+                    (sUp.Contains("["+itemType+"]") || sUp.Contains("-"+itemType+"-"))) |> Seq.head |> snd
+        if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
+        else 
+            let returnType = typeof<'ret>
+            Utilities.convertTypes itm returnType :?> 'ret
     member __.Values = [|distinctItem|]
     interface System.Linq.IGrouping<'key, SqlEntity> with
         member __.Key = keyval
-    member __.AggregateCount<'T>(columnName) = fetchItem typeof<'T> "[COUNT]" columnName :?> 'T
+    member __.AggregateCount<'T>(columnName) = this.fetchItem<'T> "COUNT" columnName
     member __.AggregateSum<'T>(columnName) = 
-        let x = fetchItem typeof<'T> "[SUM]" columnName 
-        x :?> 'T
-    member __.AggregateAvg<'T>(columnName) = fetchItem typeof<'T> "[AVG]" columnName :?> 'T
-    member __.AggregateMin<'T>(columnName) = fetchItem typeof<'T> "[MIN]" columnName :?> 'T
-    member __.AggregateMax<'T>(columnName) = fetchItem typeof<'T> "[MAX]" columnName :?> 'T
+        let x = this.fetchItem<'T> "SUM" columnName 
+        x
+    member __.AggregateAvg<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
+    member __.AggregateMin<'T>(columnName) = this.fetchItem<'T> "MIN" columnName
+    member __.AggregateMax<'T>(columnName) = this.fetchItem<'T> "MAX" columnName
 
 module internal CommonTasks =
 

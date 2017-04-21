@@ -69,7 +69,9 @@ module internal QueryImplementation =
                 // do group-read
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
-                        let aggregates = [|"[COUNT]"; "[MIN]"; "[MAX]"; "[SUM]"; "[AVG]"|]
+                        // We support two possible alias syntax (because of Access), mainly alias is '[Column][Sum]'
+                        let aggregates = [|"[COUNT]"; "[MIN]"; "[MAX]"; "[SUM]"; "[AVG]";
+                                           "-COUNT-"; "-MIN-"; "-MAX-"; "-SUM-"; "-AVG-"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         match data with
@@ -126,6 +128,9 @@ module internal QueryImplementation =
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
+                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                con.Open()
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
            let results = parseQueryResults projector results
@@ -157,6 +162,9 @@ module internal QueryImplementation =
            // ignore any generated projection and just expect a single integer back
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
+                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                con.Open()
            let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed

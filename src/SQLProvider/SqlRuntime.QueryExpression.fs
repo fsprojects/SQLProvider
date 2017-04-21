@@ -91,6 +91,10 @@ module internal QueryExpressionTransformer =
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
+                                | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
+                                    match e.Member with 
+                                    | :? PropertyInfo as p when p.Name = "Value" && e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> directAggregate (e.Expression)
+                                    | _ -> None
                                 // This lamda could be parsed more if we would want to support
                                 // more complex aggregate scenarios.
                                 | _ -> None

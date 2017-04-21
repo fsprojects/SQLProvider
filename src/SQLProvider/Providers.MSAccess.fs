@@ -317,8 +317,8 @@ type internal MSAccessProvider() =
                         | false -> sprintf "[%s].[%s]" al col
                     let fieldNotationAlias(al:alias,col:string) =
                         match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "'[%s]'" col
-                        | false -> sprintf "'[%s][%s]'" al col
+                        | true -> sprintf "['%s']" col
+                        | false -> sprintf "[-%s-%s-]" al col
 
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
@@ -563,7 +563,7 @@ type internal MSAccessProvider() =
                 // ...but if access connection is ever closed, it will start to give unknown errors!
                 // if con.State = ConnectionState.Open then con.Close()
                 async {
-                    if con.State = ConnectionState.Closed then
+                    if con.State <> ConnectionState.Open then
                         do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                     use trnsx = con.BeginTransaction()
                     try
