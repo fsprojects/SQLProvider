@@ -1,3 +1,8 @@
+### 1.0.53 - 21.04.2017
+* Oracle Delete causes ORA-00932 fix #394
+* Misc minor fixes for MS-Access
+* Group-by fixed over empty result groups
+
 ### 1.0.52 - 09.04.2017
 * Initial support for 2 column key on group-by
 
