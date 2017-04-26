@@ -838,8 +838,6 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 ()
             else
 
-            con.Open()
-
             use scope = TransactionUtils.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
