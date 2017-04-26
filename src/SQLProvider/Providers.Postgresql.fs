@@ -873,8 +873,6 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 ()
             else
 
-            con.Open()
-
             use scope = TransactionUtils.ensureTransaction transactionOptions
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
