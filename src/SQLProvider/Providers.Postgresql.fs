@@ -12,6 +12,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open System.Configuration
 
 module PostgreSQL =
     let mutable resolutionPath = String.Empty
@@ -662,43 +663,27 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         member __.GetColumns(con,table) =
             Monitor.Enter columnLookup
 
-            let (|ArrayColumn|AtomicColumn|) (reader : IDataReader) = 
-                let dataType = Sql.dbUnbox<string> reader.["data_type"]
-                if dataType.ToLower() = "array"
-                    // for array columns, the actual data type is stored in [udt_name] with a "_" prefix, e.g. "_numeric"
-                    then ArrayColumn ((Sql.dbUnbox<string> reader.["udt_name"]).Substring(1))
-                    else AtomicColumn dataType
-
             try
                 match columnLookup.TryGetValue table.FullName with
                 | (true,data) when data.Count > 0 -> data
                 | _ ->
-                    let baseQuery = @"SELECT  c.column_name,
-                                              c.data_type,
-                                              c.character_maximum_length,
-                                              c.numeric_precision,
-                                              c.is_nullable,
-                                              c.udt_name,
-                                              (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
-                                        FROM  information_schema.columns c
-                                              LEFT JOIN  (SELECT  ku.table_catalog,
-                                                                  ku.table_schema,
-                                                                  ku.table_name,
-                                                                  ku.column_name
-                                                            FROM  information_schema.table_constraints AS tc
-                                                                  INNER JOIN  information_schema.key_column_usage AS ku
-                                                                              ON      tc.constraint_type = 'PRIMARY KEY'
-                                                                                  AND tc.constraint_name = ku.constraint_name
-                                                         ) pk
-                                                         ON      c.table_catalog = pk.table_catalog
-                                                             AND c.table_schema = pk.table_schema
-                                                             AND c.table_name = pk.table_name
-                                                             AND c.column_name = pk.column_name
-                                       WHERE      c.table_schema = @schema
-                                              AND c.table_name = @table
-                                    ORDER BY  c.table_schema,
-                                              c.table_name,
-                                              c.ordinal_position"
+                    let baseQuery = @"
+                        SELECT 
+                             a.attname                              AS column_name
+                            ,format_type(a.atttypid, NULL)          AS data_type_simple
+                            ,format_type(a.atttypid, a.atttypmod)   AS data_type_with_size
+                            ,(not a.attnotnull)                     AS is_nullable
+                            ,coalesce(i.indisprimary, false)        AS is_primary
+                        FROM 
+                            pg_attribute a 
+                        LEFT JOIN 
+                            pg_index i 
+                                ON a.attrelid = i.indrelid
+                                AND a.attnum = ANY(i.indkey)
+                        WHERE   
+                                a.attnum > 0
+                            AND a.attrelid = format('%I.%I', @schema, @table) ::regclass
+                        "
                     use command = PostgreSQL.createCommand baseQuery con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
@@ -706,13 +691,23 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do
-                                
+
+                                let (|ArrayColumn|AtomicColumn|) (reader : IDataReader) = 
+                                    let dataType = Sql.dbUnbox<string> reader.["data_type"]                                
+                                    if dataType.ToLower() = "array"
+                                        // for array columns, the actual data type is stored in the UDT columns and recovered by the function 'format_type'
+                                        then
+                                            let actualDataType = (Sql.dbUnbox<string> reader.["formattedType"]).TrimEnd [| '['; ']' |]
+                                            ArrayColumn actualDataType
+                                        else
+                                            AtomicColumn dataType
+                                        
                                 let typeMapping = 
                                     match reader with
                                     | AtomicColumn typeName ->
                                         PostgreSQL.findDbType (typeName.ToLower())
                                     | ArrayColumn arrayTypeName ->
-                                        // first we get the type mapping for the data type
+                                        // first we get the type mapping for the actual data type
                                         PostgreSQL.findDbType (arrayTypeName.ToLower())
                                         |> Option.map (fun m ->
                                             match m.ProviderType  with  
@@ -728,7 +723,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                                 ; DbType = PostgreSQL.getDbType providerType
                                                 }
                                            )
-                                        
+                                                                
                                 match typeMapping with
                                 let dataType = Sql.dbUnbox<string> reader.["data_type"]
                                 let charlen = 
@@ -736,12 +731,19 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     if c <> 0 then c.ToString() else ""
                                 match PostgreSQL.findDbType (dataType.ToLower()) with
                                 | Some m ->
+                                                                          
+                                    let charlen = 
+                                        let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
+                                        if c <> 0 then sprintf "(%i)" c else ""
+
                                     let col =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
                                           IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
                                           IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY"
-                                          TypeInfo = if charlen <> "" then Some (dataType + "(" + charlen + ")") else Some dataType }
+                                          TypeInfo = m.ProviderTypeName |> Option.map ((+) charlen) 
+                                        }
+
                                     if col.IsPrimaryKey then
                                         pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                             match col.Name with 
@@ -750,7 +752,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                                     | [] -> [x]
                                                     | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
+
                                     yield (col.Name,col)
+
                                 | _ -> 
                                     let typeName = match reader with | AtomicColumn t -> t | ArrayColumn t -> "array|" + t                                                    
                                     failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName typeName ]
