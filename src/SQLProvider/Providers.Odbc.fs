@@ -303,6 +303,26 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
 
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let separator = (sprintf "%c.%c" cClose cOpen).Trim()
+
+            let rec fieldNotation(al:alias,c:SqlColumnType) = 
+                let colSprint =
+                    match String.IsNullOrEmpty(al) with
+                    | true -> fun col -> sprintf "%c%s%c" cOpen col cClose
+                    | false -> fun col -> sprintf "%c%s%s%s%c" cOpen al separator col cClose
+                match c with
+                // Custom database spesific overrides for canonical function:
+                | SqlColumnType.CanonicalOperation(CanonicalOp.Substring startPos,col) -> sprintf "SUBSTRING(%s, %i)" (fieldNotation(al,col)) startPos
+                | SqlColumnType.CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen),col) -> sprintf "SUBSTRING(%s, %i, %i)" (fieldNotation(al,col)) startPos strLen
+                | _ -> Utilities.genericFieldNotation colSprint c
+
+
+            let fieldNotationAlias(al:alias,col:SqlColumnType) =
+                let aliasSprint =
+                    match String.IsNullOrEmpty(al) with
+                    | true -> fun c -> sprintf "%c%s%c" cOpen c cClose
+                    | false -> fun c -> sprintf "%c%s_%s%c" cOpen al c cClose
+                Utilities.genericAliasNotation aliasSprint col
+
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -332,19 +352,10 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
                 let extracolumns =
-                    let fieldNotation(al:alias,col:string) =
-                        match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "%c%s%c" cOpen col cClose
-                        | false -> sprintf "%c%s%s%s%c" cOpen al separator col cClose
-                    let fieldNotationAlias(al:alias,col:string) =
-                        match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "%c[%s]%c" cOpen col cClose
-                        | false -> sprintf "%c[%s][%s]%c" cOpen al col cClose
-
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fieldNotation)
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> fieldNotation(a,c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
@@ -365,6 +376,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                let column = fieldNotation(alias,col)
                                 let extractData data =
                                      match data with
                                      | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
@@ -379,30 +391,30 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                                 let paras = extractData data
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "%c%s%s%s%c IS NULL") cOpen alias separator col cClose
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "%c%s%s%s%c IS NOT NULL") cOpen alias separator col cClose
+                                    | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
+                                    | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
                                     | FSharp.Data.Sql.In ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%c%s%s%s%c IN (%s)") cOpen alias separator col cClose text
+                                        sprintf "%s IN (%s)" column text
                                     | FSharp.Data.Sql.NestedIn when data.IsSome ->
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
-                                        (sprintf "%c%s%s%s%c IN (%s)") cOpen alias separator col cClose innersql
+                                        sprintf "%s IN (%s)" column innersql
                                     | FSharp.Data.Sql.NotIn ->
                                         let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add paras
-                                        (sprintf "%c%s%s%s%c NOT IN (%s)") cOpen alias separator col cClose text
+                                        sprintf "%s NOT IN (%s)" column text
                                     | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
-                                        (sprintf "%c%s%s%s%c NOT IN (%s)") cOpen alias separator col cClose innersql
+                                        sprintf "%s NOT IN (%s)" column innersql
                                     | _ ->
-                                        let aliasformat = if alias<>"" then (sprintf "%c%s%c.%s %s %s") cOpen alias cClose col else (sprintf "%s %s %s") col
+                                        let aliasformat = sprintf "%s %s %s" column
                                         match data with 
-                                        | Some d when (box d :? alias * string) ->
-                                            let alias2, col2 = box d :?> (alias * string)
-                                            let alias2f = if alias2<>"" then (sprintf "%c%s%c.%s") cOpen alias2 cClose col2 else col2
+                                        | Some d when (box d :? alias * SqlColumnType) ->
+                                            let alias2, col2 = box d :?> (alias * SqlColumnType)
+                                            let alias2f = (fieldNotation(alias2,col2))
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -445,24 +457,22 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     ~~  (sprintf "%s %c%s%c as %c%s%c on "
                             joinType cOpen destTable.Name cClose cOpen destAlias cClose)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
-                        sprintf "%c%s%s%s%c = %c%s%s%s%c "
-                            cOpen
-                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            separator foreignKey cClose cOpen
-                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            separator primaryKey cClose))))
+                        sprintf "%s = %s "
+                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias),foreignKey))
+                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias),primaryKey))
+                            ))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%c%s%s%s%c" cOpen alias separator column cClose ))
+                    ~~ (fieldNotation(alias,column)))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%c%s%s%s%c %s" cOpen alias separator column cClose (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation(alias,column)) (if not desc then "DESC" else "")))
 
             // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
             // or else it will fail
@@ -494,7 +504,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
 
-                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving keys))]
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
                 filterBuilder f
 

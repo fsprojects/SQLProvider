@@ -345,7 +345,6 @@ let ``simple select where in query``() =
     Assert.IsTrue(qry.Contains("ANATR"))
 
     
-    
 [<Test >]
 let ``simple select where not-in query``() =
     let dc = sql.GetDataContext()
@@ -504,7 +503,7 @@ let ``simple select query with groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with groupBy multiple columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1075,6 +1074,22 @@ let ``simple select with contains query with where boolean option type``() =
             contains "ALFKI"
         }
     Assert.IsTrue(qry)    
+
+
+[<Test >]
+let ``simple canonical operation substing query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            // Database spesific warning here: Substring of SQLite starts from 1.
+            where (cust.CustomerId.Substring(2,3)="NAT")
+            select cust.CustomerId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(1, qry.Length)
+    Assert.IsTrue(qry.Contains("ANATR"))
 
 [<Test>]
 let ``simple union query test``() = 

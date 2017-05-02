@@ -4,6 +4,7 @@ open System
 open System.Linq.Expressions
 open System.Reflection
 open FSharp.Data.Sql
+open FSharp.Data.Sql.Schema
 
 let (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then Some () else None
 let (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then Some () else None
@@ -167,24 +168,49 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
-let (|SqlColumnGet|_|) = function 
-    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
+let (|SqlPlainColumnGet|_|) (e:Expression) =  
+    match e.NodeType, e with 
+    | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
         match o with
-        | :? MemberExpression as m  -> Some(m.Member.Name,key,meth.ReturnType) 
-        | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,key,meth.ReturnType) 
+        | :? MemberExpression as m  -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) 
+        | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,KeyColumn key,meth.ReturnType) 
         | _ -> None
     | _ -> None
 
-let (|SqlGroupingColumnGet|_|) (e:Expression) = 
+let rec (|SqlColumnGet|_|) (e:Expression) =  
     match e.NodeType, e with 
-    | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
-        match e.Member with 
-        | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, "{KEY}", p.DeclaringType) 
+    | _, SqlPlainColumnGet(m, k, t) -> Some(m,k,t)
+
+    // These are canonical functions
+    | _, OptionalFSharpOptionValue(MethodCall(Some(inner),(
+            (MethodWithName "Substring" as meth) | (MethodWithName "Substring" as meth)), par)) -> 
+        match inner, par with
+        | SqlColumnGet(alias, col, typ), [Int startPos] -> Some(String.Empty, CanonicalOperation(CanonicalOp.Substring(startPos), col), typ)
+        | SqlColumnGet(alias, col, typ), [Int startPos; Int strLen] -> Some(String.Empty, CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen), col), typ)
+        | _ -> None
+
+    // These are aggregations, e.g. GROUPBY, HAVING-clause
+    | ExpressionType.MemberAccess, ( :? MemberExpression as me) when me.Expression.Type.Name.StartsWith("IGrouping")  -> 
+        match me.Member with 
+        | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp ""), p.DeclaringType) 
         | _ -> None
     | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments.Count = 1 && e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
-        if e.Method.Name = "Count" || e.Method.Name = "Average" || e.Method.Name = "Min" || e.Method.Name = "Max" || e.Method.Name = "Sum"
-        then Some(String.Empty, "{" + e.Method.Name.ToUpper() + "}", e.Method.DeclaringType)
-        else None
+        if e.Arguments.[0].NodeType = ExpressionType.Parameter then
+            match e.Method.Name with
+            | "Count" -> Some(String.Empty, GroupColumn (CountOp ""), e.Method.DeclaringType)
+            | "Average" -> Some(String.Empty, GroupColumn (AvgOp ""), e.Method.DeclaringType)
+            | "Min" -> Some(String.Empty, GroupColumn (MinOp ""), e.Method.DeclaringType)
+            | "Max" -> Some(String.Empty, GroupColumn (MaxOp ""), e.Method.DeclaringType)
+            | "Sum" -> Some(String.Empty, GroupColumn (SumOp ""), e.Method.DeclaringType)
+            | _ -> None
+        else 
+            match e.Arguments.[0], e.Method.Name with
+            | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp ""), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Average" -> Some(m.Member.Name, GroupColumn (AvgOp ""), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp ""), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp ""), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp ""), e.Method.DeclaringType)
+            | _ -> None
     | _ -> None
 
 let (|TupleSqlColumnsGet|_|) = function 

@@ -70,24 +70,20 @@ module internal QueryExpressionTransformer =
                 let op =
                     if e.Arguments.Count = 1 then
                         match e.Method.Name with
-                        | "Count" -> Some (CountOp None)
-                        | "Sum" -> Some (Sum None)
-                        | "Avg" -> Some (Avg None)
-                        | "Min" -> Some (Min None)
-                        | "Max" -> Some (Max None)
+                        | "Count" -> Some (CountOp "")
                         | _ -> None
                     elif e.Arguments.Count = 2 then
                         match e.Arguments.[1] with
                         | :? LambdaExpression as la ->
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
-                                | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) ->
+                                | ExpressionType.Call, OptionalFSharpOptionValue(MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])) ->
                                     match e.Method.Name with
-                                    | "Count" -> Some (CountOp (Some key))
-                                    | "Sum" -> Some (Sum (Some key))
-                                    | "Avg" -> Some (Avg (Some key))
-                                    | "Min" -> Some (Min (Some key))
-                                    | "Max" -> Some (Max (Some key))
+                                    | "Count" -> Some (CountOp key)
+                                    | "Sum" -> Some (SumOp key)
+                                    | "Avg" -> Some (AvgOp key)
+                                    | "Min" -> Some (MinOp key)
+                                    | "Max" -> Some (MaxOp key)
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
@@ -106,10 +102,14 @@ module internal QueryExpressionTransformer =
                 | true, Some o when not(groupProjectionMap.Contains(o)) -> 
                     let methodname = "Aggregate"+e.Method.Name
                     
-                    let v = match o with CountOp x | Sum x | Avg x | Min x | Max x -> x
+                    let v = match o with 
+                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x 
+                            | KeyOp x -> x
+                    //Count 1 is over all the items
+                    let vf = if v = "" then None else Some v
 
                     let ty = typedefof<GroupResultItems<_>>.MakeGenericType(e.Arguments.[0].Type.GetGenericArguments().[0])
-                    let aggregateColumn = Expression.Constant(v, typeof<Option<string>>) :> Expression
+                    let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(e.Method.ReturnType);
                     let replacementExpr = 
@@ -349,13 +349,22 @@ module internal QueryExpressionTransformer =
                             sqlQuery.Grouping |> List.map(fun (group,_) ->
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
-                                let aggregations:(AggregateOperation * alias * string) list =
+                                let aggregations:(alias * SqlColumnType) list =
                                     groupProjectionMap 
                                     |> Seq.map(fun op -> 
 //                                        match group |> Seq.tryFind(fun (a,s) -> a=aliasAndOps.Key) with
 //                                        | Some(_, keyitm) -> aliasAndOps.Value |> Seq.map(fun ao -> ao, aliasAndOps.Key, keyitm)
 //                                        | None -> Seq.empty
-                                        group |> Seq.map(fun (a,n) -> op,a,n)
+                                        group 
+                                        |> Seq.choose(fun (a, c) -> 
+                                            match op, c with
+                                            | KeyOp i, KeyColumn c when String.IsNullOrEmpty i -> Some (a, GroupColumn(KeyOp c))
+                                            | MaxOp i, KeyColumn c -> Some (a, GroupColumn(MaxOp (if String.IsNullOrEmpty i then c else i)))
+                                            | MinOp i, KeyColumn c -> Some (a, GroupColumn(MinOp (if String.IsNullOrEmpty i then c else i)))
+                                            | SumOp i, KeyColumn c -> Some (a, GroupColumn(SumOp (if String.IsNullOrEmpty i then c else i)))
+                                            | AvgOp i, KeyColumn c -> Some (a, GroupColumn(AvgOp (if String.IsNullOrEmpty i then c else i)))
+                                            | CountOp i, KeyColumn c -> Some (a, GroupColumn(CountOp (if String.IsNullOrEmpty i then c else i)))
+                                            | _ -> None)
                                     ) |> Seq.concat |> Seq.toList
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
@@ -419,7 +428,7 @@ module internal QueryExpressionTransformer =
             | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
             | ConstantTrue -> ConstantTrue
             | ConstantFalse -> ConstantFalse
-
+            
         // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
 

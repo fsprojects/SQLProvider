@@ -250,7 +250,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let pk = r.PrimaryKey
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
-                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Parents) @@> )
+                            <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),constraintName,pt, pk,ft, fk,RelationshipDirection.Parents) @@> )
                         prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)
                         yield prop ]
                 attProps @ relProps)

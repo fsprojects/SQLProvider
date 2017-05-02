@@ -38,11 +38,21 @@ type ConditionOperator =
         | NestedNotIn      -> "NOT IN"
 
 type AggregateOperation = // Aggregate (column name if not default)
-| Max of string Option
-| Min of string Option
-| Sum of string Option
-| Avg of string Option
-| CountOp of string Option
+| KeyOp of string
+| MaxOp of string
+| MinOp of string
+| SumOp of string
+| AvgOp of string
+| CountOp of string
+
+type CanonicalOp =
+| Substring of int
+| SubstringWithLength of int*int
+
+type SqlColumnType =
+| KeyColumn of string
+| CanonicalOperation of CanonicalOp * SqlColumnType
+| GroupColumn of AggregateOperation
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types
