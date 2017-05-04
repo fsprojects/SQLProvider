@@ -385,8 +385,9 @@ module internal QueryImplementation =
                             else
 
                             // the following case can happen with multiple where clauses when only a single entity is selected
-                            if paramNames.First() = "" || source.TupleIndex.Count = 0 then FilterClause(filter,current)
-                            else FilterClause(filter,current)
+                            //if (paramNames.Length > 0 && paramNames.First() = "") || source.TupleIndex.Count = 0 then FilterClause(filter,current)
+                            //else 
+                            FilterClause(filter,current)
 
                     let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                     ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>

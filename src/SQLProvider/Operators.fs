@@ -45,14 +45,49 @@ type AggregateOperation = // Aggregate (column name if not default)
 | AvgOp of string
 | CountOp of string
 
-type CanonicalOp =
-| Substring of int
-| SubstringWithLength of int*int
+[<AutoOpenAttribute>]
+module ColumnSchema =
 
-type SqlColumnType =
-| KeyColumn of string
-| CanonicalOperation of CanonicalOp * SqlColumnType
-| GroupColumn of AggregateOperation
+    type CanonicalOp =
+    //String functions
+    | Substring of int
+    | SubstringWithLength of int*int
+    | ToUpper
+    | ToLower
+    | Trim
+    | Length
+    | Replace of string*string
+    | IndexOf of string
+    | IndexOfStart of string*int
+    // Date functions
+    | Date
+    | Year
+    | Month
+    | Day
+    | Hour
+    | Minute
+    | Second
+    | AddYears of int
+    | AddMonths of int
+    | AddDays of float
+    | AddHours of float
+    | AddMinutes of float
+    | AddSeconds of float
+    // Numerical functions
+    | Abs
+    | Ceil
+    | Floor
+    | Round
+    | RoundDecimals of int
+    | Truncate
+    // Other
+    | BasicMath of string*obj //operation, constant
+    | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
+
+    and SqlColumnType =
+    | KeyColumn of string
+    | CanonicalOperation of CanonicalOp * SqlColumnType
+    | GroupColumn of AggregateOperation
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types

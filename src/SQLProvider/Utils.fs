@@ -55,15 +55,15 @@ module internal Utilities =
             }
         | [] -> async { () }
 
-    let parseAggregates fieldNotation fieldNotationAlias query =
+    let parseAggregates fieldNotat fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
             match query with
             | [] -> selectColumns |> Seq.distinct |> Seq.toList
             | (opAlias, (aggCol:SqlColumnType))::tail ->
                 let parsed = 
-                         (fieldNotation(opAlias, aggCol) + " as " + fieldNotationAlias(opAlias, aggCol)) :: selectColumns
+                         ((fieldNotation opAlias aggCol) + " as " + fieldNotationAlias(opAlias, aggCol)) :: selectColumns
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
-        parseAggregates' fieldNotation fieldNotationAlias query []
+        parseAggregates' fieldNotat fieldNotationAlias query []
 
     let rec convertTypes (itm:obj) (returnType:Type) =
         if returnType.Name.StartsWith("Option") && returnType.GenericTypeArguments.Length = 1 then
@@ -98,9 +98,21 @@ module internal Utilities =
             else itm |> box
 
     /// Standard SQL. Provider spesific overloads can be done before this.
-    let rec genericFieldNotation colSprint = function
+    let genericFieldNotation (recursionBase:SqlColumnType->string) (colSprint:string->string) = function
         | SqlColumnType.KeyColumn col -> colSprint col
-        | SqlColumnType.CanonicalOperation(op,col) -> failwithf "Not yet supported: %O %O" op col
+        | SqlColumnType.CanonicalOperation(op,key) ->
+            let column = recursionBase key
+            match op with // These are very standard:
+            | ToUpper -> sprintf "UPPER(%s)" column
+            | ToLower -> sprintf "LOWER(%s)" column
+            | Replace(searchItm,toItm) -> sprintf "REPLACE(%s,%s,%s)" column searchItm toItm
+            | Abs -> sprintf "ABS(%s)" column
+            | Ceil -> sprintf "CEILING(%s)" column
+            | Floor -> sprintf "FLOOR(%s)" column
+            | Round -> sprintf "ROUND(%s)" column
+            | RoundDecimals x -> sprintf "ROUND(%s,%d)" column x
+            | BasicMath(o, c) -> sprintf "(%s %s %O)" column o c
+            | _ -> failwithf "Not yet supported: %O %s" op (key.ToString())
         | GroupColumn (KeyOp key) -> colSprint key
         | GroupColumn (CountOp _) -> sprintf "COUNT(1)"
         | GroupColumn (AvgOp key) -> sprintf "AVG(%s)" (colSprint key)

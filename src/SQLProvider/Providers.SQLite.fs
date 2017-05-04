@@ -54,16 +54,43 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let paramterType =    (findType (fun t -> t.Name = if useMono then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
-    let rec fieldNotation(al:alias,c:SqlColumnType) = 
+    let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
             match String.IsNullOrEmpty(al) with
             | true -> sprintf "[%s]"
             | false -> sprintf "[%s].[%s]" al
         match c with
         // Custom database spesific overrides for canonical function:
-        | SqlColumnType.CanonicalOperation(CanonicalOp.Substring startPos,col) -> sprintf "SUBSTR(%s, %i)" (fieldNotation(al,col)) startPos
-        | SqlColumnType.CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen),col) -> sprintf "SUBSTR(%s, %i, %i)" (fieldNotation(al,col)) startPos strLen
-        | _ -> Utilities.genericFieldNotation colSprint c
+        | SqlColumnType.CanonicalOperation(cf,col) ->
+            let column = fieldNotation al col
+            match cf with
+            | Substring startPos -> sprintf "SUBSTR(%s, %i)" column startPos
+            | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
+            | Trim -> sprintf "TRIM(%s)" column
+            | Length -> sprintf "LENGTH(%s)" column
+            | IndexOf search -> sprintf "INSTR(%s,%s)" column search
+            // Date functions
+            | Date -> sprintf "STRFTIME('%%Y-%%m-%%dT00:00:00', %s)" column
+            | Year -> sprintf "STRFTIME('%%Y', %s)" column
+            | Month -> sprintf "STRFTIME('%%m', %s)" column
+            | Day -> sprintf "STRFTIME('%%d', %s)" column
+            | Hour -> sprintf "STRFTIME('%%H', %s)" column
+            | Minute -> sprintf "STRFTIME('%%M', %s)" column
+            | Second -> sprintf "STRFTIME('%%S', %s)" column
+            | AddYears x -> sprintf "DATE(%s, '+%d year')" column x
+            | AddMonths x -> sprintf "DATE(%s, '+%d month')" column x
+            | AddDays x -> sprintf "DATE(%s, '+%f day')" column x // SQL ignores decimal part :-(
+            | AddHours x -> sprintf "DATE(%s, '+%f hour')" column x
+            | AddMinutes x -> sprintf "DATE(%s, '+%f minute')" column x
+            | AddSeconds x -> sprintf "DATE(%s, '+%f second')" column x
+            // Math functions
+            | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
+            | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do
+            | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
+            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
+            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
+            | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
@@ -389,7 +416,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> fieldNotation(a,c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
@@ -412,7 +439,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let column = fieldNotation(alias,col)
+                                let column = fieldNotation alias col
                                 let extractData data =
                                      match data with
                                      | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
@@ -451,7 +478,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                         match data with 
                                         | Some d when (box d :? alias * SqlColumnType) ->
                                             let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = fieldNotation(alias2,col2)
+                                            let alias2f = fieldNotation alias2 col2
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -495,21 +522,21 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                             joinType destTable.Schema destTable.Name destAlias)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
-                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias),foreignKey))
-                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias),primaryKey))
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                             ))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (fieldNotation(alias,column)))
+                    ~~ (fieldNotation alias column))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (fieldNotation(alias,column)) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)

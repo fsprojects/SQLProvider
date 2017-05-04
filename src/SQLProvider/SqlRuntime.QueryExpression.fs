@@ -422,10 +422,16 @@ module internal QueryExpressionTransformer =
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseAlias else tbl
+        
+        // This resolves aliases on canonical multi-column functions
+        let rec resolveC = function
+            | CanonicalOperation(BasicMathOfColumns(op,al,col2), col1) -> 
+                CanonicalOperation(BasicMathOfColumns(op,resolve al, resolveC col2), col1)
+            | x -> x
 
         let rec resolveFilterList = function
-            | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
-            | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
+            | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,d),Option.map (List.map resolveFilterList) y)
+            | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,d),Option.map (List.map resolveFilterList) y)
             | ConstantTrue -> ConstantTrue
             | ConstantFalse -> ConstantFalse
             
@@ -437,7 +443,11 @@ module internal QueryExpressionTransformer =
         // its possible to do this when converting the expression but its
         // much easier at this stage once we have knowledge of the whole query
         let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters
-                                       Ordering = List.map(function ("",b,c) -> (resolve "",b,c) | x -> x) sqlQuery.Ordering }
+                                       Ordering = List.map(function ("",b,c) -> (resolve "",resolveC b,c) | x -> x) sqlQuery.Ordering 
+                                       // Resolve other canonical function columns also:
+                                       Links = sqlQuery.Links |> List.map (fun (a1,ld,a2) -> a1, {ld with PrimaryKey = ld.PrimaryKey |> List.map(resolveC)}, a2)
+                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> ga, resolveC gk), a|>List.map(fun(ag,aa)->ag,resolveC aa)) 
+                       }
 
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking

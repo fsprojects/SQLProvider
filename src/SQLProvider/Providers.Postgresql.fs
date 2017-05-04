@@ -62,16 +62,42 @@ module PostgreSQL =
     let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
     let namemap name dbTypes = findType name |> Option.bind (fun ty -> dbTypes |> List.tryPick (parseDbType ty))
 
-    let rec fieldNotation(al:alias,c:SqlColumnType) = 
+    let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
             match String.IsNullOrEmpty(al) with
             | true -> sprintf "\"%s\""
             | false -> sprintf "\"%s\".\"%s\"" al
         match c with
-        // Custom database spesific overrides for canonical function:
-        | SqlColumnType.CanonicalOperation(CanonicalOp.Substring startPos,col) -> sprintf "SUBSTRING(%s, %i)" (fieldNotation(al,col)) startPos
-        | SqlColumnType.CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen),col) -> sprintf "SUBSTRING(%s, %i, %i)" (fieldNotation(al,col)) startPos strLen
-        | _ -> Utilities.genericFieldNotation colSprint c
+        // Custom database spesific overrides for canonical functions:
+        | SqlColumnType.CanonicalOperation(cf,col) ->
+            let column = fieldNotation al col
+            match cf with
+            // String functions
+            | Substring startPos -> sprintf "SUBSTRING(%s from %i)" column startPos
+            | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
+            | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
+            | Length -> sprintf "CHAR_LENGTH(%s)" column
+            | IndexOf search -> sprintf "STRPOS(%s,%s)" search column
+            // Date functions
+            | Date -> sprintf "DATE_TRUNC('day', %s)" column
+            | Year -> sprintf "DATE_PART('year', %s)" column
+            | Month -> sprintf "DATE_PART('month', %s)" column
+            | Day -> sprintf "DATE_PART('day', %s)" column
+            | Hour -> sprintf "DATE_PART('hour', %s)" column
+            | Minute -> sprintf "DATE_PART('minute', %s)" column
+            | Second -> sprintf "DATE_PART('second', %s)" column
+            | AddYears x -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
+            | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
+            | AddDays x -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
+            | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
+            | AddMinutes x -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
+            | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
+            // Math functions
+            | Truncate -> sprintf "TRUNC(%s)" column
+            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
+            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
+            | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
@@ -702,7 +728,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates PostgreSQL.fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> PostgreSQL.fieldNotation(a,c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> PostgreSQL.fieldNotation a c)
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates PostgreSQL.fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
@@ -727,7 +753,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let column = PostgreSQL.fieldNotation(alias,col)
+                                let column = PostgreSQL.fieldNotation alias col
                                 let extractData data =
                                      match data with
                                      | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
@@ -765,7 +791,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         match data with 
                                         | Some d when (box d :? alias * SqlColumnType) ->
                                             let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = PostgreSQL.fieldNotation(alias2,col2)
+                                            let alias2f = PostgreSQL.fieldNotation alias2 col2
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -809,21 +835,21 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             joinType destTable.Schema destTable.Name destAlias)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
-                            (PostgreSQL.fieldNotation((if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias),foreignKey))
-                            (PostgreSQL.fieldNotation((if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias),primaryKey))
+                            (PostgreSQL.fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
+                            (PostgreSQL.fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                             ))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (PostgreSQL.fieldNotation(alias,column)))
+                    ~~ (PostgreSQL.fieldNotation alias column))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (PostgreSQL.fieldNotation(alias,column)) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (PostgreSQL.fieldNotation alias column) (if not desc then "DESC" else "")))
 
             // SELECT
             if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)

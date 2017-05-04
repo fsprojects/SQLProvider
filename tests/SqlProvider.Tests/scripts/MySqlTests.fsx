@@ -237,3 +237,17 @@ let taskarray =
     ) |> Seq.toArray |> Tasks.Task.WaitAll
 
 ctx.GetUpdates()
+
+let canoncicalOpTest = 
+    query {
+        // Silly query not hitting indexes, so testing purposes only...
+        for job in ctx.Hr.Jobs do
+        join emp in ctx.Hr.Employees on (job.JobId  = emp.JobId )
+        where (
+            floor(job.MaxSalary)+1m > 4m
+            && emp.Email.Length > 1  
+            && emp.HireDate.Date.Year + 1 > 1997
+        )
+        //sortBy emp.HireDate.Day
+        select (emp.HireDate, emp.Email, job.MaxSalary)
+    } |> Seq.toArray

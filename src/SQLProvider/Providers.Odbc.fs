@@ -304,16 +304,42 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
             let separator = (sprintf "%c.%c" cClose cOpen).Trim()
 
-            let rec fieldNotation(al:alias,c:SqlColumnType) = 
+            let rec fieldNotation (al:alias) (c:SqlColumnType) =
                 let colSprint =
                     match String.IsNullOrEmpty(al) with
                     | true -> fun col -> sprintf "%c%s%c" cOpen col cClose
                     | false -> fun col -> sprintf "%c%s%s%s%c" cOpen al separator col cClose
                 match c with
                 // Custom database spesific overrides for canonical function:
-                | SqlColumnType.CanonicalOperation(CanonicalOp.Substring startPos,col) -> sprintf "SUBSTRING(%s, %i)" (fieldNotation(al,col)) startPos
-                | SqlColumnType.CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen),col) -> sprintf "SUBSTRING(%s, %i, %i)" (fieldNotation(al,col)) startPos strLen
-                | _ -> Utilities.genericFieldNotation colSprint c
+                | SqlColumnType.CanonicalOperation(cf,col) ->
+                    let column = fieldNotation al col
+                    match cf with
+                    // String functions
+                    | Substring startPos -> sprintf "SUBSTRING(%s, %i)" column startPos
+                    | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
+                    | Trim -> sprintf "LTRIM(RTRIM(%s))" column
+                    //| Length -> sprintf "LENGTH(%s)" column // ODBC 1.0, works with strings only
+                    | Length -> sprintf "CHARACTER_LENGTH(%s)" column // ODBC 3.0, works with all columns
+                    | IndexOf search -> sprintf "LOCATE(%s,%s)" search column
+                    | IndexOfStart(search,startPos) -> sprintf "LOCATE(%s,%s,%d)" search column startPos
+                    | ToUpper -> sprintf "UCASE(%s)" column
+                    | ToLower -> sprintf "LCASE(%s)" column
+                    // Date functions
+                    | Date -> sprintf "CONVERT(%s, SQL_DATE)" column
+                    | Year -> sprintf "YEAR(%s)" column
+                    | Month -> sprintf "MONTH(%s)" column
+                    | Day -> sprintf "DAYOFMONTH(%s)" column
+                    | Hour -> sprintf "HOUR(%s)" column
+                    | Minute -> sprintf "MINUTE(%s)" column
+                    | Second -> sprintf "SECOND(%s)" column
+                    // Date additions not supported by standard ODBC
+                    // Math functions
+                    | Truncate -> sprintf "TRUNCATE(%s)" column
+                    | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "(CONCAT(%s, %s))" column (fieldNotation a c)
+                    | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(CONCAT(%s, '%O')" column par
+                    | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
 
             let fieldNotationAlias(al:alias,col:SqlColumnType) =
@@ -355,7 +381,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> fieldNotation(a,c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
@@ -376,7 +402,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let column = fieldNotation(alias,col)
+                                let column = fieldNotation alias col
                                 let extractData data =
                                      match data with
                                      | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
@@ -414,7 +440,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                                         match data with 
                                         | Some d when (box d :? alias * SqlColumnType) ->
                                             let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = (fieldNotation(alias2,col2))
+                                            let alias2f = fieldNotation alias2 col2
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -458,21 +484,21 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             joinType cOpen destTable.Name cClose cOpen destAlias cClose)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
-                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias),foreignKey))
-                            (fieldNotation((if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias),primaryKey))
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                             ))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (fieldNotation(alias,column)))
+                    ~~ (fieldNotation alias column))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (fieldNotation(alias,column)) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
             // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
             // or else it will fail

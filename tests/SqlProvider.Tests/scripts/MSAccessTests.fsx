@@ -84,3 +84,18 @@ let asyncContainsQuery =
         } |> Async.StartAsTask
     r.Wait()
     r.Result
+
+let canoncicalOpTest = 
+    query {
+        // Silly query not hitting indexes, so testing purposes only...
+        for cust in ctx.Northwind.Customers do
+        join emp in ctx.Northwind.Employees on (cust.City.Value.Trim() + "x" = emp.City.Value.Trim() + "x")
+        where (
+            abs(emp.EmployeeId)+1 > 4
+            && cust.City.Value.Length > 1  
+            && cust.City.IsSome && cust.City.Value + "L" = "LondonL" 
+            && emp.BirthDate.Value.AddYears(3).Month + 1 > 3
+        )
+        sortBy emp.BirthDate.Value.Day
+        select (cust.CustomerId, cust.City, emp.BirthDate)
+    } |> Seq.toArray

@@ -1083,13 +1083,37 @@ let ``simple canonical operation substing query``() =
         query {
             for cust in dc.Main.Customers do
             // Database spesific warning here: Substring of SQLite starts from 1.
-            where (cust.CustomerId.Substring(2,3)="NAT")
+            where (cust.CustomerId.Substring(2,3)+"F"="NATF")
             select cust.CustomerId
         } |> Seq.toArray
 
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(1, qry.Length)
     Assert.IsTrue(qry.Contains("ANATR"))
+
+[<Test >]
+let ``simple canonical operations query``() =
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            // Silly query not hitting indexes, so testing purposes only...
+            for cust in dc.Main.Customers do
+            join emp in dc.Main.Employees on (cust.City.Trim() + "x" = emp.City.Trim() + "x")
+            where (
+                abs(emp.EmployeeId)+1L > 4L 
+                && cust.City.Length > 1  
+                && cust.City + "L" = "LondonL" 
+                && emp.BirthDate.Date.AddYears(3).Month + 1 > 3
+            )
+            sortBy emp.BirthDate.Day
+            select (cust.CustomerId, cust.City, emp.BirthDate)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(12, qry.Length)
+    Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
+
 
 [<Test>]
 let ``simple union query test``() = 
