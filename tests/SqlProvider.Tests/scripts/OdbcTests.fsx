@@ -99,6 +99,21 @@ let asyncContainsQuery =
     r.Wait()
     r.Result
 
+let canoncicalOpTest = 
+    query {
+        // Access doesn't support many ODBC functions.
+        // Silly query not hitting indexes, so testing purposes only...
+        for cust in odbcaContext.Dbo.Customers do
+        join emp in odbcaContext.Dbo.Employees on (cust.City.Value.Trim() = emp.City.Value.Trim())
+        where (
+            abs(emp.EmployeeId)+1 > 4
+            && emp.BirthDate.Value.Month + 1 > 3
+        )
+        sortBy emp.BirthDate.Value.Year
+        select (cust.CustomerId, cust.City, emp.BirthDate)
+    } |> Seq.toArray
+
+
 // ----------------------------------------------------------------
 // SQL Server connection
 // Database: http://pastebin.com/5W3PPVaD

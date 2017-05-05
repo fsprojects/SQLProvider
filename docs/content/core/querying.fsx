@@ -159,12 +159,12 @@ corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`
 .Hour          | DATEPART HOUR  | DATE_PART | HOUR     | EXTRACT   | STRFTIME| Hour      | HOUR       |   |
 .Minute        | DATEPART MINUTE| DATE_PART | MINUTE   | EXTRACT   | STRFTIME| Minute    | MINUTE     |   |
 .Second        | DATEPART SECOND| DATE_PART | SECOND   | EXTRACT   | STRFTIME| Second    | SECOND     |   |
-.AddYears(i)   | DATEADD YEAR   | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            |   |
-.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            |   |
-.AddDays(f)    | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            | .NET has float, bus SQL may ignore decimal fraction |
-.AddHours(f)   | DATEADD HOUR   | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            |   |
-.AddMinutes(f) | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            |   |
-.AddSeconds(f) | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATE    | DateAdd   |            |   |
+.AddYears(i)   | DATEADD YEAR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddDays(f)    | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            | .NET has float, bus SQL may ignore decimal fraction |
+.AddHours(f)   | DATEADD HOUR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddMinutes(f) | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddSeconds(f) | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 
 #### Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)
 

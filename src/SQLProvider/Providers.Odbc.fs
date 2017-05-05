@@ -318,8 +318,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     | Substring startPos -> sprintf "SUBSTRING(%s, %i)" column startPos
                     | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
                     | Trim -> sprintf "LTRIM(RTRIM(%s))" column
-                    //| Length -> sprintf "LENGTH(%s)" column // ODBC 1.0, works with strings only
-                    | Length -> sprintf "CHARACTER_LENGTH(%s)" column // ODBC 3.0, works with all columns
+                    | Length -> sprintf "LENGTH(%s)" column // ODBC 1.0, works with strings only
+                    //| Length -> sprintf "CHARACTER_LENGTH(%s)" column // ODBC 3.0, works with all columns
                     | IndexOf search -> sprintf "LOCATE(%s,%s)" search column
                     | IndexOfStart(search,startPos) -> sprintf "LOCATE(%s,%s,%d)" search column startPos
                     | ToUpper -> sprintf "UCASE(%s)" column
@@ -335,9 +335,9 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     // Date additions not supported by standard ODBC
                     // Math functions
                     | Truncate -> sprintf "TRUNCATE(%s)" column
-                    | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "(CONCAT(%s, %s))" column (fieldNotation a c)
+                    | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(CONCAT(%s, '%O')" column par
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

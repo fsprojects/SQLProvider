@@ -70,19 +70,19 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | Length -> sprintf "LENGTH(%s)" column
             | IndexOf search -> sprintf "INSTR(%s,%s)" column search
             // Date functions
-            | Date -> sprintf "STRFTIME('%%Y-%%m-%%dT00:00:00', %s)" column
-            | Year -> sprintf "STRFTIME('%%Y', %s)" column
-            | Month -> sprintf "STRFTIME('%%m', %s)" column
-            | Day -> sprintf "STRFTIME('%%d', %s)" column
-            | Hour -> sprintf "STRFTIME('%%H', %s)" column
-            | Minute -> sprintf "STRFTIME('%%M', %s)" column
-            | Second -> sprintf "STRFTIME('%%S', %s)" column
-            | AddYears x -> sprintf "DATE(%s, '+%d year')" column x
-            | AddMonths x -> sprintf "DATE(%s, '+%d month')" column x
-            | AddDays x -> sprintf "DATE(%s, '+%f day')" column x // SQL ignores decimal part :-(
-            | AddHours x -> sprintf "DATE(%s, '+%f hour')" column x
-            | AddMinutes x -> sprintf "DATE(%s, '+%f minute')" column x
-            | AddSeconds x -> sprintf "DATE(%s, '+%f second')" column x
+            | Date -> sprintf "DATE(%s)" column
+            | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
+            | Month -> sprintf "CAST(STRFTIME('%%m', %s) as INTEGER)" column
+            | Day -> sprintf "CAST(STRFTIME('%%d', %s) as INTEGER)" column
+            | Hour -> sprintf "CAST(STRFTIME('%%H', %s) as INTEGER)" column
+            | Minute -> sprintf "CAST(STRFTIME('%%M', %s) as INTEGER)" column
+            | Second -> sprintf "CAST(STRFTIME('%%S', %s) as INTEGER)" column
+            | AddYears x -> sprintf "DATETIME(%s, '+%d year')" column x
+            | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
+            | AddDays x -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
+            | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
+            | AddMinutes x -> sprintf "DATETIME(%s, '+%f minute')" column x
+            | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
             // Math functions
             | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
             | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do

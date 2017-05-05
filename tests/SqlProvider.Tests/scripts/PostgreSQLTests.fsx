@@ -123,6 +123,19 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
+let canonicalTest =
+    query {
+            for emp in ctx.Public.Employees do
+            join d in ctx.Public.Departments on (emp.DepartmentId.Value+1 = d.DepartmentId+1)
+            where (abs(d.LocationId.Value) > 1//.value
+                && emp.FirstName.Value + "D" = "DavidD"
+                && emp.LastName.Length > 6
+                && emp.HireDate.Date.AddYears(-10).Year < 1990
+            )
+            select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
+    } |> Seq.toList
+
+
 #r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json

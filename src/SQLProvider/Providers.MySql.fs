@@ -75,16 +75,16 @@ module MySql =
             | Hour -> sprintf "HOUR(%s)" column
             | Minute -> sprintf "MINUTE(%s)" column
             | Second -> sprintf "SECOND(%s)" column
-            | AddYears x -> sprintf "DATE_ADD(%s + INTERVAL %d YEAR)" column x
-            | AddMonths x -> sprintf "DATE_ADD(%s + INTERVAL %d MONTH)" column x
-            | AddDays x -> sprintf "DATE_ADD(%s + INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
-            | AddHours x -> sprintf "DATE_ADD(%s + INTERVAL %f HOUR)" column x
-            | AddMinutes x -> sprintf "DATE_ADD(%s + INTERVAL %f MINUTE)" column x
-            | AddSeconds x -> sprintf "DATE_ADD(%s + INTERVAL %f SECOND)" column x
+            | AddYears x -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
+            | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
+            | AddDays x -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
+            | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
+            | AddMinutes x -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
+            | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
             // Math functions
             | Truncate -> sprintf "TRUNCATE(%s)" column
-            | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "(CONCAT(%s, %s))" column (fieldNotation a c)
-            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(CONCAT(%s, '%O')" column par
+            | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
+            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
