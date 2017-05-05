@@ -65,8 +65,9 @@ module MySql =
             | SubstringWithLength(startPos,strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "LOCATE(%s,%s)" search column
-            | IndexOfStart(search,startPos) -> sprintf "LOCATE(%s,%s,%d)" search column startPos
+            | IndexOf search -> sprintf "LOCATE('%s',%s)" search column
+            | IndexOfColumn(al2,col2) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(search,startPos) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
             // Date functions
             | Date -> sprintf "DATE(%s)" column
             | Year -> sprintf "YEAR(%s)" column

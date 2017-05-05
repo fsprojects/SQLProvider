@@ -59,6 +59,7 @@ module ColumnSchema =
     | Replace of string*string
     | IndexOf of string
     | IndexOfStart of string*int
+    | IndexOfColumn of string*SqlColumnType //alias, column
     // Date functions
     | Date
     | Year

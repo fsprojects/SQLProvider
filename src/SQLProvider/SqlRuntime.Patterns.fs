@@ -230,9 +230,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "ToLowerInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToLower, col), typ)
             | "Trim", [] -> Some(alias, CanonicalOperation(CanonicalOp.Trim, col), typ)
             | "Length", [] -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
-            | "Replace", [String itm1; String itm2] -> Some(alias, CanonicalOperation(CanonicalOp.Replace(itm1, itm2), col), typ)
-            | "IndexOf", [String search] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(search), col), intType typ)
-            | "IndexOf", [String search; Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(search, startPos), col), intType typ)
+            | "Replace", [String itm1; String itm2] when not(itm1.Contains("'") || itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(itm1, itm2), col), typ)
+            | "IndexOf", [String search] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(search), col), intType typ)
+            | "IndexOf", [String search; Int startPos] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(search, startPos), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,typ2)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfColumn(al2,col2), col), intType typ)
             | _ -> None
         | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> -> // DateTime functions
             match meth.Name, par with

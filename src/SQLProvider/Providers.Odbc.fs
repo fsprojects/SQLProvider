@@ -320,8 +320,9 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     | Trim -> sprintf "LTRIM(RTRIM(%s))" column
                     | Length -> sprintf "LENGTH(%s)" column // ODBC 1.0, works with strings only
                     //| Length -> sprintf "CHARACTER_LENGTH(%s)" column // ODBC 3.0, works with all columns
-                    | IndexOf search -> sprintf "LOCATE(%s,%s)" search column
-                    | IndexOfStart(search,startPos) -> sprintf "LOCATE(%s,%s,%d)" search column startPos
+                    | IndexOf search -> sprintf "LOCATE('%s',%s)" search column
+                    | IndexOfColumn(al2,col2) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
+                    | IndexOfStart(search,startPos) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
                     | ToUpper -> sprintf "UCASE(%s)" column
                     | ToLower -> sprintf "LCASE(%s)" column
                     // Date functions

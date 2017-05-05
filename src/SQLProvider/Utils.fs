@@ -105,7 +105,7 @@ module internal Utilities =
             match op with // These are very standard:
             | ToUpper -> sprintf "UPPER(%s)" column
             | ToLower -> sprintf "LOWER(%s)" column
-            | Replace(searchItm,toItm) -> sprintf "REPLACE(%s,%s,%s)" column searchItm toItm
+            | Replace(searchItm,toItm) -> sprintf "REPLACE(%s,'%s','%s')" column searchItm toItm
             | Abs -> sprintf "ABS(%s)" column
             | Ceil -> sprintf "CEILING(%s)" column
             | Floor -> sprintf "FLOOR(%s)" column

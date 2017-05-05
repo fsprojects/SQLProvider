@@ -74,8 +74,9 @@ module internal Oracle =
             | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
             | Trim -> sprintf "LTRIM(RTRIM((%s))" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "INSTR(%s,%s)" column search
-            | IndexOfStart(search,startPos) -> sprintf "INSTR(%s,%s,%d)" column search startPos
+            | IndexOf search -> sprintf "INSTR(%s,'%s')" column search
+            | IndexOfColumn(al2,col2) -> sprintf "LOCATE(%s,%s)" column (fieldNotation al2 col2)
+            | IndexOfStart(search,startPos) -> sprintf "INSTR(%s,'%s',%d)" column search startPos
             // Date functions
             | Date -> sprintf "TRUNC(%s)" column
             | Year -> sprintf "EXTRACT(YEAR FROM %s)" column

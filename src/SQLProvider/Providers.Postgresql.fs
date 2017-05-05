@@ -77,7 +77,8 @@ module PostgreSQL =
             | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
             | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "STRPOS(%s,%s)" search column
+            | IndexOf search -> sprintf "STRPOS('%s',%s)" search column
+            | IndexOfColumn(al2,col2) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
             // Date functions
             | Date -> sprintf "DATE_TRUNC('day', %s)" column
             | Year -> sprintf "DATE_PART('year', %s)" column

@@ -37,8 +37,9 @@ type internal MSAccessProvider() =
             | SubstringWithLength(startPos,strLen) -> sprintf "Mid(%s, %i, %i)" column startPos strLen
             | Trim -> sprintf "Trim(%s)" column
             | Length -> sprintf "Len(%s)" column
-            | IndexOf search -> sprintf "InStr(%s,%s)" search column
-            | IndexOfStart(search,startPos) -> sprintf "InStr(%d,%s,%s)" startPos search column
+            | IndexOf search -> sprintf "InStr('%s',%s)" search column
+            | IndexOfColumn(al2,col2) -> sprintf "InStr(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(search,startPos) -> sprintf "InStr(%d,'%s',%s)" startPos search column
             | ToUpper -> sprintf "UCase(%s)" column
             | ToLower -> sprintf "LCase(%s)" column
             // Date functions

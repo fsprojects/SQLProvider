@@ -68,7 +68,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "LENGTH(%s)" column
-            | IndexOf search -> sprintf "INSTR(%s,%s)" column search
+            | IndexOf search -> sprintf "INSTR(%s,'%s')" column search
+            | IndexOfColumn(al2,col2) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
             // Date functions
             | Date -> sprintf "DATE(%s)" column
             | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column

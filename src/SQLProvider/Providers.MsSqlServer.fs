@@ -296,8 +296,9 @@ type internal MSSqlServerProvider(tableNames:string) =
             | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
             | Trim -> sprintf "LTRIM(RTRIM(%s))" column
             | Length -> sprintf "DATALENGTH(%s)" column
-            | IndexOf search -> sprintf "CHARINDEX(%s,%s)" search column
-            | IndexOfStart(search,startPos) -> sprintf "CHARINDEX(%s,%s,%d)" search column startPos
+            | IndexOf search -> sprintf "CHARINDEX('%s',%s)" search column
+            | IndexOfColumn(al2,col2) -> sprintf "CHARINDEX(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(search,startPos) -> sprintf "CHARINDEX('%s',%s,%d)" search column startPos
             // Date functions
             | Date -> sprintf "CAST(%s AS DATE)" column
             | Year -> sprintf "YEAR(%s)" column
