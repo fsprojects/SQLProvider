@@ -83,7 +83,7 @@ module AsyncOperations =
                     if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
                     return (Utilities.convertTypes res typeof<'T>) |> unbox
                 | _ -> return failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-            | c -> return failwithf "Supported only on SQLProvider dataase IQueryables"
+            | c -> return failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
         }
 
 open AsyncOperations
@@ -107,6 +107,15 @@ module Seq =
     let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Min"
     /// Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
     let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Average"
+    /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
+    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> Async<int> = function 
+        | :? IWithSqlService as source ->
+            async { 
+                let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex 
+                if res = box(DBNull.Value) then return Unchecked.defaultof<int> else
+                return (Utilities.convertTypes res typeof<int>) |> unbox
+            }
+        | x -> failwithf "Only SQLProvider queryables accepted. Only simple single-table deletion where-clauses supported. Unsupported type %O" x
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.

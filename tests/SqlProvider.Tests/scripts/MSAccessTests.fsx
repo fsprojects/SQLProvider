@@ -84,3 +84,12 @@ let asyncContainsQuery =
         } |> Async.StartAsTask
     r.Wait()
     r.Result
+
+
+//******************** Delete all test **********************//
+
+query {
+    for c in ctx.Northwind.Customers do
+    where (c.ContactName.Value = "Tuomas")
+} |> Seq.``delete all items from single table`` 
+|> Async.RunSynchronously

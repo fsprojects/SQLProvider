@@ -237,3 +237,11 @@ let taskarray =
     ) |> Seq.toArray |> Tasks.Task.WaitAll
 
 ctx.GetUpdates()
+
+//******************** Delete all test **********************//
+
+query {
+    for count in ctx.Hr.Countries do
+    where (count.CountryName = "Andorra" || count.RegionId = 99934u)
+} |> Seq.``delete all items from single table`` 
+|> Async.RunSynchronously
