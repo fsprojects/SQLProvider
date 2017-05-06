@@ -64,12 +64,19 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         | SqlColumnType.CanonicalOperation(cf,col) ->
             let column = fieldNotation al col
             match cf with
-            | Substring startPos -> sprintf "SUBSTR(%s, %i)" column startPos
-            | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
+            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s, %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "LENGTH(%s)" column
-            | IndexOf search -> sprintf "INSTR(%s,'%s')" column search
-            | IndexOfColumn(al2,col2) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+            | IndexOf(SqlStr search) -> sprintf "INSTR(%s,'%s')" column search
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
             // Date functions
             | Date -> sprintf "DATE(%s)" column
             | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
@@ -78,9 +85,9 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | Hour -> sprintf "CAST(STRFTIME('%%H', %s) as INTEGER)" column
             | Minute -> sprintf "CAST(STRFTIME('%%M', %s) as INTEGER)" column
             | Second -> sprintf "CAST(STRFTIME('%%S', %s) as INTEGER)" column
-            | AddYears x -> sprintf "DATETIME(%s, '+%d year')" column x
+            | AddYears(SqlInt x) -> sprintf "DATETIME(%s, '+%d year')" column x
             | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
-            | AddDays x -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
+            | AddDays(SqlFloat x) -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
             | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
             | AddMinutes x -> sprintf "DATETIME(%s, '+%f minute')" column x
             | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x

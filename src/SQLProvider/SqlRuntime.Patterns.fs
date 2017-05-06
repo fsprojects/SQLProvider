@@ -222,24 +222,36 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         match typ with
         | t when t = typeof<System.String> || t= typeof<Option<System.String>> -> // String functions
             match meth.Name, par with
-            | "Substring", [Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.Substring(startPos), col), typ)
-            | "Substring", [Int startPos; Int strLen] -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(startPos,strLen), col), typ)
+            | "Substring", [Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlInt(startPos)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlIntCol(al2,col2)), col), typ)
+            | "Substring", [Int startPos; Int strLen] -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlInt(strLen)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ); Int strLen] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlInt(strLen)), col), typ)
+            | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlIntCol(al2,col2)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,ty2); SqlColumnGet(al3,col3,ty3)]  when integerTypes |> Seq.exists(fun t -> t = ty2) && integerTypes |> Seq.exists(fun t -> t = ty3) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlIntCol(al3,col3)), col), typ)
             | "ToUpper", []
             | "ToUpperInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToUpper, col), typ)
             | "ToLower", [] 
             | "ToLowerInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToLower, col), typ)
             | "Trim", [] -> Some(alias, CanonicalOperation(CanonicalOp.Trim, col), typ)
             | "Length", [] -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
-            | "Replace", [String itm1; String itm2] when not(itm1.Contains("'") || itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(itm1, itm2), col), typ)
-            | "IndexOf", [String search] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(search), col), intType typ)
-            | "IndexOf", [String search; Int startPos] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(search, startPos), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,typ2)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfColumn(al2,col2), col), intType typ)
+            | "Replace", [String itm1; String itm2] when not(itm1.Contains("'") || itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStr(itm1), SqlStr(itm2)), col), typ)
+            | "Replace", [SqlColumnGet(al2,col2,_); String itm2] when not(itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStrCol(al2,col2), SqlStr(itm2)), col), typ)
+            | "Replace", [String itm1; SqlColumnGet(al2,col2,_)] when not(itm1.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStr(itm1), SqlStrCol(al2,col2)), col), typ)
+            | "Replace", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,_)] -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStrCol(al2,col2), SqlStrCol(al3,col3)), col), typ)
+            | "IndexOf", [String search] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStr(search)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStrCol(al2,col2)), col), intType typ)
+            | "IndexOf", [String search; Int startPos] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlInt(startPos)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,typ2); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlInt(startPos)), col), intType typ)
+            | "IndexOf", [String search; SqlColumnGet(al2,col2,typ)] when not(search.Contains("'")) && integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlIntCol(al2,col2)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlIntCol(al3,col3)), col), intType typ)
             | _ -> None
         | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> -> // DateTime functions
             match meth.Name, par with
-            | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(x), col), typ)
+            | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlInt(x)), col), typ)
+            | "AddYears", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlIntCol(al2,col2)), col), typ)
             | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
-            | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(x), col), typ)
+            | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlFloat(x)), col), typ)
+            | "AddDays", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) || decimalTypes |> Seq.exists(fun t -> t = typ)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlNumCol(al2,col2)), col), typ)
             | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
             | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(x), col), typ)
             | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)

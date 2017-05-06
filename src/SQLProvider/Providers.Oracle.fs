@@ -70,13 +70,23 @@ module internal Oracle =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Substring startPos -> sprintf "SUBSTR(%s, %i)" column startPos
-            | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
+            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s, %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "LTRIM(RTRIM((%s))" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "INSTR(%s,'%s')" column search
-            | IndexOfColumn(al2,col2) -> sprintf "LOCATE(%s,%s)" column (fieldNotation al2 col2)
-            | IndexOfStart(search,startPos) -> sprintf "INSTR(%s,'%s',%d)" column search startPos
+            | IndexOf(SqlStr search) -> sprintf "INSTR(%s,'%s')" column search
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+            | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "INSTR(%s,'%s',%d)" column search startPos
+            | IndexOfStart(SqlStr(search), SqlIntCol(al2, col2)) -> sprintf "INSTR(%s,'%s',%s)" column search (fieldNotation al2 col2)
+            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "INSTR(%s,%s,%d)" column (fieldNotation al2 col2) startPos
+            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             // Date functions
             | Date -> sprintf "TRUNC(%s)" column
             | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
@@ -85,9 +95,11 @@ module internal Oracle =
             | Hour -> sprintf "EXTRACT(HOUR FROM %s)" column
             | Minute -> sprintf "EXTRACT(MINUTE FROM %s)" column
             | Second -> sprintf "EXTRACT(SECOND FROM %s)" column
-            | AddYears x -> sprintf "(%s + INTERVAL '%d' YEAR)" column x
+            | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '%d' YEAR)" column x
+            | AddYears(SqlIntCol(al2, col2)) -> sprintf "(%s + INTERVAL %s YEAR)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "(%s + INTERVAL '%d' MONTH)" column x
-            | AddDays x -> sprintf "(%s + INTERVAL '%f' DAY)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '%f' DAY)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '%f' HOUR)" column x
             | AddMinutes x -> sprintf "(%s + INTERVAL '%f' MINUTE)" column x
             | AddSeconds x -> sprintf "(%s + INTERVAL '%f' SECOND)" column x

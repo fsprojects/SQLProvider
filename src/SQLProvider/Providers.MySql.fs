@@ -61,13 +61,23 @@ module MySql =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Substring startPos -> sprintf "MID(%s, %i)" column startPos
-            | SubstringWithLength(startPos,strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
+            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "MID(%s, %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "MID(%s, %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "MID(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "MID(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "LOCATE('%s',%s)" search column
-            | IndexOfColumn(al2,col2) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
-            | IndexOfStart(search,startPos) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
+            | IndexOf(SqlStr search) -> sprintf "LOCATE('%s',%s)" search column
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
+            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "LOCATE('%s',%s,%s)" search column (fieldNotation al2 col2)
+            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
             // Date functions
             | Date -> sprintf "DATE(%s)" column
             | Year -> sprintf "YEAR(%s)" column
@@ -76,9 +86,11 @@ module MySql =
             | Hour -> sprintf "HOUR(%s)" column
             | Minute -> sprintf "MINUTE(%s)" column
             | Second -> sprintf "SECOND(%s)" column
-            | AddYears x -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
+            | AddYears(SqlInt x) -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
+            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
-            | AddDays x -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
             | AddMinutes x -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
             | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x

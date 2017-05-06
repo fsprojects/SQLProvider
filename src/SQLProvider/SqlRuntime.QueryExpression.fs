@@ -425,10 +425,25 @@ module internal QueryExpressionTransformer =
         
         // This resolves aliases on canonical multi-column functions
         let rec resolveC = function
-            | CanonicalOperation(BasicMathOfColumns(op,al,col2), col1) -> 
-                CanonicalOperation(BasicMathOfColumns(op,resolve al, resolveC col2), resolveC col1)
-            | CanonicalOperation(IndexOfColumn(al, col2), col1) ->
-                CanonicalOperation(IndexOfColumn(resolve al, resolveC col2), resolveC col1)
+            | CanonicalOperation(BasicMathOfColumns(op,al,col2), col1) -> CanonicalOperation(BasicMathOfColumns(op,resolve al, resolveC col2), resolveC col1)
+            | CanonicalOperation(Substring(SqlIntCol(al, col2)), col1) -> CanonicalOperation(Substring(SqlIntCol(resolve al, resolveC col2)), resolveC col1)
+
+            | CanonicalOperation(SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)), col1) -> CanonicalOperation(SubstringWithLength(SqlIntCol(resolve al2, resolveC col2),SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(SubstringWithLength(x,SqlIntCol(al3, col3)), col1) -> CanonicalOperation(SubstringWithLength(x,SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(SubstringWithLength(SqlIntCol(al2, col2),x), col1) -> CanonicalOperation(SubstringWithLength(SqlIntCol(resolve al2, resolveC col2),x), resolveC col1)
+
+            | CanonicalOperation(Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)), col1) -> CanonicalOperation(Replace(SqlStrCol(resolve al2, resolveC col2),SqlStrCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(Replace(x,SqlStrCol(al3, col3)), col1) -> CanonicalOperation(Replace(x,SqlStrCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(Replace(SqlStrCol(al2, col2),x), col1) -> CanonicalOperation(Replace(SqlStrCol(resolve al2, resolveC col2),x), resolveC col1)
+
+            | CanonicalOperation(IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)), col1) -> CanonicalOperation(IndexOfStart(SqlStrCol(resolve al2, resolveC col2),SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(IndexOfStart(x,SqlIntCol(al3, col3)), col1) -> CanonicalOperation(IndexOfStart(x,SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
+            | CanonicalOperation(IndexOfStart(SqlStrCol(al2, col2),x), col1) -> CanonicalOperation(IndexOfStart(SqlStrCol(resolve al2, resolveC col2),x), resolveC col1)
+
+            | CanonicalOperation(IndexOf(SqlStrCol(al, col2)), col1) -> CanonicalOperation(IndexOf(SqlStrCol(resolve al, resolveC col2)), resolveC col1)
+
+            | CanonicalOperation(AddYears(SqlIntCol(al, col2)), col1) -> CanonicalOperation(AddYears(SqlIntCol(resolve al, resolveC col2)), resolveC col1)
+            | CanonicalOperation(AddDays(SqlNumCol(al, col2)), col1) -> CanonicalOperation(AddDays(SqlNumCol(resolve al, resolveC col2)), resolveC col1)
             | x -> x
 
         let tryResolveC : Option<obj>->Option<obj> = Option.map(function

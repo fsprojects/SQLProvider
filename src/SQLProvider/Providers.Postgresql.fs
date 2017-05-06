@@ -73,12 +73,19 @@ module PostgreSQL =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Substring startPos -> sprintf "SUBSTRING(%s from %i)" column startPos
-            | SubstringWithLength(startPos,strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
+            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s from %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf search -> sprintf "STRPOS('%s',%s)" search column
-            | IndexOfColumn(al2,col2) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOf(SqlStr search) -> sprintf "STRPOS('%s',%s)" search column
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
             // Date functions
             | Date -> sprintf "DATE_TRUNC('day', %s)" column
             | Year -> sprintf "DATE_PART('year', %s)" column
@@ -87,9 +94,11 @@ module PostgreSQL =
             | Hour -> sprintf "DATE_PART('hour', %s)" column
             | Minute -> sprintf "DATE_PART('minute', %s)" column
             | Second -> sprintf "DATE_PART('second', %s)" column
-            | AddYears x -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
+            | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
+            | AddYears(SqlIntCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
-            | AddDays x -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
+            | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
             | AddMinutes x -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
             | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x

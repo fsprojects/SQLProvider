@@ -50,16 +50,15 @@ module ColumnSchema =
 
     type CanonicalOp =
     //String functions
-    | Substring of int
-    | SubstringWithLength of int*int
+    | Substring of SqlIntOrColumn
+    | SubstringWithLength of SqlIntOrColumn*SqlIntOrColumn
     | ToUpper
     | ToLower
     | Trim
     | Length
-    | Replace of string*string
-    | IndexOf of string
-    | IndexOfStart of string*int
-    | IndexOfColumn of string*SqlColumnType //alias, column
+    | Replace of SqlStringOrColumn*SqlStringOrColumn
+    | IndexOf of SqlStringOrColumn
+    | IndexOfStart of SqlStringOrColumn*SqlIntOrColumn
     // Date functions
     | Date
     | Year
@@ -68,9 +67,9 @@ module ColumnSchema =
     | Hour
     | Minute
     | Second
-    | AddYears of int
+    | AddYears of SqlIntOrColumn
     | AddMonths of int
-    | AddDays of float
+    | AddDays of SqlFloatOrColumn
     | AddHours of float
     | AddMinutes of float
     | AddSeconds of float
@@ -89,6 +88,20 @@ module ColumnSchema =
     | KeyColumn of string
     | CanonicalOperation of CanonicalOp * SqlColumnType
     | GroupColumn of AggregateOperation
+
+    and SqlStringOrColumn =
+    | SqlStr of string
+    | SqlStrCol of string*SqlColumnType //alias*column
+
+    // More recursion, because you mighn want to say e.g.
+    // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
+    and SqlIntOrColumn =
+    | SqlInt of int
+    | SqlIntCol of string*SqlColumnType //alias*column
+
+    and SqlFloatOrColumn =
+    | SqlFloat of float
+    | SqlNumCol of string*SqlColumnType //alias*column
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types
