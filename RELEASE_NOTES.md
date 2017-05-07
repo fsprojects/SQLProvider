@@ -1,3 +1,7 @@
+### 1.0.55 - 08.05.2017
+* Support canonical functions: Convert some basic .NET-functions to SQL.
+* Support delete from -query to delete many items with a single clause.
+
 ### 1.0.54 - 26.04.2017
 * Oracle connection leak fix #397
 
