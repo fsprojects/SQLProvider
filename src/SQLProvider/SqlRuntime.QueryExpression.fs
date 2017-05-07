@@ -251,7 +251,7 @@ module internal QueryExpressionTransformer =
 
         newProjection, projectionMap, groupProjectionMap
 
-    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) =
+    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript =
         // first convert the abstract query tree into a more useful format
         let legaliseName (alias:alias) =
                 if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
@@ -459,6 +459,6 @@ module internal QueryExpressionTransformer =
                                             | None -> snd sqlQuery.UltimateChild.Value
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 
-        let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns)
+        let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript)
 
         (sql,parameters,projectionDelegate,baseTable)

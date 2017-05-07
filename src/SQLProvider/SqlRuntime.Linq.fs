@@ -102,7 +102,7 @@ module internal QueryImplementation =
 
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
-        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
         let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
         Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
         // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
@@ -119,7 +119,7 @@ module internal QueryImplementation =
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
-           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
            let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
            Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
@@ -141,7 +141,7 @@ module internal QueryImplementation =
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        use con = provider.CreateConnection(dc.ConnectionString)
        con.Open()
-       let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+       let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
        Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
@@ -155,7 +155,37 @@ module internal QueryImplementation =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider
+           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
+           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
+           use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           for p in parameters do cmd.Parameters.Add p |> ignore
+           // ignore any generated projection and just expect a single integer back
+           if con.State <> ConnectionState.Open then
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
+                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                con.Open()
+           let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           return executed
+       }
+
+    let executeDeleteQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
+       async {
+            // Not too complex clauses please...
+            // No "AS" command allowed for basetable. Little visitor-pattern to modify base-alias name.
+           let rec modifyAlias (sqlx:SqlExp) =
+               match sqlx with
+               | BaseTable (alias,table) when (alias = "" || alias = table.Name || alias = table.FullName ) -> sqlx //ok
+               | BaseTable (_,table) -> BaseTable (table.Name,table)
+               | FilterClause(a,rest) -> FilterClause(a,modifyAlias rest)
+               | AggregateOp(a,b,c,rest) -> AggregateOp(a,b,c,modifyAlias rest)
+               | _ -> failwithf "Unsupported delete-clause. Only simple single-table deletion where-clauses supported. You had parameters: %O" sqlx
+
+           let sqlExp = modifyAlias sqlExp
+           use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
+           do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true
            Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            for p in parameters do cmd.Parameters.Add p |> ignore
@@ -281,7 +311,7 @@ module internal QueryImplementation =
 
                         let svc = (qry :?> IWithSqlService)
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false
 
                         let modified = 
                             parameters |> Seq.map(fun p ->
@@ -732,7 +762,7 @@ module internal QueryImplementation =
 
                         let subquery = values :?> IWithSqlService
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false
 
                         let modified = 
                             parameters |> Seq.map(fun p ->
