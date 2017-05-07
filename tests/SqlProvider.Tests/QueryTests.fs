@@ -1099,19 +1099,20 @@ let ``simple canonical operations query``() =
         query {
             // Silly query not hitting indexes, so testing purposes only...
             for cust in dc.Main.Customers do
-            join emp in dc.Main.Employees on (cust.City.Trim() + "x" = emp.City.Trim() + "x")
             // This is not yet working:
-            //join emp in dc.Main.Employees on (cust.City.Trim() + "x" + cust.Country = emp.City.Trim() + "x" + emp.Country)
+            join emp in dc.Main.Employees on (cust.City.Trim() + "x" + cust.Country = emp.City.Trim() + "x" + emp.Country)
+            join secondCust in dc.Main.Customers on (cust.City + emp.City + "A" = secondCust.City + secondCust.City + "A")
             where (
                 cust.City + emp.City + cust.City + emp.City + cust.City = cust.City + emp.City + cust.City + emp.City + cust.City
                 && abs(emp.EmployeeId)+1L > 4L 
-                && cust.City.Length > 1  
-                && cust.City + "L" = "LondonL" 
-                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,2))>0
+                && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
+                && cust.City.Replace("on","on") + "L" = "LondonL" 
+                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
                 && emp.BirthDate.Date.AddYears(3).Month + 1 > 3
             )
-            sortBy (emp.BirthDate.Day * emp.BirthDate.Day)
+            sortBy (abs(abs(emp.BirthDate.Day * emp.BirthDate.Day)))
             select (cust.CustomerId, cust.City, emp.BirthDate)
+            distinct
         } |> Seq.toArray
 
     CollectionAssert.IsNotEmpty qry

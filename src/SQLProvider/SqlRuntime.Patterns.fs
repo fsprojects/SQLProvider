@@ -223,10 +223,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | t when t = typeof<System.String> || t= typeof<Option<System.String>> -> // String functions
             match meth.Name, par with
             | "Substring", [Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlInt(startPos)), col), typ)
-            | "Substring", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlIntCol(al2,col2)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlIntCol(al2,col2)), col), typ)
             | "Substring", [Int startPos; Int strLen] -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlInt(strLen)), col), typ)
-            | "Substring", [SqlColumnGet(al2,col2,typ); Int strLen] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlInt(strLen)), col), typ)
-            | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlIntCol(al2,col2)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ2); Int strLen] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlInt(strLen)), col), typ)
+            | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlIntCol(al2,col2)), col), typ)
             | "Substring", [SqlColumnGet(al2,col2,ty2); SqlColumnGet(al3,col3,ty3)]  when integerTypes |> Seq.exists(fun t -> t = ty2) && integerTypes |> Seq.exists(fun t -> t = ty3) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlIntCol(al3,col3)), col), typ)
             | "ToUpper", []
             | "ToUpperInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToUpper, col), typ)
@@ -241,17 +241,17 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "IndexOf", [String search] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStr(search)), col), intType typ)
             | "IndexOf", [SqlColumnGet(al2,col2,_)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStrCol(al2,col2)), col), intType typ)
             | "IndexOf", [String search; Int startPos] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlInt(startPos)), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,typ2); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlInt(startPos)), col), intType typ)
-            | "IndexOf", [String search; SqlColumnGet(al2,col2,typ)] when not(search.Contains("'")) && integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlIntCol(al2,col2)), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlIntCol(al3,col3)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlInt(startPos)), col), intType typ)
+            | "IndexOf", [String search; SqlColumnGet(al2,col2,typ2)] when not(search.Contains("'")) && integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlIntCol(al2,col2)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlIntCol(al3,col3)), col), intType typ)
             | _ -> None
         | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> -> // DateTime functions
             match meth.Name, par with
             | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlInt(x)), col), typ)
-            | "AddYears", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlIntCol(al2,col2)), col), typ)
+            | "AddYears", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlIntCol(al2,col2)), col), typ)
             | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
             | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlFloat(x)), col), typ)
-            | "AddDays", [SqlColumnGet(al2,col2,typ)] when integerTypes |> Seq.exists(fun t -> t = typ) || decimalTypes |> Seq.exists(fun t -> t = typ)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlNumCol(al2,col2)), col), typ)
+            | "AddDays", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlNumCol(al2,col2)), col), typ)
             | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
             | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(x), col), typ)
             | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)

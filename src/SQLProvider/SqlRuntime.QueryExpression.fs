@@ -414,6 +414,15 @@ module internal QueryExpressionTransformer =
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
             else sqlQuery,baseAlias
 
+        let resolve defaultTable name =
+            // name will be blank when there is only a single table as it never gets
+            // tupled by the LINQ infrastructure. In this case we know it must be referring
+            // to the only table in the query, so replace it
+            if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
+            else 
+                let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                if tbl = "" then baseAlias else tbl
+
         let resolve name =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
@@ -422,29 +431,37 @@ module internal QueryExpressionTransformer =
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseAlias else tbl
+
         
-        // This resolves aliases on canonical multi-column functions
-        let rec resolveC = function
-            | CanonicalOperation(BasicMathOfColumns(op,al,col2), col1) -> CanonicalOperation(BasicMathOfColumns(op,resolve al, resolveC col2), resolveC col1)
-            | CanonicalOperation(Substring(SqlIntCol(al, col2)), col1) -> CanonicalOperation(Substring(SqlIntCol(resolve al, resolveC col2)), resolveC col1)
+        // Resolves aliases on canonical multi-column functions
+        let rec visitCanonicals resolver = function
+            | CanonicalOperation(subItem, col) -> 
+                let resolvedSub =
+                    match subItem with
+                    | BasicMathOfColumns(op,al,col2) -> BasicMathOfColumns(op,resolver al, visitCanonicals resolver col2)
+                    | Substring(SqlIntCol(al, col2)) -> Substring(SqlIntCol(resolver al, visitCanonicals resolver col2))
 
-            | CanonicalOperation(SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)), col1) -> CanonicalOperation(SubstringWithLength(SqlIntCol(resolve al2, resolveC col2),SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(SubstringWithLength(x,SqlIntCol(al3, col3)), col1) -> CanonicalOperation(SubstringWithLength(x,SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(SubstringWithLength(SqlIntCol(al2, col2),x), col1) -> CanonicalOperation(SubstringWithLength(SqlIntCol(resolve al2, resolveC col2),x), resolveC col1)
+                    | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | SubstringWithLength(x,SqlIntCol(al3, col3)) -> SubstringWithLength(x,SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | SubstringWithLength(SqlIntCol(al2, col2),x) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolver col2),x)
 
-            | CanonicalOperation(Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)), col1) -> CanonicalOperation(Replace(SqlStrCol(resolve al2, resolveC col2),SqlStrCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(Replace(x,SqlStrCol(al3, col3)), col1) -> CanonicalOperation(Replace(x,SqlStrCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(Replace(SqlStrCol(al2, col2),x), col1) -> CanonicalOperation(Replace(SqlStrCol(resolve al2, resolveC col2),x), resolveC col1)
+                    | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlStrCol(resolver al3, visitCanonicals resolver col3))
+                    | Replace(x,SqlStrCol(al3, col3)) -> Replace(x,SqlStrCol(resolver al3, visitCanonicals resolver col3))
+                    | Replace(SqlStrCol(al2, col2),x) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolver col2),x)
 
-            | CanonicalOperation(IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)), col1) -> CanonicalOperation(IndexOfStart(SqlStrCol(resolve al2, resolveC col2),SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(IndexOfStart(x,SqlIntCol(al3, col3)), col1) -> CanonicalOperation(IndexOfStart(x,SqlIntCol(resolve al3, resolveC col3)), resolveC col1)
-            | CanonicalOperation(IndexOfStart(SqlStrCol(al2, col2),x), col1) -> CanonicalOperation(IndexOfStart(SqlStrCol(resolve al2, resolveC col2),x), resolveC col1)
+                    | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | IndexOfStart(x,SqlIntCol(al3, col3)) -> IndexOfStart(x,SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | IndexOfStart(SqlStrCol(al2, col2),x) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolver col2),x)
 
-            | CanonicalOperation(IndexOf(SqlStrCol(al, col2)), col1) -> CanonicalOperation(IndexOf(SqlStrCol(resolve al, resolveC col2)), resolveC col1)
+                    | IndexOf(SqlStrCol(al, col2)) -> IndexOf(SqlStrCol(resolver al, visitCanonicals resolver col2))
 
-            | CanonicalOperation(AddYears(SqlIntCol(al, col2)), col1) -> CanonicalOperation(AddYears(SqlIntCol(resolve al, resolveC col2)), resolveC col1)
-            | CanonicalOperation(AddDays(SqlNumCol(al, col2)), col1) -> CanonicalOperation(AddDays(SqlNumCol(resolve al, resolveC col2)), resolveC col1)
+                    | AddYears(SqlIntCol(al, col2)) -> AddYears(SqlIntCol(resolver al, visitCanonicals resolver col2))
+                    | AddDays(SqlNumCol(al, col2)) -> AddDays(SqlNumCol(resolver al, visitCanonicals resolver col2))
+                    | x -> x
+                CanonicalOperation(resolvedSub, visitCanonicals resolver col) 
             | x -> x
+
+        let resolveC = visitCanonicals resolve
 
         let tryResolveC : Option<obj>->Option<obj> = Option.map(function
             | :? (alias * SqlColumnType) as a ->
@@ -469,7 +486,6 @@ module internal QueryExpressionTransformer =
                                                             |("",b,c) -> (resolve "",resolveC b,c) 
                                                             | a,c,b -> a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
-                                       Links = sqlQuery.Links |> List.map (fun (a1,ld,a2) -> a1, {ld with ForeignKey = ld.ForeignKey |> List.map(resolveC)}, a2)
                                        Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> ga, resolveC gk), a|>List.map(fun(ag,aa)->ag,resolveC aa)) 
                        }
 
@@ -490,8 +506,25 @@ module internal QueryExpressionTransformer =
         // able to be resolved now.
         let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            if linkData.ForeignTable.Name <> "" then (outerAlias, linkData, innerAlias)
-            else (outerAlias, { linkData with ForeignTable = resolved }, innerAlias)
+            let resolvePrimary name =
+                if String.IsNullOrWhiteSpace(name) || name = "__base__" then innerAlias
+                else 
+                    let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                    if tbl = "" then innerAlias else tbl
+            let resolveForeign name =
+                if String.IsNullOrWhiteSpace(name) || name = "__base__" then outerAlias
+                else 
+                    let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                    if tbl = "" then outerAlias else tbl
+
+            let resolvedLinkData =
+                { linkData with PrimaryKey = linkData.PrimaryKey |> List.map(visitCanonicals resolvePrimary)
+                                ForeignKey = linkData.ForeignKey |> List.map(visitCanonicals resolveForeign)
+                }
+
+            if linkData.ForeignTable.Name <> "" then (outerAlias, resolvedLinkData, innerAlias)
+            else (outerAlias, { resolvedLinkData with ForeignTable = resolved }, innerAlias)
+
         let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
 
         // make sure the provider has cached the columns for the tables within the projection
