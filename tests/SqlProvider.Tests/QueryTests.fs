@@ -1183,3 +1183,14 @@ let ``verify groupBy results``() =
     let res = groupqry |> dict  
 
     CollectionAssert.AreEqual(inlogics,groupqry)
+
+[<Test >]
+let ``simple delete where query``() =
+    let dc = sql.GetDataContext()
+    query {
+        for cust in dc.Main.Customers do
+        where (cust.City = "Atlantis" || cust.CompanyName = "Home")
+    } |> Seq.``delete all items from single table`` 
+    |> Async.RunSynchronously |> ignore
+    ()
+

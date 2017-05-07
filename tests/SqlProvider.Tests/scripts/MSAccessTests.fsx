@@ -99,3 +99,11 @@ let canoncicalOpTest =
         sortBy emp.BirthDate.Value.Day
         select (cust.CustomerId, cust.City, emp.BirthDate)
     } |> Seq.toArray
+
+//******************** Delete all test **********************//
+
+query {
+    for c in ctx.Northwind.Customers do
+    where (c.ContactName.Value = "Tuomas")
+} |> Seq.``delete all items from single table`` 
+|> Async.RunSynchronously

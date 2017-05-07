@@ -569,7 +569,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")) amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s`.`%s` WHERE `%s`.`%s`.`%s` = @id" table.Schema (MySql.ripQuotes table.Name) table.Schema (MySql.ripQuotes table.Name) column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -743,12 +743,16 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (MySql.fieldNotation alias column) (if not desc then "DESC" else "")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s " columns)
-            // FROM
-            ~~(sprintf "FROM %s as `%s` " (baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`"))  baseAlias)
+            let basetable = baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM %s " basetable)
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else  ~~(sprintf "SELECT %s " columns)
+                // FROM
+                ~~(sprintf "FROM %s as `%s` " basetable  baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

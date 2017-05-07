@@ -672,7 +672,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         member __.GetIndividualsQueryText(table,amount) = Oracle.getIndivdualsQueryText amount table
         member __.GetIndividualQueryText(table,column) = Oracle.getIndivdualQueryText table column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -829,12 +829,15 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (Oracle.fieldNotation alias column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s " columns)
-            // FROM
-            ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM %s " baseTable.FullName)
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else  ~~(sprintf "SELECT %s " columns)
+                // FROM
+                ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

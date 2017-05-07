@@ -229,3 +229,12 @@ let getemployees hireDate =
     ]
 
 getemployees (new System.DateTime(1999,4,1))
+
+
+//******************** Delete all test **********************//
+
+query {
+    for c in ctx.Dbo.Employees do
+    where (c.FirstName = "Tuomas")
+} |> Seq.``delete all items from single table`` 
+|> Async.RunSynchronously

@@ -301,7 +301,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             sprintf "SELECT * FROM %c%s%c WHERE %c%s%s%s%c = ?" 
                         cOpen table.Name cClose cOpen table.Name separator column cClose
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let separator = (sprintf "%c.%c" cClose cOpen).Trim()
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) =
@@ -516,13 +516,16 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             let stripSpecialCharacters (s:string) =
                 String(s.ToCharArray() |> Array.filter(fun c -> Char.IsLetterOrDigit c || c = ' ' || c = '_'))
 
-            // SELECT
-            let columnsFixed = if String.IsNullOrEmpty columns then "*" else columns
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s " columnsFixed)
-            // FROM
-            ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters baseAlias) cClose)
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose)
+            else 
+                // SELECT
+                let columnsFixed = if String.IsNullOrEmpty columns then "*" else columns
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else  ~~(sprintf "SELECT %s " columnsFixed)
+                // FROM
+                ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters baseAlias) cClose)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

@@ -344,7 +344,7 @@ type internal MSAccessProvider() =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -504,15 +504,18 @@ type internal MSAccessProvider() =
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
-            // FROM
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM %s[%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")))
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
+                // FROM
 
-            ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")) baseAlias)
+                ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")) baseAlias)
 
             fromBuilder(numLinks)
             // WHERE

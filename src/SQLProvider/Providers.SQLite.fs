@@ -389,7 +389,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" table.FullName amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -546,12 +546,15 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else  ~~(sprintf "SELECT %s " columns)
-            // FROM
-            ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM %s " baseTable.FullName)
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else  ~~(sprintf "SELECT %s " columns)
+                // FROM
+                ~~(sprintf "FROM %s as [%s] " baseTable.FullName baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

@@ -624,7 +624,7 @@ type internal MSSqlServerProvider(tableNames:string) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -793,15 +793,18 @@ type internal MSSqlServerProvider(tableNames:string) =
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else
-                match sqlQuery.Skip, sqlQuery.Take with
-                | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
-                | _ -> ~~(sprintf "SELECT %s " columns)
-            // FROM
-            ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else
+                    match sqlQuery.Skip, sqlQuery.Take with
+                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | _ -> ~~(sprintf "SELECT %s " columns)
+                // FROM
+                ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
