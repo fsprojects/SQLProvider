@@ -302,9 +302,9 @@ and ISqlDataContext =
 // LinkData is for joins with SelectMany
 and LinkData =
     { PrimaryTable       : Table
-      PrimaryKey         : string list
+      PrimaryKey         : SqlColumnType list
       ForeignTable       : Table
-      ForeignKey         : string list
+      ForeignKey         : SqlColumnType list
       OuterJoin          : bool
       RelDirection       : RelationshipDirection      }
     with
@@ -314,8 +314,8 @@ and LinkData =
 // GroupData is for group-by projections
 and GroupData =
     { PrimaryTable       : Table
-      KeyColumns         : (alias * string) list
-      AggregateColumns   : (AggregateOperation * alias * string) list
+      KeyColumns         : (alias * SqlColumnType) list
+      AggregateColumns   : (alias * SqlColumnType) list
       Projection         : Expression option }
 
 and alias = string
@@ -327,25 +327,25 @@ and Condition =
     // this is largely from my CRM type provider. I don't think in practice for the SQL provider
     // you will ever have more than what is representable in a traditional binary expression tree, but
     // changing it would be a lot of effort ;)
-    | And of (alias * string * ConditionOperator * obj option) list * (Condition list) option
-    | Or of (alias * string * ConditionOperator * obj option) list * (Condition list) option
+    | And of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
+    | Or of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
     | ConstantTrue
     | ConstantFalse
 
 and SelectData = LinkQuery of LinkData | GroupQuery of GroupData
 and internal SqlExp =
-    | BaseTable    of alias * Table                      // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
-    | SelectMany   of alias * alias * SelectData * SqlExp  // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
-    | FilterClause of Condition * SqlExp                 // filters from the where clause(es)
-    | HavingClause of Condition * SqlExp                 // filters from the where clause(es)
-    | Projection   of Expression * SqlExp                // entire LINQ projection expression tree
-    | Distinct     of SqlExp                             // distinct indicator
-    | OrderBy      of alias * string * bool * SqlExp     // alias and column name, bool indicates ascending sort
-    | Union        of bool * string * SqlExp             // true = "union all", false = "union", and subquery
+    | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
+    | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
+    | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
+    | HavingClause of Condition * SqlExp                    // filters from the where clause(es)
+    | Projection   of Expression * SqlExp                   // entire LINQ projection expression tree
+    | Distinct     of SqlExp                                // distinct indicator
+    | OrderBy      of alias * SqlColumnType * bool * SqlExp // alias and column name, bool indicates ascending sort
+    | Union        of bool * string * SqlExp                // true = "union all", false = "union", and subquery
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
-    | AggregateOp  of AggregateOperation * alias * string * SqlExp
+    | AggregateOp  of alias * SqlColumnType * SqlExp
     with member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
@@ -359,7 +359,7 @@ and internal SqlExp =
                 | Take(_,rest)
                 | Union(_,_,rest)
                 | Count(rest) 
-                | AggregateOp(_,_,_,rest) -> aux rest
+                | AggregateOp(_,_,rest) -> aux rest
             aux this
 
 and internal SqlQuery =
@@ -367,16 +367,16 @@ and internal SqlQuery =
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
       Aliases       : Map<string, Table>
-      Ordering      : (alias * string * bool) list
+      Ordering      : (alias * SqlColumnType * bool) list
       Projection    : Expression list
-      Grouping      : (list<alias * string> * list<AggregateOperation * alias * string>) list //key columns, aggregate columns
+      Grouping      : (list<alias * SqlColumnType> * list<alias * SqlColumnType>) list //key columns, aggregate columns
       Distinct      : bool
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
       Union         : (bool*string) option
       Count         : bool 
-      AggregateOp   : (AggregateOperation * alias * string) list }
+      AggregateOp   : (alias * SqlColumnType) list }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
                                 Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None; HavingFilters = [] }
@@ -409,7 +409,7 @@ and internal SqlQuery =
                                     Grouping = 
                                         let baseAlias:alias = grp.PrimaryTable.Name
                                         let f = grp.KeyColumns |> List.map (fun (al,k) -> legaliseName (match al<>"" with true -> al | false -> baseAlias), k)
-                                        let s = grp.AggregateColumns |> List.map (fun (op,al,key) -> op, legaliseName (match al<>"" with true -> al | false -> baseAlias), key)
+                                        let s = grp.AggregateColumns |> List.map (fun (al,opKey) -> legaliseName (match al<>"" with true -> al | false -> baseAlias), opKey)
                                         (f,s)::q.Grouping
                                     Projection = match grp.Projection with Some p -> p::q.Projection | None -> q.Projection } rest
                 | FilterClause(c,rest) ->  convert { q with Filters = (c)::q.Filters } rest
@@ -437,8 +437,8 @@ and internal SqlQuery =
                     if q.Union.IsSome then failwith "Union may only be specified once. However you can try: xs.Union(ys.Union(zs))"
                     elif q.Take.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
                     else convert { q with Union = Some(all,subquery) } rest
-                | AggregateOp(operation, alias, key, rest) ->
-                    convert { q with AggregateOp = (operation, alias, key)::q.AggregateOp } rest
+                | AggregateOp(alias, operationWithKey, rest) ->
+                    convert { q with AggregateOp = (alias, operationWithKey)::q.AggregateOp } rest
             let sq = convert (SqlQuery.Empty) exp
             sq
 
@@ -503,8 +503,8 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
             distinctItem.ColumnValues 
             |> Seq.filter(fun (s,k) -> 
                 let sUp = s.ToUpperInvariant()
-                (sUp.Contains("["+fetchCol+"]") || sUp.Contains("-"+fetchCol+"-")) && 
-                    (sUp.Contains("["+itemType+"]") || sUp.Contains("-"+itemType+"-"))) |> Seq.head |> snd
+                (sUp.Contains("_"+fetchCol)) && 
+                    (sUp.Contains(itemType+"_"))) |> Seq.head |> snd
         if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
         else 
             let returnType = typeof<'ret>
@@ -535,30 +535,24 @@ module internal CommonTasks =
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
 
-    let parseHaving (keys:(alias*string) list) (conditionList : Condition list) =
+    let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =
         if keys.Length <> 1 then
             failwithf "Unsupported having. Expected 1 key column, found: %i" keys.Length
         else
             let basealias, key = keys.[0]
             let replaceAlias = function "" -> basealias | x -> x
-            let replacefunc (alias:alias,itm:string,op,i) =
-                let a, k = 
-                    match itm with
-                    | "{KEY}" -> replaceAlias alias, key
-                    | "{COUNT}" -> String.Empty, "COUNT( 1 )"
-                    | "{AVG}" -> String.Empty, "AVG(" + key + ")"
-                    | "{MIN}" -> String.Empty, "MIN(" + key + ")"
-                    | "{MAX}" -> String.Empty, "MAX(" + key + ")"
-                    | x -> replaceAlias alias, x
-                a,k,op,i
+            let replaceEmptyKey = 
+                match key with
+                | KeyColumn keyName -> function GroupColumn (KeyOp k) when k = "" -> GroupColumn (KeyOp keyName) | x -> x
+                | _ -> fun x -> x
 
             let rec parseFilters conditionList = 
                 conditionList |> List.map(function 
                     | Condition.And(curr, tail) -> 
-                        let converted = curr |> List.map replacefunc
+                        let converted = curr |> List.map (fun (alias,c,op,i) -> replaceAlias alias, replaceEmptyKey c, op, i)
                         Condition.And(converted, tail |> Option.map parseFilters)
                     | Condition.Or(curr,tail) -> 
-                        let converted = curr |> List.map replacefunc
+                        let converted = curr |> List.map (fun (alias,c,op,i) -> replaceAlias alias, replaceEmptyKey c, op, i)
                         Condition.Or(curr, tail |> Option.map parseFilters)
                     | x -> x)
             parseFilters conditionList

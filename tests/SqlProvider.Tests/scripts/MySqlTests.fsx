@@ -129,7 +129,19 @@ let qry =
         select (p.Key, p.Sum(fun f -> f.Salary))
     } |> Seq.toList
     
-
+let canoncicalOpTest = 
+    query {
+        // Silly query not hitting indexes, so testing purposes only...
+        for job in ctx.Hr.Jobs do
+        join emp in ctx.Hr.Employees on (job.JobId.Trim() + "x" = emp.JobId.Trim() + "x")
+        where (
+            floor(job.MaxSalary)+1m > 4m
+            && emp.Email.Length > 2
+            && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
+        )
+        sortBy emp.HireDate.Day
+        select (emp.HireDate, emp.Email, job.MaxSalary)
+    } |> Seq.toArray
 
 //************************ CRUD *************************//
 

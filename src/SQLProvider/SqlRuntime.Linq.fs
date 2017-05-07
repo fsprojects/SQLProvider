@@ -53,7 +53,10 @@ module internal QueryImplementation =
                         let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kt)
                         tyo.GetConstructors())
 
-                let getval (key:obj) idx = Utilities.convertTypes key keyType.Value.GenericTypeArguments.[idx]
+                let getval (key:obj) idx = 
+                    if keyType.Value.IsGenericType then
+                        Utilities.convertTypes key keyType.Value.GenericTypeArguments.[idx]
+                    else key
                 
                 let tup2, tup3 = 
                     let genArg idx = 
@@ -69,9 +72,8 @@ module internal QueryImplementation =
                 // do group-read
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
-                        // We support two possible alias syntax (because of Access), mainly alias is '[Column][Sum]'
-                        let aggregates = [|"[COUNT]"; "[MIN]"; "[MAX]"; "[SUM]"; "[AVG]";
-                                           "-COUNT-"; "-MIN-"; "-MAX-"; "-SUM-"; "-AVG-"|]
+                        // Alias is '[Sum_Column]'
+                        let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         match data with
@@ -179,7 +181,7 @@ module internal QueryImplementation =
                | BaseTable (alias,table) when (alias = "" || alias = table.Name || alias = table.FullName ) -> sqlx //ok
                | BaseTable (_,table) -> BaseTable (table.Name,table)
                | FilterClause(a,rest) -> FilterClause(a,modifyAlias rest)
-               | AggregateOp(a,b,c,rest) -> AggregateOp(a,b,c,modifyAlias rest)
+               | AggregateOp(a,c,rest) -> AggregateOp(a,c,modifyAlias rest)
                | _ -> failwithf "Unsupported delete-clause. Only simple single-table deletion where-clauses supported. You had parameters: %O" sqlx
 
            let sqlExp = modifyAlias sqlExp
@@ -369,36 +371,6 @@ module internal QueryImplementation =
                         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
                     | _ -> None
 
-                let (|HavingCondition|_|) exp =
-                    // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
-                    match exp with
-                    | OptionIsSome(SqlGroupingColumnGet(ti,key,_)) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.NotNull,None)
-                    | OptionIsNone(SqlGroupingColumnGet(ti,key,_))
-                    | SqlCondOp(ConditionOperator.Equal,(SqlGroupingColumnGet(ti,key,_)),OptionNone) 
-                    | SqlNegativeCondOp(ConditionOperator.Equal,(SqlGroupingColumnGet(ti,key,_)),OptionNone) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.IsNull,None)
-                    | SqlCondOp(ConditionOperator.NotEqual,(SqlGroupingColumnGet(ti,key,_)),OptionNone) 
-                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(SqlGroupingColumnGet(ti,key,_)),OptionNone) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.NotNull,None)
-                    // matches column to constant with any operator eg c.name = "john", c.age > 42
-                    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
-                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,c)
-                    // matches to another property getter, method call or new expression
-                    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlGroupingColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
-                    | SqlGroupingColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.Equal, Some(true |> box))
-                    | _ -> None
-
                 let rec filterExpression (exp:Expression)  =
                     let extendFilter conditions nextFilter =
                         match exp with
@@ -424,11 +396,6 @@ module internal QueryImplementation =
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
                     | _ -> 
-                        if isHaving then
-                            match exp with
-                            | HavingCondition(cond) -> Condition.And([cond],None)
-                            | _ -> failwith ("Unsupported group having expression. " + exp.ToString())
-                        else
                         failwith ("Unsupported expression. Ensure all server-side objects won't have any .NET-operators/methods that can't be converted to SQL. The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
                 match qual with
@@ -448,8 +415,9 @@ module internal QueryImplementation =
                             else
 
                             // the following case can happen with multiple where clauses when only a single entity is selected
-                            if paramNames.First() = "" || source.TupleIndex.Count = 0 then FilterClause(filter,current)
-                            else FilterClause(filter,current)
+                            //if (paramNames.Length > 0 && paramNames.First() = "") || source.TupleIndex.Count = 0 then FilterClause(filter,current)
+                            //else 
+                            FilterClause(filter,current)
 
                     let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                     ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
@@ -703,12 +671,15 @@ module internal QueryImplementation =
                                                 OuterJoin = false; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                             | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
+                                
+                                let parseKey itm =
+                                    SqlColumnType.KeyColumn itm
                                 let fromAlias =
                                     match param with
                                     | ParamName x -> x
                                     | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
                                     | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
-                                let data = { PrimaryKey = [PK]; PrimaryTable = Table.FromFullName PE; ForeignKey = [FK]; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
+                                let data = { PrimaryKey = [parseKey PK]; PrimaryTable = Table.FromFullName PE; ForeignKey = [parseKey FK]; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
                                 let sqlExpression =
                                     match outExp with
                                     | BaseTable(alias,entity) when alias = "" ->
@@ -847,7 +818,7 @@ module internal QueryImplementation =
                         let res = parseWhere meth limitedSource qual
                         res |> Seq.head |> box :?> 'T
                     | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
-                             OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) 
+                             OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity, KeyColumn key,_)))) 
                              ]) ->
                         let alias =
                              match entity with
@@ -857,14 +828,16 @@ module internal QueryImplementation =
                         let sqlExpression =
                                
                                match meth.Name, source.SqlExpression with
-                               | "Sum", BaseTable("",entity)  -> AggregateOp(Sum(None),"",key,BaseTable(alias,entity))
-                               | "Sum", _ ->  AggregateOp(Sum(None),alias,key,source.SqlExpression)
-                               | "Max", BaseTable("",entity)  -> AggregateOp(Max(None),"",key,BaseTable(alias,entity))
-                               | "Max", _ ->  AggregateOp(Max(None),alias,key,source.SqlExpression)
-                               | "Min", BaseTable("",entity)  -> AggregateOp(Min(None),"",key,BaseTable(alias,entity))
-                               | "Min", _ ->  AggregateOp(Min(None),alias,key,source.SqlExpression)
-                               | "Average", BaseTable("",entity)  -> AggregateOp(Avg(None),"",key,BaseTable(alias,entity))
-                               | "Average", _ ->  AggregateOp(Avg(None),alias,key,source.SqlExpression)
+                               | "Sum", BaseTable("",entity)  -> AggregateOp("",GroupColumn(SumOp(key)),BaseTable(alias,entity))
+                               | "Sum", _ ->  AggregateOp(alias,GroupColumn(SumOp(key)),source.SqlExpression)
+                               | "Max", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MaxOp(key)),BaseTable(alias,entity))
+                               | "Max", _ ->  AggregateOp(alias,GroupColumn(MaxOp(key)),source.SqlExpression)
+                               | "Count", BaseTable("",entity)  -> AggregateOp("",GroupColumn(CountOp(key)),BaseTable(alias,entity))
+                               | "Count", _ ->  AggregateOp(alias,GroupColumn(CountOp(key)),source.SqlExpression)
+                               | "Min", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MinOp(key)),BaseTable(alias,entity))
+                               | "Min", _ ->  AggregateOp(alias,GroupColumn(MinOp(key)),source.SqlExpression)
+                               | "Average", BaseTable("",entity)  -> AggregateOp("",GroupColumn(AvgOp(key)),BaseTable(alias,entity))
+                               | "Average", _ ->  AggregateOp(alias,GroupColumn(AvgOp(key)),source.SqlExpression)
                                | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
                         if res = box(DBNull.Value) then Unchecked.defaultof<'T> else

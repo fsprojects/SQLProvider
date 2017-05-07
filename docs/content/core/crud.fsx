@@ -186,3 +186,18 @@ SQLProvider also supports async database operations:
 *)
 
 ctx.SubmitUpdatesAsync() |> Async.StartAsTask
+
+(**
+
+### Delete-query for multiple items
+
+If you want to delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this.
+
+*)
+
+query {
+    for c in ctx.Dbo.Employees do
+    where (...)
+} |> Seq.``delete all items from single table``  |> Async.RunSynchronously
+
+*)

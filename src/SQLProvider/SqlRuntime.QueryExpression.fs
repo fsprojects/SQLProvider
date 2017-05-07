@@ -70,24 +70,20 @@ module internal QueryExpressionTransformer =
                 let op =
                     if e.Arguments.Count = 1 then
                         match e.Method.Name with
-                        | "Count" -> Some (CountOp None)
-                        | "Sum" -> Some (Sum None)
-                        | "Avg" -> Some (Avg None)
-                        | "Min" -> Some (Min None)
-                        | "Max" -> Some (Max None)
+                        | "Count" -> Some (CountOp "")
                         | _ -> None
                     elif e.Arguments.Count = 2 then
                         match e.Arguments.[1] with
                         | :? LambdaExpression as la ->
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
-                                | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) ->
+                                | ExpressionType.Call, OptionalFSharpOptionValue(MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])) ->
                                     match e.Method.Name with
-                                    | "Count" -> Some (CountOp (Some key))
-                                    | "Sum" -> Some (Sum (Some key))
-                                    | "Avg" -> Some (Avg (Some key))
-                                    | "Min" -> Some (Min (Some key))
-                                    | "Max" -> Some (Max (Some key))
+                                    | "Count" -> Some (CountOp key)
+                                    | "Sum" -> Some (SumOp key)
+                                    | "Avg" -> Some (AvgOp key)
+                                    | "Min" -> Some (MinOp key)
+                                    | "Max" -> Some (MaxOp key)
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
@@ -106,10 +102,14 @@ module internal QueryExpressionTransformer =
                 | true, Some o when not(groupProjectionMap.Contains(o)) -> 
                     let methodname = "Aggregate"+e.Method.Name
                     
-                    let v = match o with CountOp x | Sum x | Avg x | Min x | Max x -> x
+                    let v = match o with 
+                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x 
+                            | KeyOp x -> x
+                    //Count 1 is over all the items
+                    let vf = if v = "" then None else Some v
 
                     let ty = typedefof<GroupResultItems<_>>.MakeGenericType(e.Arguments.[0].Type.GetGenericArguments().[0])
-                    let aggregateColumn = Expression.Constant(v, typeof<Option<string>>) :> Expression
+                    let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(e.Method.ReturnType);
                     let replacementExpr = 
@@ -349,13 +349,22 @@ module internal QueryExpressionTransformer =
                             sqlQuery.Grouping |> List.map(fun (group,_) ->
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
-                                let aggregations:(AggregateOperation * alias * string) list =
+                                let aggregations:(alias * SqlColumnType) list =
                                     groupProjectionMap 
                                     |> Seq.map(fun op -> 
 //                                        match group |> Seq.tryFind(fun (a,s) -> a=aliasAndOps.Key) with
 //                                        | Some(_, keyitm) -> aliasAndOps.Value |> Seq.map(fun ao -> ao, aliasAndOps.Key, keyitm)
 //                                        | None -> Seq.empty
-                                        group |> Seq.map(fun (a,n) -> op,a,n)
+                                        group 
+                                        |> Seq.choose(fun (a, c) -> 
+                                            match op, c with
+                                            | KeyOp i, KeyColumn c when String.IsNullOrEmpty i -> Some (a, GroupColumn(KeyOp c))
+                                            | MaxOp i, KeyColumn c -> Some (a, GroupColumn(MaxOp (if String.IsNullOrEmpty i then c else i)))
+                                            | MinOp i, KeyColumn c -> Some (a, GroupColumn(MinOp (if String.IsNullOrEmpty i then c else i)))
+                                            | SumOp i, KeyColumn c -> Some (a, GroupColumn(SumOp (if String.IsNullOrEmpty i then c else i)))
+                                            | AvgOp i, KeyColumn c -> Some (a, GroupColumn(AvgOp (if String.IsNullOrEmpty i then c else i)))
+                                            | CountOp i, KeyColumn c -> Some (a, GroupColumn(CountOp (if String.IsNullOrEmpty i then c else i)))
+                                            | _ -> None)
                                     ) |> Seq.concat |> Seq.toList
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
@@ -405,6 +414,15 @@ module internal QueryExpressionTransformer =
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
             else sqlQuery,baseAlias
 
+        let resolve defaultTable name =
+            // name will be blank when there is only a single table as it never gets
+            // tupled by the LINQ infrastructure. In this case we know it must be referring
+            // to the only table in the query, so replace it
+            if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
+            else 
+                let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                if tbl = "" then baseAlias else tbl
+
         let resolve name =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
@@ -414,12 +432,48 @@ module internal QueryExpressionTransformer =
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseAlias else tbl
 
+        
+        // Resolves aliases on canonical multi-column functions
+        let rec visitCanonicals resolver = function
+            | CanonicalOperation(subItem, col) -> 
+                let resolvedSub =
+                    match subItem with
+                    | BasicMathOfColumns(op,al,col2) -> BasicMathOfColumns(op,resolver al, visitCanonicals resolver col2)
+                    | Substring(SqlIntCol(al, col2)) -> Substring(SqlIntCol(resolver al, visitCanonicals resolver col2))
+
+                    | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | SubstringWithLength(x,SqlIntCol(al3, col3)) -> SubstringWithLength(x,SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | SubstringWithLength(SqlIntCol(al2, col2),x) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolver col2),x)
+
+                    | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlStrCol(resolver al3, visitCanonicals resolver col3))
+                    | Replace(x,SqlStrCol(al3, col3)) -> Replace(x,SqlStrCol(resolver al3, visitCanonicals resolver col3))
+                    | Replace(SqlStrCol(al2, col2),x) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolver col2),x)
+
+                    | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | IndexOfStart(x,SqlIntCol(al3, col3)) -> IndexOfStart(x,SqlIntCol(resolver al3, visitCanonicals resolver col3))
+                    | IndexOfStart(SqlStrCol(al2, col2),x) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolver col2),x)
+
+                    | IndexOf(SqlStrCol(al, col2)) -> IndexOf(SqlStrCol(resolver al, visitCanonicals resolver col2))
+
+                    | AddYears(SqlIntCol(al, col2)) -> AddYears(SqlIntCol(resolver al, visitCanonicals resolver col2))
+                    | AddDays(SqlNumCol(al, col2)) -> AddDays(SqlNumCol(resolver al, visitCanonicals resolver col2))
+                    | x -> x
+                CanonicalOperation(resolvedSub, visitCanonicals resolver col) 
+            | x -> x
+
+        let resolveC = visitCanonicals resolve
+
+        let tryResolveC : Option<obj>->Option<obj> = Option.map(function
+            | :? (alias * SqlColumnType) as a ->
+                (resolve (fst a), resolveC (snd a)) :> obj
+            | x -> x)
+
         let rec resolveFilterList = function
-            | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
-            | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,b,c,d),Option.map (List.map resolveFilterList) y)
+            | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,tryResolveC d),Option.map (List.map resolveFilterList) y)
+            | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,tryResolveC d),Option.map (List.map resolveFilterList) y)
             | ConstantTrue -> ConstantTrue
             | ConstantFalse -> ConstantFalse
-
+            
         // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...
 
@@ -428,7 +482,12 @@ module internal QueryExpressionTransformer =
         // its possible to do this when converting the expression but its
         // much easier at this stage once we have knowledge of the whole query
         let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters
-                                       Ordering = List.map(function ("",b,c) -> (resolve "",b,c) | x -> x) sqlQuery.Ordering }
+                                       Ordering = List.map(function 
+                                                            |("",b,c) -> (resolve "",resolveC b,c) 
+                                                            | a,c,b -> a, resolveC c,b) sqlQuery.Ordering 
+                                       // Resolve other canonical function columns also:
+                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> ga, resolveC gk), a|>List.map(fun(ag,aa)->ag,resolveC aa)) 
+                       }
 
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking
@@ -447,8 +506,25 @@ module internal QueryExpressionTransformer =
         // able to be resolved now.
         let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            if linkData.ForeignTable.Name <> "" then (outerAlias, linkData, innerAlias)
-            else (outerAlias, { linkData with ForeignTable = resolved }, innerAlias)
+            let resolvePrimary name =
+                if String.IsNullOrWhiteSpace(name) || name = "__base__" then innerAlias
+                else 
+                    let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                    if tbl = "" then innerAlias else tbl
+            let resolveForeign name =
+                if String.IsNullOrWhiteSpace(name) || name = "__base__" then outerAlias
+                else 
+                    let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                    if tbl = "" then outerAlias else tbl
+
+            let resolvedLinkData =
+                { linkData with PrimaryKey = linkData.PrimaryKey |> List.map(visitCanonicals resolvePrimary)
+                                ForeignKey = linkData.ForeignKey |> List.map(visitCanonicals resolveForeign)
+                }
+
+            if linkData.ForeignTable.Name <> "" then (outerAlias, resolvedLinkData, innerAlias)
+            else (outerAlias, { resolvedLinkData with ForeignTable = resolved }, innerAlias)
+
         let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
 
         // make sure the provider has cached the columns for the tables within the projection

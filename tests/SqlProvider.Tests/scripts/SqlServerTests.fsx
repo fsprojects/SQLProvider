@@ -149,6 +149,21 @@ let nestedQueryTest =
     } |> Seq.toArray
 
 
+
+let canoncicalOpTest = 
+    query {
+        // Silly query not hitting indexes, so testing purposes only...
+        for job in ctx.Dbo.Jobs do
+        join emp in ctx.Dbo.Employees on (job.JobId.Trim() + "z" = emp.JobId.Trim() + "z")
+        where (
+            floor(job.MaxSalary)+1m > 4m
+            && emp.Email.Length > 1  
+            && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
+        )
+        sortBy emp.HireDate.Day
+        select (emp.HireDate, emp.Email, job.MaxSalary)
+    } |> Seq.toArray
+
 //************************ CRUD *************************//
 
 
