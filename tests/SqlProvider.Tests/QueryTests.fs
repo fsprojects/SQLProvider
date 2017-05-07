@@ -1146,4 +1146,6 @@ let ``simple delete where query``() =
         for cust in dc.Main.Customers do
         where (cust.City = "Atlantis" || cust.CompanyName = "Home")
     } |> Seq.``delete all items from single table`` 
-    |> Async.RunSynchronously
+    |> Async.RunSynchronously |> ignore
+    ()
+
