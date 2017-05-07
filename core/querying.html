@@ -377,6 +377,470 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tbody>
 </table>
 
+<h3><a name="Canonical-Functions" class="anchor" href="#Canonical-Functions">Canonical Functions</a></h3>
+<p>Besides that, we support these .NET-functions to to transfer to SQL-clauses.
+If you use these, remember to check your database indexes.
+Most of the operations support parameters to be either constants or other SQL-columns.</p>
+<h4><a name="NET-String-Functions-NET" class="anchor" href="#NET-String-Functions-NET">.NET String Functions (.NET)</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.Substring(x)</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>MID</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>Mid</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>Start position may vary.</p></td>
+</tr>
+<tr class="even">
+<td><p>.Substring(x, y)</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>MID</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>MID</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>(0 or 1 based.)</p></td>
+</tr>
+<tr class="odd">
+<td><p>.ToUpper()</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UCase</p></td>
+<td><p>UCASE</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.ToLower()</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LCase</p></td>
+<td><p>LCASE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Trim()</p></td>
+<td><p>LTRIM(RTRIM)</p></td>
+<td><p>TRIM(BOTH...)</p></td>
+<td><p>TRIM</p></td>
+<td><p>LTRIM(RTRIM)</p></td>
+<td><p>TRIM</p></td>
+<td><p>Trim</p></td>
+<td><p>LTRIM(RTRIM)</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Length()</p></td>
+<td><p>DATALENGTH</p></td>
+<td><p>CHAR_LENGTH</p></td>
+<td><p>CHAR_LENGTH</p></td>
+<td><p>LENGTH</p></td>
+<td><p>LENGTH</p></td>
+<td><p>Len</p></td>
+<td><p>CHARACTER_LENGTH</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Replace(a, b)</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>Replace</p></td>
+<td><p>REPLACE</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.IndexOf(x)</p></td>
+<td><p>CHARINDEX</p></td>
+<td><p>STRPOS</p></td>
+<td><p>LOCATE</p></td>
+<td><p>INSTR</p></td>
+<td><p>INSTR</p></td>
+<td><p>InStr</p></td>
+<td><p>LOCATE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.IndexOf(x, i)</p></td>
+<td><p>CHARINDEX</p></td>
+<td></td>
+<td><p>LOCATE</p></td>
+<td><p>INSTR</p></td>
+<td></td>
+<td><p>InStr</p></td>
+<td><p>LOCATE</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(+)</p></td>
+<td><p><code>+</code></p></td>
+<td><p><code>||</code></p></td>
+<td><p>CONCAT</p></td>
+<td><p><code>||</code></p></td>
+<td><p><code>||</code></p></td>
+<td><p>&amp;</p></td>
+<td><p>CONCAT</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>In where-clauses you can also use <code>.Contains()</code>, <code>.StartsWith()</code> and <code>.EndsWith()</code>, which are translated to
+corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('asdf%')</code></p>
+<h4><a name="NET-DateTime-Functions" class="anchor" href="#NET-DateTime-Functions">.NET DateTime Functions</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.Date</p></td>
+<td><p>CAST(AS DATE)</p></td>
+<td><p>DATE_TRUNC</p></td>
+<td><p>DATE</p></td>
+<td><p>TRUNC</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>DateValue(Format)</p></td>
+<td><p>CONVERT(SQL_DATE)</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Year</p></td>
+<td><p>YEAR</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>YEAR</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Year</p></td>
+<td><p>YEAR</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Month</p></td>
+<td><p>MONTH</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>MONTH</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Month</p></td>
+<td><p>MONTH</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Day</p></td>
+<td><p>DAY</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>DAY</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Day</p></td>
+<td><p>DAYOFMONTH</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Hour</p></td>
+<td><p>DATEPART HOUR</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>HOUR</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Hour</p></td>
+<td><p>HOUR</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Minute</p></td>
+<td><p>DATEPART MINUTE</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>MINUTE</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Minute</p></td>
+<td><p>MINUTE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Second</p></td>
+<td><p>DATEPART SECOND</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>SECOND</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Second</p></td>
+<td><p>SECOND</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.AddYears(i)</p></td>
+<td><p>DATEADD YEAR</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.AddMonths(i)</p></td>
+<td><p>DATEADD MONTH</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td><p>For now most date-additions can't be other columns.</p></td>
+</tr>
+<tr class="even">
+<td><p>.AddDays(f)</p></td>
+<td><p>DATEADD DAY</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td><p>.NET has float, bus SQL may ignore decimal fraction</p></td>
+</tr>
+<tr class="odd">
+<td><p>.AddHours(f)</p></td>
+<td><p>DATEADD HOUR</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.AddMinutes(f)</p></td>
+<td><p>DATEADD MINUTE</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.AddSeconds(f)</p></td>
+<td><p>DATEADD SECOND</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<h4><a name="Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators" class="anchor" href="#Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators">Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>abs(i)</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>Abs</p></td>
+<td><p>ABS</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>ceil(i)</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEIL</p></td>
+<td><p>CAST + 0.5</p></td>
+<td><p>Fix+1</p></td>
+<td><p>CEILING</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>floor(i)</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>CAST AS INT</p></td>
+<td><p>Int</p></td>
+<td><p>FLOOR</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>round(i)</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>Round</p></td>
+<td><p>ROUND</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Math.Round(i,x)</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>Round</p></td>
+<td><p>ROUND</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>truncate(i)</p></td>
+<td><p>TRUNCATE</p></td>
+<td><p>TRUNC</p></td>
+<td><p>TRUNCATE</p></td>
+<td><p>TRUNC</p></td>
+<td></td>
+<td><p>Fix</p></td>
+<td><p>TRUNCATE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(+)</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(-)</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(*)</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(/)</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(%)</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
+<p>Also you can use these on group-by clause:
+<code>COUNT</code>, <code>SUM</code>, <code>MIN</code>, <code>MAX</code>, <code>AVG</code></p>
 <p>To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>

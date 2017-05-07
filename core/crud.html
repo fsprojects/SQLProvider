@@ -309,6 +309,24 @@ output of .ColumnValues:</p>
 </code></pre></td>
 </tr>
 </table>
+<h3><a name="Delete-query-for-multiple-items" class="anchor" href="#Delete-query-for-multiple-items">Delete-query for multiple items</a></h3>
+<p>If you want to delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">query</span> {
+    <span class="k">for</span> <span class="i">c</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Dbo</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+    <span class="i">where</span> (<span class="o">..</span><span class="o">.</span>)
+} <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">``delete all items from single table``</span>  <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">RunSynchronously</span>
+
+<span class="o">*</span>)
+</code></pre></td>
+</tr>
+</table>
 
 
         </div>

@@ -53,33 +53,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '47', 47)" onmouseover="showTip(event, '47', 47)">
+          <code onmouseout="hideTip(event, '48', 48)" onmouseover="showTip(event, '48', 48)">
             connect con f
           </code>
-          <div class="tip" id="47">
+          <div class="tip" id="48">
             <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;a) -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L345-345" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '48', 48)" onmouseover="showTip(event, '48', 48)">
-            connectAsync con f
-          </code>
-          <div class="tip" id="48">
-            <strong>Signature:</strong> con:DbConnection -&gt; f:(DbConnection -&gt; unit) -&gt; Async&lt;unit&gt;<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L350-350" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L373-373" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -90,14 +72,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '49', 49)" onmouseover="showTip(event, '49', 49)">
-            dataReaderToArray reader
+            connectAsync con f
           </code>
           <div class="tip" id="49">
-            <strong>Signature:</strong> reader:IDataReader -&gt; (string * obj) [] []<br />
+            <strong>Signature:</strong> con:DbConnection -&gt; f:(DbConnection -&gt; unit) -&gt; Async&lt;unit&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L319-319" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L378-378" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -108,14 +90,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '50', 50)" onmouseover="showTip(event, '50', 50)">
-            dataReaderToArrayAsync reader
+            dataReaderToArray reader
           </code>
           <div class="tip" id="50">
-            <strong>Signature:</strong> reader:DbDataReader -&gt; Async&lt;(string * obj) [] []&gt;<br />
+            <strong>Signature:</strong> reader:IDataReader -&gt; (string * obj) [] []<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L325-325" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L347-347" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -126,14 +108,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '51', 51)" onmouseover="showTip(event, '51', 51)">
-            dbUnbox v
+            dataReaderToArrayAsync reader
           </code>
           <div class="tip" id="51">
-            <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+            <strong>Signature:</strong> reader:DbDataReader -&gt; Async&lt;(string * obj) [] []&gt;<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L339-339" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L353-353" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -144,14 +126,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '52', 52)" onmouseover="showTip(event, '52', 52)">
-            dbUnboxWithDefault def v
+            dbUnbox v
           </code>
           <div class="tip" id="52">
-            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
+            <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L342-342" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L367-367" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -162,14 +144,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '53', 53)" onmouseover="showTip(event, '53', 53)">
-            ensureOpen con
+            dbUnboxWithDefault def v
           </code>
           <div class="tip" id="53">
-            <strong>Signature:</strong> con:IDbConnection -&gt; unit<br />
-                      </div>
+            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L380-380" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L370-370" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -180,14 +162,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '54', 54)" onmouseover="showTip(event, '54', 54)">
-            executeSql createCommand sql con
+            ensureOpen con
           </code>
           <div class="tip" id="54">
-            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; IDataReader<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+            <strong>Signature:</strong> con:IDbConnection -&gt; unit<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L358-358" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L408-408" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -198,14 +180,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '55', 55)" onmouseover="showTip(event, '55', 55)">
-            executeSqlAsDataTable (...)
+            executeSql createCommand sql con
           </code>
           <div class="tip" id="55">
-            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; DataTable<br />
+            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; IDataReader<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L366-366" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L386-386" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -216,14 +198,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '56', 56)" onmouseover="showTip(event, '56', 56)">
-            executeSqlAsDataTableAsync (...)
+            executeSqlAsDataTable (...)
           </code>
           <div class="tip" id="56">
-            <strong>Signature:</strong> createCommand:(&#39;?8201 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8201 -&gt; con:IDbConnection -&gt; Async&lt;DataTable&gt;<br />
-                          <strong>Type parameters:</strong> '?8201          </div>
+            <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; DataTable<br />
+                          <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L372-372" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L394-394" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -234,14 +216,32 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '57', 57)" onmouseover="showTip(event, '57', 57)">
-            executeSqlAsync createCommand sql con
+            executeSqlAsDataTableAsync (...)
           </code>
           <div class="tip" id="57">
-            <strong>Signature:</strong> createCommand:(&#39;?8197 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8197 -&gt; con:IDbConnection -&gt; Async&lt;DbDataReader&gt;<br />
-                          <strong>Type parameters:</strong> '?8197          </div>
+            <strong>Signature:</strong> createCommand:(&#39;?8216 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8216 -&gt; con:IDbConnection -&gt; Async&lt;DataTable&gt;<br />
+                          <strong>Type parameters:</strong> '?8216          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L362-362" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L400-400" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '58', 58)" onmouseover="showTip(event, '58', 58)">
+            executeSqlAsync createCommand sql con
+          </code>
+          <div class="tip" id="58">
+            <strong>Signature:</strong> createCommand:(&#39;?8212 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8212 -&gt; con:IDbConnection -&gt; Async&lt;DbDataReader&gt;<br />
+                          <strong>Type parameters:</strong> '?8212          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L390-390" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
