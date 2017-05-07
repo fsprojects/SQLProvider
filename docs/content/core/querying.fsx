@@ -128,7 +128,9 @@ where                    |x | Server side variables must be plain without .NET o
 
 ### Canonical Functions 
 
-Besides that, we support these .NET-functions to to transfer to SQL-clauses:
+Besides that, we support these .NET-functions to to transfer to SQL-clauses.
+If you use these, remember to check your database indexes.
+Most of the operations support parameters to be either constants or other SQL-columns.
 
 #### .NET String Functions (.NET)
 
@@ -160,7 +162,7 @@ corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`
 .Minute        | DATEPART MINUTE| DATE_PART | MINUTE   | EXTRACT   | STRFTIME| Minute    | MINUTE     |   |
 .Second        | DATEPART SECOND| DATE_PART | SECOND   | EXTRACT   | STRFTIME| Second    | SECOND     |   |
 .AddYears(i)   | DATEADD YEAR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
-.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            | For now most date-additions can't be other columns. |
 .AddDays(f)    | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            | .NET has float, bus SQL may ignore decimal fraction |
 .AddHours(f)   | DATEADD HOUR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddMinutes(f) | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
