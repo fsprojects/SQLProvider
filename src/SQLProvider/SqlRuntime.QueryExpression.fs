@@ -62,23 +62,23 @@ module internal QueryExpressionTransformer =
             // On group-by aggregates we support currently only direct calls like .Count() or .Sum()
             // and direct parameter calls like .Sum(fun entity -> entity.UnitPrice)
             match e.NodeType, e with
-            | ExpressionType.Call, (:? MethodCallExpression as e) -> 
+            | ExpressionType.Call, (:? MethodCallExpression as me) -> 
                 let isGrouping = 
-                    e.Arguments.Count > 0 && //= 1 &&
-                    e.Arguments.[0].Type.Name.StartsWith("IGrouping")
+                    me.Arguments.Count > 0 &&
+                    me.Arguments.[0].Type.Name.StartsWith("IGrouping")
                 
                 let op =
-                    if e.Arguments.Count = 1 then
-                        match e.Method.Name with
+                    if me.Arguments.Count = 1 && me.Arguments.[0].NodeType = ExpressionType.Parameter then
+                        match me.Method.Name with
                         | "Count" -> Some (CountOp "")
                         | _ -> None
-                    elif e.Arguments.Count = 2 then
-                        match e.Arguments.[1] with
+                    elif me.Arguments.Count = 2 then
+                        match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
                                 | ExpressionType.Call, OptionalFSharpOptionValue(MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])) ->
-                                    match e.Method.Name with
+                                    match me.Method.Name with
                                     | "Count" -> Some (CountOp key)
                                     | "Sum" -> Some (SumOp key)
                                     | "Avg" -> Some (AvgOp key)
@@ -87,9 +87,9 @@ module internal QueryExpressionTransformer =
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
-                                | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
-                                    match e.Member with 
-                                    | :? PropertyInfo as p when p.Name = "Value" && e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> directAggregate (e.Expression)
+                                | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
+                                    match me2.Member with 
+                                    | :? PropertyInfo as p when p.Name = "Value" && me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> directAggregate (me2.Expression)
                                     | _ -> None
                                 // This lamda could be parsed more if we would want to support
                                 // more complex aggregate scenarios.
@@ -100,7 +100,7 @@ module internal QueryExpressionTransformer =
 
                 match isGrouping, op with
                 | true, Some o when not(groupProjectionMap.Contains(o)) -> 
-                    let methodname = "Aggregate"+e.Method.Name
+                    let methodname = "Aggregate"+me.Method.Name
                     
                     let v = match o with 
                             | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x 
@@ -108,49 +108,54 @@ module internal QueryExpressionTransformer =
                     //Count 1 is over all the items
                     let vf = if v = "" then None else Some v
 
-                    let ty = typedefof<GroupResultItems<_>>.MakeGenericType(e.Arguments.[0].Type.GetGenericArguments().[0])
+                    let ty = typedefof<GroupResultItems<_>>.MakeGenericType(me.Arguments.[0].Type.GetGenericArguments().[0])
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
-                    let generic = meth.MakeGenericMethod(e.Method.ReturnType);
+                    let generic = meth.MakeGenericMethod(me.Method.ReturnType);
                     let replacementExpr = 
                             Expression.Call(
-                                Expression.Convert(e.Arguments.[0], ty),
+                                Expression.Convert(me.Arguments.[0], ty),
                                 generic, aggregateColumn)
                     Some (o, replacementExpr)
                 | _ -> None
             | _ -> None
 
-        // this is not tail recursive but it shouldn't matter in practice ....
-        let rec transform  (en:String option) (e:Expression): Expression =
-            let e = ExpressionOptimizer.doReduction e
-            if e = null then null else
-            match e.NodeType, e with
+        let rec (|ProjectionItem|_|) = function
             | _, SourceTupleGet(alias,name,None) ->
                 // at any point if we see a property getter where the input is "tupledArg" this
                 // needs to be replaced with a call to GetSubEntity using the result as an input
                 match projectionMap.TryGetValue alias with
                 | true, values -> values.Clear()
                 | false, _ -> projectionMap.Add(alias,new ResizeArray<_>())
-                upcast Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name))
+                Some (Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)))
             | _, SourceTupleGet(alias,name,Some(key,mi)) ->
                 match projectionMap.TryGetValue alias with
                 | true, values when values.Count > 0 -> values.Add(key)
                 | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
                 | _ -> ()
-                upcast
-                    Expression.Call(
+                Some
+                    (Expression.Call(
                         Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
-                            mi,Expression.Constant(key))
+                            mi,Expression.Constant(key)))
 
             | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])  ->
                 match projectionMap.TryGetValue name with
                 | true, values when values.Count > 0 -> values.Add(key)
                 | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield key}))
                 | _ -> ()
-                match databaseParam.Type.Name.StartsWith("IGrouping") with
-                | false -> upcast Expression.Call(databaseParam,mi,Expression.Constant(key))
-                | true -> upcast Expression.Call(Expression.Parameter(typeof<SqlEntity>,name),mi,Expression.Constant(key))
+                Some
+                    (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                     | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
+                     | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,name),mi,Expression.Constant(key)))
+            | _ -> None
 
+
+        // this is not tail recursive but it shouldn't matter in practice ....
+        let rec transform  (en:String option) (e:Expression): Expression =
+            let e = ExpressionOptimizer.doReduction e
+            if e = null then null else
+            match e.NodeType, e with
+            | ProjectionItem me -> upcast me
             | ExpressionType.Negate,             (:? UnaryExpression as e)       -> upcast Expression.Negate(transform en e.Operand,e.Method)
             | ExpressionType.NegateChecked,      (:? UnaryExpression as e)       -> upcast Expression.NegateChecked(transform en e.Operand,e.Method)
             | ExpressionType.Not,                (:? UnaryExpression as e)       -> upcast Expression.Not(transform en e.Operand,e.Method)
