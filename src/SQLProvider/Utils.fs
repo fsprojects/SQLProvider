@@ -308,6 +308,53 @@ module Sql =
     open System
     open System.Data
 
+    type DataReaderWithCommand(dataReader: IDataReader, command : IDbCommand) = 
+        member x.DataReader = dataReader
+        member x.Command = command
+
+        interface IDisposable with
+            member x.Dispose() = 
+                x.DataReader.Dispose()
+                x.Command.Dispose()
+
+        interface IDataReader with
+            member x.Close() = x.DataReader.Close()
+            member x.Depth = x.DataReader.Depth            
+            member x.FieldCount = x.DataReader.FieldCount
+            member x.GetBoolean(i) = x.DataReader.GetBoolean(i)
+            member x.GetByte(i) = x.DataReader.GetByte(i)
+            member x.GetBytes(i, fieldOffset, buffer, bufferoffset, length) = x.DataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length)
+            member x.GetChar(i) = x.DataReader.GetChar(i)
+            member x.GetChars(i, fieldoffset, buffer, bufferoffset, length) = x.DataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length)
+            member x.GetData(i) = x.DataReader.GetData(i)
+            member x.GetDataTypeName(i) = x.DataReader.GetDataTypeName(i)
+            member x.GetDateTime(i) = x.DataReader.GetDateTime(i)
+            member x.GetDecimal(i) = x.DataReader.GetDecimal(i)
+            member x.GetDouble(i) = x.DataReader.GetDouble(i)
+            member x.GetFieldType(i) = x.DataReader.GetFieldType(i)
+            member x.GetFloat(i) = x.DataReader.GetFloat(i)
+            member x.GetGuid(i) = x.DataReader.GetGuid(i)
+            member x.GetInt16(i) = x.DataReader.GetInt16(i)
+            member x.GetInt32(i) = x.DataReader.GetInt32(i)
+            member x.GetInt64(i) = x.DataReader.GetInt64(i)
+            member x.GetName(i) = x.DataReader.GetName(i)
+            member x.GetOrdinal(name) = x.DataReader.GetOrdinal(name)
+            member x.GetSchemaTable() = x.DataReader.GetSchemaTable()
+            member x.GetString(i) = x.DataReader.GetString(i)
+            member x.GetValue(i) = x.DataReader.GetValue(i)
+            member x.GetValues(values) = x.DataReader.GetValues(values)
+            member x.IsClosed = x.DataReader.IsClosed
+            member x.IsDBNull(i) = x.DataReader.IsDBNull(i)
+            member x.Item
+                with get (i: int): obj = 
+                    x.DataReader.Item(i)
+            member x.Item
+                with get (name: string): obj = 
+                    x.DataReader.Item(name)
+            member x.NextResult() = x.DataReader.NextResult()
+            member x.Read() = x.DataReader.Read()
+            member x.RecordsAffected = x.DataReader.RecordsAffected
+
     let private collectfunc(reader:IDataReader) = 
         [|
             for i = 0 to reader.FieldCount - 1 do 
@@ -356,8 +403,8 @@ module Sql =
         }
 
     let executeSql createCommand sql (con:IDbConnection) =        
-        use com : IDbCommand = createCommand sql con   
-        com.ExecuteReader()    
+        let com : IDbCommand = createCommand sql con   
+        new DataReaderWithCommand(com.ExecuteReader(), com) :> IDataReader        
 
     let executeSqlAsync createCommand sql (con:IDbConnection) =
         use com : System.Data.Common.DbCommand = createCommand sql con   

@@ -22,6 +22,7 @@ type DatabaseProviderTypes =
     | ORACLE = 4
     | MSACCESS = 5
     | ODBC = 6
+    | FIREBIRD = 7
 type RelationshipDirection = Children = 0 | Parents = 1
 
 type CaseSensitivityChange =
