@@ -38,11 +38,70 @@ type ConditionOperator =
         | NestedNotIn      -> "NOT IN"
 
 type AggregateOperation = // Aggregate (column name if not default)
-| Max of string Option
-| Min of string Option
-| Sum of string Option
-| Avg of string Option
-| CountOp of string Option
+| KeyOp of string
+| MaxOp of string
+| MinOp of string
+| SumOp of string
+| AvgOp of string
+| CountOp of string
+
+[<AutoOpenAttribute>]
+module ColumnSchema =
+
+    type CanonicalOp =
+    //String functions
+    | Substring of SqlIntOrColumn
+    | SubstringWithLength of SqlIntOrColumn*SqlIntOrColumn
+    | ToUpper
+    | ToLower
+    | Trim
+    | Length
+    | Replace of SqlStringOrColumn*SqlStringOrColumn
+    | IndexOf of SqlStringOrColumn
+    | IndexOfStart of SqlStringOrColumn*SqlIntOrColumn
+    // Date functions
+    | Date
+    | Year
+    | Month
+    | Day
+    | Hour
+    | Minute
+    | Second
+    | AddYears of SqlIntOrColumn
+    | AddMonths of int
+    | AddDays of SqlFloatOrColumn
+    | AddHours of float
+    | AddMinutes of float
+    | AddSeconds of float
+    // Numerical functions
+    | Abs
+    | Ceil
+    | Floor
+    | Round
+    | RoundDecimals of int
+    | Truncate
+    // Other
+    | BasicMath of string*obj //operation, constant
+    | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
+
+    and SqlColumnType =
+    | KeyColumn of string
+    | CanonicalOperation of CanonicalOp * SqlColumnType
+    | GroupColumn of AggregateOperation
+
+    and SqlStringOrColumn =
+    | SqlStr of string
+    | SqlStrCol of string*SqlColumnType //alias*column
+
+    // More recursion, because you mighn want to say e.g.
+    // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
+    and SqlIntOrColumn =
+    | SqlInt of int
+    | SqlIntCol of string*SqlColumnType //alias*column
+
+    and SqlFloatOrColumn =
+    | SqlFloat of float
+    | SqlNumCol of string*SqlColumnType //alias*column
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types

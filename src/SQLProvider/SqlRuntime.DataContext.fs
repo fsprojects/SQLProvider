@@ -76,15 +76,16 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =
+            let parseKey k = KeyColumn k
             if direction = RelationshipDirection.Children then
                 QueryImplementation.SqlQueryable<_>(this,provider,
                     FilterClause(
-                        Condition.And(["__base__",fk,ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
+                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
                         BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> IQueryable<_>
             else
                 QueryImplementation.SqlQueryable<_>(this,provider,
                     FilterClause(
-                        Condition.And(["__base__",pk,ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
+                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
                         BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_>
 
         member this.CreateEntities(table:string) : IQueryable<SqlEntity> =

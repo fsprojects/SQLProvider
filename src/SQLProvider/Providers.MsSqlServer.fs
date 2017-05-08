@@ -280,6 +280,65 @@ type internal MSSqlServerProvider(tableNames:string) =
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
 
+    let rec fieldNotation (al:alias) (c:SqlColumnType) = 
+        let x = fieldNotation
+        let colSprint =
+            match String.IsNullOrEmpty(al) with
+            | true -> sprintf "[%s]" 
+            | false -> sprintf "[%s].[%s]" al 
+        match c with
+        // Custom database spesific overrides for canonical functions:
+        | SqlColumnType.CanonicalOperation(cf,col) ->
+            let column = fieldNotation al col
+            match cf with
+            // String functions
+            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s, %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Trim -> sprintf "LTRIM(RTRIM(%s))" column
+            | Length -> sprintf "DATALENGTH(%s)" column
+            | IndexOf(SqlStr search) -> sprintf "CHARINDEX('%s',%s)" search column
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "CHARINDEX(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "CHARINDEX('%s',%s,%d)" search column startPos
+            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "CHARINDEX('%s',%s,%s)" search column (fieldNotation al2 col2)
+            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "CHARINDEX(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
+            // Date functions
+            | Date -> sprintf "CAST(%s AS DATE)" column
+            | Year -> sprintf "YEAR(%s)" column
+            | Month -> sprintf "MONTH(%s)" column
+            | Day -> sprintf "DAY(%s)" column
+            | Hour -> sprintf "DATEPART(HOUR, %s)" column
+            | Minute -> sprintf "DATEPART(MINUTE, %s)" column
+            | Second -> sprintf "DATEPART(SECOND, %s)" column
+            | AddYears(SqlInt x) -> sprintf "DATEADD(YEAR, %d, %s)" x column
+            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATEADD(YEAR, %s, %s)" (fieldNotation al2 col2) column
+            | AddMonths x -> sprintf "DATEADD(MONTH, %d, %s)" x column
+            | AddDays(SqlFloat x) -> sprintf "DATEADD(DAY, %f, %s)" x column // SQL ignores decimal part :-(
+            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATEADD(DAY, %s, %s)" (fieldNotation al2 col2) column
+            | AddHours x -> sprintf "DATEADD(HOUR, %f, %s)" x column
+            | AddMinutes x -> sprintf "DATEADD(MINUTE, %f, %s)" x column
+            | AddSeconds x -> sprintf "DATEADD(SECOND, %f, %s)" x column
+            // Math functions
+            | Truncate -> sprintf "TRUNCATE(%s)" column
+            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldNotation a c)
+            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||","+")) par
+            | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+
+    let fieldNotationAlias(al:alias,col:SqlColumnType) = 
+        let aliasSprint =
+            match String.IsNullOrEmpty(al) with
+            | true -> sprintf "'[%s]'"
+            | false -> sprintf "'[%s].[%s]'" al
+        Utilities.genericAliasNotation aliasSprint col
+
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
@@ -565,7 +624,7 @@ type internal MSSqlServerProvider(tableNames:string) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
             let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
             let (~~) (t:string) = sb.Append t |> ignore
@@ -598,19 +657,10 @@ type internal MSSqlServerProvider(tableNames:string) =
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
                 let extracolumns =
-                    let fieldNotation(al:alias,col:string) = 
-                        match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "[%s]" col
-                        | false -> sprintf "[%s].[%s]" al col
-                    let fieldNotationAlias(al:alias,col:string) = 
-                        match String.IsNullOrEmpty(al) with
-                        | true -> sprintf "'[%s]'" col
-                        | false -> sprintf "'[%s][%s]'" al col
-
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fieldNotation)
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
@@ -635,6 +685,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                     let build op preds (rest:Condition list option) =
                         ~~ "("
                         preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                let column = fieldNotation alias col
                                 let extractData data =
                                      match data with
                                      | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
@@ -655,8 +706,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                                         let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
                                         Array.iter parameters.Add array
                                         match operator with
-                                        | FSharp.Data.Sql.In -> (sprintf "[%s].[%s] IN (%s)") alias col text
-                                        | FSharp.Data.Sql.NotIn -> (sprintf "[%s].[%s] NOT IN (%s)") alias col text
+                                        | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
+                                        | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
                                         | _ -> failwith "Should not be called with any other operator"
 
                                 let prefix = if i>0 then (sprintf " %s " op) else ""
@@ -666,24 +717,24 @@ type internal MSSqlServerProvider(tableNames:string) =
                                     let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                     Array.iter parameters.Add innerpars
                                     match operator with
-                                    | FSharp.Data.Sql.NestedIn -> (sprintf "[%s].[%s] IN (%s)") alias col innersql
-                                    | FSharp.Data.Sql.NestedNotIn -> (sprintf "[%s].[%s] NOT IN (%s)") alias col innersql
+                                    | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
+                                    | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
                                     | _ -> failwith "Should not be called with any other operator"
 
                                 ~~(sprintf "%s%s" prefix <|
                                     match operator with
-                                    | FSharp.Data.Sql.IsNull -> (sprintf "[%s].[%s] IS NULL") alias col
-                                    | FSharp.Data.Sql.NotNull -> (sprintf "[%s].[%s] IS NOT NULL") alias col
+                                    | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
+                                    | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
                                     | FSharp.Data.Sql.In 
                                     | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                     | FSharp.Data.Sql.NestedIn 
                                     | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                     | _ ->
-                                        let aliasformat = if alias<>"" then (sprintf "[%s].[%s]%s %s") alias col else (sprintf "%s %s %s") col
+                                        let aliasformat = sprintf "%s %s %s" column
                                         match data with 
-                                        | Some d when (box d :? alias * string) ->
-                                            let alias2, col2 = box d :?> (alias * string)
-                                            let alias2f = if alias2<>"" then (sprintf "[%s].[%s]") alias2 col2 else col2
+                                        | Some d when (box d :? alias * SqlColumnType) ->
+                                            let alias2, col2 = box d :?> (alias * SqlColumnType)
+                                            let alias2f = fieldNotation alias2 col2
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -725,34 +776,35 @@ type internal MSSqlServerProvider(tableNames:string) =
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
-                        sprintf "[%s].[%s] = [%s].[%s]"
-                            (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias)
-                            foreignKey
-                            (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias)
-                            primaryKey
+                        sprintf "%s = %s"
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                         ))))
 
             let groupByBuilder() =
                 sqlQuery.Grouping |> List.map(fst) |> List.concat
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "[%s].[%s]" alias column))
+                    ~~ (fieldNotation alias column))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "[%s].[%s]%s" alias column (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
 
-            // SELECT
-            if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
-            elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-            else
-                match sqlQuery.Skip, sqlQuery.Take with
-                | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
-                | _ -> ~~(sprintf "SELECT %s " columns)
-            // FROM
-            ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)
+            if isDeleteScript then
+                ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
+            else 
+                // SELECT
+                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
+                else
+                    match sqlQuery.Skip, sqlQuery.Take with
+                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | _ -> ~~(sprintf "SELECT %s " columns)
+                // FROM
+                ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -771,7 +823,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
 
-                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving keys))]
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
                 filterBuilder f
 

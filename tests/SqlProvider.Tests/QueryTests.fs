@@ -345,7 +345,6 @@ let ``simple select where in query``() =
     Assert.IsTrue(qry.Contains("ANATR"))
 
     
-    
 [<Test >]
 let ``simple select where not-in query``() =
     let dc = sql.GetDataContext()
@@ -504,7 +503,7 @@ let ``simple select query with groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with groupBy multiple columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1076,6 +1075,52 @@ let ``simple select with contains query with where boolean option type``() =
         }
     Assert.IsTrue(qry)    
 
+
+[<Test >]
+let ``simple canonical operation substing query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            // Database spesific warning here: Substring of SQLite starts from 1.
+            where (cust.CustomerId.Substring(2,3)+"F"="NATF")
+            select cust.CustomerId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(1, qry.Length)
+    Assert.IsTrue(qry.Contains("ANATR"))
+
+[<Test >]
+let ``simple canonical operations query``() =
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        let L = "L"
+        query {
+            // Silly query not hitting indexes, so testing purposes only...
+            for cust in dc.Main.Customers do
+            // This is not yet working:
+            join emp in dc.Main.Employees on (cust.City.Trim() + "x" + cust.Country = emp.City.Trim() + "x" + emp.Country)
+            join secondCust in dc.Main.Customers on (cust.City + emp.City + "A" = secondCust.City + secondCust.City + "A")
+            where (
+                cust.City + emp.City + cust.City + emp.City + cust.City = cust.City + emp.City + cust.City + emp.City + cust.City
+                && abs(emp.EmployeeId)+1L > 4L 
+                && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
+                && (cust.City.Replace("on","xx") + L).Replace("xx","on") + ("O" + L) = "London" + "LOL" 
+                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
+                && emp.BirthDate.Date.AddYears(3).Month + 1 > 3
+            )
+            sortBy (abs(abs(emp.BirthDate.Day * emp.BirthDate.Day)))
+            select (cust.CustomerId, cust.City, emp.BirthDate)
+            distinct
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(12, qry.Length)
+    Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
+
+
 [<Test>]
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
@@ -1138,3 +1183,14 @@ let ``verify groupBy results``() =
     let res = groupqry |> dict  
 
     CollectionAssert.AreEqual(inlogics,groupqry)
+
+[<Test >]
+let ``simple delete where query``() =
+    let dc = sql.GetDataContext()
+    query {
+        for cust in dc.Main.Customers do
+        where (cust.City = "Atlantis" || cust.CompanyName = "Home")
+    } |> Seq.``delete all items from single table`` 
+    |> Async.RunSynchronously |> ignore
+    ()
+

@@ -68,6 +68,21 @@ let employeesJob =
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList
 
+// TODO: Test if you have Oracle.
+//let canonicalTest =
+//    query {
+//            for emp in ctx.Hr.Employees do
+//            join d in ctx.Hr.Departments on (emp.DepartmentId+1 = d.DepartmentId+1)
+//            where (abs(d.DepartmentId) > 1
+//                && emp.FirstName + "D" = "DavidD"
+//                && emp.LastName.Length > 3
+//                && emp.HireDate.Date.AddYears(-10).Year < 1990
+//            )
+//            select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
+//    } |> Seq.toList
+    
+
+
 //Can select from views
 let empDetails =
     query {

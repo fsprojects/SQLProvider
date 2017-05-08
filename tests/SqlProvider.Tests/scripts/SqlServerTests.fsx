@@ -149,6 +149,21 @@ let nestedQueryTest =
     } |> Seq.toArray
 
 
+
+let canoncicalOpTest = 
+    query {
+        // Silly query not hitting indexes, so testing purposes only...
+        for job in ctx.Dbo.Jobs do
+        join emp in ctx.Dbo.Employees on (job.JobId.Trim() + "z" = emp.JobId.Trim() + "z")
+        where (
+            floor(job.MaxSalary)+1m > 4m
+            && emp.Email.Length > 1  
+            && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
+        )
+        sortBy emp.HireDate.Day
+        select (emp.HireDate, emp.Email, job.MaxSalary)
+    } |> Seq.toArray
+
 //************************ CRUD *************************//
 
 
@@ -214,3 +229,12 @@ let getemployees hireDate =
     ]
 
 getemployees (new System.DateTime(1999,4,1))
+
+
+//******************** Delete all test **********************//
+
+query {
+    for c in ctx.Dbo.Employees do
+    where (c.FirstName = "Tuomas")
+} |> Seq.``delete all items from single table`` 
+|> Async.RunSynchronously
