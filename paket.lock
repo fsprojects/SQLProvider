@@ -33,6 +33,13 @@ GROUP Scripts
 FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
+    FirebirdSql.Data.FirebirdClient (5.9.0.1)
+      Microsoft.Bcl.Async (>= 1.0.168) - framework: net40
+    Microsoft.Bcl (1.1.10) - framework: net40
+      Microsoft.Bcl.Build (>= 1.0.14)
+    Microsoft.Bcl.Async (1.0.168) - framework: net40
+      Microsoft.Bcl (>= 1.1.8)
+    Microsoft.Bcl.Build (1.0.21) - import_targets: false, framework: net40
     MySql.Data (6.9.9)
     Newtonsoft.Json (9.0.1)
     Npgsql (3.1.7)
