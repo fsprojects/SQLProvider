@@ -128,7 +128,7 @@ where                    |x | Server side variables must be plain without .NET o
 
 ### Canonical Functions 
 
-Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.55).
+Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).
 If you use these, remember to check your database indexes.
 
 
@@ -139,7 +139,7 @@ If you use these, remember to check your database indexes.
 .Substring(x)   | SUBSTRING       | SUBSTRING    | MID        | SUBSTR      | SUBSTR | Mid     | SUBSTRING   | Start position may vary (0 or 1 based.) |
 .ToUpper()      | UPPER           | UPPER        | UPPER      | UPPER       | UPPER  | UCase   | UCASE       |                 |
 .ToLower()      | LOWER           | LOWER        | LOWER      | LOWER       | LOWER  | LCase   | LCASE       |                 |
-.Trim()         | LTRIM(RTRIM)    | TRIM(BOTH...)| TRIM       | LTRIM(RTRIM)| TRIM   | Trim    | LTRIM(RTRIM)|                 |
+.Trim()         | LTRIM(RTRIM)    | TRIM(BOTH...)| TRIM       | TRIM        | TRIM   | Trim    | LTRIM(RTRIM)|                 |
 .Length()       | DATALENGTH      | CHAR_LENGTH  | CHAR_LENGTH| LENGTH      | LENGTH | Len     | CHARACTER_LENGTH |            |
 .Replace(a,b)   | REPLACE         | REPLACE      | REPLACE    | REPLACE     | REPLACE| Replace | REPLACE     |                 |
 .IndexOf(x)     | CHARINDEX       | STRPOS       | LOCATE     | INSTR       | INSTR  | InStr   | LOCATE      |                 |
