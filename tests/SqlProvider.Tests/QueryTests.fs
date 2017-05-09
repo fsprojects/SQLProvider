@@ -706,6 +706,35 @@ let ``simple select and sort query with then by desc query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Salzburg"|], qry.[0..3])
 
+[<Test>]
+let ``simple sort query with lambda cast to IComparable``() =
+    let dc = sql.GetDataContext()
+    let qry =
+        query {
+            for cust in dc.Main.Customers do
+            sortBy ((fun (c : sql.dataContext.``main.CustomersEntity``) -> c.CustomerId :> IComparable) cust)
+            select cust.City
+            take 1
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    CollectionAssert.AreEquivalent([|"Berlin"|], qry)
+
+[<Test>]
+let ``simple sort query with then by desc query with lambda cast to IComparable``() =
+    let dc = sql.GetDataContext()
+    let qry =
+        query {
+            for cust in dc.Main.Customers do
+            sortBy cust.CompanyName
+            thenByDescending ((fun (c : sql.dataContext.``main.CustomersEntity``) -> c.CustomerId :> IComparable) cust)
+            select cust.City
+            take 1
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    CollectionAssert.AreEquivalent([|"Berlin"|], qry)
+
 [<Test >]
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
