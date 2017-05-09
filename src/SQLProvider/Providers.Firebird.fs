@@ -64,39 +64,39 @@ module Firebird =
             | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
             | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
             | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | Substring(SqlInt startPos) -> sprintf "MID(%s, %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "MID(%s, %s)" column (fieldNotation al2 col2)
-            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "MID(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "MID(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s FROM %i)" column startPos
+            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s FROM %s)" column (fieldNotation al2 col2)
+            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s FROM %i FOR %i)" column startPos strLen
+            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s FROM %i FOR %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s FROM %s FOR %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTR(%s FROM %s FOR %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf(SqlStr search) -> sprintf "LOCATE('%s',%s)" search column
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
-            | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
-            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "LOCATE('%s',%s,%s)" search column (fieldNotation al2 col2)
-            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
-            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
+            | IndexOf(SqlStr search) -> sprintf "POSITION('%s',%s)" search column
+            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "POSITION(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "POSITION('%s',%s,%d)" search column startPos
+            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "POSITION('%s',%s,%s)" search column (fieldNotation al2 col2)
+            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "POSITION(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "POSITION(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
             // Date functions
-            | Date -> sprintf "DATE(%s)" column
-            | Year -> sprintf "YEAR(%s)" column
-            | Month -> sprintf "MONTH(%s)" column
-            | Day -> sprintf "DAY(%s)" column
-            | Hour -> sprintf "HOUR(%s)" column
-            | Minute -> sprintf "MINUTE(%s)" column
-            | Second -> sprintf "SECOND(%s)" column
-            | AddYears(SqlInt x) -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
-            | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
-            | AddDays(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
-            | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
-            | AddMinutes x -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
-            | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
+            | Date -> sprintf "CAST (%s AS DATE)" column
+            | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
+            | Month -> sprintf "EXTRACT(MONTH FROM %s)" column
+            | Day -> sprintf "EXTRACT(DAY FROM %s)" column
+            | Hour -> sprintf "EXTRACT(HOUR FROM %s)" column
+            | Minute -> sprintf "EXTRACT(MINUTE FROM %s)" column
+            | Second -> sprintf "EXTRACT(SECOND FROM %s)" column
+            | AddYears(SqlInt x) -> sprintf "DATEADD(%d YEAR TO %s)" x column
+            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATEADD(%s YEAR TO %s)" (fieldNotation al2 col2) column
+            | AddMonths x -> sprintf "DATEADD(%d MONTH TO %s)" x column
+            | AddDays(SqlFloat x) -> sprintf "DATEADD(%f DAY TO %s)" x column // SQL ignores decimal part :-(
+            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATEADD(%s DAY TO %s)" (fieldNotation al2 col2) column
+            | AddHours x -> sprintf "DATEADD(%f HOUR TO %s)" x column
+            | AddMinutes x -> sprintf "DATEADD(%f MINUTE TO %s)" x column
+            | AddSeconds x -> sprintf "DATEADD(%f SECOND TO %s)" x column
             // Math functions
-            | Truncate -> sprintf "TRUNCATE(%s)" column
-            | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
+            | Truncate -> sprintf "TRUNC(%s)" column
+            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
@@ -307,6 +307,57 @@ module Firebird =
         | cols ->
             use reader = com.ExecuteReader()
             Set(cols |> Array.map (processReturnColumn reader))
+    
+    type DataReaderWithCommand(dataReader: IDataReader, command : IDbCommand) = 
+        member x.DataReader = dataReader
+        member x.Command = command
+
+        interface IDisposable with
+            member x.Dispose() = 
+                x.DataReader.Dispose()
+                x.Command.Dispose()
+
+        interface IDataReader with
+            member x.Close() = x.DataReader.Close()
+            member x.Depth = x.DataReader.Depth            
+            member x.FieldCount = x.DataReader.FieldCount
+            member x.GetBoolean(i) = x.DataReader.GetBoolean(i)
+            member x.GetByte(i) = x.DataReader.GetByte(i)
+            member x.GetBytes(i, fieldOffset, buffer, bufferoffset, length) = x.DataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length)
+            member x.GetChar(i) = x.DataReader.GetChar(i)
+            member x.GetChars(i, fieldoffset, buffer, bufferoffset, length) = x.DataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length)
+            member x.GetData(i) = x.DataReader.GetData(i)
+            member x.GetDataTypeName(i) = x.DataReader.GetDataTypeName(i)
+            member x.GetDateTime(i) = x.DataReader.GetDateTime(i)
+            member x.GetDecimal(i) = x.DataReader.GetDecimal(i)
+            member x.GetDouble(i) = x.DataReader.GetDouble(i)
+            member x.GetFieldType(i) = x.DataReader.GetFieldType(i)
+            member x.GetFloat(i) = x.DataReader.GetFloat(i)
+            member x.GetGuid(i) = x.DataReader.GetGuid(i)
+            member x.GetInt16(i) = x.DataReader.GetInt16(i)
+            member x.GetInt32(i) = x.DataReader.GetInt32(i)
+            member x.GetInt64(i) = x.DataReader.GetInt64(i)
+            member x.GetName(i) = x.DataReader.GetName(i)
+            member x.GetOrdinal(name) = x.DataReader.GetOrdinal(name)
+            member x.GetSchemaTable() = x.DataReader.GetSchemaTable()
+            member x.GetString(i) = x.DataReader.GetString(i)
+            member x.GetValue(i) = x.DataReader.GetValue(i)
+            member x.GetValues(values) = x.DataReader.GetValues(values)
+            member x.IsClosed = x.DataReader.IsClosed
+            member x.IsDBNull(i) = x.DataReader.IsDBNull(i)
+            member x.Item
+                with get (i: int): obj = 
+                    x.DataReader.Item(i)
+            member x.Item
+                with get (name: string): obj = 
+                    x.DataReader.Item(name)
+            member x.NextResult() = x.DataReader.NextResult()
+            member x.Read() = x.DataReader.Read()
+            member x.RecordsAffected = x.DataReader.RecordsAffected
+    
+    let executeSql createCommand sql (con:IDbConnection) =        
+        let com : IDbCommand = createCommand sql con   
+        new DataReaderWithCommand(com.ExecuteReader(), com) :> IDataReader        
 
 type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = ConcurrentDictionary<string,string list>()
@@ -469,7 +520,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                 *)
             if con.State = ConnectionState.Closed then con.Open()
             Sql.connect con (fun con ->
-                use reader = Sql.executeSql Firebird.createCommand (sprintf "select 'Dbo', trim(RDB$RELATION_NAME), 'BASE TABLE' from RDB$RELATIONS") con
+                use reader = Firebird.executeSql Firebird.createCommand (sprintf "select 'Dbo', trim(RDB$RELATION_NAME), 'BASE TABLE' from RDB$RELATIONS") con
                 [ while reader.Read() do
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1).Trim(); Type=reader.GetString(2) }
                     yield tableLookup.GetOrAdd(table.Name,table) ])
@@ -568,13 +619,13 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                               "
 
             let res = Sql.connect con (fun con ->
-                use reader = (Sql.executeSql Firebird.createCommand (sprintf "%s WHERE RC.RDB$RELATION_NAME = '%s'" baseQuery (Firebird.ripQuotes table.Name) ) con)
+                use reader = (Firebird.executeSql Firebird.createCommand (sprintf "%s WHERE RC.RDB$RELATION_NAME = '%s'" baseQuery (Firebird.ripQuotes table.Name) ) con)
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
                                 ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
                 reader.Dispose()
-                use reader = Sql.executeSql Firebird.createCommand (sprintf "%s WHERE RCref.RDB$RELATION_NAME = '%s'" baseQuery (Firebird.ripQuotes table.Name) ) con
+                use reader = Firebird.executeSql Firebird.createCommand (sprintf "%s WHERE RCref.RDB$RELATION_NAME = '%s'" baseQuery (Firebird.ripQuotes table.Name) ) con
                 let parents =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
@@ -906,57 +957,3 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                 finally
                     con.Close()
             }
-        (* member this.ProcessUpdatesAsync(con, entities) =
-            async { (this :> ISqlProvider).ProcessUpdates(con, entities) }
-            let sb = Text.StringBuilder()
-
-            CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
-
-            if entities.Count = 0 then 
-                async { () }
-            else
-
-            async {
-
-                use scope = Utilities.ensureTransaction()
-                try
-                    // close the connection first otherwise it won't get enlisted into the transaction
-                    if con.State = ConnectionState.Open then con.Close()
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-
-                    // initially supporting update/create/delete of single entities, no hierarchies yet
-                    let handleEntity (e: SqlEntity) =
-                        match e._State with
-                        | Created ->
-                            async {
-                                let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                CommonTasks.checkKey pkLookup id e
-                                e._State <- Unchanged
-                            }
-                        | Modified fields ->
-                            async {
-                                let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
-                                e._State <- Unchanged
-                            }
-                        | Delete ->
-                            async {
-                                let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
-                                // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
-                                e._State <- Deleted
-                            }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
-
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-
-                    scope.Complete()
-
-                finally
-                    con.Close()
-            }*)

@@ -5,7 +5,7 @@ open FSharp.Data.Sql.Providers
 
 
 let [<Literal>] resolutionPath = "D:/Gibran/Projetos/GitRep/SQLProvider/packages/scripts/FirebirdSql.Data.FirebirdClient/lib/net452" //"D:/Gibran/Projetos/FirebirdNetProvider141216/src/FirebirdSql.Data.FirebirdClient/bin/Debug/NET40" 
-let [<Literal>] connectionString = @"character set=NONE;data source=localhost;initial catalog=d:\Tisul\Gestao\Dados\ROMENA.FDB;user id=SYSDBA;password=masterkey;dialect=1"
+let [<Literal>] connectionString = @"character set=NONE;data source=localhost;port=3051;initial catalog=d:\Tisul\Gestao\Dados\ROMENA.FDB;user id=SYSDBA;password=masterkey;dialect=1"
 // create a type alias with the connection string and database vendor settings
 
               
@@ -24,12 +24,12 @@ let ctx = sql.GetDataContext()
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
-let nfi1 = query { for ni in ctx.Dbo.Notafiscalitem do take 1; select ni} |> Seq.head
-nfi1.Cfopa5cod <- Some "9999"
-nfi1.Nfitiitem <- 1001
-ctx.ClearUpdates()
-let nfiN = ctx.Dbo.Notafiscalitem.Create nfi1.ColumnValues
-ctx.SubmitUpdates()
+//let nfi1 = query { for ni in ctx.Dbo.Notafiscalitem do take 1; select ni} |> Seq.head
+//nfi1.Cfopa5cod <- Some "9999"
+//nfi1.Nfitiitem <- 1001
+//ctx.ClearUpdates()
+//let nfiN = ctx.Dbo.Notafiscalitem.Create nfi1.ColumnValues
+//ctx.SubmitUpdates()
 
 let ni = 
     query
