@@ -1,6 +1,6 @@
-### 1.0.56 - 09.05.2017
+### 1.0.57 - 09.05.2017
 * Sort-by casts to IComparable fix #407
-* Oracle Length fix #408
+* Oracle Length and Trim fix #408
 * Column <> null fix
 
 ### 1.0.55 - 08.05.2017
