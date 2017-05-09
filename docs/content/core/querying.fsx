@@ -128,28 +128,32 @@ where                    |x | Server side variables must be plain without .NET o
 
 ### Canonical Functions 
 
-Besides that, we support these .NET-functions to to transfer to SQL-clauses.
+Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.55).
 If you use these, remember to check your database indexes.
-Most of the operations support parameters to be either constants or other SQL-columns.
+
 
 #### .NET String Functions (.NET)
 
 | .NET          | MsSqlServer     | PostgreSql   | MySql      | Oracle      | SQLite | MSAccess| Odbc        |  Notes
 |---------------|-----------------|--------------|------------|-------------|--------|---------|-------------|--------------------------|
-.Substring(x)   | SUBSTRING       | SUBSTRING    | MID        | SUBSTR      | SUBSTR | Mid     | SUBSTRING   | Start position may vary. |
-.Substring(x, y)| SUBSTRING       | SUBSTRING    | MID        | SUBSTR      | SUBSTR | MID     | SUBSTRING   | (0 or 1 based.) |
+.Substring(x)   | SUBSTRING       | SUBSTRING    | MID        | SUBSTR      | SUBSTR | Mid     | SUBSTRING   | Start position may vary (0 or 1 based.) |
 .ToUpper()      | UPPER           | UPPER        | UPPER      | UPPER       | UPPER  | UCase   | UCASE       |                 |
 .ToLower()      | LOWER           | LOWER        | LOWER      | LOWER       | LOWER  | LCase   | LCASE       |                 |
 .Trim()         | LTRIM(RTRIM)    | TRIM(BOTH...)| TRIM       | LTRIM(RTRIM)| TRIM   | Trim    | LTRIM(RTRIM)|                 |
 .Length()       | DATALENGTH      | CHAR_LENGTH  | CHAR_LENGTH| LENGTH      | LENGTH | Len     | CHARACTER_LENGTH |            |
-.Replace(a, b)  | REPLACE         | REPLACE      | REPLACE    | REPLACE     | REPLACE| Replace | REPLACE     |                 |
+.Replace(a,b)   | REPLACE         | REPLACE      | REPLACE    | REPLACE     | REPLACE| Replace | REPLACE     |                 |
 .IndexOf(x)     | CHARINDEX       | STRPOS       | LOCATE     | INSTR       | INSTR  | InStr   | LOCATE      |                 |
 .IndexOf(x, i)  | CHARINDEX       |              | LOCATE     | INSTR       |        | InStr   | LOCATE      |                 |
 (+)             | `+`             | `||`         | CONCAT     | `||`        | `||`   | &       | CONCAT      |                 |
 
-In where-clauses you can also use `.Contains()`, `.StartsWith()` and `.EndsWith()`, which are translated to 
-corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`
+In where-clauses you can also use `.Contains("...")`, `.StartsWith("...")` and `.EndsWith("...")`, which are translated to 
+corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`.
 
+`Substring(startpos,length)` is supported. IndexOf with length paramter is supported except PostgreSql and SQLite.
+
+Operations do support parameters to be either constants or other SQL-columns (e.g. `x.Substring(x.Length() - 1)`).
+
+ 
 #### .NET DateTime Functions
 
 | .NET         | MsSqlServer    | PostgreSql| MySql    | Oracle    | SQLite  | MSAccess  | Odbc      |  Notes
@@ -162,11 +166,17 @@ corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`
 .Minute        | DATEPART MINUTE| DATE_PART | MINUTE   | EXTRACT   | STRFTIME| Minute    | MINUTE     |   |
 .Second        | DATEPART SECOND| DATE_PART | SECOND   | EXTRACT   | STRFTIME| Second    | SECOND     |   |
 .AddYears(i)   | DATEADD YEAR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
-.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            | For now most date-additions can't be other columns. |
-.AddDays(f)    | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            | .NET has float, bus SQL may ignore decimal fraction |
+.AddMonths(i)  | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+.AddDays(f)    | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddHours(f)   | DATEADD HOUR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddMinutes(f) | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddSeconds(f) | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
+
+AddYears and AddDays parameter can be either constant or other SQL-column, except in SQLite which supports only constant. 
+AddMonths, AddHours, AddMinutes and AddSeconds supports only constants for now. 
+Odbc standard doesn't seem to have a date-add functionality.
+.NET has float parameters on some time-functions like AddDays, but SQL may ignore the decimal fraction.
+
 
 #### Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)
 
@@ -192,12 +202,18 @@ Also you can use these on group-by clause:
 *)
 
 (**
+
+
+## How to see the SQL-clause?
+
 To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:
 *)
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
 
 (**
+
+## More details
 
 By default `query { ... }` is `IQueryable<T>` which is lazy. To execute the query you have to do `Seq.toList`, `Seq.toArray`, or some corresponding operation. If you don't do that but just continue inside another `query { ... }` or use System.Linq `.Where(...)` etc, that will still be combined to the same SQL-query.
 
