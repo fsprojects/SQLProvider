@@ -378,9 +378,8 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </table>
 
 <h3><a name="Canonical-Functions" class="anchor" href="#Canonical-Functions">Canonical Functions</a></h3>
-<p>Besides that, we support these .NET-functions to to transfer to SQL-clauses.
-If you use these, remember to check your database indexes.
-Most of the operations support parameters to be either constants or other SQL-columns.</p>
+<p>Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.55).
+If you use these, remember to check your database indexes.</p>
 <h4><a name="NET-String-Functions-NET" class="anchor" href="#NET-String-Functions-NET">.NET String Functions (.NET)</a></h4>
 <table>
 <thead>
@@ -406,20 +405,9 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>SUBSTR</p></td>
 <td><p>Mid</p></td>
 <td><p>SUBSTRING</p></td>
-<td><p>Start position may vary.</p></td>
+<td><p>Start position may vary (0 or 1 based.)</p></td>
 </tr>
 <tr class="even">
-<td><p>.Substring(x, y)</p></td>
-<td><p>SUBSTRING</p></td>
-<td><p>SUBSTRING</p></td>
-<td><p>MID</p></td>
-<td><p>SUBSTR</p></td>
-<td><p>SUBSTR</p></td>
-<td><p>MID</p></td>
-<td><p>SUBSTRING</p></td>
-<td><p>(0 or 1 based.)</p></td>
-</tr>
-<tr class="odd">
 <td><p>.ToUpper()</p></td>
 <td><p>UPPER</p></td>
 <td><p>UPPER</p></td>
@@ -430,7 +418,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>UCASE</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>.ToLower()</p></td>
 <td><p>LOWER</p></td>
 <td><p>LOWER</p></td>
@@ -441,7 +429,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>LCASE</p></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>.Trim()</p></td>
 <td><p>LTRIM(RTRIM)</p></td>
 <td><p>TRIM(BOTH...)</p></td>
@@ -452,7 +440,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>LTRIM(RTRIM)</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>.Length()</p></td>
 <td><p>DATALENGTH</p></td>
 <td><p>CHAR_LENGTH</p></td>
@@ -463,8 +451,8 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>CHARACTER_LENGTH</p></td>
 <td></td>
 </tr>
-<tr class="odd">
-<td><p>.Replace(a, b)</p></td>
+<tr class="even">
+<td><p>.Replace(a,b)</p></td>
 <td><p>REPLACE</p></td>
 <td><p>REPLACE</p></td>
 <td><p>REPLACE</p></td>
@@ -474,7 +462,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>REPLACE</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>.IndexOf(x)</p></td>
 <td><p>CHARINDEX</p></td>
 <td><p>STRPOS</p></td>
@@ -485,7 +473,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>LOCATE</p></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>.IndexOf(x, i)</p></td>
 <td><p>CHARINDEX</p></td>
 <td></td>
@@ -496,7 +484,7 @@ Most of the operations support parameters to be either constants or other SQL-co
 <td><p>LOCATE</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>(+)</p></td>
 <td><p><code>+</code></p></td>
 <td><p><code>||</code></p></td>
@@ -510,8 +498,10 @@ Most of the operations support parameters to be either constants or other SQL-co
 </tbody>
 </table>
 
-<p>In where-clauses you can also use <code>.Contains()</code>, <code>.StartsWith()</code> and <code>.EndsWith()</code>, which are translated to
-corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('asdf%')</code></p>
+<p>In where-clauses you can also use <code>.Contains("...")</code>, <code>.StartsWith("...")</code> and <code>.EndsWith("...")</code>, which are translated to
+corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('asdf%')</code>.</p>
+<p><code>Substring(startpos,length)</code> is supported. IndexOf with length paramter is supported except PostgreSql and SQLite.</p>
+<p>Operations do support parameters to be either constants or other SQL-columns (e.g. <code>x.Substring(x.Length() - 1)</code>).</p>
 <h4><a name="NET-DateTime-Functions" class="anchor" href="#NET-DateTime-Functions">.NET DateTime Functions</a></h4>
 <table>
 <thead>
@@ -633,7 +623,7 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <td><p>DATETIME</p></td>
 <td><p>DateAdd</p></td>
 <td></td>
-<td><p>For now most date-additions can't be other columns.</p></td>
+<td></td>
 </tr>
 <tr class="even">
 <td><p>.AddDays(f)</p></td>
@@ -648,7 +638,7 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <td><p>DATETIME</p></td>
 <td><p>DateAdd</p></td>
 <td></td>
-<td><p>.NET has float, bus SQL may ignore decimal fraction</p></td>
+<td></td>
 </tr>
 <tr class="odd">
 <td><p>.AddHours(f)</p></td>
@@ -698,6 +688,10 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 </tbody>
 </table>
 
+<p>AddYears and AddDays parameter can be either constant or other SQL-column, except in SQLite which supports only constant.
+AddMonths, AddHours, AddMinutes and AddSeconds supports only constants for now.
+Odbc standard doesn't seem to have a date-add functionality.
+.NET has float parameters on some time-functions like AddDays, but SQL may ignore the decimal fraction.</p>
 <h4><a name="Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators" class="anchor" href="#Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators">Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)</a></h4>
 <table>
 <thead>
@@ -841,6 +835,7 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
 <p>Also you can use these on group-by clause:
 <code>COUNT</code>, <code>SUM</code>, <code>MIN</code>, <code>MAX</code>, <code>AVG</code></p>
+<h2><a name="How-to-see-the-SQL-clause" class="anchor" href="#How-to-see-the-SQL-clause">How to see the SQL-clause?</a></h2>
 <p>To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
@@ -848,6 +843,7 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 </code></pre></td>
 </tr>
 </table>
+<h2><a name="More-details" class="anchor" href="#More-details">More details</a></h2>
 <p>By default <code>query { ... }</code> is <code>IQueryable&lt;T&gt;</code> which is lazy. To execute the query you have to do <code>Seq.toList</code>, <code>Seq.toArray</code>, or some corresponding operation. If you don't do that but just continue inside another <code>query { ... }</code> or use System.Linq <code>.Where(...)</code> etc, that will still be combined to the same SQL-query.</p>
 <p>There are some limitation of complexity of your queries, but for example
 this is still ok and will give you very simple select-clause:</p>
