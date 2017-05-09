@@ -90,6 +90,11 @@ let (|OptionNone|_|) (e: Expression) =
         | _ -> None
     | _ -> None
 
+let (|NullConstant|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Constant, (:? ConstantExpression as ce) when ce.Value = null -> Some()
+    | _ -> None
+
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some(Some(ce.Value))

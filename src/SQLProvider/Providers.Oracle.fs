@@ -80,7 +80,7 @@ module internal Oracle =
             | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
             | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "LTRIM(RTRIM((%s))" column
-            | Length -> sprintf "CHAR_LENGTH(%s)" column
+            | Length -> sprintf "LENGTH(%s)" column
             | IndexOf(SqlStr search) -> sprintf "INSTR(%s,'%s')" column search
             | IndexOf(SqlStrCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
             | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "INSTR(%s,'%s',%d)" column search startPos
