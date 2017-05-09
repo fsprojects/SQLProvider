@@ -276,6 +276,22 @@ let ``simple select where query``() =
     Assert.AreEqual(1, qry.Length)
     Assert.AreEqual("Berlin", qry.[0].City)
 
+
+[<Test >]
+let ``simple select where null query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId <> null)
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(91, qry.Length)
+    Assert.AreEqual("Berlin", qry.[0].City)
+
+
 [<Test >]
 let ``simple select where query right side``() =
     let dc = sql.GetDataContext()
