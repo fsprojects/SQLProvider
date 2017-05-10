@@ -28,6 +28,7 @@ The provider currently has explicit implementations for the following database v
 * Oracle
 * MySQL (& MariaDB)
 * MsAccess
+* Firebird
 
 There is also an ODBC provider that will let you connect to any ODBC source with limited features. 
 

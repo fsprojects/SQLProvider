@@ -1,3 +1,6 @@
+### 1.1.0 - 10.05.2017
+* Support for Firebird SQL Server
+
 ### 1.0.57 - 09.05.2017
 * Sort-by casts to IComparable fix #407
 * Oracle Length and Trim fix #408
