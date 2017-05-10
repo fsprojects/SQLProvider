@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>CompileTimeSprocDefinition - SQLProvider</title>
+    <title>DataReaderWithCommand - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,70 +35,82 @@
 
 
 
-<h1>CompileTimeSprocDefinition</h1>
+<h1>DataReaderWithCommand</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql.Schema</span><br />
+  <span>Namespace: FSharp.Data.Sql.Providers</span><br />
+  <span>Parent Module: <a href="fsharp-data-sql-providers-firebird.html">Firebird</a></span>
 </p>
 <div class="xmldoc">
 </div>
-  <h3>Record Fields</h3>
+  <h3>Constructors</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Record Field</td><td>Description</td></tr>
+      <tr><td>Constructor</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '379', 379)" onmouseover="showTip(event, '379', 379)">
-            Name
+          <code onmouseout="hideTip(event, '361', 361)" onmouseover="showTip(event, '361', 361)">
+            new(dataReader, command)
           </code>
-          <div class="tip" id="379">
-            <strong>Signature:</strong> SprocName<br />
+          <div class="tip" id="361">
+            <strong>Signature:</strong> (dataReader:IDataReader * command:IDbCommand) -&gt; DataReaderWithCommand<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L77-77" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Firebird.fs#L311-311" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '362', 362)" onmouseover="showTip(event, '362', 362)">
+            Command
+          </code>
+          <div class="tip" id="362">
+            <strong>Signature:</strong> IDbCommand<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Firebird.fs#L313-313" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_Command</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '380', 380)" onmouseover="showTip(event, '380', 380)">
-            Params
+          <code onmouseout="hideTip(event, '363', 363)" onmouseover="showTip(event, '363', 363)">
+            DataReader
           </code>
-          <div class="tip" id="380">
-            <strong>Signature:</strong> IDbConnection -&gt; QueryParameter list<br />
+          <div class="tip" id="363">
+            <strong>Signature:</strong> IDataReader<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L78-78" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.Firebird.fs#L312-312" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '381', 381)" onmouseover="showTip(event, '381', 381)">
-            ReturnColumns
-          </code>
-          <div class="tip" id="381">
-            <strong>Signature:</strong> IDbConnection -&gt; QueryParameter list -&gt; QueryParameter list<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L79-79" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
+              <p>CompiledName: <code>get_DataReader</code></p>
         </td>
       </tr>
     </tbody>
