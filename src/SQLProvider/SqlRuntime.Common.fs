@@ -22,6 +22,7 @@ type DatabaseProviderTypes =
     | ORACLE = 4
     | MSACCESS = 5
     | ODBC = 6
+    | FIREBIRD = 7
 type RelationshipDirection = Children = 0 | Parents = 1
 
 type CaseSensitivityChange =
@@ -188,6 +189,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 let prefix2 = alias + "."
                 let prefix3 = "`" + alias + "`."
                 let prefix4 = alias + "_"
+                let prefix5 = alias.ToUpper() + "_"
                 (fun (k:string,v) ->
                     if k.StartsWith prefix then
                         let temp = replaceFirst k prefix ""
@@ -205,6 +207,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                     //this case for MSAccess, uses _ as whitespace qualifier
                     elif  k.StartsWith prefix4 then
                         let temp = replaceFirst k prefix4 ""
+                        Some(temp,v)
+                    //this case for Firebird version<=2.1, all uppercase
+                    elif  k.StartsWith prefix5 then 
+                        let temp = replaceFirst k prefix5 ""
                         Some(temp,v)
                     elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
                         Some(k,v)

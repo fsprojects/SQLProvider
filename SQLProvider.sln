@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -47,6 +47,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 		src\scripts\MySqlInspector.fsx = src\scripts\MySqlInspector.fsx
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
+		src\scripts\Script1.fsx = src\scripts\Script1.fsx
 	EndProjectSection
 EndProject
 Global

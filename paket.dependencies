@@ -27,6 +27,7 @@ group Scripts
     nuget Newtonsoft.Json
     nuget Npgsql
     nuget Oracle.ManagedDataAccess
+    nuget FirebirdSql.Data.FirebirdClient
 
 
     
