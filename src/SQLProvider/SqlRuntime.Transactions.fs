@@ -62,7 +62,7 @@ module internal TransactionUtils =
         | true -> new Transactions.TransactionScope(transactionScopeOption, transactionOptions)
         | false ->
             // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
-            new Transactions.TransactionScope(transactionScopeOption, transactionOptions, Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            new Transactions.TransactionScope(transactionScopeOption, transactionOptions, System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
 
 type TransactionOptions with
     static member Default =
