@@ -1,7 +1,7 @@
 FRAMEWORK: >= NET40
 NUGET
   remote: https://www.nuget.org/api/v2
-    FAKE (4.58.6)
+    FAKE (4.61.2)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Core (3.1.2.1) - redirects: force
     FSharp.Formatting (2.14.4)
@@ -49,7 +49,7 @@ GROUP SourceFiles
 
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/ProvidedTypes.fs (45f4d8780b3213ef61ba4fccc716cd495565c1a4)
-    src/ProvidedTypes.fsi (45f4d8780b3213ef61ba4fccc716cd495565c1a4)
+    src/ProvidedTypes.fs (1dab4f94411500794342f61f877feab772e5a754)
+    src/ProvidedTypes.fsi (1dab4f94411500794342f61f877feab772e5a754)
   remote: Thorium/Linq.Expression.Optimizer
     src/Code/ExpressionOptimizer.fs (b494733a57be4988cda349b65b5089db77ba00d6)
