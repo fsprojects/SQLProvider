@@ -260,12 +260,12 @@ module Firebird =
         p
 
     let getSprocReturnCols (sparams: QueryParameter list) =
-        //match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
-        //| [] ->
+        match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
+        | [] -> []           
+        | _ -> 
             findDbType "cursor"
             |> Option.map (fun m -> QueryParameter.Create("ResultSet",0,m,ParameterDirection.Output))
             |> Option.fold (fun _ p -> [p]) []
-        //| a -> a
 
     let getSprocName (row:DataRow) =
         //let defaultValue =
@@ -330,7 +330,7 @@ module Firebird =
         //This could filter the query using the Sproc name passed in
         let sqlParams = 
             (sprintf @"
-            SELECT RDB$PROCEDURE_NAME procedure_name, RDB$PARAMETER_NAME parameter_name, RDB$PARAMETER_TYPE PARAMETER_MODE, 
+            SELECT trim(RDB$PROCEDURE_NAME) procedure_name, trim(RDB$PARAMETER_NAME) parameter_name, RDB$PARAMETER_TYPE PARAMETER_MODE, 
             %s DATA_TYPE, RDB$CHARACTER_LENGTH character_maximum_length, RDB$PARAMETER_NUMBER ORDINAL_POSITION 
             FROM RDB$PROCEDURE_PARAMETERS r
             inner join RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME
