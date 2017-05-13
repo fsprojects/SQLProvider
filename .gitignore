@@ -192,3 +192,4 @@ docs/content/core/northwindEF.db
 /tests/SqlProvider.Tests/scripts/NorthwindFBD1.sql
 /tests/SqlProvider.Tests/scripts/NORTHWINDFBD3-.FDB
 /tests/SqlProvider.Tests/scripts/NorthwindFBD3.sql
+/src/scripts/Script1.fsx

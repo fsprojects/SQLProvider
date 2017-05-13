@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{116D77B0-B9B2-4516-8DAF-485D43FE4B18}"
 	ProjectSection(SolutionItems) = preProject
@@ -29,10 +29,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 		docs\content\oracle.fsx = docs\content\oracle.fsx
 	EndProjectSection
 EndProject
-Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "SqlProvider.Tests", "tests\SqlProvider.Tests\SqlProvider.Tests.fsproj", "{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider.Tests", "tests\SqlProvider.Tests\SqlProvider.Tests.fsproj", "{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{DB8153B0-4B4F-4CD8-8500-C61D66E75426}"
 	ProjectSection(SolutionItems) = preProject
+		tests\SqlProvider.Tests\scripts\FirebirdTests.fsx = tests\SqlProvider.Tests\scripts\FirebirdTests.fsx
 		tests\SqlProvider.Tests\scripts\MSAccessTests.fsx = tests\SqlProvider.Tests\scripts\MSAccessTests.fsx
 		tests\SqlProvider.Tests\scripts\MySqlTests.fsx = tests\SqlProvider.Tests\scripts\MySqlTests.fsx
 		tests\SqlProvider.Tests\scripts\OdbcTests.fsx = tests\SqlProvider.Tests\scripts\OdbcTests.fsx
@@ -59,10 +60,10 @@ Global
 		{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}.Release|x86.ActiveCfg = Release|Any CPU
 		{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
 	EndGlobalSection
 EndGlobal

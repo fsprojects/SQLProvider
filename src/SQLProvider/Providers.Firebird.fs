@@ -20,6 +20,75 @@ module Firebird =
 
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+        
+    type DataReaderWithCommand(dataReader: IDataReader, command : IDbCommand) = 
+        member x.DataReader = dataReader
+        member x.Command = command
+
+        interface IDisposable with
+            member x.Dispose() = 
+                x.DataReader.Dispose()
+                x.Command.Dispose()
+
+        interface IDataReader with
+            member x.Close() = x.DataReader.Close()
+            member x.Depth = x.DataReader.Depth            
+            member x.FieldCount = x.DataReader.FieldCount
+            member x.GetBoolean(i) = x.DataReader.GetBoolean(i)
+            member x.GetByte(i) = x.DataReader.GetByte(i)
+            member x.GetBytes(i, fieldOffset, buffer, bufferoffset, length) = x.DataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length)
+            member x.GetChar(i) = x.DataReader.GetChar(i)
+            member x.GetChars(i, fieldoffset, buffer, bufferoffset, length) = x.DataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length)
+            member x.GetData(i) = x.DataReader.GetData(i)
+            member x.GetDataTypeName(i) = x.DataReader.GetDataTypeName(i)
+            member x.GetDateTime(i) = x.DataReader.GetDateTime(i)
+            member x.GetDecimal(i) = x.DataReader.GetDecimal(i)
+            member x.GetDouble(i) = x.DataReader.GetDouble(i)
+            member x.GetFieldType(i) = x.DataReader.GetFieldType(i)
+            member x.GetFloat(i) = x.DataReader.GetFloat(i)
+            member x.GetGuid(i) = x.DataReader.GetGuid(i)
+            member x.GetInt16(i) = x.DataReader.GetInt16(i)
+            member x.GetInt32(i) = x.DataReader.GetInt32(i)
+            member x.GetInt64(i) = x.DataReader.GetInt64(i)
+            member x.GetName(i) = x.DataReader.GetName(i)
+            member x.GetOrdinal(name) = x.DataReader.GetOrdinal(name)
+            member x.GetSchemaTable() = x.DataReader.GetSchemaTable()
+            member x.GetString(i) = x.DataReader.GetString(i)
+            member x.GetValue(i) = x.DataReader.GetValue(i)
+            member x.GetValues(values) = x.DataReader.GetValues(values)
+            member x.IsClosed = x.DataReader.IsClosed
+            member x.IsDBNull(i) = x.DataReader.IsDBNull(i)
+            member x.Item
+                with get (i: int): obj = 
+                    x.DataReader.Item(i)
+            member x.Item
+                with get (name: string): obj = 
+                    x.DataReader.Item(name)
+            member x.NextResult() = x.DataReader.NextResult()
+            member x.Read() = x.DataReader.Read()
+            member x.RecordsAffected = x.DataReader.RecordsAffected
+    
+    let executeSql createCommand sql (con:IDbConnection) =        
+        let com : IDbCommand = createCommand sql con   
+        new DataReaderWithCommand(com.ExecuteReader(), com) :> IDataReader        
+    
+    let executeSqlAsDataTable createCommand sql con = 
+        use r = executeSql createCommand sql con
+        let dt = new DataTable()
+        dt.Load(r)
+        dt
+    
+    let executeSqlAsync createCommand sql (con:IDbConnection) =
+        use com : System.Data.Common.DbCommand = createCommand sql con   
+        com.ExecuteReaderAsync() |> Async.AwaitTask  
+
+    let executeSqlAsDataTableAsync createCommand sql con = 
+        async{
+            use! r = executeSqlAsync createCommand sql con
+            let dt = new DataTable()
+            dt.Load(r)
+            return dt
+        }
 
     let findType name =
         match assembly.Value with
@@ -97,7 +166,7 @@ module Firebird =
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
+            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par            
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
@@ -105,7 +174,7 @@ module Firebird =
         let aliasSprint =
             match String.IsNullOrEmpty(al) with
             | true -> sprintf "%s"
-            | false -> sprintf "%s.%s" al
+            | false -> sprintf "%s_%s" al
         Utilities.genericAliasNotation aliasSprint col
 
     let ripQuotes (str:String) = 
@@ -177,7 +246,7 @@ module Firebird =
         let value = if value = null then (box System.DBNull.Value) else value
 
         let parameterType = parameterType.Value
-        let mySqlDbTypeSetter =
+        let firebirdDbTypeSetter =
             parameterType.GetProperty("FbDbType").GetSetMethod()
 
         let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
@@ -185,48 +254,71 @@ module Firebird =
         p.Direction <-  param.Direction
 
         p.DbType <- (defaultArg mapping param.TypeMapping).DbType
-        param.TypeMapping.ProviderType |> Option.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        param.TypeMapping.ProviderType |> Option.iter (fun pt -> firebirdDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
 
         Option.iter (fun l -> p.Size <- l) param.Length
         p
 
     let getSprocReturnCols (sparams: QueryParameter list) =
-        match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
-        | [] ->
+        //match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
+        //| [] ->
             findDbType "cursor"
             |> Option.map (fun m -> QueryParameter.Create("ResultSet",0,m,ParameterDirection.Output))
             |> Option.fold (fun _ p -> [p]) []
-        | a -> a
+        //| a -> a
 
     let getSprocName (row:DataRow) =
-        let defaultValue =
-            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
-            else row.["procedure_schema"]
-        let owner = Sql.dbUnboxWithDefault<string> owner defaultValue
+        //let defaultValue =
+        //    if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
+        //    else row.["procedure_schema"]
+        //let owner = Sql.dbUnboxWithDefault<string> owner defaultValue
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["procedure_name"])
         { ProcName = procName; Owner = owner; PackageName = String.Empty; }
+
+    let sqlTypeName = @"
+            LOWER(
+            case RDB$FIELD_TYPE 
+            WHEN 7 then 'SMALLINT'
+            when 8 then 'INTEGER'
+            when 10 then 'FLOAT'
+            when 12 then 'DATE'
+            when 13 then 'TIME'
+            when 14 then 'CHAR'           
+            when 16 then case RDB$FIELD_SUB_TYPE
+                when 1 THEN 'NUMERIC' 
+                WHEN 2 THEN 'DECIMAL'
+                ELSE 'BIGINT'
+                END         -- dialect 3
+            when 27 then CASE RDB$FIELD_SCALE
+                when 0 then 'DOUBLE PRECISION'
+                else 'NUMERIC'  -- dialect 1
+                end
+            when 35 then 'TIMESTAMP'
+            when 37 then 'VARCHAR'
+            when 261 then 'BLOB'|| iif(RDB$FIELD_SUB_TYPE=1, ' SUB_TYPE '|| RDB$FIELD_SUB_TYPE, '')
+            END)"
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
         let createSprocParameters (row:DataRow) =
             let dataType = Sql.dbUnbox row.["data_type"]
             let argumentName = Sql.dbUnbox row.["parameter_name"]
             let maxLength =
-                let r = Sql.dbUnboxWithDefault<int> -1 row.["character_maximum_length"]
+                let r = Sql.dbUnboxWithDefault<int16> -1s row.["character_maximum_length"] |> Convert.ToInt32
                 if r = -1 then None else Some r
 
             findDbType dataType
             |> Option.map (fun m ->
-                let ordinal_position = Sql.dbUnboxWithDefault<int> 0 row.["ORDINAL_POSITION"]
-                let parameter_mode = Sql.dbUnbox<string> row.["PARAMETER_MODE"]
-                let returnValue = argumentName = null && ordinal_position = 0
+                let ordinal_position = Sql.dbUnboxWithDefault<int16> 0s row.["ORDINAL_POSITION"] |> Convert.ToInt32
+                let parameter_mode = Sql.dbUnbox<int16> row.["PARAMETER_MODE"] |> Convert.ToInt32
+                //let returnValue = argumentName = null && ordinal_position = 0
                 let direction =
                     match parameter_mode with
-                    | "IN" -> ParameterDirection.Input
-                    | "OUT" -> ParameterDirection.Output
-                    | "INOUT" -> ParameterDirection.InputOutput
-                    | null when returnValue -> ParameterDirection.ReturnValue
-                    | a -> failwithf "Direction not supported %s %s" argumentName a
-                { Name = if argumentName = null then "ReturnValue" else argumentName
+                    | 0 -> ParameterDirection.Input
+                    | 1 -> ParameterDirection.Output
+                    //| "INOUT" -> ParameterDirection.InputOutput
+                    //| null when returnValue -> ParameterDirection.ReturnValue
+                    | a -> failwithf "Direction not supported %s %i" argumentName a
+                { Name = if argumentName = null then failwithf "Parameter name is null for procedure %s" argumentName else argumentName
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
@@ -234,11 +326,18 @@ module Firebird =
             )
 
         let dbName = if String.IsNullOrEmpty owner then con.Database else owner
-
+        
         //This could filter the query using the Sproc name passed in
-        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM RDB$PROCEDURE_PARAMETERS"))
-        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
-        |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
+        let sqlParams = 
+            (sprintf @"
+            SELECT RDB$PROCEDURE_NAME procedure_name, RDB$PARAMETER_NAME parameter_name, RDB$PARAMETER_TYPE PARAMETER_MODE, 
+            %s DATA_TYPE, RDB$CHARACTER_LENGTH character_maximum_length, RDB$PARAMETER_NUMBER ORDINAL_POSITION 
+            FROM RDB$PROCEDURE_PARAMETERS r
+            inner join RDB$FIELDS f ON r.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME
+            where r.RDB$PROCEDURE_NAME='%s'" sqlTypeName name.ProcName)
+        Sql.connect con (executeSqlAsDataTable createCommand sqlParams)
+        |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)  // ** TODO: The query is already filtered by sprocname, refactor it!
+        //|> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
         |> Seq.collect (snd >> Seq.choose id)
         |> Seq.sortBy (fun x -> x.Ordinal)
         |> Seq.toList
@@ -250,7 +349,7 @@ module Firebird =
                             //match (Sql.dbUnbox<string> row.["routine_type"]).ToUpper() with
                             //| "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ name -> getSprocReturnCols name) }))
                             //| "PROCEDURE" ->  
-                            Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ name -> getSprocReturnCols name) }))
+                            Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ paramList -> getSprocReturnCols paramList) }))
                             //| _ -> Empty
                           )
         |> Seq.toList
@@ -307,57 +406,6 @@ module Firebird =
         | cols ->
             use reader = com.ExecuteReader()
             Set(cols |> Array.map (processReturnColumn reader))
-    
-    type DataReaderWithCommand(dataReader: IDataReader, command : IDbCommand) = 
-        member x.DataReader = dataReader
-        member x.Command = command
-
-        interface IDisposable with
-            member x.Dispose() = 
-                x.DataReader.Dispose()
-                x.Command.Dispose()
-
-        interface IDataReader with
-            member x.Close() = x.DataReader.Close()
-            member x.Depth = x.DataReader.Depth            
-            member x.FieldCount = x.DataReader.FieldCount
-            member x.GetBoolean(i) = x.DataReader.GetBoolean(i)
-            member x.GetByte(i) = x.DataReader.GetByte(i)
-            member x.GetBytes(i, fieldOffset, buffer, bufferoffset, length) = x.DataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length)
-            member x.GetChar(i) = x.DataReader.GetChar(i)
-            member x.GetChars(i, fieldoffset, buffer, bufferoffset, length) = x.DataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length)
-            member x.GetData(i) = x.DataReader.GetData(i)
-            member x.GetDataTypeName(i) = x.DataReader.GetDataTypeName(i)
-            member x.GetDateTime(i) = x.DataReader.GetDateTime(i)
-            member x.GetDecimal(i) = x.DataReader.GetDecimal(i)
-            member x.GetDouble(i) = x.DataReader.GetDouble(i)
-            member x.GetFieldType(i) = x.DataReader.GetFieldType(i)
-            member x.GetFloat(i) = x.DataReader.GetFloat(i)
-            member x.GetGuid(i) = x.DataReader.GetGuid(i)
-            member x.GetInt16(i) = x.DataReader.GetInt16(i)
-            member x.GetInt32(i) = x.DataReader.GetInt32(i)
-            member x.GetInt64(i) = x.DataReader.GetInt64(i)
-            member x.GetName(i) = x.DataReader.GetName(i)
-            member x.GetOrdinal(name) = x.DataReader.GetOrdinal(name)
-            member x.GetSchemaTable() = x.DataReader.GetSchemaTable()
-            member x.GetString(i) = x.DataReader.GetString(i)
-            member x.GetValue(i) = x.DataReader.GetValue(i)
-            member x.GetValues(values) = x.DataReader.GetValues(values)
-            member x.IsClosed = x.DataReader.IsClosed
-            member x.IsDBNull(i) = x.DataReader.IsDBNull(i)
-            member x.Item
-                with get (i: int): obj = 
-                    x.DataReader.Item(i)
-            member x.Item
-                with get (name: string): obj = 
-                    x.DataReader.Item(name)
-            member x.NextResult() = x.DataReader.NextResult()
-            member x.Read() = x.DataReader.Read()
-            member x.RecordsAffected = x.DataReader.RecordsAffected
-    
-    let executeSql createCommand sql (con:IDbConnection) =        
-        let com : IDbCommand = createCommand sql con   
-        new DataReaderWithCommand(com.ExecuteReader(), com) :> IDataReader        
 
 type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = ConcurrentDictionary<string,string list>()
@@ -481,7 +529,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                                 WHERE RDB$RELATION_NAME = @table"
             use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
             //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
-            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes tn))) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (Firebird.ripQuotes tn))) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then 
@@ -496,8 +544,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                                 WHERE RDB$RELATION_NAME = @table AND RDB$FIELD_NAME = @column"
             use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
             //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
-            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes tn))) |> ignore
-            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@column", 2), (MySql.ripQuotes columnName))) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (Firebird.ripQuotes tn))) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@column", 2), (Firebird.ripQuotes columnName))) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then 
@@ -536,27 +584,9 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
             | _ ->
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
-                let baseQuery = @"SELECT DISTINCT trim(c.RDB$FIELD_NAME) COLUMN_NAME,
-                                                LOWER(
-                                                case f.RDB$FIELD_TYPE 
-                                                WHEN 7 then 'SMALLINT'
-                                                when 8 then case f.RDB$FIELD_SUB_TYPE
-                                                  when 1 THEN 'NUMERIC'
-                                                  WHEN 2 THEN 'DECIMAL'
-                                                  ELSE 'INTEGER'
-                                                  END
-                                                when 10 then 'FLOAT'
-                                                when 12 then 'DATE'
-                                                when 13 then 'TIME'
-                                                when 14 then 'CHAR'
-                                                when 16 then 'BIGINT'
-                                                when 27 then 'DOUBLE PRECISION'
-                                                when 35 then 'TIMESTAMP'
-                                                when 37 then 'VARCHAR'
-                                                when 261 then 'BLOB'||' SUBTYPE '|| f.RDB$FIELD_SUB_TYPE
-                                                END)
-                                                DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length, f.RDB$FIELD_PRECISION numeric_precision, c.RDB$NULL_FLAG is_nullable
-                                               ,
+                let baseQuery = sprintf @"SELECT DISTINCT trim(c.RDB$FIELD_NAME) COLUMN_NAME,
+                                                %s DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length
+                                                , f.RDB$FIELD_PRECISION numeric_precision, c.RDB$NULL_FLAG is_nullable,
                                                CASE WHEN c.RDB$FIELD_NAME in 
                                                    (select i.RDB$FIELD_NAME from RDB$INDEX_SEGMENTS i
                                                     inner join RDB$RELATION_CONSTRAINTS rc on rc.RDB$INDEX_NAME=i.RDB$INDEX_NAME and rc.RDB$RELATION_NAME=c.RDB$RELATION_NAME
@@ -564,10 +594,9 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                                                  THEN 'PRIMARY KEY'
                                                ELSE '' END AS KeyType
                                   FROM rdb$relation_fields c
-                                  inner join RDB$FIELDS f on f.RDB$FIELD_NAME=c.RDB$FIELD_SOURCE
+                                  inner join RDB$FIELDS f on f.RDB$FIELD_NAME=c.RDB$FIELD_SOURCE                                  
                                   
-                                  
-                                  WHERE c.RDB$RELATION_NAME = @table"
+                                  WHERE c.RDB$RELATION_NAME = @table" Firebird.sqlTypeName
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
                 //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (Firebird.ripQuotes table.Name))) |> ignore
@@ -750,7 +779,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                                         match data with 
                                         | Some d when (box d :? alias * SqlColumnType) ->
                                             let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = MySql.fieldNotation alias2 col2
+                                            let alias2f = Firebird.fieldNotation alias2 col2
                                             aliasformat (operator.ToString()) alias2f
                                         | _ ->
                                             parameters.Add paras.[0]
@@ -788,7 +817,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
             let fromBuilder() =
                 sqlQuery.Links
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
-                    let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
+                    let joinType = if data.OuterJoin then " LEFT OUTER JOIN " else " INNER JOIN "
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s as %s on "
                             joinType destTable.Name destAlias)
@@ -819,7 +848,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM
-                ~~(sprintf "FROM %s as %s " basetable  baseAlias)
+                ~~(sprintf " FROM %s as %s " basetable  baseAlias)
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -837,13 +866,13 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
 
-                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving MySql.fieldNotation keys))]
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving Firebird.fieldNotation keys))]
                 ~~" HAVING "
                 filterBuilder f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then
-                ~~"ORDER BY "
+                ~~" ORDER BY "
                 orderByBuilder()
 
             match sqlQuery.Union with
