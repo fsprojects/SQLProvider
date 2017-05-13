@@ -1,3 +1,6 @@
+### 1.1.1 - 13.05.2017
+* Support for Mono 5 #413
+
 ### 1.1.0 - 10.05.2017
 * Support for Firebird SQL Server
 
