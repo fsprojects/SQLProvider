@@ -82,11 +82,11 @@ Target "AssemblyInfo" (fun _ ->
 Target "RestorePackages" RestorePackages
 
 Target "Clean" (fun _ ->
-    CleanDirs ["bin"; "temp"]
+    DeleteDirs ["bin"; "temp"]
 )
 
 Target "CleanDocs" (fun _ ->
-    CleanDirs ["docs/output"]
+    DeleteDirs ["docs/output"]
 )
 
 // --------------------------------------------------------------------------------------
