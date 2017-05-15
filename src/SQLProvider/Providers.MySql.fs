@@ -480,19 +480,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
                 let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
-                                  FROM INFORMATION_SCHEMA.COLUMNS c
-                                  LEFT JOIN (
-                                              SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
-                                              FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-                                              INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
-                                                  ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                                                  AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
-                                           )   pk
-                                  ON (c.TABLE_CATALOG = pk.TABLE_CATALOG OR pk.TABLE_CATALOG IS NULL)
-                                              AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
-                                              AND c.TABLE_NAME = pk.TABLE_NAME
-                                              AND c.COLUMN_NAME = pk.COLUMN_NAME
+				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
+				                  FROM INFORMATION_SCHEMA.COLUMNS c
+                                  left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
+                                   on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
+							            AND c.TABLE_SCHEMA = ku.TABLE_SCHEMA
+							            AND c.TABLE_NAME = ku.TABLE_NAME
+							            AND c.COLUMN_NAME = ku.COLUMN_NAME
+                                        and ku.CONSTRAINT_NAME='PRIMARY'
                                   WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table"
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), table.Schema)) |> ignore
@@ -531,21 +526,17 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
           relationshipLookup.GetOrAdd(table.FullName, fun name ->
             let baseQuery = @"SELECT
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
-                                ,RC.TABLE_NAME AS FK_TABLE_NAME
+                                ,KCU1.TABLE_NAME AS FK_TABLE_NAME
                                 ,KCU1.TABLE_SCHEMA AS FK_SCHEMA_NAME
                                 ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME
-                                ,RC.REFERENCED_TABLE_NAME AS REFERENCED_TABLE_NAME
+                                ,KCU1.REFERENCED_TABLE_NAME AS REFERENCED_TABLE_NAME
                                 ,KCU1.REFERENCED_TABLE_SCHEMA AS REFERENCED_SCHEMA_NAME
                                 ,KCU1.REFERENCED_COLUMN_NAME AS FK_CONSTRAINT_SCHEMA
-                            FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC
-
-                            INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1
-                                ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG
-                                AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA
-                                AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  "
+                            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1
+                            WHERE POSITION_IN_UNIQUE_CONSTRAINT is not null"
 
             let res = Sql.connect con (fun con ->
-                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s WHERE RC.TABLE_NAME = @table" baseQuery))
+                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.TABLE_NAME = @table" baseQuery))
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
@@ -554,7 +545,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
                                 ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ]
                 reader.Dispose()
-                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s WHERE RC.REFERENCED_TABLE_NAME = @table" baseQuery))
+                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.REFERENCED_TABLE_NAME = @table" baseQuery))
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
