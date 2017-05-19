@@ -144,21 +144,22 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       // watch out for normal strings
                       | :? string, _ -> Some o
                       | :? Guid, _ -> Some (box (o.ToString()))
-                      | :? Array as arr, _ -> 
-                          printfn "fix"
-                          printfn "%A" arr
-                          match o.GetType().GetGenericArguments() with
-                          | [| t |] -> 
-                              let elements = Seq.choose id <| seq {
-                                      for i in arr do
-                                          match i with
-                                          | FixedType iTxt -> yield Some iTxt
-                                          | _ -> yield None
-                                  }
-                                         
-                              Some (box <| "{" + String.Join(",", elements) + "}")
-                                              
-                          | _ -> None
+                      | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> 
+                          
+                          let elements = 
+                            seq {
+                                for elem in arr do
+                                    match elem with
+                                    | FixedType iTxt -> yield iTxt.ToString()
+                                    | _ -> ()
+                            }
+
+                          let arrayString = String.Join (",", elements) |> sprintf "{ %s }" 
+
+                          // Some (box <| arrayString)                       
+                          Some (box arr)
+
+
                       | _, true -> Some o
                       // can't support any other types
                       | _, _ -> None
@@ -172,15 +173,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                          match e.GetColumn pk with
                          | FixedType pkValue -> 
                             let name = table.FullName
+                            let pkName = match pkValue with | :? Array -> sprintf "%A" pkValue | _ -> pkValue.ToString()
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
                             e.ColumnValues
                             |> Seq.iter(fun (k,v) -> 
                                if k = pk then () else      
                                (fst propertyMap.[k]).AddMemberDelayed(
-                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkValue.ToString()) (if v = null then "<null>" else v.ToString()) ,et,
+                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkName) (if v = null then "<null>" else v.ToString()) ,et,
                                             GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )))
                             // return the primary key property
-                            Some <| ProvidedProperty(pkValue.ToString(),et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )
+                            Some <| ProvidedProperty(pkName,et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )
                          | _ -> None)
                       |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
 
@@ -380,16 +382,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 ct.AddMembersDelayed( fun () -> 
                     // creation methods.
                     // we are forced to load the columns here, but this is ok as the user has already 
-                    // pressed . on an IQueryable type so they are obviously interested in using this entity..
-                    let columns,_ = getTableData key 
-                    let (_,columns) =
-                        columns |> Seq.map (fun kvp -> kvp.Value)
-                                |> Seq.toList
-                                |> List.partition(fun c->c.IsNullable || c.IsPrimaryKey)
+                    // pressed . on an IQueryable type so they are obviously interested in using this entity..                    
+                    let columns, _ = getTableData key
+                    let requiredColumns =
+                        columns
+                        |> Seq.map (fun kvp -> kvp.Value)
+                        |> Seq.filter (fun c-> (not c.IsNullable) || c.IsPrimaryKey)
+
                     let normalParameters = 
-                        columns 
-                        |> List.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
-                        |> List.sortBy(fun p -> p.Name)
+                        requiredColumns 
+                        |> Seq.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
+                        |> Seq.sortBy(fun p -> p.Name)
+                        |> Seq.toList
                     
                     // Create: unit -> SqlEntity 
                     let create1 = ProvidedMethod("Create", [], entityType, InvokeCode = fun args ->                         
@@ -432,7 +436,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               e 
                           @@>)
                     let desc3 = 
-                        let cols = columns |> Seq.map(fun c -> c.Name)
+                        let cols = requiredColumns |> Seq.map(fun c -> c.Name)
                         "Item array of database columns: \r\n" + String.Join(",", cols)
                     create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
 
