@@ -152,10 +152,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
                    
                    let prettyPrint (value : obj) =
-                       match value with
-                       | null -> "<null>"
-                       | :? Array as a -> sprintf "%A" a
-                       | x -> x.ToString()
+                       let dirtyName = 
+                           match value with
+                           | null -> "<null>"
+                           | :? Array as a -> (sprintf "%A" a)
+                           | x -> x.ToString()                       
+                       dirtyName.Replace("\r", "").Replace("\n", "").Replace("\t", "")
 
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
@@ -163,8 +165,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       |> Array.choose(fun e -> 
                          match e.GetColumn pkName with
                          | FixedType pkValue -> 
-                         
-                            let getterCode = fun (args : Expr list) -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(table.FullName, pkValue) @@> 
+                            
+                            let tableName = table.FullName
+                            let getterCode (args : Expr list) = <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(tableName, pkValue) @@> 
 
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
                             for colName, colValue in e.ColumnValues do                                         
@@ -173,13 +176,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     colDefinition.AddMemberDelayed(fun() -> 
                                         ProvidedProperty( propertyName = sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
                                                         , propertyType = tableTypeDef
-                                                        , GetterCode = getterCode 
+                                                        , GetterCode = getterCode
                                                         )
                                     )
                             // return the primary key property
                             Some <| ProvidedProperty( propertyName = prettyPrint pkValue
                                                     , propertyType = tableTypeDef
-                                                    , GetterCode = getterCode 
+                                                    , GetterCode = getterCode
                                                     )
                          | _ -> None)
                       |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
