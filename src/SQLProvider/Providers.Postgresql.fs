@@ -201,30 +201,30 @@ module PostgreSQL =
             //"enum"                        , typemap<obj>                        ["Enum"]
             //"range"                       , typemap<Array>                      ["Range"]
               ]
-            |> List.choose 
-                   (function
-                   | name, Some(clrType, providerType) -> 
-                       Some (name, { ProviderTypeName = Some(name)
-                                     ClrType = clrType.AssemblyQualifiedName
-                                     DbType = getDbType providerType
-                                     ProviderType = Some(providerType) })    
-                   | _ -> None
-                   )
+            |> List.choose (
+                function
+                | name, Some(clrType, providerType) -> 
+                    Some (name, { ProviderTypeName = Some(name)
+                                  ClrType = clrType.AssemblyQualifiedName
+                                  DbType = getDbType providerType
+                                  ProviderType = Some(providerType) })    
+                | _ -> None
+            )
             |> Map.ofList
         
         let resolveAlias = function
-            | "int8" -> "bigint"
-            | "bool" -> "boolean"
-            | "varbit" -> "bit varying"
-            | "char" -> "character"
-            | "varchar" -> "character varying"
-            | "float8" -> "double precision"
-            | "int" | "int4" -> "integer"
-            | "float4" -> "real"
-            | "decimal" -> "numeric"
-            | "int2" -> "smallint"
-            | "timetz" -> "time with time zone"
-            | "timestamptz" -> "timestamp with time zone"
+            | "int8"            -> "bigint"
+            | "bool"            -> "boolean"
+            | "varbit"          -> "bit varying"
+            | "char"            -> "character"
+            | "varchar"         -> "character varying"
+            | "float8"          -> "double precision"
+            | "int" | "int4"    -> "integer"
+            | "float4"          -> "real"
+            | "decimal"         -> "numeric"
+            | "int2"            -> "smallint"
+            | "timetz"          -> "time with time zone"
+            | "timestamptz"     -> "timestamp with time zone"
             | x -> x                
 
         findDbType <- resolveAlias >> mappings.TryFind
