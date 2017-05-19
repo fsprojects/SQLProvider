@@ -103,7 +103,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
 
         let createIndividualsType (table:Table) =
-            let (et,_,_,_) = baseTypes.Force().[table.FullName]
+            let tableTypeDef,_,_,_ = baseTypes.Force().[table.FullName]
             let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", None, HideObjectMethods = true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
@@ -113,7 +113,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             t.AddMembersDelayed( fun _ ->
                let columns = prov.GetColumns(con,table)
                match prov.GetPrimaryKey table with
-               | Some pk ->
+               | Some pkName ->
                    let entities =
                         use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                         if con.State <> ConnectionState.Open then con.Open()
@@ -129,7 +129,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    let propertyMap =
                       prov.GetColumns(con,table)
                       |> Seq.choose(fun col -> 
-                        if col.Key = pk then None else
+                        if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
                         let ty = ProvidedTypeDefinition(name, None, HideObjectMethods = true )
                         ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)]))
@@ -137,52 +137,50 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
                       |> Map.ofSeq
                  
-                   // special case for guids as they are not a supported quotable constant in the TP mechanics,
-                   // but we can deal with them as strings.
                    let rec (|FixedType|_|) (o:obj) = 
                       match o, o.GetType().IsValueType with
                       // watch out for normal strings
                       | :? string, _ -> Some o
+                      // special case for guids as they are not a supported quotable constant in the TP mechanics,
+                      // but we can deal with them as strings.                 
                       | :? Guid, _ -> Some (box (o.ToString()))
-                      | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> 
-                          
-                          let elements = 
-                            seq {
-                                for elem in arr do
-                                    match elem with
-                                    | FixedType iTxt -> yield iTxt.ToString()
-                                    | _ -> ()
-                            }
-
-                          let arrayString = String.Join (",", elements) |> sprintf "{ %s }" 
-
-                          // Some (box <| arrayString)                       
-                          Some (box arr)
-
-
+                      // Postgres also supports arrays
+                      | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> Some (box arr)
                       | _, true -> Some o
                       // can't support any other types
                       | _, _ -> None
+
+                   
+                   let prettyPrint (value : obj) =
+                       match value with
+                       | null -> "<null>"
+                       | :? Array as a -> sprintf "%A" a
+                       | x -> x.ToString()
 
                    // on the main object create a property for each entity simply using the primary key 
                    let props =
                       entities
                       |> Array.choose(fun e -> 
-                         printfn "props"
-                         printfn "%s" <| (e.GetColumn pk).ToString()
-                         match e.GetColumn pk with
+                         match e.GetColumn pkName with
                          | FixedType pkValue -> 
-                            let name = table.FullName
-                            let pkName = match pkValue with | :? Array -> sprintf "%A" pkValue | _ -> pkValue.ToString()
+                         
+                            let getterCode = fun (args : Expr list) -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(table.FullName, pkValue) @@> 
+
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
-                            e.ColumnValues
-                            |> Seq.iter(fun (k,v) -> 
-                               if k = pk then () else      
-                               (fst propertyMap.[k]).AddMemberDelayed(
-                                  fun()->ProvidedProperty(sprintf "%s, %s" (pkName) (if v = null then "<null>" else v.ToString()) ,et,
-                                            GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )))
+                            for colName, colValue in e.ColumnValues do                                         
+                                if colName <> pkName then
+                                    let colDefinition, _ = propertyMap.[colName]
+                                    colDefinition.AddMemberDelayed(fun() -> 
+                                        ProvidedProperty( propertyName = sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
+                                                        , propertyType = tableTypeDef
+                                                        , GetterCode = getterCode 
+                                                        )
+                                    )
                             // return the primary key property
-                            Some <| ProvidedProperty(pkName,et,GetterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetIndividual(name,pkValue) @@> )
+                            Some <| ProvidedProperty( propertyName = prettyPrint pkValue
+                                                    , propertyType = tableTypeDef
+                                                    , GetterCode = getterCode 
+                                                    )
                          | _ -> None)
                       |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
 
