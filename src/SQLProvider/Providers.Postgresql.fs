@@ -669,11 +669,12 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 | _ ->
                     let baseQuery = @"
                         SELECT 
-                             a.attname                              AS column_name
-                            ,format_type(a.atttypid, NULL)          AS data_type_simple
-                            ,format_type(a.atttypid, a.atttypmod)   AS data_type_with_size
-                            ,(not a.attnotnull)                     AS is_nullable
-                            ,coalesce(i.indisprimary, false)        AS is_primary
+                             a.attname                                          AS column_name
+                            ,rtrim(format_type(a.atttypid, NULL), '[]')         AS base_data_type
+                            ,format_type(a.atttypid, a.atttypmod)               AS data_type_with_sizes
+                            ,a.attndims                                         AS array_dimensions
+                            ,(not a.attnotnull)                                 AS is_nullable
+                            ,coalesce(i.indisprimary, false)                    AS is_primary_key
                         FROM 
                             pg_attribute a 
                         LEFT JOIN 
@@ -691,40 +692,39 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do
+                            
+                                let dimensions = Sql.dbUnbox<int> reader.["array_dimensions"]  
+                                let baseTypeName = Sql.dbUnbox<string> reader.["base_data_type"]
+                                let fullTypeName = Sql.dbUnbox<string> reader.["data_type_with_sizes"]
+                                let baseDataType = PostgreSQL.findDbType baseTypeName
 
-                                let (|ArrayColumn|AtomicColumn|) (reader : IDataReader) = 
-                                    let dataType = Sql.dbUnbox<string> reader.["data_type"]                                
-                                    if dataType.ToLower() = "array"
-                                        // for array columns, the actual data type is stored in the UDT columns and recovered by the function 'format_type'
-                                        then
-                                            let actualDataType = (Sql.dbUnbox<string> reader.["formattedType"]).TrimEnd [| '['; ']' |]
-                                            ArrayColumn actualDataType
-                                        else
-                                            AtomicColumn dataType
-                                        
                                 let typeMapping = 
-                                    match reader with
-                                    | AtomicColumn typeName ->
-                                        PostgreSQL.findDbType (typeName.ToLower())
-                                    | ArrayColumn arrayTypeName ->
-                                        // first we get the type mapping for the actual data type
-                                        PostgreSQL.findDbType (arrayTypeName.ToLower())
-                                        |> Option.map (fun m ->
-                                            match m.ProviderType  with  
-                                            | None -> failwithf "Could not get columns for `%s`, the array type `%s` is unknown to Npgsql type mapping" table.FullName arrayTypeName
-                                            // then we convert it to a type mapping for the array
-                                            | Some t ->
-                                                // binary-add the array type to the bitflag
+                                    match dimensions with   
+                                    | 0 -> 
+                                        // plain column
+                                        baseDataType
+                                    | n ->
+                                        // array column: we convert the base type to a type mapping for the array
+                                        baseDataType
+                                        |> Option.bind (fun m -> 
+                                            let pt = m.ProviderType
+                                            // binary-add the array type to the bitflag
+                                            match pt with
+                                            | None -> None
+                                            | Some t ->                                            
                                                 let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                                                
-
-                                                { ProviderTypeName = Some "array"
-                                                ; ClrType = Type.GetType(m.ClrType).MakeArrayType().AssemblyQualifiedName
-                                                ; ProviderType = Some providerType
-                                                ; DbType = PostgreSQL.getDbType providerType
-                                                }
-                                           )
+                                                Some { ProviderTypeName = Some "array"
+                                                     ; ClrType = Type.GetType(m.ClrType).MakeArrayType(dimensions).AssemblyQualifiedName
+                                                     ; ProviderType = Some providerType
+                                                     ; DbType = PostgreSQL.getDbType providerType
+                                                     }
+                                        )
                                                                 
                                 match typeMapping with
+                                | None ->                                                     
+                                    failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName fullTypeName
+                                | Some m -> 
+
                                 let dataType = Sql.dbUnbox<string> reader.["data_type"]
                                 let charlen = 
                                     let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
@@ -739,9 +739,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     let col =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
-                                          IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY"
-                                          TypeInfo = m.ProviderTypeName |> Option.map ((+) charlen) 
+                                          IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
+                                          IsPrimaryKey = Sql.dbUnbox<bool> reader.["is_primary_key"]
+                                          TypeInfo = Some fullTypeName
                                         }
 
                                     if col.IsPrimaryKey then
@@ -753,11 +753,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                                     | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
 
-                                    yield (col.Name,col)
-
-                                | _ -> 
-                                    let typeName = match reader with | AtomicColumn t -> t | ArrayColumn t -> "array|" + t                                                    
-                                    failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName typeName ]
+                                    yield col.Name, col
+                            ]
                             |> Map.ofList
                         columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns))
             finally
