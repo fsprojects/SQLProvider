@@ -684,6 +684,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         WHERE   
                                 a.attnum > 0
                             AND a.attrelid = format('%I.%I', @schema, @table) ::regclass
+                            AND NOT a.attisdropped
                         "
                     use command = PostgreSQL.createCommand baseQuery con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
