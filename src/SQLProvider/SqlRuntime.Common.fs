@@ -49,8 +49,20 @@ type SQLiteLibrary =
     | AutoSelect = 2
 
 module public QueryEvents =
+   open System.Data.SqlClient
+
    let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
-   let private sqlEvent = new Event<string>()
+   
+   type SqlEventData = {
+       Command: string
+       Parameters: (string*obj) seq
+   }
+   with 
+      override x.ToString() =
+        let paramsString = x.Parameters |> Seq.fold (fun acc (pName, pValue) -> acc + (sprintf "%s - %A; " pName pValue)) ""
+        sprintf "%s - params %s" x.Command paramsString
+
+   let private sqlEvent = new Event<SqlEventData>()
 
    [<CLIEvent>]
    let LinqExpressionEvent = expressionEvent.Publish
@@ -59,7 +71,15 @@ module public QueryEvents =
    let SqlQueryEvent = sqlEvent.Publish
 
    let PublishExpression(e) = expressionEvent.Trigger(e)
-   let PublishSqlQuery(s) = sqlEvent.Trigger(s)
+   let PublishSqlQuery qry (spc:IDbDataParameter seq) = sqlEvent.Trigger( {Command = qry; Parameters = spc |> Seq.map(fun p -> p.ParameterName, p.Value) })
+   let PublishSqlQueryCol qry (spc:DbParameterCollection) = 
+        sqlEvent.Trigger( {Command = qry; Parameters = [for p in spc do yield (p.ParameterName, p.Value)] })
+   let PublishSqlQueryICol qry (spc:IDataParameterCollection) = 
+        sqlEvent.Trigger(
+            { Command = qry; 
+              Parameters = [ for op in spc do
+                               let p = op :?> IDataParameter
+                               yield (p.ParameterName, p.Value)] })
 
 type EntityState =
     | Unchanged

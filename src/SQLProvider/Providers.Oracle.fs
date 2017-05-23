@@ -902,7 +902,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand provider con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         let id = cmd.ExecuteScalar()
                         match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
                         | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
@@ -912,12 +912,12 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand provider con sb e fields
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand provider con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
@@ -952,7 +952,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Created ->
                             async {
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
                                 | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
@@ -964,14 +964,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             async {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)

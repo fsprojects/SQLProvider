@@ -1,3 +1,7 @@
+### 1.1.2 - 15.05.2017
+* Mysql: more efficient schema queries, PR #415
+* Firebird: Stored Procedures, PR #414
+
 ### 1.1.1 - 13.05.2017
 * Support for Mono 5 #413
 

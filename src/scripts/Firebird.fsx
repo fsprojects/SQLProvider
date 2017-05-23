@@ -22,7 +22,7 @@ type sql = SqlDataProvider<
 
 let ctx = sql.GetDataContext()
 
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 //let nfi1 = query { for ni in ctx.Dbo.Notafiscalitem do take 1; select ni} |> Seq.head
 //nfi1.Cfopa5cod <- Some "9999"

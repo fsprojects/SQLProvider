@@ -14,7 +14,7 @@ let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/Firebird
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString, ResolutionPath = resolutionPath>
 let ctx = HR.GetDataContext()
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 

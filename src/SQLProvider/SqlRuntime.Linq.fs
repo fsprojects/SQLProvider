@@ -105,8 +105,7 @@ module internal QueryImplementation =
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
-        let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
-        Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
+        Common.QueryEvents.PublishSqlQuery query parameters
         // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
         use cmd = provider.CreateCommand(con,query)
         for p in parameters do cmd.Parameters.Add p |> ignore
@@ -122,8 +121,7 @@ module internal QueryImplementation =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
-           let paramsString = parameters |> Seq.fold (fun acc p -> acc + (sprintf "%s - %A; " p.ParameterName p.Value)) ""
-           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %s" query paramsString)
+           Common.QueryEvents.PublishSqlQuery query parameters
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            for p in parameters do cmd.Parameters.Add p |> ignore
@@ -144,7 +142,7 @@ module internal QueryImplementation =
        use con = provider.CreateConnection(dc.ConnectionString)
        con.Open()
        let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
-       Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
+       Common.QueryEvents.PublishSqlQuery query parameters
        use cmd = provider.CreateCommand(con,query)
        for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
@@ -158,7 +156,7 @@ module internal QueryImplementation =
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
-           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
+           Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
@@ -188,7 +186,7 @@ module internal QueryImplementation =
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true
-           Common.QueryEvents.PublishSqlQuery (sprintf "%s - params %A" query parameters)
+           Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
