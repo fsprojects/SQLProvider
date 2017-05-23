@@ -18,7 +18,7 @@ let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=fal
 // http://nunit.org/index.php?p=vsTestAdapter&r=2.6.4
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
    
 [<Test>]
 let ``simple select with contains query``() =

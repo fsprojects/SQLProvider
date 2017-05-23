@@ -209,7 +209,7 @@ Also you can use these on group-by clause:
 To debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:
 *)
 
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 (**
 

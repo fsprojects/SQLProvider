@@ -114,7 +114,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
             let param = def.Params |> List.toArray
 
-            Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A")))))
+            Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with

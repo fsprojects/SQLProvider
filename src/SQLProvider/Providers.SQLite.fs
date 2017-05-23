@@ -616,18 +616,18 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -659,7 +659,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Created ->
                             async {
                                 use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
@@ -667,14 +667,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Modified fields ->
                             async {
                                 use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             async {
                                 use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)

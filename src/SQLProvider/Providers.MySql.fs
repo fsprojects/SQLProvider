@@ -806,18 +806,18 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand con sb e
-                        Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -852,7 +852,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         | Created ->
                             async {
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
@@ -860,14 +860,14 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             async {
                                 let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQuery cmd.CommandText
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)

@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
