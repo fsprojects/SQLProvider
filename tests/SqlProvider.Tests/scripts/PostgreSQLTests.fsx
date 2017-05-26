@@ -6,7 +6,7 @@ open FSharp.Data.Sql
 open System.Data
 
 [<Literal>]
-let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
+let connStr = " User ID=postgres;Host=192.168.99.100;Port=32768;Database=postgres;"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/Npgsql/lib/net45"
