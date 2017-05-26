@@ -422,17 +422,17 @@ module PostgreSQL =
                               r.routine_schema AS schema_name,
                               r.routine_name AS name,
                               r.data_type AS returntype,
-                              (SELECT  STRING_AGG(x.param, E'\n')
+                              COALESCE((SELECT  STRING_AGG(x.param, E'\n')
                                  FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
                                           FROM  information_schema.parameters p
                                          WHERE  p.specific_name = r.specific_name
-                                      ORDER BY  p.ordinal_position) x) AS args
+                                      ORDER BY  p.ordinal_position) x), '') AS args
                         FROM  information_schema.routines r
                        WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
                               AND r.routine_name NOT IN (SELECT  routine_name
                                                            FROM  information_schema.routines
                                                        GROUP BY  routine_name
-                                                         HAVING  COUNT(routine_name) > 1)"
+                                                         HAVING  COUNT(routine_name) > 1)"                                                         
         Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r ->
             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
@@ -440,7 +440,7 @@ module PostgreSQL =
                          PackageName = String.Empty }
             let sparams =
                 match Sql.dbUnbox<string> r.["args"] with
-                | null -> []
+                | "" -> []
                 | args ->
                     args.Split('\n')
                     |> Array.mapi (fun i arg ->
@@ -668,7 +668,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 | (true,data) when data.Count > 0 -> data
                 | _ ->
                     let baseQuery = @"
-                        SELECT 
+                        SELECT DISTINCT
                              a.attname                                          AS column_name
                             ,rtrim(format_type(a.atttypid, NULL), '[]')         AS base_data_type
                             ,format_type(a.atttypid, a.atttypmod)               AS data_type_with_sizes
@@ -681,6 +681,12 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             pg_index i 
                                 ON a.attrelid = i.indrelid
                                 AND a.attnum = ANY(i.indkey)
+                        LEFT JOIN pg_depend d
+            		            ON (d.refobjid, d.refobjsubid) = (a.attrelid, a.attnum)
+            		      LEFT JOIN pg_class s 
+                                ON d.objid = s.oid AND s.relkind = 'S'
+                          LEFT JOIN pg_type t
+                                ON s.reltype = t.oid 
                         WHERE   
                                 a.attnum > 0
                             AND a.attrelid = format('%I.%I', @schema, @table) ::regclass
