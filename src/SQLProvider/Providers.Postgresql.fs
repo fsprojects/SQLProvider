@@ -46,7 +46,7 @@ module PostgreSQL =
     let parameterType = lazy (getType "NpgsqlParameter")
     let dbType = lazy (getType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
-    let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())   
+    let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
 
     let getDbType(providerType : int) =
         let parameterType = parameterType.Value
@@ -180,11 +180,11 @@ module PostgreSQL =
               "record"                      , typemap<SqlEntity[]>                ["Refcursor"]
               "refcursor"                   , typemap<SqlEntity[]>                ["Refcursor"]
               "regtype"                     , typemap<uint32>                     ["Regtype"]
-              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]              
+              "SETOF refcursor"             , typemap<SqlEntity[]>                ["Refcursor"]
               "smallint"                    , typemap<int16>                      ["Smallint"]
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
-              "time without time zone"      , typemap<TimeSpan>                   ["Time"]              
+              "time without time zone"      , typemap<TimeSpan>                   ["Time"]
               "time with time zone",    (if isLegacyVersion.Value
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
                                          else typemap<DateTimeOffset>             ["TimeTZ"])
@@ -432,7 +432,7 @@ module PostgreSQL =
                               AND r.routine_name NOT IN (SELECT  routine_name
                                                            FROM  information_schema.routines
                                                        GROUP BY  routine_name
-                                                         HAVING  COUNT(routine_name) > 1)"                                                         
+                                                         HAVING  COUNT(routine_name) > 1)"
         Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r ->
             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
@@ -675,18 +675,16 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             ,a.attndims                                         AS array_dimensions
                             ,(not a.attnotnull)                                 AS is_nullable
                             ,coalesce(i.indisprimary, false)                    AS is_primary_key
-                        FROM 
-                            pg_attribute a 
-                        LEFT JOIN 
-                            pg_index i 
-                                ON a.attrelid = i.indrelid
-                                AND a.attnum = ANY(i.indkey)
+                        FROM pg_attribute a 
+                        LEFT JOIN pg_index i 
+                            ON a.attrelid = i.indrelid
+                            AND a.attnum = ANY(i.indkey)
                         LEFT JOIN pg_depend d
-            		            ON (d.refobjid, d.refobjsubid) = (a.attrelid, a.attnum)
-            		      LEFT JOIN pg_class s 
-                                ON d.objid = s.oid AND s.relkind = 'S'
-                          LEFT JOIN pg_type t
-                                ON s.reltype = t.oid 
+                            ON (d.refobjid, d.refobjsubid) = (a.attrelid, a.attnum)
+                        LEFT JOIN pg_class s 
+                            ON d.objid = s.oid AND s.relkind = 'S'
+                        LEFT JOIN pg_type t
+                            ON s.reltype = t.oid 
                         WHERE   
                                 a.attnum > 0
                             AND a.attrelid = format('%I.%I', @schema, @table) ::regclass
@@ -756,8 +754,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
-                                                    | [] -> [x]
-                                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                                                   | [] -> [x]
+                                                   | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
 
                                     yield col.Name, col
