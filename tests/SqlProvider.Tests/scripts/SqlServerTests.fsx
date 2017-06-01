@@ -201,6 +201,12 @@ let employees =
         yield e.MapTo<Employee>()
     ]
 
+let employeesAsync =
+    async {
+        let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
+        return ia.ResultSet
+    } |> Async.RunSynchronously
+
 type Region = {
     RegionId : int
     RegionName : string

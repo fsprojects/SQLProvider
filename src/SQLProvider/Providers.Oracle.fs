@@ -445,7 +445,7 @@ module internal Oracle =
 
         functions @ procs @ packages
 
-    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandCommon (inputParameters:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
 
         let outps =
@@ -460,9 +460,16 @@ module internal Oracle =
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
 
-        Array.append outps inps
-        |> Array.sortBy fst
-        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        let allParams =
+            Array.append outps inps
+            |> Array.sortBy fst
+
+        allParams, outps
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+
+        let allParams, outps = executeSprocCommandCommon inputParameters retCols values
+        allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         let entities =
             match retCols with
@@ -489,6 +496,38 @@ module internal Oracle =
                     )
                 Set(returnValues)
         entities
+
+    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+        async {
+
+            let allParams, outps = executeSprocCommandCommon inputParameters retCols values
+            allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+            match retCols with
+            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                      return Unit
+            | [|col|] ->
+                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                match col.TypeMapping.ProviderTypeName with
+                | Some "REF CURSOR" -> return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                | _ ->
+                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                    | Some(_,p) -> return Scalar(p.ParameterName, readParameter p)
+                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+            | cols ->
+                do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                let returnValues =
+                    cols
+                    |> Array.map (fun col ->
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        | Some(_,p) ->
+                            match col.TypeMapping.ProviderTypeName with
+                            | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                            | _ -> ScalarResultSet(col.Name, readParameter p)
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                    )
+                return Set(returnValues)
+        }
 
 type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) =
     let mutable primaryKeyColumn : IDictionary<string,PrimaryKey> = null
@@ -637,6 +676,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         member __.CreateCommand(connection,commandText) =  Oracle.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
         member __.ExecuteSprocCommand(con, param ,retCols, values:obj array) = Oracle.executeSprocCommand con param retCols values
+        member __.ExecuteSprocCommandAsync(con, param ,retCols, values:obj array) = Oracle.executeSprocCommandAsync con param retCols values
 
         member __.CreateTypeMappings(con) =
             Sql.connect con (fun con ->

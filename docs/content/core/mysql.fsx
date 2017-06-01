@@ -24,6 +24,10 @@ for a complete list of connection string options.
 let connString  = "Server=localhost;Database=HR;User=root;Password=password"
 
 (**
+
+To deal with some MySQL data connection problems you might want to add some more parameters to connectionstring:
+`Auto Enlist=false; Convert Zero Datetime=true;`
+
 ### ConnectionStringName
 
 Instead of storing the connection string in the source code, you

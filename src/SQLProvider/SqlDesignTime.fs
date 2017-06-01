@@ -262,7 +262,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             rt.AddMember resultType
             container.AddMember(rt)
             
-            resultType.AddMemberDelayed(fun () ->
+            resultType.AddMembersDelayed(fun () ->
                     Sql.ensureOpen con
                     let sprocParameters = sproc.Params con        
                     let parameters =
@@ -296,8 +296,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               rt :> Type
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
-                    ProvidedMethod("Invoke", parameters, returnType, InvokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->                      
-                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))
+                    let asyncRet = typedefof<Async<_>>.MakeGenericType([| returnType |])
+                    [ProvidedMethod("Invoke", parameters, returnType, InvokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
+                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>));
+                     ProvidedMethod("InvokeAsync", parameters, asyncRet, InvokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
+                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))]
             )
 
             ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, GetterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 

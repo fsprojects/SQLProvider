@@ -8,7 +8,7 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
         
 [<Literal>]
-let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;"
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 
@@ -179,6 +179,12 @@ let employees =
       for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
+
+let employeesAsync =
+    async {
+        let! res = ctx.Procedures.GetEmployees.InvokeAsync()
+        return res.ResultSet |> Array.map(fun e -> e.MapTo<Employee>())
+    } |> Async.RunSynchronously
 
 type Region = {
     RegionId : decimal

@@ -43,6 +43,31 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
+    let initCallSproc (dc:SqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection)=
+        
+        use com = provider.CreateCommand(con, def.Name.DbName)
+        com.CommandType <- CommandType.StoredProcedure
+
+        let columns =
+            def.Params
+            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
+            |> Map.ofList
+
+        let entity = new SqlEntity(dc, def.Name.DbName, columns)
+
+        let toEntityArray rowSet =
+            [|
+                for row in rowSet do
+                    let entity = new SqlEntity(dc, def.Name.DbName, columns)
+                    entity.SetData(row)
+                    yield entity
+            |]
+
+        let param = def.Params |> List.toArray
+
+        Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
+        com, param, entity, toEntityArray
+
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
         member __.CreateConnection() = provider.CreateConnection(connectionString)
@@ -94,27 +119,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             use con = provider.CreateConnection(connectionString)
             con.Open()
-            use com = provider.CreateCommand(con, def.Name.DbName)
-            com.CommandType <- CommandType.StoredProcedure
-
-            let columns =
-                def.Params
-                |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
-                |> Map.ofList
-
-            let entity = new SqlEntity(this, def.Name.DbName, columns)
-
-            let toEntityArray rowSet =
-                [|
-                    for row in rowSet do
-                        let entity = new SqlEntity(this, def.Name.DbName, columns)
-                        entity.SetData(row)
-                        yield entity
-                |]
-
-            let param = def.Params |> List.toArray
-
-            Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
+            let com, param, entity, toEntityArray = initCallSproc (this) def values con
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -132,6 +137,32 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
             if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
             entities
+
+        member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
+            async {
+                use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
+                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+
+                let com, param, entity, toEntityArray = initCallSproc (this) def values con
+
+                let! res = provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
+                let entities =
+                    match res with
+                    | Unit -> Unchecked.defaultof<SqlEntity>
+                    | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity
+                    | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity
+                    | Set(rowSet) ->
+                        for row in rowSet do
+                            match row with
+                            | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                            | ResultSet(name, rs) ->
+                                let data = toEntityArray rs
+                                entity.SetColumnSilent(name, data)
+                        entity
+
+                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                return entities
+            }
 
         member this.GetIndividual(table,id) : SqlEntity =
             use con = provider.CreateConnection(connectionString)

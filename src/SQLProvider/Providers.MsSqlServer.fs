@@ -217,8 +217,8 @@ module MSSqlServer =
              | _ -> Empty
            )
         |> Seq.toList
-
-    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
+    
+    let executeSprocCommandCommon (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
 
         let outps =
@@ -241,10 +241,10 @@ module MSSqlServer =
         let returnValues =
             outps |> Array.filter (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue)
 
-        Array.append returnValues inps
-        |> Array.sortBy (fun (x,_,_) -> x)
-        |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
-
+        let allParams =
+            Array.append returnValues inps
+            |> Array.sortBy (fun (x,_,_) -> x)
+        
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" ->
@@ -255,6 +255,13 @@ module MSSqlServer =
                 match outps |> Array.tryFind (fun (_,_,p) -> p.ParameterName = retCol.Name) with
                 | Some(_,_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+
+        allParams, processReturnColumn, outps
+
+    let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
+
+        let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParameters returnCols values
+        allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
         match returnCols with
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
@@ -273,6 +280,33 @@ module MSSqlServer =
         | cols ->
             use reader = com.ExecuteReader() :?> SqlDataReader
             Set(cols |> Array.map (processReturnColumn reader))
+
+
+    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
+        async {
+            let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParameters returnCols values
+            allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
+
+            match returnCols with
+            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                      return Unit
+            | [|retCol|] ->
+                match retCol.TypeMapping.ProviderTypeName with
+                | Some "cursor" ->
+                    use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
+                    let reader = readera :?> SqlDataReader
+                    let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
+                    reader.NextResult() |> ignore
+                    return result
+                | _ ->
+                    do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
+                    | Some(_,name,p) -> return Scalar(name, readParameter p)
+                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+            | cols ->
+                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                return Set(cols |> Array.map (processReturnColumn reader))
+        }
 
 type internal MSSqlServerProvider(tableNames:string) =
     let pkLookup = ConcurrentDictionary<string,string list>()
@@ -494,6 +528,7 @@ type internal MSSqlServerProvider(tableNames:string) =
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
+        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
         member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con
         
         member __.GetTables(con,_) =
