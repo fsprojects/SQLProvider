@@ -263,6 +263,7 @@ module internal SchemaProjections =
 module internal Reflection = 
     
     open System.Reflection
+    open System.IO
 
     let tryLoadAssembly path = 
          try 
@@ -284,21 +285,22 @@ module internal Reflection =
             |> List.map (fun asm ->
                 if String.IsNullOrEmpty resolutionPath 
                 then asm
-                else System.IO.Path.Combine(resolutionPath,asm))
+                else Path.Combine(resolutionPath,asm))
 
-        let currentPaths =
-            let myPath = 
+        let myPath = 
 #if INTERACTIVE
-                __SOURCE_DIRECTORY__
+            __SOURCE_DIRECTORY__
 #else
-                System.Reflection.Assembly.GetExecutingAssembly().Location
-                |> System.IO.Path.GetDirectoryName
+            System.Reflection.Assembly.GetExecutingAssembly().Location
+            |> Path.GetDirectoryName
 #endif
+        let currentPaths =
             assemblyNames 
             |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm))
 
         let allPaths =
             (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
+            |> Seq.distinct |> Seq.toList
         
         let result = 
             allPaths
@@ -307,13 +309,30 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
+
+        // Some providers have additional references to other libraries.
+        // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
+        System.AppDomain.CurrentDomain.add_AssemblyResolve (
+            System.ResolveEventHandler (fun _ args ->
+                
+                let extraPathDirs =[resolutionPath; myPath]
+                let loaded = 
+                    extraPathDirs |> List.tryPick(fun dllPath ->
+                        let fileName = args.Name.Split(',').[0] + ".dll"
+                        let assemblyPath = Path.Combine(dllPath,fileName)
+                        if File.Exists assemblyPath then
+                            Some(Assembly.LoadFrom assemblyPath)
+                        else None)
+                match loaded with
+                | Some x -> x
+                | None -> null))
         
         match result with
         | Some asm -> Choice1Of2 asm
         | None ->
             let folders = 
                 allPaths
-                |> Seq.map (IO.Path.GetDirectoryName)
+                |> Seq.map (Path.GetDirectoryName)
                 |> Seq.distinct
             let errors = 
                 allPaths
