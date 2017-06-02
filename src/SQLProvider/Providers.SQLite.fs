@@ -285,6 +285,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             p
 
         member __.ExecuteSprocCommand(_,_,_,_) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommandAsync(_,_,_,_) =  raise(NotImplementedException())
 
         member __.CreateTypeMappings(con) =
             if con.State <> ConnectionState.Open then con.Open()

@@ -258,7 +258,7 @@ module PostgreSQL =
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
 
-    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
 
         let outps =
@@ -273,9 +273,16 @@ module PostgreSQL =
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal,p))
 
-        Array.append outps inps
-        |> Array.sortBy fst
-        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        let allParams =
+            Array.append outps inps
+            |> Array.sortBy fst
+
+        allParams, outps
+
+    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+
+        let allParams, outps = executeSprocCommandCommon inputParams retCols values
+        allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         let tran = com.Connection.BeginTransaction()
         let entities =
@@ -322,6 +329,66 @@ module PostgreSQL =
             finally
                 tran.Commit()
         entities
+
+    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+        async {
+            let allParams, outps = executeSprocCommandCommon inputParams retCols values
+            allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+            let tran = com.Connection.BeginTransaction()
+                //try
+            let entities = 
+                async {
+                    match retCols with
+                    | [||] -> do! com.ExecuteNonQueryAsync()|> Async.AwaitIAsyncResult |> Async.Ignore
+                              return Unit
+                    | [|col|] ->
+                        match col.TypeMapping.ProviderTypeName with
+                        | Some "record" ->
+                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                        | Some "refcursor" ->
+                            if not isLegacyVersion.Value then
+                                let! cur = com.ExecuteScalarAsync() |> Async.AwaitTask
+                                let cursorName = cur |> unbox
+                                com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
+                                com.CommandType <- CommandType.Text
+                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                        | Some "SETOF refcursor" ->
+                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            let results = ref [ResultSet("ReturnValue", Sql.dataReaderToArray reader)]
+                            let i = ref 1
+                            while reader.NextResult() do
+                                    results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
+                                    incr(i)
+                            return Set(!results)
+                        | _ ->
+                            match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                            | Some(_,p) -> 
+                                let! co = com.ExecuteScalarAsync() |> Async.AwaitTask
+                                return Scalar(p.ParameterName, co)
+                            | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                    | cols ->
+                        com.ExecuteNonQuery() |> ignore
+                        let returnValues =
+                            cols
+                            |> Array.map (fun col ->
+                                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                                | Some(_,p) ->
+                                    match col.TypeMapping.ProviderTypeName with
+                                    | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                                    | _ -> ScalarResultSet(col.Name, readParameter p)
+                                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                            )
+                        return Set(returnValues)
+                }
+            // For some reasont there was commit also on failure?
+            // Should it be on Async.Catch ok result only?
+            let! res = entities
+            tran.Commit()
+            return res
+        }
 
     let getSprocs con =
         let query = @"SELECT  r.specific_name AS id,
@@ -544,6 +611,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
         member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
+        member __.ExecuteSprocCommandAsync(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommandAsync con param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con,_) =

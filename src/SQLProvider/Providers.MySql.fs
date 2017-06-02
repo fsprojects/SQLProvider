@@ -260,7 +260,7 @@ module MySql =
             par.Value
         else null
 
-    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
 
         let outps =
@@ -275,9 +275,9 @@ module MySql =
                  let p = createCommandParameter true ip values.[i]
                  (ip.Ordinal,p))
 
-        Array.append outps inps
-        |> Array.sortBy fst
-        |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        let allParams =
+            Array.append outps inps
+            |> Array.sortBy fst
 
         let processReturnColumn reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
@@ -289,6 +289,13 @@ module MySql =
                 match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
                 | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+
+        allParams, processReturnColumn, outps
+
+    let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+
+        let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParams retCols values
+        allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         match retCols with
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
@@ -306,6 +313,30 @@ module MySql =
         | cols ->
             use reader = com.ExecuteReader()
             Set(cols |> Array.map (processReturnColumn reader))
+
+    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+        async {
+            let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParams retCols values
+            allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+
+            match retCols with
+            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                      return Unit
+            | [|retCol|] ->
+                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                match retCol.TypeMapping.ProviderTypeName with
+                | Some "cursor" ->
+                    let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
+                    reader.NextResult() |> ignore
+                    return result
+                | _ ->
+                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                    | Some(_,p) -> return Scalar(p.ParameterName, readParameter p)
+                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+            | cols ->
+                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                return Set(cols |> Array.map (processReturnColumn reader))
+        }
 
 type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
     let pkLookup = ConcurrentDictionary<string,string list>()
@@ -453,6 +484,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateCommand(connection,commandText) = MySql.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MySql.createCommandParameter false param value
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
+        member __.ExecuteSprocCommandAsync(com,definition,retCols,values) = MySql.executeSprocCommandAsync com definition retCols values
         member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
 
         member __.GetTables(con,cs) =

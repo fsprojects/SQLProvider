@@ -259,6 +259,7 @@ type internal MSAccessProvider() =
             upcast p
 
         member __.ExecuteSprocCommand(_,_,_,_) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommandAsync(_,_,_,_) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)
 
         member __.GetTables(con,_) =

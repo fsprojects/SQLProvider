@@ -230,7 +230,26 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             Option.iter (fun l -> p.Size <- l) param.Length
             upcast p
 
-        member __.ExecuteSprocCommand(_,_,_,_) = ReturnValueType.Unit
+        /// Not implemented yet
+        member __.ExecuteSprocCommand(com,inputParams,_,_) =
+            let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
+            let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+            odbcCommand.CommandType <- CommandType.StoredProcedure;
+            inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+            odbcCommand.ExecuteNonQuery() |> ignore
+            ReturnValueType.Unit
+
+        /// Not implemented yet
+        member __.ExecuteSprocCommandAsync(com,inputParams,_,_) =
+            async {
+                let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
+                let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+                odbcCommand.CommandType <- CommandType.StoredProcedure;
+                inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+                do! odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                return ReturnValueType.Unit
+            }
+
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OdbcConnection)
 
         member __.GetTables(con,_) =

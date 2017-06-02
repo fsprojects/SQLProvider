@@ -313,6 +313,7 @@ and ISqlDataContext =
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
     abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
+    abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> Async<SqlEntity>
     abstract GetIndividual              : string * obj -> SqlEntity
     abstract SubmitChangedEntity        : SqlEntity -> unit
     abstract SubmitPendingChanges       : unit -> unit
@@ -512,6 +513,8 @@ and internal ISqlProvider =
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<string>>*bool -> string * ResizeArray<IDbDataParameter>
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
+    ///Builds a command representing a call to a stored procedure, executing async
+    abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> Async<ReturnValueType>
 
 /// GroupResultItems is an item to create key-igrouping-structure.
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
