@@ -1,3 +1,9 @@
+### 1.1.3 - 02.06.2017
+* Fix for issue when Oracle a sproc returns a cursor with an actual type
+* FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent has now better structure
+* Async stored procedure execution support (InvokeAsync)
+* PostgreSQL 3.2 support (when System.Threading.Tasks.Extensions.dll near)
+
 ### 1.1.2 - 15.05.2017
 * Mysql: more efficient schema queries, PR #415
 * Firebird: Stored Procedures, PR #414
