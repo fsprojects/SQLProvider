@@ -43,9 +43,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
-    let initCallSproc (dc:SqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection)=
+    let initCallSproc (dc:SqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
         
-        use com = provider.CreateCommand(con, def.Name.DbName)
         com.CommandType <- CommandType.StoredProcedure
 
         let columns =
@@ -66,7 +65,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         let param = def.Params |> List.toArray
 
         Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
-        com, param, entity, toEntityArray
+        param, entity, toEntityArray
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
@@ -119,7 +118,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             use con = provider.CreateConnection(connectionString)
             con.Open()
-            let com, param, entity, toEntityArray = initCallSproc (this) def values con
+            use com = provider.CreateCommand(con, def.Name.DbName)
+            let param, entity, toEntityArray = initCallSproc (this) def values con com
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -143,7 +143,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
 
-                let com, param, entity, toEntityArray = initCallSproc (this) def values con
+                use com = provider.CreateCommand(con, def.Name.DbName)
+                let param, entity, toEntityArray = initCallSproc (this) def values con com
 
                 let! res = provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
                 let entities =
