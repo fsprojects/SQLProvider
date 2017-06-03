@@ -12,7 +12,7 @@ open FSharp.Data.Sql
 type sql  = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE,
                 connectionString,
-                ResolutionPath = resolutionPath, 
+                ResolutionPath = resolutionPath,
                 CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
             >
 (*** hide ***)
@@ -39,8 +39,8 @@ let query1 =
       select (customers)}
 
 (**
-The variable that is returned from the query is sometimes called a computation. If you write evaluate 
-(e.g. a foreach loop or `|> Seq.toList`) and display the address field from the customers returned by this 
+The variable that is returned from the query is sometimes called a computation. If you write evaluate
+(e.g. a foreach loop or `|> Seq.toList`) and display the address field from the customers returned by this
 computation, you see the following output:
 
 ```
@@ -74,14 +74,14 @@ In other words, SQLProvider queries typically follow this pattern:
 
 *)
 
-let (query:IQueryable<'T>) = 
+let (query:IQueryable<'T>) =
     query {
         //for is like C# foreach
         for x in (xs:IQueryable<'T>) do
         select x
     }
 
-// 
+//
 (**
 This is a simple mechanism to understand, but it yields powerful results.
 It allows you to take complex problems, break them into manageable pieces, and solve them with code that is easy to understand and easy to maintain.
@@ -110,7 +110,7 @@ let companyNameFilter inUse queryable =
     queryable
 
 (**
-(Let's asume that your inUse some complex data: 
+(Let's asume that your inUse some complex data:
  E.g. Your sub-queries would come from other functions. Basic booleans you can just include to your where-clause)
 
 Then you can create the main query
@@ -170,7 +170,7 @@ query { for (i,n,e) in qry1 do
         select (i,n,e,u,b,y)
     } |> Seq.toArray
 
-(** 
+(**
 
 ### Nested Select Where Queries
 
@@ -182,7 +182,7 @@ This is done by not saying `|> Seq.toArray` to the first query:
 
 open System.Linq
 
-let nestedQueryTest = 
+let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Hr.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -192,4 +192,25 @@ let nestedQueryTest =
         for emp in ctx.Hr.Employees do
         where (qry1.Contains(emp.FirstName))
         select (emp.FirstName, emp.LastName)
+    } |> Seq.toArray
+
+(**
+
+## Generate composable queries from quotations
+
+You can also construct composable queries using the F# quotation mechanism. For
+example, if you need to select a filter function at runtime, you could write the
+filters as quotations, and then include them into query like that:
+
+*)
+
+let johnFilter = <@ fun (employee : sql.dataContext.``main.EmployeesEntity``) -> employee.FirstName = "John" @>
+let pamFilter = <@ fun (employee : sql.dataContext.``main.EmployeesEntity``) -> employee.FirstName = "Pam" @>
+
+let runtimeSelectedFilter = if 1 = 1 then johnFilter else pamFilter
+let employees =
+    query {
+        for emp in ctx.Main.Employees do
+        where ((%runtimeSelectedFilter) emp)
+        select emp
     } |> Seq.toArray
