@@ -109,14 +109,14 @@ In other words, SQLProvider queries typically follow this pattern:</p>
 <span class="l">7: </span>
 <span class="l">8: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> (<span class="i">query</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="o">=</span> 
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> (<span class="i">query</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="o">=</span>
     <span class="i">query</span> {
         <span class="c">//for is like C# foreach</span>
         <span class="k">for</span> <span class="i">x</span> <span class="k">in</span> (<span class="i">xs</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="k">do</span>
         <span class="i">select</span> <span class="i">x</span>
     }
 
-<span class="c">// </span>
+<span class="c">//</span>
 </code></pre></td>
 </tr>
 </table>
@@ -269,7 +269,7 @@ This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">System</span><span class="o">.</span><span class="i">Linq</span>
 
-<span class="k">let</span> <span class="i">nestedQueryTest</span> <span class="o">=</span> 
+<span class="k">let</span> <span class="i">nestedQueryTest</span> <span class="o">=</span>
     <span class="k">let</span> <span class="i">qry1</span> <span class="o">=</span> <span class="i">query</span> {
         <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
         <span class="i">where</span> (<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span><span class="o">.</span><span class="i">StartsWith</span>(<span class="s">&quot;S&quot;</span>))
@@ -279,6 +279,34 @@ This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p
         <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
         <span class="i">where</span> (<span class="i">qry1</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span>))
         <span class="i">select</span> (<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span>, <span class="i">emp</span><span class="o">.</span><span class="i">LastName</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<h2><a name="Generate-composable-queries-from-quotations" class="anchor" href="#Generate-composable-queries-from-quotations">Generate composable queries from quotations</a></h2>
+<p>You can also construct composable queries using the F# quotation mechanism. For
+example, if you need to select a filter function at runtime, you could write the
+filters as quotations, and then include them into query like that:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">johnFilter</span> <span class="o">=</span> &lt;@ <span class="k">fun</span> (<span class="i">employee</span> <span class="o">:</span> <span class="i">sql</span><span class="o">.</span><span class="i">dataContext</span><span class="o">.</span><span class="i">``main.EmployeesEntity``</span>) <span class="k">-&gt;</span> <span class="i">employee</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">=</span> <span class="s">&quot;John&quot;</span> @&gt;
+<span class="k">let</span> <span class="i">pamFilter</span> <span class="o">=</span> &lt;@ <span class="k">fun</span> (<span class="i">employee</span> <span class="o">:</span> <span class="i">sql</span><span class="o">.</span><span class="i">dataContext</span><span class="o">.</span><span class="i">``main.EmployeesEntity``</span>) <span class="k">-&gt;</span> <span class="i">employee</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">=</span> <span class="s">&quot;Pam&quot;</span> @&gt;
+
+<span class="k">let</span> <span class="i">runtimeSelectedFilter</span> <span class="o">=</span> <span class="k">if</span> <span class="n">1</span> <span class="o">=</span> <span class="n">1</span> <span class="k">then</span> <span class="i">johnFilter</span> <span class="k">else</span> <span class="i">pamFilter</span>
+<span class="k">let</span> <span class="i">employees</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+        <span class="i">where</span> ((<span class="o">%</span><span class="i">runtimeSelectedFilter</span>) <span class="i">emp</span>)
+        <span class="i">select</span> <span class="i">emp</span>
     } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
 </code></pre></td>
 </tr>
