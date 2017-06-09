@@ -137,6 +137,7 @@ module ConfigHelpers =
     
     open System
     open System.IO
+#if !NETCORE
     open System.Configuration
 
     let internal getConStringFromConfig isRuntime root (connectionStringName : string) =
@@ -166,10 +167,12 @@ module ConfigHelpers =
                     | null -> ""
                     | a -> a.ConnectionString
                 | None -> ""
+#endif
 
     let cachedConStrings = System.Collections.Concurrent.ConcurrentDictionary<string, string>()
 
     let tryGetConnectionString isRuntime root (connectionStringName:string) (connectionString:string) =
+#if !NETCORE
         if String.IsNullOrWhiteSpace(connectionString)
         then
             match isRuntime with
@@ -177,7 +180,9 @@ module ConfigHelpers =
             | _ -> cachedConStrings.GetOrAdd(connectionStringName, fun name ->
                     let fromFile = getConStringFromConfig isRuntime root connectionStringName
                     fromFile)
-        else connectionString
+        else
+#endif
+            connectionString
 
 module internal SchemaProjections = 
     
@@ -267,7 +272,11 @@ module internal Reflection =
 
     let tryLoadAssembly path = 
          try 
+#if NETCORE
+             let loadedAsm = Assembly.Load(path) 
+#else
              let loadedAsm = Assembly.LoadFrom(path) 
+#endif
              if loadedAsm <> null
              then Some(Choice1Of2 loadedAsm)
              else None
@@ -291,8 +300,13 @@ module internal Reflection =
 #if INTERACTIVE
             __SOURCE_DIRECTORY__
 #else
+#if NETCORE
+                System.Reflection.Assembly.GetEntryAssembly().Location
+                |> System.IO.Path.GetDirectoryName
+#else
             System.Reflection.Assembly.GetExecutingAssembly().Location
             |> Path.GetDirectoryName
+#endif
 #endif
         let currentPaths =
             assemblyNames 

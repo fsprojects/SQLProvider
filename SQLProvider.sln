@@ -1,7 +1,6 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -50,16 +49,43 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3
 		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 	EndProjectSection
 EndProject
+# Uncomment when Visual Studio supports FSharp .Net Standard projects:
+# Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Standard", "src\SQLProvider.Standard\SQLProvider.Standard.fsproj", "{70D6FDFE-1498-45E4-A601-E68A9A7A6121}"
+# EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|x64.Build.0 = Debug|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Debug|x86.Build.0 = Debug|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x64.ActiveCfg = Release|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x64.Build.0 = Release|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x86.ActiveCfg = Release|Any CPU
+		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x86.Build.0 = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x64.Build.0 = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x86.Build.0 = Debug|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x64.ActiveCfg = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x64.Build.0 = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x86.ActiveCfg = Release|Any CPU
+		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
