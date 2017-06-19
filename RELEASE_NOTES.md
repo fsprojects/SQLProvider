@@ -1,3 +1,7 @@
+### 1.1.4 - 19.06.2017
+* ConnectionStringName when not running from application folder #428
+* sortBy Key support to groupBy #429
+
 ### 1.1.3 - 02.06.2017
 * Fix for issue when Oracle a sproc returns a cursor with an actual type
 * FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent has now better structure
