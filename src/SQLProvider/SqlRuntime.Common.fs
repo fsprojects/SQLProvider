@@ -373,7 +373,8 @@ and internal SqlExp =
     | Take         of int * SqlExp
     | Count        of SqlExp
     | AggregateOp  of alias * SqlColumnType * SqlExp
-    with member this.HasAutoTupled() =
+    with 
+        member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
                 | SelectMany(_) -> true
@@ -388,6 +389,22 @@ and internal SqlExp =
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> aux rest
             aux this
+        member this.hasGroupBy() =
+            let rec isGroupBy = function
+                | SelectMany(_, _,GroupQuery(gdata),_) -> Some (gdata.PrimaryTable, gdata.KeyColumns)
+                | BaseTable(_) -> None
+                | SelectMany(_) -> None
+                | FilterClause(_,rest)
+                | HavingClause(_,rest)
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Union(_,_,rest)
+                | Count(rest) 
+                | AggregateOp(_,_,rest) -> isGroupBy rest
+            isGroupBy this
 
 and internal SqlQuery =
     { Filters       : Condition list
@@ -545,6 +562,7 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
     member __.AggregateSum<'T>(columnName) = 
         let x = this.fetchItem<'T> "SUM" columnName 
         x
+    member __.AggregateAverage<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
     member __.AggregateAvg<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
     member __.AggregateMin<'T>(columnName) = this.fetchItem<'T> "MIN" columnName
     member __.AggregateMax<'T>(columnName) = this.fetchItem<'T> "MAX" columnName

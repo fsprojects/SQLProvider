@@ -520,6 +520,24 @@ let ``simple select query with groupBy``() =
     Assert.AreEqual(6, res.["London"])
 
 [<Test>]
+let ``simple select query with groupBy and then sort``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for order in dc.Main.Orders do
+            groupBy (order.ShipCity) into ts
+            where (ts.Count() > 1)
+            sortBy (ts.Key)
+            thenBy (ts.Key)
+            select (ts.Key, ts.Average(fun o -> o.Freight))
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    let lonAvg = res.["London"]
+    Assert.Less(50, lonAvg)
+    Assert.Greater(100, lonAvg)
+
+[<Test>]
 let ``simple select query with groupBy multiple columns``() = 
     let dc = sql.GetDataContext()
     let qry = 

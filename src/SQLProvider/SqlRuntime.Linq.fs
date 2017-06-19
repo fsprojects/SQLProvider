@@ -296,12 +296,7 @@ module internal QueryImplementation =
              let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
                 let paramNames = HashSet<string>()
 
-                let isHaving =
-                    let rec checkExpression = function
-                        | SelectMany(_, _,GroupQuery(_),_) -> true
-                        | HavingClause(f,ex) -> true
-                        | _ -> false
-                    checkExpression source.SqlExpression
+                let isHaving = source.SqlExpression.hasGroupBy().IsSome
 
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
@@ -482,9 +477,13 @@ module internal QueryImplementation =
                              | "" -> ""
                              | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex
                         let ascending = meth.Name = "OrderBy"
+                        let gb = source.SqlExpression.hasGroupBy()
                         let sqlExpression =
                                match source.SqlExpression with
                                | BaseTable("",entity)  -> OrderBy("",key,ascending,BaseTable(alias,entity))
+                               | _ when gb.IsSome && key = GroupColumn(KeyOp("")) ->
+                                    gb.Value |> snd |> List.fold(fun exprstate (al,itm) ->
+                                        OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
                                | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
@@ -500,7 +499,13 @@ module internal QueryImplementation =
                         let ascending = meth.Name = "ThenBy"
                         match source.SqlExpression with
                         | OrderBy(_) ->
-                            let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; OrderBy(alias,key,ascending,source.SqlExpression) ; source.TupleIndex; |]
+                            let gb = source.SqlExpression.hasGroupBy()
+                            let sqlExpression =
+                               if gb.IsSome && key = GroupColumn(KeyOp("")) then
+                                    gb.Value |> snd |> List.fold(fun exprstate (al,itm) ->
+                                        OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
+                               else OrderBy(alias,key,ascending,source.SqlExpression)
+                            let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression ; source.TupleIndex; |]
                             x :?> IQueryable<_>
                         | _ -> failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
 
