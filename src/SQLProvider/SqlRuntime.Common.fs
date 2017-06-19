@@ -360,6 +360,7 @@ and Condition =
     | ConstantFalse
 
 and SelectData = LinkQuery of LinkData | GroupQuery of GroupData
+and UnionType = NormalUnion | UnionAll | Intersect | Except
 and internal SqlExp =
     | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
@@ -368,7 +369,7 @@ and internal SqlExp =
     | Projection   of Expression * SqlExp                   // entire LINQ projection expression tree
     | Distinct     of SqlExp                                // distinct indicator
     | OrderBy      of alias * SqlColumnType * bool * SqlExp // alias and column name, bool indicates ascending sort
-    | Union        of bool * string * SqlExp                // true = "union all", false = "union", and subquery
+    | Union        of UnionType * string * SqlExp           // union type and subquery
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
@@ -418,7 +419,7 @@ and internal SqlQuery =
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
-      Union         : (bool*string) option
+      Union         : (UnionType*string) option
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with

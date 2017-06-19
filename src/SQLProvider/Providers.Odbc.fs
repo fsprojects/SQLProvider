@@ -573,8 +573,10 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
-            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.UnionAll, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(UnionType.NormalUnion, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.Intersect, suquery) -> ~~(sprintf " INTERSECT %s " suquery)
+            | Some(UnionType.Except, suquery) -> ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
 
             let sql = sb.ToString()

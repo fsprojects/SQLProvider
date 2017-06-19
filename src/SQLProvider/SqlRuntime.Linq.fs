@@ -732,7 +732,7 @@ module internal QueryImplementation =
                         else
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Projection(whole,source.SqlExpression); source.TupleIndex;|] :?> IQueryable<_>
 
-                    | MethodCall(None,(MethodWithName("Union") | MethodWithName("Concat") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
+                    | MethodCall(None,(MethodWithName("Union") | MethodWithName("Concat") | MethodWithName("Intersect") | MethodWithName("Except") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
 
                         let subquery = values :?> IWithSqlService
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
@@ -750,8 +750,14 @@ module internal QueryImplementation =
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
 
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        let all = meth.Name = "Concat"
-                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(all,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        let utyp = 
+                            match meth.Name with
+                            | "Concat" -> UnionType.UnionAll
+                            | "Union" -> UnionType.NormalUnion
+                            | "Intersect" -> UnionType.Intersect
+                            | "Except" -> UnionType.Except
+                            | _ -> failwithf "Unsupported union type: %s" meth.Name
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
                     | x -> failwith ("unrecognised method call " + x.ToString())
 

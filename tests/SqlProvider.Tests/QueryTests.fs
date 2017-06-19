@@ -1201,6 +1201,12 @@ let ``simple union query test``() =
     // Union: query1 contains 69 distinct values, query2 distinct 5 and res1 is 71 distinct values
     let res1 = query1.Union(query2) |> Seq.toArray
     Assert.IsNotEmpty(res1)
+    // Intersect contains 3 values:
+    let res2 = query1.Intersect(query2) |> Seq.toArray
+    Assert.IsNotEmpty(res2)
+    // Except contains 2 values:
+    let res3 = query2.Except(query1) |> Seq.toArray
+    Assert.IsNotEmpty(res2)
     
 
 [<Test>]
