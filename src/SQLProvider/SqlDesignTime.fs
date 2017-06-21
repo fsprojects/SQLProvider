@@ -146,6 +146,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       | :? Guid, _ -> Some (box (o.ToString()))
                       // Postgres also supports arrays
                       | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> Some (box arr)
+                      // value types in general work
                       | _, true -> Some o
                       // can't support any other types
                       | _, _ -> None

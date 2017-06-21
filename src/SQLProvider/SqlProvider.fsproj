@@ -28,7 +28,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <StartAction>Program</StartAction>
-    <StartProgram>D:\Appdev\SqlProvider\tests\SqlProvider.Tests\Test.Console\bin\Debug\Test.Console.exe</StartProgram>
+    <StartProgram>..\..\..\..\postgrestest\postgrestest\postgrestest\bin\Debug\postgrestest.exe</StartProgram>
     <StartArguments>
     </StartArguments>
   </PropertyGroup>
@@ -39,7 +39,7 @@
     <OutputPath>..\..\bin</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>    
+    <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
