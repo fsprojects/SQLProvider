@@ -33,7 +33,7 @@ let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 Basic connection string used to connect to PostgreSQL instance; typical 
 connection strings for the driver apply here. See
-[PostgreSQL Connecting Strings Documentation](https://github.com/npgsql/Npgsql/wiki/User-Manual)
+[PostgreSQL Connecting Strings Documentation](http://www.npgsql.org/doc/connection-string-parameters.html)
 for a complete list of connection string options.
 
 *)
