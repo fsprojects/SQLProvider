@@ -870,7 +870,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (Firebird.fieldNotation alias column) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (Firebird.fieldNotation alias column) (if not desc then "DESC " else "")))
 
             let basetable = baseTable.Name.Replace("[","\"").Replace("]","\"").Replace("``","\"")
             if isDeleteScript then

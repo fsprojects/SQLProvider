@@ -528,7 +528,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             // Certain ODBC drivers (excel) don't like special characters in aliases, so we need to strip them
             // or else it will fail

@@ -927,7 +927,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (PostgreSQL.fieldNotation alias column) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (PostgreSQL.fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM \"%s\".\"%s\" " baseTable.Schema baseTable.Name)

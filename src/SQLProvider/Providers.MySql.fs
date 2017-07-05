@@ -764,7 +764,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (MySql.fieldNotation alias column) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (MySql.fieldNotation alias column) (if not desc then "DESC " else "")))
 
             let basetable = baseTable.FullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")
             if isDeleteScript then

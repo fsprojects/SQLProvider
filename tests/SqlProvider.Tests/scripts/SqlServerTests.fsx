@@ -5,8 +5,8 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-//let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
-let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
+let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
@@ -95,6 +95,17 @@ let topSales5ByCommission =
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
+        take 5
+    } 
+    |> Seq.map (fun e -> e.MapTo<Employee>())
+    |> Seq.toList
+
+let pagingTest = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        sortByDescending emp.CommissionPct
+        select emp
+        skip 2
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
