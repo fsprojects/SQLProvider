@@ -1263,3 +1263,15 @@ let ``simple delete where query``() =
     |> Async.RunSynchronously |> ignore
     ()
 
+[<Test>]
+let ``simple left join``() = 
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            for c in (!!) o.``main.Customers by CustomerID`` do
+            select (o.CustomerId, c.CustomerId)
+        } |> Seq.toArray
+    
+    let hasNulls = qry |> Seq.map(fst) |> Seq.filter(Option.isNone) |> Seq.isEmpty |> not
+    Assert.IsTrue hasNulls
