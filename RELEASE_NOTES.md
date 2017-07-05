@@ -1,3 +1,6 @@
+### 1.1.5 - 05.07.2017
+Fixed (sortBy desc + skip + take) combination #432
+
 ### 1.1.4 - 19.06.2017
 * ConnectionStringName when not running from application folder #428
 * sortBy Key support to groupBy #429
