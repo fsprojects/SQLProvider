@@ -1206,7 +1206,7 @@ let ``simple union query test``() =
     Assert.IsNotEmpty(res2)
     // Except contains 2 values:
     let res3 = query2.Except(query1) |> Seq.toArray
-    Assert.IsNotEmpty(res2)
+    Assert.IsNotEmpty(res3)
     
 
 [<Test>]
