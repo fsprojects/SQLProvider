@@ -333,7 +333,14 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                     | _ -> operation
                 Some(aliasLeft, CanonicalOperation(CanonicalOp.BasicMathOfColumns(opFix, aliasRight, colRight), colLeft), typLeft)
         | _ -> None
-
+    //
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
+                           (e.Type = typeof<System.DateTime> || e.Type = typeof<Option<System.DateTime>>) ->
+        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
+        match e.Arguments.[0] with
+        | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> 
+            -> Some(alias, col, e.Type)
+        | _ -> None
     | _ -> None
 
 let (|TupleSqlColumnsGet|_|) = function 
