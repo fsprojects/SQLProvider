@@ -1,5 +1,8 @@
+### 1.1.6 - 19.07.2017
+* String to datetime parsing with DateTime.Parse in SQL will convert the types if ok for db.
+
 ### 1.1.5 - 05.07.2017
-Fixed (sortBy desc + skip + take) combination #432
+* Fixed (sortBy desc + skip + take) combination #432
 
 ### 1.1.4 - 19.06.2017
 * ConnectionStringName when not running from application folder #428
