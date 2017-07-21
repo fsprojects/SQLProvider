@@ -920,15 +920,26 @@ Their utility is in forcing the compiler to check against the correct types.</p>
 static constructor parameter <code>UseOptionTypes = true</code>.
 Database null-checking is done with <code>x IS NULL</code>.
 With option types, easiest way to do that is to check <code>IsSome</code> and <code>IsNone</code>:</p>
-<p><code>fsharp
-let result =
-query {
-for order in ctx.Main.Orders do
-where (
-order.ShippedDate.IsSome &amp;&amp;
-order.ShippedDate.Value.Year = 2015)
-select (order.OrderId, order.Freight)
-} |&gt; Array.executeQueryAsync</code></p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">result</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="i">where</span> (
+            <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span><span class="o">.</span><span class="i">IsSome</span> <span class="o">&amp;&amp;</span> 
+            <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span><span class="o">.</span><span class="i">Value</span><span class="o">.</span><span class="i">Year</span> <span class="o">=</span> <span class="n">2015</span>)
+        <span class="i">select</span> (<span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>, <span class="i">order</span><span class="o">.</span><span class="i">Freight</span>)
+    } <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+</code></pre></td>
+</tr>
+</table>
 <h3><a name="Using-booleans-and-simple-variables-from-outside-a-scope-in-where-clauses" class="anchor" href="#Using-booleans-and-simple-variables-from-outside-a-scope-in-where-clauses">Using booleans and simple variables (from outside a scope) in where-clauses</a></h3>
 <p>This is how you make your code easier to read when you have multiple code paths.
 SQLProvider will optimize the SQL-clause before sending it to the database,
@@ -976,7 +987,7 @@ so it will still be simple.</p>
 </code></pre></td>
 </tr>
 </table>
-<h3><a name="Don-t-select-all-fields-if-you-don-t-need-them" class="anchor" href="#Don-t-select-all-fields-if-you-don-t-need-them">Don't select all fields if you don't need them</a></h3>
+<h3><a name="Don-t-select-all-the-fields-if-you-don-t-need-them" class="anchor" href="#Don-t-select-all-the-fields-if-you-don-t-need-them">Don't select all the fields if you don't need them</a></h3>
 <p>In general you should select only columns you need
 and not a whole object if you don't update its fields.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
@@ -998,7 +1009,7 @@ and not a whole object if you don't update its fields.</p>
 <span class="l">17: </span>
 <span class="l">18: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Select all fields, basically:</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Select all the fields from a table, basically:</span>
 <span class="c">// SELECT TOP 1 Address, City, CompanyName, </span>
 <span class="c">//      ContactName, ContactTitle, Country, </span>
 <span class="c">//      CustomerID, Fax, Phone, PostalCode, </span>
