@@ -480,7 +480,7 @@ for chunk in chunked do
 
 (**
 
-#### Creating nested query
+#### Creating a nested query
 
 By leaving the last `|> Seq.toArray` away from your main query you create a lazy
 `IQueryable<...>`-query. Which means your IN-objects are not fetched from
