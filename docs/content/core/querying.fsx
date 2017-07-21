@@ -291,7 +291,7 @@ static constructor parameter `UseOptionTypes = true`.
 Database null-checking is done with `x IS NULL`.
 With option types, easiest way to do that is to check `IsSome` and `IsNone`:
 
-``fsharp
+```fsharp
 let result =
     query {
         for order in ctx.Main.Orders do
@@ -300,7 +300,7 @@ let result =
             order.ShippedDate.Value.Year = 2015)
         select (order.OrderId, order.Freight)
     } |> Array.executeQueryAsync
-``
+```
 
 ### Using booleans and simple variables (from outside a scope) in where-clauses
 
@@ -333,14 +333,15 @@ let getOrders(futureOrders:bool, shipYears:int list) =
 
 (**
 
-### Don't select all fields if you don't need them
+
+### Don't select all the fields if you don't need them
 
 In general you should select only columns you need 
 and not a whole object if you don't update its fields.
 
 *)
 
-// Select all fields, basically:
+// Select all the fields from a table, basically:
 // SELECT TOP 1 Address, City, CompanyName, 
 //      ContactName, ContactTitle, Country, 
 //      CustomerID, Fax, Phone, PostalCode, 
@@ -379,6 +380,7 @@ someQuery |> Array.map(fun c -> c.ColumnValues |> Map.ofSeq)
 
 F# Map values are accessed like this: `myItem.["City"]`
 
+
 ### Using code logic in select-clause
 
 Don't be scared to insert non-Sql syntax to select-clauses.
@@ -410,6 +412,7 @@ You can't have a `let` inside a select, but you can have custom function calls l
 `parseTimezoneFunction` here. Just be careful, they are executed for each result item separately.
 So if you want also SQL to execute there, it's rather better to do a separate function taking
 a collection as parameter. See below.
+
 
 ### Using one sub-query to populate items
 
