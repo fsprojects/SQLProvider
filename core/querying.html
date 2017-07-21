@@ -1193,7 +1193,7 @@ SQL-IN will fail. You have two easy options to deal with that.</p>
 </code></pre></td>
 </tr>
 </table>
-<h4><a name="Creating-nested-query" class="anchor" href="#Creating-nested-query">Creating nested query</a></h4>
+<h4><a name="Creating-a-nested-query" class="anchor" href="#Creating-a-nested-query">Creating a nested query</a></h4>
 <p>By leaving the last <code>|&gt; Seq.toArray</code> away from your main query you create a lazy
 <code>IQueryable&lt;...&gt;</code>-query. Which means your IN-objects are not fetched from
 the database, but is actually a nested query.</p>
