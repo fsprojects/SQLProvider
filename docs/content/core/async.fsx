@@ -101,6 +101,8 @@ The functions to work with asynchrony are:
 Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync 
 to not execute your queries several times.
 
+Also stored procedures do support InvokeAsync.
+
 #### Database asynchrony can't be used as a way to do parallelism inside one context. 
 
 Usually database operations can't be executed as parallel inside one context/transaction. 
@@ -117,5 +119,15 @@ we have provided a little helper function for you, that is List.evaluateOneByOne
 
 Avoid network traffic between business logics (BL) and database (DB). 
 When you exit the query-computation, you cause the traffic.
+
+### Why Not to Use Async
+
+As with all the technical choices, there are drawbacks to consider.
+
+* Your codebase will be more complex. This will slow down your development speed if your developers are not F#-professionals.
+* You have to use other technologies that support async or .NET tasks, like WCF or SignalR. There is no point of doing async and then still using `RunSynchronously` at the end.
+* You may consider async as premature optimization. Starting without async and converting all later is an option, although your APIs will have to change.
+* Async and transactions is a problem with Mono environment.
+* Async will make your error stacktraces are harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.
 
 *)

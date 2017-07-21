@@ -65,7 +65,7 @@ After updating your item (row) will have the Id property.
 
 
 
-You can also create with the longer ``Create(...)``(parameters)-method like this:
+You can also create with the longer \`\`Create(...)\`\`(parameters)-method like this:
 
 *)
 
@@ -199,5 +199,84 @@ query {
     for c in ctx.Dbo.Employees do
     where (...)
 } |> Seq.``delete all items from single table``  |> Async.RunSynchronously
+
+(**
+
+### Selecting which Create() to use
+
+There are 3 overrides of create.
+
+**The ideal one to use is the long one \`\`Create(...)\`\`(...):**
+
+*)
+
+let emp = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
+
+(**
+
+This is because it will fail if your database structure changes.
+So, when your table gets new columns, the code will fail at compile time.
+Then you decide what to do with the new columns, and not let a bug to customers.
+
+But you may want to use the plain .Create() if your setup is not optimal.
+Try to avoid these conditions:
+
+* If your editor intellisense is not working for backtick-variables.
+* You have lot of nullable columns in your database.
+* You want to use F# like a dynamic language.
+
+In the last case you'll be maintaining code like this:
+
+*)
+
+let employeeId = 123
+// Got some untyped array of data from the client
+let createSomeItem (data: seq<string*obj>)  = 
+    data
+    |> Seq.map( // Some parsing and validation:
+        function 
+        // Skip some fields
+        | "EmployeeId", x
+        | "PermissionLevel", x -> "", x
+        // Convert and validate some fields
+        | "PostalCode", x -> 
+            "PostalCode", x.ToString().ToUpper().Replace(" ", "") |> box
+        | "BirthDate", x -> 
+            let bdate = x.ToString() |> DateTime.Parse
+            if bdate.AddYears(18) > DateTime.UtcNow then
+                failwith "Too young!"
+            else
+                "BirthDate", bdate.ToString("yyyy-MM-dd") |> box
+        | others -> others)
+    |> Seq.filter (fun (key,_) -> key <> "")
+                  // Add some fields:
+    |> Seq.append [|"EmployeeId", employeeId |> box; 
+                    "Country", "UK" |> box |]
+    |> ctx.Main.Employees.Create
+
+(**
+### What to do if your creation fails systematically every time
+
+Some underlying database connection libraries have problems with serializing underlying data types.
+So, if this fails:
+
+*)
+
+emp.BirthDate <- DateTime.UtcNow
+ctx.SubmitUpdates()
+
+(**
+
+Try using `.SetColumn("ColumnName", value |> box)`
+for example:
+
+*)
+
+emp.SetColumn("BirthDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH\:mm\:ss") |> box)
+ctx.SubmitUpdates()
+
+(**
+
+SetColumn takes object, so you have more control over the type serialization.
 
 *)
