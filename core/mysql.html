@@ -136,6 +136,79 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).</
 </code></pre></td>
 </tr>
 </table>
+<h2><a name="Working-with-Type-mappings" class="anchor" href="#Working-with-Type-mappings">Working with Type-mappings</a></h2>
+<h3><a name="Basic-types" class="anchor" href="#Basic-types">Basic types</a></h3>
+<p>MySql.Data types are not always the ones you have used to in .NET, so here is a little help:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">myEmp</span> <span class="o">=</span> 
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">emp</span><span class="o">.</span><span class="i">EmployeeId</span> <span class="o">&gt;</span> <span class="n">10u</span>)
+        <span class="i">select</span> (<span class="i">emp</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
+
+<span class="k">let</span> <span class="i">myUint32</span> <span class="o">=</span> <span class="n">10u</span>
+<span class="k">let</span> <span class="i">myInt64</span> <span class="o">=</span> <span class="n">10L</span>
+<span class="k">let</span> <span class="i">myUInt64</span> <span class="o">=</span> <span class="n">10UL</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="System-Guid-Serialization" class="anchor" href="#System-Guid-Serialization">System.Guid Serialization</a></h3>
+<p>If you use string column to save a Guid to database, you may want to skip the hyphens ("-")
+when serializing them:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">myGuid</span> <span class="o">=</span> <span class="i">System</span><span class="o">.</span><span class="i">Guid</span><span class="o">.</span><span class="i">NewGuid</span>() <span class="c">//e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b</span>
+
+<span class="k">let</span> <span class="i">myGuidAsString</span> <span class="o">=</span> <span class="i">myGuid</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;N&quot;</span>) <span class="c">// e.g. &quot;b8fa7880ce4443158d60a160e5734c4b&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The problem with this is that you should never forgot to use "N" in anywhere.</p>
+<h3><a name="System-DateTime-Serialization" class="anchor" href="#System-DateTime-Serialization">System.DateTime Serialization</a></h3>
+<p>Another problem with MySql.Data is that DateTime conversions may fail if your culture is
+not the expected one.</p>
+<p>So you may have to convert datetimes as strings instead of using just <code>myEmp.BirthDate &lt;- DateTime.UtcNow</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">myEmp</span><span class="o">.</span><span class="i">SetColumn</span>(<span class="s">&quot;BirthDate&quot;</span>, <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>Notice that if you use <code>.ToString("s")</code> there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
+And comparing two datetimes as strings with "T" and without "T" will generate a problem with the time-part.</p>
+<p>If your DateTime columns are strings in the database, you can use <code>DateTime.Parse</code> in your where-queries:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">longAgo</span> <span class="o">=</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">AddYears</span>(<span class="o">-</span><span class="n">5</span>)
+<span class="k">let</span> <span class="i">myEmp</span> <span class="o">=</span> 
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">DateTime</span><span class="o">.</span><span class="i">Parse</span>(<span class="i">emp</span><span class="o">.</span><span class="i">HireDate</span>) <span class="o">&gt;</span> <span class="i">longAgo</span>)
+        <span class="i">select</span> (<span class="i">emp</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
+</code></pre></td>
+</tr>
+</table>
+<p>You should be fine even with canonical functions like <code>DateTime.Parse(a.MeetStartTime).AddMinutes(10.)</code>.</p>
 <h2><a name="Caveats-Additional-Info" class="anchor" href="#Caveats-Additional-Info">Caveats / Additional Info</a></h2>
 <p>Check <a href="general.html">General</a>, <a href="parameters.html">Static Parameters</a> and <a href="querying.html">Querying</a> documentation.</p>
 <p>More to be added.</p>

@@ -108,7 +108,7 @@
 </tr>
 </table>
 <p>After updating your item (row) will have the Id property.</p>
-<p>You can also create with the longer <code>Create(...)</code>(parameters)-method like this:</p>
+<p>You can also create with the longer ``Create(...)``(parameters)-method like this:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">``Create(FirstName, LastName)``</span>(<span class="s">&quot;Don&quot;</span>, <span class="s">&quot;Syme&quot;</span>)
@@ -315,18 +315,108 @@ output of .ColumnValues:</p>
 <span class="l">2: </span>
 <span class="l">3: </span>
 <span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">query</span> {
     <span class="k">for</span> <span class="i">c</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Dbo</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
     <span class="i">where</span> (<span class="o">..</span><span class="o">.</span>)
 } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">``delete all items from single table``</span>  <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">RunSynchronously</span>
-
-<span class="o">*</span>)
 </code></pre></td>
 </tr>
 </table>
+<h3><a name="Selecting-which-Create-to-use" class="anchor" href="#Selecting-which-Create-to-use">Selecting which Create() to use</a></h3>
+<p>There are 3 overrides of create.</p>
+<p><strong>The ideal one to use is the long one ``Create(...)``(...):</strong></p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">``Create(FirstName, LastName)``</span>(<span class="s">&quot;Don&quot;</span>, <span class="s">&quot;Syme&quot;</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>This is because it will fail if your database structure changes.
+So, when your table gets new columns, the code will fail at compile time.
+Then you decide what to do with the new columns, and not let a bug to customers.</p>
+<p>But you may want to use the plain .Create() if your setup is not optimal.
+Try to avoid these conditions:</p>
+<ul>
+<li>If your editor intellisense is not working for backtick-variables.</li>
+<li>You have lot of nullable columns in your database.</li>
+<li>You want to use F# like a dynamic language.</li>
+</ul>
+<p>In the last case you'll be maintaining code like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">employeeId</span> <span class="o">=</span> <span class="n">123</span>
+<span class="c">// Got some untyped array of data from the client</span>
+<span class="k">let</span> <span class="i">createSomeItem</span> (<span class="i">data</span><span class="o">:</span> <span class="i">seq</span><span class="o">&lt;</span><span class="i">string</span><span class="o">*</span><span class="i">obj</span><span class="o">&gt;</span>)  <span class="o">=</span> 
+    <span class="i">data</span>
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">map</span>( <span class="c">// Some parsing and validation:</span>
+        <span class="k">function</span> 
+        <span class="c">// Skip some fields</span>
+        | <span class="s">&quot;EmployeeId&quot;</span>, <span class="i">x</span>
+        | <span class="s">&quot;PermissionLevel&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> <span class="s">&quot;&quot;</span>, <span class="i">x</span>
+        <span class="c">// Convert and validate some fields</span>
+        | <span class="s">&quot;PostalCode&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> 
+            <span class="s">&quot;PostalCode&quot;</span>, <span class="i">x</span><span class="o">.</span><span class="i">ToString</span>()<span class="o">.</span><span class="i">ToUpper</span>()<span class="o">.</span><span class="i">Replace</span>(<span class="s">&quot; &quot;</span>, <span class="s">&quot;&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>
+        | <span class="s">&quot;BirthDate&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> 
+            <span class="k">let</span> <span class="i">bdate</span> <span class="o">=</span> <span class="i">x</span><span class="o">.</span><span class="i">ToString</span>() <span class="o">|&gt;</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">Parse</span>
+            <span class="k">if</span> <span class="i">bdate</span><span class="o">.</span><span class="i">AddYears</span>(<span class="n">18</span>) <span class="o">&gt;</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span> <span class="k">then</span>
+                <span class="i">failwith</span> <span class="s">&quot;Too young!&quot;</span>
+            <span class="k">else</span>
+                <span class="s">&quot;BirthDate&quot;</span>, <span class="i">bdate</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;yyyy-MM-dd&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>
+        | <span class="i">others</span> <span class="k">-&gt;</span> <span class="i">others</span>)
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">filter</span> (<span class="k">fun</span> (<span class="i">key</span>,_) <span class="k">-&gt;</span> <span class="i">key</span> <span class="o">&lt;&gt;</span> <span class="s">&quot;&quot;</span>)
+                  <span class="c">// Add some fields:</span>
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">append</span> [|<span class="s">&quot;EmployeeId&quot;</span>, <span class="i">employeeId</span> <span class="o">|&gt;</span> <span class="i">box</span>; 
+                    <span class="s">&quot;Country&quot;</span>, <span class="s">&quot;UK&quot;</span> <span class="o">|&gt;</span> <span class="i">box</span> |]
+    <span class="o">|&gt;</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">Create</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="What-to-do-if-your-creation-fails-systematically-every-time" class="anchor" href="#What-to-do-if-your-creation-fails-systematically-every-time">What to do if your creation fails systematically every time</a></h3>
+<p>Some underlying database connection libraries have problems with serializing underlying data types.
+So, if this fails:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">emp</span><span class="o">.</span><span class="i">BirthDate</span> <span class="o">&lt;-</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span>
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Try using <code>.SetColumn("ColumnName", value |&gt; box)</code>
+for example:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">emp</span><span class="o">.</span><span class="i">SetColumn</span>(<span class="s">&quot;BirthDate&quot;</span>, <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>)
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>SetColumn takes object, so you have more control over the type serialization.</p>
 
 
         </div>

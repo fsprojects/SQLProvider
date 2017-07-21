@@ -130,6 +130,7 @@ situation is that MS-SQL-server handles async well and MySQL not so.)</p>
 </ul>
 <p>Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync
 to not execute your queries several times.</p>
+<p>Also stored procedures do support InvokeAsync.</p>
 <h4><a name="Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context" class="anchor" href="#Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context">Database asynchrony can't be used as a way to do parallelism inside one context.</a></h4>
 <p>Usually database operations can't be executed as parallel inside one context/transaction.
 That is an anti-pattern in general: the network lag between database and your logics server
@@ -144,6 +145,15 @@ say Async.Parallel as that may corrupt your data. To avoid custom imperative whi
 we have provided a little helper function for you, that is List.evaluateOneByOne.</p>
 <p>Avoid network traffic between business logics (BL) and database (DB).
 When you exit the query-computation, you cause the traffic.</p>
+<h3><a name="Why-Not-to-Use-Async" class="anchor" href="#Why-Not-to-Use-Async">Why Not to Use Async</a></h3>
+<p>As with all the technical choices, there are drawbacks to consider.</p>
+<ul>
+<li>Your codebase will be more complex. This will slow down your development speed if your developers are not F#-professionals.</li>
+<li>You have to use other technologies that support async or .NET tasks, like WCF or SignalR. There is no point of doing async and then still using <code>RunSynchronously</code> at the end.</li>
+<li>You may consider async as premature optimization. Starting without async and converting all later is an option, although your APIs will have to change.</li>
+<li>Async and transactions is a problem with Mono environment.</li>
+<li>Async will make your error stacktraces are harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.</li>
+</ul>
 
 
         </div>
