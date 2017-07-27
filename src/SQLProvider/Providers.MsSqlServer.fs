@@ -826,7 +826,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC" else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
@@ -868,8 +868,10 @@ type internal MSSqlServerProvider(tableNames:string) =
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
-            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.UnionAll, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(UnionType.NormalUnion, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.Intersect, suquery) -> ~~(sprintf " INTERSECT %s " suquery)
+            | Some(UnionType.Except, suquery) -> ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
 
             match sqlQuery.Skip, sqlQuery.Take with

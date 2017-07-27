@@ -81,7 +81,7 @@ module internal QueryExpressionTransformer =
                                     match me.Method.Name with
                                     | "Count" -> Some (CountOp key)
                                     | "Sum" -> Some (SumOp key)
-                                    | "Avg" -> Some (AvgOp key)
+                                    | "Avg" | "Average" -> Some (AvgOp key)
                                     | "Min" -> Some (MinOp key)
                                     | "Max" -> Some (MaxOp key)
                                     | _ -> None

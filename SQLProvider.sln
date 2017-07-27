@@ -21,6 +21,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlProvider", "src\SQLProvi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-91DA-43CE-B343-C54614949C13}"
 	ProjectSection(SolutionItems) = preProject
+		docs\content\core\async.fsx = docs\content\core\async.fsx
 		docs\content\core\composable.fsx = docs\content\core\composable.fsx
 		docs\content\core\constraints-relationships.fsx = docs\content\core\constraints-relationships.fsx
 		docs\content\core\crud.fsx = docs\content\core\crud.fsx

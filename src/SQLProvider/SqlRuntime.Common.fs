@@ -360,6 +360,7 @@ and Condition =
     | ConstantFalse
 
 and SelectData = LinkQuery of LinkData | GroupQuery of GroupData
+and UnionType = NormalUnion | UnionAll | Intersect | Except
 and internal SqlExp =
     | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
@@ -368,12 +369,13 @@ and internal SqlExp =
     | Projection   of Expression * SqlExp                   // entire LINQ projection expression tree
     | Distinct     of SqlExp                                // distinct indicator
     | OrderBy      of alias * SqlColumnType * bool * SqlExp // alias and column name, bool indicates ascending sort
-    | Union        of bool * string * SqlExp                // true = "union all", false = "union", and subquery
+    | Union        of UnionType * string * SqlExp           // union type and subquery
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
     | AggregateOp  of alias * SqlColumnType * SqlExp
-    with member this.HasAutoTupled() =
+    with 
+        member this.HasAutoTupled() =
             let rec aux = function
                 | BaseTable(_) -> false
                 | SelectMany(_) -> true
@@ -388,6 +390,22 @@ and internal SqlExp =
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> aux rest
             aux this
+        member this.hasGroupBy() =
+            let rec isGroupBy = function
+                | SelectMany(_, _,GroupQuery(gdata),_) -> Some (gdata.PrimaryTable, gdata.KeyColumns)
+                | BaseTable(_) -> None
+                | SelectMany(_) -> None
+                | FilterClause(_,rest)
+                | HavingClause(_,rest)
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Union(_,_,rest)
+                | Count(rest) 
+                | AggregateOp(_,_,rest) -> isGroupBy rest
+            isGroupBy this
 
 and internal SqlQuery =
     { Filters       : Condition list
@@ -401,7 +419,7 @@ and internal SqlQuery =
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
-      Union         : (bool*string) option
+      Union         : (UnionType*string) option
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with
@@ -545,6 +563,7 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
     member __.AggregateSum<'T>(columnName) = 
         let x = this.fetchItem<'T> "SUM" columnName 
         x
+    member __.AggregateAverage<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
     member __.AggregateAvg<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
     member __.AggregateMin<'T>(columnName) = this.fetchItem<'T> "MIN" columnName
     member __.AggregateMax<'T>(columnName) = this.fetchItem<'T> "MAX" columnName

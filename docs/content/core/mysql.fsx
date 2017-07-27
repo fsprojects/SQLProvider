@@ -5,6 +5,8 @@
 (*** hide ***)
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
+open System
+
 (**
 
 
@@ -97,6 +99,69 @@ let employees =
 
 (**
 
+## Working with Type-mappings
+
+### Basic types
+
+MySql.Data types are not always the ones you have used to in .NET, so here is a little help:
+
+*)
+
+let myEmp = 
+    query {
+        for emp in ctx.Hr.Employees do
+        where (emp.EmployeeId > 10u)
+        select (emp)
+    } |> Seq.head
+
+let myUint32 = 10u
+let myInt64 = 10L
+let myUInt64 = 10UL
+
+(**
+
+### System.Guid Serialization
+
+If you use string column to save a Guid to database, you may want to skip the hyphens ("-")
+when serializing them:
+
+*)
+let myGuid = System.Guid.NewGuid() //e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b
+
+let myGuidAsString = myGuid.ToString("N") // e.g. "b8fa7880ce4443158d60a160e5734c4b"
+
+(**
+The problem with this is that you should never forgot to use "N" in anywhere.
+
+### System.DateTime Serialization
+
+Another problem with MySql.Data is that DateTime conversions may fail if your culture is 
+not the expected one.
+
+So you may have to convert datetimes as strings instead of using just `myEmp.BirthDate <- DateTime.UtcNow`:
+*)
+
+myEmp.SetColumn("BirthDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH\:mm\:ss") |> box)
+
+(**
+
+Notice that if you use `.ToString("s")` there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
+And comparing two datetimes as strings with "T" and without "T" will generate a problem with the time-part.
+
+
+If your DateTime columns are strings in the database, you can use `DateTime.Parse` in your where-queries:
+
+```fsharp
+let longAgo = DateTime.UtcNow.AddYears(-5)
+let myEmp = 
+    query {
+        for emp in ctx.Hr.Employees do
+        where (DateTime.Parse(emp.HireDate) > longAgo)
+        select (emp)
+    } |> Seq.head
+```
+
+You should be fine even with canonical functions like `DateTime.Parse(a.MeetStartTime).AddMinutes(10.)`.
 
 ## Caveats / Additional Info
 

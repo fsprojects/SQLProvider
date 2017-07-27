@@ -20,6 +20,9 @@ let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=fal
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
    
+
+let isMono = Type.GetType ("Mono.Runtime") <> null
+
 [<Test>]
 let ``simple select with contains query``() =
     let dc = sql.GetDataContext()
@@ -518,6 +521,24 @@ let ``simple select query with groupBy``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
+
+[<Test>]
+let ``simple select query with groupBy and then sort``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for order in dc.Main.Orders do
+            groupBy (order.ShipCity) into ts
+            where (ts.Count() > 1)
+            sortBy (ts.Key)
+            thenBy (ts.Key)
+            select (ts.Key, ts.Average(fun o -> o.Freight))
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    let lonAvg = res.["London"]
+    Assert.Less(50, lonAvg)
+    Assert.Greater(100, lonAvg)
 
 [<Test>]
 let ``simple select query with groupBy multiple columns``() = 
@@ -1039,14 +1060,18 @@ let ``simple select into a generic type`` () =
 
 [<Test >]
 let ``simple select into a generic type with pipe`` () =
-    let dc = sql.GetDataContext()
-    let qry = 
-        query {
-            for emp in dc.Main.Customers do
-            select ({First=emp.ContactName} |> D)
-        } |> Seq.toList
+    if isMono then 
+        Console.WriteLine "This is not supported in Mono: simple select into a generic type with pipe"
+        Assert.IsFalse false
+    else
+        let dc = sql.GetDataContext()
+        let qry = 
+            query {
+                for emp in dc.Main.Customers do
+                select ({First=emp.ContactName} |> D)
+            } |> Seq.toList
 
-    CollectionAssert.IsNotEmpty qry
+        CollectionAssert.IsNotEmpty qry
 
 [<Test >]
 let ``simple select with bool outside query``() = 
@@ -1183,6 +1208,12 @@ let ``simple union query test``() =
     // Union: query1 contains 69 distinct values, query2 distinct 5 and res1 is 71 distinct values
     let res1 = query1.Union(query2) |> Seq.toArray
     Assert.IsNotEmpty(res1)
+    // Intersect contains 3 values:
+    let res2 = query1.Intersect(query2) |> Seq.toArray
+    Assert.IsNotEmpty(res2)
+    // Except contains 2 values:
+    let res3 = query2.Except(query1) |> Seq.toArray
+    Assert.IsNotEmpty(res3)
     
 
 [<Test>]
@@ -1239,3 +1270,15 @@ let ``simple delete where query``() =
     |> Async.RunSynchronously |> ignore
     ()
 
+[<Test>]
+let ``simple left join``() = 
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            for c in (!!) o.``main.Customers by CustomerID`` do
+            select (o.CustomerId, c.CustomerId)
+        } |> Seq.toArray
+    
+    let hasNulls = qry |> Seq.map(fst) |> Seq.filter(Option.isNone) |> Seq.isEmpty |> not
+    Assert.IsTrue hasNulls

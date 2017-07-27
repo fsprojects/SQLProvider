@@ -906,8 +906,10 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(true, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
-            | Some(false, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.UnionAll, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
+            | Some(UnionType.NormalUnion, suquery) -> ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.Intersect, suquery) -> ~~(sprintf " INTERSECT %s " suquery)
+            | Some(UnionType.Except, suquery) -> ~~(sprintf " MINUS %s " suquery)
             | None -> ()
 
             //I think on oracle this will potentially impact the ordering as the row num is generated before any

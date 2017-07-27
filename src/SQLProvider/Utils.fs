@@ -146,7 +146,10 @@ module ConfigHelpers =
 
                 let root, paths =
                     if isRuntime && entryAssembly.IsSome
-                    then entryAssembly.Value.Location, [entryAssembly.Value.GetName().Name + ".exe.config"]
+                    then entryAssembly.Value.Location, [
+                            entryAssembly.Value.GetName().Name + ".exe.config";
+                            Path.Combine(root, entryAssembly.Value.GetName().Name + ".exe.config")
+                        ]
                     else root, []
 
                 let configFilePath =
