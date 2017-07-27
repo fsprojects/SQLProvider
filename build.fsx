@@ -258,7 +258,7 @@ Target "BuildDocs" DoNothing
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
-  =?> ("RunTests", isLocalBuild || not isMono) //Travis can't run database tests
+  ==> "RunTests"
   ==> "CleanDocs"
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
   =?> ("GenerateHelp",isLocalBuild && not isMono)
