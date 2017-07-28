@@ -37,11 +37,12 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">AdventureWorks</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">MSSQLSERVER</span>, <span class="i">connStr</span>, <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionFolder</span><span class="o">&gt;</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">AdventureWorks</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">MSSQLSERVER</span>, <span class="i">connStr</span><span class="o">&gt;</span>
 <span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">AdventureWorks</span><span class="o">.</span><span class="i">GetDataContext</span>()
 </code></pre></td>
 </tr>
 </table>
+<p>Querying views is just like querying tables. But executing a stored procedure or a function is a bit different:</p>
 <p>Execute a function in the Adventure Works database</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
@@ -53,6 +54,37 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">ctx</span><span class="o">.</span><span class="i">Procedures</span><span class="o">.</span><span class="i">UspLogError</span><span class="o">.</span><span class="i">Invoke</span>(<span class="n">1</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>Example of executing a procedure with async and reading the results:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">uspGetManagerEmployees</span> <span class="o">=</span>
+    <span class="i">async</span> {
+        <span class="k">let!</span> <span class="i">res</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Procedures</span><span class="o">.</span><span class="i">UspGetManagerEmployees</span><span class="o">.</span><span class="i">InvokeAsync</span> <span class="n">2</span>
+        <span class="k">let</span> <span class="i">mapped</span> <span class="o">=</span> <span class="i">res</span><span class="o">.</span><span class="i">ResultSet</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">map</span>(<span class="k">fun</span> <span class="i">i</span> <span class="k">-&gt;</span> <span class="i">i</span><span class="o">.</span><span class="i">ColumnValues</span> <span class="o">|&gt;</span> <span class="i">Map</span><span class="o">.</span><span class="i">ofSeq</span>)
+        <span class="i">mapped</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">iter</span>(<span class="k">fun</span> <span class="i">i</span> <span class="k">-&gt;</span> 
+            <span class="i">printfn</span> <span class="s">&quot;Name: %O, Level: %O&quot;</span> <span class="i">i</span><span class="o">.</span>[<span class="s">&quot;FirstName&quot;</span>] <span class="i">i</span><span class="o">.</span>[<span class="s">&quot;RecursionLevel&quot;</span>]
+        )
+    } <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+
+    <span class="c">// Name: Roberto, Level: 1</span>
+    <span class="c">// Name: Rob, Level: 2</span>
+    <span class="c">// Name: Gail, Level: 2</span>
+    <span class="c">// ...</span>
 </code></pre></td>
 </tr>
 </table>
