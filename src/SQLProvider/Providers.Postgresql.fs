@@ -100,7 +100,8 @@ module PostgreSQL =
             | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
             | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
-            | AddMinutes x -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
+            | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
+            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column

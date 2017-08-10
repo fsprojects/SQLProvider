@@ -357,7 +357,8 @@ type internal MSSqlServerProvider(tableNames:string) =
             | AddDays(SqlFloat x) -> sprintf "DATEADD(DAY, %f, %s)" x column // SQL ignores decimal part :-(
             | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATEADD(DAY, %s, %s)" (fieldNotation al2 col2) column
             | AddHours x -> sprintf "DATEADD(HOUR, %f, %s)" x column
-            | AddMinutes x -> sprintf "DATEADD(MINUTE, %f, %s)" x column
+            | AddMinutes(SqlFloat x) -> sprintf "DATEADD(MINUTE, %f, %s)" x column
+            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DATEADD(MINUTE, %s, %s)" (fieldNotation al2 col2) column
             | AddSeconds x -> sprintf "DATEADD(SECOND, %f, %s)" x column
             // Math functions
             | Truncate -> sprintf "TRUNCATE(%s)" column

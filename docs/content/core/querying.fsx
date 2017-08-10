@@ -194,8 +194,8 @@ Operations do support parameters to be either constants or other SQL-columns (e.
 .AddMinutes(f) | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddSeconds(f) | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 
-AddYears and AddDays parameter can be either constant or other SQL-column, except in SQLite which supports only constant. 
-AddMonths, AddHours, AddMinutes and AddSeconds supports only constants for now. 
+AddYears, AddDays and AddMinutes parameter can be either constant or other SQL-column, except in SQLite which supports only constant. 
+AddMonths, AddHours and AddSeconds supports only constants for now. 
 Odbc standard doesn't seem to have a date-add functionality.
 .NET has float parameters on some time-functions like AddDays, but SQL may ignore the decimal fraction.
 
