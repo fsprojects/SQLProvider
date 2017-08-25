@@ -856,10 +856,10 @@ GROUP SourceFiles
 
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/AssemblyReader.fs (1dab4f94411500794342f61f877feab772e5a754)
-    src/AssemblyReaderReflection.fs (1dab4f94411500794342f61f877feab772e5a754)
-    src/ProvidedTypes.fs (1dab4f94411500794342f61f877feab772e5a754)
-    src/ProvidedTypes.fsi (1dab4f94411500794342f61f877feab772e5a754)
-    src/ProvidedTypesContext.fs (1dab4f94411500794342f61f877feab772e5a754)
+    src/AssemblyReader.fs (dc5ac01a1ac288eceb1fd6f12a5d388236f4f8e5)
+    src/AssemblyReaderReflection.fs (dc5ac01a1ac288eceb1fd6f12a5d388236f4f8e5)
+    src/ProvidedTypes.fs (dc5ac01a1ac288eceb1fd6f12a5d388236f4f8e5)
+    src/ProvidedTypes.fsi (dc5ac01a1ac288eceb1fd6f12a5d388236f4f8e5)
+    src/ProvidedTypesContext.fs (dc5ac01a1ac288eceb1fd6f12a5d388236f4f8e5)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (7163511b50de985ab8e90822bdd1d4a7f836b58c)
+    src/Code/ExpressionOptimizer.fs (297f7d9f75c7d8d86b1d00bae0b535d8e48f572d)
