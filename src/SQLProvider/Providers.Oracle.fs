@@ -101,7 +101,8 @@ module internal Oracle =
             | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '%f' DAY)" column x // SQL ignores decimal part :-(
             | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '%f' HOUR)" column x
-            | AddMinutes x -> sprintf "(%s + INTERVAL '%f' MINUTE)" column x
+            | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '%f' MINUTE)" column x
+            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "(%s + INTERVAL '%f' SECOND)" column x
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column

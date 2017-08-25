@@ -1,3 +1,6 @@
+### 1.1.7 - 10.08.2017
+* Canonical operation AddMinutes supports now other sql-columns as parameter.
+
 ### 1.1.6 - 19.07.2017
 * String to datetime parsing with DateTime.Parse in SQL will convert the types if ok for db.
 

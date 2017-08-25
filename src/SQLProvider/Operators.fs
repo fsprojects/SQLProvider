@@ -71,7 +71,7 @@ module ColumnSchema =
     | AddMonths of int
     | AddDays of SqlFloatOrColumn
     | AddHours of float
-    | AddMinutes of float
+    | AddMinutes of SqlFloatOrColumn
     | AddSeconds of float
     // Numerical functions
     | Abs

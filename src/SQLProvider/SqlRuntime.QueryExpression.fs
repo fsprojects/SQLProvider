@@ -464,6 +464,7 @@ module internal QueryExpressionTransformer =
 
                     | AddYears(SqlIntCol(al, col2)) -> AddYears(SqlIntCol(resolver al, visitCanonicals resolverfunc col2))
                     | AddDays(SqlNumCol(al, col2)) -> AddDays(SqlNumCol(resolver al, visitCanonicals resolverfunc col2))
+                    | AddMinutes(SqlNumCol(al, col2)) -> AddMinutes(SqlNumCol(resolver al, visitCanonicals resolverfunc col2))
                     | x -> x
                 CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col) 
             | x -> x

@@ -92,7 +92,8 @@ module MySql =
             | AddDays(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
             | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
-            | AddMinutes x -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
+            | AddMinutes(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
+            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
             // Math functions
             | Truncate -> sprintf "TRUNCATE(%s)" column

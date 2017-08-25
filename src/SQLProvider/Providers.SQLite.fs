@@ -89,7 +89,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
             | AddDays(SqlFloat x) -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
             | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
-            | AddMinutes x -> sprintf "DATETIME(%s, '+%f minute')" column x
+            | AddMinutes(SqlFloat x) -> sprintf "DATETIME(%s, '+%f minute')" column x
             | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
             // Math functions
             | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column

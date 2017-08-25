@@ -161,7 +161,8 @@ module Firebird =
             | AddDays(SqlFloat x) -> sprintf "DATEADD(%f DAY TO %s)" x column // SQL ignores decimal part :-(
             | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATEADD(%s DAY TO %s)" (fieldNotation al2 col2) column
             | AddHours x -> sprintf "DATEADD(%f HOUR TO %s)" x column
-            | AddMinutes x -> sprintf "DATEADD(%f MINUTE TO %s)" x column
+            | AddMinutes(SqlFloat x) -> sprintf "DATEADD(%f MINUTE TO %s)" x column
+            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DATEADD(%s MINUTE TO %s)" (fieldNotation al2 col2) column
             | AddSeconds x -> sprintf "DATEADD(%f SECOND TO %s)" x column
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column
