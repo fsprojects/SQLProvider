@@ -152,9 +152,9 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).</
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">myEmp</span> <span class="o">=</span> 
     <span class="i">query</span> {
-        <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
-        <span class="i">where</span> (<span class="i">emp</span><span class="o">.</span><span class="i">EmployeeId</span> <span class="o">&gt;</span> <span class="n">10u</span>)
-        <span class="i">select</span> (<span class="i">emp</span>)
+        <span class="k">for</span> <span class="i">jh</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Hr</span><span class="o">.</span><span class="i">JobHistory</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">jh</span><span class="o">.</span><span class="i">Years</span> <span class="o">&gt;</span> <span class="n">10u</span>)
+        <span class="i">select</span> (<span class="i">jh</span>)
     } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
 
 <span class="k">let</span> <span class="i">myUint32</span> <span class="o">=</span> <span class="n">10u</span>
