@@ -137,7 +137,10 @@ module MySql =
             [
                 for r in dt.Rows do
                     let clrType = getClrType (string r.["DataType"])
-                    let oleDbType = string r.["TypeName"]
+                    let oleDbType =
+                        let format = (string r.["CreateFormat"])
+                        if format <> null && format.ToUpper().Contains("UNSIGNED") then format
+                        else  string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
@@ -513,7 +516,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
                 let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
+				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.COLUMN_TYPE
 				                  FROM INFORMATION_SCHEMA.COLUMNS c
                                   left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
                                    on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
@@ -533,7 +536,9 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         let maxlen = 
                             if reader.IsDBNull(2) then ""
                             else reader.GetString(2)
-                        match MySql.findDbType dt with
+                        let isUnsigned = not(reader.IsDBNull(6)) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
+                        let udt = if isUnsigned then dt + " unsigned" else dt
+                        match MySql.findDbType udt with
                         | Some(m) ->
                             let col =
                                 { Column.Name = reader.GetString(0)
