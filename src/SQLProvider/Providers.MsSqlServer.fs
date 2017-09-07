@@ -395,16 +395,22 @@ type internal MSSqlServerProvider(tableNames:string) =
         sb.Clear() |> ignore
         match haspk, pk with
         | true, [itm] ->
-            ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.%s VALUES (%s);"
-                entity.Table.Schema entity.Table.Name
-                (String.Join(",",columnNames))
-                itm
-                (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+            if values |> Array.isEmpty then
+                ~~(sprintf "INSERT INTO [%s].[%s] OUTPUT inserted.%s DEFAULT VALUES;" entity.Table.Schema entity.Table.Name itm)
+            else
+                ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.%s VALUES (%s);"
+                    entity.Table.Schema entity.Table.Name
+                    (String.Join(",",columnNames))
+                    itm
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
         | _ -> 
-            ~~(sprintf "INSERT INTO [%s].[%s] (%s) VALUES (%s);"
-                entity.Table.Schema entity.Table.Name
-                (String.Join(",",columnNames))
-                (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+            if values |> Array.isEmpty then
+                ~~(sprintf "INSERT INTO [%s].[%s] DEFAULT VALUES;" entity.Table.Schema entity.Table.Name )
+            else
+                ~~(sprintf "INSERT INTO [%s].[%s] (%s) VALUES (%s);"
+                    entity.Table.Schema entity.Table.Name
+                    (String.Join(",",columnNames))
+                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
         cmd.Parameters.AddRange(values)
         cmd.CommandText <- sb.ToString()
