@@ -150,7 +150,7 @@ let antartica =
     let result =
         query {
             for reg in ctx.Hr.Regions do
-            where (reg.RegionId = 5u)
+            where (reg.RegionId = 5)
             select reg
         } |> Seq.toList
     match result with
@@ -158,7 +158,7 @@ let antartica =
     | _ -> 
         let newRegion = ctx.Hr.Regions.Create() 
         newRegion.RegionName <- "Antartica"
-        newRegion.RegionId <- 5u
+        newRegion.RegionId <- 5
         ctx.SubmitUpdates()
         newRegion
 
@@ -170,7 +170,7 @@ ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 
-ctx.Procedures.AddJobHistory.Invoke(101u, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60u)
+ctx.Procedures.AddJobHistory.Invoke(101, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
 //Support for sprocs that return ref cursors
@@ -216,7 +216,7 @@ getemployees (new System.DateTime(1999,4,1))
 
 //********************** Functions ***************************//
 
-let fullName = ctx.Functions.EmpFullname.Invoke(100u).ReturnValue
+let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 //********************** Thread test ***************************//
 
@@ -225,7 +225,7 @@ open System.Threading
 
 let taskarray = 
     [1u..100u] |> Seq.map(fun itm ->
-        let itm = rnd.Next(1, 300) |> uint32
+        let itm = rnd.Next(1, 300)
         let t1 = Tasks.Task.Run(fun () ->
             let ctx1 = HR.GetDataContext()
             let country1 = 
@@ -260,6 +260,15 @@ ctx.GetUpdates()
 
 query {
     for count in ctx.Hr.Countries do
-    where (count.CountryName = "Andorra" || count.RegionId = 99934u)
+    where (count.CountryName = "Andorra" || count.RegionId = 99934)
 } |> Seq.``delete all items from single table`` 
 |> Async.RunSynchronously
+
+//******************** Unsigned mapping test **********************//
+
+query {
+    for c in ctx.Hr.JobHistory do
+    where (c.Years > 3u)
+    select c.Years
+} |> Seq.tryHead
+
