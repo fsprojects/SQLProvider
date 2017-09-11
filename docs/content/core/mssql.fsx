@@ -69,7 +69,7 @@ if it is null in the database.
 
 let [<Literal>] useOptTypes  = true
 
-let sql =
+type sql =
     SqlDataProvider<
         dbVendor,
         connString,
