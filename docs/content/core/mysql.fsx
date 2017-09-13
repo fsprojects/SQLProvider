@@ -109,9 +109,9 @@ MySql.Data types are not always the ones you have used to in .NET, so here is a 
 
 let myEmp = 
     query {
-        for emp in ctx.Hr.Employees do
-        where (emp.EmployeeId > 10u)
-        select (emp)
+        for jh in ctx.Hr.JobHistory do
+        where (jh.Years > 10u)
+        select (jh)
     } |> Seq.head
 
 let myUint32 = 10u

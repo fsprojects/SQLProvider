@@ -1,3 +1,7 @@
+### 1.1.8 - 07.09.2017
+* Breaking change for MYSQL/MariaDB: Unsigned types mapping fixed #437
+* Fix for MSSQL tables with no-values insert #440
+
 ### 1.1.7 - 10.08.2017
 * Canonical operation AddMinutes supports now other sql-columns as parameter.
 
