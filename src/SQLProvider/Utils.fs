@@ -276,7 +276,7 @@ module internal Reflection =
     let tryLoadAssembly path = 
          try 
 #if NETCORE
-             let loadedAsm = Assembly.Load(path) 
+             let loadedAsm = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(path) 
 #else
              let loadedAsm = Assembly.LoadFrom(path) 
 #endif
@@ -326,7 +326,7 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
-
+#if !NETCORE
         // Some providers have additional references to other libraries.
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
         System.AppDomain.CurrentDomain.add_AssemblyResolve (
@@ -343,7 +343,7 @@ module internal Reflection =
                 match loaded with
                 | Some x -> x
                 | None -> null))
-        
+#endif        
         match result with
         | Some asm -> Choice1Of2 asm
         | None ->

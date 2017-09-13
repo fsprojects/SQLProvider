@@ -201,9 +201,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let propTy = if nullable then typedefof<option<_>>.MakeGenericType(ty) else ty
                         let name = c.Name
                         let prop = 
-                            ProvidedProperty(
+                            ctxt.ProvidedProperty(
                                 SchemaProjections.buildFieldName(name),propTy,
-                                GetterCode = (fun args ->
+                                (fun args ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                     Expr.Call(args.[0],meth,[Expr.Value name])
@@ -327,7 +327,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let typ = ctxt.ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
                     parent.AddMember(typ)
                     parent.AddMember(ctxt.ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
-                    typ.AddMember(ctxt.ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
+                    typ.AddMember(ctxt.ProvidedConstructor([ctxt.ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
                     typ.AddMembersDelayed(fun () -> Sql.ensureOpen con; (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
                     createdTypes.Add(path, typ)
                 | _ -> failwithf "Could not generate package path type undefined root or previous type"    
@@ -495,9 +495,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
             [ let meth = 
-                ProvidedMethod ("GetDataContext", [],
-                                serviceType, IsStaticMethod=true,
-                                InvokeCode = (fun _ ->
+                ctxt.ProvidedMethod ("GetDataContext", [],
+                                serviceType, isStatic=true,
+                                invokeCode = (fun _ ->
                                     let runtimePath = config.ResolutionFolder
                                     let runtimeAssembly = config.ResolutionFolder
                                     let runtimeConStr = 
@@ -510,9 +510,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    
               yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
+              let meth = ctxt.ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString",typeof<string>);], 
+                                                            serviceType, isStatic=true,
+                                                            invokeCode = (fun args ->
                                                                 let runtimeAssembly = config.ResolutionFolder
                                                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr) :> ISqlDataContext @@> ))
                       
@@ -521,9 +521,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield meth
 
 
-              let meth = ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> 
+              let meth = ctxt.ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString",typeof<string>);ctxt.ProvidedParameter("resolutionPath",typeof<string>);],
+                                                            serviceType, isStatic=true,
+                                                            invokeCode = (fun args -> 
                                                                 let runtimeAssembly = config.ResolutionFolder
                                                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr) :> ISqlDataContext  @@>))
 
@@ -532,9 +532,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
               yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
+              let meth = ctxt.ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
+                                                            serviceType, isStatic=true,
+                                                            invokeCode = (fun args ->
                                                                 let runtimePath = config.ResolutionFolder
                                                                 let runtimeAssembly = config.ResolutionFolder
                                                                 let runtimeConStr = 
@@ -548,9 +548,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    
               yield meth
 
-              let meth = ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)], 
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
+              let meth = ctxt.ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString", typeof<string>); ctxt.ProvidedParameter("transactionOptions", typeof<TransactionOptions>)], 
+                                                            serviceType, isStatic=true,
+                                                            invokeCode = (fun args ->
                                                                 let runtimeAssembly = config.ResolutionFolder
                                                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1]) :> ISqlDataContext @@> ))
                       
@@ -560,9 +560,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield meth
 
 
-              let meth = ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("resolutionPath", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> 
+              let meth = ctxt.ProvidedMethod ("GetDataContext", [ctxt.ProvidedParameter("connectionString", typeof<string>); ctxt.ProvidedParameter("resolutionPath", typeof<string>); ctxt.ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
+                                                            serviceType, isStatic=true,
+                                                            invokeCode = (fun args -> 
                                                                 let runtimeAssembly = config.ResolutionFolder
                                                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2]) :> ISqlDataContext  @@>))
 

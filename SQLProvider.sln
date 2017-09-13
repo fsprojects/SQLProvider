@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -42,17 +42,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3C867-4E92-4A85-BE21-5839A66F47E5}"
 	ProjectSection(SolutionItems) = preProject
+		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 		src\scripts\GraphViz.fsx = src\scripts\GraphViz.fsx
 		src\scripts\MsSqlServerInspector.fsx = src\scripts\MsSqlServerInspector.fsx
 		src\scripts\MySqlInspector.fsx = src\scripts\MySqlInspector.fsx
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
-		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 	EndProjectSection
 EndProject
-# Uncomment when Visual Studio supports FSharp .Net Standard projects:
-# Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Standard", "src\SQLProvider.Standard\SQLProvider.Standard.fsproj", "{70D6FDFE-1498-45E4-A601-E68A9A7A6121}"
-# EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SQLProvider.Standard", "src\SQLProvider.Standard\SQLProvider.Standard.fsproj", "{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,24 +74,27 @@ Global
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x64.Build.0 = Release|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x86.ActiveCfg = Release|Any CPU
 		{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}.Release|x86.Build.0 = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x64.Build.0 = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Debug|x86.Build.0 = Debug|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|Any CPU.Build.0 = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x64.ActiveCfg = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x64.Build.0 = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x86.ActiveCfg = Release|Any CPU
-		{70D6FDFE-1498-45E4-A601-E68A9A7A6121}.Release|x86.Build.0 = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|x64.Build.0 = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Debug|x86.Build.0 = Debug|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|x64.ActiveCfg = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|x64.Build.0 = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|x86.ActiveCfg = Release|Any CPU
+		{FBD2D502-BA0F-491D-8E6B-3D01F66F4D5F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6C63075C-B7D8-46EE-B9BA-DE66FA612F2F}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

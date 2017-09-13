@@ -20,8 +20,10 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
+#if !NETCORE
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
+#endif
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
