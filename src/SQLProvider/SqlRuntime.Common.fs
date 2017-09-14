@@ -310,6 +310,7 @@ and ReturnValueType =
 
 and ISqlDataContext =
     abstract ConnectionString           : string
+    abstract CommandTimeout             : Option<int>
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
     abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
@@ -522,9 +523,9 @@ and internal ISqlProvider =
     /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
     /// Writes all pending database changes to database
-    abstract ProcessUpdates : IDbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions -> unit
+    abstract ProcessUpdates : IDbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> unit
     /// Asynchronously writes all pending database changes to database
-    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions -> Async<unit>
+    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> Async<unit>
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing
     /// the columns from the various table aliases that are in the SELECT projection

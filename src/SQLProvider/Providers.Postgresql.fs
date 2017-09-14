@@ -983,7 +983,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities, transactionOptions) =
+        member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -1004,17 +1004,23 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     | Created ->
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -1025,7 +1031,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -1049,6 +1055,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             async {
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
@@ -1057,6 +1065,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             async {
                                 let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
@@ -1064,6 +1074,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             async {
                                 let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)

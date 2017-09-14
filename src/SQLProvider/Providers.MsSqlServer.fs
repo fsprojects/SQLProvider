@@ -893,7 +893,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities, transactionOptions) =
+        member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -913,17 +913,23 @@ type internal MSSqlServerProvider(tableNames:string) =
                     | Created ->
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey pkLookup id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -935,7 +941,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -957,6 +963,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                             async {
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 CommonTasks.checkKey pkLookup id e
                                 e._State <- Unchanged
@@ -965,6 +973,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                             async {
                                 let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
@@ -972,6 +982,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                             async {
                                 let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
