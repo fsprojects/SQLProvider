@@ -228,7 +228,7 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 <tr class="even">
 <td><p>groupBy</p></td>
 <td align="center"><p>x</p></td>
-<td><p>Initially only very simple groupBy (and having) is supported: On single-table with single-key-column and direct aggregates like <code>.Count()</code> or direct parameter calls like <code>.Sum(fun entity -&gt; entity.UnitPrice)</code>.</p></td>
+<td><p>Initially only very simple groupBy (and having) is supported: On single-table with direct aggregates like <code>.Count()</code> or direct parameter calls like <code>.Sum(fun entity -&gt; entity.UnitPrice)</code>.</p></td>
 </tr>
 <tr class="odd">
 <td><p>groupJoin</p></td>
@@ -383,7 +383,7 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 <tr class="odd">
 <td><p>where</p></td>
 <td align="center"><p>x</p></td>
-<td><p>Server side variables must be plain without .NET operations, so you can't say where (col.Days(+1)&gt;2)</p></td>
+<td><p>Server side variables must be plain without .NET operations or use the supported canonical functions.</p></td>
 </tr>
 </tbody>
 </table>

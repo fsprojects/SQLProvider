@@ -92,7 +92,7 @@ if it is null in the database.</p>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> [&lt;<span class="i">Literal</span>&gt;] <span class="i">useOptTypes</span>  <span class="o">=</span> <span class="k">true</span>
 
-<span class="k">let</span> <span class="i">sql</span> <span class="o">=</span>
+<span class="k">type</span> <span class="i">sql</span> <span class="o">=</span>
     <span class="i">SqlDataProvider</span><span class="o">&lt;</span>
         <span class="i">dbVendor</span>,
         <span class="i">connString</span>,
