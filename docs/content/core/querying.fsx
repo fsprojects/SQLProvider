@@ -115,7 +115,7 @@ exactlyOne               |X |                                                   
 exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
-groupBy                  |x | Initially only very simple groupBy (and having) is supported: On single-table with single-key-column and direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`. | 
+groupBy                  |x | Initially only very simple groupBy (and having) is supported: On single-table with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`. | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 
@@ -146,7 +146,7 @@ thenBy	                 |X |                                                    
 thenByDescending	     |X |                                                       |   
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
-where                    |x | Server side variables must be plain without .NET operations, so you can't say where (col.Days(+1)>2)  | 
+where                    |x | Server side variables must be plain without .NET operations or use the supported canonical functions. | 
 
 ### Canonical Functions 
 

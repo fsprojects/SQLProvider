@@ -556,7 +556,7 @@ type internal MSAccessProvider() =
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities, transactionOptions) =
+        member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
@@ -582,6 +582,8 @@ type internal MSAccessProvider() =
                             let cmd = createInsertCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
                             let id = cmd.ExecuteScalar()
                             CommonTasks.checkKey pkLookup id e
                             e._State <- Unchanged
@@ -589,12 +591,16 @@ type internal MSAccessProvider() =
                             let cmd = createUpdateCommand con sb e fields
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
                             e._State <- Unchanged
                         | Delete ->
                             let cmd = createDeleteCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
                             // remove the pk to prevent this attempting to be used again
                             e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -608,7 +614,7 @@ type internal MSAccessProvider() =
                 ()
                 //con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             entities.Keys |> Seq.iter (fun e -> printfn "entity - %A" e.ColumnValues)
@@ -635,6 +641,8 @@ type internal MSAccessProvider() =
                                     let cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    if timeout.IsSome then
+                                        cmd.CommandTimeout <- timeout.Value
                                     let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                     CommonTasks.checkKey pkLookup id e
                                     e._State <- Unchanged
@@ -644,6 +652,8 @@ type internal MSAccessProvider() =
                                     let cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    if timeout.IsSome then
+                                        cmd.CommandTimeout <- timeout.Value
                                     do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                     e._State <- Unchanged
                                 }
@@ -652,6 +662,8 @@ type internal MSAccessProvider() =
                                     let cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    if timeout.IsSome then
+                                        cmd.CommandTimeout <- timeout.Value
                                     do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                     // remove the pk to prevent this attempting to be used again
                                     e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)

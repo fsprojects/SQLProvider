@@ -582,7 +582,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             let sql = sb.ToString()
             (sql,parameters)
 
-        member this.ProcessUpdates(con, entities, transactionOptions) =
+        member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -606,6 +606,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     | Created ->
                         let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         let id = (lastInsertId con).ExecuteScalar()
                         CommonTasks.checkKey pkLookup id e
@@ -613,11 +615,15 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
@@ -628,7 +634,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -651,6 +657,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             async {
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 let id = (lastInsertId con).ExecuteScalar()
                                 CommonTasks.checkKey pkLookup id e
@@ -660,6 +668,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             async {
                                 let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
@@ -667,6 +677,8 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
                             async {
                                 let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)

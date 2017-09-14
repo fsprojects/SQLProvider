@@ -131,3 +131,15 @@ type sql = SqlDataProvider<
             UseOptionTypes = useOptionTypes
           >
 
+(**
+
+# SQL Provider Data Context Parameters
+
+Besides the static parameters the `.GetDataContext(...)` method has optional parameters:
+
+* connectionString - The database connection string on runtime.
+* resolutionPath - The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types
+* transactionOptions - TransactionOptions for the transaction created on SubmitChanges.
+* commandTimeout - SQL command timeout. Maximum time for single SQL-command in seconds.
+			  
+*)
