@@ -204,12 +204,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let prop = 
                             ctxt.ProvidedProperty(
                                 SchemaProjections.buildFieldName(name),propTy,
-                                (fun args ->
+                                (fun (args:Expr list) ->
                                     let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                                                else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                     Expr.Call(args.[0],meth,[Expr.Value name])
                                 ),
-                                (fun args ->
+                                (fun (args:Expr list) ->
                                     if nullable then 
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
@@ -289,10 +289,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                   let prop = 
                                       ctxt.ProvidedProperty(
                                           name,ty,
-                                          (fun args ->
+                                          (fun (args:Expr list) ->
                                               let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                               Expr.Call(args.[0],meth,[Expr.Value name])),
-                                          (fun args ->
+                                          (fun (args:Expr list) ->
                                               let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
                                               Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                                   rt.AddMember prop)
