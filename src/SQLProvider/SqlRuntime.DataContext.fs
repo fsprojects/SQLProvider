@@ -233,3 +233,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
             new SqlEntity(this, tableName, columns)
+
+[<assembly: Microsoft.FSharp.Core.CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DesignTime")>]
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("FSharp.Data.SqlProvider.DesignTime")>]
+do()

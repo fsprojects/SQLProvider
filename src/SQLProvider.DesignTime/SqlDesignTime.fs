@@ -12,6 +12,7 @@ open FSharp.Data.Sql.Runtime
 open FSharp.Data.Sql.Common
 open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
+open FSharp.Data.Sql
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)

@@ -117,6 +117,7 @@ Target "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
     
     CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvider.dll"
+    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvider.DesignTime.dll"
 
     NuGet (fun p ->
         { p with

@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4EEA1AD8-E8A9-4D54-BC39-D5F536366945}</ProjectGuid>
+    <ProjectGuid>{8faed688-af8e-4816-bc2d-222698bac3f1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>SqlProvider</RootNamespace>
-    <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
+    <AssemblyName>FSharp.Data.SqlProvider.DesignTime</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
-    <Name>FSharp.Data.SqlProvider</Name>
+    <Name>FSharp.Data.SqlProvider.DesignTime</Name>
     <SccProjectName>SAK</SccProjectName>
     <SccProvider>SAK</SccProvider>
     <SccAuxPath>SAK</SccAuxPath>
@@ -23,7 +23,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>..\..\bin</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NO_GENERATIVE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
     </DocumentationFile>
@@ -52,30 +52,22 @@
   </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
-      <Link>ExpressionOptimizer.fs</Link>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi">
+      <Link>ProvidedTypes.fsi</Link>
     </Compile>
-    <Compile Include="Operators.fs" />
-    <Compile Include="Utils.fs" />
-    <Compile Include="SqlSchema.fs" />
-    <Compile Include="DataTable.fs" />
-    <Compile Include="SqlRuntime.Patterns.fs" />
-    <Compile Include="QuotationHelpers.fs" />
-    <Compile Include="SqlRuntime.Transactions.fs" />
-    <Compile Include="SqlRuntime.Common.fs" />
-    <Compile Include="Providers.MsSqlServer.fs" />
-    <Compile Include="Providers.MSAccess.fs" />
-    <Compile Include="Providers.MySql.fs" />
-    <Compile Include="Providers.Odbc.fs" />
-    <Compile Include="Providers.Oracle.fs" />
-    <Compile Include="Providers.Postgresql.fs" />
-    <Compile Include="Providers.SQLite.fs" />
-    <Compile Include="Providers.Firebird.fs" />
-    <Compile Include="SqlRuntime.QueryExpression.fs" />
-    <Compile Include="SqlRuntime.Linq.fs" />
-    <Compile Include="SqlRuntime.Async.fs" />
-    <Compile Include="SqlRuntime.DataContext.fs" />
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs">
+      <Link>ProvidedTypes.fs</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReader.fs">
+      <Link>AssemblyReader.fs</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReaderReflection.fs">
+      <Link>AssemblyReaderReflection.fs</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypesContext.fs">
+      <Link>ProvidedTypesContext.fs</Link>
+    </Compile>
+    <Compile Include="SqlDesignTime.fs" />
     <None Include="..\..\docs\content\core\operators.fsx">
       <Link>operators.fsx</Link>
     </None>
@@ -92,6 +84,13 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLProvider\SqlProvider.fsproj">
+      <Name>SqlProvider</Name>
+      <Project>{4eea1ad8-e8a9-4d54-bc39-d5f536366945}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
