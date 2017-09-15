@@ -20,8 +20,10 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
+#if !NETCORE
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
+#endif
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
@@ -231,3 +233,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
             new SqlEntity(this, tableName, columns)
+
+[<assembly: Microsoft.FSharp.Core.CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DesignTime")>]
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("FSharp.Data.SqlProvider.DesignTime")>]
+do()

@@ -1,10 +1,9 @@
 source https://nuget.org/api/v2
-framework >= 4.0
 
 nuget Nuget.CommandLine ~> 2
 nuget FAKE
 nuget FSharp.Formatting
-nuget FSharp.Core >= 3.1.2.1 lowest_matching:true, redirects:force
+nuget FSharp.Core >= 3.1.2.5 lowest_matching:true, redirects:force
 nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
@@ -15,12 +14,14 @@ github fsharp/FAKE modules/Octokit/Octokit.fsx
 group SourceFiles
     source https://nuget.org/api/v2
 
+    github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReader.fs
+    github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReaderReflection.fs
+    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypesContext.fs
     github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
     github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs
 
 group Scripts
-    framework >= 4.0
     source https://nuget.org/api/v2
 
     nuget MySql.Data

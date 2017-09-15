@@ -1,0 +1,81 @@
+﻿<Project Sdk="FSharp.NET.Sdk;Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DefineConstants>NETCORE</DefineConstants>
+    <OutputPath>..\..\bin</OutputPath>
+	<AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
+    <Name>FSharp.Data.SqlProvider</Name>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
+      <Link>ExpressionOptimizer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Operators.fs">
+      <Link>Operators.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Utils.fs">
+      <Link>Utils.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlSchema.fs">
+      <Link>SqlSchema.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\DataTable.fs">
+      <Link>DataTable.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Patterns.fs">
+      <Link>SqlRuntime.Patterns.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\QuotationHelpers.fs">
+      <Link>QuotationHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Transactions.fs">
+      <Link>SqlRuntime.Transactions.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Common.fs">
+      <Link>SqlRuntime.Common.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.MsSqlServer.fs">
+      <Link>Providers.MsSqlServer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.MySql.fs">
+      <Link>Providers.MySql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.Oracle.fs">
+      <Link>Providers.Oracle.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.Postgresql.fs">
+      <Link>Providers.Postgresql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.SQLite.fs">
+      <Link>Providers.SQLite.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Providers.Firebird.fs">
+      <Link>Providers.Firebird.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.QueryExpression.fs">
+      <Link>SqlRuntime.QueryExpression.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Linq.fs">
+      <Link>SqlRuntime.Linq.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.Async.fs">
+      <Link>SqlRuntime.Async.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
+      <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
+      <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="4.2.*" />
+    <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="System.Reflection" Version="4.3.*" />
+    <PackageReference Include="System.Runtime" Version="4.3.*" />
+    <PackageReference Include="System.Data.Common" Version="4.3.*" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XDocument" Version="4.3.*" />
+  </ItemGroup>
+</Project>
