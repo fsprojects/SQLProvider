@@ -25,7 +25,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions) =
+type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -69,6 +69,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
+        member __.CommandTimeout with get() = commandTimeout
         member __.CreateConnection() = provider.CreateConnection(connectionString)
 
         member __.GetPrimaryKeyDefinition(tableName) =
@@ -85,7 +86,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
-                provider.ProcessUpdates(con, pendingChanges, transactionOptions)
+                provider.ProcessUpdates(con, pendingChanges, transactionOptions, commandTimeout)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             )
 
@@ -95,7 +96,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 let maxWait = DateTime.Now.AddSeconds(3.)
                 while (pendingChanges |> Seq.exists(fun e -> match e.Key._State with Unchanged | Deleted -> true | _ -> false)) && DateTime.Now < maxWait do
                     do! Async.Sleep 150 // we can't let async lock but this helps.
-                do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions)
+                do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions, commandTimeout)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             }
 
@@ -119,6 +120,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use con = provider.CreateConnection(connectionString)
             con.Open()
             use com = provider.CreateCommand(con, def.Name.DbName)
+            if commandTimeout.IsSome then
+                com.CommandTimeout <- commandTimeout.Value
             let param, entity, toEntityArray = initCallSproc (this) def values con com
 
             let entities =
@@ -144,6 +147,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
 
                 use com = provider.CreateCommand(con, def.Name.DbName)
+                if commandTimeout.IsSome then
+                    com.CommandTimeout <- commandTimeout.Value
                 let param, entity, toEntityArray = initCallSproc (this) def values con com
 
                 let! res = provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
@@ -179,6 +184,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     // this fail case should not really be possible unless the runtime database is different to the design-time one
                     failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
             use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
+            if commandTimeout.IsSome then
+                com.CommandTimeout <- commandTimeout.Value
             //todo: establish pk SQL data type
             com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
             if con.State <> ConnectionState.Open then con.Open()

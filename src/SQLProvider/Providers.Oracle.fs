@@ -924,7 +924,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 let sql = sb.ToString()
                 (sql,parameters)
 
-        member this.ProcessUpdates(con, entities, transactionOptions) =
+        member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
@@ -946,6 +946,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | Created ->
                         let cmd = createInsertCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
                         match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
                         | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
@@ -956,11 +958,15 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | Modified fields ->
                         let cmd = createUpdateCommand provider con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        if timeout.IsSome then
+                            cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
@@ -971,7 +977,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             finally
                 con.Close()
 
-        member this.ProcessUpdatesAsync(con, entities, transactionOptions) =
+        member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
             let provider = this :> ISqlProvider
 
@@ -996,6 +1002,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                             async {
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
                                 match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
                                 | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
@@ -1008,6 +1016,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                             async {
                                 let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 e._State <- Unchanged
                             }
@@ -1015,6 +1025,8 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                             async {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                if timeout.IsSome then
+                                    cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)

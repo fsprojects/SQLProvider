@@ -70,7 +70,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
         let transactionOptions = TransactionOptions.Default
-        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions)
+        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, None)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -491,83 +491,85 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let defaultTransactionOptionsExpr = <@@ TransactionOptions.Default @@>
         rootType.AddMembers [ serviceType ]
         rootType.AddMembersDelayed (fun () -> 
-            [ let meth = 
-                ProvidedMethod ("GetDataContext", [],
-                                serviceType, IsStaticMethod=true,
-                                InvokeCode = (fun _ ->
-                                    let runtimePath = config.ResolutionFolder
-                                    let runtimeAssembly = config.ResolutionFolder
-                                    let runtimeConStr = 
-                                        <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                            | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                            | cs -> cs @@>
-                                    <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr) :> ISqlDataContext @@>))
+            [ 
+              let constr =     "connectionString","The database runtime connection string",typeof<string>
+              let respath =    "resolutionPath", "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types",typeof<string>
+              let transopt =   "transactionOptions", "TransactionOptions for the transaction created on SubmitChanges.", typeof<TransactionOptions>
+              let cmdTimeout = "commandTimeout", "SQL command timeout. Maximum time for single SQL-command in seconds.", typeof<int>
 
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
-                   
-              yield meth
+              // This could be refactored to some kind of Option type thing to get rid of different invoke-args-functions?
+              let parameterCombinations = [
+                    [], (fun (_:Expr list) ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext @@>);
+                    [constr], (fun args ->
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext @@> );
+                    [constr;respath], (fun args -> 
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext  @@>);
+                    [transopt], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], None) :> ISqlDataContext @@>);
+                    [constr; transopt], (fun args ->
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], None) :> ISqlDataContext @@> );
+                    [constr; respath; transopt], (fun args -> 
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], None) :> ISqlDataContext  @@>)
+                    [cmdTimeout], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0])) :> ISqlDataContext @@>);
+                    [constr;cmdTimeout], (fun args ->
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1])) :> ISqlDataContext @@> );
+                    [constr;respath;cmdTimeout], (fun args -> 
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[2])) :> ISqlDataContext  @@>);
+                    [transopt;cmdTimeout], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1])) :> ISqlDataContext @@>);
+                    [constr; transopt;cmdTimeout], (fun args ->
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], (Some %%args.[2])) :> ISqlDataContext @@> );
+                    [constr; respath; transopt;cmdTimeout], (fun args -> 
+                                let runtimeAssembly = config.ResolutionFolder
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3])) :> ISqlDataContext  @@>)
+                ]
 
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);], 
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
-                                                                let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr) :> ISqlDataContext @@> ))
-                      
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='connectionString'>The database connection string</param>"
-              yield meth
-
-
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString",typeof<string>);ProvidedParameter("resolutionPath",typeof<string>);],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> 
-                                                                let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr) :> ISqlDataContext  @@>))
-
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='connectionString'>The database connection string</param>
-                              <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>"
-              yield meth
-
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
-                                                                let runtimePath = config.ResolutionFolder
-                                                                let runtimeAssembly = config.ResolutionFolder
-                                                                let runtimeConStr = 
-                                                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                                                        | cs -> cs @@>
-                                                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0]) :> ISqlDataContext @@>))
-
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>"
-                   
-              yield meth
-
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)], 
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args ->
-                                                                let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1]) :> ISqlDataContext @@> ))
-                      
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='connectionString'>The database connection string</param>
-                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>"
-              yield meth
-
-
-              let meth = ProvidedMethod ("GetDataContext", [ProvidedParameter("connectionString", typeof<string>); ProvidedParameter("resolutionPath", typeof<string>); ProvidedParameter("transactionOptions", typeof<TransactionOptions>)],
-                                                            serviceType, IsStaticMethod=true,
-                                                            InvokeCode = (fun args -> 
-                                                                let runtimeAssembly = config.ResolutionFolder
-                                                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2]) :> ISqlDataContext  @@>))
-
-              meth.AddXmlDoc "<summary>Returns an instance of the SQL Provider</summary>
-                              <param name='connectionString'>The database connection string</param>
-                              <param name='resolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</param>
-                              <param name='transactionOptions'>TransactionOptions for the transaction created on SubmitChanges.</param>"
-              yield meth
+              yield! 
+                  parameterCombinations |> Seq.map(fun (parmArr, invoker) ->
+                      let providerParams = parmArr |> List.map(fun (pname, _, ptype) -> ProvidedParameter(pname, ptype))
+                      let meth = 
+                        ProvidedMethod ("GetDataContext", providerParams,
+                                        serviceType, IsStaticMethod=true,
+                                        InvokeCode = invoker)
+                      let xmlComment = 
+                            let all = parmArr |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
+                            String.Join("", all)
+                      meth.AddXmlDoc ("<summary>Returns an instance of the SQL Provider using the static parameters</summary>" + xmlComment)
+                      meth
+                  )
 
             ])
         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()

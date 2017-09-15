@@ -108,6 +108,8 @@ module internal QueryImplementation =
         Common.QueryEvents.PublishSqlQuery query parameters
         // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
         use cmd = provider.CreateCommand(con,query)
+        if dc.CommandTimeout.IsSome then
+            cmd.CommandTimeout <- dc.CommandTimeout.Value
         for p in parameters do cmd.Parameters.Add p |> ignore
         let columns = provider.GetColumns(con, baseTable)
         if con.State <> ConnectionState.Open then con.Open()
@@ -124,6 +126,8 @@ module internal QueryImplementation =
            Common.QueryEvents.PublishSqlQuery query parameters
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           if dc.CommandTimeout.IsSome then
+               cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
@@ -144,6 +148,8 @@ module internal QueryImplementation =
        let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
        Common.QueryEvents.PublishSqlQuery query parameters
        use cmd = provider.CreateCommand(con,query)
+       if dc.CommandTimeout.IsSome then
+           cmd.CommandTimeout <- dc.CommandTimeout.Value
        for p in parameters do cmd.Parameters.Add p |> ignore
        // ignore any generated projection and just expect a single integer back
        if con.State <> ConnectionState.Open then con.Open()
@@ -158,6 +164,8 @@ module internal QueryImplementation =
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
            Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           if dc.CommandTimeout.IsSome then
+               cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
            if con.State <> ConnectionState.Open then
@@ -188,6 +196,8 @@ module internal QueryImplementation =
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true
            Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
+           if dc.CommandTimeout.IsSome then
+               cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
            if con.State <> ConnectionState.Open then
