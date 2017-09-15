@@ -59,10 +59,7 @@ module PostgreSQL =
     let parseDbType dbTypeName =
         try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
         with _ -> None
-
-    let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
-    let namemap name dbTypes = findType name |> Option.bind (fun ty -> dbTypes |> List.tryPick (parseDbType ty))
-
+        
     let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
             match String.IsNullOrEmpty(al) with
@@ -673,26 +670,27 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 | _ ->
                     let baseQuery = @"
                         SELECT DISTINCT
-                             a.attname                                          AS column_name
-                            ,rtrim(format_type(a.atttypid, NULL), '[]')         AS base_data_type
-                            ,format_type(a.atttypid, a.atttypmod)               AS data_type_with_sizes
-                            ,a.attndims                                         AS array_dimensions
-                            ,(not a.attnotnull)                                 AS is_nullable
-                            ,coalesce(i.indisprimary, false)                    AS is_primary_key
-                        FROM pg_attribute a 
-                        LEFT JOIN pg_index i 
-                            ON a.attrelid = i.indrelid
-                            AND a.attnum = ANY(i.indkey)
-                        LEFT JOIN pg_depend d
-                            ON (d.refobjid, d.refobjsubid) = (a.attrelid, a.attnum)
-                        LEFT JOIN pg_class s 
-                            ON d.objid = s.oid AND s.relkind = 'S'
-                        LEFT JOIN pg_type t
-                            ON s.reltype = t.oid 
+                             pg_attribute.attname                                          AS column_name
+                            ,rtrim(format_type(pg_attribute.atttypid, NULL), '[]')         AS base_data_type
+                            ,format_type(pg_attribute.atttypid, pg_attribute.atttypmod)    AS data_type_with_sizes
+                            ,pg_attribute.attndims                                         AS array_dimensions
+                            ,(not pg_attribute.attnotnull)                                 AS is_nullable
+                            ,coalesce(pg_index.indisprimary, false)                        AS is_primary_key
+                            ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
+                        FROM pg_attribute 
+                        LEFT JOIN pg_index
+                            ON pg_attribute.attrelid = pg_index.indrelid
+                            AND pg_attribute.attnum = ANY(pg_index.indkey)
+                        LEFT JOIN pg_depend
+                            ON (pg_depend.refobjid, pg_depend.refobjsubid) = (pg_attribute.attrelid, pg_attribute.attnum)
+                        LEFT JOIN pg_class 
+                            ON pg_depend.objid = pg_class.oid
+                        LEFT JOIN pg_type
+                            ON pg_class.reltype = pg_type.oid 
                         WHERE   
-                                a.attnum > 0
-                            AND a.attrelid = format('%I.%I', @schema, @table) ::regclass
-                            AND NOT a.attisdropped
+                                pg_attribute.attnum > 0
+                            AND pg_attribute.attrelid = format('%I.%I', @schema, @table) ::regclass
+                            AND NOT pg_attribute.attisdropped
                         "
                     use command = PostgreSQL.createCommand baseQuery con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
@@ -732,18 +730,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                 match typeMapping with
                                 | None ->                                                     
                                     failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName fullTypeName
-                                | Some m -> 
-
-                                let dataType = Sql.dbUnbox<string> reader.["data_type"]
-                                let charlen = 
-                                    let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
-                                    if c <> 0 then c.ToString() else ""
-                                match PostgreSQL.findDbType (dataType.ToLower()) with
                                 | Some m ->
-                                                                          
-                                    let charlen = 
-                                        let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
-                                        if c <> 0 then sprintf "(%i)" c else ""
 
                                     let col =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
@@ -754,7 +741,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         }
 
                                     if col.IsPrimaryKey then
-                                        pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                        pkLookup.AddOrUpdate(table.FullName, [col.Name], fun _ old -> 
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
