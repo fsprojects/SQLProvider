@@ -28,7 +28,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <StartAction>Program</StartAction>
-    <StartProgram>..\..\..\..\postgrestest\postgrestest\postgrestest\bin\Debug\postgrestest.exe</StartProgram>
+    <StartProgram>D:\Appdev\SqlProvider\tests\SqlProvider.Tests\Test.Console\bin\Debug\Test.Console.exe</StartProgram>
     <StartArguments>
     </StartArguments>
   </PropertyGroup>
