@@ -183,7 +183,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 | None ->
                     // this fail case should not really be possible unless the runtime database is different to the design-time one
                     failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
-            use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
+            use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk.Name))
             if commandTimeout.IsSome then
                 com.CommandTimeout <- commandTimeout.Value
             //todo: establish pk SQL data type
