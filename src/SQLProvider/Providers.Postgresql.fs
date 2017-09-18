@@ -12,7 +12,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-open System.Configuration
 
 module PostgreSQL =
     let mutable resolutionPath = String.Empty
