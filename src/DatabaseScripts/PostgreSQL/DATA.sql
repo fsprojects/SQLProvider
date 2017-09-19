@@ -1,11 +1,11 @@
 
-Insert into REGIONS (REGION_ID,REGION_NAME) values (1,'Europe', '{'Europa'}');
+Insert into REGIONS (REGION_ID,REGION_NAME, REGION_ALTERNATE_NAMES) values (1,'Europe', '{"Europa"}');
 
 Insert into REGIONS (REGION_ID,REGION_NAME) values (2,'Americas');
 
 Insert into REGIONS (REGION_ID,REGION_NAME) values (3,'Asia');
 
-Insert into REGIONS (REGION_ID,REGION_NAME) values (4,'Middle East and Africa', '{'MEA'}');
+Insert into REGIONS (REGION_ID,REGION_NAME, REGION_ALTERNATE_NAMES) values (4,'Middle East and Africa', '{"MEA"}');
 
 
 Insert into COUNTRIES (COUNTRY_ID,COUNTRY_NAME,REGION_ID) values ('AR','Argentina',2);
