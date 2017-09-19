@@ -263,14 +263,10 @@ module PostgreSQL =
         let normalizedValue =
             if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
-        let flattenedifArrayValue = 
-            match normalizedValue with
-            | :? Array as arr when arr.Rank > 1 -> (arr |> Seq.cast<obj> |> Seq.toArray) :> obj
-            | x -> x
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
-        p.Value <- flattenedifArrayValue
+        p.Value <- normalizedValue
         p.Direction <- param.Direction
         Option.iter (fun l -> p.Size <- l) param.Length
         p
