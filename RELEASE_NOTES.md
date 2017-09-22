@@ -1,3 +1,7 @@
+### 1.1.10 - 22.09.2017
+* Access to command timeout #447
+* Support Postgres arrays #450
+
 ### 1.1.8 - 07.09.2017
 * Breaking change for MYSQL/MariaDB: Unsigned types mapping fixed #437
 * Fix for MSSQL tables with no-values insert #440
