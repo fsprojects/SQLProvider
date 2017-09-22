@@ -82,7 +82,7 @@ let skip2first10employess =
 let employeesFirstName =
     query {
         for emp in ctx.Public.Employees do
-        select (emp.FirstName, emp.LastName, emp.Email)
+        select (emp.FirstName, emp.LastName, emp.Email, emp.SalaryHistory)
     } |> Seq.toList
 
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
@@ -106,7 +106,7 @@ let salesNamedDavid =
 let employeesJob =
     query {
             for emp in ctx.Public.Employees do
-            for manager in emp.``public.employees by employee_id_0`` do
+            for manager in emp.``public.employees by employee_id_1`` do
             join dept in ctx.Public.Departments on (emp.DepartmentId = Some(dept.DepartmentId))
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
@@ -183,10 +183,12 @@ let antartica =
         let newRegion = ctx.Public.Regions.Create()
         newRegion.RegionName <- Some("Antartica")
         newRegion.RegionId <- 5
+        newRegion.RegionAlternateNames <- [| "Antarctica"; "South Pole" |]
         ctx.SubmitUpdates()
         newRegion
 
 antartica.RegionName <- Some("ant")
+antartica.RegionAlternateNames <- [| "Antartica"; "Antarctica"; "South Pole" |]
 ctx.SubmitUpdates()
 
 antartica.Delete()

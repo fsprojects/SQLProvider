@@ -179,15 +179,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             let columns = provider.GetColumns(con, table)
             let pk =
                 match provider.GetPrimaryKey table with
-                | Some v -> v
+                | Some v -> columns.[v]
                 | None ->
                     // this fail case should not really be possible unless the runtime database is different to the design-time one
                     failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
-            use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk))
+            use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk.Name))
             if commandTimeout.IsSome then
                 com.CommandTimeout <- commandTimeout.Value
             //todo: establish pk SQL data type
-            com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0),id)) |> ignore
+            com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0, pk.TypeMapping),id)) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             let entity = (this :> ISqlDataContext).ReadEntities(table.FullName, columns, reader) |> Seq.exactlyOne
