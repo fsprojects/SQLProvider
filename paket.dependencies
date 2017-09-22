@@ -1,5 +1,4 @@
 source https://nuget.org/api/v2
-framework >= 4.0
 
 nuget Nuget.CommandLine ~> 2
 nuget FAKE
@@ -9,6 +8,14 @@ nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
+nuget System.Runtime
+nuget FSharp.NET.Sdk
+nuget System.Runtime.Loader
+nuget System.Runtime.Serialization.Primitives
+nuget System.Reflection
+nuget System.Data.SqlClient
+nuget System.Data.Common
+nuget System.IO
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
@@ -23,7 +30,6 @@ group SourceFiles
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs
 
 group Scripts
-    framework >= 4.0
     source https://nuget.org/api/v2
 
     nuget MySql.Data

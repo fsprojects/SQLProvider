@@ -93,6 +93,18 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
+    // Build .NET Core solution
+    DotNetCli.Restore(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            NoCache = true})
+
+    DotNetCli.Build(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            Configuration = "Release"})
+    
+    // Build .NET Framework solution
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore

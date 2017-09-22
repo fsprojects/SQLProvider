@@ -117,3 +117,12 @@ module Operators =
     let (<>%) (a:'a) (b:string) = false
     // Left join
     let (!!) (a:IQueryable<_>) = a
+
+#if NETSTANDARD
+// Hacks for .NET Core.
+namespace FSharp.Data.Sql.Providers
+type internal MSAccessProvider() = 
+    member __.Note = "Not Supported in .NET core"
+type internal OdbcProvider(quotehcar) =
+    member __.Note = "Not Supported in .NET core"
+#endif

@@ -9,6 +9,7 @@ module internal Utilities =
     open System.Collections.Concurrent
     open FSharp.Data.Sql
 
+#if !NETSTANDARD
     type TempFile(path:string) =
          member val Path = path with get
          interface IDisposable with 
@@ -22,7 +23,8 @@ module internal Utilities =
                 File.Delete tempF
             tempF'
         new TempFile(filename)
-    
+#endif
+
     let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
@@ -137,6 +139,7 @@ module ConfigHelpers =
     
     open System
     open System.IO
+#if !NETSTANDARD
     open System.Configuration
 
     let internal getConStringFromConfig isRuntime root (connectionStringName : string) =
@@ -169,10 +172,12 @@ module ConfigHelpers =
                     | null -> ""
                     | a -> a.ConnectionString
                 | None -> ""
+#endif
 
     let cachedConStrings = System.Collections.Concurrent.ConcurrentDictionary<string, string>()
 
     let tryGetConnectionString isRuntime root (connectionStringName:string) (connectionString:string) =
+#if !NETSTANDARD
         if String.IsNullOrWhiteSpace(connectionString)
         then
             match isRuntime with
@@ -180,7 +185,9 @@ module ConfigHelpers =
             | _ -> cachedConStrings.GetOrAdd(connectionStringName, fun name ->
                     let fromFile = getConStringFromConfig isRuntime root connectionStringName
                     fromFile)
-        else connectionString
+        else
+#endif
+            connectionString
 
 module internal SchemaProjections = 
     
@@ -270,7 +277,11 @@ module internal Reflection =
 
     let tryLoadAssembly path = 
          try 
+#if NETSTANDARD
+             let loadedAsm = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(path) 
+#else
              let loadedAsm = Assembly.LoadFrom(path) 
+#endif
              if loadedAsm <> null
              then Some(Choice1Of2 loadedAsm)
              else None
@@ -294,8 +305,13 @@ module internal Reflection =
 #if INTERACTIVE
             __SOURCE_DIRECTORY__
 #else
+#if NETSTANDARD
+                System.Reflection.Assembly.GetEntryAssembly().Location
+                |> System.IO.Path.GetDirectoryName
+#else
             System.Reflection.Assembly.GetExecutingAssembly().Location
             |> Path.GetDirectoryName
+#endif
 #endif
         let currentPaths =
             assemblyNames 
@@ -312,7 +328,7 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
-
+#if !NETSTANDARD
         // Some providers have additional references to other libraries.
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
         System.AppDomain.CurrentDomain.add_AssemblyResolve (
@@ -329,7 +345,7 @@ module internal Reflection =
                 match loaded with
                 | Some x -> x
                 | None -> null))
-        
+#endif        
         match result with
         | Some asm -> Choice1Of2 asm
         | None ->
