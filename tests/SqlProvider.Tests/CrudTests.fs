@@ -108,7 +108,7 @@ let ``Can persist a blob``() =
     let imageBytes = [| 0uy .. 100uy |]
 
     let savedEntity = dc.Main.Pictures.``Create(Image)`` imageBytes
-    savedEntity.Id <- 1234
+    savedEntity.Id <- 1234L
     dc.SubmitUpdates()
 
     let reloadedEntity =
