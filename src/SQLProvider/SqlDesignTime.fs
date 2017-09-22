@@ -23,7 +23,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces()
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let ns = "FSharp.Data.Sql"
-     
+    
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, odbcquote, sqliteLibrary, rootTypeName) = 
         let resolutionPath = 
             if String.IsNullOrWhiteSpace resolutionPath
@@ -389,7 +389,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let requiredColumns =
                         columns
                         |> Seq.map (fun kvp -> kvp.Value)
-                        |> Seq.filter (fun c-> (not c.IsNullable) || c.IsPrimaryKey)
+                        |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsPrimaryKey))
 
                     let normalParameters = 
                         requiredColumns 
