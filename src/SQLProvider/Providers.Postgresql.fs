@@ -47,7 +47,7 @@ module PostgreSQL =
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
 
-    let getDbType(providerType) =
+    let getDbType(providerType : int) =
         let parameterType = parameterType.Value
         let p = Activator.CreateInstance(parameterType, [| |]) :?> IDbDataParameter
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
@@ -55,13 +55,10 @@ module PostgreSQL =
 
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let parseDbType (ty: Type) dbt =
-        try Some(ty, Enum.Parse(dbType.Value, dbt) |> unbox<int>)
+    let parseDbType dbTypeName =
+        try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
         with _ -> None
-
-    let typemap<'t> = List.tryPick (parseDbType typeof<'t>)
-    let namemap name dbTypes = findType name |> Option.bind (fun ty -> dbTypes |> List.tryPick (parseDbType ty))
-
+        
     let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
             match String.IsNullOrEmpty(al) with
@@ -117,7 +114,19 @@ module PostgreSQL =
             | false -> sprintf "\"%s.%s\"" al
         Utilities.genericAliasNotation aliasSprint col
 
-    let createTypeMappings () =
+    // store the enum value for Array; it will be combined later with the generic argument
+    let arrayProviderDbType = lazy (Option.get <| parseDbType "Array")        
+    
+    /// Pairs a CLR type by type object with a value of Npgsql's type enumeration
+    let typemap' t = List.tryPick parseDbType >> Option.map (fun dbType -> t, dbType)
+
+    /// Pairs a CLR type by type parameter with a value of Npgsql's type enumeration
+    let typemap<'t> = typemap' typeof<'t>
+    
+    /// Pairs a CLR type by name with a value of Npgsql's type enumeration
+    let namemap name dbTypes = findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
+
+    let createTypeMappings () =            
         // http://www.npgsql.org/doc/2.2/
         // http://www.npgsql.org/doc/3.0/types.html
         let mappings =
@@ -184,24 +193,37 @@ module PostgreSQL =
               "uuid"                        , typemap<Guid>                       ["Uuid"]
               "xid"                         , typemap<uint32>                     ["Xid"]
               "xml"                         , typemap<string>                     ["Xml"]
-            //"array"                       , typemap<Array>                      ["Array"]
             //"composite"                   , typemap<obj>                        ["Composite"]
             //"enum"                        , typemap<obj>                        ["Enum"]
             //"range"                       , typemap<Array>                      ["Range"]
               ]
-            |> List.choose (fun (name,dbt) ->
-                dbt |> Option.map (fun (clrType,providerType) ->
-                    { ProviderTypeName = Some(name)
-                      ClrType = clrType.AssemblyQualifiedName
-                      DbType = getDbType providerType
-                      ProviderType = Some(providerType) }))
-
-        let dbMappings =
-            mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.choose (
+                function
+                | name, Some(clrType, providerType) -> 
+                    Some (name, { ProviderTypeName = Some(name)
+                                  ClrType = clrType.AssemblyQualifiedName
+                                  DbType = getDbType providerType
+                                  ProviderType = Some(providerType) })    
+                | _ -> None
+            )
             |> Map.ofList
+        
+        let resolveAlias = function
+            | "int8"            -> "bigint"
+            | "bool"            -> "boolean"
+            | "varbit"          -> "bit varying"
+            | "char"            -> "character"
+            | "varchar"         -> "character varying"
+            | "float8"          -> "double precision"
+            | "int" | "int4"    -> "integer"
+            | "float4"          -> "real"
+            | "decimal"         -> "numeric"
+            | "int2"            -> "smallint"
+            | "timetz"          -> "time with time zone"
+            | "timestamptz"     -> "timestamp with time zone"
+            | x -> x                
 
-        findDbType <- dbMappings.TryFind
+        findDbType <- resolveAlias >> mappings.TryFind
 
     let createConnection connectionString =
         try
@@ -237,13 +259,13 @@ module PostgreSQL =
         typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let createCommandParameter (param:QueryParameter) value =
-        let value =
+        let normalizedValue =
             if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- param.Name
         Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
-        p.Value <- value
+        p.Value <- normalizedValue
         p.Direction <- param.Direction
         Option.iter (fun l -> p.Size <- l) param.Length
         p
@@ -396,11 +418,11 @@ module PostgreSQL =
                               r.routine_schema AS schema_name,
                               r.routine_name AS name,
                               r.data_type AS returntype,
-                              (SELECT  STRING_AGG(x.param, E'\n')
+                              COALESCE((SELECT  STRING_AGG(x.param, E'\n')
                                  FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
                                           FROM  information_schema.parameters p
                                          WHERE  p.specific_name = r.specific_name
-                                      ORDER BY  p.ordinal_position) x) AS args
+                                      ORDER BY  p.ordinal_position) x), '') AS args
                         FROM  information_schema.routines r
                        WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
                               AND r.routine_name NOT IN (SELECT  routine_name
@@ -414,7 +436,7 @@ module PostgreSQL =
                          PackageName = String.Empty }
             let sparams =
                 match Sql.dbUnbox<string> r.["args"] with
-                | null -> []
+                | "" -> []
                 | args ->
                     args.Split('\n')
                     |> Array.mapi (fun i arg ->
@@ -636,35 +658,35 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
 
         member __.GetColumns(con,table) =
             Monitor.Enter columnLookup
+
             try
                 match columnLookup.TryGetValue table.FullName with
                 | (true,data) when data.Count > 0 -> data
                 | _ ->
-                    let baseQuery = @"SELECT  c.column_name,
-                                              c.data_type,
-                                              c.character_maximum_length,
-                                              c.numeric_precision,
-                                              c.is_nullable,
-                                              (CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END) AS keytype
-                                        FROM  information_schema.columns c
-                                              LEFT JOIN  (SELECT  ku.table_catalog,
-                                                                  ku.table_schema,
-                                                                  ku.table_name,
-                                                                  ku.column_name
-                                                            FROM  information_schema.table_constraints AS tc
-                                                                  INNER JOIN  information_schema.key_column_usage AS ku
-                                                                              ON      tc.constraint_type = 'PRIMARY KEY'
-                                                                                  AND tc.constraint_name = ku.constraint_name
-                                                         ) pk
-                                                         ON      c.table_catalog = pk.table_catalog
-                                                             AND c.table_schema = pk.table_schema
-                                                             AND c.table_name = pk.table_name
-                                                             AND c.column_name = pk.column_name
-                                       WHERE      c.table_schema = @schema
-                                              AND c.table_name = @table
-                                    ORDER BY  c.table_schema,
-                                              c.table_name,
-                                              c.ordinal_position"
+                    let baseQuery = @"
+                        SELECT DISTINCT
+                             pg_attribute.attname                                          AS column_name
+                            ,rtrim(format_type(pg_attribute.atttypid, NULL), '[]')         AS base_data_type
+                            ,format_type(pg_attribute.atttypid, pg_attribute.atttypmod)    AS data_type_with_sizes
+                            ,pg_attribute.attndims                                         AS array_dimensions
+                            ,(not pg_attribute.attnotnull)                                 AS is_nullable
+                            ,coalesce(pg_index.indisprimary, false)                        AS is_primary_key
+                            ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
+                        FROM pg_attribute 
+                        LEFT JOIN pg_index
+                            ON pg_attribute.attrelid = pg_index.indrelid
+                            AND pg_attribute.attnum = ANY(pg_index.indkey)
+                        LEFT JOIN pg_depend
+                            ON (pg_depend.refobjid, pg_depend.refobjsubid) = (pg_attribute.attrelid, pg_attribute.attnum)
+                        LEFT JOIN pg_class 
+                            ON pg_depend.objid = pg_class.oid
+                        LEFT JOIN pg_type
+                            ON pg_class.reltype = pg_type.oid 
+                        WHERE   
+                                pg_attribute.attnum > 0
+                            AND pg_attribute.attrelid = format('%I.%I', @schema, @table) ::regclass
+                            AND NOT pg_attribute.attisdropped
+                        "
                     use command = PostgreSQL.createCommand baseQuery con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
@@ -672,28 +694,58 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do
-                                let dataType = Sql.dbUnbox<string> reader.["data_type"]
-                                let charlen = 
-                                    let c = Sql.dbUnboxWithDefault<int> 0 reader.["character_maximum_length"]
-                                    if c <> 0 then c.ToString() else ""
-                                match PostgreSQL.findDbType (dataType.ToLower()) with
+                            
+                                let dimensions = Sql.dbUnbox<int> reader.["array_dimensions"]  
+                                let baseTypeName = Sql.dbUnbox<string> reader.["base_data_type"]
+                                let fullTypeName = Sql.dbUnbox<string> reader.["data_type_with_sizes"]
+                                let baseDataType = PostgreSQL.findDbType baseTypeName
+
+                                let typeMapping = 
+                                    match dimensions with   
+                                    | 0 -> 
+                                        // plain column
+                                        baseDataType
+                                    | n ->
+                                        // array column: we convert the base type to a type mapping for the array
+                                        baseDataType
+                                        |> Option.bind (fun m -> 
+                                            let pt = m.ProviderType
+                                            // binary-add the array type to the bitflag
+                                            match pt with
+                                            | None -> None
+                                            | Some t ->                                            
+                                                let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                                                
+                                                Some { ProviderTypeName = Some "array"
+                                                       ClrType = Type.GetType(m.ClrType).MakeArrayType(dimensions).AssemblyQualifiedName
+                                                       ProviderType = Some providerType
+                                                       DbType = PostgreSQL.getDbType providerType
+                                                     }
+                                        )
+                                                                
+                                match typeMapping with
+                                | None ->                                                     
+                                    failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName fullTypeName
                                 | Some m ->
+
                                     let col =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
-                                          IsNullable = (Sql.dbUnbox<string> reader.["is_nullable"]) = "YES"
-                                          IsPrimaryKey = (Sql.dbUnbox<string> reader.["keytype"]) = "PRIMARY KEY"
-                                          TypeInfo = if charlen <> "" then Some (dataType + "(" + charlen + ")") else Some dataType }
+                                          IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
+                                          IsPrimaryKey = Sql.dbUnbox<bool> reader.["is_primary_key"]
+                                          TypeInfo = Some fullTypeName
+                                        }
+
                                     if col.IsPrimaryKey then
-                                        pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                        pkLookup.AddOrUpdate(table.FullName, [col.Name], fun _ old -> 
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
                                                    | [] -> [x]
                                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                         ) |> ignore
-                                    yield (col.Name,col)
-                                | _ -> failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName dataType ]
+
+                                    yield col.Name, col
+                            ]
                             |> Map.ofList
                         columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns))
             finally
