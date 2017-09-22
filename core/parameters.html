@@ -145,6 +145,14 @@ which SQLite library to load.</p>
 </code></pre></td>
 </tr>
 </table>
+<h1><a name="SQL-Provider-Data-Context-Parameters" class="anchor" href="#SQL-Provider-Data-Context-Parameters">SQL Provider Data Context Parameters</a></h1>
+<p>Besides the static parameters the <code>.GetDataContext(...)</code> method has optional parameters:</p>
+<ul>
+<li>connectionString - The database connection string on runtime.</li>
+<li>resolutionPath - The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</li>
+<li>transactionOptions - TransactionOptions for the transaction created on SubmitChanges.</li>
+<li>commandTimeout - SQL command timeout. Maximum time for single SQL-command in seconds.</li>
+</ul>
 
 
         </div>
