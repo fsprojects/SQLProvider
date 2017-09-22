@@ -116,7 +116,8 @@ Target "RunTests" (fun _ ->
 Target "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
     
-    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvider.dll"
+    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.dll"
+    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.deps.json"
 
     NuGet (fun p ->
         { p with

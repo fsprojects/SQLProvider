@@ -1,45 +1,45 @@
-FRAMEWORK: >= NET40
+RESTRICTION: >= net40
 NUGET
   remote: https://www.nuget.org/api/v2
     FAKE (4.62.5)
     FSharp.Compiler.Service (2.0.0.6)
-    FSharp.Core (3.1.2.1) - redirects: force
+    FSharp.Core (3.1.2.5) - redirects: force
     FSharp.Formatting (2.14.4)
       FSharp.Compiler.Service (2.0.0.6)
       FSharpVSPowerTools.Core (>= 2.3 < 2.4)
     FSharpVSPowerTools.Core (2.3)
       FSharp.Compiler.Service (>= 2.0.0.3)
-    Microsoft.AspNet.Razor (2.0.30506) - framework: net40
-    Microsoft.Bcl (1.1.10) - framework: net40, net40-full
+    Microsoft.AspNet.Razor (2.0.30506) - restriction: && (>= net40) (< net45)
+    Microsoft.Bcl (1.1.10) - restriction: && (>= net40) (< net45) (< portable-win81+wpa81)
       Microsoft.Bcl.Build (>= 1.0.14)
-    Microsoft.Bcl.Build (1.0.21) - import_targets: false
-    Microsoft.Net.Http (2.2.29) - framework: net40, net40-full
+    Microsoft.Bcl.Build (1.0.21) - import_targets: false, restriction: && (>= net40) (< net45) (< portable-win81+wpa81)
+    Microsoft.Net.Http (2.2.29) - restriction: && (>= net40) (< net45) (< portable-win81+wpa81)
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
     NuGet.CommandLine (2.12)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
     Octokit (0.21.1)
-      Microsoft.Net.Http  - framework: net40, net40-full
+      Microsoft.Net.Http  - restriction: && (>= net40) (< net45) (< portable-win81+wpa81)
     RazorEngine (3.9)
-      Microsoft.AspNet.Razor (>= 3.0) - framework: >= net45
-      Microsoft.AspNet.Razor (2.0.30506) - framework: net40
+      Microsoft.AspNet.Razor (>= 3.0) - restriction: >= net45
+      Microsoft.AspNet.Razor (2.0.30506) - restriction: && (>= net40) (< net45)
     SourceLink.Fake (1.1)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (dad2dec00064233e9742b458d96fe64708f3be8a)
+    modules/Octokit/Octokit.fsx (148ad51769517ceb281b07654fbfb25898d8fde0)
       Octokit (>= 0.20)
 GROUP Scripts
-FRAMEWORK: >= NET40
+RESTRICTION: >= net40
 NUGET
   remote: https://www.nuget.org/api/v2
     FirebirdSql.Data.FirebirdClient (5.9.0.1)
-      Microsoft.Bcl.Async (>= 1.0.168) - framework: net40
-    Microsoft.Bcl (1.1.10) - framework: net40
+      Microsoft.Bcl.Async (>= 1.0.168) - restriction: == net40
+    Microsoft.Bcl (1.1.10) - restriction: == net40
       Microsoft.Bcl.Build (>= 1.0.14)
-    Microsoft.Bcl.Async (1.0.168) - framework: net40
+    Microsoft.Bcl.Async (1.0.168) - restriction: == net40
       Microsoft.Bcl (>= 1.1.8)
-    Microsoft.Bcl.Build (1.0.21) - import_targets: false, framework: net40
+    Microsoft.Bcl.Build (1.0.21) - import_targets: false, restriction: == net40
     MySql.Data (6.9.9)
     Newtonsoft.Json (9.0.1)
     Npgsql (3.1.7)
@@ -49,7 +49,10 @@ GROUP SourceFiles
 
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/ProvidedTypes.fs (1dab4f94411500794342f61f877feab772e5a754)
-    src/ProvidedTypes.fsi (1dab4f94411500794342f61f877feab772e5a754)
+    src/AssemblyReader.fs (1341256f7cc11f09feb74edde028aa0513c53afd)
+    src/AssemblyReaderReflection.fs (1341256f7cc11f09feb74edde028aa0513c53afd)
+    src/ProvidedTypes.fs (1341256f7cc11f09feb74edde028aa0513c53afd)
+    src/ProvidedTypes.fsi (1341256f7cc11f09feb74edde028aa0513c53afd)
+    src/ProvidedTypesContext.fs (1341256f7cc11f09feb74edde028aa0513c53afd)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (b494733a57be4988cda349b65b5089db77ba00d6)
+    src/Code/ExpressionOptimizer.fs (297f7d9f75c7d8d86b1d00bae0b535d8e48f572d)
