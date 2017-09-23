@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="FSharp.NET.Sdk;Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Can build: -->
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <!-- Can not build: -->
     <!--TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks-->
     <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
@@ -114,7 +114,6 @@
   <ItemGroup>
     <PackageReference Include="System.Runtime" Version="4.3.0" />
     <PackageReference Include="FSharp.Core" Version="4.2.3" />
-    <PackageReference Include="FSharp.NET.Sdk" Version="1.0.5" PrivateAssets="All" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />

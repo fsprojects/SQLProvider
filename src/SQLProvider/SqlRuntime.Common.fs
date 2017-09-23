@@ -87,9 +87,7 @@ type EntityState =
     | Delete
     | Deleted
 
-#if !NETSTANDARD
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
-#endif
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()
