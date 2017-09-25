@@ -440,11 +440,18 @@ module Firebird =
                 return Set(cols |> Array.map (processReturnColumn reader))
         }
 
-type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as this =
+type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
+
+    let getTableNameForQuery (table:Table) =
+        match quoteChar with
+            | OdbcQuoteCharacter.DOUBLE_QUOTES ->
+                sprintf "\"%s\"" (table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
+            | _ ->
+                (table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -467,7 +474,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
         let (hasPK, pks) =  pkLookup.TryGetValue(entity.Table.Name)
 
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s) %s;" 
-            (entity.Table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
+            (getTableNameForQuery entity.Table)
             (String.Join(", ",columnNames))
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName)))
             (if hasPK then "returning " + String.concat "," pks else ""))
@@ -511,7 +518,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE %s SET %s WHERE "
-                (entity.Table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
+                (getTableNameForQuery entity.Table)
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ))))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
 
@@ -543,7 +550,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\"")))
+            ~~(sprintf "DELETE FROM %s WHERE " (getTableNameForQuery entity.Table))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
@@ -697,8 +704,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
             res)
 
         member __.GetSprocs(con) = Sql.connect con Firebird.getSprocs
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT first %i * FROM %s;" amount (table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.%s = @id" (Firebird.ripQuotes table.Name) (Firebird.ripQuotes table.Name) column
+        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT first %i * FROM %s;" amount (getTableNameForQuery table)
+        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.%s = @id" (getTableNameForQuery table) (getTableNameForQuery table) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns, isDeleteScript) =
             let sb = System.Text.StringBuilder()
@@ -854,7 +861,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                     let joinType = if data.OuterJoin then " LEFT OUTER JOIN " else " INNER JOIN "
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s as %s on "
-                            joinType destTable.Name destAlias)
+                            joinType (getTableNameForQuery destTable) destAlias)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s" 
                             (Firebird.fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
@@ -873,7 +880,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies) as t
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (Firebird.fieldNotation alias column) (if not desc then "DESC " else "")))
 
-            let basetable = baseTable.Name.Replace("[","\"").Replace("]","\"").Replace("``","\"")
+            let basetable = getTableNameForQuery baseTable
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM %s " basetable)
             else 
