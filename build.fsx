@@ -94,6 +94,7 @@ Target "CleanDocs" (fun _ ->
 
 Target "Build" (fun _ ->
     // Build .NET Core solution
+#if MONO
     DotNetCli.Restore(fun p -> 
         { p with 
             Project = "SQLProvider.Core.sln"
@@ -103,6 +104,7 @@ Target "Build" (fun _ ->
         { p with 
             Project = "SQLProvider.Core.sln"
             Configuration = "Release"})
+#endif
     
     // Build .NET Framework solution
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
@@ -131,6 +133,13 @@ Target "NuGet" (fun _ ->
     CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.dll"
     CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.deps.json"
 
+#if MONO
+    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" 
+    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll" 
+    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll" 
+    CopyFile "bin/netstandard2.0" "..\..\packages\System.Data.SqlClient\lib\net461\System.Data.SqlClient.dll" 
+#endif
+	
     NuGet (fun p ->
         { p with
             Authors = authors
@@ -194,9 +203,9 @@ Target "GenerateHelp" (fun _ ->
     CopyFile "docs/content/" "LICENSE.txt"
     Rename "docs/content/license.md" "docs/content/LICENSE.txt"
 
-    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
-    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
-
+    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
+    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
+	
     generateHelp true
 )
 

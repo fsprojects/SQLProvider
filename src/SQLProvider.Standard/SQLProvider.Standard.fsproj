@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Can build: -->
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <!-- Can not build: -->
-    <!--TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks-->
+    <!-- <TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks> -->
+    <!-- Lets use: -->
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
 	<AllowCrossTargeting>true</AllowCrossTargeting>
     <OutputPath>..\..\bin</OutputPath>
@@ -12,9 +12,6 @@
     <Name>FSharp.Data.SqlProvider</Name>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
  </PropertyGroup>
-  <ItemGroup>
-    <NetStandardImplicitPackageVersion Include="NetStandardLibrary" Version="2.0.0" />
-  </ItemGroup>
   <ItemGroup>
     <!--Compile Include="Init.fs" / -->
     <Compile Include="..\SQLProvider\AssemblyInfo.fs">

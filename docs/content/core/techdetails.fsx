@@ -19,7 +19,7 @@ Even though our test run will run modifications to the test databases, don't che
 We use Fake and Paket. You have to run `build.cmd` on Windows (or `sh ./build.sh` on Mac/Linux) before opening the solutions.
 
 The main source solution is `SQLProvider.sln`.
-The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
+The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\net451\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
 
  - To debug design-time features you "Attach to process" the main solution debugger to another instance of Visual Studio running the tests solution.
  - To debug runtime you attach it to e.g. fsi.exe and run the code in interactive.

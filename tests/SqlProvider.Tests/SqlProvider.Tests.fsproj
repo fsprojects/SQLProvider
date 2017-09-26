@@ -79,7 +79,7 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Transactions" />
     <Reference Include="FSharp.Data.SqlProvider">
-      <HintPath>..\..\bin\FSharp.Data.SqlProvider.dll</HintPath>
+      <HintPath>..\..\bin\net451\FSharp.Data.SqlProvider.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Data.Sqlite">
       <HintPath>Mono.Data.Sqlite.dll</HintPath>

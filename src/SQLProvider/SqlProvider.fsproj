@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\..\bin</OutputPath>
+    <OutputPath>..\..\bin\net451</OutputPath>
     <DefineConstants>TRACE;DEBUG;NO_GENERATIVE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
@@ -36,10 +36,10 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\bin</OutputPath>
+    <OutputPath>..\..\bin\net451</OutputPath>
     <DefineConstants>TRACE;NO_GENERATIVE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\..\bin\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <DocumentationFile>..\..\bin\net451\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
