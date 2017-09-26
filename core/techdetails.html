@@ -45,7 +45,7 @@
 <h3><a name="Solution-structure" class="anchor" href="#Solution-structure">Solution structure</a></h3>
 <p>We use Fake and Paket. You have to run <code>build.cmd</code> on Windows (or <code>sh ./build.sh</code> on Mac/Linux) before opening the solutions.</p>
 <p>The main source solution is <code>SQLProvider.sln</code>.
-The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, and when you open the solution, it will lock the <code>bin\FSharp.Data.SqlProvider.dll</code>, and after that you can't build the main solution.</p>
+The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, and when you open the solution, it will lock the <code>bin\net451\FSharp.Data.SqlProvider.dll</code>, and after that you can't build the main solution.</p>
 <ul>
 <li>To debug design-time features you "Attach to process" the main solution debugger to another instance of Visual Studio running the tests solution.</li>
 <li>To debug runtime you attach it to e.g. fsi.exe and run the code in interactive.</li>

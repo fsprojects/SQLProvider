@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>.NET Standard / .NET Core support
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
+<p>This is very initial / experimental.</p>
+<h2><a name="Example-project" class="anchor" href="#Example-project">Example project</a></h2>
+<p>There is an example .NET-Coreapp 2.0 project at: <code>tests\SqlProvider.Core.Tests</code></p>
+<p>It is build and run as follows:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">dotnet</span> <span class="i">restore</span>
+<span class="i">dotnet</span> <span class="i">build</span>
+<span class="i">dotnet</span> <span class="i">run</span>
+</code></pre></td>
+</tr>
+</table>
+<h2><a name="Details" class="anchor" href="#Details">Details</a></h2>
+<p>The following files is needed to the NuGet package:
+netstandard.dll System.Reflection.dll System.Runtime.dll System.Data.SqlClient.dll</p>
+<p>Those files are by default the net461 versions, gotten from paths:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="s">&quot;C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll&quot;</span>
+<span class="s">&quot;C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll&quot;</span>
+<span class="s">&quot;C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll&quot;</span>
+<span class="s">&quot;..\..\packages\System.Data.SqlClient\lib\net461\System.Data.SqlClient.dll&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The NuGet cache is located at:
+<code>C:\Users\(your-user-name)\.nuget\packages\SQLProvider\</code></p>
+<p>There is an example .NET-Coreapp 2.0 project at: <code>tests\SqlProvider.Core.Tests</code></p>
+<h2><a name="Limitations" class="anchor" href="#Limitations">Limitations</a></h2>
+<p>You need your database connection driver to also support .NET Core.
+If your database connection driver has external dependencies, they has to be also present.</p>
+<p>The providers that are not included in .NET-Standard version:</p>
+<ul>
+<li>Ms-Access in not supported</li>
+<li>Odbc is not supported</li>
+</ul>
+<p>Connection string can be passed as hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> but fetching it automatically from the application configuration is not supported.</p>
+<p>.NET Standard solution is located at <code>/src/SQLProvider.Standard/SQLProvider.Standard.fsproj</code></p>
+<p>The target frameworks are defined in the project file: <code>&lt;TargetFrameworks&gt;net461;netcoreapp2.0;netstandard2.0&lt;/TargetFrameworks&gt;</code>
+Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0</p>
+<p>You should use .netstandard2.0 and not netcoreapp2.0. But if you want to still build  netcoreapp2.0, a modification is needed: ProvidedTypes.fs needs a type hint at line 94:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">forall</span> (<span class="k">fun</span> (<span class="i">originalName</span><span class="o">:</span><span class="i">string</span>, <span class="i">newName</span><span class="o">:</span><span class="i">string</span>) <span class="k">-&gt;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Build is not tested with Mono, so .Net Standard build is disabled from build.fsx on Mono.</p>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>
