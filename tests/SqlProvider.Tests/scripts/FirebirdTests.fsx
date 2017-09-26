@@ -7,18 +7,46 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
 
 [<Literal>]
-let connectionString = @"Data Source=localhost; port=3051;initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
+let port = "3051"
+[<Literal>]
+let connectionString = @"Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/FirebirdSql.Data.FirebirdClient/lib/net452"
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString, ResolutionPath = resolutionPath>
+type HRCamelCase = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString, ResolutionPath = resolutionPath, OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-        
+//*************** quoted table names ***********
+//just get the single existing record
+let ctxCamelCase = HRCamelCase.GetDataContext()
+let cc = query {
+    for camelCase in ctxCamelCase.Dbo.CamelCase do
+    head
+}
+printfn "got some name from CC table: %s" cc.Name
+//insert/create
+let cc1 = ctxCamelCase.Dbo.CamelCase.Create()
+cc1.Id <- 2
+cc1.Name <- "nr 2"
+ctxCamelCase.SubmitUpdates()
+//individuals/update
+let ccForUpdate = ctxCamelCase.Dbo.CamelCase.Individuals.``1``
+ccForUpdate.Name <- "nr 11"
+//delete
+let ccForDelete = query {
+    for camelCase in ctxCamelCase.Dbo.CamelCase do
+    where (camelCase.Id = 2)
+    head
+}
+ccForDelete.Delete()
+ctxCamelCase.SubmitUpdates()
+
+
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -170,9 +198,17 @@ antartica.Delete()
 ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
-
+//make sure to delete any conflicting record before trying to insert
+let historyItem = query {
+    for job in ctx.Dbo.JobHistory do
+    where (job.EmployeeId = 101 && job.StartDate = DateTime(1993, 1, 13))
+    select job
+    head
+}
+historyItem.Delete()
+ctx.SubmitUpdates()
+//insert using sproc
 ctx.Procedures.AddJobHistory.Invoke(101, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
-
 
 //Support for sprocs that return ref cursors
 let employees =
@@ -219,35 +255,35 @@ let rnd = new Random()
 open System.Threading
 
 let taskarray = 
-    [1u..100u] |> Seq.map(fun itm ->
-        let itm = rnd.Next(1, 300) |> int
-        let t1 = Tasks.Task.Run(fun () ->
-            let ctx1 = HR.GetDataContext()
-            let country1 = 
-                query {
-                    for c in ctx1.Dbo.Countries do
-                    where (c.CountryId = "AR")
-                    head
-                }
-            Console.WriteLine Thread.CurrentThread.ManagedThreadId
-            country1.CountryName <- "Argentina" + itm.ToString()
-            ctx1.SubmitUpdates()
-        )
-        let t2 = Tasks.Task.Run(fun () ->
-            let ctx2 = HR.GetDataContext()
-            Console.WriteLine Thread.CurrentThread.ManagedThreadId
-            let country2 = 
-                query {
-                    for c in ctx2.Dbo.Countries do
-                    where (c.CountryId = "BR")
-                    head
-                }
-            country2.RegionId <- itm
-            ctx2.SubmitUpdates()
-        )
-        Tasks.Task.WhenAll [|t1; t2|]
-        //ctx.ClearUpdates() |> ignore
-    ) |> Seq.toArray |> Tasks.Task.WaitAll
+   [1u..100u] |> Seq.map(fun itm ->
+       let itm = rnd.Next(1, 300) |> int
+       let t1 = Tasks.Task.Run(fun () ->
+           let ctx1 = HR.GetDataContext()
+           let country1 = 
+               query {
+                   for c in ctx1.Dbo.Countries do
+                   where (c.CountryId = "AR")
+                   head
+               }
+           Console.WriteLine Thread.CurrentThread.ManagedThreadId
+           country1.CountryName <- "Argentina" + itm.ToString()
+           ctx1.SubmitUpdates()
+       )
+       let t2 = Tasks.Task.Run(fun () ->
+           let ctx2 = HR.GetDataContext()
+           Console.WriteLine Thread.CurrentThread.ManagedThreadId
+           let country2 = 
+               query {
+                   for c in ctx2.Dbo.Countries do
+                   where (c.CountryId = "BR")
+                   head
+               }
+           country2.RegionId <- itm
+           ctx2.SubmitUpdates()
+       )
+       Tasks.Task.WhenAll [|t1; t2|]
+       //ctx.ClearUpdates() |> ignore
+   ) |> Seq.toArray |> Tasks.Task.WaitAll
 
 ctx.GetUpdates()
 

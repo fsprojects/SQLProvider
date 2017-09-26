@@ -24,7 +24,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
 #endif
-        | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
 type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>) =

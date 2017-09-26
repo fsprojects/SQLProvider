@@ -37,7 +37,7 @@ type OdbcQuoteCharacter =
     | SQUARE_BRACKETS = 2
     /// Plain, no special names: alias
     | NO_QUOTES = 3 // alias
-    /// Amazon Redshift style: "alias"
+    /// Amazon Redshift style: "alias" & Firebird style too
     | DOUBLE_QUOTES = 4
     /// Single quote: 'alias'
     | APHOSTROPHE = 5 

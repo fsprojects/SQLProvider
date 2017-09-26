@@ -1,3 +1,13 @@
+### 1.1.12-alpha - 22.09.2017
+* Initial version of .NET Standard 2.0 release
+
+### 1.1.11 - 22.09.2017
+* Firebird quotes fix PR #453
+
+### 1.1.10 - 22.09.2017
+* Access to command timeout #447
+* Support Postgres arrays #450
+
 ### 1.1.8 - 07.09.2017
 * Breaking change for MYSQL/MariaDB: Unsigned types mapping fixed #437
 * Fix for MSSQL tables with no-values insert #440
