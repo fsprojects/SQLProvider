@@ -1,0 +1,13 @@
+group Standard
+
+      FSharp.Core
+      System.Runtime
+      System.Runtime.Loader
+      System.Runtime.Serialization.Primitives
+      System.Runtime.Serialization.Formatters
+      System.IO
+      System.Console
+      System.Reflection
+      System.Reflection.TypeExtensions
+      System.Data.SqlClient
+      System.Data.Common

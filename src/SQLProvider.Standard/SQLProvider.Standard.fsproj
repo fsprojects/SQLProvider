@@ -6,12 +6,12 @@
     <!-- Lets use: -->
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
-	<AllowCrossTargeting>true</AllowCrossTargeting>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
     <OutputPath>..\..\bin</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
- </PropertyGroup>
+  </PropertyGroup>
   <ItemGroup>
     <!--Compile Include="Init.fs" / -->
     <Compile Include="..\SQLProvider\AssemblyInfo.fs">
@@ -113,14 +113,16 @@
     <PackageReference Include="FSharp.Core" Version="4.2.3" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.IO" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'net461'">
+    <PackageReference Include="System.IO" Version="4.3.0" />
+    <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.*" />
   </ItemGroup>
   <!--Import Project="..\..\.paket\Paket.Restore.targets" /-->
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

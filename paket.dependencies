@@ -8,14 +8,22 @@ nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
-nuget System.Runtime
-nuget FSharp.NET.Sdk
-nuget System.Runtime.Loader
-nuget System.Runtime.Serialization.Primitives
-nuget System.Reflection
 nuget System.Data.SqlClient
-nuget System.Data.Common
-nuget System.IO
+
+group Standard
+    source https://nuget.org/api/v2
+
+    nuget FSharp.Core
+    nuget System.Runtime
+    nuget System.Runtime.Loader
+    nuget System.Runtime.Serialization.Primitives
+    nuget System.Runtime.Serialization.Formatters
+    nuget System.IO
+    nuget System.Console
+    nuget System.Reflection
+    nuget System.Reflection.TypeExtensions
+    nuget System.Data.SqlClient
+    nuget System.Data.Common
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 

@@ -95,6 +95,7 @@ Target "CleanDocs" (fun _ ->
 Target "Build" (fun _ ->
     // Build .NET Core solution
 #if MONO
+#else
     DotNetCli.Restore(fun p -> 
         { p with 
             Project = "SQLProvider.Core.sln"
@@ -129,16 +130,18 @@ Target "RunTests" (fun _ ->
 
 Target "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
-    
-    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.dll"
-    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.deps.json"
 
 #if MONO
-    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" 
-    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll" 
-    CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll" 
-    CopyFile "bin/netstandard2.0" "..\..\packages\System.Data.SqlClient\lib\net461\System.Data.SqlClient.dll" 
+#else
+    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" 
+    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Console.dll" 
+    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.IO.dll" 
+    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll" 
+    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll" 
+    CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
 #endif
+
+    CopyDir @"temp/lib" "bin" allFiles
 
     NuGet (fun p ->
         { p with
