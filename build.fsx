@@ -139,7 +139,7 @@ Target "NuGet" (fun _ ->
     CopyFile "bin/netstandard2.0" "C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll" 
     CopyFile "bin/netstandard2.0" "..\..\packages\System.Data.SqlClient\lib\net461\System.Data.SqlClient.dll" 
 #endif
-	
+
     NuGet (fun p ->
         { p with
             Authors = authors
@@ -205,7 +205,7 @@ Target "GenerateHelp" (fun _ ->
 
     CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
     CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
-	
+
     generateHelp true
 )
 
