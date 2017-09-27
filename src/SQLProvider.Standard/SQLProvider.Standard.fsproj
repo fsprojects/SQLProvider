@@ -10,7 +10,6 @@
     <OutputPath>..\..\bin</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <!--Compile Include="Init.fs" / -->

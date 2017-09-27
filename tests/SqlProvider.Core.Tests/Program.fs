@@ -25,4 +25,5 @@ let main argv =
         } |> Seq.head
 
     printfn "Hello %s!" employeesFirstName
+    System.Threading.Thread.Sleep 2000
     0 // return an integer exit code

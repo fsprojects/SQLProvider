@@ -13,7 +13,22 @@
     <releaseNotes>@releaseNotes@</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>@tags@</tags>
-    <dependencies />
+    <dependencies>
+		<group targetFramework="netstandard2.0">
+			<dependency id="NETStandard.Library" version="2.0" />
+			<dependency id="FSharp.Core" version="3.1.2.5" />
+			<dependency id="System.Runtime" version="4.3" />
+			<dependency id="System.Runtime.Loader" version="4.3" />
+			<dependency id="System.Runtime.Serialization.Primitives" version="4.3" />
+			<dependency id="System.Runtime.Serialization.Formatters" version="4.3" />
+			<dependency id="System.IO" version="4.3" />
+			<dependency id="System.Console" version="4.3" />
+			<dependency id="System.Reflection" version="4.3" />
+			<dependency id="System.Reflection.TypeExtensions" version="4.3" />
+			<dependency id="System.Data.SqlClient" version="4.4" />
+			<dependency id="System.Data.Common" version="4.3" />
+		</group>
+	</dependencies>
   </metadata>
   <files>
     <file src="**/*.dll" />
