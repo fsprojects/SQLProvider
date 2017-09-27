@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
+type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
@@ -20,11 +20,11 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let quotes =
-        if quotehcar = OdbcQuoteCharacter.NO_QUOTES then ' ',' '
-        elif quotehcar = OdbcQuoteCharacter.GRAVE_ACCENT then '`', '`'
-        elif quotehcar = OdbcQuoteCharacter.SQUARE_BRACKETS then '[', ']'
-        elif quotehcar = OdbcQuoteCharacter.DOUBLE_QUOTES then '"', '"'
-        elif quotehcar = OdbcQuoteCharacter.APHOSTROPHE then ''', '''
+        if quotechar = OdbcQuoteCharacter.NO_QUOTES then ' ',' '
+        elif quotechar = OdbcQuoteCharacter.GRAVE_ACCENT then '`', '`'
+        elif quotechar = OdbcQuoteCharacter.SQUARE_BRACKETS then '[', ']'
+        elif quotechar = OdbcQuoteCharacter.DOUBLE_QUOTES then '"', '"'
+        elif quotechar = OdbcQuoteCharacter.APHOSTROPHE then ''', '''
         else '`', '`'
 
     let mutable cOpen = fst quotes //char separator in query for table aliases `alias` or [alias]
@@ -32,7 +32,7 @@ type internal OdbcProvider(quotehcar : OdbcQuoteCharacter) =
 
     let createTypeMappings (con:OdbcConnection) =
 
-        if quotehcar = OdbcQuoteCharacter.DEFAULT_QUOTE && con.Driver.Contains("sql") then
+        if quotechar = OdbcQuoteCharacter.DEFAULT_QUOTE && con.Driver.Contains("sql") then
             cOpen <- '['
             cClose <- ']'
 
