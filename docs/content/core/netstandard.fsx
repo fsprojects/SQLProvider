@@ -4,9 +4,11 @@
 
 This is very initial / experimental, from version 1.1.12-alpha5.
 
+Install e.g. with: `dotnet add package SQLProvider --version 1.1.12-alpha5`
+
 ## Example project ##
 
-There is an example .NET-Coreapp 2.0 project at: `tests\SqlProvider.Core.Tests`
+There is an example .NET-Coreapp 2.0 project at: [tests\SqlProvider.Core.Tests](https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests)
 
 There is a build.cmd which runs as follows:
 
@@ -17,10 +19,12 @@ dotnet run
 ```
 
 If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
-copy correct dll under System.Data.SqlClient\runtimes\...\ to your execution folder.
+copy correct dll from under `System.Data.SqlClient\runtimes\...\` to your execution folder.
 
 
-## Details ##
+## Some Technical Details ##
+
+Sources are in the [netstandard branch](https://github.com/fsprojects/SQLProvider/tree/netstandard).
 
 The following files is needed to the NuGet package, from the .NET Standard SDK:
 netstandard.dll, System.Console.dll, System.IO.dll, System.Reflection.dll, System.Runtime.dll
