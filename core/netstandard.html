@@ -34,8 +34,8 @@
         <div class="span9" id="main">
           
 <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
-<p>This is very initial / experimental, from version 1.1.12-alpha5.
-With .NET-cli: <code>dotnet add package SQLProvider --version 1.1.12-alpha5</code></p>
+<p>This is very initial / experimental, from version 1.1.12-alpha5.</p>
+<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12-alpha5</code></p>
 <h2><a name="Example-project" class="anchor" href="#Example-project">Example project</a></h2>
 <p>There is an example .NET-Coreapp 2.0 project at: <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
 <p>There is a build.cmd which runs as follows:</p>
@@ -52,7 +52,7 @@ With .NET-cli: <code>dotnet add package SQLProvider --version 1.1.12-alpha5</cod
 <p>If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
 copy correct dll from under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>
 <h2><a name="Some-Technical-Details" class="anchor" href="#Some-Technical-Details">Some Technical Details</a></h2>
-<p>Sources are in <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard">netstandard branch</a>.</p>
+<p>Sources are in the <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard">netstandard branch</a>.</p>
 <p>The following files is needed to the NuGet package, from the .NET Standard SDK:
 netstandard.dll, System.Console.dll, System.IO.dll, System.Reflection.dll, System.Runtime.dll</p>
 <p>You can find net461 versions of them by default from:
