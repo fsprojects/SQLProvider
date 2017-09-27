@@ -2,7 +2,7 @@
 
 # .NET Standard / .NET Core support #
 
-This is very initial / experimental.
+This is very initial / experimental, from version 1.1.12-alpha5.
 
 ## Example project ##
 

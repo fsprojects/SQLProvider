@@ -93,24 +93,24 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    // Build .NET Core solution
-#if MONO
-#else
-    DotNetCli.Restore(fun p -> 
-        { p with 
-            Project = "SQLProvider.Core.sln"
-            NoCache = true})
 
-    DotNetCli.Build(fun p -> 
-        { p with 
-            Project = "SQLProvider.Core.sln"
-            Configuration = "Release"})
-#endif
-    
     // Build .NET Framework solution
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore
+
+    // Build .NET Core solution
+    if not isMono then // Mono dotnet build is not tested yet...
+        DotNetCli.Restore(fun p -> 
+            { p with 
+                Project = "SQLProvider.Core.sln"
+                NoCache = true})
+
+        DotNetCli.Build(fun p -> 
+            { p with 
+                Project = "SQLProvider.Core.sln"
+                Configuration = "Release"})
+
 )
 
 // --------------------------------------------------------------------------------------
@@ -161,6 +161,10 @@ Target "NuGet" (fun _ ->
 
     CleanDir "Temp"
     Branches.tag "" release.NugetVersion
+    // Manual process for now: Rename SQLProvider.*.nupkg to zip, open SQLProvider.nuspec inside it
+    // and replace "Unsupported0.0" to ".NETStandard2.0", update the file to zip-package,
+    // then rename it back and upload from NuGet.org or command-line.
+
     // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
     //Branches.pushTag "" "upstream" release.NugetVersion
 )

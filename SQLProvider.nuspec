@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="2.12">
     <id>@project@</id>
     <version>@build.number@</version>
     <authors>@authors@</authors>
@@ -11,23 +11,24 @@
     <summary>@summary@</summary>
     <description>@description@</description>
     <releaseNotes>@releaseNotes@</releaseNotes>
-    <copyright>Copyright 2015</copyright>
+    <copyright>Copyright 2015-2017</copyright>
     <tags>@tags@</tags>
     <dependencies>
-		<group targetFramework="netstandard2.0">
-			<dependency id="NETStandard.Library" version="2.0" />
-			<dependency id="FSharp.Core" version="3.1.2.5" />
-			<dependency id="System.Runtime" version="4.3" />
-			<dependency id="System.Runtime.Loader" version="4.3" />
-			<dependency id="System.Runtime.Serialization.Primitives" version="4.3" />
-			<dependency id="System.Runtime.Serialization.Formatters" version="4.3" />
-			<dependency id="System.IO" version="4.3" />
-			<dependency id="System.Console" version="4.3" />
-			<dependency id="System.Reflection" version="4.3" />
-			<dependency id="System.Reflection.TypeExtensions" version="4.3" />
-			<dependency id="System.Data.SqlClient" version="4.4" />
-			<dependency id="System.Data.Common" version="4.3" />
-		</group>
+      <group targetFramework=".NETFramework4.5.1"/>
+      <group targetFramework=".NETStandard2.0">
+		<dependency id="NETStandard.Library" version="2.0" />
+		<dependency id="FSharp.Core" version="3.1.2.5" />
+		<dependency id="System.Runtime" version="4.3" />
+		<dependency id="System.Runtime.Loader" version="4.3" />
+		<dependency id="System.Runtime.Serialization.Primitives" version="4.3" />
+		<dependency id="System.Runtime.Serialization.Formatters" version="4.3" />
+		<dependency id="System.IO" version="4.3" />
+		<dependency id="System.Console" version="4.3" />
+		<dependency id="System.Reflection" version="4.3" />
+		<dependency id="System.Reflection.TypeExtensions" version="4.3" />
+		<dependency id="System.Data.SqlClient" version="4.4" />
+		<dependency id="System.Data.Common" version="4.3" />
+      </group>
 	</dependencies>
   </metadata>
   <files>
