@@ -55,12 +55,6 @@ Connection string can be passed as hard-coded static parameter (development) or 
 The target frameworks are defined in the project file: `<TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks>`
 Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0
 
-You should use .netstandard2.0 and not netcoreapp2.0, because .netstandard2.0 can be referenced from the netcoreapp2.0. But if you want to still build as netcoreapp2.0, a modification is needed: ProvidedTypes.fs needs a type hint at line 94:
-
-```fsharp
-|> Seq.forall (fun (originalName:string, newName:string) ->
-```
-
 Build is not tested with Mono, so .Net Standard build is disabled from build.fsx on Mono.
 
 *)
