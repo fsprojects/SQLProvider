@@ -1,5 +1,5 @@
-﻿#I @"../../../bin"
-#r @"../../../bin/FSharp.Data.SqlProvider.dll"
+﻿#I @"../../../bin/net451"
+#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System

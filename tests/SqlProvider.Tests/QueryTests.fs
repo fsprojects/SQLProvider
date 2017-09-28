@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r @"../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
 module QueryTests

@@ -15,7 +15,12 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Data.Sql
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
-    let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
+    let runtimeAssembly = 
+        Assembly.GetExecutingAssembly()
+        //let r = Reflection.tryLoadAssemblyFrom "" [||] [config.RuntimeAssembly]
+        //match r with
+        //| Choice1Of2(assembly) -> assembly
+        //| Choice2Of2(paths, errors) -> Assembly.GetExecutingAssembly()
     member __.RuntimeAssembly = runtimeAssembly 
 
 module internal DesignTimeCache = 

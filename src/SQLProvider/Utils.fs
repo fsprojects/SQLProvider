@@ -277,11 +277,7 @@ module internal Reflection =
 
     let tryLoadAssembly path = 
          try 
-#if NETSTANDARD
-             let loadedAsm = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(path) 
-#else
              let loadedAsm = Assembly.LoadFrom(path) 
-#endif
              if loadedAsm <> null
              then Some(Choice1Of2 loadedAsm)
              else None
@@ -301,21 +297,17 @@ module internal Reflection =
                 then asm
                 else Path.Combine(resolutionPath,asm))
 
-        let myPath = 
+        let myPath1, myPath2 = 
 #if INTERACTIVE
-            __SOURCE_DIRECTORY__
+            __SOURCE_DIRECTORY__, __SOURCE_DIRECTORY__
 #else
-#if NETSTANDARD
-                System.Reflection.Assembly.GetEntryAssembly().Location
-                |> System.IO.Path.GetDirectoryName
-#else
-            System.Reflection.Assembly.GetExecutingAssembly().Location
-            |> Path.GetDirectoryName
-#endif
+            System.Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName,
+            System.Reflection.Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
 #endif
         let currentPaths =
-            assemblyNames 
-            |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm))
+            (assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath1,asm)))
+            @ (assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath2,asm)))
+            |> Seq.distinct |> Seq.toList
 
         let allPaths =
             (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
@@ -328,24 +320,40 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
-#if !NETSTANDARD
         // Some providers have additional references to other libraries.
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
-        System.AppDomain.CurrentDomain.add_AssemblyResolve (
-            System.ResolveEventHandler (fun _ args ->
-                
-                let extraPathDirs =[resolutionPath; myPath]
+        // and runtime binding-redirect: http://blog.slaks.net/2013-12-25/redirecting-assembly-loads-at-runtime/
+
+        let loadHandler (args:ResolveEventArgs) (loadFunc:string->Assembly) =
+            let fileName = args.Name.Split(',').[0] + ".dll"
+            try 
+                let tryLoad = loadFunc fileName
+                System.Diagnostics.Debug.WriteLine("Redirecting assembly load of " + args.Name + " to " + tryLoad.FullName)
+                tryLoad
+            with
+            | _ ->
+                let extraPathDirs =[resolutionPath; myPath1; myPath2] |> Seq.distinct |> Seq.toList
                 let loaded = 
                     extraPathDirs |> List.tryPick(fun dllPath ->
-                        let fileName = args.Name.Split(',').[0] + ".dll"
                         let assemblyPath = Path.Combine(dllPath,fileName)
                         if File.Exists assemblyPath then
-                            Some(Assembly.LoadFrom assemblyPath)
+                            Some(loadFunc assemblyPath)
                         else None)
                 match loaded with
-                | Some x -> x
-                | None -> null))
-#endif        
+                | Some x -> 
+                    System.Diagnostics.Debug.WriteLine("Redirecting assembly load of " + args.Name + " to " + x.FullName)
+                    x
+                | None -> null
+        let mutable handler = Unchecked.defaultof<ResolveEventHandler>
+        handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
+            System.ResolveEventHandler (fun _ args ->
+                let loadfunc x =
+                    if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
+                    let res = Assembly.LoadFrom x
+                    if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
+                    res
+                loadHandler args loadfunc)
+        System.AppDomain.CurrentDomain.add_AssemblyResolve handler
         match result with
         | Some asm -> Choice1Of2 asm
         | None ->

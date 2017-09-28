@@ -37,7 +37,7 @@
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy ..\..\packages\System.Data.SqlClient\runtimes\win\lib\netstandard2.0\System.Data.SqlClient.dll bin\Debug\netcoreapp2.0" Condition="'$(IsWindows)' == 'true'" />
-    <Exec Command="cp ../../packages/System.Data.SqlClient/runtimes/unix/lib/netstandard2.0/System.Data.SqlClient.dll bin/Debug/netcoreapp2.0" Condition="'$(IsWindows)' != 'true'" />
+    <Exec Command="copy ..\..\..\packages\System.Data.SqlClient\runtimes\win\lib\netstandard2.0\System.Data.SqlClient.dll bin\Debug\netcoreapp2.0" Condition="'$(IsWindows)' == 'true'" />
+    <Exec Command="cp ../../../packages/System.Data.SqlClient/runtimes/unix/lib/netstandard2.0/System.Data.SqlClient.dll bin/Debug/netcoreapp2.0" Condition="'$(IsWindows)' != 'true'" />
   </Target>
 </Project>

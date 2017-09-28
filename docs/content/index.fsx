@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin"
+#I "../../bin/net451"
 
 (**
 SQLProvider
