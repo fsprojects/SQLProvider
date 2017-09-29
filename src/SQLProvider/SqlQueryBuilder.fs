@@ -306,7 +306,7 @@ type SqlQueryBuilder() =
 [<AutoOpen>]
 module ExtraTopLevelOperators = 
     /// Builds a SQL query using query syntax and operators
-    let sqlQuery = SqlQueryBuilder()
+    let sql = SqlQueryBuilder()
   
     [<AutoOpen>]
     module LowPriority = 

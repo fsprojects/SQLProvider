@@ -18,11 +18,11 @@ open System.Transactions
 let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
+type Sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
  
-let createCustomer (dc:sql.dataContext) = 
+let createCustomer (dc:Sql.dataContext) = 
     let newCustomer = dc.Main.Customers.Create()
     newCustomer.CustomerId <- "SQLPROVIDER"
     newCustomer.Address <- "FsPRojects"
@@ -39,10 +39,10 @@ let createCustomer (dc:sql.dataContext) =
 
 [<Test>]
 let ``Can create and delete an entity``() = 
-    let dc = sql.GetDataContext()
+    let dc = Sql.GetDataContext()
     
     let originalCustomers = 
-        sqlQuery { 
+        sql { 
           for cust in dc.Main.Customers do
           select cust
         }
@@ -53,7 +53,7 @@ let ``Can create and delete an entity``() =
     dc.SubmitUpdates()
 
     let newCustomers = 
-        sqlQuery { 
+        sql { 
           for cust in dc.Main.Customers do
           select cust  
         }
@@ -69,10 +69,10 @@ let ``Can create and delete an entity``() =
 
 [<Test>]
 let ``Can create, update and delete an entity``() = 
-    let dc = sql.GetDataContext()
+    let dc = Sql.GetDataContext()
     
     let originalCustomers = 
-        sqlQuery { 
+        sql { 
           for cust in dc.Main.Customers do
           select cust 
         }
@@ -89,10 +89,10 @@ let ``Can create, update and delete an entity``() =
     dc.SubmitUpdates()
 
     // let's create new context just to test that it is actually there.
-    let dc2 = sql.GetDataContext()
+    let dc2 = Sql.GetDataContext()
  
     let newCustomers = 
-        sqlQuery { 
+        sql { 
           for cust in dc2.Main.Customers do
           select cust
         }
@@ -109,7 +109,7 @@ let ``Can create, update and delete an entity``() =
     dc2.SubmitUpdates()
 
     let reallyDeleted = 
-        sqlQuery { 
+        sql { 
           for cust in dc2.Main.Customers do
           select cust  
         }
@@ -119,7 +119,7 @@ let ``Can create, update and delete an entity``() =
 
 [<Test>]
 let ``Can persist a blob``() = 
-    let dc = sql.GetDataContext()
+    let dc = Sql.GetDataContext()
     
     let imageBytes = [| 0uy .. 100uy |]
 
@@ -128,7 +128,7 @@ let ``Can persist a blob``() =
     dc.SubmitUpdates()
 
     let reloadedEntity =
-        sqlQuery { 
+        sql { 
           for image in dc.Main.Pictures do
           where (image.Id = savedEntity.Id)
           head 
@@ -140,17 +140,17 @@ let ``Can persist a blob``() =
 let ``Can enlist in a transaction scope and rollback changes without complete``() =
 
     try
-        let dc = sql.GetDataContext()
+        let dc = Sql.GetDataContext()
         use ts = new TransactionScope()
         createCustomer dc |> ignore
         dc.SubmitUpdates()
         ts.Dispose()
     finally
         GC.Collect()
-    let dc2 = sql.GetDataContext()
+    let dc2 = Sql.GetDataContext()
 
     let created = 
-        sqlQuery { 
+        sql { 
           for cust in dc2.Main.Customers do
           where (cust.CustomerId = "SQLPROVIDER")
           select cust  
