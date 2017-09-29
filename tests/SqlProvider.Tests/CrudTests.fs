@@ -1,4 +1,10 @@
-﻿module CrudTests
+﻿#if INTERACTIVE
+#r @"../../bin/FSharp.Data.SqlProvider.dll"
+#r @"System.Transactions.dll"
+#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#else
+module CrudTests
+#endif
 
 open System
 open System.IO
