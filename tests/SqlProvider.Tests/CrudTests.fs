@@ -42,8 +42,10 @@ let ``Can create and delete an entity``() =
     let dc = sql.GetDataContext()
     
     let originalCustomers = 
-        query { for cust in dc.Main.Customers do
-                select cust }
+        sqlQuery { 
+          for cust in dc.Main.Customers do
+          select cust
+        }
         |> Seq.toList
      
     createCustomer dc |> ignore
@@ -51,8 +53,10 @@ let ``Can create and delete an entity``() =
     dc.SubmitUpdates()
 
     let newCustomers = 
-        query { for cust in dc.Main.Customers do
-                select cust  }
+        sqlQuery { 
+          for cust in dc.Main.Customers do
+          select cust  
+        }
         |> Seq.toList
     
     let created = 
@@ -68,8 +72,10 @@ let ``Can create, update and delete an entity``() =
     let dc = sql.GetDataContext()
     
     let originalCustomers = 
-        query { for cust in dc.Main.Customers do
-                select cust }
+        sqlQuery { 
+          for cust in dc.Main.Customers do
+          select cust 
+        }
         |> Seq.toList
      
     let ent = createCustomer dc
@@ -86,8 +92,10 @@ let ``Can create, update and delete an entity``() =
     let dc2 = sql.GetDataContext()
  
     let newCustomers = 
-        query { for cust in dc2.Main.Customers do
-                select cust  }
+        sqlQuery { 
+          for cust in dc2.Main.Customers do
+          select cust
+        }
         |> Seq.toList
     
     let created = 
@@ -101,8 +109,10 @@ let ``Can create, update and delete an entity``() =
     dc2.SubmitUpdates()
 
     let reallyDeleted = 
-        query { for cust in dc2.Main.Customers do
-                select cust  }
+        sqlQuery { 
+          for cust in dc2.Main.Customers do
+          select cust  
+        }
         |> Seq.toList
 
     Assert.AreEqual(originalCustomers.Length, reallyDeleted.Length)
@@ -118,9 +128,11 @@ let ``Can persist a blob``() =
     dc.SubmitUpdates()
 
     let reloadedEntity =
-        query { for image in dc.Main.Pictures do
-                where (image.Id = savedEntity.Id)
-                head }
+        sqlQuery { 
+          for image in dc.Main.Pictures do
+          where (image.Id = savedEntity.Id)
+          head 
+        }
 
     Assert.That( reloadedEntity.Image, Is.EqualTo(imageBytes))
 
@@ -138,9 +150,10 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
     let dc2 = sql.GetDataContext()
 
     let created = 
-        query { for cust in dc2.Main.Customers do
-                where (cust.CustomerId = "SQLPROVIDER")
-                select cust  
+        sqlQuery { 
+          for cust in dc2.Main.Customers do
+          where (cust.CustomerId = "SQLPROVIDER")
+          select cust  
         }
         |> Seq.toList
 
