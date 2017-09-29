@@ -98,19 +98,20 @@ Target "Build" (fun _ ->
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore
+)
+
+Target "BuildCore" (fun _ ->
 
     // Build .NET Core solution
-    if not isMono then // Mono dotnet build is not tested yet...
-        DotNetCli.Restore(fun p -> 
-            { p with 
-                Project = "SQLProvider.Core.sln"
-                NoCache = true})
+    DotNetCli.Restore(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            NoCache = true})
 
-        DotNetCli.Build(fun p -> 
-            { p with 
-                Project = "SQLProvider.Core.sln"
-                Configuration = "Release"})
-
+    DotNetCli.Build(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            Configuration = "Release"})
 )
 
 // --------------------------------------------------------------------------------------
@@ -133,11 +134,13 @@ Target "NuGet" (fun _ ->
 
 #if MONO
 #else
-    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" 
-    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Console.dll" 
-    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.IO.dll" 
-    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll" 
-    CopyFile "bin/netstandard2.0" @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll" 
+    let dotnetSdk = @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
+    if directoryExists dotnetSdk then
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
     CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
 #endif
 
@@ -161,9 +164,6 @@ Target "NuGet" (fun _ ->
 
     CleanDir "Temp"
     Branches.tag "" release.NugetVersion
-    // Manual process for now: Rename SQLProvider.*.nupkg to zip, open SQLProvider.nuspec inside it
-    // and replace "Unsupported0.0" to ".NETStandard2.0", update the file to zip-package,
-    // then rename it back and upload from NuGet.org or command-line.
 
     // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
     //Branches.pushTag "" "upstream" release.NugetVersion
@@ -287,8 +287,10 @@ Target "BuildDocs" DoNothing
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
+  =?> ("BuildCore", isLocalBuild || not isMono)
   ==> "RunTests"
   ==> "CleanDocs"
+  // Travis doesn't support mono+dotnet:
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
   =?> ("GenerateHelp",isLocalBuild && not isMono)
   ==> "All"

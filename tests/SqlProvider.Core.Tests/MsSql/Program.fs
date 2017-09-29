@@ -2,12 +2,12 @@
 //#r "../../../bin/net461/FSharp.Data.SqlProvider.dll"
 #if INTERACTIVE
 #r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll"
-#r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Reflection.dll"
-#r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Runtime.dll"
 #r "../../../packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll"
 #r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+
 #else
 module Netstandard
+
 #endif
 
 open System
@@ -20,7 +20,8 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr>
 
 [<EntryPoint>]
 let main argv =
-    let ctx = HR.GetDataContext connStr
+    let runtimeConnectionString = connStr
+    let ctx = HR.GetDataContext runtimeConnectionString
     let employeesFirstName = 
         query {
             for emp in ctx.Dbo.Employees do

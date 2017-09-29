@@ -26,7 +26,14 @@ module internal Oracle =
 
     let findType name =
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice1Of2(assembly) -> 
+            let types = 
+                try assembly.GetTypes() 
+                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                    let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                    let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                    failwith (e.Message + Environment.NewLine + details)
+            types |> Array.find(fun t -> t.Name = name)
         | Choice2Of2(paths, errors) ->
            let details = 
                 match errors with 
@@ -178,12 +185,16 @@ module internal Oracle =
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
-            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.InnerException.Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+            let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand

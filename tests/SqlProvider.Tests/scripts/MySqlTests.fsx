@@ -8,7 +8,7 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
         
 [<Literal>]
-let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;"
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 

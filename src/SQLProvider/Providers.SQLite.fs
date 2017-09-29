@@ -18,40 +18,57 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let useMono = 
-        match sqliteLibrary with
-        | SQLiteLibrary.SystemDataSQLite -> false
-        | SQLiteLibrary.MonoDataSQLite -> true
-        | SQLiteLibrary.AutoSelect -> Type.GetType ("Mono.Runtime") <> null
-        | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
-
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assemblyNames =
+        let fileStart = 
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> "System"
+            | SQLiteLibrary.MonoDataSQLite -> "Mono"
+            | SQLiteLibrary.MicrosoftDataSqlite -> "Microsoft"
+            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then "Mono" else "System"
+            | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
         [
-           (if useMono then "Mono" else "System") + ".Data.SQLite.dll"
-           (if useMono then "Mono" else "System") + ".Data.Sqlite.dll"
+           fileStart + ".Data.SQLite.dll"
+           fileStart + ".Data.Sqlite.dll"
         ]
+    
+    let lowercasedll = 
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> false
+            | SQLiteLibrary.MonoDataSQLite
+            | SQLiteLibrary.MicrosoftDataSqlite -> true
+            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then true else false
+            | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
 
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath (Array.append [|runtimeAssembly|] referencedAssemblies) assemblyNames
 
     let findType f =
+        let example = "System.Data.SQLite.Core"
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find f
+        | Choice1Of2(assembly) -> 
+            let types = 
+                try assembly.GetTypes() 
+                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                    let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                    let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                    failwith (e.Message + Environment.NewLine + details)
+            types |> Array.find f
         | Choice2Of2(paths, errors) ->
            let details = 
                 match errors with 
                 | [] -> "" 
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package System.Data.SQLite.Core) must exist in the paths: %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
+                example
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
                 details
 
-    let connectionType =  (findType (fun t -> t.Name = if useMono then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (findType (fun t -> t.Name = if useMono then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (findType (fun t -> t.Name = if useMono then "SqliteParameter" else "SQLiteParameter"))
+    let connectionType =  (findType (fun t -> t.Name = if lowercasedll then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     (findType (fun t -> t.Name = if lowercasedll then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    (findType (fun t -> t.Name = if lowercasedll then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
 
     let rec fieldNotation (al:alias) (c:SqlColumnType) =
@@ -268,12 +285,16 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
             with
             | :? System.Reflection.ReflectionTypeLoadException as ex ->
-                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
                 let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-                let msg = ex.InnerException.Message + ", Path: " + (Path.GetFullPath resolutionPath)
+                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath)
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
+            | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+                let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath)
+                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
 

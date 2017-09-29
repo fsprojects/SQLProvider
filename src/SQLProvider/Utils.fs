@@ -284,7 +284,8 @@ module internal Reflection =
          with e ->
              Some(Choice2Of2 e)
 
-    let tryLoadAssemblyFrom resolutionPath (referencedAssemblies:string[]) assemblyNames =
+    let tryLoadAssemblyFrom (resolutionPath:string) (referencedAssemblies:string[]) assemblyNames =
+        let resolutionPath = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
         let referencedPaths = 
             referencedAssemblies 
             |> Array.filter (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a)))
@@ -297,19 +298,34 @@ module internal Reflection =
                 then asm
                 else Path.Combine(resolutionPath,asm))
 
-        let myPaths = 
-#if INTERACTIVE
-            [__SOURCE_DIRECTORY__]
-#else
-            let ifNotNull (x:Assembly) =
-                if x = null then ""
-                elif x.Location = null then ""
-                else x.Location |> Path.GetDirectoryName
+        let ifNotNull (x:Assembly) =
+            if x = null then ""
+            elif x.Location = null then ""
+            else x.Location |> Path.GetDirectoryName
 
-            let l1 = System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull
-            let l2 = System.Reflection.Assembly.GetExecutingAssembly() |> ifNotNull
-            [l1; l2] |> List.filter(fun x -> String.IsNullOrEmpty x) |> Seq.distinct |> Seq.toList
+//#if NETSTANDARD
+//                    // This would be nice to add myPaths, but Microsoft.Extensions.DependencyModel conflicts in System.Runtime: 
+//                    if Microsoft.Extensions.DependencyModel.DependencyContext.Default = null then [] else
+//                    Microsoft.Extensions.DependencyModel.DependencyContext.Default.CompileLibraries
+//                    |> Seq.map(fun lib -> Path.GetDirectoryName(lib.Name)) |> Seq.distinct |> Seq.toList
+//#endif
+
+        let myPaths = 
+            let dirs = 
+                [__SOURCE_DIRECTORY__;
+#if !INTERACITVE
+                   System.Reflection.Assembly.GetExecutingAssembly() |> ifNotNull;
 #endif
+                   Environment.CurrentDirectory;
+                   System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
+            let dirs = 
+                if not(System.IO.Path.IsPathRooted resolutionPath) then
+                    dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
+                else
+                    dirs
+
+            dirs |> Seq.distinct |> Seq.filter(fun x -> not(String.IsNullOrEmpty x) && Directory.Exists x) |> Seq.toList
+
         let currentPaths =
             myPaths |> List.map(fun myPath -> 
                 assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm)))
@@ -330,11 +346,10 @@ module internal Reflection =
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
         // and runtime binding-redirect: http://blog.slaks.net/2013-12-25/redirecting-assembly-loads-at-runtime/
 
-        let loadHandler (args:ResolveEventArgs) (loadFunc:string->Assembly) =
+        let loadHandler (args:ResolveEventArgs) (loadFunc:string->bool->Assembly) =
             let fileName = args.Name.Split(',').[0] + ".dll"
             try 
-                let tryLoad = loadFunc fileName
-                System.Diagnostics.Debug.WriteLine("Redirecting assembly load of " + args.Name + " to " + tryLoad.FullName)
+                let tryLoad = loadFunc fileName false
                 tryLoad
             with
             | _ ->
@@ -343,19 +358,28 @@ module internal Reflection =
                     extraPathDirs |> List.tryPick(fun dllPath ->
                         let assemblyPath = Path.Combine(dllPath,fileName)
                         if File.Exists assemblyPath then
-                            Some(loadFunc assemblyPath)
+                            let tryLoad = loadFunc assemblyPath true
+                            if tryLoad <> null then 
+                                Some(tryLoad) else None
                         else None)
                 match loaded with
                 | Some x -> 
-                    System.Diagnostics.Debug.WriteLine("Redirecting assembly load of " + args.Name + " to " + x.FullName)
                     x
                 | None -> null
         let mutable handler = Unchecked.defaultof<ResolveEventHandler>
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
             System.ResolveEventHandler (fun _ args ->
-                let loadfunc x =
+                let loadfunc x shouldCatch =
                     if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
-                    let res = try Assembly.LoadFrom x with _ -> null
+                    let res = 
+                        try 
+                            //File.AppendAllText(@"c:\Temp\build.txt", "Binding trial " + args.Name + " to " + x + "\r\n")
+                            let r = Assembly.LoadFrom x 
+                            //if r <> null then 
+                            //    File.AppendAllText(@"c:\Temp\build.txt", "Binding success " + args.Name + " to " + r.FullName + "\r\n")
+                            r
+                        with e when shouldCatch -> 
+                            null
                     if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
                     res
                 loadHandler args loadfunc)

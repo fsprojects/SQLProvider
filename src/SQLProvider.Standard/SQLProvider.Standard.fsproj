@@ -16,19 +16,19 @@
     <Compile Include="..\SQLProvider\AssemblyInfo.fs">
       <Link>AssemblyInfo.fs</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi">
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
       <Link>ProvidedTypes.fsi</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs">
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fs">
       <Link>ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReader.fs">
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\AssemblyReader.fs">
       <Link>AssemblyReader.fs</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReaderReflection.fs">
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\AssemblyReaderReflection.fs">
       <Link>AssemblyReaderReflection.fs</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypesContext.fs">
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypesContext.fs">
       <Link>ProvidedTypesContext.fs</Link>
     </Compile>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">

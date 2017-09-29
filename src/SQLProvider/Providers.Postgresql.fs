@@ -37,7 +37,14 @@ module PostgreSQL =
                     assemblyNames Environment.NewLine resolutionPaths details
 
     let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
-    let findType name = assembly.Value.GetTypes() |> Array.tryFind (fun t -> t.Name = name)
+    let findType name = 
+        let types = 
+            try assembly.Value.GetTypes() 
+            with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                failwith (e.Message + Environment.NewLine + details)
+        types |> Array.tryFind (fun t -> t.Name = name)
     let getType = findType >> Option.get
 
     let connectionType = lazy (getType "NpgsqlConnection")
@@ -230,14 +237,18 @@ module PostgreSQL =
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
-            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.InnerException.Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as e when (e.InnerException <> null) ->
             failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
+        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+            let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
     let createCommand commandText connection =
         try
