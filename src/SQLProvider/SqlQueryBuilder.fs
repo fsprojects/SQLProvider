@@ -287,13 +287,21 @@ type SqlQueryBuilder() =
     /// </summary>
     [<CustomOperation("thenByNullableDescending",MaintainsVariableSpace=true,AllowIntoPattern=true)>] 
     member inline this.ThenByNullableDescending (source, [<ProjectionParameter>] keySelector) = this.QueryBuilder.ThenByNullableDescending (source, keySelector)
+      
+    //// WIP
+    
+    ///// <summary>
+    ///// A query operator that selects elements from another table based on a SQL foreign key relationship'. 
+    ///// </summary>
+    //[<CustomOperation("naturalJoin")>] 
+    //member inline this.NaturalJoin (source:QuerySource<'T,'Q>, body: 'T -> QuerySource<'Result,'Q2>) : QuerySource<'Result,'Q> = 
+    //  // QueryBuilder.For is defined as :
+    //  // QuerySource (Seq.collect (fun x -> (body x).Source) source.Source)
+    
+    //  // QueryBuilder.Join is defined as :
+    //  // QuerySource (System.Linq.Enumerable.Join(outerSource.Source, innerSource.Source, Func<_,_>(outerKeySelector), Func<_,_>(innerKeySelector), Func<_,_,_>(elementSelector)))
 
-    // WIP: Can we turn the (!!) operator into 'naturalJoin'?
-
-    /// <summary>A query operator that correlates two sets of selected values based on a SQL foreign key relationship'. 
-    /// </summary>
-    [<CustomOperation("naturalJoin")>] 
-    member inline this.NaturalJoin (source) = !!source
+    //  this.QueryBuilder.For(QuerySource (!! (source)), body)
 
 [<AutoOpen>]
 module ExtraTopLevelOperators = 
