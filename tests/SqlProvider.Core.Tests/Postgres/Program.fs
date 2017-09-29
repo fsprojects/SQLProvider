@@ -16,7 +16,8 @@ open FSharp.Data.Sql
 
 type HR = SqlDataProvider<
             Common.DatabaseProviderTypes.POSTGRESQL, 
-            "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres">
+            "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres",
+            ResolutionPath = "temp">
 
 [<EntryPoint>]
 let main argv =
