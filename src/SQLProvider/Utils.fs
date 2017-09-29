@@ -297,17 +297,23 @@ module internal Reflection =
                 then asm
                 else Path.Combine(resolutionPath,asm))
 
-        let myPath1, myPath2 = 
+        let myPaths = 
 #if INTERACTIVE
-            __SOURCE_DIRECTORY__, __SOURCE_DIRECTORY__
+            [__SOURCE_DIRECTORY__]
 #else
-            System.Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName,
-            System.Reflection.Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
+            let ifNotNull (x:Assembly) =
+                if x = null then ""
+                elif x.Location = null then ""
+                else x.Location |> Path.GetDirectoryName
+
+            let l1 = System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull
+            let l2 = System.Reflection.Assembly.GetExecutingAssembly() |> ifNotNull
+            [l1; l2] |> List.filter(fun x -> String.IsNullOrEmpty x) |> Seq.distinct |> Seq.toList
 #endif
         let currentPaths =
-            (assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath1,asm)))
-            @ (assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath2,asm)))
-            |> Seq.distinct |> Seq.toList
+            myPaths |> List.map(fun myPath -> 
+                assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm)))
+            |> Seq.concat |> Seq.toList
 
         let allPaths =
             (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
@@ -332,7 +338,7 @@ module internal Reflection =
                 tryLoad
             with
             | _ ->
-                let extraPathDirs =[resolutionPath; myPath1; myPath2] |> Seq.distinct |> Seq.toList
+                let extraPathDirs = (resolutionPath :: myPaths)
                 let loaded = 
                     extraPathDirs |> List.tryPick(fun dllPath ->
                         let assemblyPath = Path.Combine(dllPath,fileName)

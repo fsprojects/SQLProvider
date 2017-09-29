@@ -1,4 +1,4 @@
-### 1.1.12-alpha5 - 27.09.2017
+### 1.1.12-alpha6 - 28.09.2017
 * Initial version of .NET Standard 2.0 release
 * Breaking change: The original dll path is now under net451 folder.
 

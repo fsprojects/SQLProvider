@@ -10,7 +10,7 @@
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-  </PropertyGroup>  
+  </PropertyGroup>
   <PropertyGroup Condition="'$(IsWindows)' == 'true'">
     <FscToolPath>C:\Program Files (x86)\Microsoft SDKs\F#\4.1\Framework\v4.0</FscToolPath>
     <FscToolExe>fsc.exe</FscToolExe>
@@ -27,17 +27,16 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.4.1" />
+    <PackageReference Include="MySql.Data" Version="8.0.9-dmr" />
     <PackageReference Include="SQLProvider" Version="1.1.12-alpha6" />
+    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy ..\..\..\packages\System.Data.SqlClient\runtimes\win\lib\netstandard2.0\System.Data.SqlClient.dll bin\Debug\netcoreapp2.0" Condition="'$(IsWindows)' == 'true'" />
-    <Exec Command="cp ../../../packages/System.Data.SqlClient/runtimes/unix/lib/netstandard2.0/System.Data.SqlClient.dll bin/Debug/netcoreapp2.0" Condition="'$(IsWindows)' != 'true'" />
-  </Target>
 </Project>
