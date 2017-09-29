@@ -63,6 +63,7 @@
       <Link>ExpressionOptimizer.fs</Link>
     </Compile>
     <Compile Include="Operators.fs" />
+    <Compile Include="SqlQueryBuilder.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="SqlSchema.fs" />
     <Compile Include="DataTable.fs" />

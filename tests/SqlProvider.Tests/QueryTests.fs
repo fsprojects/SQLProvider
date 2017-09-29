@@ -27,7 +27,7 @@ let isMono = Type.GetType ("Mono.Runtime") <> null
 let ``simple select with contains query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.CustomerId
             contains "ALFKI"
@@ -38,7 +38,7 @@ let ``simple select with contains query``() =
 let ``simple select with contains query with where``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.City <> "")
             select cust.CustomerId
@@ -50,7 +50,7 @@ let ``simple select with contains query with where``() =
 let ``simple select with contains query when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.CustomerId
             contains "ALFKI2"
@@ -61,7 +61,7 @@ let ``simple select with contains query when not exists``() =
 let ``simple select with count``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.CustomerId
             count
@@ -72,7 +72,7 @@ let ``simple select with count``() =
 let ``simple select with last``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy cust.CustomerId
             select cust.CustomerId
@@ -84,7 +84,7 @@ let ``simple select with last``() =
 let ``simple select with last or default when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ZZZZ")
             select cust.CustomerId
@@ -96,7 +96,7 @@ let ``simple select with last or default when not exists``() =
 let ``simple exists when exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             exists (cust.CustomerId = "WOLZA")
         }
@@ -106,7 +106,7 @@ let ``simple exists when exists``() =
 let ``simple select with last or default when exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "WOLZA")
             select cust.CustomerId
@@ -118,7 +118,7 @@ let ``simple select with last or default when exists``() =
 let ``simple select with exactly one``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ALFKI")
             select cust.CustomerId
@@ -130,7 +130,7 @@ let ``simple select with exactly one``() =
 let ``simple select with exactly one when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ZZZZ")
             select cust.CustomerId
@@ -142,7 +142,7 @@ let ``simple select with exactly one when not exists``() =
 let ``simple select with head``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ALFKI")
             select cust.CustomerId
@@ -154,7 +154,7 @@ let ``simple select with head``() =
 let ``simple select with head or Default``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ALFKI")
             select cust.CustomerId
@@ -166,7 +166,7 @@ let ``simple select with head or Default``() =
 let ``simple select with head or Default when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ZZZZ")
             select cust.CustomerId
@@ -178,7 +178,7 @@ let ``simple select with head or Default when not exists``() =
 let ``simple select query``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust
         } |> Seq.toArray
@@ -189,7 +189,7 @@ let ``simple select query``() =
 let ``simplest select query let temp``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             let y = cust.City
             select cust.Address
@@ -201,7 +201,7 @@ let ``simplest select query let temp``() =
 let ``simple select query let temp nested``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             let y1 = cust.Address
             let y2 = cust.City
@@ -214,7 +214,7 @@ let ``simple select query let temp nested``() =
 let ``simple select query let temp``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             let y = cust.City + "test"
             select y
@@ -229,7 +229,7 @@ let ``simple select query let temp``() =
 let ``simple select query let where``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             let y = cust.City + "test"
             where (cust.Address <> "")
@@ -243,7 +243,7 @@ let ``simple select query let where``() =
 let ``simple select query let temp used in where``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             let y = cust.City + "test"
             where (y <> "")
@@ -258,7 +258,7 @@ let ``simple select query let temp used in where``() =
 let ``simple select query with operations in select``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select (cust.Country + " " + cust.Address + (1).ToString())
         } |> Seq.toArray
@@ -269,7 +269,7 @@ let ``simple select query with operations in select``() =
 let ``simple select where query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ALFKI")
             select cust
@@ -284,7 +284,7 @@ let ``simple select where query``() =
 let ``simple select where null query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId <> null)
             select cust
@@ -299,7 +299,7 @@ let ``simple select where null query``() =
 let ``simple select where query right side``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where ("ALFKI" = cust.CustomerId)
             select cust
@@ -313,7 +313,7 @@ let ``simple select where query right side``() =
 let ``simple select where query between col properties``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for order in dc.Main.Orders do
             where (order.ShippedDate > order.RequiredDate)
             select (order.ShippedDate, order.RequiredDate)
@@ -326,7 +326,7 @@ let ``simple select where query between col properties``() =
 let ``simple nth query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust
             nth 4
@@ -338,7 +338,7 @@ let ``simple nth query``() =
 let ``simple select where not query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (not(cust.CustomerId = "ALFKI"))
             select cust
@@ -352,7 +352,7 @@ let ``simple select where in query``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (arr.Contains(cust.CustomerId))
             select cust.CustomerId
@@ -369,7 +369,7 @@ let ``simple select where not-in query``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (not(arr.Contains(cust.CustomerId)))
             select cust.CustomerId
@@ -385,14 +385,14 @@ let ``simple select where in queryable query``() =
 
     let dc = sql.GetDataContext()
     let query1 = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.City="London")
             select cust.CustomerId
         }
 
     let query2 = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (query1.Contains(cust.CustomerId))
             select cust.CustomerId
@@ -409,7 +409,7 @@ let ``simple select where in query custom syntax``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId |=| arr)
             select cust.CustomerId
@@ -423,7 +423,7 @@ let ``simple select where in query custom syntax``() =
 let ``simple select where like query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId.Contains("a"))
             select cust.CustomerId
@@ -435,7 +435,7 @@ let ``simple select where like query``() =
 let ``simple select where query with operations in where``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.CustomerId = "ALFKI" && (cust.City.StartsWith("B")))
             select cust
@@ -449,7 +449,7 @@ let ``simple select where query with operations in where``() =
 let ``simple select query with minBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for ord in dc.Main.OrderDetails do
             minBy (decimal ord.Discount)
         }   
@@ -459,7 +459,7 @@ let ``simple select query with minBy``() =
 let ``simple select query with minBy2``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for ord in dc.Main.OrderDetails do
             minBy (ord.Discount)
         }   
@@ -470,7 +470,7 @@ let ``simple select query with minBy2``() =
 let ``simple select query with minBy DateTime``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Employees do
             minBy (emp.BirthDate)
         }   
@@ -480,9 +480,9 @@ let ``simple select query with minBy DateTime``() =
 let ``simple select query with sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
-            sumBy od.UnitPrice
+            sumBy (od.UnitPrice)
         }
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
@@ -491,7 +491,7 @@ let ``simple select query with sumBy``() =
 let ``simple select query with averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             averageBy od.UnitPrice
         }
@@ -502,7 +502,7 @@ let ``simple select query with averageBy``() =
 let ``simplest select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City
         } |> Seq.toArray
@@ -513,7 +513,7 @@ let ``simplest select query with groupBy``() =
 let ``simple select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             select (c.Key, c.Count())
@@ -526,7 +526,7 @@ let ``simple select query with groupBy``() =
 let ``simple select query with groupBy and then sort``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for order in dc.Main.Orders do
             groupBy (order.ShipCity) into ts
             where (ts.Count() > 1)
@@ -544,7 +544,7 @@ let ``simple select query with groupBy and then sort``() =
 let ``simple select query with groupBy multiple columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for p in dc.Main.Products do
             groupBy (p.ReorderLevel, p.CategoryId) into c
             select (c.Key, c.Sum(fun i -> i.UnitPrice))
@@ -556,7 +556,7 @@ let ``simple select query with groupBy multiple columns``() =
 let ``simple select query with groupBy sum``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             groupBy od.ProductId into p
             select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
@@ -572,7 +572,7 @@ let ``simple select query with groupBy sum``() =
 let ``simple select query with groupBy having count``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             where (c.Count() > 1)
@@ -587,7 +587,7 @@ let ``simple select query with groupBy having count``() =
 let ``simple select query with groupBy where and having``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Employees do
             where (emp.Country = "USA")
             groupBy emp.City into grp
@@ -605,7 +605,7 @@ let ``simple select query with groupBy where and having``() =
 let ``simple select query with groupBy having key``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             where (c.Key = "London") 
@@ -619,7 +619,7 @@ let ``simple select query with groupBy having key``() =
 let ``simple select query with groupBy date``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Employees do
             groupBy emp.BirthDate into e
             select (e.Key, e.Count())
@@ -631,7 +631,7 @@ let ``simple select query with groupBy date``() =
 let ``simple select query with groupBy2``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.City = "London")
             groupBy (cust.Country, cust.City) into c
@@ -644,7 +644,7 @@ let ``simple select query with groupBy2``() =
 let ``simple select query with groupValBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupValBy cust.ContactTitle cust.City into g
             select (g.Key, g.Count())
@@ -655,10 +655,10 @@ let ``simple select query with groupValBy``() =
 let ``complex select query with groupValBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupValBy (cust.ContactTitle, Int32.Parse(cust.PostalCode)) (cust.PostalCode, cust.City) into g
-            let maxPlusOne = 1 + query {for i in g do sumBy (snd i) }
+            let maxPlusOne = 1 + sqlQuery {for i in g do sumBy (snd i) }
             select (snd(g.Key), maxPlusOne)
         } |> dict  
     Assert.IsNotEmpty(qry)
@@ -667,7 +667,7 @@ let ``complex select query with groupValBy``() =
 let ``simple if query``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             if cust.Country = "UK" then select cust.City
         } |> Seq.toArray
@@ -682,7 +682,7 @@ let ``simple select query with case``() =
     // Actual: SELECT [cust].[Country] as 'Country',[cust].[City] as 'City' FROM main.Customers as [cust]
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select (if cust.Country = "UK" then (cust.City)
                 else ("Outside UK"))
@@ -693,7 +693,7 @@ let ``simple select query with case``() =
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy cust.City
             select cust.City
@@ -706,7 +706,7 @@ let ``simple select and sort query``() =
 let ``simple select and sort desc query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortByDescending cust.City
             select cust.City
@@ -719,7 +719,7 @@ let ``simple select and sort desc query``() =
 let ``simple select and sort query with then by query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy cust.Country
             thenBy cust.City
@@ -733,7 +733,7 @@ let ``simple select and sort query with then by query``() =
 let ``simple select and sort query with then by desc query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy cust.Country
             thenByDescending cust.City
@@ -747,7 +747,7 @@ let ``simple select and sort query with then by desc query``() =
 let ``simple sort query with lambda cast to IComparable``() =
     let dc = sql.GetDataContext()
     let qry =
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy ((fun (c : sql.dataContext.``main.CustomersEntity``) -> c.CustomerId :> IComparable) cust)
             select cust.City
@@ -761,7 +761,7 @@ let ``simple sort query with lambda cast to IComparable``() =
 let ``simple sort query with then by desc query with lambda cast to IComparable``() =
     let dc = sql.GetDataContext()
     let qry =
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             sortBy cust.CompanyName
             thenByDescending ((fun (c : sql.dataContext.``main.CustomersEntity``) -> c.CustomerId :> IComparable) cust)
@@ -776,7 +776,7 @@ let ``simple sort query with then by desc query with lambda cast to IComparable`
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
             select (cust.CustomerId, order.OrderDate)
@@ -796,7 +796,7 @@ let ``simple select query with join``() =
 let ``simple select query with join and then groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
             groupBy cust.City into c
@@ -810,7 +810,7 @@ let ``simple select query with join and then groupBy``() =
 let ``simple select query with groupBy and then join``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             join order in dc.Main.Orders on (c.Key = order.ShipCity)
@@ -825,7 +825,7 @@ let ``simple select query with groupBy and then join``() =
 let ``simple select query with join multi columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             join order in dc.Main.Orders on ((cust.CustomerId, cust.CustomerId) = (order.CustomerId, order.CustomerId))
             select (cust.CustomerId, order.OrderDate)
@@ -845,7 +845,7 @@ let ``simple select query with join multi columns``() =
 let ``simple select query with join using relationships``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             for order in cust.``main.Orders by CustomerID`` do
             select (cust.CustomerId, order.OrderDate)
@@ -864,7 +864,7 @@ let ``simple select query with join using relationships``() =
 let ``simple select query with group join``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupJoin ord in dc.Main.Orders on (cust.CustomerId = ord.CustomerId) into g
             for order in g do
@@ -889,7 +889,7 @@ let ``simple select query with group join``() =
 let ``simple select query with multiple joins on relationships``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             for order in cust.``main.Orders by CustomerID`` do
             for orderDetail in order.``main.OrderDetails by OrderID`` do
@@ -913,7 +913,7 @@ let ``simple select query with multiple joins on relationships``() =
 let ``simple select query with left outer join``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
             for order in result.DefaultIfEmpty() do
@@ -933,7 +933,7 @@ let ``simple select query with left outer join``() =
 let ``simple sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             sumBy od.UnitPrice
         }
@@ -943,7 +943,7 @@ let ``simple sumBy``() =
 let ``simple async sum``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             select od.UnitPrice
         } |> Seq.sumAsync |> Async.RunSynchronously
@@ -953,7 +953,7 @@ let ``simple async sum``() =
 let ``simple averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             averageBy od.UnitPrice
         }
@@ -963,7 +963,7 @@ let ``simple averageBy``() =
 let ``simple averageByNullable``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for od in dc.Main.OrderDetails do
             averageByNullable (System.Nullable(od.UnitPrice))
         }
@@ -973,7 +973,7 @@ let ``simple averageByNullable``() =
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.City
             distinct
@@ -987,7 +987,7 @@ let ``simple select with distinct``() =
 let ``simple select with skip``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.City
             skip 5
@@ -1002,7 +1002,7 @@ let ``simple select with skip``() =
 let ``simple select with take``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select cust.City
             take 5
@@ -1017,7 +1017,7 @@ let ``simple select with take``() =
 let ``simple select query with all``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for ord in dc.Main.OrderDetails do
             all (ord.UnitPrice > 0m)
         }   
@@ -1027,7 +1027,7 @@ let ``simple select query with all``() =
 let ``simple select query with all false``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for ord in dc.Main.OrderDetails do
             all (ord.UnitPrice > 10m)
         }   
@@ -1037,7 +1037,7 @@ let ``simple select query with all false``() =
 let ``simple select query with find``() = 
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for ord in dc.Main.OrderDetails do
             find (ord.UnitPrice > 10m)
         }   
@@ -1051,7 +1051,7 @@ type Dummy<'t> = D of 't
 let ``simple select into a generic type`` () =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Customers do
             select (D {First=emp.ContactName})
         } |> Seq.toList
@@ -1066,7 +1066,7 @@ let ``simple select into a generic type with pipe`` () =
     else
         let dc = sql.GetDataContext()
         let qry = 
-            query {
+            sqlQuery {
                 for emp in dc.Main.Customers do
                 select ({First=emp.ContactName} |> D)
             } |> Seq.toList
@@ -1084,7 +1084,7 @@ let ``simple select with bool outside query``() =
     let myCond4 = 4
 
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             // Simple booleans outside queries are supported:
             where (((myCond1 && myCond1=true) && cust.City="Helsinki" || myCond1) || cust.City="London")
@@ -1106,7 +1106,7 @@ let ``simple select with bool outside query2``() =
     let myCond4 = 4
 
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             // Simple booleans outside queries are supported:
             where (myCond4 > 3 || (myCond2 && cust.Address="test" && not(myCond2)))
@@ -1122,7 +1122,7 @@ let ``simple select query async``() =
     let task = 
         async {
             let! asyncquery =
-                query {
+                sqlQuery {
                     for cust in dc.Main.Customers do
                     select cust
                 } |> Seq.executeQueryAsync 
@@ -1137,7 +1137,7 @@ type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connection
 let ``simple select with contains query with where boolean option type``() =
     let dc = sqlOption.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             where (cust.City.IsSome)
             select cust.CustomerId
@@ -1150,7 +1150,7 @@ let ``simple select with contains query with where boolean option type``() =
 let ``simple canonical operation substing query``() =
     let dc = sql.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             // Database spesific warning here: Substring of SQLite starts from 1.
             where (cust.CustomerId.Substring(2,3)+"F"="NATF")
@@ -1167,7 +1167,7 @@ let ``simple canonical operations query``() =
 
     let qry = 
         let L = "L"
-        query {
+        sqlQuery {
             // Silly query not hitting indexes, so testing purposes only...
             for cust in dc.Main.Customers do
             // This is not yet working:
@@ -1195,12 +1195,12 @@ let ``simple canonical operations query``() =
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 
-        query {
+        sqlQuery {
             for cus in dc.Main.Customers do
             select (cus.City)
         }
     let query2 = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Employees do
             select (emp.City)
         } 
@@ -1220,12 +1220,12 @@ let ``simple union query test``() =
 let ``simple union all query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 
-        query {
+        sqlQuery {
             for cus in dc.Main.Customers do
             select (cus.City)
         }
     let query2 = 
-        query {
+        sqlQuery {
             for emp in dc.Main.Employees do
             select (emp.City)
         } 
@@ -1239,19 +1239,19 @@ let ``simple union all query test``() =
 let ``verify groupBy results``() = 
     let dc = sql.GetDataContext()
     let enumtest =
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             select (cust)
         } |> Seq.toList
     let inlogics = 
-        query {
+        sqlQuery {
             for cust in enumtest do
             groupBy cust.City into c
             select (c.Key, c.Count())
         } |> Seq.toArray |> Array.sortBy (fun (k,v) -> k )
 
     let groupqry = 
-        query {
+        sqlQuery {
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             select (c.Key, c.Count())
@@ -1263,7 +1263,7 @@ let ``verify groupBy results``() =
 [<Test >]
 let ``simple delete where query``() =
     let dc = sql.GetDataContext()
-    query {
+    sqlQuery {
         for cust in dc.Main.Customers do
         where (cust.City = "Atlantis" || cust.CompanyName = "Home")
     } |> Seq.``delete all items from single table`` 
@@ -1274,7 +1274,7 @@ let ``simple delete where query``() =
 let ``simple left join``() = 
     let dc = sqlOption.GetDataContext()
     let qry = 
-        query {
+        sqlQuery {
             for o in dc.Main.Orders do
             for c in (!!) o.``main.Customers by CustomerID`` do
             select (o.CustomerId, c.CustomerId)
