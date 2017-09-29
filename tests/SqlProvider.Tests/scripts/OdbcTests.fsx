@@ -34,7 +34,7 @@ let odbcaContext =
     dbOdbcAccess.GetDataContext(
         {Timeout = TimeSpan.MaxValue; IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction})
 
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.Add (printfn "%s")
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.Add (printfn "%O")
 
 /// Normal query
 let mattisOrderDetails =

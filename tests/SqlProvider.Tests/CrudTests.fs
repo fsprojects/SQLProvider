@@ -39,6 +39,7 @@ let createCustomer (dc:sql.dataContext) =
 
 [<Test>]
 let ``Can create and delete an entity``() = 
+    let dcTestParam = sql.GetDataContext(200)
     let dc = sql.GetDataContext()
     
     let originalCustomers = 
@@ -114,7 +115,7 @@ let ``Can persist a blob``() =
     let imageBytes = [| 0uy .. 100uy |]
 
     let savedEntity = dc.Main.Pictures.``Create(Image)`` imageBytes
-    savedEntity.Id <- 1234L
+    savedEntity.Id <- 123L+int64(System.Random().Next(10000))
     dc.SubmitUpdates()
 
     let reloadedEntity =
@@ -123,6 +124,8 @@ let ``Can persist a blob``() =
                 head }
 
     Assert.That( reloadedEntity.Image, Is.EqualTo(imageBytes))
+    savedEntity.Delete()
+    dc.SubmitUpdates()
 
 [<Test; Ignore("Something wrong with SQLite transactions...")>]
 let ``Can enlist in a transaction scope and rollback changes without complete``() =

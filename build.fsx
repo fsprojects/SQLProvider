@@ -93,6 +93,8 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
+
+    // Build .NET Framework solution
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
     |> MSBuildRelease "" "Rebuild"
     |> ignore

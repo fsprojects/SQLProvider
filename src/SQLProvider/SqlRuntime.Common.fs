@@ -7,7 +7,6 @@ open System.Data
 open System.Data.Common
 open System.Linq.Expressions
 open System.Reflection
-open System.Runtime.Serialization
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -88,7 +87,7 @@ type EntityState =
     | Delete
     | Deleted
 
-[<DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
+[<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()

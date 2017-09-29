@@ -46,7 +46,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | cs -> cs
                     
         let rootType, prov, con = 
-            let rootType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,baseType=Some typeof<obj>, HideObjectMethods=true)
+            let rootType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,Some typeof<obj>, true)
             let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
             let con = prov.CreateConnection conString
             this.Disposing.Add(fun _ -> 
@@ -72,7 +72,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             (sprocDefinition.ReturnColumns con param)
 
         let getTableData name = tableColumns.Force().[name].Force()
-        let serviceType = ctxt.ProvidedTypeDefinition( "dataContext", None, HideObjectMethods = true)
+        let serviceType = ctxt.ProvidedTypeDefinition( "dataContext", None, true)
         let transactionOptions = TransactionOptions.Default
         let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, None)
         // first create all the types so we are able to recursively reference them in each other's definitions
@@ -99,7 +99,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             serviceType.AddMember errInfo
                        else                
                        for table in tablesforced do
-                        let t = ctxt.ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, HideObjectMethods = true)
+                        let t = ctxt.ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, true)
                         t.AddMemberDelayed(fun () -> ctxt.ProvidedConstructor([ctxt.ProvidedParameter("dataContext",typeof<ISqlDataContext>)],
                                                         fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntity(table.FullName) @@>))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
@@ -108,7 +108,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let createIndividualsType (table:Table) =
             let tableTypeDef,_,_,_ = baseTypes.Force().[table.FullName]
-            let t = ctxt.ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", None, HideObjectMethods = true)
+            let t = ctxt.ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", None, true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
             
@@ -135,7 +135,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       |> Seq.choose(fun col -> 
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
-                        let ty = ctxt.ProvidedTypeDefinition(name, None, HideObjectMethods = true )
+                        let ty = ctxt.ProvidedTypeDefinition(name, None, true )
                         ty.AddMember(ProvidedConstructor([ctxt.ProvidedParameter("sqlService", typeof<ISqlDataContext>)]))
                         individualsTypes.Add ty
                         Some(col.Key,(ty,ctxt.ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
@@ -207,7 +207,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 dict [ for table in tables.Force() do  
                         let name = table.FullName
                         let (et,_,_,_) = baseTypes.Force().[name]
-                        let ct = ctxt.ProvidedTypeDefinition(table.FullName, None ,HideObjectMethods=false)                        
+                        let ct = ctxt.ProvidedTypeDefinition(table.FullName, None ,false)                        
                         ct.AddInterfaceImplementationsDelayed( fun () -> [ctxt.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
                         let it = createIndividualsType table 
                         yield table.FullName,(ct,it) ]
@@ -281,8 +281,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =             
-            let rt = ctxt.ProvidedTypeDefinition(SchemaProjections.buildSprocName(sproc.Name.DbName),None, HideObjectMethods = true)
-            let resultType = ctxt.ProvidedTypeDefinition("Result",None, HideObjectMethods = true)
+            let rt = ctxt.ProvidedTypeDefinition(SchemaProjections.buildSprocName(sproc.Name.DbName),None, true)
+            let resultType = ctxt.ProvidedTypeDefinition("Result",None, true)
             resultType.AddMember(ctxt.ProvidedConstructor([ctxt.ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
             rt.AddMember resultType
             container.AddMember(rt)
@@ -300,7 +300,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         match retCols.Length with
                         | 0 -> typeof<Unit>
                         | _ -> 
-                              let rt = ctxt.ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, HideObjectMethods = true)
+                              let rt = ctxt.ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, true)
                               rt.AddMember(ctxt.ProvidedConstructor([]))
                                       
                               retCols
@@ -339,14 +339,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some(typ) -> 
                     walkSproc con path (Some typ) createdTypes next 
                 | None ->
-                    let typ = ctxt.ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
+                    let typ = ctxt.ProvidedTypeDefinition(typeName, None, true)
                     typ.AddMember(ctxt.ProvidedConstructor([ctxt.ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
                     walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next 
             | Package(typeName, packageDefn) ->       
                 match parent with
                 | Some(parent) ->
                     let path = (path @ [typeName])
-                    let typ = ctxt.ProvidedTypeDefinition(typeName, None, HideObjectMethods = true)
+                    let typ = ctxt.ProvidedTypeDefinition(typeName, None, true)
                     parent.AddMember(typ)
                     parent.AddMember(ctxt.ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     typ.AddMember(ctxt.ProvidedConstructor([ctxt.ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
@@ -524,58 +524,25 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               let transopt =   "transactionOptions", "TransactionOptions for the transaction created on SubmitChanges.", typeof<TransactionOptions>
               let cmdTimeout = "commandTimeout", "SQL command timeout. Maximum time for single SQL-command in seconds.", typeof<int>
 
-              // This could be refactored to some kind of Option type thing to get rid of different invoke-args-functions?
-              let parameterCombinations = [
-                    [], (fun (_:Expr list) ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext @@>);
-                    [constr], (fun args ->
+              let crossTargetParameterCombinations = [
+                    [constr], (fun (args:Expr list) ->
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext @@> );
                     [constr;respath], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext  @@>);
-                    [transopt], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], None) :> ISqlDataContext @@>);
                     [constr; transopt], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], None) :> ISqlDataContext @@> );
                     [constr; respath; transopt], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], None) :> ISqlDataContext  @@>)
-                    [cmdTimeout], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0])) :> ISqlDataContext @@>);
                     [constr;cmdTimeout], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1])) :> ISqlDataContext @@> );
                     [constr;respath;cmdTimeout], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[2])) :> ISqlDataContext  @@>);
-                    [transopt;cmdTimeout], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1])) :> ISqlDataContext @@>);
                     [constr; transopt;cmdTimeout], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
                                 <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], (Some %%args.[2])) :> ISqlDataContext @@> );
@@ -585,12 +552,59 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 ]
 
               yield! 
-                  parameterCombinations |> Seq.map(fun (parmArr, invoker) ->
+                  crossTargetParameterCombinations |> Seq.map(fun (parmArr, invoker) ->
                       let providerParams = parmArr |> List.map(fun (pname, _, ptype) -> ctxt.ProvidedParameter(pname, ptype))
                       let meth = 
-                        ProvidedMethod ("GetDataContext", providerParams,
-                                        serviceType, IsStaticMethod=true,
-                                        InvokeCode = invoker)
+                        ctxt.ProvidedMethod("GetDataContext", providerParams, serviceType, invoker, true)
+                      let xmlComment = 
+                            let all = parmArr |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
+                            String.Join("", all)
+                      meth.AddXmlDoc ("<summary>Returns an instance of the SQL Provider using the static parameters</summary>" + xmlComment)
+                      meth
+                  )
+
+              // Todo: Find a way to move tryGetConnectionString lambda to cross-targetting type provider
+              let parameterCombinations = [
+                    [], (fun (_:Expr list) ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None) :> ISqlDataContext @@>);
+                    [transopt], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], None) :> ISqlDataContext @@>);
+                    [cmdTimeout], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0])) :> ISqlDataContext @@>);
+                    [transopt;cmdTimeout], (fun args ->
+                                let runtimePath = config.ResolutionFolder
+                                let runtimeAssembly = config.ResolutionFolder
+                                let runtimeConStr = 
+                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
+                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                                        | cs -> cs @@>
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1])) :> ISqlDataContext @@>);
+                ]
+
+              yield! 
+                  parameterCombinations |> Seq.map(fun (parmArr, invoker) ->
+                      // Note: This is not supported by cross-targetting typeprovider.
+                      let providerParams = parmArr |> List.map(fun (pname, _, ptype) -> ProvidedParameter(pname, ptype))
+                      let meth =
+                          ProvidedMethod("GetDataContext", providerParams, serviceType, IsStaticMethod = true, InvokeCode = invoker)
                       let xmlComment = 
                             let all = parmArr |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
                             String.Join("", all)
@@ -602,7 +616,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         rootType
     
-    let paramSqlType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), HideObjectMethods = true)
+    let paramSqlType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), true)
     
     let conString = ctxt.ProvidedStaticParameter("ConnectionString",typeof<string>, "")
     let connStringName = ctxt.ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")    
