@@ -34,10 +34,10 @@
         <div class="span9" id="main">
           
 <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
-<p>This is very initial / experimental, from version 1.1.12-alpha6.</p>
-<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12-alpha6</code></p>
+<p>This is very initial / experimental, from version 1.1.12-alpha7.</p>
+<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12-alpha7</code></p>
 <h2><a name="Example-project" class="anchor" href="#Example-project">Example project</a></h2>
-<p>There is an example .NET-Coreapp 2.0 project at: <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
+<p>There are some example .NET-Coreapp 2.0 projects at: <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
 <p>There is a build.cmd which runs as follows:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -61,6 +61,7 @@ C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net46
 <p>The NuGet cache is located at:
 <code>C:\Users\(your-user-name)\.nuget\packages\SQLProvider\</code></p>
 <h2><a name="Limitations" class="anchor" href="#Limitations">Limitations</a></h2>
+<p>For now, you have to specify the runtime connectionstring for the GetDataContext method.</p>
 <p>You need your database connection driver to also support .NET Core.
 If your database connection driver has external dependencies, they have to be also present.</p>
 <p>The providers that are not included in .NET-Standard version:</p>
