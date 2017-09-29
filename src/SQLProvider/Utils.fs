@@ -355,7 +355,7 @@ module internal Reflection =
             System.ResolveEventHandler (fun _ args ->
                 let loadfunc x =
                     if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
-                    let res = Assembly.LoadFrom x
+                    let res = try Assembly.LoadFrom x with _ -> null
                     if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
                     res
                 loadHandler args loadfunc)

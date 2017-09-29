@@ -14,14 +14,16 @@ module Netstandard
 open System
 open FSharp.Data.Sql
 
+[<Literal>]
+let connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres"
+
 type HR = SqlDataProvider<
-            Common.DatabaseProviderTypes.POSTGRESQL, 
-            "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres",
+            Common.DatabaseProviderTypes.POSTGRESQL, connStr,
             ResolutionPath = "temp">
 
 [<EntryPoint>]
 let main argv =
-    let ctx = HR.GetDataContext()
+    let ctx = HR.GetDataContext connStr
     let employeesFirstName = 
         query {
             for emp in ctx.Public.Employees do

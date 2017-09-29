@@ -14,11 +14,14 @@ module Netstandard
 open System
 open FSharp.Data.Sql
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, "Data Source=./../../SqlProvider.Tests/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;">
+[<Literal>]
+let connStr = "Data Source=./../../SqlProvider.Tests/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connStr>
 
 [<EntryPoint>]
 let main argv =
-    let ctx = HR.GetDataContext()
+    let ctx = HR.GetDataContext connStr
     let employeesFirstName = 
         query {
             for emp in ctx.Main.Employees do

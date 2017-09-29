@@ -13,11 +13,14 @@ module Netstandard
 open System
 open FSharp.Data.Sql
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, "Data Source=localhost; Initial Catalog=HR; Integrated Security=True">
+[<Literal>]
+let connStr = "Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr>
 
 [<EntryPoint>]
 let main argv =
-    let ctx = HR.GetDataContext()
+    let ctx = HR.GetDataContext connStr
     let employeesFirstName = 
         query {
             for emp in ctx.Dbo.Employees do

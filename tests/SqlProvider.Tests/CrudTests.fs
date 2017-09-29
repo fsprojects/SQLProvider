@@ -39,6 +39,7 @@ let createCustomer (dc:sql.dataContext) =
 
 [<Test>]
 let ``Can create and delete an entity``() = 
+    let dcTestParam = sql.GetDataContext(200)
     let dc = sql.GetDataContext()
     
     let originalCustomers = 
