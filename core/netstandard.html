@@ -34,8 +34,8 @@
         <div class="span9" id="main">
           
 <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
-<p>This is very initial / experimental, from version 1.1.12-alpha5.</p>
-<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12-alpha5</code></p>
+<p>This is very initial / experimental, from version 1.1.12-alpha6.</p>
+<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12-alpha6</code></p>
 <h2><a name="Example-project" class="anchor" href="#Example-project">Example project</a></h2>
 <p>There is an example .NET-Coreapp 2.0 project at: <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
 <p>There is a build.cmd which runs as follows:</p>
@@ -72,13 +72,6 @@ If your database connection driver has external dependencies, they have to be al
 <p>.NET Standard solution is located at <code>/src/SQLProvider.Standard/SQLProvider.Standard.fsproj</code></p>
 <p>The target frameworks are defined in the project file: <code>&lt;TargetFrameworks&gt;net461;netcoreapp2.0;netstandard2.0&lt;/TargetFrameworks&gt;</code>
 Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0</p>
-<p>You should use .netstandard2.0 and not netcoreapp2.0, because .netstandard2.0 can be referenced from the netcoreapp2.0. But if you want to still build as netcoreapp2.0, a modification is needed: ProvidedTypes.fs needs a type hint at line 94:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">forall</span> (<span class="k">fun</span> (<span class="i">originalName</span><span class="o">:</span><span class="i">string</span>, <span class="i">newName</span><span class="o">:</span><span class="i">string</span>) <span class="k">-&gt;</span>
-</code></pre></td>
-</tr>
-</table>
 <p>Build is not tested with Mono, so .Net Standard build is disabled from build.fsx on Mono.</p>
 
 
