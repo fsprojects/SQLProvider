@@ -1,7 +1,6 @@
 source https://nuget.org/api/v2
-framework >= 4.0
 
-nuget Nuget.CommandLine ~> 2
+nuget Nuget.CommandLine
 nuget FAKE
 nuget FSharp.Formatting
 nuget FSharp.Core >= 3.1.2.5 lowest_matching:true, redirects:force
@@ -9,21 +8,37 @@ nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
+nuget System.Data.SqlClient
+
+group Standard
+    source https://nuget.org/api/v2
+
+    nuget FSharp.Core
+    nuget System.Runtime
+    nuget System.Runtime.Loader
+    nuget System.Runtime.Serialization.Primitives
+    nuget System.Runtime.Serialization.Formatters
+    nuget System.IO
+    nuget System.Console
+    nuget System.Reflection
+    nuget System.Reflection.TypeExtensions
+    nuget System.Data.SqlClient
+    nuget System.Data.Common
+	nuget Microsoft.Data.SQLite
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
 group SourceFiles
     source https://nuget.org/api/v2
 
-    github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReader.fs
-    github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReaderReflection.fs
-    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypesContext.fs
-    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
-    github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
+    github fsprojects/FSharp.TypeProviders.SDK src/AssemblyReader.fs
+    github fsprojects/FSharp.TypeProviders.SDK src/AssemblyReaderReflection.fs
+    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypesContext.fs
+    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
+    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs
 
 group Scripts
-    framework >= 4.0
     source https://nuget.org/api/v2
 
     nuget MySql.Data

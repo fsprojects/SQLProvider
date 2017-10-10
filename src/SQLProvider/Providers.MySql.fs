@@ -23,7 +23,14 @@ module MySql =
 
     let findType name =
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find(fun t -> t.Name = name)
+        | Choice1Of2(assembly) -> 
+            let types = 
+                try assembly.GetTypes() 
+                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                    let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                    let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                    failwith (e.Message + Environment.NewLine + details)
+            types |> Array.find(fun t -> t.Name = name)
         | Choice2Of2(paths, errors) ->
            let details = 
                 match errors with 
@@ -43,8 +50,42 @@ module MySql =
     let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
     let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
 
-    let getSchema name (args:string[]) (conn:IDbConnection) =
+    let getSchema (name:string) (args:string[]) (conn:IDbConnection) =
+#if !NETSTANDARD
         getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
+#else
+        // Initial version of MySQL .Net-Standard doesn't suppot GetSchema()
+        let cont = connectionType.Value
+        try 
+            cont.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]).Invoke(conn,[|name; args|]) :?> DataTable
+        with
+        | :?  System.Reflection.TargetInvocationException as re when (re.InnerException <> null && re.InnerException :? System.NotSupportedException) ->
+            let schemacoll = cont.GetMethod("GetSchemaCollection",[|typeof<string>; typeof<string[]>|]).Invoke(conn,[|name; args|])
+            let collType = schemacoll.GetType()
+            let name = collType.GetProperty("Name").GetValue(schemacoll,null) :?> string
+            let dt = new DataTable(name)
+            let cols = collType.GetProperty("Columns").GetValue(schemacoll,null) :?> System.Collections.IEnumerable
+            let rows = collType.GetProperty("Rows").GetValue(schemacoll,null) :?> System.Collections.IList
+            let colType = findType "SchemaColumn"
+            let rowType = findType "MySqlSchemaRow"
+            for col in cols do 
+                dt.Columns.Add(
+                    col.GetType().GetProperty("Name").GetValue(col,null) :?> string, 
+                    col.GetType().GetProperty("Type").GetValue(col,null) :?> Type) |> ignore
+            for row in rows do 
+                let mutable idx = 0
+                let xs = 
+                    let prop = rowType.GetMethod("GetValueForName", (Reflection.BindingFlags.NonPublic ||| Reflection.BindingFlags.Instance))
+                    [| for c in cols do 
+                            idx <- idx + 1
+                            let cn = c.GetType().GetProperty("Name").GetValue(c,null) :?> string
+                            let r = prop.Invoke(row, [| cn |])
+                            if r <> null then yield r
+                            else yield box(DBNull.Value)
+                    |]
+                dt.Rows.Add(xs) |> ignore
+            dt
+#endif
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -166,12 +207,16 @@ module MySql =
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
-            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
+            let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.InnerException.Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+            let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -499,10 +544,13 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 | Common.CaseSensitivityChange.TOLOWER -> "LOWER(TABLE_SCHEMA)"
                 | _ -> "TABLE_SCHEMA"
             Sql.connect con (fun con ->
-                use reader = Sql.executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane dbName) con
-                [ while reader.Read() do
-                    let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
-                    yield tableLookup.GetOrAdd(table.FullName,table) ])
+                let executeSql createCommand sql (con:IDbConnection) = 
+                    use com : IDbCommand = createCommand sql con   
+                    use reader = com.ExecuteReader()
+                    [ while reader.Read() do
+                        let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
+                        yield tableLookup.GetOrAdd(table.FullName,table) ]
+                executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane dbName) con)
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with

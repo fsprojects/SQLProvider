@@ -1,5 +1,5 @@
-﻿#I @"../../../bin"
-#r @"../../../bin/FSharp.Data.SqlProvider.dll"
+﻿#I @"../../../bin/net451"
+#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
@@ -8,7 +8,7 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
         
 [<Literal>]
-let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;"
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 

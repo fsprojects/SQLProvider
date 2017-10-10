@@ -100,6 +100,20 @@ Target "Build" (fun _ ->
     |> ignore
 )
 
+Target "BuildCore" (fun _ ->
+
+    // Build .NET Core solution
+    DotNetCli.Restore(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            NoCache = true})
+
+    DotNetCli.Build(fun p -> 
+        { p with 
+            Project = "SQLProvider.Core.sln"
+            Configuration = "Release"})
+)
+
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
@@ -117,9 +131,20 @@ Target "RunTests" (fun _ ->
 
 Target "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
-    
-    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.dll"
-    CopyFiles @"temp/lib" !!"bin/**/FSharp.Data.SqlProvide*.deps.json"
+
+#if MONO
+#else
+    let dotnetSdk = @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
+    if directoryExists dotnetSdk then
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
+    CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
+#endif
+
+    CopyDir @"temp/lib" "bin" allFiles
 
     NuGet (fun p ->
         { p with
@@ -139,6 +164,7 @@ Target "NuGet" (fun _ ->
 
     CleanDir "Temp"
     Branches.tag "" release.NugetVersion
+
     // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
     //Branches.pushTag "" "upstream" release.NugetVersion
 )
@@ -184,8 +210,8 @@ Target "GenerateHelp" (fun _ ->
     CopyFile "docs/content/" "LICENSE.txt"
     Rename "docs/content/license.md" "docs/content/LICENSE.txt"
 
-    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
-    CopyFile "bin" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
+    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
+    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
 
     generateHelp true
 )
@@ -261,8 +287,10 @@ Target "BuildDocs" DoNothing
 "Clean"
   ==> "AssemblyInfo"
   ==> "Build"
+  =?> ("BuildCore", isLocalBuild || not isMono)
   ==> "RunTests"
   ==> "CleanDocs"
+  // Travis doesn't support mono+dotnet:
   =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
   =?> ("GenerateHelp",isLocalBuild && not isMono)
   ==> "All"

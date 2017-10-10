@@ -18,41 +18,156 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
     let relationshipLookup = Dictionary<string,Relationship list * Relationship list>()
 
-    let useMono = 
-        match sqliteLibrary with
-        | SQLiteLibrary.SystemDataSQLite -> false
-        | SQLiteLibrary.MonoDataSQLite -> true
-        | SQLiteLibrary.AutoSelect -> Type.GetType ("Mono.Runtime") <> null
-        | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
+    /// This is custom getSchema operation for data libraries that doesn't support System.Data.Common GetSchema interface.
+    let customGetSchema name conn =
+        let dt = new DataTable(name)
+        match name with
+        | "DataTypes" -> 
+            dt.Columns.AddRange([|"DataType",typeof<string>;"TypeName",typeof<string>;"ProviderDbType",typeof<int>|]|>Array.map(fun (x,t) -> new DataColumn(x,t)))
+            let addrow(a:string,b:string,c:int) = dt.Rows.Add([|box(a);box(b);box(c);|]) |> ignore
+            [   "System.Int16","smallint",10
+                "System.Int32","int",11
+                "System.Double","real",8
+                "System.Single","single",15
+                "System.Double","float",8
+                "System.Double","double",8
+                "System.Decimal","money",7
+                "System.Decimal","currency",7
+                "System.Decimal","decimal",7
+                "System.Decimal","numeric",7
+                "System.Boolean","bit",3
+                "System.Boolean","yesno",3
+                "System.Boolean","logical",3
+                "System.Boolean","bool",3
+                "System.Boolean","boolean",3
+                "System.Byte","tinyint",2
+                "System.Int64","integer",12
+                "System.Int64","counter",12
+                "System.Int64","autoincrement",12
+                "System.Int64","identity",12
+                "System.Int64","long",12
+                "System.Int64","bigint",12
+                "System.Byte[]","binary",1
+                "System.Byte[]","varbinary",1
+                "System.Byte[]","blob",1
+                "System.Byte[]","image",1
+                "System.Byte[]","general",1
+                "System.Byte[]","oleobject",1
+                "System.String","varchar",16
+                "System.String","nvarchar",16
+                "System.String","memo",16
+                "System.String","longtext",16
+                "System.String","note",16
+                "System.String","text",16
+                "System.String","ntext",16
+                "System.String","string",16
+                "System.String","char",16
+                "System.String","nchar",16
+                "System.DateTime","datetime",6
+                "System.DateTime","smalldate",6
+                "System.DateTime","timestamp",6
+                "System.DateTime","date",6
+                "System.DateTime","time",6
+                "System.Guid","uniqueidentifier",4
+                "System.Guid","guid",4 ] |> List.iter(addrow)
+            dt
+        | "Tables" -> 
+            dt.Columns.AddRange([|"TABLE_TYPE";"TABLE_CATALOG";"TABLE_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
+
+            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='table';"
+
+            use com = (this:>ISqlProvider).CreateCommand(conn,query)
+            use reader = com.ExecuteReader()
+            while reader.Read() do
+                dt.Rows.Add([|box(reader.GetString(0));box(reader.GetString(1));box(reader.GetString(2));|]) |> ignore
+            dt
+        | "ForeignKeys" ->
+            let tablequery = "SELECT name as TABLE_NAME FROM sqlite_master WHERE type='table';"
+            let tables = 
+                use com = (this:>ISqlProvider).CreateCommand(conn,tablequery)
+                use reader = com.ExecuteReader()
+                [while reader.Read() do yield reader.GetString(0)]
+
+            dt.Columns.AddRange([|"TABLE_NAME";"FKEY_TO_CATALOG";"TABLE_CATALOG";"FKEY_TO_TABLE";"FKEY_FROM_COLUMN";"FKEY_TO_COLUMN";"CONSTRAINT_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
+
+            tables |> List.iter(fun tablename ->
+                let query = sprintf "pragma foreign_key_list(%s)" tablename
+                use com = (this:>ISqlProvider).CreateCommand(conn,query)
+                use reader = com.ExecuteReader()
+                while reader.Read() do 
+                    dt.Rows.Add([|box(tablename); box("main"); box("main"); box(reader.GetString(2));box(reader.GetString(3));box(reader.GetString(4));box("fk_"+tablename+reader.GetString(0));|]) |> ignore
+            )
+            dt
+        | _ -> failwith "Not supported. This custom getSchema will be removed when the corresponding System.Data.Common interface is supported by the connection driver. "
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assemblyNames =
+        let fileStart = 
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> "System"
+            | SQLiteLibrary.MonoDataSQLite -> "Mono"
+            | SQLiteLibrary.MicrosoftDataSqlite -> "Microsoft"
+#if NETSTANDARD
+            | SQLiteLibrary.AutoSelect -> "Microsoft"
+#else
+            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then "Mono" else "System"
+#endif
+            | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
         [
-           (if useMono then "Mono" else "System") + ".Data.SQLite.dll"
-           (if useMono then "Mono" else "System") + ".Data.Sqlite.dll"
+           fileStart + ".Data.SQLite.dll"
+           fileStart + ".Data.Sqlite.dll"
         ]
+    
+    let lowercasedll = 
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> false
+            | SQLiteLibrary.MonoDataSQLite
+            | SQLiteLibrary.MicrosoftDataSqlite -> true
+#if NETSTANDARD
+            | SQLiteLibrary.AutoSelect -> true
+#else
+            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then true else false
+#endif
+            | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
 
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath (Array.append [|runtimeAssembly|] referencedAssemblies) assemblyNames
 
     let findType f =
+#if NETSTANDARD
+        let example = "Microsoft.Data.Sqlite.Core"
+#else
+        let example = 
+            match sqliteLibrary with
+            | SQLiteLibrary.MicrosoftDataSqlite -> "Microsoft.Data.Sqlite.Core"
+            | _ -> "System.Data.SQLite.Core"
+#endif
         match assembly.Value with
-        | Choice1Of2(assembly) -> assembly.GetTypes() |> Array.find f
+        | Choice1Of2(assembly) -> 
+            let types = 
+                try assembly.GetTypes() 
+                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                    let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                    let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                    failwith (e.Message + Environment.NewLine + details)
+            types |> Array.find f
         | Choice2Of2(paths, errors) ->
            let details = 
                 match errors with 
                 | [] -> "" 
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package System.Data.SQLite.Core) must exist in the paths: %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
+                example
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
                 details
+                (if Environment.Is64BitProcess then "(You are running on x64.)" else "(You are NOT running on x64.)")
 
-    let connectionType =  (findType (fun t -> t.Name = if useMono then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (findType (fun t -> t.Name = if useMono then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (findType (fun t -> t.Name = if useMono then "SqliteParameter" else "SQLiteParameter"))
-    let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
+    let connectionType =  lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteParameter" else "SQLiteParameter"))
+    let getSchemaMethod = lazy(connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
 
     let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
@@ -108,7 +223,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         Utilities.genericAliasNotation aliasSprint col
 
     let getSchema name conn =
-        getSchemaMethod.Invoke(conn,[|name|]) :?> DataTable
+        if sqliteLibrary <> SQLiteLibrary.MicrosoftDataSqlite then
+            getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
+        else
+            customGetSchema name conn // GetSchema Not supported by Microsoft.Data.SQLite
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -265,20 +383,24 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
                     .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
             try
-                Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+                Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
             with
             | :? System.Reflection.ReflectionTypeLoadException as ex ->
-                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.Message) |> Seq.distinct |> Seq.toArray
-                let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
+                let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-                let msg = ex.InnerException.Message + ", Path: " + (Path.GetFullPath resolutionPath)
+                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
+            | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+                let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
-        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
         member __.CreateCommandParameter(param,value) =
-            let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
+            let p = Activator.CreateInstance(paramterType.Value,[|box param.Name;box value|]) :?> IDbDataParameter
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
@@ -295,7 +417,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member __.GetTables(con,_) =
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
-                [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do
+                [ for row in (getSchema "Tables" con).Rows do
                     let ty = string row.["TABLE_TYPE"]
                     if ty <> "SYSTEM_TABLE" then
                         let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty }
@@ -358,7 +480,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 // At least we can perform all the work for all the tables once here
                 // and cache the results for successive calls.....
                 if con.State <> ConnectionState.Open then con.Open()
-                let relData = (getSchemaMethod.Invoke(con,[|"ForeignKeys"|]) :?> DataTable)
+                let relData = (getSchema "ForeignKeys" con)
                 for row in relData.Rows do
                     let pTable =
                         { Schema = string row.["FKEY_TO_CATALOG"]     //I've not seen a schema column populated in SQLite so I'm using catalog instead

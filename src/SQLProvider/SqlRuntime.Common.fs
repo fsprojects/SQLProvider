@@ -43,9 +43,14 @@ type OdbcQuoteCharacter =
     | APHOSTROPHE = 5 
 
 type SQLiteLibrary =
+    // .NET Framework default
     | SystemDataSQLite = 0
+    // Mono version
     | MonoDataSQLite = 1
+    // Auto-select by environment
     | AutoSelect = 2
+    // Microsoft.Data.Sqlite. May support .NET Standard 2.0 contract in the future.
+    | MicrosoftDataSqlite = 3
 
 module public QueryEvents =
    open System.Data.SqlClient

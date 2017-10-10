@@ -1,6 +1,5 @@
-#I "../../../bin"
-#r "../../../bin/FSharp.Data.SqlProvider.dll"
-
+#I "../../../bin/net451"
+#r "../../../bin/net451/FSharp.Data.SqlProvider.dll"
 // Postgres Npgsql v.3.2.x has internal reference to System.Threading.Tasks.Extensions.dll:
 // #r "../../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 open System
