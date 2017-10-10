@@ -1,6 +1,9 @@
-### 1.1.12-alpha13 - 10.10.2017
-* Initial version of .NET Standard 2.0 release
+### 1.1.12 - 11.10.2017
+* Initial version of .NET Standard 2.0 / .NET Coreapp 2.0 support
 * Breaking change: The original dll path is now under net451 folder.
+* SQLite: Performance improvements. Option to use Microsoft.Data.SQLite 
+* MySql: Support for MySQL.Data.dll v6.10-rc3 and v8.0.9dmr (but 6.9.9 stable still recommended)
+* Reference component assembly loading and error messages improved.
 
 ### 1.1.11 - 26.09.2017
 * Firebird quotes fix PR #453
