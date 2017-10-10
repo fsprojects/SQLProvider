@@ -66,10 +66,12 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
                 details
 
-    let connectionType =  (findType (fun t -> t.Name = if lowercasedll then "SqliteConnection" else "SQLiteConnection"))
-    let commandType =     (findType (fun t -> t.Name = if lowercasedll then "SqliteCommand" else "SQLiteCommand"))
-    let paramterType =    (findType (fun t -> t.Name = if lowercasedll then "SqliteParameter" else "SQLiteParameter"))
-    let getSchemaMethod = (connectionType.GetMethod("GetSchema",[|typeof<string>|]))
+    let connectionType =  lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteConnection" else "SQLiteConnection"))
+    let commandType =     lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteCommand" else "SQLiteCommand"))
+    let paramterType =    lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteParameter" else "SQLiteParameter"))
+    let getSchemaMethod = 
+        // Not supported by Microsoft.Data.SQLite
+        (connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
 
     let rec fieldNotation (al:alias) (c:SqlColumnType) =
         let colSprint =
@@ -282,7 +284,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
                     .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
             try
-                Activator.CreateInstance(connectionType,[|box connectionString|]) :?> IDbConnection
+                Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
             with
             | :? System.Reflection.ReflectionTypeLoadException as ex ->
                 let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
@@ -296,10 +298,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath)
                 raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
 
-        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType,[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
         member __.CreateCommandParameter(param,value) =
-            let p = Activator.CreateInstance(paramterType,[|box param.Name;box value|]) :?> IDbDataParameter
+            let p = Activator.CreateInstance(paramterType.Value,[|box param.Name;box value|]) :?> IDbDataParameter
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
             Option.iter (fun l -> p.Size <- l) param.Length
@@ -316,7 +318,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member __.GetTables(con,_) =
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
-                [ for row in (getSchemaMethod.Invoke(con,[|"Tables"|]) :?> DataTable).Rows do
+                [ for row in (getSchema "Tables" con).Rows do
                     let ty = string row.["TABLE_TYPE"]
                     if ty <> "SYSTEM_TABLE" then
                         let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty }
@@ -379,7 +381,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 // At least we can perform all the work for all the tables once here
                 // and cache the results for successive calls.....
                 if con.State <> ConnectionState.Open then con.Open()
-                let relData = (getSchemaMethod.Invoke(con,[|"ForeignKeys"|]) :?> DataTable)
+                let relData = (getSchema "ForeignKeys" con)
                 for row in relData.Rows do
                     let pTable =
                         { Schema = string row.["FKEY_TO_CATALOG"]     //I've not seen a schema column populated in SQLite so I'm using catalog instead
