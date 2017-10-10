@@ -29,7 +29,7 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SQLProvider" Version="1.1.12-alpha11" />
+    <PackageReference Include="SQLProvider" Version="1.1.12-alpha12" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />

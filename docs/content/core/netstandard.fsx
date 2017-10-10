@@ -2,9 +2,9 @@
 
 # .NET Standard / .NET Core support #
 
-This is very initial / experimental, from version 1.1.12-alpha11.
+This is very initial / experimental, from version 1.1.12-alpha12.
 
-Install e.g. with: `dotnet add package SQLProvider --version 1.1.12-alpha11`
+Install e.g. with: `dotnet add package SQLProvider --version 1.1.12-alpha12`
 
 ## Example project ##
 
@@ -42,6 +42,7 @@ Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0
 Build is not tested with Mono, so .Net Standard build is disabled from build.fsx on Mono.
 
 MySQL is having custom build of MySQL.Data.dll compiled from sources to .Net Standard 2.0
+Described at: https://bugs.mysql.com/bug.php?id=88016
 
 ## Some Technical Details ##
 
