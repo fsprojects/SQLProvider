@@ -2,9 +2,9 @@
 
 # .NET Standard / .NET Core support #
 
-This is very initial / experimental, from version 1.1.12-alpha12.
+This is very initial / experimental, from version 1.1.12-alpha13.
 
-Install e.g. with: `dotnet add package SQLProvider --version 1.1.12-alpha12`
+Install e.g. with: `dotnet add package SQLProvider --version 1.1.12-alpha13`
 
 ## Example project ##
 
