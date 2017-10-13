@@ -8,7 +8,7 @@ Install e.g. with: `dotnet add package SQLProvider --version 1.1.12`
 
 ## Example project ##
 
-There are some example .NET-Coreapp 2.0 projects at: [tests\SqlProvider.Core.Tests](https://github.com/fsprojects/SQLProvider/tree/netstandard/tests/SqlProvider.Core.Tests)
+There are some example .NET-Coreapp 2.0 projects at: [tests\SqlProvider.Core.Tests](https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Core.Tests)
 
 There is a build.cmd which runs as follows:
 
