@@ -31,9 +31,6 @@ github fsharp/FAKE modules/Octokit/Octokit.fsx
 group SourceFiles
     source https://nuget.org/api/v2
 
-    github fsprojects/FSharp.TypeProviders.SDK src/AssemblyReader.fs
-    github fsprojects/FSharp.TypeProviders.SDK src/AssemblyReaderReflection.fs
-    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypesContext.fs
     github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
     github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs

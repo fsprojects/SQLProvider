@@ -59,15 +59,6 @@
     <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fs">
       <Link>ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\AssemblyReader.fs">
-      <Link>AssemblyReader.fs</Link>
-    </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\AssemblyReaderReflection.fs">
-      <Link>AssemblyReaderReflection.fs</Link>
-    </Compile>
-    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypesContext.fs">
-      <Link>ProvidedTypesContext.fs</Link>
-    </Compile>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
       <Link>ExpressionOptimizer.fs</Link>
     </Compile>
