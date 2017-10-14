@@ -6,7 +6,7 @@ This is very initial / experimental, from version 1.1.12.
 
 Install e.g. with: `dotnet add package SQLProvider --version 1.1.12`
 
-## Example project ##
+## Example projects ##
 
 There are some example .NET-Coreapp 2.0 projects at: [tests\SqlProvider.Core.Tests](https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Core.Tests)
 
@@ -43,6 +43,9 @@ Build is not tested with Mono, so .Net Standard build is disabled from build.fsx
 
 MySQL is having custom build of MySQL.Data.dll compiled from sources to .Net Standard 2.0
 Described at: https://bugs.mysql.com/bug.php?id=88016
+
+SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
+Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.
 
 ## Some Technical Details ##
 
