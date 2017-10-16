@@ -601,7 +601,7 @@ module internal CommonTasks =
             let replaceAlias = function "" -> basealias | x -> x
             let replaceEmptyKey = 
                 match key with
-                | KeyColumn keyName -> function GroupColumn (KeyOp k) when k = "" -> GroupColumn (KeyOp keyName) | x -> x
+                | KeyColumn keyName -> function GroupColumn (KeyOp k,c) when k = "" -> GroupColumn (KeyOp keyName,c) | x -> x
                 | _ -> fun x -> x
 
             let rec parseFilters conditionList = 

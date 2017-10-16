@@ -489,10 +489,10 @@ module internal QueryImplementation =
                         let ascending = meth.Name = "OrderBy"
                         let gb = source.SqlExpression.hasGroupBy()
                         let sqlExpression =
-                               match source.SqlExpression with
-                               | BaseTable("",entity)  -> OrderBy("",key,ascending,BaseTable(alias,entity))
-                               | _ when gb.IsSome && key = GroupColumn(KeyOp("")) ->
-                                    gb.Value |> snd |> List.fold(fun exprstate (al,itm) ->
+                               match source.SqlExpression, gb, key with
+                               | BaseTable("",entity),_,_ -> OrderBy("",key,ascending,BaseTable(alias,entity))
+                               | _, Some gbv, GroupColumn(KeyOp(""), _) -> 
+                                    gbv |> snd |> List.fold(fun exprstate (al,itm) ->
                                         OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
                                | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
@@ -511,10 +511,11 @@ module internal QueryImplementation =
                         | OrderBy(_) ->
                             let gb = source.SqlExpression.hasGroupBy()
                             let sqlExpression =
-                               if gb.IsSome && key = GroupColumn(KeyOp("")) then
-                                    gb.Value |> snd |> List.fold(fun exprstate (al,itm) ->
-                                        OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
-                               else OrderBy(alias,key,ascending,source.SqlExpression)
+                               match gb, key with
+                               | Some gbv, GroupColumn(KeyOp(""), _) ->
+                                        gbv |> snd |> List.fold(fun exprstate (al,itm) ->
+                                            OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
+                               | _ -> OrderBy(alias,key,ascending,source.SqlExpression)
                             let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression ; source.TupleIndex; |]
                             x :?> IQueryable<_>
                         | _ -> failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
@@ -837,8 +838,17 @@ module internal QueryImplementation =
                         let res = parseWhere meth limitedSource qual
                         res |> Seq.head |> box :?> 'T
                     | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
-                             OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity, KeyColumn key,_)))) 
+                             OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity, op,_)))) 
                              ]) ->
+
+                        let key = 
+                            let rec getBaseCol x =
+                                match x with
+                                | KeyColumn k -> k
+                                | CanonicalOperation(_, c) -> getBaseCol c
+                                | GroupColumn(_, c) -> getBaseCol c
+                            getBaseCol op
+
                         let alias =
                              match entity with
                              | "" when source.SqlExpression.HasAutoTupled() -> param
@@ -847,16 +857,16 @@ module internal QueryImplementation =
                         let sqlExpression =
                                
                                match meth.Name, source.SqlExpression with
-                               | "Sum", BaseTable("",entity)  -> AggregateOp("",GroupColumn(SumOp(key)),BaseTable(alias,entity))
-                               | "Sum", _ ->  AggregateOp(alias,GroupColumn(SumOp(key)),source.SqlExpression)
-                               | "Max", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MaxOp(key)),BaseTable(alias,entity))
-                               | "Max", _ ->  AggregateOp(alias,GroupColumn(MaxOp(key)),source.SqlExpression)
-                               | "Count", BaseTable("",entity)  -> AggregateOp("",GroupColumn(CountOp(key)),BaseTable(alias,entity))
-                               | "Count", _ ->  AggregateOp(alias,GroupColumn(CountOp(key)),source.SqlExpression)
-                               | "Min", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MinOp(key)),BaseTable(alias,entity))
-                               | "Min", _ ->  AggregateOp(alias,GroupColumn(MinOp(key)),source.SqlExpression)
-                               | "Average", BaseTable("",entity)  -> AggregateOp("",GroupColumn(AvgOp(key)),BaseTable(alias,entity))
-                               | "Average", _ ->  AggregateOp(alias,GroupColumn(AvgOp(key)),source.SqlExpression)
+                               | "Sum", BaseTable("",entity)  -> AggregateOp("",GroupColumn(SumOp(key), op),BaseTable(alias,entity))
+                               | "Sum", _ ->  AggregateOp(alias,GroupColumn(SumOp(key), op),source.SqlExpression)
+                               | "Max", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MaxOp(key), op),BaseTable(alias,entity))
+                               | "Max", _ ->  AggregateOp(alias,GroupColumn(MaxOp(key), op),source.SqlExpression)
+                               | "Count", BaseTable("",entity)  -> AggregateOp("",GroupColumn(CountOp(key), op),BaseTable(alias,entity))
+                               | "Count", _ ->  AggregateOp(alias,GroupColumn(CountOp(key), op),source.SqlExpression)
+                               | "Min", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MinOp(key), op),BaseTable(alias,entity))
+                               | "Min", _ ->  AggregateOp(alias,GroupColumn(MinOp(key), op),source.SqlExpression)
+                               | "Average", BaseTable("",entity)  -> AggregateOp("",GroupColumn(AvgOp(key), op),BaseTable(alias,entity))
+                               | "Average", _ ->  AggregateOp(alias,GroupColumn(AvgOp(key), op),source.SqlExpression)
                                | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
                         if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
