@@ -510,6 +510,17 @@ let ``simple select query with averageBy``() =
     Assert.Greater(27m, qry)
     Assert.Less(26m, qry)
 
+let ``simple select query with averageBy length``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for c in dc.Main.Customers do
+            averageBy (decimal(c.ContactName.Length))
+        }
+    Assert.Greater(14m, qry)
+    Assert.Less(13m, qry)
+
+
 [<Test>]
 let ``simplest select query with groupBy``() = 
     let dc = sql.GetDataContext()
