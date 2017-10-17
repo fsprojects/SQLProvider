@@ -1,3 +1,7 @@
+### 1.1.13 - 17.10.2017
+* Canonical operations support for aggregation operators (SUM/AVG/MIN/MAX) in single table #459
+* Latest type provider SDK
+
 ### 1.1.12 - 11.10.2017
 * Initial version of .NET Standard 2.0 / .NET Coreapp 2.0 support
 * Breaking change: The original dll path is now under net451 folder.

@@ -106,8 +106,8 @@ If you consider using asynchronous queries, read more from the [async documentat
 .Concat()                |X | `open System.Linq`, SQL UNION ALL-clause                     | 
 .Union()                 |X | `open System.Linq`, SQL UNION-clause                         | 
 all	                     |X |                                                       | 
-averageBy                |X |                                                       | 
-averageByNullable        |X |                                                       | 
+averageBy                |X | Single table                                          | 
+averageByNullable        |X | Single table                                          | 
 contains                 |X |                                                       | 
 count                    |X |                                                       | 
 distinct                 |X |                                                       | 
@@ -126,10 +126,10 @@ last                     |  |                                                   
 lastOrDefault            |  |                                                       | 
 leftOuterJoin            |  |                                                       | 
 let                      |x | ...but not using tmp variables in where-clauses       |
-maxBy                    |X |                                                       | 
-maxByNullable            |X |                                                       | 
-minBy                    |X |                                                       | 
-minByNullable            |X |                                                       | 
+maxBy                    |X | Single table                                          | 
+maxByNullable            |X | Single table                                          | 
+minBy                    |X | Single table                                          | 
+minByNullable            |X | Single table                                          | 
 nth                      |X |                                                       | 
 select                   |X |                                                       | 
 skip                     |X |                                                       | 
@@ -138,8 +138,8 @@ sortBy                   |X |                                                   
 sortByDescending	     |X |                                                       | 
 sortByNullable           |X |                                                       | 
 sortByNullableDescending |X |                                                       | 
-sumBy                    |X |                                                       | 
-sumByNullable            |X |                                                       | 
+sumBy                    |X | Single table                                          | 
+sumByNullable            |X | Single table                                          | 
 take                     |X |                                                       | 
 takeWhile                |  |                                                       | 
 thenBy	                 |X |                                                       |     
