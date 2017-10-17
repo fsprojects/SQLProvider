@@ -312,9 +312,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> failwith "Shouldn't hit"
 
         match be.Left, be.Right with
-        | OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)), Constant(constVal,constTyp) 
-        | Constant(constVal,constTyp), OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))
-            when (typ = constTyp || (typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> && typ.GenericTypeArguments.[0] = constTyp )) ->  // Support only numeric and string math
+        | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), OptionalConvertOrTypeAs(Constant(constVal,constTyp)) 
+        | OptionalConvertOrTypeAs(Constant(constVal,constTyp)), OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)))
+            when (typ = constTyp || (typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> && typ.GenericTypeArguments.[0] = constTyp )
+                 || be.Left.Type = be.Right.Type) ->  // Support only numeric and string math
                 match typ with
                 | t when (operation = "+" && (t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>>)) -> 
                     let x = constVal :?> String
@@ -327,8 +328,11 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | t when (decimalTypes |> Seq.exists((=) t) || integerTypes |> Seq.exists((=) t)) ->
                         Some(alias, CanonicalOperation(CanonicalOp.BasicMath(operation, constVal), col), typ)
                 | _ -> None
-        | OptionalFSharpOptionValue(SqlColumnGet(aliasLeft, colLeft, typLeft)), OptionalFSharpOptionValue(SqlColumnGet(aliasRight, colRight, typRight)) 
-            when (typLeft = typRight) -> 
+        | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasLeft, colLeft, typLeft))), OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasRight, colRight, typRight))) 
+            when (typLeft = typRight ||
+                     (typLeft.IsGenericType && typLeft.GetGenericTypeDefinition() = typedefof<Option<_>> && typLeft.GenericTypeArguments.[0] = typRight ) ||
+                     (typRight.IsGenericType && typRight.GetGenericTypeDefinition() = typedefof<Option<_>> && typRight.GenericTypeArguments.[0] = typLeft ) ||
+                         be.Left.Type = be.Right.Type) -> 
                 let opFix = 
                     match typLeft with
                     | t when ((t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>>) && operation = "+") -> "||"

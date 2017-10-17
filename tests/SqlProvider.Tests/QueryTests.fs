@@ -1179,6 +1179,17 @@ let ``simple select with contains query with where boolean option type``() =
         }
     Assert.IsTrue(qry)    
 
+[<Test>]
+let ``simple async sum with option operations``() = 
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            where (od.UnitPrice>0m)
+            select ((od.UnitPrice)*(decimal)od.OrderId)
+        } |> Seq.sumAsync |> Async.RunSynchronously
+    Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
+
 
 [<Test >]
 let ``simple canonical operation substing query``() =
