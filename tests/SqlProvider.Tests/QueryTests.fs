@@ -488,6 +488,18 @@ let ``simple select query with sumBy``() =
     Assert.Less(56499m, qry)
 
 [<Test>]
+let ``simple select query with sumBy times two``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            sumBy (od.UnitPrice*od.UnitPrice-2m)
+        }
+    Assert.Greater(3393420m, qry)
+    Assert.Less(3393418m, qry)
+
+
+[<Test>]
 let ``simple select query with averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -497,6 +509,17 @@ let ``simple select query with averageBy``() =
         }
     Assert.Greater(27m, qry)
     Assert.Less(26m, qry)
+
+let ``simple select query with averageBy length``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for c in dc.Main.Customers do
+            averageBy (decimal(c.ContactName.Length))
+        }
+    Assert.Greater(14m, qry)
+    Assert.Less(13m, qry)
+
 
 [<Test>]
 let ``simplest select query with groupBy``() = 
@@ -948,6 +971,17 @@ let ``simple async sum``() =
             select od.UnitPrice
         } |> Seq.sumAsync |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
+
+[<Test>]
+let ``simple async sum with operations``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            select ((od.UnitPrice+1m)*od.UnitPrice)
+        } |> Seq.sumAsync |> Async.RunSynchronously
+    Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
+
 
 [<Test>]
 let ``simple averageBy``() = 

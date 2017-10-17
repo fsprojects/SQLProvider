@@ -115,24 +115,29 @@ module internal Utilities =
             | RoundDecimals x -> sprintf "ROUND(%s,%d)" column x
             | BasicMath(o, c) -> sprintf "(%s %s %O)" column o c
             | _ -> failwithf "Not yet supported: %O %s" op (key.ToString())
-        | GroupColumn (KeyOp key) -> colSprint key
-        | GroupColumn (CountOp _) -> sprintf "COUNT(1)"
-        | GroupColumn (AvgOp key) -> sprintf "AVG(%s)" (colSprint key)
-        | GroupColumn (MinOp key) -> sprintf "MIN(%s)" (colSprint key)
-        | GroupColumn (MaxOp key) -> sprintf "MAX(%s)" (colSprint key)
-        | GroupColumn (SumOp key) -> sprintf "SUM(%s)" (colSprint key)
+        | GroupColumn (AvgOp key, KeyColumn _) -> sprintf "AVG(%s)" (colSprint key)
+        | GroupColumn (MinOp key, KeyColumn _) -> sprintf "MIN(%s)" (colSprint key)
+        | GroupColumn (MaxOp key, KeyColumn _) -> sprintf "MAX(%s)" (colSprint key)
+        | GroupColumn (SumOp key, KeyColumn _) -> sprintf "SUM(%s)" (colSprint key)
+        | GroupColumn (KeyOp key,_) -> colSprint key
+        | GroupColumn (CountOp _,_) -> sprintf "COUNT(1)"
+        // Nested aggregate operators, e.g. select(x*y) |> Seq.sum
+        | GroupColumn (AvgOp _,x) -> sprintf "AVG(%s)" (recursionBase x)
+        | GroupColumn (MinOp _,x) -> sprintf "MIN(%s)" (recursionBase x)
+        | GroupColumn (MaxOp _,x) -> sprintf "MAX(%s)" (recursionBase x)
+        | GroupColumn (SumOp _,x) -> sprintf "SUM(%s)" (recursionBase x)
 
     let rec genericAliasNotation aliasSprint = function
         | SqlColumnType.KeyColumn col -> aliasSprint col
         | SqlColumnType.CanonicalOperation(op,col) -> 
             let subItm = genericAliasNotation aliasSprint col
             aliasSprint (sprintf "%s_%O" (op.ToString().Replace(" ", "_")) subItm)
-        | GroupColumn (KeyOp key) -> aliasSprint key
-        | GroupColumn (CountOp key) -> aliasSprint (sprintf "COUNT_%s" key)
-        | GroupColumn (AvgOp key) -> aliasSprint (sprintf "AVG_%s" key)
-        | GroupColumn (MinOp key) -> aliasSprint (sprintf "MIN_%s" key)
-        | GroupColumn (MaxOp key) -> aliasSprint (sprintf "MAX_%s" key)
-        | GroupColumn (SumOp key) -> aliasSprint (sprintf "SUM_%s" key)
+        | GroupColumn (KeyOp key,_) -> aliasSprint key
+        | GroupColumn (CountOp key,_) -> aliasSprint (sprintf "COUNT_%s" key)
+        | GroupColumn (AvgOp key,_) -> aliasSprint (sprintf "AVG_%s" key)
+        | GroupColumn (MinOp key,_) -> aliasSprint (sprintf "MIN_%s" key)
+        | GroupColumn (MaxOp key,_) -> aliasSprint (sprintf "MAX_%s" key)
+        | GroupColumn (SumOp key,_) -> aliasSprint (sprintf "SUM_%s" key)
 
 
 module ConfigHelpers = 

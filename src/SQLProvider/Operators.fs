@@ -87,7 +87,7 @@ module ColumnSchema =
     and SqlColumnType =
     | KeyColumn of string
     | CanonicalOperation of CanonicalOp * SqlColumnType
-    | GroupColumn of AggregateOperation
+    | GroupColumn of AggregateOperation * SqlColumnType
 
     and SqlStringOrColumn =
     | SqlStr of string

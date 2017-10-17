@@ -200,26 +200,27 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             me.Expression <> null && me.Expression.Type <> null && me.Expression.Type.Name <> null &&
             me.Expression.Type.Name.StartsWith("IGrouping")  -> 
         match me.Member with 
-        | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp ""), p.DeclaringType) 
+        | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp "",SqlColumnType.KeyColumn("Key")), p.DeclaringType) 
         | _ -> None
     | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments <> null && e.Arguments.Count = 1 && 
             e.Arguments.[0] <> null && e.Arguments.[0].Type <> null && e.Arguments.[0].Type.Name <> null &&
             e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
         if e.Arguments.[0].NodeType = ExpressionType.Parameter then
+            let pn = match e.Arguments.[0] with :? ParameterExpression as p -> p.Name | _ -> e.Method.Name
             match e.Method.Name with
-            | "Count" -> Some(String.Empty, GroupColumn (CountOp ""), e.Method.DeclaringType)
-            | "Average" -> Some(String.Empty, GroupColumn (AvgOp ""), e.Method.DeclaringType)
-            | "Min" -> Some(String.Empty, GroupColumn (MinOp ""), e.Method.DeclaringType)
-            | "Max" -> Some(String.Empty, GroupColumn (MaxOp ""), e.Method.DeclaringType)
-            | "Sum" -> Some(String.Empty, GroupColumn (SumOp ""), e.Method.DeclaringType)
+            | "Count" -> Some(String.Empty, GroupColumn (CountOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Average" -> Some(String.Empty, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Min" -> Some(String.Empty, GroupColumn (MinOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Max" -> Some(String.Empty, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Sum" -> Some(String.Empty, GroupColumn (SumOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
             | _ -> None
         else 
             match e.Arguments.[0], e.Method.Name with
-            | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp ""), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Average" -> Some(m.Member.Name, GroupColumn (AvgOp ""), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp ""), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp ""), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp ""), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Average" -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | _ -> None
 
     // These are canonical functions
