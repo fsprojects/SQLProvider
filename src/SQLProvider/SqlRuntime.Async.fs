@@ -78,18 +78,20 @@ module AsyncOperations =
                             | "" -> ""
                             | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
                     let sqlExpression =
-                            match agg, source.SqlExpression with
-                            | "Sum", BaseTable("",entity)  -> AggregateOp("",GroupColumn(SumOp(key), op),BaseTable(alias,entity))
-                            | "Sum", _ ->  AggregateOp(alias,GroupColumn(SumOp(key), op),source.SqlExpression)
-                            | "Max", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MaxOp(key), op),BaseTable(alias,entity))
-                            | "Max", _ ->  AggregateOp(alias,GroupColumn(MaxOp(key), op),source.SqlExpression)
-                            | "Min", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MinOp(key), op),BaseTable(alias,entity))
-                            | "Min", _ ->  AggregateOp(alias,GroupColumn(MinOp(key), op),source.SqlExpression)
-                            | "Count", BaseTable("",entity)  -> AggregateOp("",GroupColumn(CountOp(key), op),BaseTable(alias,entity))
-                            | "Count", _ ->  AggregateOp(alias,GroupColumn(CountOp(key), op),source.SqlExpression)
-                            | "Average", BaseTable("",entity)  -> AggregateOp("",GroupColumn(AvgOp(key), op),BaseTable(alias,entity))
-                            | "Average", _ ->  AggregateOp(alias,GroupColumn(AvgOp(key), op),source.SqlExpression)
+
+                        let opName = 
+                            match agg with
+                            | "Sum" -> SumOp(key)
+                            | "Max" -> MaxOp(key)
+                            | "Count" -> CountOp(key)
+                            | "Min" -> MinOp(key)
+                            | "Average" -> AvgOp(key)
                             | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
+
+                        match source.SqlExpression with
+                        | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
+                        | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
+
                     let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex 
                     if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
                     return (Utilities.convertTypes res typeof<'T>) |> unbox

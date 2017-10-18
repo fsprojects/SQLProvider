@@ -42,6 +42,7 @@
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\scripts\Npgsql\lib\netstandard2.0\Npgsql.dll temp\ /y" />
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\scripts\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll temp\ /y" />
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\System.Data.Common\lib\netstandard1.2\System.Data.Common.dll temp\ /y" />
+    <Exec Condition="'$(IsWindows)' != 'true'" Command="mkdir -p temp" />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/scripts/Npgsql/lib/netstandard2.0/Npgsql.dll temp/ " />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/scripts/System.Threading.Tasks.Extensions/lib/netstandard2.0/System.Threading.Tasks.Extensions.dll temp/ " />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/System.Data.Common/lib/netstandard1.2/System.Data.Common.dll temp/ " />

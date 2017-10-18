@@ -42,6 +42,7 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\System.Security.Principal.Windows\lib\netstandard2.0\System.Security.Principal.Windows.dll temp\ /y" />
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\System.Text.Encoding.CodePages\lib\netstandard2.0\System.Text.Encoding.CodePages.dll temp\ /y" />
+    <Exec Condition="'$(IsWindows)' != 'true'" Command="mkdir -p temp" />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/System.Security.Principal.Windows/lib/netstandard2.0/System.Security.Principal.Windows.dll temp/ " />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/System.Text.Encoding.CodePages/lib/netstandard2.0/System.Text.Encoding.CodePages.dll temp/ " />
   </Target>

@@ -464,6 +464,115 @@ module internal QueryImplementation =
                 let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
                 ty, data, sourceAlias
 
+
+             // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
+             let rec processSelectManys (toAlias:string) (inExp:Expression) (outExp:SqlExp) (projectionParams : ParameterExpression list) (source:IWithSqlService) =
+                let (|OptionalOuterJoin|) e =
+                    match e with
+                    | MethodCall(None, (!!), [inner]) -> (true,inner)
+                    | _ -> (false,e)
+                match inExp with
+                | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
+                    let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    processSelectManys projectionParams.[1].Name inner outExp projectionParams source
+            //                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+            //                                                    [createRelated
+            //                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+            //                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
+            //                                                     OptionalQuote (Lambda(_,_))])
+            //                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+            //                                                    [createRelated
+            //                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+            //                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
+            //                                                     OptionalQuote (Lambda(_,_))]) 
+            //                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+            //                                                    [createRelated
+            //                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+            //                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)])
+                | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
+                                        [createRelated
+                                         ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+                                         OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)]) ->
+
+                    let lambda = lambda1 :?> LambdaExpression
+                    let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
+                    SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
+
+                | MethodCall(None, (MethodWithName "Join"),
+                                        [createRelated
+                                         ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+                                         OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
+                                         OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
+                                         OptionalQuote (Lambda(projectionParams,_))])
+                | MethodCall(None, (MethodWithName "Join"),
+                                        [createRelated
+                                         ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+                                         OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
+                                         OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
+                                         OptionalQuote (Lambda(projectionParams,_))]) ->
+                    // this case happens when the select many also includes one or more joins in the same tree.
+                    // in this situation, the first agrument will either be an additional nested join method call,
+                    // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
+                    let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                    if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                    if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                    // we don't actually have the "foreign" table name here in a join as that information is "lost" further up the expression tree.
+                    // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
+                    let data = { PrimaryKey = [destKey]; PrimaryTable = Table.FromFullName destEntity; ForeignKey = [sourceKey];
+                                    ForeignTable = {Schema="";Name="";Type=""};
+                                    OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                    SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
+                | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
+                                
+                    let parseKey itm =
+                        SqlColumnType.KeyColumn itm
+                    let fromAlias =
+                        match param with
+                        | ParamName x -> x
+                        | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
+                        | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
+                    let data = { PrimaryKey = [parseKey PK]; PrimaryTable = Table.FromFullName PE; ForeignKey = [parseKey FK]; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
+                    let sqlExpression =
+                        match outExp with
+                        | BaseTable(alias,entity) when alias = "" ->
+                            // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the select many
+                            SelectMany(fromAlias,toAlias,LinkQuery(data),BaseTable(alias,entity))
+                        | _ ->
+                            SelectMany(fromAlias,toAlias,LinkQuery(data),outExp)
+                    // add new aliases to the tuple index
+                    if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
+                    if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
+                    sqlExpression
+                | MethodCall(None, (MethodWithName "Join"),
+                                        [createRelated
+                                         ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+                                         OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
+                                         OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
+                                         OptionalQuote (Lambda(projectionParams,_))]) ->
+                    let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+
+                    let destKeys = multidest |> List.map(fun (_,destKey,_) -> destKey)
+                    let aliashandlesSource =
+                        multisource |> List.map(
+                            fun (sourceTi,sourceKey,_) ->
+                                let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                                if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                                if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                                sourceAlias, sourceKey
+                            )
+                    let sourceAlias = match aliashandlesSource with [] -> sourceAlias | (alias,_)::t -> alias
+                    let sourceKeys = aliashandlesSource |> List.map snd
+
+                    let data = { PrimaryKey = destKeys; PrimaryTable = Table.FromFullName destEntity; ForeignKey = sourceKeys;
+                                    ForeignTable = {Schema="";Name="";Type=""};
+                                    OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                    SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
+                | _ -> failwith ("Unknown: " + inExp.ToString())
+
+
+
              // Possible Linq method overrides are available here: 
              // https://referencesource.microsoft.com/#System.Core/System/Linq/IQueryable.cs
              // https://msdn.microsoft.com/en-us/library/system.linq.enumerable_methods(v=vs.110).aspx
@@ -625,113 +734,7 @@ module internal QueryImplementation =
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
                                 | _ -> failwith "unsupported projection in select many"
 
-                        // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
-                        let rec processSelectManys toAlias inExp outExp =
-                            let (|OptionalOuterJoin|) e =
-                                match e with
-                                | MethodCall(None, (!!), [inner]) -> (true,inner)
-                                | _ -> (false,e)
-                            match inExp with
-                            | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
-                                let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
-                                processSelectManys projectionParams.[1].Name inner outExp
-//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
-//                                                    [createRelated
-//                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
-//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
-//                                                     OptionalQuote (Lambda(_,_))])
-//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
-//                                                    [createRelated
-//                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
-//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)
-//                                                     OptionalQuote (Lambda(_,_))]) 
-//                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
-//                                                    [createRelated
-//                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
-//                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)])
-                            | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
-                                                    [createRelated
-                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
-                                                     OptionalQuote (Lambda([ParamName sourceAlias], exp) as lambda1)]) ->
-
-                                let lambda = lambda1 :?> LambdaExpression
-                                let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
-                                let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
-                                SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
-
-                            | MethodCall(None, (MethodWithName "Join"),
-                                                    [createRelated
-                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
-                                                     OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
-                                                     OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
-                                                     OptionalQuote (Lambda(projectionParams,_))])
-                            | MethodCall(None, (MethodWithName "Join"),
-                                                    [createRelated
-                                                     ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
-                                                     OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
-                                                     OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
-                                                     OptionalQuote (Lambda(projectionParams,_))]) ->
-                                // this case happens when the select many also includes one or more joins in the same tree.
-                                // in this situation, the first agrument will either be an additional nested join method call,
-                                // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
-                                let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
-                                let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                                if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                                if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
-                                // we don't actually have the "foreign" table name here in a join as that information is "lost" further up the expression tree.
-                                // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
-                                let data = { PrimaryKey = [destKey]; PrimaryTable = Table.FromFullName destEntity; ForeignKey = [sourceKey];
-                                                ForeignTable = {Schema="";Name="";Type=""};
-                                                OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
-                            | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
-                                
-                                let parseKey itm =
-                                    SqlColumnType.KeyColumn itm
-                                let fromAlias =
-                                    match param with
-                                    | ParamName x -> x
-                                    | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
-                                    | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
-                                let data = { PrimaryKey = [parseKey PK]; PrimaryTable = Table.FromFullName PE; ForeignKey = [parseKey FK]; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
-                                let sqlExpression =
-                                    match outExp with
-                                    | BaseTable(alias,entity) when alias = "" ->
-                                        // special case here as above - this is the first call so replace the top of the tree here with the current base entity alias and the select many
-                                        SelectMany(fromAlias,toAlias,LinkQuery(data),BaseTable(alias,entity))
-                                    | _ ->
-                                        SelectMany(fromAlias,toAlias,LinkQuery(data),outExp)
-                                // add new aliases to the tuple index
-                                if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
-                                if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
-                                sqlExpression
-                            | MethodCall(None, (MethodWithName "Join"),
-                                                    [createRelated
-                                                     ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
-                                                     OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
-                                                     OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
-                                                     OptionalQuote (Lambda(projectionParams,_))]) ->
-                                let outExp = processSelectManys projectionParams.[0].Name createRelated outExp
-
-                                let destKeys = multidest |> List.map(fun (_,destKey,_) -> destKey)
-                                let aliashandlesSource =
-                                    multisource |> List.map(
-                                        fun (sourceTi,sourceKey,_) ->
-                                            let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                                            if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                                            if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
-                                            sourceAlias, sourceKey
-                                        )
-                                let sourceAlias = match aliashandlesSource with [] -> sourceAlias | (alias,_)::t -> alias
-                                let sourceKeys = aliashandlesSource |> List.map snd
-
-                                let data = { PrimaryKey = destKeys; PrimaryTable = Table.FromFullName destEntity; ForeignKey = sourceKeys;
-                                                ForeignTable = {Schema="";Name="";Type=""};
-                                                OuterJoin = false; RelDirection = RelationshipDirection.Parents }
-                                SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
-                            | _ -> failwith ("Unknown: " + inExp.ToString())
-
-                        let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression
+                        let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression projectionParams source 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
@@ -854,20 +857,24 @@ module internal QueryImplementation =
                              | "" when source.SqlExpression.HasAutoTupled() -> param
                              | "" -> ""
                              | _ -> resolveTuplePropertyName entity source.TupleIndex
+
                         let sqlExpression =
-                               
-                               match meth.Name, source.SqlExpression with
-                               | "Sum", BaseTable("",entity)  -> AggregateOp("",GroupColumn(SumOp(key), op),BaseTable(alias,entity))
-                               | "Sum", _ ->  AggregateOp(alias,GroupColumn(SumOp(key), op),source.SqlExpression)
-                               | "Max", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MaxOp(key), op),BaseTable(alias,entity))
-                               | "Max", _ ->  AggregateOp(alias,GroupColumn(MaxOp(key), op),source.SqlExpression)
-                               | "Count", BaseTable("",entity)  -> AggregateOp("",GroupColumn(CountOp(key), op),BaseTable(alias,entity))
-                               | "Count", _ ->  AggregateOp(alias,GroupColumn(CountOp(key), op),source.SqlExpression)
-                               | "Min", BaseTable("",entity)  -> AggregateOp("",GroupColumn(MinOp(key), op),BaseTable(alias,entity))
-                               | "Min", _ ->  AggregateOp(alias,GroupColumn(MinOp(key), op),source.SqlExpression)
-                               | "Average", BaseTable("",entity)  -> AggregateOp("",GroupColumn(AvgOp(key), op),BaseTable(alias,entity))
-                               | "Average", _ ->  AggregateOp(alias,GroupColumn(AvgOp(key), op),source.SqlExpression)
-                               | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
+
+                               let opName = 
+                                    match meth.Name with
+                                    | "Sum" -> SumOp(key)
+                                    | "Max" -> MaxOp(key)
+                                    | "Count" -> CountOp(key)
+                                    | "Min" -> MinOp(key)
+                                    | "Average" -> AvgOp(key)
+                                    | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
+
+                               match source.SqlExpression with
+                               | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
+                               | _ ->  
+                                    //let ex = processSelectManys param innerProjection x projectionParams source 
+                                    AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
+
                         let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
                         if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                         (Utilities.convertTypes res typeof<'T>) :?> 'T

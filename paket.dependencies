@@ -25,6 +25,7 @@ group Standard
     nuget System.Data.SqlClient
     nuget System.Data.Common
 	nuget Microsoft.Data.SQLite
+	nuget FSharp.Compiler.Service
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 

@@ -45,6 +45,7 @@
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_green.dll temp\ /y" />
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
     <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
+    <Exec Condition="'$(IsWindows)' != 'true'" Command="mkdir -p temp" />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../standard\SQLitePCLRaw.provider.e_sqlite3.netstandard11\lib\netstandard1.1\SQLitePCLRaw.provider.e_sqlite3.dll temp/ " />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/Microsoft.Data.Sqlite.Core/lib/netstandard2.0/Microsoft.Data.Sqlite.dll temp/ " />
     <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/SQLitePCLRaw.core/lib/netstandard1.1/SQLitePCLRaw.core.dll temp/ " />
