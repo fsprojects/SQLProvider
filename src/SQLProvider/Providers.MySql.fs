@@ -15,7 +15,7 @@ module MySql =
     let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
-        "MySql.Data.dll"
+        "MySql.Data.dll"; "MySqlConnector.dll"
     ]
 
     let assembly =
@@ -47,8 +47,8 @@ module MySql =
     let parameterType =   lazy (findType "MySqlParameter")
     let enumType =        lazy (findType "MySqlDbType")
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
-    let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
-    let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
+    //let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
+    //let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
 
     let getSchema (name:string) (args:string[]) (conn:IDbConnection) =
 #if !NETSTANDARD
@@ -179,9 +179,9 @@ module MySql =
                 for r in dt.Rows do
                     let clrType = getClrType (string r.["DataType"])
                     let oleDbType =
-                        let format = (string r.["CreateFormat"])
-                        if format <> null && format.ToUpper().Contains("UNSIGNED") then format
-                        else  string r.["TypeName"]
+                        let unsigned = r.["IsUnsigned"]
+                        if unsigned <> null && unsigned.ToString() <> "" && (unsigned:?>bool) then (string r.["TypeName"]).Replace(" ", "") + " UNSIGNED"
+                        else string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
                     yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
@@ -583,7 +583,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                         let dt = reader.GetString(1)
                         let maxlen = 
                             if reader.IsDBNull(2) then ""
-                            else reader.GetString(2)
+                            else reader.GetValue(2).ToString()
                         let isUnsigned = not(reader.IsDBNull(6)) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
                         let udt = if isUnsigned then dt + " unsigned" else dt
                         match MySql.findDbType udt with

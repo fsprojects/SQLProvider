@@ -659,7 +659,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                         let dt = reader.GetString(1)
                         let maxlen = 
                             if reader.IsDBNull(2) then ""
-                            else reader.GetString(2)
+                            else reader.GetValue(2).ToString()
                         match Firebird.findDbType dt with
                         | Some(m) ->
                             let col =
