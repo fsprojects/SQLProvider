@@ -44,6 +44,8 @@ group Scripts
     nuget Npgsql
     nuget Oracle.ManagedDataAccess
     nuget FirebirdSql.Data.FirebirdClient
+    nuget System.Data.SQLite.Core
+    nuget System.Data.SQLite.Linq
 
 
     
