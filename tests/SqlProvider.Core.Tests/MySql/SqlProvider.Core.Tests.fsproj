@@ -31,7 +31,7 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.12" />
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.15" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />

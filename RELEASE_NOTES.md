@@ -1,3 +1,7 @@
+### 1.1.15 - 21.10.2017
+* Initial support for MySqlConnector driver
+* Latest type provider SDK
+
 ### 1.1.14 - 17.10.2017
 * Canonical operations support for aggregation operators (SUM/AVG/MIN/MAX) in single table #459
 * Latest type provider SDK

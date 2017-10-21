@@ -2,9 +2,9 @@
 
 # .NET Standard / .NET Core support #
 
-This is very initial / experimental, from version 1.1.12.
+This is very initial / experimental, from version 1.1.15.
 
-Install e.g. with: `dotnet add package SQLProvider --version 1.1.12`
+Install e.g. with: `dotnet add package SQLProvider --version 1.1.15`
 
 ## Example projects ##
 
@@ -53,6 +53,9 @@ Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.
 Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
 But your compilation resolutionPath reference assemblies have to be .Net 4.5.1 version and your build folder
 have to have core references, e.g. via PackageReferences.
+
+On Ubuntu you probably have to use sudo for both dotnet restore and dotnet build.
+If you forgot the sudo, try to remove bin and obj folders and then run restore again.
 
 ## Some Technical Details ##
 
