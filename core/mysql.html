@@ -211,7 +211,11 @@ And comparing two datetimes as strings with "T" and without "T" will generate a 
 <p>You should be fine even with canonical functions like <code>DateTime.Parse(a.MeetStartTime).AddMinutes(10.)</code>.</p>
 <h2><a name="Caveats-Additional-Info" class="anchor" href="#Caveats-Additional-Info">Caveats / Additional Info</a></h2>
 <p>Check <a href="general.html">General</a>, <a href="parameters.html">Static Parameters</a> and <a href="querying.html">Querying</a> documentation.</p>
-<p>More to be added.</p>
+<h1><a name="Suppport-for-MySqlConnector" class="anchor" href="#Suppport-for-MySqlConnector">Suppport for MySqlConnector</a></h1>
+<p><a href="https://github.com/mysql-net/MySqlConnector">MySqlConnector</a> is alternative driver to use instead of MySql.Data.dll.
+It has less features but a lot better performance than the official driver.</p>
+<p>It is supported when MySqlConnector supports GetSchema() (currently on GitHub, not yet in NuGet).</p>
+<p>Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead.</p>
 
 
         </div>

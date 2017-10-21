@@ -34,8 +34,8 @@
         <div class="span9" id="main">
           
 <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
-<p>This is very initial / experimental, from version 1.1.12.</p>
-<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.12</code></p>
+<p>This is very initial / experimental, from version 1.1.15.</p>
+<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.15</code></p>
 <h2><a name="Example-projects" class="anchor" href="#Example-projects">Example projects</a></h2>
 <p>There are some example .NET-Coreapp 2.0 projects at: <a href="https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
 <p>There is a build.cmd which runs as follows:</p>
@@ -69,6 +69,13 @@ Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0</p>
 Described at: <a href="https://bugs.mysql.com/bug.php?id=88016">https://bugs.mysql.com/bug.php?id=88016</a></p>
 <p>SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
 Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.</p>
+<p>On Windows you can reference .NET Standard 2.0 dlls in FSharp interactive but in Osx or Linux you cannot as Mono is not .NET Standard 2.0 compatible.</p>
+<p>Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.1 libraries.
+Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
+But your compilation resolutionPath reference assemblies have to be .Net 4.5.1 version and your build folder
+have to have core references, e.g. via PackageReferences.</p>
+<p>On Ubuntu you probably have to use sudo for both dotnet restore and dotnet build.
+If you forgot the sudo, try to remove bin and obj folders and then run restore again.</p>
 <h2><a name="Some-Technical-Details" class="anchor" href="#Some-Technical-Details">Some Technical Details</a></h2>
 <p>Sources are in the <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard">netstandard branch</a>.</p>
 <p>The following files is needed to the NuGet package, from the .NET Standard SDK:
