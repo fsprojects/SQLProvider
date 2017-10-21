@@ -47,6 +47,13 @@ Described at: https://bugs.mysql.com/bug.php?id=88016
 SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
 Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.
 
+On Windows you can reference .NET Standard 2.0 dlls in FSharp interactive but in Osx or Linux you cannot as Mono is not .NET Standard 2.0 compatible. 
+
+Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.1 libraries. 
+Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
+But your compilation resolutionPath reference assemblies have to be .Net 4.5.1 version and your build folder
+have to have core references, e.g. via PackageReferences.
+
 ## Some Technical Details ##
 
 Sources are in the [netstandard branch](https://github.com/fsprojects/SQLProvider/tree/netstandard).

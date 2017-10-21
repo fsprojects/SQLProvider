@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
-  </PropertyGroup>
-  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <!--TargetFramework>netstandard2.0</TargetFramework-->
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+  <!-- FSharp config -->
+  <PropertyGroup>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
@@ -25,11 +26,12 @@
     <FscToolPath>/usr/bin</FscToolPath>
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
+  <!-- /FSharp config -->
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SQLProvider" Version="1.1.12" />
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.12" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
@@ -39,11 +41,32 @@
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
+  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
+      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
+      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
+      assembly will ve .NET Core compatible. -->
+  <ItemGroup><!-- Mono fix -->
+    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
+    </Reference>
+  </ItemGroup>  
+  <Target Name="CopyLibrariesWin">
+    <Exec Command="xcopy ..\..\..\packages\standard\System.Security.Principal.Windows\lib\netstandard2.0\System.Security.Principal.Windows.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\standard\System.Text.Encoding.CodePages\lib\netstandard2.0\System.Text.Encoding.CodePages.dll temp\ /y" />
+    <Exec Command="xcopy core\MySql.Data.dll temp\ /y" />
+  </Target>
+  <Target Name="CopyLibrariesNonWin">
+    <Exec Command="mkdir -p temp" />
+    <Exec Command="cp ../../../packages/scripts/MySql.Data/lib/net45/MySql.Data.dll temp/ " />
+  </Target>
+  <ItemGroup><!-- MySql.Data.dll is currently not CoreApp 2.0 compatible in Nuget. -->
+    <Reference Include="MySql.Data.dll">
+      <HintPath>core/MySql.Data.dll</HintPath>
+    </Reference>
+  </ItemGroup>    
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\System.Security.Principal.Windows\lib\netstandard2.0\System.Security.Principal.Windows.dll temp\ /y" />
-    <Exec Condition="'$(IsWindows)' == 'true'" Command="xcopy ..\..\..\packages\standard\System.Text.Encoding.CodePages\lib\netstandard2.0\System.Text.Encoding.CodePages.dll temp\ /y" />
-    <Exec Condition="'$(IsWindows)' != 'true'" Command="mkdir -p temp" />
-    <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/System.Security.Principal.Windows/lib/netstandard2.0/System.Security.Principal.Windows.dll temp/ " />
-    <Exec Condition="'$(IsWindows)' != 'true'" Command="cp ../../../packages/standard/System.Text.Encoding.CodePages/lib/netstandard2.0/System.Text.Encoding.CodePages.dll temp/ " />
+    <CallTarget Targets="CopyLibrariesWin" Condition="'$(IsWindows)' == 'true'"/>
+    <CallTarget Targets="CopyLibrariesNonWin" Condition="'$(IsWindows)' != 'true'"/>
   </Target>
 </Project>

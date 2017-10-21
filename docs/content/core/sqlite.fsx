@@ -44,6 +44,8 @@ manually copy the interop libraries:
 If `System.Data.SQLite.dll` is in the location where NuGet places it by default, you don't have to submit
 the ResolutionPath parameter at all, but you still need to copy the interop libraries as described above.
 
+If you use Microsoft.Data.Sqlite driver, you still need the physical dll, (in that case e_sqlite3.dll), to be in resolutionPath or folder under operating system PATH variable.
+
 *)
 
 [<Literal>]
@@ -55,9 +57,10 @@ let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/
 Specifies what SQLite library to use. This is an `SQLiteLibrary` enumeration, defined in the `FSharp.Data.Sql.Common`
 namespace, which has the following members:
 
-- **`AutoSelect`** - Uses System.Data.SQLite under .NET and Mono.Data.SQLite under Mono. This is the default.
+- **`AutoSelect`** - Uses System.Data.SQLite under .NET, Mono.Data.SQLite under Mono and Microsoft.Data.Sqlite under NET Core. This is the default.
 - **`MonoDataSQLite`** - Always uses Mono.Data.SQLite.
-- **`SystemDataSQLite`** - Always uses System.Data.SQLite.
+- **`SystemDataSQLite`** - Always uses [System.Data.SQLite](https://system.data.sqlite.org/).
+- **`MicrosoftDataSqlite`** - Always uses [Microsoft.Data.Sqlite](https://github.com/aspnet/Microsoft.Data.Sqlite). This is experimental until it supports GetSchema().
 
 
 ## Example

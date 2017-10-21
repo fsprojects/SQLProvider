@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
-  </PropertyGroup>
-  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <!--TargetFramework>netstandard2.0</TargetFramework-->
+  </PropertyGroup>
+  <!-- FSharp config -->
+  <PropertyGroup>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
@@ -23,11 +24,27 @@
     <FscToolPath>/usr/bin</FscToolPath>
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
+  <!-- /FSharp config -->
+  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
+      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
+      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
+      assembly will ve .NET Core compatible. -->
+  <ItemGroup><!-- Mono fix -->
+    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
+    </Reference>
+  </ItemGroup>  
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SQLProvider" Version="1.1.12" />
+    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
+    </Reference>
+  </ItemGroup>  
+  <ItemGroup>
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.12" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
