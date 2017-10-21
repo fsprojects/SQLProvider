@@ -1,11 +1,11 @@
-﻿// Learn more about F# at http://fsharp.org
-//#r "../../bin/net461/FSharp.Data.SqlProvider.dll"
-#if INTERACTIVE
+﻿#if INTERACTIVE
 #r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll"
 #r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+// On Non-Windows-machine, fsharpi is not running on Core:
+// #r "../../../bin/net451/FSharp.Data.SqlProvider.dll"
+
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
-
 #else
 module Netstandard
 [<Literal>]
@@ -21,7 +21,7 @@ let connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Pa
 
 type HR = SqlDataProvider<
             Common.DatabaseProviderTypes.POSTGRESQL, connStr,
-            ResolutionPath = resolutionPath>
+            ResolutionPath = resolutionPath, Owner="sqlprovider">
 
 [<EntryPoint>]
 let main argv =

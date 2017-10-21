@@ -167,5 +167,14 @@ You should be fine even with canonical functions like `DateTime.Parse(a.MeetStar
 
 Check [General](general.html), [Static Parameters](parameters.html) and [Querying](querying.html) documentation.
 
-More to be added.
+
+# Suppport for MySqlConnector
+
+[MySqlConnector](https://github.com/mysql-net/MySqlConnector) is alternative driver to use instead of MySql.Data.dll.
+It has less features but a lot better performance than the official driver.
+
+It is supported when MySqlConnector supports GetSchema() (currently on GitHub, not yet in NuGet).
+
+Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead.
+
 *)

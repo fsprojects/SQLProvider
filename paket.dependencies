@@ -40,10 +40,14 @@ group Scripts
     source https://nuget.org/api/v2
 
     nuget MySql.Data
+    // nuget MySqlConnector //Faster replacement for MySql.Data. Supported version not yet on NuGet, take from GitHub.
     nuget Newtonsoft.Json
     nuget Npgsql
     nuget Oracle.ManagedDataAccess
     nuget FirebirdSql.Data.FirebirdClient
+    nuget System.Data.SQLite.Core
+    nuget System.Data.SQLite.Linq
+    // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 
     

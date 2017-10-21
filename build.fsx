@@ -105,12 +105,12 @@ Target "BuildCore" (fun _ ->
     // Build .NET Core solution
     DotNetCli.Restore(fun p -> 
         { p with 
-            Project = "SQLProvider.Core.sln"
+            Project = "src/SQLProvider.Standard/SQLProvider.Standard.fsproj"
             NoCache = true})
 
     DotNetCli.Build(fun p -> 
         { p with 
-            Project = "SQLProvider.Core.sln"
+            Project = "src/SQLProvider.Standard/SQLProvider.Standard.fsproj"
             Configuration = "Release"})
 )
 
