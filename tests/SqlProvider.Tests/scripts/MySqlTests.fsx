@@ -2,6 +2,7 @@
 #r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
+
 open System
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
@@ -9,12 +10,13 @@ open Newtonsoft.Json
         
 [<Literal>]
 let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
+
 [<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
+let dataPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = resolutionFolder, Owner = "HR">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = dataPath, Owner = "HR">
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
@@ -272,3 +274,25 @@ query {
     select c.Years
 } |> Seq.tryHead
 
+
+//******************** MySqlConnector **********************//
+
+// MySqlConnector is unofficial driver, a lot faster execution, better async. 
+// Stored-procedures and function calls not supported.
+
+// NOTE: Needs also System.Threading.Tasks.Extensions.dll, System.Buffers.dll and System.Runtime.InteropServices.RuntimeInformation.dll to ResolutionPath
+
+//"../../../packages/standard/System.Buffers/lib/netstandard1.1/System.Buffers.dll"
+//"../../../packages/standard/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll"
+//"../../../packages/standard/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
+
+[<Literal>]
+let connectorPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySqlConnector/lib/net46/"
+type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = connectorPath, Owner = "HR">
+let ctx2 = HRFast.GetDataContext()
+
+let firstNameAsync = 
+    query {
+        for emp in ctx2.Hr.Employees do
+        select (emp.FirstName, emp.LastName, emp.PhoneNumber)
+    } |> Seq.executeQueryAsync |> Async.StartAsTask

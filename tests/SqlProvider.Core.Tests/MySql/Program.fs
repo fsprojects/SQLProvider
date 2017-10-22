@@ -4,13 +4,18 @@
 // On Non-Windows-machine, fsharpi is not running on Core:
 // #r "../../../bin/net451/FSharp.Data.SqlProvider.dll"
 
+//[<Literal>]
+//let msyqlDataPath = __SOURCE_DIRECTORY__ + "/dataTemp"
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
+let msyqlConnectorPath = __SOURCE_DIRECTORY__ + "/connectorTemp"
+
 #else
 module Netstandard
 
+//[<Literal>]
+//let msyqlDataPath = "dataTemp"
 [<Literal>]
-let resolutionPath = "temp"
+let msyqlConnectorPath = "connectorTemp"
 #endif
 
 open System
@@ -18,8 +23,11 @@ open FSharp.Data.Sql
 
 [<Literal>]
 let connStr =  "Server=localhost;Database=HR;Uid=admin;Pwd=password;Convert Zero Datetime=true;" //SslMode=none;
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr,
-                          Owner = "HR", ResolutionPath = resolutionPath>
+//Use MySql.Data.dll (See the project file for details):
+//type HRSpocs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, Owner = "HR", ResolutionPath = msyqlDataPath>
+
+//Use MySqlConnector.dll:
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, Owner = "HR", ResolutionPath = msyqlConnectorPath>
 
 [<EntryPoint>]
 let main argv =

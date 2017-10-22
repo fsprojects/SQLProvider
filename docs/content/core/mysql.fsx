@@ -173,8 +173,17 @@ Check [General](general.html), [Static Parameters](parameters.html) and [Queryin
 [MySqlConnector](https://github.com/mysql-net/MySqlConnector) is alternative driver to use instead of MySql.Data.dll.
 It has less features but a lot better performance than the official driver.
 
-It is supported when MySqlConnector supports GetSchema() (currently on GitHub, not yet in NuGet).
+You can use it with SQLProvider:
+Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead. (Get the latest from NuGet.)
+It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
+so copy those files also to your referencePath. You can get them from corresponding NuGet packages.
 
-Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead.
+Pocedures and database functions are not supported with MySqlConnector so if you want to use those,
+the current solution is to use two different connections to database:
+
+```fsharp
+type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = "c:\mysqlConnectorPath", Owner = "HR">
+type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = "c:\MysqlDataPath", Owner = "HR">
+```
 
 *)
