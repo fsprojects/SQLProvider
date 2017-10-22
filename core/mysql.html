@@ -214,8 +214,20 @@ And comparing two datetimes as strings with "T" and without "T" will generate a 
 <h1><a name="Suppport-for-MySqlConnector" class="anchor" href="#Suppport-for-MySqlConnector">Suppport for MySqlConnector</a></h1>
 <p><a href="https://github.com/mysql-net/MySqlConnector">MySqlConnector</a> is alternative driver to use instead of MySql.Data.dll.
 It has less features but a lot better performance than the official driver.</p>
-<p>It is supported when MySqlConnector supports GetSchema() (currently on GitHub, not yet in NuGet).</p>
-<p>Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead.</p>
+<p>You can use it with SQLProvider:
+Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead. (Get the latest from NuGet.)
+It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
+so copy those files also to your referencePath. You can get them from corresponding NuGet packages.</p>
+<p>Pocedures and database functions are not supported with MySqlConnector so if you want to use those,
+the current solution is to use two different connections to database:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">HRFast</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">MYSQL</span>, <span class="i">connString</span>, <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="s">&quot;c:\mysqlConnectorPath&quot;</span>, <span class="i">Owner</span> <span class="o">=</span> <span class="s">&quot;HR&quot;</span><span class="o">&gt;</span>
+<span class="k">type</span> <span class="i">HRProcs</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">MYSQL</span>, <span class="i">connString</span>, <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="s">&quot;c:\MysqlDataPath&quot;</span>, <span class="i">Owner</span> <span class="o">=</span> <span class="s">&quot;HR&quot;</span><span class="o">&gt;</span>
+</code></pre></td>
+</tr>
+</table>
 
 
         </div>
