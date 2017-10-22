@@ -65,7 +65,7 @@
     <Exec Command="cp ../../../packages/standard/System.Buffers/lib/netstandard1.1/System.Buffers.dll connectorTemp/ " />
     <Exec Command="cp ../../../packages/standard/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll connectorTemp/ " />
     <Exec Command="cp ../../../packages/standard/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp/ " />
-    <Exec Command="cp ../../../packages/standard/System.Data.Common/lib/netstandard1.2/System.Data.Common.dll connectorTemp/ /y" />
+    <Exec Command="cp ../../../packages/standard/System.Data.Common/lib/netstandard1.2/System.Data.Common.dll connectorTemp/ " />
   </Target>
   <!-- MySql.Data.dll is currently not CoreApp 2.0 compatible in Nuget. But you can use the local if you want.
        Just uncomment these commented lines.
