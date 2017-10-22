@@ -183,8 +183,8 @@ the current solution is to use two different connections to database:
 
 *)
 
-type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = "c:\mysqlConnectorPath", Owner = "HR">
-type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = "c:\MysqlDataPath", Owner = "HR">
+type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\mysqlConnectorPath", Owner = "HR">
+type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\MysqlDataPath", Owner = "HR">
 
 (**
 
@@ -192,16 +192,16 @@ type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, R
 
 One complex query:
 
-```
-MySql.Data.dll:   Real: 00:00:00.583, CPU: 00:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
-MySqlConnect.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0
+``` 
+MySql.Data.dll:     Real: 00:00:00.583, CPU: 00:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
+MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0
 ```
 
 Lot of async queries:
 
 ```
-MySQL.Data.dll    Real: 00:00:01.425, CPU: 00:00:02.078, GC gen0: 16, gen1: 1, gen2: 0
-MySqlConnect.dll: Real: 00:00:01.091, CPU: 00:00:02.000, GC gen0: 14, gen1: 1, gen2: 0
+MySQL.Data.dll      Real: 00:00:01.425, CPU: 00:00:02.078, GC gen0: 16, gen1: 1, gen2: 0
+MySqlConnector.dll: Real: 00:00:01.091, CPU: 00:00:02.000, GC gen0: 14, gen1: 1, gen2: 0
 ```
 
 *)
