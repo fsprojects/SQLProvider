@@ -1,3 +1,6 @@
+### 1.1.16 - 25.10.2017
+* Excluded FSharp.Core dll from package #465
+
 ### 1.1.15 - 21.10.2017
 * Initial support for MySqlConnector driver
 * Latest type provider SDK
