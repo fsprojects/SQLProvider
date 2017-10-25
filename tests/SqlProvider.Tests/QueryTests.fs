@@ -185,6 +185,19 @@ let ``simple select query``() =
     
     CollectionAssert.IsNotEmpty qry
 
+
+[<Test>]
+let ``simplest select query into temp``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust.City, cust.Country) into y
+            select (snd y, fst y)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+
 [<Test>]
 let ``simplest select query let temp``() = 
     let dc = sql.GetDataContext()

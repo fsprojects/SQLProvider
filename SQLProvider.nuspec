@@ -32,7 +32,7 @@
 	</dependencies>
   </metadata>
   <files>
-    <file src="**/*.dll" />
+    <file src="**/*.dll" exclude="**/net451/FSharp.Core.dll" />
     <file src="**/*.deps.json" />
   </files>
 </package>
