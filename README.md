@@ -20,6 +20,7 @@ A general .NET/Mono SQL database type provider. Current features :
  * Mapping to record types
  * Custom Operators
  * Supports Asynchronous Operations
+ * Supports .NET Standard / .NET Core 
   
 The provider currently has explicit implementations for the following database vendors : 
 * SQL Server
