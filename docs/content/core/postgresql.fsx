@@ -1,7 +1,7 @@
 ﻿(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 (*** hide ***)
 let connectionString =
     "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"

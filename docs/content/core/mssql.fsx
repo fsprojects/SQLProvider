@@ -1,7 +1,7 @@
 ﻿(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
@@ -73,9 +73,8 @@ type sql =
     SqlDataProvider<
         dbVendor,
         connString,
-        resPath,
-        indivAmount,
-        useOptTypes>
+        IndividualsAmount = indivAmount,
+        UseOptionTypes = useOptTypes>
 
 (**
 

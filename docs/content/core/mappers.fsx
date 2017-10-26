@@ -1,9 +1,11 @@
 (*** hide ***)
 #I "../../files/sqlite"
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 (*** hide ***)
-#r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
+(*** hide ***)
+open System
 
 (*** hide ***)
 [<Literal>]

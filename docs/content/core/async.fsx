@@ -2,7 +2,7 @@
 #I @"../../files/sqlite"
 
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 
 (*** hide ***)
 #if INTERACTIVE

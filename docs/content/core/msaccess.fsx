@@ -1,9 +1,9 @@
 (*** hide ***)
 #I @"../../files/msaccess"
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 (*** hide ***)
-#r @"../../../bin/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
 
 //type mdb = SqlDataProvider< "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:\\ACCESS\\BT.mdb", Common.DatabaseProviderTypes.MSACCESS, "c:\\ACCESS" , 100, true >
 

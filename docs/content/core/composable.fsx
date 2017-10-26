@@ -1,11 +1,13 @@
 (*** hide ***)
-#I "../../../bin"
+#I "../../../bin/net451"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
 (*** hide ***)
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+(*** hide ***)
+open System.Linq
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 (*** hide ***)
@@ -74,7 +76,7 @@ In other words, SQLProvider queries typically follow this pattern:
 
 *)
 
-let (query:IQueryable<'T>) =
+let (qry:IQueryable<'T>) =
     query {
         //for is like C# foreach
         for x in (xs:IQueryable<'T>) do
