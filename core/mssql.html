@@ -88,7 +88,6 @@ if it is null in the database.</p>
 <span class="l">6: </span>
 <span class="l">7: </span>
 <span class="l">8: </span>
-<span class="l">9: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> [&lt;<span class="i">Literal</span>&gt;] <span class="i">useOptTypes</span>  <span class="o">=</span> <span class="k">true</span>
 
@@ -96,9 +95,8 @@ if it is null in the database.</p>
     <span class="i">SqlDataProvider</span><span class="o">&lt;</span>
         <span class="i">dbVendor</span>,
         <span class="i">connString</span>,
-        <span class="i">resPath</span>,
-        <span class="i">indivAmount</span>,
-        <span class="i">useOptTypes</span><span class="o">&gt;</span>
+        <span class="i">IndividualsAmount</span> <span class="o">=</span> <span class="i">indivAmount</span>,
+        <span class="i">UseOptionTypes</span> <span class="o">=</span> <span class="i">useOptTypes</span><span class="o">&gt;</span>
 </code></pre></td>
 </tr>
 </table>

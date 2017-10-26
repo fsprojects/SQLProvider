@@ -109,7 +109,7 @@ In other words, SQLProvider queries typically follow this pattern:</p>
 <span class="l">7: </span>
 <span class="l">8: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> (<span class="i">query</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="o">=</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> (<span class="i">qry</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="o">=</span>
     <span class="i">query</span> {
         <span class="c">//for is like C# foreach</span>
         <span class="k">for</span> <span class="i">x</span> <span class="k">in</span> (<span class="i">xs</span><span class="o">:</span><span class="i">IQueryable</span><span class="o">&lt;</span><span class="o">&#39;</span><span class="i">T</span><span class="o">&gt;</span>) <span class="k">do</span>
