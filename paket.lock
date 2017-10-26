@@ -1479,8 +1479,8 @@ GROUP SourceFiles
 
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (27232ac95fa6f91f136e01b23f38dda34d0f3dc4)
-    src/ProvidedTypes.fsi (27232ac95fa6f91f136e01b23f38dda34d0f3dc4)
+    src/ProvidedTypes.fs (e75f056b5a675d04445649d872aa020439a6442a)
+    src/ProvidedTypes.fsi (e75f056b5a675d04445649d872aa020439a6442a)
   remote: Thorium/Linq.Expression.Optimizer
     src/Code/ExpressionOptimizer.fs (297f7d9f75c7d8d86b1d00bae0b535d8e48f572d)
 GROUP Standard

@@ -50,7 +50,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | cs -> cs
                     
         let rootType, prov, con = 
-            let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,Some typeof<obj>, true)
+            let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,Some typeof<obj>, true, isErased = true)
             let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
             let con = prov.CreateConnection conString
             this.Disposing.Add(fun _ -> 
@@ -76,7 +76,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             (sprocDefinition.ReturnColumns con param)
 
         let getTableData name = tableColumns.Force().[name].Force()
-        let serviceType = ProvidedTypeDefinition( "dataContext", None, true)
+        let serviceType = ProvidedTypeDefinition( "dataContext", None, true, isErased = true)
         let transactionOptions = TransactionOptions.Default
         let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, None)
         // first create all the types so we are able to recursively reference them in each other's definitions
@@ -103,7 +103,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             serviceType.AddMember errInfo
                        else                
                        for table in tablesforced do
-                        let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, true)
+                        let t = ProvidedTypeDefinition(table.FullName + "Entity", Some typeof<SqlEntity>, true, isErased = true)
                         t.AddMemberDelayed(fun () -> ProvidedConstructor([ProvidedParameter("dataContext",typeof<ISqlDataContext>)],
                                                         fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntity(table.FullName) @@>))
                         let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
@@ -140,7 +140,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       |> Seq.choose(fun col -> 
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
-                        let ty = ProvidedTypeDefinition(name, None, true )
+                        let ty = ProvidedTypeDefinition(name, None, true, isErased = true)
                         ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
                         individualsTypes.Add ty
                         Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
@@ -212,7 +212,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 dict [ for table in tables.Force() do  
                         let name = table.FullName
                         let (et,_,_,_) = baseTypes.Force().[name]
-                        let ct = ProvidedTypeDefinition(table.FullName, None ,false)                        
+                        let ct = ProvidedTypeDefinition(table.FullName, None ,false, isErased = true)                        
                         ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
                         let it = createIndividualsType table 
                         yield table.FullName,(ct,it) ]
@@ -285,9 +285,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         yield prop ]
                 attProps @ relProps)
         
-        let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =             
-            let rt = ProvidedTypeDefinition(SchemaProjections.buildSprocName(sproc.Name.DbName),None, true)
-            let resultType = ProvidedTypeDefinition("Result",None, true)
+        let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =    
+            let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
+            let rt = ProvidedTypeDefinition(sprocname,None, true, isErased = true)
+            let resultType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "Result"+sprocname, None, true, isErased = true)
+            this.AddNamespace(ns, [resultType])
+
             let empty = fun (_:Expr list) -> <@@ () @@>
             resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
             rt.AddMember resultType
@@ -306,9 +309,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         match retCols.Length with
                         | 0 -> typeof<Unit>
                         | _ -> 
-                              let rt = ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, true)
-                              rt.AddMember(ProvidedConstructor([],empty))
-                                      
+                              let rt = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,"SprocResult"+sprocname,Some typeof<SqlEntity>, true, isErased = true)
+                              do this.AddNamespace(ns, [rt])
+
+                              rt.AddMemberDelayed(fun () -> ProvidedConstructor([],empty))
                               retCols
                               |> Array.iter(fun col ->
                                   let name = col.Name
@@ -346,14 +350,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some(typ) -> 
                     walkSproc con path (Some typ) createdTypes next 
                 | None ->
-                    let typ = ProvidedTypeDefinition(typeName, None, true)
+                    let typ = ProvidedTypeDefinition(typeName, None, true, isErased = true)
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)],empty))
                     walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next 
             | Package(typeName, packageDefn) ->       
                 match parent with
                 | Some(parent) ->
                     let path = (path @ [typeName])
-                    let typ = ProvidedTypeDefinition(typeName, None, true)
+                    let typ = ProvidedTypeDefinition(typeName, None, true, isErased = true)
                     parent.AddMember(typ)
                     parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)],empty))
@@ -381,7 +385,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 match schemaMap.TryGetValue name with
                 | true, pt -> pt
                 | false, _  -> 
-                    let pt = ProvidedTypeDefinition(name + "Schema", Some typeof<obj>)
+                    let pt = ProvidedTypeDefinition(name + "Schema", Some typeof<obj>, isErased = true)
                     schemaMap.Add(name, pt)
                     pt
             [ 
@@ -611,7 +615,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         rootType
     
-    let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), true)
+    let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), true, isErased = true)
     
     let conString = ProvidedStaticParameter("ConnectionString",typeof<string>, "")
     let connStringName = ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")    
