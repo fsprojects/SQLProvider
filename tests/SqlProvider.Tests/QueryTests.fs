@@ -1340,3 +1340,21 @@ let ``simple left join``() =
     
     let hasNulls = qry |> Seq.map(fst) |> Seq.filter(Option.isNone) |> Seq.isEmpty |> not
     Assert.IsTrue hasNulls
+
+
+[<Test>]
+let ``simple quert sproc result``() = 
+    let dc = sql.GetDataContext()
+    let pragmaSchemav = dc.Pragma.Get.Invoke("schema_version")
+    let res = pragmaSchemav.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+    let ver = (res |> Seq.head).["schema_version"] :?> Int64
+    Assert.IsTrue(ver > 1L)
+
+    let pragmaFk = dc.Pragma.GetOf.Invoke("foreign_key_list", "EmployeesTerritories")
+    let res = pragmaFk.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+    Assert.IsNotNull(res)
+
+    let pragmaSchemaAsync = 
+        dc.Pragma.Get.InvokeAsync("schema_version")
+        |> Async.RunSynchronously
+    Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
