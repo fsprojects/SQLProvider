@@ -14,7 +14,7 @@ let connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0; Data Source= " + __S
 type mdb = SqlDataProvider<Common.DatabaseProviderTypes.MSACCESS, connectionString, @"" , @"", 100, true>
 let ctx = mdb.GetDataContext()
 
-SqlQueryEvent.Add (printfn "%s")
+SqlQueryEvent.Add (printfn "%O")
 
 /// Normal query
 let mattisOrderDetails =
