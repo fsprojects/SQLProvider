@@ -62,6 +62,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                         let providerType = unbox<int> r.Table.Columns.["ProviderDbType"].Ordinal
                         let dbType = getDbType providerType
                         yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =

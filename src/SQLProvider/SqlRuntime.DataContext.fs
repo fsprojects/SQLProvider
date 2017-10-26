@@ -42,12 +42,13 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 // the minimum base set of data available
                 prov.CreateTypeMappings(con)
                 prov.GetTables(con,caseSensitivity) |> ignore
-                if (providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
     let initCallSproc (dc:SqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
         
-        com.CommandType <- CommandType.StoredProcedure
+        if (providerType <> DatabaseProviderTypes.SQLITE) then 
+            com.CommandType <- CommandType.StoredProcedure
 
         let columns =
             def.Params

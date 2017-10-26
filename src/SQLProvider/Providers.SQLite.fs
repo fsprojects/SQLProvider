@@ -9,6 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open System.Data.SqlClient
 
 type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) as this =
     // note we intentionally do not hang onto a connection object at any time,
@@ -243,6 +244,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
                     yield { ProviderTypeName = Some sqlliteType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
             ]
 
         let clrMappings =
@@ -366,6 +368,15 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
+    let pragmacheck (values:obj array) =
+        let checkp p = 
+            let p = p.ToString()
+            if p.Contains("'") || p.Contains("\"") || p.Contains(";") then failwithf "Unsupported pragma: %s" p
+            p
+        match values.Length with
+        | 1 -> checkp values.[0]
+        | 2 -> (checkp values.[0]) + "(" + (checkp values.[1]) + ")"
+        | _ -> failwith "Unsupported pragma"
 
     interface ISqlProvider with
         member __.GetTableDescription(con,tableName) = "" // SQLite doesn't support table descriptions/comments
@@ -406,8 +417,37 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             Option.iter (fun l -> p.Size <- l) param.Length
             p
 
-        member __.ExecuteSprocCommand(_,_,_,_) =  raise(NotImplementedException())
-        member __.ExecuteSprocCommandAsync(_,_,_,_) =  raise(NotImplementedException())
+        member __.ExecuteSprocCommand(com, _, returnCols, values:obj array) = 
+            let pars = pragmacheck values
+            use pcom = (this:>ISqlProvider).CreateCommand(com.Connection, ("PRAGMA " + pars))
+            match returnCols with
+            | [||] -> 
+                pcom.ExecuteNonQuery() |> ignore
+                Unit
+            | cols ->
+                use reader = pcom.ExecuteReader()
+                let processReturnColumn (col:QueryParameter) =
+                    let result = ResultSet(col.Name, Sql.dataReaderToArray reader)
+                    reader.NextResult() |> ignore
+                    result
+                Set(cols |> Array.map (processReturnColumn))
+
+        member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =  
+            async {
+                let pars = pragmacheck values
+                use pcom = (this:>ISqlProvider).CreateCommand(com.Connection, ("PRAGMA " + pars)) :?> Common.DbCommand
+                match returnCols with
+                | [||] -> 
+                    do! pcom.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                    return Unit
+                | cols ->
+                    use! reader = pcom.ExecuteReaderAsync() |> Async.AwaitTask
+                    let processReturnColumn (col:QueryParameter) =
+                        let result = ResultSet(col.Name, Sql.dataReaderToArray reader)
+                        reader.NextResult() |> ignore
+                        result
+                    return Set(cols |> Array.map (processReturnColumn))
+            }
 
         member __.CreateTypeMappings(con) =
             if con.State <> ConnectionState.Open then con.Open()
@@ -508,7 +548,21 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
           finally
             System.Threading.Monitor.Exit relationshipLookup
 
-        member __.GetSprocs(_) = [] // SQLite does not support stored procedures.
+        member __.GetSprocs(_) = // SQLite does not support stored procedures. Let's just add a possibilirt to query a pragma value.
+             let inParamType = (findDbType "text").Value
+             let outParamType = (findDbType "cursor").Value
+             [
+                Root("Pragma", Sproc({ 
+                                        Name = { ProcName = "Get"; Owner = "Main"; PackageName = String.Empty; }; 
+                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input)]; 
+                                        ReturnColumns = (fun _ name -> [QueryParameter.Create("ResultSet",0,outParamType,ParameterDirection.Output)])
+                }))
+                Root("Pragma", Sproc({ 
+                                        Name = { ProcName = "GetOf"; Owner = "Main"; PackageName = String.Empty; }; 
+                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input); QueryParameter.Create("Param", 0, inParamType, ParameterDirection.Input)]; 
+                                        ReturnColumns = (fun _ name -> [QueryParameter.Create("ResultSet",0,outParamType,ParameterDirection.Output)])
+                }))
+             ]
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" table.FullName amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
