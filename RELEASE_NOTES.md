@@ -1,3 +1,6 @@
+### 1.1.17 - 26.10.2017
+* Procedure result fix.
+
 ### 1.1.16 - 25.10.2017
 * Excluded FSharp.Core dll from package #465
 
