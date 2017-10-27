@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedTypeSymbol - SQLProvider</title>
+    <title>ProvidedSymbolKind - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,62 +35,138 @@
 
 
 
-<h1>ProvidedTypeSymbol</h1>
+<h1>ProvidedSymbolKind</h1>
 <p>
   <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>Represents an array or other symbolic type involving a provided type as the argument.
-See the type provider spec for the methods that must be implemented.
-Note that the type provider specification does not require us to implement pointer-equality for provided types.</p>
+<p>Represents the type constructor in a provided symbol type.</p>
 
 </div>
-  <h3>Instance members</h3>
+  <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
+      <tr><td>Union Case</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '548', 548)" onmouseover="showTip(event, '548', 548)">
-            IsFSharpTypeAbbreviation
+          <code onmouseout="hideTip(event, '514', 514)" onmouseover="showTip(event, '514', 514)">
+            Array(int)
           </code>
-          <div class="tip" id="548">
-            <strong>Signature:</strong> bool<br />
+          <div class="tip" id="514">
+            <strong>Signature:</strong> int<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L582-582" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L221-221" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>For example, kg</p>
+          <p>Indicates that the type constructor is for a multi-dimensional array</p>
 
 
-              <p>CompiledName: <code>get_IsFSharpTypeAbbreviation</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '549', 549)" onmouseover="showTip(event, '549', 549)">
-            IsFSharpUnitAnnotated
+          <code onmouseout="hideTip(event, '515', 515)" onmouseover="showTip(event, '515', 515)">
+            ByRef
           </code>
-          <div class="tip" id="549">
-            <strong>Signature:</strong> bool<br />
+          <div class="tip" id="515">
+            <strong>Signature:</strong> <br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L585-585" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L227-227" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>For example, int<kg> or int<kilogram></p>
+          <p>Indicates that the type constructor is for byref types</p>
 
 
-              <p>CompiledName: <code>get_IsFSharpUnitAnnotated</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '516', 516)" onmouseover="showTip(event, '516', 516)">
+            FSharpTypeAbbreviation(...)
+          </code>
+          <div class="tip" id="516">
+            <strong>Signature:</strong> Assembly * string * string []<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L233-233" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for abbreviated types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '517', 517)" onmouseover="showTip(event, '517', 517)">
+            Generic(Type)
+          </code>
+          <div class="tip" id="517">
+            <strong>Signature:</strong> Type<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L230-230" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for named generic types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '518', 518)" onmouseover="showTip(event, '518', 518)">
+            Pointer
+          </code>
+          <div class="tip" id="518">
+            <strong>Signature:</strong> <br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L224-224" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for pointer types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '519', 519)" onmouseover="showTip(event, '519', 519)">
+            SDArray
+          </code>
+          <div class="tip" id="519">
+            <strong>Signature:</strong> <br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi#L218-218" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Indicates that the type constructor is for a single-dimensional array</p>
+
+
         </td>
       </tr>
     </tbody>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedTypeBuilder - SQLProvider</title>
+    <title>ProvidedSymbolType - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,58 +35,104 @@
 
 
 
-<h1>ProvidedTypeBuilder</h1>
+<h1>ProvidedSymbolType</h1>
 <p>
   <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>Helpers to build symbolic provided types</p>
+<p>Represents an array or other symbolic type involving a provided type as the argument.
+See the type provider spec for the methods that must be implemented.
+Note that the type provider specification does not require us to implement pointer-equality for provided types.</p>
 
 </div>
-  <h3>Static members</h3>
+  <h3>Instance members</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Static member</td><td>Description</td></tr>
+      <tr><td>Instance member</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '524', 524)" onmouseover="showTip(event, '524', 524)">
-            MakeGenericMethod(...)
+          <code onmouseout="hideTip(event, '520', 520)" onmouseover="showTip(event, '520', 520)">
+            Args
           </code>
-          <div class="tip" id="524">
-            <strong>Signature:</strong> (genericMethodDefinition:MethodInfo * genericArguments:Type list) -&gt; MethodInfo<br />
+          <div class="tip" id="520">
+            <strong>Signature:</strong> Type list<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1439-1439" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1324-1324" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Like methodInfo.MakeGenericMethod, but will also work with unit-annotated types and provided types</p>
+          <p>Return the provided types used as arguments of this symbolic type</p>
 
 
+              <p>CompiledName: <code>get_Args</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '525', 525)" onmouseover="showTip(event, '525', 525)">
-            MakeGenericType(...)
+          <code onmouseout="hideTip(event, '521', 521)" onmouseover="showTip(event, '521', 521)">
+            IsFSharpTypeAbbreviation
           </code>
-          <div class="tip" id="525">
-            <strong>Signature:</strong> (genericTypeDefinition:Type * genericArguments:Type list) -&gt; Type<br />
+          <div class="tip" id="521">
+            <strong>Signature:</strong> bool<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1438-1438" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1326-1326" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Like typ.MakeGenericType, but will also work with unit-annotated types</p>
+          <p>For example, kg</p>
 
 
+              <p>CompiledName: <code>get_IsFSharpTypeAbbreviation</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '522', 522)" onmouseover="showTip(event, '522', 522)">
+            IsFSharpUnitAnnotated
+          </code>
+          <div class="tip" id="522">
+            <strong>Signature:</strong> bool<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1328-1328" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>For example, int<kg> or int<kilogram></p>
+
+
+              <p>CompiledName: <code>get_IsFSharpUnitAnnotated</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '523', 523)" onmouseover="showTip(event, '523', 523)">
+            Kind
+          </code>
+          <div class="tip" id="523">
+            <strong>Signature:</strong> ProvidedSymbolKind<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1323-1323" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Returns the kind of this symbolic type</p>
+
+
+              <p>CompiledName: <code>get_Kind</code></p>
         </td>
       </tr>
     </tbody>

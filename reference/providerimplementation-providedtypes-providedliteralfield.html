@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedTypeBuilder - SQLProvider</title>
+    <title>ProvidedLiteralField - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,36 +35,36 @@
 
 
 
-<h1>ProvidedTypeBuilder</h1>
+<h1>ProvidedLiteralField</h1>
 <p>
   <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>Helpers to build symbolic provided types</p>
+<p>Represents an erased provided field.</p>
 
 </div>
-  <h3>Static members</h3>
+  <h3>Instance members</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Static member</td><td>Description</td></tr>
+      <tr><td>Instance member</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '524', 524)" onmouseover="showTip(event, '524', 524)">
-            MakeGenericMethod(...)
+          <code onmouseout="hideTip(event, '478', 478)" onmouseover="showTip(event, '478', 478)">
+            AddDefinitionLocation(...)
           </code>
-          <div class="tip" id="524">
-            <strong>Signature:</strong> (genericMethodDefinition:MethodInfo * genericArguments:Type list) -&gt; MethodInfo<br />
+          <div class="tip" id="478">
+            <strong>Signature:</strong> (line:int * column:int * filePath:string) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1439-1439" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1111-1111" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Like methodInfo.MakeGenericMethod, but will also work with unit-annotated types and provided types</p>
+          <p>Add definition location information to the provided field.</p>
 
 
         </td>
@@ -72,19 +72,80 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '525', 525)" onmouseover="showTip(event, '525', 525)">
-            MakeGenericType(...)
+          <code onmouseout="hideTip(event, '479', 479)" onmouseover="showTip(event, '479', 479)">
+            AddObsoleteAttribute(message, isError)
           </code>
-          <div class="tip" id="525">
-            <strong>Signature:</strong> (genericTypeDefinition:Type * genericArguments:Type list) -&gt; Type<br />
+          <div class="tip" id="479">
+            <strong>Signature:</strong> (message:string * isError:bool option) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1438-1438" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1110-1110" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Like typ.MakeGenericType, but will also work with unit-annotated types</p>
+          <p>Add a 'Obsolete' attribute to this provided field</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '480', 480)" onmouseover="showTip(event, '480', 480)">
+            AddXmlDoc(xmlDoc)
+          </code>
+          <div class="tip" id="480">
+            <strong>Signature:</strong> xmlDoc:string -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1109-1109" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Add XML documentation information to this provided field</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '481', 481)" onmouseover="showTip(event, '481', 481)">
+            AddXmlDocComputed(xmlDocFunction)
+          </code>
+          <div class="tip" id="481">
+            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1107-1107" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
+The documentation is re-computed  every time it is required.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '482', 482)" onmouseover="showTip(event, '482', 482)">
+            AddXmlDocDelayed(xmlDocFunction)
+          </code>
+          <div class="tip" id="482">
+            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1108-1108" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary</p>
 
 
         </td>
