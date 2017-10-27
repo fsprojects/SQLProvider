@@ -1,3 +1,7 @@
+### 1.1.18 - 26.10.2017
+* Previous type provider SDK returned #472 #470 #468 #466 #465
+* More info to tooltips.
+
 ### 1.1.17 - 26.10.2017
 * Procedure result fix.
 
