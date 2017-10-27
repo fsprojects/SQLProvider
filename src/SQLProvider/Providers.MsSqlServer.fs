@@ -503,9 +503,9 @@ type internal MSSqlServerProvider(tableNames:string) =
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then
-                let itm = reader.GetSqlString(0)
-                if itm.Value <> null then
-                    reader.GetSqlString(0).Value.ToString()
+                let itm = reader.GetValue(0)
+                if itm <> null then
+                    reader.GetValue(0).ToString()
                 else ""
             else ""
 
@@ -527,7 +527,7 @@ type internal MSSqlServerProvider(tableNames:string) =
             use reader = com.ExecuteReader()
             if reader.Read() then
                 try
-                    reader.GetSqlString(0).Value.ToString()
+                    reader.GetValue(0).ToString()
                 with 
                 | :? InvalidCastException -> ""
             else ""
