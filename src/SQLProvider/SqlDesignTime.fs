@@ -117,7 +117,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
             
-            t.AddXmlDocDelayed(fun _ -> sprintf "A sample of %s individuals from the SQL object as supplied in the static parameters" table.Name)
+            t.AddXmlDocDelayed(fun _ -> sprintf "<summary>A sample of %s individuals from the SQL object as supplied in the static parameters</summary>" table.Name)
             t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
             t.AddMembersDelayed( fun _ ->
                let columns = prov.GetColumns(con,table)
@@ -243,11 +243,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
+                        let nfo = c.TypeInfo
                         prop.AddXmlDocDelayed(fun () -> 
-                            let typeInfo = match c.TypeInfo with None -> "" | Some x -> x.ToString() 
-                            let details = prov.GetColumnDescription(con, key, c.Name).Replace("<","&lt;").Replace(">","&gt;")
+                            let typeInfo = match nfo with None -> "" | Some x -> x.ToString() 
+                            let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
                             let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                            sprintf "<summary>%s %s %s</summary>" details separator typeInfo)
+                            sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
@@ -338,7 +339,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))]
             )
 
-            ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, getterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
+            let p = ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, getterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
+            let dbName = sproc.Name.DbName
+            p.AddXmlDocDelayed(fun _ -> sprintf "<summary>%s</summary>" dbName)
+            p
             
         
         let empty = fun (_:Expr list) -> <@@ () @@>
@@ -496,9 +500,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
-
+                let tname = ct.Name
                 prop.AddXmlDocDelayed (fun () -> 
-                    let details = prov.GetTableDescription(con, ct.Name).Replace("<","&lt;").Replace(">","&gt;")
+                    let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
                     let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
                     sprintf "<summary>%s %s %s</summary>" details separator desc)
                 schemaType.AddMember ct
