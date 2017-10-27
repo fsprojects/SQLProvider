@@ -19,7 +19,7 @@ let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=fal
 
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
-   
+let inline isNull (x:^T when ^T : not struct) = obj.ReferenceEquals (x, null)   
 
 let isMono = Type.GetType ("Mono.Runtime") <> null
 
@@ -136,6 +136,7 @@ let ``simple select with exactly one when not exists``() =
             select cust.CustomerId
             exactlyOneOrDefault
         }
+    Assert.IsTrue(isNull(qry))
     Assert.AreEqual(null, qry)  
 
 [<Test >]
