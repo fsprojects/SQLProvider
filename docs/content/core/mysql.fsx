@@ -178,8 +178,7 @@ Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnec
 It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
 so copy those files also to your referencePath. You can get them from corresponding NuGet packages.
 
-Pocedures and database functions are not supported with MySqlConnector so if you want to use those,
-the current solution is to use two different connections to database:
+If you want to use the drivers in parallel, you need two resolution paths:
 
 *)
 

@@ -32,7 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="0.29.0" />
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.15" />
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.18" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
@@ -91,7 +91,7 @@
     <CallTarget Targets="MySqlDataCopyLibrariesWin" Condition="'$(IsWindows)' == 'true'"/>
     <CallTarget Targets="MySqlDataCopyLibrariesNonWin" Condition="'$(IsWindows)' != 'true'"/>
 	-->
-    <!-- Using driver MySqlConnector.dll (Fast but no Sprocs-support) -->
+    <!-- Using driver MySqlConnector.dll (Faster) -->
     <CallTarget Targets="MySqlConnectorCopyLibrariesWin" Condition="'$(IsWindows)' == 'true'" />
     <CallTarget Targets="MySqlConnectorCopyLibrariesNonWin" Condition="'$(IsWindows)' != 'true'" />
   </Target>
