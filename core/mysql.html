@@ -218,8 +218,7 @@ It has less features but a lot better performance than the official driver.</p>
 Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead. (Get the latest from NuGet.)
 It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
 so copy those files also to your referencePath. You can get them from corresponding NuGet packages.</p>
-<p>Pocedures and database functions are not supported with MySqlConnector so if you want to use those,
-the current solution is to use two different connections to database:</p>
+<p>If you want to use the drivers in parallel, you need two resolution paths:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>

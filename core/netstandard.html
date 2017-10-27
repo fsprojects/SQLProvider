@@ -34,8 +34,39 @@
         <div class="span9" id="main">
           
 <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
-<p>This is very initial / experimental, from version 1.1.15.</p>
-<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.15</code></p>
+<p>This is very initial / experimental, from version 1.1.18.</p>
+<p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.18</code></p>
+<p>You will need some configuration to your project files, see the examples.
+- You need a path to fsc.
+- You need your database driver and dependency dlls to resolutionPath-folder.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">Core</span> <span class="o">/</span> <span class="i">NetStandard</span><span class="o">:</span>
+                     | <span class="i">Win10</span> | <span class="i">Mac</span>  | <span class="i">Ubuntu</span> (<span class="i">needs</span> <span class="i">sudo</span>) | <span class="i">Comments</span>   | 
+<span class="i">Microsoft</span> <span class="i">SQL</span> <span class="i">Server</span> | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">prebuild</span> <span class="i">task</span><span class="o">.</span> |
+<span class="i">Postgres</span>             | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> |
+<span class="i">MySQL</span> <span class="o">/</span> <span class="i">MariaDB</span>      | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> |
+<span class="i">SQLite</span>               | [<span class="i">x</span>]   |      |            | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> <span class="i">Builds</span> <span class="i">on</span> <span class="i">Win</span><span class="o">.</span> <span class="i">Runs</span> <span class="i">on</span> <span class="i">all</span>, <span class="i">due</span> <span class="k">to</span> <span class="i">lack</span> <span class="k">of</span> <span class="i">Mono</span><span class="o">-</span><span class="i">support</span> <span class="k">in</span> <span class="i">Microsoft</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">SQLite</span><span class="o">.</span> |
+<span class="i">FireBird</span>             |  <span class="o">?</span>    |  <span class="o">?</span>   |  <span class="o">?</span>         | <span class="i">Not</span> <span class="i">tested</span><span class="o">.</span> |
+<span class="i">Oracle</span>               |       |      |            | <span class="i">No</span> <span class="i">ODP</span><span class="o">.</span><span class="i">NET</span><span class="o">-</span><span class="i">driver</span> <span class="i">yet</span><span class="o">.</span> |
+<span class="i">Odbc</span>                 |       |      |            | <span class="i">Not</span> <span class="i">supported</span><span class="o">.</span> |
+<span class="i">Access</span>               |       |      |            | <span class="i">Not</span> <span class="i">supported</span><span class="o">.</span> |
+
+<span class="o">.</span><span class="i">NET</span> <span class="n">4.5</span><span class="o">.</span><span class="n">1</span> <span class="o">/</span> <span class="i">Mono</span><span class="o">:</span> <span class="i">All</span> <span class="i">should</span> <span class="i">work</span><span class="o">.</span>
+</code></pre></td>
+</tr>
+</table>
 <h2><a name="Example-projects" class="anchor" href="#Example-projects">Example projects</a></h2>
 <p>There are some example .NET-Coreapp 2.0 projects at: <a href="https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Core.Tests">tests\SqlProvider.Core.Tests</a></p>
 <p>There is a build.cmd which runs as follows:</p>
@@ -53,22 +84,20 @@
 <p>You need your database connection driver to also support .NET Core.
 If your database connection driver has external dependencies, they have to be also present
 (e.g. a project prebuild-task to move them to resolution path).</p>
-<p>If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
-copy correct dll from under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>
-<p>The providers that are not included in .NET-Standard version:</p>
-<ul>
-<li>Ms-Access in not supported</li>
-<li>Odbc is not supported</li>
-</ul>
-<p>Connection string can be passed as hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> but fetching it automatically from the application configuration is not supported.</p>
-<p>.NET Standard solution is located at <code>/src/SQLProvider.Standard/SQLProvider.Standard.fsproj</code></p>
+<p>Connection string can be passed as hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> parameter on runtime, but fetching it automatically from the application configuration is not supported.</p>
 <p>The target frameworks are defined in the project file: <code>&lt;TargetFrameworks&gt;net461;netcoreapp2.0;netstandard2.0&lt;/TargetFrameworks&gt;</code>
 Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0</p>
-<p>Build is not tested with Mono, so .Net Standard build is disabled from build.fsx on Mono.</p>
-<p>MySQL is having custom build of MySQL.Data.dll compiled from sources to .Net Standard 2.0
-Described at: <a href="https://bugs.mysql.com/bug.php?id=88016">https://bugs.mysql.com/bug.php?id=88016</a></p>
+<h4><a name="Microsoft-Sql-Server" class="anchor" href="#Microsoft-Sql-Server">Microsoft Sql Server</a></h4>
+<p>If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
+copy correct dll from under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>
+<h4><a name="MySql" class="anchor" href="#MySql">MySql</a></h4>
+<p>MySQL is using MySQLConnector.
+Alternative is to use provided custom build of MySQL.Data.dll (6.10-rc) compiled from sources to .Net Standard 2.0.
+As the official MySQL.Data.dll does not support .NET Standard 2.0. See: <a href="https://bugs.mysql.com/bug.php?id=88016">https://bugs.mysql.com/bug.php?id=88016</a></p>
+<h4><a name="SQLite" class="anchor" href="#SQLite">SQLite</a></h4>
 <p>SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
 Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.</p>
+<h4><a name="Non-Windows-environment-Mac-Ubuntu-Linux" class="anchor" href="#Non-Windows-environment-Mac-Ubuntu-Linux">Non-Windows environment (Mac / Ubuntu / Linux / ...)</a></h4>
 <p>On Windows you can reference .NET Standard 2.0 dlls in FSharp interactive but in Osx or Linux you cannot as Mono is not .NET Standard 2.0 compatible.</p>
 <p>Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.1 libraries.
 Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
@@ -77,14 +106,16 @@ have to have core references, e.g. via PackageReferences.</p>
 <p>On Ubuntu you probably have to use sudo for both dotnet restore and dotnet build.
 If you forgot the sudo, try to remove bin and obj folders and then run restore again.</p>
 <h2><a name="Some-Technical-Details" class="anchor" href="#Some-Technical-Details">Some Technical Details</a></h2>
-<p>Sources are in the <a href="https://github.com/fsprojects/SQLProvider/tree/netstandard">netstandard branch</a>.</p>
+<p>.NET Standard solution is located at <code>/src/SQLProvider.Standard/SQLProvider.Standard.fsproj</code></p>
 <p>The following files is needed to the NuGet package, from the .NET Standard SDK:
 netstandard.dll, System.Console.dll, System.IO.dll, System.Reflection.dll, System.Runtime.dll</p>
-<p>You can find net461 versions of them by default from:
-C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\</p>
+<p>You can find net461 versions of them by default from (e.g. 2.0.0, can be also something else like 2.0.2):
+Win: <code>C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\</code>
+Others: <code>/usr/local/share/dotnet/sdk/2.0.0/Microsoft/Microsoft.NET.Build.Extensions/net461/lib</code></p>
 <p>and also System.Data.SqlClient.dll from that NuGet package.</p>
 <p>The NuGet cache is located at:
-<code>C:\Users\(your-user-name)\.nuget\packages\SQLProvider\</code></p>
+Win: <code>C:\Users\(your-user-name)\.nuget\packages\SQLProvider\</code>
+Others: <code>~/.nuget/packages/SQLProvider/</code></p>
 
 
         </div>
