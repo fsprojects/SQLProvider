@@ -133,8 +133,8 @@ type Employee2 = {
 
 let updateEmployee (employee: Employee2) =
     let foundEmployee = query {
-        for p in ctx.Public.Employee2 do
-        where (p.Id = employee.Id)
+        for p in ctx.Main.Employees do
+        where (p.EmployeeId = 32342L)
         exactlyOneOrDefault
     }
     if not (isNull foundEmployee) then

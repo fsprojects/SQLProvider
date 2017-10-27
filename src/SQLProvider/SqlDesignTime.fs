@@ -288,11 +288,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =    
             let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
-            let rt = ProvidedTypeDefinition(sprocname,None, true, isErased = true)
-            let resultType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "Result"+sprocname, None, true, isErased = true)
-            this.AddNamespace(ns, [resultType])
-
+            let rt = ProvidedTypeDefinition(sprocname,None, true)
+            let resultType = ProvidedTypeDefinition("Result", None, true)
             let empty = fun (_:Expr list) -> <@@ () @@>
+
             resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
             rt.AddMember resultType
             container.AddMember(rt)
@@ -310,10 +309,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         match retCols.Length with
                         | 0 -> typeof<Unit>
                         | _ -> 
-                              let rt = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,"SprocResult"+sprocname,Some typeof<SqlEntity>, true, isErased = true)
-                              do this.AddNamespace(ns, [rt])
+                              let rt = ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, true)
+                              let emptyList : ProvidedParameter list = []
+                              rt.AddMember(ProvidedConstructor(emptyList, empty))
 
-                              rt.AddMemberDelayed(fun () -> ProvidedConstructor([],empty))
                               retCols
                               |> Array.iter(fun col ->
                                   let name = col.Name
