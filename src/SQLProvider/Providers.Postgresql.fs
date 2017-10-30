@@ -434,7 +434,7 @@ module PostgreSQL =
 	          ,COALESCE((
 			          SELECT STRING_AGG(x.param, E'\n')
 			          FROM (
-				          SELECT p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
+				          SELECT p.parameter_mode || ';' || COALESCE(p.parameter_name, ('param' || p.ORDINAL_POSITION::TEXT)) || ';' || p.data_type AS param
 				          FROM information_schema.parameters p
 				          WHERE p.specific_name = r.specific_name
 				          ORDER BY p.ordinal_position
