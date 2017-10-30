@@ -425,21 +425,28 @@ module PostgreSQL =
         }
 
     let getSprocs con =
-        let query = @"SELECT  r.specific_name AS id,
-                              r.routine_schema AS schema_name,
-                              r.routine_name AS name,
-                              r.data_type AS returntype,
-                              COALESCE((SELECT  STRING_AGG(x.param, E'\n')
-                                 FROM  (SELECT  p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
-                                          FROM  information_schema.parameters p
-                                         WHERE  p.specific_name = r.specific_name
-                                      ORDER BY  p.ordinal_position) x), '') AS args
-                        FROM  information_schema.routines r
-                       WHERE      r.routine_schema NOT IN ('pg_catalog', 'information_schema')
-                              AND r.routine_name NOT IN (SELECT  routine_name
-                                                           FROM  information_schema.routines
-                                                       GROUP BY  routine_name
-                                                         HAVING  COUNT(routine_name) > 1)"
+        let query = @"
+          SELECT 
+             r.specific_name AS id
+	          ,r.routine_schema AS schema_name
+	          ,r.routine_name AS name
+	          ,r.data_type AS returntype
+	          ,COALESCE((
+			          SELECT STRING_AGG(x.param, E'\n')
+			          FROM (
+				          SELECT p.parameter_mode || ';' || p.parameter_name || ';' || p.data_type AS param
+				          FROM information_schema.parameters p
+				          WHERE p.specific_name = r.specific_name
+				          ORDER BY p.ordinal_position
+				          ) x
+			          ), '') AS args
+          FROM information_schema.routines r
+          NATURAL JOIN information_schema.routine_privileges p
+          WHERE r.routine_schema NOT IN ('pg_catalog', 'information_schema')
+            AND r.data_type <> 'trigger'
+	          AND p.grantee = current_user
+            AND p.privilege_type = 'EXECUTE'
+        "
         Sql.executeSqlAsDataTable createCommand query con
         |> DataTable.map (fun r ->
             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
