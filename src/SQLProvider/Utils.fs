@@ -253,17 +253,11 @@ module internal SchemaProjections =
         name.[0].ToString().ToLowerInvariant() + name.Substring(1)
       else name
     
-    /// Add ' until the property is non-unique
-    let rec avoidPropertyClash (container:ProvidedTypeDefinition) name =
-      match container.GetProperty name with
+    /// Add ' until the name is unique
+    let rec avoidNameClashBy nameFinder name =
+      match nameFinder name with
       | null -> name
-      | _ -> avoidPropertyClash container (name + "'")
-    
-    /// Add ' until the type is unique
-    let rec avoidTypeNameClash (container:IProvidedNamespace) name =
-      match container.GetTypes() |> Array.exists (fun t -> t.Name = name) with
-      | false -> name
-      | true -> avoidTypeNameClash container (name + "'")
+      | _ -> avoidNameClashBy nameFinder (name + "'")
         
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
