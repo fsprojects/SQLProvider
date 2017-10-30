@@ -2,9 +2,6 @@
     
 open System
 open System.Collections.Generic
-open ProviderImplementation
-open ProviderImplementation.ProvidedTypes
-open Microsoft.FSharp.Core.CompilerServices
 
 module internal Utilities = 
     
