@@ -2,6 +2,9 @@
     
 open System
 open System.Collections.Generic
+open ProviderImplementation
+open ProviderImplementation.ProvidedTypes
+open Microsoft.FSharp.Core.CompilerServices
 
 module internal Utilities = 
     
@@ -250,6 +253,18 @@ module internal SchemaProjections =
         name.[0].ToString().ToLowerInvariant() + name.Substring(1)
       else name
     
+    /// Add ' until the property is non-unique
+    let rec avoidPropertyClash (container:ProvidedTypeDefinition) name =
+      match container.GetProperty name with
+      | null -> name
+      | _ -> avoidPropertyClash container (name + "'")
+    
+    /// Add ' until the type is unique
+    let rec avoidTypeNameClash (container:IProvidedNamespace) name =
+      match container.GetTypes() |> Array.exists (fun t -> t.Name = name) with
+      | false -> name
+      | true -> avoidTypeNameClash container (name + "'")
+        
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
         if(tableName.Contains("."))
