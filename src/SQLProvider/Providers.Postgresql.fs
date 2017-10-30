@@ -22,6 +22,8 @@ module PostgreSQL =
         "Npgsql.dll"
     ]
 
+    let [<Literal>] ANONYMOUS_PARAMETER_NAME = "param"
+
     let assembly =
         lazy
             match Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames with
@@ -274,7 +276,13 @@ module PostgreSQL =
             if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
-        p.ParameterName <- param.Name
+        p.ParameterName <- 
+          let isAnonymousParam =
+            param.Direction <> ParameterDirection.Output &&
+            param.Name.StartsWith ANONYMOUS_PARAMETER_NAME &&
+            Int32.TryParse(param.Name.Substring (ANONYMOUS_PARAMETER_NAME.Length), ref 0)
+          if isAnonymousParam then "" else param.Name
+
         Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
         p.Value <- normalizedValue
         p.Direction <- param.Direction
@@ -425,7 +433,7 @@ module PostgreSQL =
         }
 
     let getSprocs con =
-        let query = @"
+        let query = sprintf """
           SELECT 
              r.specific_name AS id
 	          ,r.routine_schema AS schema_name
@@ -434,7 +442,7 @@ module PostgreSQL =
 	          ,COALESCE((
 			          SELECT STRING_AGG(x.param, E'\n')
 			          FROM (
-				          SELECT p.parameter_mode || ';' || COALESCE(p.parameter_name, ('param' || p.ORDINAL_POSITION::TEXT)) || ';' || p.data_type AS param
+				          SELECT p.parameter_mode || ';' || COALESCE(p.parameter_name, ('%s' || p.ordinal_position::TEXT)) || ';' || p.data_type AS param
 				          FROM information_schema.parameters p
 				          WHERE p.specific_name = r.specific_name
 				          ORDER BY p.ordinal_position
@@ -446,49 +454,62 @@ module PostgreSQL =
             AND r.data_type <> 'trigger'
 	          AND p.grantee = current_user
             AND p.privilege_type = 'EXECUTE'
-        "
-        Sql.executeSqlAsDataTable createCommand query con
-        |> DataTable.map (fun r ->
+        """
+        let query' = query ANONYMOUS_PARAMETER_NAME
+
+        Sql.executeSqlAsDataTable createCommand query' con
+        |> DataTable.mapChoose (fun r ->
             let name = { ProcName = Sql.dbUnbox<string> r.["name"]
                          Owner = Sql.dbUnbox<string> r.["schema_name"]
                          PackageName = String.Empty }
             let sparams =
-                match Sql.dbUnbox<string> r.["args"] with
-                | "" -> []
-                | args ->
-                    args.Split('\n')
-                    |> Array.mapi (fun i arg ->
+                let args = Sql.dbUnbox<string> r.["args"] 
+                args.Split('\n')
+                |> Seq.mapi (fun i arg -> i, arg)
+                |> Seq.fold (fun acc (i, arg) ->
+                    match acc with
+                    | None -> None
+                    | Some sparams -> 
                         let direction, name, typeName =
                             match arg.Split(';') with
                             | [| direction; name; typeName |] -> direction, name, typeName
                             | _ -> failwith "Invalid procedure argument description."
-                        findDbType typeName
-                        |> Option.map (fun m ->
-                           let direction =
-                               match direction.ToLower() with
-                               | "in" -> ParameterDirection.Input
-                               | "inout" -> ParameterDirection.InputOutput
-                               | "out" -> ParameterDirection.Output
-                               | _ -> failwithf "Unknown parameter direction value %s." direction
-                           QueryParameter.Create(name,i,m,direction)))
-                    |> Array.choose id
-                    |> Array.toList
-            let sparams, rcolumns =
-                let rcolumns = sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
-                match Sql.dbUnbox<string> r.["returntype"] with
-                | null -> sparams, rcolumns
-                | "record" ->
-                    match findDbType "record" with
-                    | Some(m) ->
-                        // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
-                        let sparams = sparams |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
-                        sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = Some("record") }, ParameterDirection.ReturnValue) ]
-                    | None -> sparams, rcolumns
-                | rtype ->
-                    findDbType rtype
-                    |> Option.map (fun m -> QueryParameter.Create("ReturnValue",0,m,ParameterDirection.ReturnValue))
-                    |> Option.fold (fun acc col -> fst acc, col :: (snd acc)) (sparams, rcolumns)
-            Root("Functions", Sproc({ Name = name; Params = (fun _ -> sparams); ReturnColumns = (fun _ _ -> rcolumns) })))
+
+                        let direction =
+                            match direction.ToLower() with
+                            | "in" -> ParameterDirection.Input
+                            | "inout" -> ParameterDirection.InputOutput
+                            | "out" -> ParameterDirection.Output
+                            | _ -> failwithf "Unknown parameter direction value %s." direction
+                                                
+                        match findDbType typeName with
+                        // If the parameter cannot be mapped and is required (i.e. is input or input/output) bail out early
+                        | None -> if direction = ParameterDirection.Output then acc else None
+                        | Some m -> Some <| sparams @ [QueryParameter.Create(name,i,m,direction)]
+                ) (Some [])                    
+
+            match sparams with
+            | None -> None
+            | Some sp -> 
+                let sparams, rcolumns =
+                    let rcolumns = sp |> List.filter (fun p -> p.Direction <> ParameterDirection.Input)
+                    match Sql.dbUnbox<string> r.["returntype"] with
+                    | null -> sp, rcolumns
+                    | "record" ->
+                        match findDbType "record" with
+                        | Some(m) ->
+                            // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
+                            let sparams = sp |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
+                            sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = Some("record") }, ParameterDirection.ReturnValue) ]
+                        | None -> sp, rcolumns
+                    | rtype ->
+                        findDbType rtype
+                        |> Option.map (fun m -> QueryParameter.Create("ReturnValue",0,m,ParameterDirection.ReturnValue))
+                        |> Option.fold (fun acc col -> fst acc, col :: (snd acc)) (sp, rcolumns)
+                Some <| Root("Functions", Sproc({ Name = name
+                                                  Params = (fun _ -> sparams)
+                                                  ReturnColumns = (fun _ _ -> rcolumns) }))
+        )
 
 type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
     let pkLookup = ConcurrentDictionary<string,string list>()
