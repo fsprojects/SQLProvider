@@ -289,7 +289,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =    
             
             let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName) 
-                            |> SchemaProjections.avoidNameClashBy container.GetMember
+                            |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
 
             let rt = ctxt.ProvidedTypeDefinition(sprocname,None, true)
             let resultType = ctxt.ProvidedTypeDefinition("Result", None, true)
@@ -339,7 +339,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               
             let niceUniqueSprocName = 
                 SchemaProjections.buildSprocName(sproc.Name.ProcName)
-                |> SchemaProjections.avoidNameClashBy container.GetProperty  
+                |> SchemaProjections.avoidNameClashBy (container.GetProperty >> (<>) null)
 
             let p = ctxt.ProvidedProperty(niceUniqueSprocName, resultType, getterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
             let dbName = sproc.Name.DbName
