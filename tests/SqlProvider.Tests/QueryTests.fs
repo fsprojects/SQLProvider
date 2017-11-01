@@ -1193,6 +1193,23 @@ let ``simple select with contains query with where boolean option type``() =
         }
     Assert.IsTrue(qry)    
 
+type MyOpt = {MyItem: string option}
+
+[<Test>]
+let ``simple select with custom option types in where``() =
+    let dc = sqlOption.GetDataContext()
+    let someItem = {MyItem = Some "London"}
+    let noneItem = {MyItem = None}
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City = someItem.MyItem && not(cust.City = noneItem.MyItem))
+            select cust.CustomerId
+            headOrDefault
+        }
+    Assert.AreEqual("AROUT",qry)    
+
+
 [<Test>]
 let ``simple async sum with option operations``() = 
     let dc = sqlOption.GetDataContext()

@@ -367,8 +367,25 @@ module internal QueryImplementation =
                     | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
                     | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
                     | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
+
                         paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,Some(Expression.Lambda(meth).Compile().DynamicInvoke()))
+                        let invokedResult = Expression.Lambda(meth).Compile().DynamicInvoke()
+
+                        let handleNullCompare() =
+                            match op with
+                            | ConditionOperator.Equal -> Some(ti,key,ConditionOperator.IsNull,None)
+                            | ConditionOperator.NotEqual -> Some(ti,key,ConditionOperator.NotNull,None)
+                            | _ -> Some(ti,key,op,Some(invokedResult))
+
+                        if invokedResult = null then handleNullCompare()
+                        else
+                        let retType = invokedResult.GetType()
+                        if retType.IsGenericType && retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") then
+                            let gotVal = retType.GetProperty("Value") // Option type Some should not be SQL-parameter.
+                            match gotVal.GetValue(invokedResult, [||]) with
+                            | null -> handleNullCompare()
+                            | r -> Some(ti,key,op,Some(r))
+                        else Some(ti,key,op,Some(invokedResult))
                     | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
