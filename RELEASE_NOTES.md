@@ -1,3 +1,8 @@
+### 1.1.19 - 01.11.2017
+* Oracle column name resolution PR #480 
+* Procedure name overload fix PR #476 
+* Allow option type return in where-lambda. #478 
+
 ### 1.1.18 - 26.10.2017
 * Previous type provider SDK returned #472 #470 #468 #466 #465
 * More info to tooltips.
