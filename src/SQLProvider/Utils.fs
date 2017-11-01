@@ -250,6 +250,11 @@ module internal SchemaProjections =
         name.[0].ToString().ToLowerInvariant() + name.Substring(1)
       else name
     
+    /// Add ' until the name is unique
+    let rec avoidNameClashBy nameExists name =
+      if nameExists name then avoidNameClashBy nameExists (name + "'")
+      else name
+        
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
         if(tableName.Contains("."))

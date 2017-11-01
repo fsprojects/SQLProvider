@@ -31,7 +31,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces()
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let ctxt = ProvidedTypesContext.Create(config)
-    let ns = "FSharp.Data.Sql"
+    let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     
     let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, odbcquote, sqliteLibrary, rootTypeName) = 
         let resolutionPath = 
@@ -51,7 +51,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | cs -> cs
                     
         let rootType, prov, con = 
-            let rootType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,ns,rootTypeName,Some typeof<obj>, true)
+            let rootType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, true)
             let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
             let con = prov.CreateConnection conString
             this.Disposing.Add(fun _ -> 
@@ -287,7 +287,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 attProps @ relProps)
         
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =    
-            let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
+            
+            let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName) 
+                            |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
+
             let rt = ctxt.ProvidedTypeDefinition(sprocname,None, true)
             let resultType = ctxt.ProvidedTypeDefinition("Result", None, true)
             resultType.AddMember(ctxt.ProvidedConstructor([ctxt.ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)]))
@@ -333,8 +336,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                      ctxt.ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
                         <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))]
             )
+                              
+            let niceUniqueSprocName = 
+                SchemaProjections.buildSprocName(sproc.Name.ProcName)
+                |> SchemaProjections.avoidNameClashBy (container.GetProperty >> (<>) null)
 
-            let p = ctxt.ProvidedProperty(SchemaProjections.buildSprocName(sproc.Name.ProcName), resultType, getterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
+            let p = ctxt.ProvidedProperty(niceUniqueSprocName, resultType, getterCode = (fun args -> <@@ ((%%args.[0] : obj) :?>ISqlDataContext) @@>) ) 
             let dbName = sproc.Name.DbName
             p.AddXmlDocDelayed(fun _ -> sprintf "<summary>%s</summary>" dbName)
             p
@@ -612,7 +619,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         rootType
     
-    let paramSqlType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, ns, "SqlDataProvider", Some(typeof<obj>), true)
+    let paramSqlType = ctxt.ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, FSHARP_DATA_SQL, "SqlDataProvider", Some(typeof<obj>), true)
     
     let conString = ctxt.ProvidedStaticParameter("ConnectionString",typeof<string>, "")
     let connStringName = ctxt.ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")    
@@ -672,7 +679,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     do paramSqlType.AddXmlDoc helpText               
     
     // add them to the namespace    
-    do this.AddNamespace(ns, [paramSqlType])
+    do this.AddNamespace(FSHARP_DATA_SQL, [paramSqlType])
                             
 [<assembly:TypeProviderAssembly>] 
 do()
