@@ -126,6 +126,46 @@ let ``simple select with exactly one``() =
         }
     Assert.AreEqual("ALFKI", qry)  
 
+[<Test >]
+let ``option from join select with exactly one``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join ord in dc.Main.Orders on (cust.CustomerId = ord.CustomerId)
+            where (cust.CustomerId = "ALFKI" && ord.OrderId = (int64 10643))
+            select (Some (cust, ord))
+            exactlyOneOrDefault
+        } 
+
+    match qry with
+    | Some(cust, ord) ->
+        let id = cust.CustomerId
+        let ordId = ord.OrderId
+        Assert.AreEqual("ALFKI",id)
+        Assert.AreEqual(10643,ordId)
+    | None ->
+        Assert.Fail()
+
+[<Test >]
+let ``option from simple select with exactly one``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId = "ALFKI")
+            select (Some cust)
+            exactlyOneOrDefault
+        } 
+
+    match qry with
+    | Some cust ->
+        let id = cust.CustomerId
+        Assert.AreEqual("ALFKI",id)
+    | None ->
+        Assert.Fail()
+     
+
 [<Test>]
 let ``simple select with exactly one when not exists``() =
     let dc = sql.GetDataContext()
@@ -138,6 +178,7 @@ let ``simple select with exactly one when not exists``() =
         }
     Assert.IsTrue(isNull(qry))
     Assert.AreEqual(null, qry)  
+
 
 [<Test >]
 let ``simple select with head``() =
