@@ -583,7 +583,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
             // first build  the select statement, this is easy ...
             let selectcolumns =
-                if projectionColumns |> Seq.isEmpty then "*" else
+                if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
