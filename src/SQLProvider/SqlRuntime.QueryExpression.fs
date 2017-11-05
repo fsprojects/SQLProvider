@@ -56,7 +56,19 @@ module internal QueryExpressionTransformer =
                 elif ultimateChild.IsSome then
                     Some (alias,fst(ultimateChild.Value), Some(key,mi))
                 else None
-            | _ -> None
+            
+            | eOther -> 
+                if eOther.NodeType.ToString().Contains("Parameter") then
+                    let param = eOther :?> ParameterExpression
+                    if (param.Type.Name.Equals("SqlEntity")) then
+                        let alias = Utilities.resolveTuplePropertyName (param.Name) tupleIndex
+                        if aliasEntityDict.ContainsKey(alias) then
+                            Some (alias,aliasEntityDict.[alias].FullName, None)
+                        elif ultimateChild.IsSome then
+                            Some (alias,fst(ultimateChild.Value), None)
+                        else None
+                    else None
+                else None
 
         let (|GroupByAggregate|_|) (e:Expression) =
             // On group-by aggregates we support currently only direct calls like .Count() or .Sum()
