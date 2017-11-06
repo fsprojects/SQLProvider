@@ -395,8 +395,10 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let cols = (getTable k).FullName
+                        let k = if k = "" then baseTable.Name else k
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
                                 else 
                                     yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose
@@ -545,7 +547,9 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columnsFixed)
                 // FROM
-                ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters baseAlias) cClose)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf "FROM %c%s%c as %c%s%c " cOpen (baseTable.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters bal) cClose)
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", %c%s%c as %c%s%c " cOpen (t.Name.Replace("\"", "")) cClose cOpen (stripSpecialCharacters a) cClose))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

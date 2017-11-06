@@ -586,9 +586,23 @@ module internal QueryImplementation =
                                     ForeignTable = {Schema="";Name="";Type=""};
                                     OuterJoin = false; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
+                | OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)) ->
+                    let sourceAlias =
+                        match source.SqlExpression with
+                        | BaseTable(a, t) -> t.Name
+                        | _ -> projectionParams.[0].Name
+                    let table = Table.FromFullName destEntity
+                    let destAlias = table.Name
+
+                    if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+                    if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
+                    SelectMany(sourceAlias,destAlias,CrossJoin(table.Name,table),outExp)
+                | MethodCall(None, (MethodWithName "AsQueryable"), [innerExp]) ->
+                    processSelectManys projectionParams.[0].Name innerExp outExp projectionParams source
+                | MethodCall(None, (MethodWithName "Select"), [ createRelated; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
+                    let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    Projection(whole,outExp)
                 | _ -> failwith ("Unknown: " + inExp.ToString())
-
-
 
              // Possible Linq method overrides are available here: 
              // https://referencesource.microsoft.com/#System.Core/System/Linq/IQueryable.cs

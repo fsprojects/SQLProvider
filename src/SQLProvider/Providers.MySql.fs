@@ -656,8 +656,8 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
             // if it does not, then we first need to create an alias for the single table
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
-                | Some(a) -> a
-                | None -> baseTable
+                | Some(a) when x <> "" -> a
+                | _ -> baseTable
 
             let singleEntity = sqlQuery.Aliases.Count = 0
 
@@ -669,8 +669,10 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let cols = (getTable k).FullName
+                        let k = if k = "" then baseTable.Name else k
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
                                 else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col
                         else
@@ -829,7 +831,9 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM
-                ~~(sprintf "FROM %s as `%s` " basetable  baseAlias)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf "FROM %s as `%s` " basetable  bal)
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ",  %s as `%s` " t.Name a))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
