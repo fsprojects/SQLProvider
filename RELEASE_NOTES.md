@@ -1,3 +1,7 @@
+### 1.1.20 - 06.11.2017
+* Option type exactlyOneOrDefault fix PR #484
+* Oracle join columns fix PR #455
+
 ### 1.1.19 - 01.11.2017
 * Oracle column name resolution PR #480 
 * Procedure name overload fix PR #476 
