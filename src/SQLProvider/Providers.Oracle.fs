@@ -743,7 +743,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[baseTable.FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnCache.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
