@@ -1,3 +1,6 @@
+### 1.1.21 - 07.11.2017
+* Initial support for cross joins. PR #489
+
 ### 1.1.20 - 06.11.2017
 * Option type exactlyOneOrDefault fix PR #484
 * Oracle join columns fix PR #455
