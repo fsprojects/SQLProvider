@@ -742,8 +742,10 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let cols = (getTable k).FullName
+                        let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnCache.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
@@ -889,7 +891,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM
-                ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf "FROM %s %s " baseTable.FullName bal)
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", %s %s " t.FullName a))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

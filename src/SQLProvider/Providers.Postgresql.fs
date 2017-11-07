@@ -883,8 +883,10 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let cols = (getTable k).FullName
+                        let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[(getTable k).FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
                         else
@@ -1030,7 +1032,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 else  ~~(sprintf "SELECT %s " columns)
 
                 // FROM
-                ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name  baseAlias)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name bal)
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", \"%s\".\"%s\" as \"%s\" " t.Schema t.Name a))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

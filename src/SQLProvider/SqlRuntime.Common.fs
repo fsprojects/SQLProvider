@@ -369,7 +369,7 @@ and Condition =
     | ConstantTrue
     | ConstantFalse
 
-and SelectData = LinkQuery of LinkData | GroupQuery of GroupData
+and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
 and UnionType = NormalUnion | UnionAll | Intersect | Except
 and internal SqlExp =
     | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
@@ -421,6 +421,7 @@ and internal SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
+      CrossJoins    : (alias * Table) list
       Aliases       : Map<string, Table>
       Ordering      : (alias * SqlColumnType * bool) list
       Projection    : Expression list
@@ -433,7 +434,7 @@ and internal SqlQuery =
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with
-        static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []
+        static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
                                 Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None; HavingFilters = [] }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
@@ -442,13 +443,13 @@ and internal SqlQuery =
 
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
-                                        | Some(_,_) -> q
+                                        | Some(_,_) when q.CrossJoins.IsEmpty -> q
                                         | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false ->
                                                 // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
                                                   { q with UltimateChild = Some(legaliseName entityIndex.[0], e) }
-                                        | None -> { q with UltimateChild = Some(legaliseName a,e) }
+                                        | _ -> { q with UltimateChild = Some(legaliseName a,e) }
                 | SelectMany(a,b,dat,rest) ->
                    match dat with
                    | LinkQuery(link) when link.RelDirection = RelationshipDirection.Children ->
@@ -457,6 +458,9 @@ and internal SqlQuery =
                    | LinkQuery(link) ->
                          convert { q with Aliases = q.Aliases.Add(legaliseName a,link.ForeignTable).Add(legaliseName b,link.PrimaryTable);
                                          Links = (legaliseName a, link, legaliseName b) :: q.Links  } rest
+                   | CrossJoin(a,tbl) ->
+                         convert { q with Aliases = q.Aliases.Add(legaliseName a,tbl);
+                                          CrossJoins = (legaliseName a, tbl) :: q.CrossJoins } rest
                    | GroupQuery(grp) ->
                          convert { q with 
                                     Aliases = q.Aliases.Add(legaliseName a,grp.PrimaryTable).Add(legaliseName b,grp.PrimaryTable);

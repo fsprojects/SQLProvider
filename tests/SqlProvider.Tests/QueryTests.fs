@@ -1206,8 +1206,115 @@ let ``simple select with bool outside query2``() =
     CollectionAssert.IsNotEmpty qry
 
 [<Test >]
-let ``simple select query async``() = 
+let ``simple select cross-join test``() = 
+    //crossjoin: SELECT ... FROM Customers, Employees
     let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for emp in dc.Main.Employees do
+            select (cust.ContactName, emp.LastName)
+            take 3
+        } |> Seq.toList
+    Assert.IsNotNull(qry) 
+
+[<Test >]
+let ``simple select cross-join test 3 tables``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for emp in dc.Main.Employees do
+            for ter in dc.Main.Territories do
+            where (cust.City=emp.City && ter.RegionId > 3L)
+            select (cust.ContactName, emp.LastName, ter.RegionId)
+            take 3
+        } |> Seq.toList
+    Assert.IsNotNull(qry) 
+
+[<Test >]
+let ``simple select join and cross-join test``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for x in cust.``main.Orders by CustomerID`` do
+            for emp in dc.Main.Employees do
+            select (x.Freight, cust.ContactName, emp.LastName)
+            head
+        } 
+    Assert.IsNotNull(qry) 
+
+
+[<Test >]
+let ``simple select nested query``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for c3 in (query {
+                for b2 in (query {
+                    for a1 in (query {
+                        for emp in dc.Main.Employees do
+                        select emp
+                    }) do
+                    select a1
+                }) do
+                select b2.LastName
+            }) do
+            select c3
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+[<Test >]
+let ``simple select nested emp query``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            for a1 in (query {
+                for emp in dc.Main.Employees do
+                select (emp)
+            }) do
+            where(a1.FirstName = cust.ContactName)
+            select (a1.FirstName)
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+[<Test; Ignore("Not supported, issue #405")>]
+let ``simple select nested query sort``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp2 in (query {
+                for ter in dc.Main.EmployeesTerritories do
+                for emp in ter.``main.Employees by EmployeeID`` do
+                select emp
+            }) do
+            sortBy emp2.EmployeeId
+            select emp2.Address
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+
+[<Test>]
+let ``simple select join twice to same table``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            join cust1 in dc.Main.Customers on (emp.Country = cust1.Country)
+            join cust2 in dc.Main.Customers on (emp.Country = cust2.Country)
+            where (cust1.City = "Butte" && cust2.City = "Kirkland")
+            select (emp.EmployeeId, cust1.City, cust2.City)
+        } |> Seq.toList
+    Assert.AreEqual(5,qry.Length)    
+    let _,c1,c2 = qry.[0]
+    Assert.AreEqual("Butte",c1)    
+    Assert.AreEqual("Kirkland",c2)    
+
+[<Test >]
+let ``simple select query async``() = 
+    let dc = sql.GetDataContext() 
     let task = 
         async {
             let! asyncquery =
