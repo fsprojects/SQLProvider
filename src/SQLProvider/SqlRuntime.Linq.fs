@@ -588,6 +588,8 @@ module internal QueryImplementation =
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                 | OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)) ->
                     let sourceAlias =
+                        if source.TupleIndex.Contains projectionParams.[0].Name then projectionParams.[0].Name
+                        else
                         match source.SqlExpression with
                         | BaseTable(a, t) -> t.Name
                         | _ -> projectionParams.[0].Name
@@ -623,7 +625,7 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (SqlColumnGet(entity,key,_)))) ]) ->
                         let alias =
                              match entity with
-                             | "" when source.SqlExpression.HasAutoTupled() -> param
+                             | "" when source.SqlExpression.HasAutoTupled() && source.TupleIndex.Contains param -> param
                              | "" -> ""
                              | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex
                         let ascending = meth.Name = "OrderBy"
@@ -642,7 +644,7 @@ module internal QueryImplementation =
                     | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (SqlColumnGet(entity,key,_)))) ]) ->
                         let alias =
                             match entity with
-                            | "" when source.SqlExpression.HasAutoTupled() -> param
+                            | "" when source.SqlExpression.HasAutoTupled() && source.TupleIndex.Contains param -> param
                             | "" -> ""
                             | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
@@ -885,7 +887,7 @@ module internal QueryImplementation =
 
                         let alias =
                              match entity with
-                             | "" when source.SqlExpression.HasAutoTupled() -> param
+                             | "" when source.SqlExpression.HasAutoTupled() && source.TupleIndex.Contains param -> param
                              | "" -> ""
                              | _ -> resolveTuplePropertyName entity source.TupleIndex
 

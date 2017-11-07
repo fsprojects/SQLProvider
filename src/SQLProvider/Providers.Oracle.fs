@@ -743,7 +743,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
-                        let k = if k = "" then baseTable.Name else k
+                        let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnCache.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col

@@ -1233,6 +1233,20 @@ let ``simple select cross-join test 3 tables``() =
     Assert.IsNotNull(qry) 
 
 [<Test >]
+let ``simple select join and cross-join test``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for x in cust.``main.Orders by CustomerID`` do
+            for emp in dc.Main.Employees do
+            select (x.Freight, cust.ContactName, emp.LastName)
+            head
+        } 
+    Assert.IsNotNull(qry) 
+
+
+[<Test >]
 let ``simple select nested query``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1271,14 +1285,32 @@ let ``simple select nested query sort``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
-            for emp in (query {
+            for emp2 in (query {
                 for ter in dc.Main.EmployeesTerritories do
                 for emp in ter.``main.Employees by EmployeeID`` do
                 select emp
             }) do
-            sortBy emp.EmployeeId
+            sortBy emp2.EmployeeId
+            select emp2.Address
         } |> Seq.toList
     Assert.IsNotNull(qry)    
+
+
+[<Test>]
+let ``simple select join twice to same table``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            join cust1 in dc.Main.Customers on (emp.Country = cust1.Country)
+            join cust2 in dc.Main.Customers on (emp.Country = cust2.Country)
+            where (cust1.City = "Butte" && cust2.City = "Kirkland")
+            select (emp.EmployeeId, cust1.City, cust2.City)
+        } |> Seq.toList
+    Assert.AreEqual(5,qry.Length)    
+    let _,c1,c2 = qry.[0]
+    Assert.AreEqual("Butte",c1)    
+    Assert.AreEqual("Kirkland",c2)    
 
 [<Test >]
 let ``simple select query async``() = 

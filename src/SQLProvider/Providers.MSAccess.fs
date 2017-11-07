@@ -113,11 +113,13 @@ type internal MSAccessProvider() =
 
         let dbMappings =
             mappings
+            |> List.filter (fun m -> m.ProviderTypeName.IsSome)
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
 
         let enumMappings =
             mappings
+            |> List.filter (fun m -> m.ProviderType.IsSome)
             |> List.map (fun m -> m.ProviderType.Value, m)
             |> Map.ofList
 
@@ -365,7 +367,7 @@ type internal MSAccessProvider() =
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
-                        let k = if k = "" then baseTable.Name else k
+                        let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
