@@ -295,7 +295,10 @@ module internal Reflection =
              Some(Choice2Of2 e)
 
     let tryLoadAssemblyFrom (resolutionPath:string) (referencedAssemblies:string[]) assemblyNames =
-        let resolutionPath = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+        let resolutionPath = 
+            let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+            if not(File.Exists p) then p else p |> Path.GetDirectoryName
+
         let referencedPaths = 
             referencedAssemblies 
             |> Array.filter (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a)))
