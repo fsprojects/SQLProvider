@@ -236,6 +236,9 @@ assuming Id is unique</p>
 <span class="l">33: </span>
 <span class="l">34: </span>
 <span class="l">35: </span>
+<span class="l">36: </span>
+<span class="l">37: </span>
+<span class="l">38: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">Employee2</span> <span class="o">=</span> {
     <span class="i">Id</span><span class="o">:</span><span class="i">int</span>
@@ -244,15 +247,18 @@ assuming Id is unique</p>
 }
 
 <span class="k">let</span> <span class="i">updateEmployee</span> (<span class="i">employee</span><span class="o">:</span> <span class="i">Employee2</span>) <span class="o">=</span>
-    <span class="k">let</span> <span class="i">foundEmployee</span> <span class="o">=</span> <span class="i">query</span> {
+    <span class="k">let</span> <span class="i">foundEmployeeMaybe</span> <span class="o">=</span> <span class="i">query</span> {
         <span class="k">for</span> <span class="i">p</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Public</span><span class="o">.</span><span class="i">Employee2</span> <span class="k">do</span>
         <span class="i">where</span> (<span class="i">p</span><span class="o">.</span><span class="i">Id</span> <span class="o">=</span> <span class="i">employee</span><span class="o">.</span><span class="i">Id</span>)
+        <span class="i">select</span> (<span class="i">Some</span> <span class="i">p</span>)
         <span class="i">exactlyOneOrDefault</span>
     }
-    <span class="k">if</span> <span class="i">not</span> (<span class="i">isNull</span> <span class="i">foundEmployee</span>) <span class="k">then</span>
+    <span class="k">match</span> <span class="i">foundEmployeeMaybe</span> <span class="k">with</span>
+    | <span class="i">Some</span> <span class="i">foundEmployee</span> <span class="k">-&gt;</span>
         <span class="i">foundEmployee</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">FirstName</span>
         <span class="i">foundEmployee</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">LastName</span>
-    <span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+        <span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+    | <span class="i">None</span> <span class="k">-&gt;</span> ()
 
 <span class="k">let</span> <span class="i">updateEmployee&#39;</span> (<span class="i">employee</span><span class="o">:</span> <span class="i">Employee2</span>) <span class="o">=</span>
     <span class="i">query</span> {
