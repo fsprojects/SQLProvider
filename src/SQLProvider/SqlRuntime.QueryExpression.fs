@@ -63,7 +63,7 @@ module internal QueryExpressionTransformer =
                     if aliasEntityDict.ContainsKey(alias) then
                         Some (alias,aliasEntityDict.[alias].FullName, None)
                     elif ultimateChild.IsSome then
-                        Some (alias,fst(ultimateChild.Value), None)
+                        Some (alias,snd(ultimateChild.Value).FullName, None)
                     else None
                 else None
             | _ -> None
