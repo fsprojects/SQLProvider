@@ -143,6 +143,7 @@ let updateEmployee (employee: Employee2) =
         foundEmployee.FirstName <- employee.FirstName
         foundEmployee.LastName <- employee.LastName
         ctx.SubmitUpdates()
+    | None -> ()
 
 let updateEmployee' (employee: Employee2) =
     query {

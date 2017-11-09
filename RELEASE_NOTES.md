@@ -1,3 +1,6 @@
+### 1.1.22 - 09.11.2017
+* Option type fix for exactlyOneOrDefault. PR #491
+
 ### 1.1.21 - 07.11.2017
 * Initial support for cross joins. PR #489
 
