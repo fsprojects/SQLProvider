@@ -162,6 +162,11 @@ let ``option from simple select with exactly one``() =
     | Some cust ->
         let id = cust.CustomerId
         Assert.AreEqual("ALFKI",id)
+        let city = cust.City
+        cust.City <- city + " upd "
+        dc.SubmitUpdates()
+        cust.City <- city
+        dc.SubmitUpdates()
     | None ->
         Assert.Fail()
      
