@@ -250,6 +250,11 @@ module internal SchemaProjections =
         name.[0].ToString().ToLowerInvariant() + name.Substring(1)
       else name
     
+    /// Add ' until the name is unique
+    let rec avoidNameClashBy nameExists name =
+      if nameExists name then avoidNameClashBy nameExists (name + "'")
+      else name
+        
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
         if(tableName.Contains("."))
@@ -290,7 +295,10 @@ module internal Reflection =
              Some(Choice2Of2 e)
 
     let tryLoadAssemblyFrom (resolutionPath:string) (referencedAssemblies:string[]) assemblyNames =
-        let resolutionPath = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+        let resolutionPath = 
+            let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+            if not(File.Exists p) then p else p |> Path.GetDirectoryName
+
         let referencedPaths = 
             referencedAssemblies 
             |> Array.filter (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a)))

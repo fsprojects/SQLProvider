@@ -132,15 +132,18 @@ type Employee2 = {
 }
 
 let updateEmployee (employee: Employee2) =
-    let foundEmployee = query {
+    let foundEmployeeMaybe = query {
         for p in ctx.Public.Employee2 do
         where (p.Id = employee.Id)
+        select (Some p)
         exactlyOneOrDefault
     }
-    if not (isNull foundEmployee) then
+    match foundEmployeeMaybe with
+    | Some foundEmployee ->
         foundEmployee.FirstName <- employee.FirstName
         foundEmployee.LastName <- employee.LastName
-    ctx.SubmitUpdates()
+        ctx.SubmitUpdates()
+    | None -> ()
 
 let updateEmployee' (employee: Employee2) =
     query {

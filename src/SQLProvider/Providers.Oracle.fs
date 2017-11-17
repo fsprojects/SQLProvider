@@ -293,8 +293,8 @@ module internal Oracle =
               Type   = Sql.dbUnbox row.[2] })
         |> Seq.toList
 
-    let getColumns (primaryKeys:IDictionary<_,_>) tableName conn = 
-        sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s'""" tableName
+    let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
+        sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
         |> read conn (fun row ->
                 let columnType = Sql.dbUnbox row.[0]
                 let nullable   = (Sql.dbUnbox row.[1]) = "Y"
@@ -307,7 +307,7 @@ module internal Oracle =
                 |> Option.map (fun m ->
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = tableName && x.Column = [columnName])
+                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
                       IsNullable = nullable
                       TypeInfo = Some typeinfo }
                 ))
@@ -712,7 +712,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             match columnCache.TryGetValue table.FullName  with
             | true, cols when cols.Count > 0 -> cols
             | _ ->
-                let cols = Sql.connect con (Oracle.getColumns primaryKeyColumn table.Name)
+                let cols = Sql.connect con (Oracle.getColumns primaryKeyColumn table)
                 columnCache.GetOrAdd(table.FullName, cols)
 
         member __.GetRelationships(con,table) =
@@ -742,8 +742,10 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
+                        let cols = (getTable k).FullName
+                        let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[baseTable.FullName] |> Seq.map (fun c -> c.Key) do
+                            for col in columnCache.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
@@ -889,7 +891,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM
-                ~~(sprintf "FROM %s %s " baseTable.FullName baseAlias)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf "FROM %s %s " baseTable.FullName bal)
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", %s %s " t.FullName a))
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

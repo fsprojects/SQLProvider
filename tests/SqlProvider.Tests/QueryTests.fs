@@ -126,6 +126,51 @@ let ``simple select with exactly one``() =
         }
     Assert.AreEqual("ALFKI", qry)  
 
+[<Test >]
+let ``option from join select with exactly one``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join ord in dc.Main.Orders on (cust.CustomerId = ord.CustomerId)
+            where (cust.CustomerId = "ALFKI" && ord.OrderId = (int64 10643))
+            select (Some (cust, ord))
+            exactlyOneOrDefault
+        } 
+
+    match qry with
+    | Some(cust, ord) ->
+        let id = cust.CustomerId
+        let ordId = ord.OrderId
+        Assert.AreEqual("ALFKI",id)
+        Assert.AreEqual(10643,ordId)
+    | None ->
+        Assert.Fail()
+
+[<Test >]
+let ``option from simple select with exactly one``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId = "ALFKI")
+            select (Some cust)
+            exactlyOneOrDefault
+        } 
+
+    match qry with
+    | Some cust ->
+        let id = cust.CustomerId
+        Assert.AreEqual("ALFKI",id)
+        let city = cust.City
+        cust.City <- city + " upd "
+        dc.SubmitUpdates()
+        cust.City <- city
+        dc.SubmitUpdates()
+    | None ->
+        Assert.Fail()
+     
+
 [<Test>]
 let ``simple select with exactly one when not exists``() =
     let dc = sql.GetDataContext()
@@ -138,6 +183,7 @@ let ``simple select with exactly one when not exists``() =
         }
     Assert.IsTrue(isNull(qry))
     Assert.AreEqual(null, qry)  
+
 
 [<Test >]
 let ``simple select with head``() =
@@ -1165,8 +1211,115 @@ let ``simple select with bool outside query2``() =
     CollectionAssert.IsNotEmpty qry
 
 [<Test >]
-let ``simple select query async``() = 
+let ``simple select cross-join test``() = 
+    //crossjoin: SELECT ... FROM Customers, Employees
     let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for emp in dc.Main.Employees do
+            select (cust.ContactName, emp.LastName)
+            take 3
+        } |> Seq.toList
+    Assert.IsNotNull(qry) 
+
+[<Test >]
+let ``simple select cross-join test 3 tables``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for emp in dc.Main.Employees do
+            for ter in dc.Main.Territories do
+            where (cust.City=emp.City && ter.RegionId > 3L)
+            select (cust.ContactName, emp.LastName, ter.RegionId)
+            take 3
+        } |> Seq.toList
+    Assert.IsNotNull(qry) 
+
+[<Test >]
+let ``simple select join and cross-join test``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query { 
+            for cust in dc.Main.Customers do
+            for x in cust.``main.Orders by CustomerID`` do
+            for emp in dc.Main.Employees do
+            select (x.Freight, cust.ContactName, emp.LastName)
+            head
+        } 
+    Assert.IsNotNull(qry) 
+
+
+[<Test >]
+let ``simple select nested query``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for c3 in (query {
+                for b2 in (query {
+                    for a1 in (query {
+                        for emp in dc.Main.Employees do
+                        select emp
+                    }) do
+                    select a1
+                }) do
+                select b2.LastName
+            }) do
+            select c3
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+[<Test >]
+let ``simple select nested emp query``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            for a1 in (query {
+                for emp in dc.Main.Employees do
+                select (emp)
+            }) do
+            where(a1.FirstName = cust.ContactName)
+            select (a1.FirstName)
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+[<Test; Ignore("Not supported, issue #405")>]
+let ``simple select nested query sort``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp2 in (query {
+                for ter in dc.Main.EmployeesTerritories do
+                for emp in ter.``main.Employees by EmployeeID`` do
+                select emp
+            }) do
+            sortBy emp2.EmployeeId
+            select emp2.Address
+        } |> Seq.toList
+    Assert.IsNotNull(qry)    
+
+
+[<Test>]
+let ``simple select join twice to same table``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            join cust1 in dc.Main.Customers on (emp.Country = cust1.Country)
+            join cust2 in dc.Main.Customers on (emp.Country = cust2.Country)
+            where (cust1.City = "Butte" && cust2.City = "Kirkland")
+            select (emp.EmployeeId, cust1.City, cust2.City)
+        } |> Seq.toList
+    Assert.AreEqual(5,qry.Length)    
+    let _,c1,c2 = qry.[0]
+    Assert.AreEqual("Butte",c1)    
+    Assert.AreEqual("Kirkland",c2)    
+
+[<Test >]
+let ``simple select query async``() = 
+    let dc = sql.GetDataContext() 
     let task = 
         async {
             let! asyncquery =
@@ -1192,6 +1345,23 @@ let ``simple select with contains query with where boolean option type``() =
             contains "ALFKI"
         }
     Assert.IsTrue(qry)    
+
+type MyOpt = {MyItem: string option}
+
+[<Test>]
+let ``simple select with custom option types in where``() =
+    let dc = sqlOption.GetDataContext()
+    let someItem = {MyItem = Some "London"}
+    let noneItem = {MyItem = None}
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City = someItem.MyItem && not(cust.City = noneItem.MyItem))
+            select cust.CustomerId
+            headOrDefault
+        }
+    Assert.AreEqual("AROUT",qry)    
+
 
 [<Test>]
 let ``simple async sum with option operations``() = 

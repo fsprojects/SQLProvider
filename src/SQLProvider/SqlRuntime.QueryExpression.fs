@@ -56,6 +56,16 @@ module internal QueryExpressionTransformer =
                 elif ultimateChild.IsSome then
                     Some (alias,fst(ultimateChild.Value), Some(key,mi))
                 else None
+            | eOther when eOther.NodeType.ToString().Contains("Parameter") && (eOther :? ParameterExpression) ->
+                let param = eOther :?> ParameterExpression
+                if param.Type = typeof<SqlEntity> then
+                    let alias = Utilities.resolveTuplePropertyName (param.Name) tupleIndex
+                    if aliasEntityDict.ContainsKey(alias) then
+                        Some (alias,aliasEntityDict.[alias].FullName, None)
+                    elif ultimateChild.IsSome then
+                        Some (alias,snd(ultimateChild.Value).FullName, None)
+                    else None
+                else None
             | _ -> None
 
         let (|GroupByAggregate|_|) (e:Expression) =
@@ -138,15 +148,29 @@ module internal QueryExpressionTransformer =
                         Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
                             mi,Expression.Constant(key)))
 
-            | ExpressionType.Call, MethodCall(Some(ParamName name),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])  ->
-                match projectionMap.TryGetValue name with
-                | true, values when values.Count > 0 -> values.Add(key)
-                | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield key}))
-                | _ -> ()
-                Some
-                    (match databaseParam.Type.Name.StartsWith("IGrouping") with
-                     | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
-                     | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,name),mi,Expression.Constant(key)))
+            | ExpressionType.Call, MethodCall(Some(ParamName pname),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])  ->
+
+                let foundAlias = 
+                    if aliasEntityDict.ContainsKey(pname) then Some pname
+                    elif pname.StartsWith "Item" then
+                        let al = Utilities.resolveTuplePropertyName pname tupleIndex
+                        if aliasEntityDict.ContainsKey(al) then Some al
+                        elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
+                        else None
+                    elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
+                    else None
+
+                match foundAlias with
+                | Some alias ->
+                    match projectionMap.TryGetValue alias with
+                    | true, values when values.Count > 0 -> values.Add(key)
+                    | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
+                    | _ -> ()
+                    Some
+                        (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                         | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
+                         | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
+                | None -> None
             | _ -> None
 
 
