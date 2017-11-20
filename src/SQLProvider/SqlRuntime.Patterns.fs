@@ -386,11 +386,11 @@ let (|SqlSpecialOp|_|) = function
     | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
     | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,Expression.Lambda(right).Compile().DynamicInvoke())
     // String  methods
-    | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "Contains", [right]) when t = typeof<string> -> 
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
         Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-    | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "StartsWith", [right]) when t = typeof<string> -> 
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
         Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-    | MethodCall(Some(SqlColumnGet(ti,key,t)), MethodWithName "EndsWith", [right]) when t = typeof<string> -> 
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
         Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
     | _ -> None
                 
