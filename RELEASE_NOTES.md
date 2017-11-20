@@ -1,3 +1,6 @@
+### 1.1.23 - 20.11.2017
+* Option type fix for Like-search
+
 ### 1.1.22 - 09.11.2017
 * Option type fix for exactlyOneOrDefault. PR #491
 
