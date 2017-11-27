@@ -11,11 +11,11 @@ open System
 open System.IO
 
 #if MONO
-#r @"packages/Scripts/Npgsql/lib/net45/Npgsql.dll"
 #else
-#r @"packages/Scripts/Npgsql/lib/net451/Npgsql.dll"
 #load @"packages/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
+
+#r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"
 
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
