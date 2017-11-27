@@ -64,6 +64,9 @@
     <None Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="System.Threading.Tasks.Extensions.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="OracleTests.fsx" />
     <None Include="SQLLiteTests.fsx" />
     <None Include="SqlServerTests.fsx" />
