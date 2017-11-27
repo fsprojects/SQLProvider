@@ -73,7 +73,7 @@ let ``Find Tokyo location`` () =
     tokyo.City <- "Tokyo"
     tokyo.StateProvince <- Some "Tokyo prefecture"
     tokyo.CountryId <- Some "JP"
-    Assert.AreEqual(result, tokyo)
+    Assert.AreEqual(result, [ tokyo ])
 
 let employeesFirstNameNoProj =
     query {
