@@ -71,7 +71,7 @@ let ``Find Tokyo location`` () =
     tokyo.StreetAddress <- Some "2017 Shinjuku-ku"
     tokyo.PostalCode <- Some "1689"
     tokyo.City <- "Tokyo"
-    tokyo.StateProvince <- Some "Tokyo prefecture"
+    tokyo.StateProvince <- Some "Tokyo Prefecture"
     tokyo.CountryId <- Some "JP"
     Assert.AreEqual(result, [ tokyo ])
 
