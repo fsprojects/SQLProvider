@@ -5,7 +5,7 @@ sudo: false  # use the new container-based Travis infrastructure
 
 services:
   - postgres
-  
+
 addons:
   postgresql: "9.5"  
 
@@ -15,6 +15,9 @@ mono:
 os:
   - linux
   - osx
+
+before_script:
+  - sleep 1m  
 
 script:
   - ./build.sh All
