@@ -17,8 +17,8 @@ os:
   - osx
 
 before_script:
-  - sleep 1m  
-
+  - psql -c 'create database postgres;' -U postgres
+  
 script:
   - ./build.sh All
 
