@@ -465,6 +465,7 @@ module PostgreSQL =
             let sparams =
                 let args = Sql.dbUnbox<string> r.["args"] 
                 args.Split('\n')
+                |> Seq.filter (not << String.IsNullOrEmpty)
                 |> Seq.mapi (fun i arg -> i, arg)
                 |> Seq.fold (fun acc (i, arg) ->
                     match acc with
