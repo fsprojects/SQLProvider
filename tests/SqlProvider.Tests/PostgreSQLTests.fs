@@ -66,14 +66,16 @@ let ``Find Tokyo location`` () =
        select location
       } |> Seq.toList
 
-    let tokyo = ctx.Public.Locations.Create()
-    tokyo.LocationId <- 1200
-    tokyo.StreetAddress <- Some "2017 Shinjuku-ku"
-    tokyo.PostalCode <- Some "1689"
-    tokyo.City <- "Tokyo"
-    tokyo.StateProvince <- Some "Tokyo Prefecture"
-    tokyo.CountryId <- Some "JP"
-    Assert.AreEqual(result, [ tokyo ])
+    Assert.AreEqual (result.Length, 1)
+
+    let tokyo = result.Head
+
+    Assert.AreEqual(tokyo.LocationId, 1200)
+    Assert.AreEqual(tokyo.StreetAddress, Some "2017 Shinjuku-ku")
+    Assert.AreEqual(tokyo.PostalCode, Some "1689")
+    Assert.AreEqual(tokyo.City, "Tokyo")
+    Assert.AreEqual(tokyo.StateProvince, Some "Tokyo Prefecture")
+    Assert.AreEqual(tokyo.CountryId, Some "JP") 
 
 let employeesFirstNameNoProj =
     query {
