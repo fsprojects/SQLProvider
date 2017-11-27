@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
+    <Compile Include="PostgreSQLTests.fs" />
     <Content Include="app.config" />
     <None Include="x86\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
