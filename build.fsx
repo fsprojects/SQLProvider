@@ -3,7 +3,6 @@
 // --------------------------------------------------------------------------------------
 
 #r @"packages/FAKE/tools/FakeLib.dll"
-#r @"packages/Scripts/Npgsql/lib/net451/Npgsql.dll"
 open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
@@ -12,7 +11,9 @@ open System
 open System.IO
 
 #if MONO
+#r @"packages/Scripts/Npgsql/lib/net45/Npgsql.dll"
 #else
+#r @"packages/Scripts/Npgsql/lib/net451/Npgsql.dll"
 #load @"packages/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
