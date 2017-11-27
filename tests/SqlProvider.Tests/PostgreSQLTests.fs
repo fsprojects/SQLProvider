@@ -1,16 +1,26 @@
-#I "../../../bin/net451"
-#r "../../../bin/net451/FSharp.Data.SqlProvider.dll"
+module PostgreSQLTests
+
+#if LOCALBUILD
+#else
+
 // Postgres Npgsql v.3.2.x has internal reference to System.Threading.Tasks.Extensions.dll:
 // #r "../../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 open System
 open FSharp.Data.Sql
 open System.Data
 
-[<Literal>]
-let connStr = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
+#if TRAVIS
+let [<Literal>] connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;"
+#else
+#if APPVEYOR
+let [<Literal>] connStr = "User ID=postgres;Password=Password12!;Host=localhost;Port=5432;Database=sqlprovider;"
+#else
+let [<Literal>] connStr = "User ID=postgres;Password=postgres;Host=localhost;Port=5432;Database=sqlprovider;"
+#endif 
+#endif
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/Npgsql/lib/net45"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../packages/scripts/Npgsql/lib/net45"
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")
@@ -135,10 +145,7 @@ let canonicalTest =
             )
             select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
     } |> Seq.toList
-
-
-#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
-
+    
 open Newtonsoft.Json
 
 type OtherCountryInformation = {
@@ -208,6 +215,7 @@ let removeIfExists employeeId startDate =
 removeIfExists 100 (DateTime(1993, 1, 13))
 ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
+
 //Support for sprocs that return ref cursors
 let employees =
     [
@@ -251,15 +259,13 @@ ctx.Functions.GetDepartments.Invoke().ReturnValue
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 //********************** Type test ***************************//
-
-#r "../../../packages/scripts/Npgsql/lib/net45/Npgsql.dll"
-
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
 let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
 let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
 let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
 let tt = ctx.Public.PostgresqlTypes.Create()
+
 //tt.Abstime0 <- Some DateTime.Today
 tt.Bigint0 <- Some 100L
 tt.Bigserial0 <- 300L
@@ -337,3 +343,5 @@ printTest <@@ tt.Bit0 @@>
 printTest <@@ tt.Box0 @@>
 printTest <@@ tt.Interval0 @@>
 printTest <@@ tt.Jsonb0 @@>
+
+#endif
