@@ -8,6 +8,7 @@ module PostgreSQLTests
 open System
 open FSharp.Data.Sql
 open System.Data
+open NUnit.Framework
 
 #if TRAVIS
 let [<Literal>] connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;"
@@ -53,15 +54,26 @@ type LocationQuery = {
      PostalCode : string option
 }
 
-let locationBy (loc:LocationQuery) =
-    query {
-       for location in ctx.Public.Locations do
-       where (location.City = loc.City)
-       where (location.PostalCode = loc.PostalCode)
-       select location
-    } |> Seq.toList
+[<Test>]
+let ``Find Tokyo location`` () =
+    let locationQuery = { City = "Tokyo"; PostalCode = Some "1689" }
 
-let result = locationBy { City = "Tokyo"; PostalCode = Some "1689" }
+    let result = 
+      query {
+       for location in ctx.Public.Locations do
+       where (location.City = locationQuery.City)
+       where (location.PostalCode = locationQuery.PostalCode)
+       select location
+      } |> Seq.toList
+
+    let tokyo = ctx.Public.Locations.Create()
+    tokyo.LocationId <- 1200
+    tokyo.StreetAddress <- Some "2017 Shinjuku-ku"
+    tokyo.PostalCode <- Some "1689"
+    tokyo.City <- "Tokyo"
+    tokyo.StateProvince <- Some "Tokyo prefecture"
+    tokyo.CountryId <- Some "JP"
+    Assert.AreEqual(result, tokyo)
 
 let employeesFirstNameNoProj =
     query {
