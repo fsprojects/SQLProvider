@@ -754,9 +754,15 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                             match pt with
                                             | None -> None
                                             | Some t ->                                            
-                                                let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                                                
+                                                let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                  
+                                                
+                                                // .MakeArrayType() would be more elegant, but on Mono it causes
+                                                // issues due to Npgsql producing Foo[*] arrays (variable lower bound)
+                                                // instead of Foo[]
+                                                let sampleArrayOfCorrectRank = Array.CreateInstance(Type.GetType(m.ClrType), lengths = Array.zeroCreate<int> dimensions)
+
                                                 Some { ProviderTypeName = Some "array"
-                                                       ClrType = Type.GetType(m.ClrType).MakeArrayType(dimensions).AssemblyQualifiedName
+                                                       ClrType = sampleArrayOfCorrectRank.GetType().AssemblyQualifiedName
                                                        ProviderType = Some providerType
                                                        DbType = PostgreSQL.getDbType providerType
                                                      }
