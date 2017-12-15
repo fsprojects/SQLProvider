@@ -194,7 +194,7 @@ ctx.SubmitUpdatesAsync() |> Async.StartAsTask
 
 ### Delete-query for multiple items
 
-If you want to delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this.
+If you want to delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
 
 *)
 
