@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ProvidedLiteralField - SQLProvider</title>
+    <title>ProvidedTypeSymbol - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,12 +35,14 @@
 
 
 
-<h1>ProvidedLiteralField</h1>
+<h1>ProvidedTypeSymbol</h1>
 <p>
   <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
-<p>Represents an erased provided field.</p>
+<p>Represents an array or other symbolic type involving a provided type as the argument.
+See the type provider spec for the methods that must be implemented.
+Note that the type provider specification does not require us to implement pointer-equality for provided types.</p>
 
 </div>
   <h3>Instance members</h3>
@@ -52,102 +54,43 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '480', 480)" onmouseover="showTip(event, '480', 480)">
-            AddDefinitionLocation(...)
+          <code onmouseout="hideTip(event, '552', 552)" onmouseover="showTip(event, '552', 552)">
+            IsFSharpTypeAbbreviation
           </code>
-          <div class="tip" id="480">
-            <strong>Signature:</strong> (line:int * column:int * filePath:string) -&gt; unit<br />
+          <div class="tip" id="552">
+            <strong>Signature:</strong> bool<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1111-1111" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L582-582" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Add definition location information to the provided field.</p>
+          <p>For example, kg</p>
 
 
+              <p>CompiledName: <code>get_IsFSharpTypeAbbreviation</code></p>
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '481', 481)" onmouseover="showTip(event, '481', 481)">
-            AddObsoleteAttribute(message, isError)
+          <code onmouseout="hideTip(event, '553', 553)" onmouseover="showTip(event, '553', 553)">
+            IsFSharpUnitAnnotated
           </code>
-          <div class="tip" id="481">
-            <strong>Signature:</strong> (message:string * isError:bool option) -&gt; unit<br />
+          <div class="tip" id="553">
+            <strong>Signature:</strong> bool<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1110-1110" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L585-585" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Add a 'Obsolete' attribute to this provided field</p>
+          <p>For example, int<kg> or int<kilogram></p>
 
 
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '482', 482)" onmouseover="showTip(event, '482', 482)">
-            AddXmlDoc(xmlDoc)
-          </code>
-          <div class="tip" id="482">
-            <strong>Signature:</strong> xmlDoc:string -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1109-1109" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '483', 483)" onmouseover="showTip(event, '483', 483)">
-            AddXmlDocComputed(xmlDocFunction)
-          </code>
-          <div class="tip" id="483">
-            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1107-1107" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
-The documentation is re-computed  every time it is required.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '484', 484)" onmouseover="showTip(event, '484', 484)">
-            AddXmlDocDelayed(xmlDocFunction)
-          </code>
-          <div class="tip" id="484">
-            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1108-1108" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary</p>
-
-
+              <p>CompiledName: <code>get_IsFSharpUnitAnnotated</code></p>
         </td>
       </tr>
     </tbody>

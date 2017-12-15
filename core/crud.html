@@ -316,7 +316,7 @@ output of .ColumnValues:</p>
 </tr>
 </table>
 <h3><a name="Delete-query-for-multiple-items" class="anchor" href="#Delete-query-for-multiple-items">Delete-query for multiple items</a></h3>
-<p>If you want to delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this.</p>
+<p>If you want to delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call <code>ctx.SubmitUpdates()</code>.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 <span class="l">3: </span>
