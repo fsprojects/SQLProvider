@@ -28,7 +28,7 @@ module internal DesignTimeCache =
 
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
-    inherit TypeProviderForNamespaces(config, [("FSharp.Data.Sql", "FSharp.Data.Sql")])
+    inherit TypeProviderForNamespaces(config)
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"

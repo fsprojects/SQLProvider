@@ -90,7 +90,7 @@ let ctx3 =
     db.GetDataContext(
         { Timeout = TimeSpan.MaxValue; 
           IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction
-        })
+        }:FSharp.Data.Sql.Transactions.TransactionOptions)
 
 (**
 
