@@ -342,12 +342,12 @@ module internal QueryImplementation =
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.NotNull,None)
                     | OptionIsNone(SqlColumnGet(ti,key,_))
-                    | SqlCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)), (OptionNone | NullConstant)) 
-                    | SqlNegativeCondOp(ConditionOperator.Equal,(SqlColumnGet(ti,key,_)),(OptionNone | NullConstant)) ->
+                    | SqlCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))), (OptionNone | NullConstant)) 
+                    | SqlNegativeCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.IsNull,None)
-                    | SqlCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),(OptionNone | NullConstant)) 
-                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(SqlColumnGet(ti,key,_)),(OptionNone | NullConstant)) ->
+                    | SqlCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) 
+                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
                         paramNames.Add(ti) |> ignore
                         Some(ti,key,ConditionOperator.NotNull,None)
                     // matches column to constant with any operator eg c.name = "john", c.age > 42

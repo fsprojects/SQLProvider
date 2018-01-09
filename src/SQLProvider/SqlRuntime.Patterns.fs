@@ -144,6 +144,8 @@ let (|OptionalConvertOrTypeAs|) (e:Expression) =
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
         // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
         e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
+        e.Arguments.[0]
     | _ -> e
 
 let (|OptionalFSharpOptionValue|) (e:Expression) = 
@@ -429,6 +431,6 @@ let (|SqlSpecialNegativeOpArrQueryable|_|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
-        | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
+        | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedNotIn, key, values)
         | _ -> None
     | _ -> None

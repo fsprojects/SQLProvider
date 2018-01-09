@@ -251,9 +251,9 @@ module MySql =
         let defaultValue =
             if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
             else row.["routine_schema"]
-        let owner = Sql.dbUnboxWithDefault<string> owner defaultValue
+        let owner2 = Sql.dbUnboxWithDefault<string> owner defaultValue
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
-        { ProcName = procName; Owner = owner; PackageName = String.Empty; }
+        { ProcName = procName; Owner = owner2; PackageName = String.Empty; }
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
         let createSprocParameters (row:DataRow) =
