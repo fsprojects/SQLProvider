@@ -902,7 +902,9 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM
-                ~~(sprintf " FROM %s as %s " basetable  baseAlias)
+                let bal = if baseAlias = "" then baseTable.Name else baseAlias
+                ~~(sprintf " FROM %s as %s " basetable  bal)
+                //~~(sprintf " FROM %s as %s " basetable  baseAlias)
                 sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ",  %s as %s " (getTableNameForQuery t) a))
             fromBuilder()
             // WHERE
