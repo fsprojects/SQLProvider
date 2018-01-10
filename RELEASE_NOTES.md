@@ -1,3 +1,9 @@
+### 1.1.24 - 10.01.2018
+* Fix for Postgres "Invalid procedure" #482
+* Fix for Postgres arrays on Mono
+* Fix for LINQ where(not(xs.Contains(subquery)))
+* Support for box-operator in null-checks to make easier checking of inner-join nulls.
+
 ### 1.1.23 - 20.11.2017
 * Option type fix for Like-search
 

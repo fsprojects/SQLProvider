@@ -8,7 +8,7 @@
 let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
 
 #else
-module Netstandard
+module NetstandardTest
 
 [<Literal>]
 let resolutionPath = "temp"

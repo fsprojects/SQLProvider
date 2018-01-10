@@ -10,7 +10,7 @@
 let msyqlConnectorPath = __SOURCE_DIRECTORY__ + "/connectorTemp"
 
 #else
-module Netstandard
+module NetstandardTest
 
 //[<Literal>]
 //let msyqlDataPath = "dataTemp"

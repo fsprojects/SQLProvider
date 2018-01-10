@@ -5,7 +5,7 @@
 // #r "../../../bin/net451/FSharp.Data.SqlProvider.dll"
 
 #else
-module Netstandard
+module NetstandardTest
 
 #endif
 
