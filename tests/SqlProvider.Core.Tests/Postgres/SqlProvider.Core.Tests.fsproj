@@ -36,7 +36,7 @@
   </ItemGroup>  
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="3.2.5" /><!-- this will add the runtime coreapp version -->
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.22" />
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.24" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />

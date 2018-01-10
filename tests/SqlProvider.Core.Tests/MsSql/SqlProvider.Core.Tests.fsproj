@@ -44,7 +44,7 @@
     </Reference>
   </ItemGroup>  
   <ItemGroup>
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.22" />
+    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.24" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
