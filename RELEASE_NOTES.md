@@ -1,3 +1,6 @@
+### 1.1.25 - 10.01.2018
+* Fix base alias in Firebird Provider PR #503
+
 ### 1.1.24 - 10.01.2018
 * Fix for Postgres "Invalid procedure" #482
 * Fix for Postgres arrays on Mono
