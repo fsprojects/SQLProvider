@@ -40,6 +40,8 @@
   <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
 </p>
 <div class="xmldoc">
+<p>Represents the context for which code is to be generated. Normally you should not need to use this directly.</p>
+
 </div>
   <h3>Instance members</h3>
   <table class="table table-bordered member-list">
@@ -50,19 +52,39 @@
       <tr>
         <td class="member-name">
 
+          <code onmouseout="hideTip(event, '554', 554)" onmouseover="showTip(event, '554', 554)">
+            AddSourceAssembly(arg1)
+          </code>
+          <div class="tip" id="554">
+            <strong>Signature:</strong> Assembly -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8956-8956" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Add an assembly to the set of design-time assemblies available to use as a basis for authoring provided types</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
           <code onmouseout="hideTip(event, '555', 555)" onmouseover="showTip(event, '555', 555)">
-            ConvertDesignTimeExprToTargetExpr(arg1)
+            ConvertSourceExprToTarget(arg1)
           </code>
           <div class="tip" id="555">
             <strong>Signature:</strong> Expr -&gt; Expr<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8364-8364" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8925-8925" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Returns a quotation rebuilt with resepct to the types from the referenced assemblies.  Normally
+          <p>Returns a quotation rebuilt with resepct to the types from the target referenced assemblies.  Normally
 this method should not be used directly when authoring a type provider.</p>
 
 
@@ -72,14 +94,14 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '556', 556)" onmouseover="showTip(event, '556', 556)">
-            ConvertDesignTimeTypeToTargetType(arg1)
+            ConvertSourceTypeToTarget(arg1)
           </code>
           <div class="tip" id="556">
             <strong>Signature:</strong> Type -&gt; Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8360-8360" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8921-8921" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -93,18 +115,18 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '557', 557)" onmouseover="showTip(event, '557', 557)">
-            ConvertTargetExprToDesignTimeExpr(arg1)
+            ConvertTargetTypeToSource(arg1)
           </code>
           <div class="tip" id="557">
-            <strong>Signature:</strong> Expr -&gt; Expr<br />
+            <strong>Signature:</strong> Type -&gt; Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8366-8366" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8923-8923" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Returns a quotation rebuilt with resepct to the types from the design-time assemblies. Normally
+          <p>Returns the design-time type that corresponds to the given type from the target referenced assemblies.  Normally
 this method should not be used directly when authoring a type provider.</p>
 
 
@@ -114,35 +136,14 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '558', 558)" onmouseover="showTip(event, '558', 558)">
-            ConvertTargetTypeToDesignTimeType(arg1)
-          </code>
-          <div class="tip" id="558">
-            <strong>Signature:</strong> Type -&gt; Type<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8361-8361" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Returns the design-time type that corresponds to the given type from the referenced assemblies.  Normally
-this method should not be used directly when authoring a type provider.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '559', 559)" onmouseover="showTip(event, '559', 559)">
             FSharpCoreAssemblyVersion
           </code>
-          <div class="tip" id="559">
+          <div class="tip" id="558">
             <strong>Signature:</strong> Version<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8385-8385" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8943-8943" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -155,19 +156,39 @@ this method should not be used directly when authoring a type provider.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '560', 560)" onmouseover="showTip(event, '560', 560)">
-            MakeGenericMethod(...)
+          <code onmouseout="hideTip(event, '559', 559)" onmouseover="showTip(event, '559', 559)">
+            GetSourceAssemblies()
           </code>
-          <div class="tip" id="560">
-            <strong>Signature:</strong> (genericMethodDefinition:MethodInfo * genericArguments:Type list) -&gt; MethodInfo<br />
+          <div class="tip" id="559">
+            <strong>Signature:</strong> unit -&gt; Assembly []<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8481-8481" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8941-8941" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>When making a cross-targeting type provider, use this method instead of ProvidedTypeBuilder.MakeGenericMethod</p>
+          <p>Get the set of design-time assemblies available to use as a basis for authoring provided types.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '560', 560)" onmouseover="showTip(event, '560', 560)">
+            GetTargetAssemblies()
+          </code>
+          <div class="tip" id="560">
+            <strong>Signature:</strong> unit -&gt; Assembly []<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8939-8939" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Get the resolved referenced assemblies determined by the type provider configuration</p>
 
 
         </td>
@@ -176,18 +197,18 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '561', 561)" onmouseover="showTip(event, '561', 561)">
-            MakeGenericType(...)
+            ReadRelatedAssembly(bytes)
           </code>
           <div class="tip" id="561">
-            <strong>Signature:</strong> (genericTypeDefinition:Type * genericArguments:Type list) -&gt; Type<br />
+            <strong>Signature:</strong> (bytes:byte []) -&gt; Assembly<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8478-8478" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8950-8950" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>When making a cross-targeting type provider, use this method instead of ProvidedTypeBuilder.MakeGenericType</p>
+          <p>Read the assembly related to this context</p>
 
 
         </td>
@@ -196,18 +217,18 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '562', 562)" onmouseover="showTip(event, '562', 562)">
-            ProvidedConstructor(...)
+            ReadRelatedAssembly(fileName)
           </code>
           <div class="tip" id="562">
-            <strong>Signature:</strong> (parameters:ProvidedParameter list * invokeCode:(Expr list -&gt; Expr) option) -&gt; ProvidedConstructor<br />
+            <strong>Signature:</strong> fileName:string -&gt; Assembly<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8437-8437" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8945-8945" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>When making a cross-targeting type provider, use this method instead of the ProvidedConstructor constructor from ProvidedTypes</p>
+          <p>Read the assembly related to this context</p>
 
 
         </td>
@@ -216,221 +237,14 @@ this method should not be used directly when authoring a type provider.</p>
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '563', 563)" onmouseover="showTip(event, '563', 563)">
-            ProvidedEvent(...)
-          </code>
-          <div class="tip" id="563">
-            <strong>Signature:</strong> (eventName:string * eventHandlerType:Type * isStatic:bool option * adderCode:(Expr list -&gt; Expr) option * removerCode:(Expr list -&gt; Expr) option) -&gt; ProvidedEvent<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8429-8429" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided event. It is not initially associated with any specific provided type definition.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedProperty constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '564', 564)" onmouseover="showTip(event, '564', 564)">
-            ProvidedField(fieldName, fieldType)
-          </code>
-          <div class="tip" id="564">
-            <strong>Signature:</strong> (fieldName:string * fieldType:Type) -&gt; ProvidedField<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8396-8396" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided field. It is not initially associated with any specific provided type definition.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedProperty constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
-            ProvidedLiteralField(...)
-          </code>
-          <div class="tip" id="565">
-            <strong>Signature:</strong> (fieldName:string * fieldType:Type * literalValue:obj) -&gt; ProvidedLiteralField<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8402-8402" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided literal field. It is not initially associated with any specific provided type definition.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedProperty constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '566', 566)" onmouseover="showTip(event, '566', 566)">
-            ProvidedMethod(...)
-          </code>
-          <div class="tip" id="566">
-            <strong>Signature:</strong> (methodName:string * parameters:ProvidedParameter list * returnType:Type * isStatic:bool option * invokeCode:(Expr list -&gt; Expr) option) -&gt; ProvidedMethod<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8442-8442" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>When making a cross-targeting type provider, use this method instead of the ProvidedMethod constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '567', 567)" onmouseover="showTip(event, '567', 567)">
-            ProvidedParameter(...)
-          </code>
-          <div class="tip" id="567">
-            <strong>Signature:</strong> (parameterName:string * parameterType:Type * isOut:bool option * optionalValue:obj option) -&gt; ProvidedParameter<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8408-8408" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided parameter.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedProperty constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '568', 568)" onmouseover="showTip(event, '568', 568)">
-            ProvidedProperty(...)
-          </code>
-          <div class="tip" id="568">
-            <strong>Signature:</strong> (propertyName:string * propertyType:Type * isStatic:bool option * getterCode:(Expr list -&gt; Expr) option * setterCode:(Expr list -&gt; Expr) option * parameters:ProvidedParameter list option) -&gt; ProvidedProperty<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8418-8418" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided property. It is not initially associated with any specific provided type definition.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedProperty constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
-            ProvidedStaticParameter(...)
-          </code>
-          <div class="tip" id="569">
-            <strong>Signature:</strong> (parameterName:string * parameterType:Type * parameterDefaultValue:obj option) -&gt; ProvidedStaticParameter<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8390-8390" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided static parameter, for use with DefineStaticParamaeters on a provided type definition.</p>
-<p>When making a cross-targeting type provider, use this method instead of the ProvidedParameter constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
-            ProvidedTypeDefinition(...)
-          </code>
-          <div class="tip" id="570">
-            <strong>Signature:</strong> (assembly:Assembly * namespaceName:string * className:string * baseType:Type option * hideObjectMethods:bool option * nonNullable:bool option * isErased:bool option) -&gt; ProvidedTypeDefinition<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8461-8461" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>When making a cross-targeting type provider, use this method instead of the corresponding ProvidedTypeDefinition constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '571', 571)" onmouseover="showTip(event, '571', 571)">
-            ProvidedTypeDefinition(...)
-          </code>
-          <div class="tip" id="571">
-            <strong>Signature:</strong> (className:string * baseType:Type option * hideObjectMethods:bool option * nonNullable:bool option * isErased:bool option) -&gt; ProvidedTypeDefinition<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8449-8449" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>When making a cross-targeting type provider, use this method instead of the corresponding ProvidedTypeDefinition constructor from ProvidedTypes</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '572', 572)" onmouseover="showTip(event, '572', 572)">
-            ReferencedAssemblies
-          </code>
-          <div class="tip" id="572">
-            <strong>Signature:</strong> Assembly []<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8383-8383" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Get the resolved referenced assemblies determined by the type provider configuration</p>
-
-
-              <p>CompiledName: <code>get_ReferencedAssemblies</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '573', 573)" onmouseover="showTip(event, '573', 573)">
             ReferencedAssemblyPaths
           </code>
-          <div class="tip" id="573">
+          <div class="tip" id="563">
             <strong>Signature:</strong> string list<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8381-8381" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8937-8937" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -443,19 +257,19 @@ this method should not be used directly when authoring a type provider.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '574', 574)" onmouseover="showTip(event, '574', 574)">
-            TryBindAssembly(aref)
+          <code onmouseout="hideTip(event, '564', 564)" onmouseover="showTip(event, '564', 564)">
+            TryBindAssemblyNameToTarget(aref)
           </code>
-          <div class="tip" id="574">
+          <div class="tip" id="564">
             <strong>Signature:</strong> aref:AssemblyName -&gt; Choice&lt;Assembly,exn&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8370-8370" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8931-8931" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Try to find the given assembly in the context</p>
+          <p>Try to find the given target assembly in the context</p>
 
 
         </td>
@@ -463,48 +277,19 @@ this method should not be used directly when authoring a type provider.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '575', 575)" onmouseover="showTip(event, '575', 575)">
-            TryBindAssemblyBySimpleName(...)
+          <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
+            TryBindSimpleAssemblyNameToTarget(...)
           </code>
-          <div class="tip" id="575">
+          <div class="tip" id="565">
             <strong>Signature:</strong> assemblyName:string -&gt; Choice&lt;Assembly,exn&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8375-8375" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8933-8933" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Try to find the given assembly in the context</p>
-
-
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Static members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Static member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '576', 576)" onmouseover="showTip(event, '576', 576)">
-            Create(cfg, assemblyReplacementMap)
-          </code>
-          <div class="tip" id="576">
-            <strong>Signature:</strong> (cfg:TypeProviderConfig * assemblyReplacementMap:seq&lt;string * string&gt; option) -&gt; ProvidedTypesContext<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L8483-8483" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a context for providing types for a particular rntime target.
-Specific assembly renaming replacements can be provided using assemblyReplacementMap.</p>
+          <p>Try to find the given target assembly in the context</p>
 
 
         </td>
