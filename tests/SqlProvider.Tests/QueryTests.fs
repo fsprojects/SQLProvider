@@ -463,6 +463,29 @@ let ``simple select where in queryable query``() =
     Assert.AreEqual(6, query2.Length)
     Assert.IsTrue(query2.Contains("EASTC"))
 
+[<Test >]
+let ``simple select where inner-join box-check and not in queryable query``() =
+
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.City="London")
+            select cust.CustomerId
+        }
+
+    let query2 = 
+        query {
+            for cust in dc.Main.Customers do
+            for ord in (!!) cust.``main.Orders by CustomerID`` do
+            where (box(ord.OrderDate) = null &&
+               not(query1.Contains(cust.CustomerId)))
+            select cust.CustomerId
+        } |> Seq.toArray
+    let res = query
+
+    CollectionAssert.IsNotEmpty query2
+    Assert.AreEqual(3, query2.Length)
 
 [<Test >]
 let ``simple select where in query custom syntax``() =
