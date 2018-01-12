@@ -3,8 +3,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <!--TargetFrameworks>netcoreapp2.0;netstandard2.0</TargetFrameworks-->
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
   <!-- FSharp config -->
   <PropertyGroup>
@@ -30,9 +28,19 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
+  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
+      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
+      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
+      assembly will ve .NET Core compatible. -->
+  <ItemGroup><!-- Mono fix, and .NET Standard fix -->
+    <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
+      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="0.29.0" />
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.24" />
+    <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.1.26" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
@@ -42,16 +50,6 @@
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
-  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
-      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
-      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
-      assembly will ve .NET Core compatible. -->
-  <ItemGroup><!-- Mono fix -->
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
-      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
-    </Reference>
-  </ItemGroup>  
   <Target Name="MySqlConnectorCopyLibrariesWin">
     <Exec Command="xcopy ..\..\..\packages\scripts\MySqlConnector\lib\netstandard2.0\MySqlConnector.dll connectorTemp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\standard\System.Buffers\lib\netstandard2.0\System.Buffers.dll connectorTemp\ /y" />

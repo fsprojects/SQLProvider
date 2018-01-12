@@ -535,11 +535,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let defaultTransactionOptionsExpr = <@@ TransactionOptions.Default @@>
         rootType.AddMembers [ serviceType ]
 
-#if NETSTANDARD
-        if conStringName <> "" then
-            failwith "ConnectionStringName not supported in .NET Standard. Use a development connection string and then give a runtime connection string as parameter variable to GetDataContext"
-#endif
-
         rootType.AddMembersDelayed (fun () -> 
             [ 
               let constr =     "connectionString","The database runtime connection string",typeof<string>

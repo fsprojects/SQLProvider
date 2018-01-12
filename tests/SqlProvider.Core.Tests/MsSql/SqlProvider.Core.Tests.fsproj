@@ -29,22 +29,17 @@
       However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
       So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
       assembly will ve .NET Core compatible. -->
-  <ItemGroup><!-- Mono fix -->
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
-    </Reference>
-  </ItemGroup>  
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+  <ItemGroup><!-- Mono fix -->
+    <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
       <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
       <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
   </ItemGroup>  
   <ItemGroup>
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.24" />
+    <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.1.26" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />

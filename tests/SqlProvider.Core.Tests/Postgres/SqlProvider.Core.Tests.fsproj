@@ -28,15 +28,19 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
+      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
+      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
+      assembly will ve .NET Core compatible. -->
+  <ItemGroup><!-- Mono fix -->
+    <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
       <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
       <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
-  </ItemGroup>  
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="3.2.5" /><!-- this will add the runtime coreapp version -->
-    <PackageReference Condition="'$(IsWindows)' == 'true'" Include="SQLProvider" Version="1.1.24" />
+    <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.1.26" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
@@ -46,15 +50,6 @@
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.4.0" />
   </ItemGroup>
-  <!-- .NET 4.61 is Net Standard 2.0 compatible so use what ever libraries.
-      However non-Windows typeprovider will call Mono on compile-time. Mono is not Net Standard 2.0 compatible.
-      So Mono will use Net 4.5.1 libraries. Typeprovider handles that on compilation, and after compile your 
-      assembly will ve .NET Core compatible. -->
-  <ItemGroup><!-- Mono fix -->
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
-    </Reference>
-  </ItemGroup>  
   <Target Name="CopyLibrariesWin">
     <Exec Command="xcopy ..\..\..\packages\scripts\Npgsql\lib\netstandard2.0\Npgsql.dll temp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\scripts\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll temp\ /y" />
