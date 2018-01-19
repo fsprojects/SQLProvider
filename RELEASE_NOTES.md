@@ -1,3 +1,6 @@
+### 1.1.28 - 19.01.2018
+* More dynamic naming for nested parameters
+
 ### 1.1.27 - 19.01.2018
 * Support for parameters in union queries #505
 * Support for string notlike-operations with LINQ syntax: not(x.StartsWith("..."))
