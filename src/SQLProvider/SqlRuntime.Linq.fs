@@ -804,7 +804,7 @@ module internal QueryImplementation =
                             | "Intersect" -> UnionType.Intersect
                             | "Except" -> UnionType.Except
                             | _ -> failwithf "Unsupported union type: %s" meth.Name
-                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,modified,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
                     | x -> failwith ("unrecognised method call " + x.ToString())
 

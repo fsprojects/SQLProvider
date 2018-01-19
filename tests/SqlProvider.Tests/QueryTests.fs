@@ -1449,11 +1449,13 @@ let ``simple union query test``() =
     let query1 = 
         query {
             for cus in dc.Main.Customers do
+            where (cus.City <> "Atlantis1")
             select (cus.City)
         }
     let query2 = 
         query {
             for emp in dc.Main.Employees do
+            where (emp.City <> "Atlantis2")
             select (emp.City)
         } 
 

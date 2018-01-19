@@ -879,10 +879,18 @@ type internal MSSqlServerProvider(tableNames:string) =
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(UnionType.UnionAll, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
-            | Some(UnionType.NormalUnion, suquery) -> ~~(sprintf " UNION %s " suquery)
-            | Some(UnionType.Intersect, suquery) -> ~~(sprintf " INTERSECT %s " suquery)
-            | Some(UnionType.Except, suquery) -> ~~(sprintf " EXCEPT %s " suquery)
+            | Some(UnionType.UnionAll, suquery, pars) ->
+                parameters.AddRange pars
+                ~~(sprintf " UNION ALL %s " suquery)
+            | Some(UnionType.NormalUnion, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.Intersect, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " INTERSECT %s " suquery)
+            | Some(UnionType.Except, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
 
             match sqlQuery.Skip, sqlQuery.Take with
