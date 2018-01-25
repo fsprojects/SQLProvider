@@ -637,7 +637,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
                 let baseQuery = sprintf @"SELECT DISTINCT trim(c.RDB$FIELD_NAME) COLUMN_NAME,
-                                                %s DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length
+                                                trim(%s) DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length
                                                 , f.RDB$FIELD_PRECISION numeric_precision, c.RDB$NULL_FLAG is_nullable,
                                                CASE WHEN c.RDB$FIELD_NAME in 
                                                    (select i.RDB$FIELD_NAME from RDB$INDEX_SEGMENTS i
