@@ -1,3 +1,6 @@
+### 1.1.29 - 25.01.2018
+* Firebird fixes for numeric columns and column descriptions, PR #508
+
 ### 1.1.28 - 19.01.2018
 * More dynamic naming for nested parameters
 
