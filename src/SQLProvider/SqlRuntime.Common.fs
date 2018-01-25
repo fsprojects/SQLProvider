@@ -65,6 +65,14 @@ module public QueryEvents =
       override x.ToString() =
         let paramsString = x.Parameters |> Seq.fold (fun acc (pName, pValue) -> acc + (sprintf "%s - %A; " pName pValue)) ""
         sprintf "%s - params %s" x.Command paramsString
+      
+      /// Use this to execute similar queries to test the result of the executed query.
+      member x.ToRawSql() =
+        x.Parameters |> Seq.fold (fun (acc:string) (pName, pValue) -> 
+            match pValue with
+            | :? String as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.Replace("'", "''"))))
+            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd hh:mm:ss"))))
+            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
 
    let private sqlEvent = new Event<SqlEventData>()
 
