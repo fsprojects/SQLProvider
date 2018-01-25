@@ -379,7 +379,7 @@ and internal SqlExp =
     | Projection   of Expression * SqlExp                   // entire LINQ projection expression tree
     | Distinct     of SqlExp                                // distinct indicator
     | OrderBy      of alias * SqlColumnType * bool * SqlExp // alias and column name, bool indicates ascending sort
-    | Union        of UnionType * string * SqlExp           // union type and subquery
+    | Union        of UnionType * string * seq<IDbDataParameter> * SqlExp  // union type and subquery
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
@@ -396,7 +396,7 @@ and internal SqlExp =
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Union(_,_,rest)
+                | Union(_,_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> aux rest
             aux this
@@ -412,7 +412,7 @@ and internal SqlExp =
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Union(_,_,rest)
+                | Union(_,_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
@@ -430,7 +430,7 @@ and internal SqlQuery =
       UltimateChild : (string * Table) option
       Skip          : int option
       Take          : int option
-      Union         : (UnionType*string) option
+      Union         : (UnionType*string*seq<IDbDataParameter>) option
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with
@@ -492,10 +492,10 @@ and internal SqlQuery =
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
-                | Union(all,subquery, rest) ->
+                | Union(all,subquery, pars, rest) ->
                     if q.Union.IsSome then failwith "Union may only be specified once. However you can try: xs.Union(ys.Union(zs))"
                     elif q.Take.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
-                    else convert { q with Union = Some(all,subquery) } rest
+                    else convert { q with Union = Some(all,subquery,pars) } rest
                 | AggregateOp(alias, operationWithKey, rest) ->
                     convert { q with AggregateOp = (alias, operationWithKey)::q.AggregateOp } rest
             let sq = convert (SqlQuery.Empty) exp

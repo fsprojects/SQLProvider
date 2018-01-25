@@ -384,7 +384,7 @@ let (|SqlSpecialOpArrQueryable|_|) = function
     | _ -> None
 
     
-let (|SqlSpecialOp|_|) = function
+let (|SqlSpecialOp|_|) : Expression -> _ = function
     | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
     | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,Expression.Lambda(right).Compile().DynamicInvoke())
     // String  methods
@@ -394,6 +394,17 @@ let (|SqlSpecialOp|_|) = function
         Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
     | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
         Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+    
+    // not (String  methods)
+    | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not -> 
+        match ue.Operand with
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        | _ -> None
     | _ -> None
                 
 let (|SqlCondOp|_|) (e:Expression) = 

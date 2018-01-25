@@ -318,13 +318,15 @@ module internal QueryImplementation =
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false
 
+                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
+
                         let modified = 
                             parameters |> Seq.map(fun p ->
-                                p.ParameterName <- p.ParameterName.Replace("@param", "@paramnested")
+                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray
                         let subquery = 
-                            let paramfixed = query.Replace("@param", "@paramnested")
+                            let paramfixed = query.Replace("@param", ``nested param names``)
                             match paramfixed.EndsWith(";") with
                             | false -> paramfixed
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
@@ -785,13 +787,15 @@ module internal QueryImplementation =
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false
 
+                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
+
                         let modified = 
                             parameters |> Seq.map(fun p ->
-                                p.ParameterName <- p.ParameterName.Replace("@param", "@paramnested")
+                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray
                         let subquery = 
-                            let paramfixed = query.Replace("@param", "@paramnested")
+                            let paramfixed = query.Replace("@param", ``nested param names``)
                             match paramfixed.EndsWith(";") with
                             | false -> paramfixed
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
@@ -804,7 +808,7 @@ module internal QueryImplementation =
                             | "Intersect" -> UnionType.Intersect
                             | "Except" -> UnionType.Except
                             | _ -> failwithf "Unsupported union type: %s" meth.Name
-                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,modified,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
 
                     | x -> failwith ("unrecognised method call " + x.ToString())
 

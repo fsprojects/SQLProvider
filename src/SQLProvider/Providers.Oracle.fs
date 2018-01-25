@@ -922,10 +922,18 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(UnionType.UnionAll, suquery) -> ~~(sprintf " UNION ALL %s " suquery)
-            | Some(UnionType.NormalUnion, suquery) -> ~~(sprintf " UNION %s " suquery)
-            | Some(UnionType.Intersect, suquery) -> ~~(sprintf " INTERSECT %s " suquery)
-            | Some(UnionType.Except, suquery) -> ~~(sprintf " MINUS %s " suquery)
+            | Some(UnionType.UnionAll, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " UNION ALL %s " suquery)
+            | Some(UnionType.NormalUnion, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " UNION %s " suquery)
+            | Some(UnionType.Intersect, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " INTERSECT %s " suquery)
+            | Some(UnionType.Except, suquery, pars) -> 
+                parameters.AddRange pars
+                ~~(sprintf " MINUS %s " suquery)
             | None -> ()
 
             //I think on oracle this will potentially impact the ordering as the row num is generated before any

@@ -1,3 +1,22 @@
+### 1.1.28 - 19.01.2018
+* More dynamic naming for nested parameters
+
+### 1.1.27 - 19.01.2018
+* Support for parameters in union queries #505
+* Support for string notlike-operations with LINQ syntax: not(x.StartsWith("..."))
+
+### 1.1.26 - 12.01.2018
+* Updated the Type Provider SDK
+
+### 1.1.25 - 10.01.2018
+* Fix base alias in Firebird Provider PR #503
+
+### 1.1.24 - 10.01.2018
+* Fix for Postgres "Invalid procedure" #482
+* Fix for Postgres arrays on Mono
+* Fix for LINQ where(not(xs.Contains(subquery)))
+* Support for box-operator in null-checks to make easier checking of inner-join nulls.
+
 ### 1.1.23 - 20.11.2017
 * Option type fix for Like-search
 
