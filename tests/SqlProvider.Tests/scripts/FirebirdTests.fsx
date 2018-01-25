@@ -7,15 +7,16 @@ open FSharp.Data.Sql.Common
 open Newtonsoft.Json
 
 [<Literal>]
-let port = "3051"
+let port = "3050"
 [<Literal>]
-let connectionString = @"Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
+let connectionString1 = @" Data Source=localhost;port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd1.fdb;user id=SYSDBA;password=masterkey;Dialect=1"
+[<Literal>]
+let connectionString3 = @" Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/FirebirdSql.Data.FirebirdClient/lib/net452"
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString, ResolutionPath = resolutionPath>
-type HRCamelCase = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString, ResolutionPath = resolutionPath, OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1, ResolutionPath = resolutionPath>
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
@@ -23,6 +24,8 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 //*************** quoted table names ***********
 //just get the single existing record
+type HRCamelCase = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString3, ResolutionPath = resolutionPath, OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
+
 let ctxCamelCase = HRCamelCase.GetDataContext()
 let cc = query {
     for camelCase in ctxCamelCase.Dbo.CamelCase do
@@ -199,13 +202,14 @@ ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 //make sure to delete any conflicting record before trying to insert
-let historyItem = query {
-    for job in ctx.Dbo.JobHistory do
-    where (job.EmployeeId = 101 && job.StartDate = DateTime(1993, 1, 13))
-    select job
-    head
-}
-historyItem.Delete()
+let historyItem = 
+    query {
+        for job in ctx.Dbo.JobHistory do
+        where (job.EmployeeId = 101 && job.StartDate = DateTime(1993, 1, 13))
+        select job    
+        head
+    } 
+try historyItem.Delete() with | _ -> ignore ()
 ctx.SubmitUpdates()
 //insert using sproc
 ctx.Procedures.AddJobHistory.Invoke(101, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
