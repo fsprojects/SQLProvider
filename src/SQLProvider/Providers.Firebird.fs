@@ -591,7 +591,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
             let baseQuery = @"SELECT RDB$DESCRIPTION 
-                                FROM INFORMATION_SCHEMA.COLUMNS
+                                FROM RDB$RELATION_FIELDS
                                 WHERE RDB$RELATION_NAME = @table AND RDB$FIELD_NAME = @column"
             use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
             //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
@@ -637,7 +637,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
                 let baseQuery = sprintf @"SELECT DISTINCT trim(c.RDB$FIELD_NAME) COLUMN_NAME,
-                                                %s DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length
+                                                trim(%s) DATA_TYPE, f.RDB$CHARACTER_LENGTH character_maximum_length
                                                 , f.RDB$FIELD_PRECISION numeric_precision, c.RDB$NULL_FLAG is_nullable,
                                                CASE WHEN c.RDB$FIELD_NAME in 
                                                    (select i.RDB$FIELD_NAME from RDB$INDEX_SEGMENTS i
@@ -741,7 +741,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
                     [|for KeyValue(k,v) in projectionColumns do
-                        let cols = (getTable k).FullName
+                        let cols = (getTable k).Name
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
