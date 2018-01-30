@@ -390,14 +390,14 @@ let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
 let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
 let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
-
-let tt = 
-    let ctx = HR.GetDataContext() 
-    ctx.Public.PostgresqlTypes.Create()
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
 
 [<Test>]
-let ``Create PostgreSQL specific types``() = 
+let ``Create and print PostgreSQL specific types``() = 
+
   let ctx = HR.GetDataContext() 
+  let tt = ctx.Public.PostgresqlTypes.Create()
 
   //tt.Abstime0 <- Some DateTime.Today
   tt.Bigint0 <- Some 100L
@@ -458,22 +458,14 @@ let ``Create PostgreSQL specific types``() =
   //tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
   
   ctx.SubmitUpdates()
-
-[<Test>]
-let ttb () = 
-    let ctx = HR.GetDataContext() 
-    let foundType = query {
-        for t in ctx.Public.PostgresqlTypes do
-        where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
-        exactlyOne
-    }
-    Assert.IsNotNull foundType
-
-open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Quotations.Patterns
-
-[<Test>]
-let ``Can print PostgreSQL types correctly`` () =   
+    
+  let ttb = query {
+      for t in ctx.Public.PostgresqlTypes do
+      where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
+      exactlyOne
+  }
+  Assert.IsNotNull ttb
+    
   let printTest (exp: Expr) =
       match exp with
       | Call(_,mi,[Value(name,_)]) ->
@@ -482,10 +474,16 @@ let ``Can print PostgreSQL types correctly`` () =
       | _ ->
         sprintf "Invalid expression: %A" exp
 
-  Assert.AreEqual(printTest <@@ tt.Bigint0 @@>    , """"bigint_0": Some 100L => Some 100L                                                               """)
-  Assert.AreEqual(printTest <@@ tt.Bit0 @@>       , """"bit_0": Some (seq [true; true; true; true; ...]) => Some (seq [true; true; true; true; ...])    """)
-  Assert.AreEqual(printTest <@@ tt.Box0 @@>       , """"box_0": <null> => <null>                                                                        """)
-  Assert.AreEqual(printTest <@@ tt.Interval0 @@>  , """"interval_0": Some 3.00:00:00 => Some 3.00:00:00                                                 """)
-  Assert.AreEqual(printTest <@@ tt.Jsonb0 @@>     , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"                                                """)
+  let bigint0 = printTest <@@ tt.Bigint0 @@>    
+  let bit0    = printTest <@@ tt.Bit0 @@>       
+  let box0    = printTest <@@ tt.Box0 @@>       
+  let interva = printTest <@@ tt.Interval0 @@>  
+  let jsonb0  = printTest <@@ tt.Jsonb0 @@>     
+
+  Assert.AreEqual(bigint0, """"bigint_0": Some 100L => Some 100L                                                               """)
+  Assert.AreEqual(bit0   , """"bit_0": Some (seq [true; true; true; true; ...]) => Some (seq [true; true; true; true; ...])    """)
+  Assert.AreEqual(box0   , """"box_0": <null> => <null>                                                                        """)
+  Assert.AreEqual(interva, """"interval_0": Some 3.00:00:00 => Some 3.00:00:00                                                 """)
+  Assert.AreEqual(jsonb0 , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"                                                """)
 
 #endif
