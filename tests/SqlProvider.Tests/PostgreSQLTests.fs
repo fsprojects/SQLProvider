@@ -484,6 +484,6 @@ let ``Create and print PostgreSQL specific types``() =
   Assert.AreEqual(bit0   , """"bit_0": Some (seq [true; true; true; true; true; true; true; true; true; true]) => Some (seq [true; true; true; true; true; true; true; true; true; true])""")
   Assert.AreEqual(box0   , """"box_0": <null> => <null>""")
   Assert.AreEqual(interva, """"interval_0": Some 3.00:00:00 => Some 3.00:00:00""")
-  Assert.AreEqual(jsonb0 , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"""")
+  Assert.AreEqual(jsonb0 , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"      """.TrimEnd())
 
 #endif
