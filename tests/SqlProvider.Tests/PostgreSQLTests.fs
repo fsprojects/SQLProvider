@@ -11,7 +11,7 @@ open System.Data
 open NUnit.Framework
 
 #if TRAVIS
-let [<Literal>] connStr = "User ID=travis_user;Password=travis_pw;Host=localhost;Port=5432;Database=sqlprovider;"
+let [<Literal>] connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;"
 #else
 #if APPVEYOR
 let [<Literal>] connStr = "User ID=postgres;Password=Password12!;Host=localhost;Port=5432;Database=sqlprovider;"

@@ -125,15 +125,10 @@ Target "SetupPostgreSQL" (fun _ ->
       connBuilder.Host <- "localhost"
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
-
-      connBuilder.Username <- 
-        match buildServer with
-        | Travis -> "travis_user"
-        | _ -> "postgres"
-
+      connBuilder.Username <- "postgres"
       connBuilder.Password <- 
         match buildServer with
-        | Travis -> "travis_pw"
+        | Travis -> ""
         | AppVeyor -> "Password12!"
         | _ -> "postgres"      
   
