@@ -293,6 +293,7 @@ let employees () =
       for e in ctx.Functions.GetEmployees.Invoke().ReturnValue do
         yield e.MapTo<Employee>()
     ]
+    |> Assert.IsNotEmpty
 
 type Region = {
     RegionId : decimal
@@ -311,6 +312,7 @@ let locations_and_regions () =
       for e in results.ReturnValue do
         yield e.ColumnValues |> Seq.toList |> box
     ]
+    |> Assert.IsNotEmpty
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
@@ -383,6 +385,7 @@ let ``Return HR info`` () =
 let fullName () = 
     let ctx = HR.GetDataContext() 
     ctx.Functions.EmpFullname.Invoke(100).ReturnValue
+    |> Assert.IsNotNullOrEmpty
 
 //********************** Type test ***************************//
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
