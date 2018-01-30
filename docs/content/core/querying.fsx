@@ -225,7 +225,7 @@ atan(i)         | ATAN       | ATAN      | ATAN    | ATAN  | ATAN       | Atn   
 
 #### Aggregate Functions 
 
-Also you can use these on group-by clause:
+Also you can use these to return an aggregated value, or in a group-by clause:
 
 | .NET          | MsSqlServer| PostgreSql| MySql   | Oracle   | SQLite | MSAccess| Odbc     |  Notes
 |---------------|------------|-----------|---------|----------|--------|---------|----------|--------------------------|
@@ -238,7 +238,7 @@ StdDev          | STDEV      | STDDEV    | STDDEV  | STDDEV   |        | STDEV  
 Variance        | VAR        | VARIANCE  | VARIANCE| VARIANCE |        | DVAR    | VAR      |   |
 
 `StdDev`, `Variance` are located in FSharp.Data.Sql.Operators namespace and also Seq.stdDevAsync and Seq.varianceAsync.
-Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumAsync, Seq.minAsync, Seq.maxAsync, Seq.averageAsync, .
+Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumAsync, Seq.minAsync, Seq.maxAsync, Seq.averageAsync.
 
 *)
 
