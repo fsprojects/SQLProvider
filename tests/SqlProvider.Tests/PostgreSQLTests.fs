@@ -29,7 +29,6 @@ FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Ex
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath=resolutionPath, UseOptionTypes=true>
-let ctx = HR.GetDataContext()
 
 type Employee = {
     EmployeeId : int32
@@ -44,8 +43,12 @@ type Department = {
 }
 
 //***************** Individuals ***********************//
-let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
-printfn "%s %s (%s)" indv.FirstName.Value indv.LastName indv.Email
+[<Test>]
+let ``Fetch and print an individual's info``() =
+  let ctx = HR.GetDataContext()
+  let indv = ctx.Public.Employees.Individuals.``As FirstName``.``100, Steven``
+  let info = sprintf "%s %s (%s)" indv.FirstName.Value indv.LastName indv.Email
+  Assert.AreEqual(info, "Steven King (SKING)")
 
 //*************** QUERY ************************//
 
@@ -56,6 +59,8 @@ type LocationQuery = {
 
 [<Test>]
 let ``Find Tokyo location`` () =
+    let ctx = HR.GetDataContext()
+    
     let locationQuery = { City = "Tokyo"; PostalCode = Some "1689" }
 
     let result = 
@@ -79,6 +84,7 @@ let ``Find Tokyo location`` () =
 
 [<Test>]
 let employeesFirstNameNoProj =
+    let ctx = HR.GetDataContext()    
     query {
         for emp in ctx.Public.Employees do
         select true
@@ -86,6 +92,7 @@ let employeesFirstNameNoProj =
 
 [<Test>]
 let employeesFirstNameIdProj =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         select emp
@@ -93,6 +100,7 @@ let employeesFirstNameIdProj =
 
 [<Test>]
 let first10employess =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -101,6 +109,7 @@ let first10employess =
 
 [<Test>]
 let skip2first10employess =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -110,6 +119,7 @@ let skip2first10employess =
 
 [<Test>]
 let employeesFirstName =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         select (emp.FirstName, emp.LastName, emp.Email, emp.SalaryHistory)
@@ -119,6 +129,7 @@ let employeesFirstName =
 
 [<Test>]
 let employeesSortByName =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         sortBy emp.FirstName
@@ -128,6 +139,7 @@ let employeesSortByName =
 
 [<Test>]
 let salesNamedDavid =
+    let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
             join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
@@ -137,6 +149,7 @@ let salesNamedDavid =
 
 [<Test>]
 let employeesJob =
+    let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
             for manager in emp.``public.employees by employee_id_1`` do
@@ -148,6 +161,7 @@ let employeesJob =
 //Can map SQLEntities to a domain type
 [<Test>]
 let topSales5ByCommission =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
         sortByDescending emp.CommissionPct
@@ -159,6 +173,7 @@ let topSales5ByCommission =
 
 [<Test>]
 let canonicalTest =
+    let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
             join d in ctx.Public.Departments on (emp.DepartmentId.Value+1 = d.DepartmentId+1)
@@ -186,6 +201,7 @@ type Country = {
 //Can customise SQLEntity mapping
 [<Test>]
 let countries =
+    let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Countries do
         select emp
@@ -204,34 +220,47 @@ let countries =
 //************************ CRUD *************************//
 
 [<Test>]
-let antartica =
-    let result =
-        query {
-            for reg in ctx.Public.Regions do
-            where (reg.RegionId = 5)
-            select reg
-        } |> Seq.toList
-    match result with
-    | [ant] -> ant
-    | _ ->
-        let newRegion = ctx.Public.Regions.Create()
-        newRegion.RegionName <- Some("Antartica")
-        newRegion.RegionId <- 5
-        newRegion.RegionAlternateNames <- [| "Antarctica"; "South Pole" |]
-        ctx.SubmitUpdates()
-        newRegion
+let ``Reassign optional and array columns`` () =
+    let ctx = HR.GetDataContext() 
 
-antartica.RegionName <- Some("ant")
-antartica.RegionAlternateNames <- [| "Antartica"; "Antarctica"; "South Pole" |]
-ctx.SubmitUpdates()
+    let oldNames = [| "Antarctica"; "South Pole" |]
+    let newNames = [| "Antartica"; "Antarctica"; "South Pole" |]
 
-antartica.Delete()
-ctx.SubmitUpdates()
+    let antartica = 
+      let result =
+          query {
+              for reg in ctx.Public.Regions do
+              where (reg.RegionId = 5)
+              select reg
+          } |> Seq.toList
+      match result with
+      | [ant] -> ant
+      | _ ->
+          let newRegion = ctx.Public.Regions.Create()
+          newRegion.RegionName <- Some("Antartica")
+          newRegion.RegionId <- 5
+          newRegion.RegionAlternateNames <- oldNames
+          ctx.SubmitUpdates()
+          newRegion
+        
+    Assert.AreEqual(antartica.RegionName, Some("Antartica"))
+    Assert.AreEqual(antartica.RegionAlternateNames, oldNames)
+
+    antartica.RegionName <- Some("ant")
+    antartica.RegionAlternateNames <- newNames
+    ctx.SubmitUpdates()
+
+    Assert.AreEqual(antartica.RegionName, Some("ant"))
+    Assert.AreEqual(antartica.RegionAlternateNames, newNames)
+
+    antartica.Delete()
+    ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
 [<Test>]
 let ``Existing item is successfully deleted, then restored``() = 
+    let ctx = HR.GetDataContext() 
     let getIfexisting employeeId startDate = 
         query {
           for x in ctx.Public.JobHistory do
@@ -259,6 +288,7 @@ let ``Existing item is successfully deleted, then restored``() =
 //Support for sprocs that return ref cursors
 [<Test>]
 let employees =
+    let ctx = HR.GetDataContext() 
     [
       for e in ctx.Functions.GetEmployees.Invoke().ReturnValue do
         yield e.MapTo<Employee>()
@@ -273,6 +303,7 @@ type Region = {
 //Support for MARS procs
 [<Test>]
 let locations_and_regions =
+    let ctx = HR.GetDataContext() 
     let results = ctx.Functions.GetLocationsAndRegions.Invoke()
     [
       for e in results.ReturnValue do
@@ -283,6 +314,7 @@ let locations_and_regions =
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
+    let ctx = HR.GetDataContext() 
     let results = (ctx.Functions.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ReturnValue do
@@ -296,14 +328,61 @@ let ``Run a sproc with a parameter returning a ref cursor`` () =
   Assert.IsNotEmpty result
 
 // Support for sprocs that return `table of`
-ctx.Functions.GetDepartments.Invoke().ReturnValue
-|> Array.map (fun e -> e.MapTo<Department>())
-|> printfn "%A"
+[<Test>]
+let ``Return HR info`` () =
+    let ctx = HR.GetDataContext() 
+    let hrInfo = 
+      ctx.Functions.GetDepartments.Invoke().ReturnValue
+      |> Array.map (fun e -> e.MapTo<Department>())
+      |> sprintf "%A"
+    Assert.AreEqual(hrInfo, """[|{DepartmentId = 10;
+   DepartmentName = "Administration";}; {DepartmentId = 20;
+                                         DepartmentName = "Marketing";};
+  {DepartmentId = 30;
+   DepartmentName = "Purchasing";}; {DepartmentId = 40;
+                                     DepartmentName = "Human Resources";};
+  {DepartmentId = 50;
+   DepartmentName = "Shipping";}; {DepartmentId = 60;
+                                   DepartmentName = "IT";};
+  {DepartmentId = 70;
+   DepartmentName = "Public Relations";}; {DepartmentId = 80;
+                                           DepartmentName = "Sales";};
+  {DepartmentId = 90;
+   DepartmentName = "Executive";}; {DepartmentId = 100;
+                                    DepartmentName = "Finance";};
+  {DepartmentId = 110;
+   DepartmentName = "Accounting";}; {DepartmentId = 120;
+                                     DepartmentName = "Treasury";};
+  {DepartmentId = 130;
+   DepartmentName = "Corporate Tax";}; {DepartmentId = 140;
+                                        DepartmentName = "Control And Credit";};
+  {DepartmentId = 150;
+   DepartmentName = "Shareholder Services";}; {DepartmentId = 160;
+                                               DepartmentName = "Benefits";};
+  {DepartmentId = 170;
+   DepartmentName = "Manufacturing";}; {DepartmentId = 180;
+                                        DepartmentName = "Construction";};
+  {DepartmentId = 190;
+   DepartmentName = "Contracting";}; {DepartmentId = 200;
+                                      DepartmentName = "Operations";};
+  {DepartmentId = 210;
+   DepartmentName = "IT Support";}; {DepartmentId = 220;
+                                     DepartmentName = "NOC";};
+  {DepartmentId = 230;
+   DepartmentName = "IT Helpdesk";}; {DepartmentId = 240;
+                                      DepartmentName = "Government Sales";};
+  {DepartmentId = 250;
+   DepartmentName = "Retail Sales";}; {DepartmentId = 260;
+                                       DepartmentName = "Recruiting";};
+  {DepartmentId = 270;
+   DepartmentName = "Payroll";}|]""")
 
 //********************** Functions ***************************//
 
 [<Test>]
-let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
+let fullName = 
+    let ctx = HR.GetDataContext() 
+    ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 //********************** Type test ***************************//
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
@@ -312,10 +391,13 @@ let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
 let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
 
-let tt = ctx.Public.PostgresqlTypes.Create()
+let tt = 
+    let ctx = HR.GetDataContext() 
+    ctx.Public.PostgresqlTypes.Create()
 
 [<Test>]
 let ``Create PostgreSQL specific types``() = 
+  let ctx = HR.GetDataContext() 
 
   //tt.Abstime0 <- Some DateTime.Today
   tt.Bigint0 <- Some 100L
@@ -379,6 +461,7 @@ let ``Create PostgreSQL specific types``() =
 
 [<Test>]
 let ttb =
+    let ctx = HR.GetDataContext() 
     let foundType = query {
         for t in ctx.Public.PostgresqlTypes do
         where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
@@ -390,7 +473,7 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
 [<Test>]
-let ``Can print PostgreSQL types correctly`` = 
+let ``Can print PostgreSQL types correctly`` =   
   let printTest (exp: Expr) =
       match exp with
       | Call(_,mi,[Value(name,_)]) ->
