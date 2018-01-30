@@ -83,7 +83,7 @@ let ``Find Tokyo location`` () =
     Assert.AreEqual(tokyo.CountryId, Some "JP") 
 
 [<Test>]
-let employeesFirstNameNoProj =
+let employeesFirstNameNoProj () = 
     let ctx = HR.GetDataContext()    
     query {
         for emp in ctx.Public.Employees do
@@ -91,7 +91,7 @@ let employeesFirstNameNoProj =
     } |> Seq.toList
 
 [<Test>]
-let employeesFirstNameIdProj =
+let employeesFirstNameIdProj () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -99,7 +99,7 @@ let employeesFirstNameIdProj =
     } |> Seq.toList
 
 [<Test>]
-let first10employess =
+let first10employess () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -108,7 +108,7 @@ let first10employess =
     } |> Seq.toList
 
 [<Test>]
-let skip2first10employess =
+let skip2first10employess () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -118,7 +118,7 @@ let skip2first10employess =
     } |> Seq.toList
 
 [<Test>]
-let employeesFirstName =
+let employeesFirstName () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -128,7 +128,7 @@ let employeesFirstName =
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
 [<Test>]
-let employeesSortByName =
+let employeesSortByName () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -138,7 +138,7 @@ let employeesSortByName =
     } |> Seq.toList
 
 [<Test>]
-let salesNamedDavid =
+let salesNamedDavid () = 
     let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
@@ -148,7 +148,7 @@ let salesNamedDavid =
     } |> Seq.toList
 
 [<Test>]
-let employeesJob =
+let employeesJob () = 
     let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
@@ -160,7 +160,7 @@ let employeesJob =
 
 //Can map SQLEntities to a domain type
 [<Test>]
-let topSales5ByCommission =
+let topSales5ByCommission () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Employees do
@@ -172,7 +172,7 @@ let topSales5ByCommission =
     |> Seq.toList
 
 [<Test>]
-let canonicalTest =
+let canonicalTest () = 
     let ctx = HR.GetDataContext() 
     query {
             for emp in ctx.Public.Employees do
@@ -200,7 +200,7 @@ type Country = {
 
 //Can customise SQLEntity mapping
 [<Test>]
-let countries =
+let countries () = 
     let ctx = HR.GetDataContext() 
     query {
         for emp in ctx.Public.Countries do
@@ -287,7 +287,7 @@ let ``Existing item is successfully deleted, then restored``() =
     
 //Support for sprocs that return ref cursors
 [<Test>]
-let employees =
+let employees () = 
     let ctx = HR.GetDataContext() 
     [
       for e in ctx.Functions.GetEmployees.Invoke().ReturnValue do
@@ -302,7 +302,7 @@ type Region = {
 
 //Support for MARS procs
 [<Test>]
-let locations_and_regions =
+let locations_and_regions () = 
     let ctx = HR.GetDataContext() 
     let results = ctx.Functions.GetLocationsAndRegions.Invoke()
     [
@@ -380,7 +380,7 @@ let ``Return HR info`` () =
 //********************** Functions ***************************//
 
 [<Test>]
-let fullName = 
+let fullName () = 
     let ctx = HR.GetDataContext() 
     ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
@@ -460,7 +460,7 @@ let ``Create PostgreSQL specific types``() =
   ctx.SubmitUpdates()
 
 [<Test>]
-let ttb =
+let ttb () = 
     let ctx = HR.GetDataContext() 
     let foundType = query {
         for t in ctx.Public.PostgresqlTypes do
@@ -473,7 +473,7 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
 [<Test>]
-let ``Can print PostgreSQL types correctly`` =   
+let ``Can print PostgreSQL types correctly`` () =   
   let printTest (exp: Expr) =
       match exp with
       | Call(_,mi,[Value(name,_)]) ->

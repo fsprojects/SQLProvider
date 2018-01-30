@@ -149,7 +149,7 @@ Target "SetupPostgreSQL" (fun _ ->
               
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
-      runCmd (sprintf "CREATE DATABASE %s OWNER %s" testDbName connBuilder.Username)
+      runCmd (sprintf "CREATE DATABASE %s" testDbName)
       connBuilder.Database <- testDbName
 
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
