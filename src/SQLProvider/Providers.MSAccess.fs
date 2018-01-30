@@ -73,11 +73,19 @@ type internal MSAccessProvider() =
             | Truncate -> sprintf "Fix(%s)" column
             | Ceil -> sprintf "Fix(%s)+1" column
             | Floor -> sprintf "Int(%s)" column
+            | Sqrt -> sprintf "Sqr(%s)" column
+            | ATan -> sprintf "Atn(%s)" column
+            | ASin -> sprintf "Atn(%s / Sqr(1 - %s * %s))" column column column
+            | ACos -> sprintf "Atn(-%s / Sqr(-%s * %s + 1)) + 2 * Atn(1)" column column column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||", "&")) par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
+        | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
+        | GroupColumn (VarianceOp key, KeyColumn _) -> sprintf "DVar(%s)" (colSprint key)
+        | GroupColumn (VarianceOp _,x) -> sprintf "DVar(%s)" (fieldNotation al x)
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-
+        
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
             match String.IsNullOrEmpty(al) with

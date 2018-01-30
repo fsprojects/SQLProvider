@@ -62,7 +62,7 @@ module AsyncOperations =
             match s with
             | :? IWithSqlService as svc ->
                 match svc.SqlExpression with
-                | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,op,_))) ]),_) ->
+                | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
                     
                     let key = 
                         let rec getBaseCol x =
@@ -85,7 +85,9 @@ module AsyncOperations =
                             | "Max" -> MaxOp(key)
                             | "Count" -> CountOp(key)
                             | "Min" -> MinOp(key)
-                            | "Average" -> AvgOp(key)
+                            | "Average" | "Avg" -> AvgOp(key)
+                            | "StdDev" | "StDev" | "StandardDeviation" -> StdDevOp(key)
+                            | "Variance" -> VarianceOp(key)
                             | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
 
                         match source.SqlExpression with
@@ -120,6 +122,10 @@ module Seq =
     let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Min"
     /// Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
     let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Average"
+    /// Execute SQLProvider query to get the standard deviation of elements, and release the OS thread while query is being executed.
+    let stdDevAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "StdDev"
+    /// Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
+    let varianceAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Variance"
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
     let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> Async<int> = function 
         | :? IWithSqlService as source ->

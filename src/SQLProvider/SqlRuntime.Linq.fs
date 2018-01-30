@@ -73,7 +73,7 @@ module internal QueryImplementation =
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
-                        let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";|]
+                        let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         match data with
@@ -905,7 +905,9 @@ module internal QueryImplementation =
                                     | "Max" -> MaxOp(key)
                                     | "Count" -> CountOp(key)
                                     | "Min" -> MinOp(key)
-                                    | "Average" -> AvgOp(key)
+                                    | "Average" | "Avg" -> AvgOp(key)
+                                    | "StdDev" | "StDev" | "StandardDeviation" -> StdDevOp(key)
+                                    | "Variance" -> VarianceOp(key)
                                     | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" meth.Name (e.ToString())
 
                                match source.SqlExpression with
@@ -923,9 +925,9 @@ module internal QueryImplementation =
                              
                         let sqlExpression =
                             match source.SqlExpression with 
-                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]),BaseTable(alias,entity2)) ->
+                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) ]),BaseTable(alias,entity2)) ->
                                 Count(Take(1,(FilterClause(Condition.And([alias, key, ConditionOperator.Equal, c],None),source.SqlExpression))))
-                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], SqlColumnGet(entity,key,_))) ]), current) ->
+                            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,key,_)))) ]), current) ->
                                 Count(Take(1,(FilterClause(Condition.And(["", key, ConditionOperator.Equal, c],None),current))))
                             | others ->
                                 failwithf "Unsupported execution of contains expression `%s`" (e.ToString())

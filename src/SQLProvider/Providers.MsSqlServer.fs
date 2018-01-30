@@ -365,6 +365,10 @@ type internal MSSqlServerProvider(tableNames:string) =
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||","+")) par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
+        | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
+        | GroupColumn (VarianceOp key, KeyColumn _) -> sprintf "VAR(%s)" (colSprint key)
+        | GroupColumn (VarianceOp _,x) -> sprintf "VAR(%s)" (fieldNotation al x)
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 

@@ -256,6 +256,14 @@ let employeesFirstNameSort =
         select (emp.FirstName, emp.FirstName)
     } |> Seq.toList
 
+// Standard deviation test
+let stdDevTest = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        select (float emp.Salary)
+    } |> Seq.stdDevAsync |> Async.RunSynchronously
+
+
 //******************** Delete all test **********************//
 
 query {

@@ -87,6 +87,8 @@ module internal QueryExpressionTransformer =
                         | "Avg" | "Average" when (isNumType me.Type) -> Some (AvgOp "")
                         | "Min" when isNumType me.Type -> Some (MinOp "")
                         | "Max" when isNumType me.Type -> Some (MaxOp "")
+                        | "StdDev" | "StDev" | "StandardDeviation" when isNumType me.Type -> Some (StdDevOp "")
+                        | "Variance" when isNumType me.Type -> Some (VarianceOp "")
                         | _ -> None
 
                     elif me.Arguments.Count = 2 then
@@ -101,6 +103,8 @@ module internal QueryExpressionTransformer =
                                     | "Avg" | "Average" -> Some (AvgOp key)
                                     | "Min" -> Some (MinOp key)
                                     | "Max" -> Some (MaxOp key)
+                                    | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key)
+                                    | "Variance" -> Some (VarianceOp key)
                                     | _ -> None
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
@@ -120,7 +124,7 @@ module internal QueryExpressionTransformer =
                     let methodname = "Aggregate"+me.Method.Name
                     
                     let v = match o with 
-                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x 
+                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x | StdDevOp x | VarianceOp x 
                             | KeyOp x -> x
                     //Count 1 is over all the items
                     let vf = if v = "" then None else Some v
@@ -433,6 +437,8 @@ module internal QueryExpressionTransformer =
                                                 | SumOp i, KeyColumn c -> Some (a, GroupColumn(SumOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
                                                 | AvgOp i, KeyColumn c -> Some (a, GroupColumn(AvgOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
                                                 | CountOp i, KeyColumn c -> Some (a, GroupColumn(CountOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | StdDevOp i, KeyColumn c -> Some (a, GroupColumn(StdDevOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | VarianceOp i, KeyColumn c -> Some (a, GroupColumn(VarianceOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
                                                 | _ -> None)
                                         else
                                             let i = 
@@ -442,6 +448,8 @@ module internal QueryExpressionTransformer =
                                                 | SumOp col -> GroupColumn(SumOp col, KeyColumn col)
                                                 | AvgOp col -> GroupColumn(AvgOp col, KeyColumn col)
                                                 | CountOp col -> GroupColumn(CountOp col, KeyColumn col)
+                                                | StdDevOp col -> GroupColumn(StdDevOp col, KeyColumn col)
+                                                | VarianceOp col -> GroupColumn(VarianceOp col, KeyColumn col)
                                                 | x -> failwithf "not supported aggregation %O" x
                                             ["",i] |> List.toSeq
                                     ) |> Seq.concat |> Seq.toList

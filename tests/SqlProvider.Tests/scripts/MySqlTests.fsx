@@ -145,6 +145,15 @@ let canoncicalOpTest =
         select (emp.HireDate, emp.Email, job.MaxSalary)
     } |> Seq.toArray
 
+
+// Standard deviation test
+let stdDevTest = 
+    query {
+        for emp in ctx.Hr.Employees do
+        select (float emp.Salary)
+    } |> Seq.stdDevAsync |> Async.RunSynchronously
+
+
 //************************ CRUD *************************//
 
 

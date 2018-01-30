@@ -211,18 +211,22 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             let pn = match e.Arguments.[0] with :? ParameterExpression as p -> p.Name | _ -> e.Method.Name
             match e.Method.Name with
             | "Count" -> Some(String.Empty, GroupColumn (CountOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
-            | "Average" -> Some(String.Empty, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Average" | "Avg" -> Some(String.Empty, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
             | "Min" -> Some(String.Empty, GroupColumn (MinOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
             | "Max" -> Some(String.Empty, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
             | "Sum" -> Some(String.Empty, GroupColumn (SumOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "StdDev" | "StDev"| "StandardDeviation" -> Some(String.Empty, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
+            | "Variance" -> Some(String.Empty, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(pn)), e.Method.DeclaringType)
             | _ -> None
         else 
             match e.Arguments.[0], e.Method.Name with
             | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Average" -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, ("Average" | "Avg") -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, ("StdDev" | "StDev" | "StandardDeviation") -> Some(m.Member.Name, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | :? MemberExpression as m, "Variance" -> Some(m.Member.Name, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | _ -> None
 
     // These are canonical functions
@@ -285,8 +289,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> None
         | _ -> None
     // Numerical functions
-    | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))] as par)))
-        when ((meth.Name = "Abs" || meth.Name = "Ceil" || meth.Name = "Floor" || meth.Name = "Round" || meth.Name = "Truncate") && (decimalTypes |> Array.exists((=) typ))
+    | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)))] as par)))
+        when ((meth.Name = "Abs" || meth.Name = "Ceil" || meth.Name = "Floor" || meth.Name = "Round" || meth.Name = "Truncate" ||
+               meth.Name = "Sqrt" || meth.Name = "Sin" || meth.Name = "Cos" || meth.Name = "Tan" || meth.Name = "ASin" || meth.Name = "ACos" || meth.Name = "ATan"
+              ) && (decimalTypes |> Array.exists((=) typ))
             || (meth.Name = "Abs" && integerTypes |> Array.exists((=) typ))) -> 
             
             match meth.Name, par with
@@ -295,6 +301,13 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Floor", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Floor, col), typ)
             | "Round", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Round, col), typ)
             | "Round", [_; Int decCount] -> Some(alias, CanonicalOperation(CanonicalOp.RoundDecimals(decCount), col), typ)
+            | "Sqrt", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Sqrt, col), typ)
+            | "Sin", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Sin, col), typ)
+            | "Cos", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Cos, col), typ)
+            | "Tan", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Tan, col), typ)
+            | "ASin", [_] -> Some(alias, CanonicalOperation(CanonicalOp.ASin, col), typ)
+            | "ACos", [_] -> Some(alias, CanonicalOperation(CanonicalOp.ACos, col), typ)
+            | "ATan", [_] -> Some(alias, CanonicalOperation(CanonicalOp.ATan, col), typ)
             | "Truncate", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Truncate, col), typ)
             | _ -> failwith "Shouldn't hit"
 

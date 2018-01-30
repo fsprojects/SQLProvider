@@ -202,24 +202,43 @@ Odbc standard doesn't seem to have a date-add functionality.
 
 #### Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)
 
-| .NET          | MsSqlServer| PostgreSql| MySql   | Oracle| SQLite     | MSAccess| Odbc    |  Notes
-|---------------|------------|-----------|---------|-------|------------|---------|---------|--------------------------|
-abs(i)          | ABS        | ABS       | ABS     | ABS   | ABS        | Abs     | ABS     |   |
-ceil(i)         | CEILING    | CEILING   | CEILING | CEIL  | CAST + 0.5 | Fix+1   | CEILING |   |
-floor(i)        | FLOOR      | FLOOR     | FLOOR   | FLOOR | CAST AS INT| Int     | FLOOR   |   |
-round(i)        | ROUND      | ROUND     | ROUND   | ROUND | ROUND      | Round   | ROUND   |   |
-Math.Round(i,x) | ROUND      | ROUND     | ROUND   | ROUND | ROUND      | Round   | ROUND   |   |
-truncate(i)     | TRUNCATE   | TRUNC     | TRUNCATE| TRUNC |            | Fix     | TRUNCATE|   |
-(+)             | +          | +         | +       | +     | +          | +       | +       |   |
-(-)             | -          | -         | -       | -     | -          | -       | -       |   |
-(*)             | *          | *         | *       | *     | *          | *       | *       |   |
-(/)             | /          | /         | /       | /     | /          | /       | /       |   |
-(%)             | %          | %         | %       | %     | %          | %       | %       |   |
+| .NET          | MsSqlServer| PostgreSql| MySql   | Oracle| SQLite     | MSAccess| Odbc     |  Notes
+|---------------|------------|-----------|---------|-------|------------|---------|----------|--------------------------|
+abs(i)          | ABS        | ABS       | ABS     | ABS   | ABS        | Abs     | ABS      |   |
+ceil(i)         | CEILING    | CEILING   | CEILING | CEIL  | CAST + 0.5 | Fix+1   | CEILING  |   |
+floor(i)        | FLOOR      | FLOOR     | FLOOR   | FLOOR | CAST AS INT| Int     | FLOOR    |   |
+round(i)        | ROUND      | ROUND     | ROUND   | ROUND | ROUND      | Round   | ROUND    |   |
+Math.Round(i,x) | ROUND      | ROUND     | ROUND   | ROUND | ROUND      | Round   | ROUND    |   |
+truncate(i)     | TRUNCATE   | TRUNC     | TRUNCATE| TRUNC |            | Fix     | TRUNCATE |   |
+sqrt(i)         | SQRT       | SQRT      | SQRT    | SQRT  | SQRT       | Sqr     | SQRT     |   |
+sin(i)          | SIN        | SIN       | SIN     | SIN   | SIN        | SIN     | SIN      |   |
+cos(i)          | COS        | COS       | COS     | COS   | COS        | COS     | COS      |   |
+tan(i)          | TAN        | TAN       | TAN     | TAN   | TAN        | TAN     | TAN      |   |
+asin(i)         | ASIN       | ASIN      | ASIN    | ASIN  | ASIN       |         | ASIN     |   |
+acos(i)         | ACOS       | ACOS      | ACOS    | ACOS  | ACOS       |         | ACOS     |   |
+atan(i)         | ATAN       | ATAN      | ATAN    | ATAN  | ATAN       | Atn     | ATAN     |   |
+(+)             | +          | +         | +       | +     | +          | +       | +        |   |
+(-)             | -          | -         | -       | -     | -          | -       | -        |   |
+(*)             | *          | *         | *       | *     | *          | *       | *        |   |
+(/)             | /          | /         | /       | /     | /          | /       | /        |   |
+(%)             | %          | %         | %       | %     | %          | %       | %        |   |
 
 #### Aggregate Functions 
 
 Also you can use these on group-by clause:
-`COUNT`, `SUM`, `MIN`, `MAX`, `AVG`
+
+| .NET          | MsSqlServer| PostgreSql| MySql   | Oracle   | SQLite | MSAccess| Odbc     |  Notes
+|---------------|------------|-----------|---------|----------|--------|---------|----------|--------------------------|
+count           | COUNT      | COUNT     | COUNT   | COUNT    | COUNT  | COUNT   | COUNT    |   |
+sum             | SUM        | SUM       | SUM     | SUM      | SUM    | SUM     | SUM      |   |
+min             | MIN        | MIN       | MIN     | MIN      | MIN    | MIN     | MIN      |   |
+max             | MAX        | MAX       | MAX     | MAX      | MAX    | MAX     | MAX      |   |
+average         | AVG        | AVG       | AVG     | AVG      | AVG    | AVG     | AVG      |   |
+StdDev          | STDEV      | STDDEV    | STDDEV  | STDDEV   |        | STDEV   | STDEV    |   |
+Variance        | VAR        | VARIANCE  | VARIANCE| VARIANCE |        | DVAR    | VAR      |   |
+
+`StdDev`, `Variance` are located in FSharp.Data.Sql.Operators namespace and also Seq.stdDevAsync and Seq.varianceAsync.
+Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumAsync, Seq.minAsync, Seq.maxAsync, Seq.averageAsync, .
 
 *)
 

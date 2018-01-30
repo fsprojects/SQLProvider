@@ -44,6 +44,8 @@ type AggregateOperation = // Aggregate (column name if not default)
 | SumOp of string
 | AvgOp of string
 | CountOp of string
+| StdDevOp of string
+| VarianceOp of string
 
 [<AutoOpenAttribute>]
 module ColumnSchema =
@@ -80,6 +82,13 @@ module ColumnSchema =
     | Round
     | RoundDecimals of int
     | Truncate
+    | Sqrt
+    | Sin
+    | Cos
+    | Tan
+    | ASin
+    | ACos
+    | ATan
     // Other
     | BasicMath of string*obj //operation, constant
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
@@ -107,16 +116,22 @@ module ColumnSchema =
 // The operators here are used to force the compiler to statically check against the correct types
 [<AutoOpenAttribute>]
 module Operators =
-    /// In
+    //// In
     let (|=|) (a:'a) (b:'a seq) = false
-    // Not In
+    /// Not In
     let (|<>|) (a:'a) (b:'a seq) = false
-    // Like
+    /// Like
     let (=%) (a:'a) (b:string) = false
-    // Not Like
+    /// Not Like
     let (<>%) (a:'a) (b:string) = false
-    // Left join
+    /// Left join
     let (!!) (a:IQueryable<_>) = a
+    
+    /// Standard Deviation
+    let StdDev (a:'a) = 1m
+
+    /// Variance
+    let Variance (a:'a) = 1m
 
 #if NETSTANDARD
 // Hacks for .NET Core.
