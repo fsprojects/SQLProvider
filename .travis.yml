@@ -17,6 +17,7 @@ os:
   - osx
   
 before_script:
+  # Fixes PostgreSQL not starting on OSX. See https://github.com/travis-ci/travis-ci/issues/1875#issuecomment-263847183
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -rf /usr/local/var/postgres; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then initdb /usr/local/var/postgres; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pg_ctl -D /usr/local/var/postgres start; fi
