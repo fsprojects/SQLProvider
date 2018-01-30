@@ -638,7 +638,7 @@ let ``simple select query with join groupBy constant``() =
             groupBy 1 into g
             select (g.Max(fun (_,od) -> od.Discount), g.Average(fun (o,_) -> o.Freight),
                     g.Max(fun (o,od) -> (decimal od.Discount) + o.Freight + 1m),
-                    g.Sum(fun (o,od)-> (if o.OrderDate < DateTime.Now then 0.0 else od.Discount)
+                    g.Sum(fun (o,od)-> (if o.OrderDate < DateTime.Now then 0.0 else (float od.Discount))
                    )
             )
         } |> Seq.toArray

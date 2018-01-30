@@ -214,6 +214,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
+        | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
