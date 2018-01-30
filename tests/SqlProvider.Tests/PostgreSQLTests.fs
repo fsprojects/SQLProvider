@@ -232,12 +232,16 @@ ctx.SubmitUpdates()
 
 [<Test>]
 let removeIfExists employeeId startDate =
-    let existing = query { for x in ctx.Public.JobHistory do
+    let existing () = query { for x in ctx.Public.JobHistory do
                            where ((x.EmployeeId = employeeId) && (x.StartDate = startDate))
                            headOrDefault }
-    if existing <> null then
-        existing.Delete()
+    let current = existing()
+    if current <> null then
+        current.Delete()
         ctx.SubmitUpdates()
+
+    let deleted = existing()
+    Assert.IsNull(deleted)
 
 removeIfExists 100 (DateTime(1993, 1, 13))
 ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
@@ -269,7 +273,6 @@ let locations_and_regions =
     ]
 
 //Support for sprocs that return ref cursors and has in parameters
-[<Test>]
 let getemployees hireDate =
     let results = (ctx.Functions.GetEmployeesStartingAfter.Invoke hireDate)
     [
@@ -277,7 +280,11 @@ let getemployees hireDate =
         yield! e.ColumnValues
     ]
 
-getemployees (new System.DateTime(1999,4,1))
+[<Test>]
+let ``Run a sproc with a parameter returning a ref cursor`` () = 
+  let result = getemployees (new System.DateTime(1999,4,1))
+  Assert.IsNotNull result
+  Assert.IsNotEmpty result
 
 // Support for sprocs that return `table of`
 ctx.Functions.GetDepartments.Invoke().ReturnValue
@@ -290,102 +297,103 @@ ctx.Functions.GetDepartments.Invoke().ReturnValue
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 //********************** Type test ***************************//
-[<Test>]
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
-[<Test>]
 let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
-[<Test>]
 let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
-[<Test>]
 let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
-[<Test>]
+
 let tt = ctx.Public.PostgresqlTypes.Create()
 
-//tt.Abstime0 <- Some DateTime.Today
-tt.Bigint0 <- Some 100L
-tt.Bigserial0 <- 300L
-//tt.Bit0 <- Some(true)
-tt.Bit0 <- Some(System.Collections.BitArray(10, true))
-tt.BitVarying0 <- Some(System.Collections.BitArray([| true; true; false; false |]))
-tt.Boolean0 <- Some(true)
-//tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0f, 1.0f, 2.0f, 3.0f))
-tt.Bytea0 <- Some([| 1uy; 10uy |])
-tt.Character0 <- Some("test")
-tt.CharacterVarying0 <- Some("raudpats")
-tt.Cid0 <- Some(87u)
-//tt.Circle0 <- Some(circle(0.0f, 1.0f, 2.0))
-tt.Date0 <- Some(DateTime.Today)
-tt.DoublePrecision0 <- Some(100.0)
-tt.Inet0 <- Some(System.Net.IPAddress.Any)
-tt.Integer0 <- Some(1)
-tt.InternalChar0 <- Some('c')
-tt.Interval0 <- Some(TimeSpan.FromDays(3.0))
-tt.Json0 <- Some("{ }")
-tt.Jsonb0 <- Some(@"{ ""x"": [] }")
-tt.Macaddr0 <- Some(System.Net.NetworkInformation.PhysicalAddress([| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy |]))
-tt.Money0 <- Some(100M)
-tt.Name0 <- Some("name")
-tt.Numeric0 <- Some(99.76M)
-tt.Oid0 <- Some(67u)
-tt.Real0 <- Some(0.8f)
-tt.Regtype0 <- Some(77u)
-tt.Smallint0 <- Some(9000s)
-tt.Smallserial0 <- 678s
-tt.Serial0 <- 77
-tt.Text0 <- Some("kesine")
-tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
-tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
-tt.Timetz0 <- Some(DateTimeOffset.Now)
-//tt.Timetz0 <- Some(NpgsqlTypes.NpgsqlTimeTZ.Now)
-tt.Timestamp0 <- Some(DateTime.Now)
-tt.Timestamptz0 <- Some(DateTime.Now)
-//tt.Unknown0 <- Some(box 13)
-tt.Uuid0 <- Some(Guid.NewGuid())
-tt.Xid0 <- Some(15u)
-tt.Xml0 <- Some("xml")
+[<Test>]
+let ``Create PostgreSQL specific types``() = 
+
+  //tt.Abstime0 <- Some DateTime.Today
+  tt.Bigint0 <- Some 100L
+  tt.Bigserial0 <- 300L
+  //tt.Bit0 <- Some(true)
+  tt.Bit0 <- Some(System.Collections.BitArray(10, true))
+  tt.BitVarying0 <- Some(System.Collections.BitArray([| true; true; false; false |]))
+  tt.Boolean0 <- Some(true)
+  //tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0f, 1.0f, 2.0f, 3.0f))
+  tt.Bytea0 <- Some([| 1uy; 10uy |])
+  tt.Character0 <- Some("test")
+  tt.CharacterVarying0 <- Some("raudpats")
+  tt.Cid0 <- Some(87u)
+  //tt.Circle0 <- Some(circle(0.0f, 1.0f, 2.0))
+  tt.Date0 <- Some(DateTime.Today)
+  tt.DoublePrecision0 <- Some(100.0)
+  tt.Inet0 <- Some(System.Net.IPAddress.Any)
+  tt.Integer0 <- Some(1)
+  tt.InternalChar0 <- Some('c')
+  tt.Interval0 <- Some(TimeSpan.FromDays(3.0))
+  tt.Json0 <- Some("{ }")
+  tt.Jsonb0 <- Some(@"{ ""x"": [] }")
+  tt.Macaddr0 <- Some(System.Net.NetworkInformation.PhysicalAddress([| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy |]))
+  tt.Money0 <- Some(100M)
+  tt.Name0 <- Some("name")
+  tt.Numeric0 <- Some(99.76M)
+  tt.Oid0 <- Some(67u)
+  tt.Real0 <- Some(0.8f)
+  tt.Regtype0 <- Some(77u)
+  tt.Smallint0 <- Some(9000s)
+  tt.Smallserial0 <- 678s
+  tt.Serial0 <- 77
+  tt.Text0 <- Some("kesine")
+  tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
+  tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
+  tt.Timetz0 <- Some(DateTimeOffset.Now)
+  //tt.Timetz0 <- Some(NpgsqlTypes.NpgsqlTimeTZ.Now)
+  tt.Timestamp0 <- Some(DateTime.Now)
+  tt.Timestamptz0 <- Some(DateTime.Now)
+  //tt.Unknown0 <- Some(box 13)
+  tt.Uuid0 <- Some(Guid.NewGuid())
+  tt.Xid0 <- Some(15u)
+  tt.Xml0 <- Some("xml")
 
 
-// Mapping SQL to types originating in Npgsql currently does not work due to type provider SDK issues.
-// See: https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/173
-//
-//tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0, 1.0, 2.0, 3.0))
-//tt.Cidr0 <- Some(NpgsqlTypes.NpgsqlInet("0.0.0.0/24"))
-//tt.Circle0 <- Some(NpgsqlTypes.NpgsqlCircle(0.0, 1.0, 2.0))
-//tt.Line0 <- Some(NpgsqlTypes.NpgsqlLine())
-//tt.Lseg0 <- Some(NpgsqlTypes.NpgsqlLSeg())
-//tt.Path0 <- Some(path [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 0.0) |])
-//tt.Point0 <- Some(point (5.0, 5.0))
-//tt.Polygon0 <- Some(polygon [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 1.0) |])
-//tt.Tsquery0 <- Some(NpgsqlTypes.NpgsqlTsQuery.Parse("test"))
-//tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
-
-
-ctx.SubmitUpdates()
+  // Mapping SQL to types originating in Npgsql currently does not work due to type provider SDK issues.
+  // See: https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/173
+  //
+  //tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0, 1.0, 2.0, 3.0))
+  //tt.Cidr0 <- Some(NpgsqlTypes.NpgsqlInet("0.0.0.0/24"))
+  //tt.Circle0 <- Some(NpgsqlTypes.NpgsqlCircle(0.0, 1.0, 2.0))
+  //tt.Line0 <- Some(NpgsqlTypes.NpgsqlLine())
+  //tt.Lseg0 <- Some(NpgsqlTypes.NpgsqlLSeg())
+  //tt.Path0 <- Some(path [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 0.0) |])
+  //tt.Point0 <- Some(point (5.0, 5.0))
+  //tt.Polygon0 <- Some(polygon [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 1.0) |])
+  //tt.Tsquery0 <- Some(NpgsqlTypes.NpgsqlTsQuery.Parse("test"))
+  //tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
+  
+  ctx.SubmitUpdates()
 
 [<Test>]
 let ttb =
-    query {
+    let foundType = query {
         for t in ctx.Public.PostgresqlTypes do
         where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
         exactlyOne
     }
+    Assert.IsNotNull foundType
 
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
 [<Test>]
-let printTest (exp: Expr) =
-    match exp with
-    | Call(_,mi,[Value(name,_)]) ->
-        let valof x = mi.Invoke(x, [| name |])
-        printfn "%A: %A => %A" name (valof tt) (valof ttb)
-    | _ -> ()
+let ``Can print PostgreSQL types correctly`` = 
+  let printTest (exp: Expr) =
+      match exp with
+      | Call(_,mi,[Value(name,_)]) ->
+          let valof x = mi.Invoke(x, [| name |])
+          sprintf "%A: %A => %A" name (valof tt) (valof ttb)
+      | _ ->
+        sprintf "Invalid expression: %A" exp
 
-printTest <@@ tt.Bigint0 @@>
-printTest <@@ tt.Bit0 @@>
-printTest <@@ tt.Box0 @@>
-printTest <@@ tt.Interval0 @@>
-printTest <@@ tt.Jsonb0 @@>
+  Assert.AreEqual(printTest <@@ tt.Bigint0 @@>    , """"bigint_0": Some 100L => Some 100L                                                               """)
+  Assert.AreEqual(printTest <@@ tt.Bit0 @@>       , """"bit_0": Some (seq [true; true; true; true; ...]) => Some (seq [true; true; true; true; ...])    """)
+  Assert.AreEqual(printTest <@@ tt.Box0 @@>       , """"box_0": <null> => <null>                                                                        """)
+  Assert.AreEqual(printTest <@@ tt.Interval0 @@>  , """"interval_0": Some 3.00:00:00 => Some 3.00:00:00                                                 """)
+  Assert.AreEqual(printTest <@@ tt.Jsonb0 @@>     , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"                                                """)
 
 #endif

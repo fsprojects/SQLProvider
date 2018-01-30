@@ -126,15 +126,19 @@ Target "SetupPostgreSQL" (fun _ ->
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
 
-      connBuilder.Username <- "postgres"
+      connBuilder.Username <- 
+        match buildServer with
+        | Travis -> "travis_user"
+        | _ -> "postgres"
+
       connBuilder.Password <- 
         match buildServer with
-        | Travis -> ""
+        | Travis -> "travis_pw"
         | AppVeyor -> "Password12!"
         | _ -> "postgres"      
   
       let runCmd query = 
-        // We wait a few seconds for PostgreSQL to be initialized
+        // We wait up to 30 seconds for PostgreSQL to be initialized
         let rec runCmd' attempt = 
           try
             use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
@@ -150,7 +154,7 @@ Target "SetupPostgreSQL" (fun _ ->
               
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
-      runCmd ("CREATE DATABASE " + testDbName)
+      runCmd (sprintf "CREATE DATABASE %s OWNER %s" testDbName connBuilder.Username)
       connBuilder.Database <- testDbName
 
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
