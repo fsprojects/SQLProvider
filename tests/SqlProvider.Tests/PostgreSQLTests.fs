@@ -88,7 +88,7 @@ let employeesFirstNameNoProj () =
     query {
         for emp in ctx.Public.Employees do
         select true
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let employeesFirstNameIdProj () = 
@@ -96,7 +96,7 @@ let employeesFirstNameIdProj () =
     query {
         for emp in ctx.Public.Employees do
         select emp
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let first10employess () = 
@@ -105,7 +105,7 @@ let first10employess () =
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
         take 10
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let skip2first10employess () = 
@@ -115,7 +115,7 @@ let skip2first10employess () =
         select emp.EmployeeId
         skip 2
         take 10
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let employeesFirstName () = 
@@ -123,7 +123,7 @@ let employeesFirstName () =
     query {
         for emp in ctx.Public.Employees do
         select (emp.FirstName, emp.LastName, emp.Email, emp.SalaryHistory)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
@@ -135,7 +135,7 @@ let employeesSortByName () =
         sortBy emp.FirstName
         thenBy emp.LastName
         select (emp.FirstName, emp.LastName)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let salesNamedDavid () = 
@@ -145,7 +145,7 @@ let salesNamedDavid () =
             join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let employeesJob () = 
@@ -156,7 +156,7 @@ let employeesJob () =
             join dept in ctx.Public.Departments on (emp.DepartmentId = Some(dept.DepartmentId))
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 //Can map SQLEntities to a domain type
 [<Test>]
@@ -169,7 +169,7 @@ let topSales5ByCommission () =
         take 5
     }
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList
+    |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
 let canonicalTest () = 
@@ -183,7 +183,7 @@ let canonicalTest () =
                 && emp.HireDate.Date.AddYears(-10).Year < 1990
             )
             select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
     
 open Newtonsoft.Json
 
@@ -215,7 +215,7 @@ let countries () =
                                                | _ -> value
                                          )
                )
-    |> Seq.toList
+    |> Seq.toList |> Assert.IsNotEmpty
 
 //************************ CRUD *************************//
 
