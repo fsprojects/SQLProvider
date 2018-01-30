@@ -7,10 +7,7 @@ services:
   - postgres
   
 env:
-  - DB=pos
-  
-before_script:
-  - psql -c 'create database postgres;' -U postgres
+  - DB=postgresql
   
 addons:
   postgresql: "9.4"
