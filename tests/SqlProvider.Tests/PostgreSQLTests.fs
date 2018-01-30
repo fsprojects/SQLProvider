@@ -231,22 +231,31 @@ ctx.SubmitUpdates()
 //********************** Procedures **************************//
 
 [<Test>]
-let removeIfExists employeeId startDate =
-    let existing () = query { for x in ctx.Public.JobHistory do
-                           where ((x.EmployeeId = employeeId) && (x.StartDate = startDate))
-                           headOrDefault }
-    let current = existing()
-    if current <> null then
-        current.Delete()
-        ctx.SubmitUpdates()
+let ``Existing item is successfully deleted, then restored``() = 
+    let getIfexisting employeeId startDate = 
+        query {
+          for x in ctx.Public.JobHistory do
+          where ((x.EmployeeId = employeeId) && (x.StartDate = startDate))
+          headOrDefault 
+        }
+        
+    let removeIfExists employeeId startDate =      
+      let current = getIfexisting employeeId startDate 
+      if current <> null then
+          current.Delete()
+          ctx.SubmitUpdates()
 
-    let deleted = existing()
-    Assert.IsNull(deleted)
+    
+    let existing = getIfexisting 100 (DateTime(1993, 1, 13))
+    Assert.IsNotNull existing
 
-removeIfExists 100 (DateTime(1993, 1, 13))
-ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+    let deleted = removeIfExists 100 (DateTime(1993, 1, 13))
+    Assert.IsNull deleted
 
-
+    ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+    let existing = getIfexisting 100 (DateTime(1993, 1, 13))
+    Assert.IsNotNull existing
+    
 //Support for sprocs that return ref cursors
 [<Test>]
 let employees =
