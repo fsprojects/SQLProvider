@@ -1,7 +1,3 @@
-SET foreign_key_checks = 0;
-DROP TABLE `hr`.`countries`, `hr`.`departments`, `hr`.`employees`, `hr`.`job_history`, `hr`.`jobs`, `hr`.`locations`, `hr`.`regions`;
-SET foreign_key_checks = 1;
-
 CREATE TABLE IF NOT EXISTS COUNTRIES
 (	
 	COUNTRY_ID CHAR(2) NOT NULL, 
