@@ -15,6 +15,8 @@ open System.IO
 #load @"packages/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
+#r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"
+
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
 // --------------------------------------------------------------------------------------
@@ -96,7 +98,7 @@ Target "Build" (fun _ ->
 
     // Build .NET Framework solution
     !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
-    |> MSBuildRelease "" "Rebuild"
+    |> MSBuildReleaseExt "" [ "DefineConstants", buildServer.ToString().ToUpper()] "Rebuild"
     |> ignore
 )
 
@@ -113,6 +115,49 @@ Target "BuildCore" (fun _ ->
             Project = "src/SQLProvider.Standard/SQLProvider.Standard.fsproj"
             Configuration = "Release"})
 )
+
+// --------------------------------------------------------------------------------------
+// Set up a PostgreSQL database in the CI pipeline to run Postgres tests
+
+Target "SetupPostgreSQL" (fun _ ->
+      let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
+
+      connBuilder.Host <- "localhost"
+      connBuilder.Port <- 5432
+      connBuilder.Database <- "postgres"
+      connBuilder.Username <- "postgres"
+      connBuilder.Password <- 
+        match buildServer with
+        | Travis -> ""
+        | AppVeyor -> "Password12!"
+        | _ -> "postgres"      
+  
+      let runCmd query = 
+        // We wait up to 30 seconds for PostgreSQL to be initialized
+        let rec runCmd' attempt = 
+          try
+            use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
+            conn.Open()
+            use cmd = new Npgsql.NpgsqlCommand(query, conn)
+            cmd.ExecuteNonQuery() |> ignore 
+          with e -> 
+            printfn "Connection attempt %i: %A" attempt e
+            Threading.Thread.Sleep 1000
+            if attempt < 30 then runCmd' (attempt + 1)
+
+        runCmd' 0
+              
+      let testDbName = "sqlprovider"
+      printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
+      runCmd (sprintf "CREATE DATABASE %s" testDbName)
+      connBuilder.Database <- testDbName
+
+      (!! "src/DatabaseScripts/PostgreSQL/*.sql")
+      |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
+      |> Seq.map IO.File.ReadAllText      
+      |> Seq.iter runCmd
+)
+
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
@@ -285,14 +330,16 @@ Target "All" DoNothing
 Target "BuildDocs" DoNothing
 
 "Clean"
-  ==> "AssemblyInfo"
+  ==> "AssemblyInfo"  
+  // In CI mode, we setup a Postgres database before building
+  =?> ("SetupPostgreSQL", not isLocalBuild)
   ==> "Build"
   =?> ("BuildCore", isLocalBuild || not isMono)
   ==> "RunTests"
   ==> "CleanDocs"
   // Travis doesn't support mono+dotnet:
-  =?> ("GenerateReferenceDocs",isLocalBuild && not isMono)
-  =?> ("GenerateHelp",isLocalBuild && not isMono)
+  =?> ("GenerateReferenceDocs", isLocalBuild && not isMono)
+  =?> ("GenerateHelp", isLocalBuild && not isMono)
   ==> "All"
 
 "All"
