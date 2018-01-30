@@ -6,9 +6,6 @@ sudo: false  # use the new container-based Travis infrastructure
 services:
   - postgres
   
-env:
-  - DB=postgresql
-  
 addons:
   postgresql: "9.4"
 

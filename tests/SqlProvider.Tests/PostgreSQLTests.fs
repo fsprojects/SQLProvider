@@ -77,18 +77,21 @@ let ``Find Tokyo location`` () =
     Assert.AreEqual(tokyo.StateProvince, Some "Tokyo Prefecture")
     Assert.AreEqual(tokyo.CountryId, Some "JP") 
 
+[<Test>]
 let employeesFirstNameNoProj =
     query {
         for emp in ctx.Public.Employees do
         select true
     } |> Seq.toList
 
+[<Test>]
 let employeesFirstNameIdProj =
     query {
         for emp in ctx.Public.Employees do
         select emp
     } |> Seq.toList
 
+[<Test>]
 let first10employess =
     query {
         for emp in ctx.Public.Employees do
@@ -96,6 +99,7 @@ let first10employess =
         take 10
     } |> Seq.toList
 
+[<Test>]
 let skip2first10employess =
     query {
         for emp in ctx.Public.Employees do
@@ -104,6 +108,7 @@ let skip2first10employess =
         take 10
     } |> Seq.toList
 
+[<Test>]
 let employeesFirstName =
     query {
         for emp in ctx.Public.Employees do
@@ -112,6 +117,7 @@ let employeesFirstName =
 
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
+[<Test>]
 let employeesSortByName =
     query {
         for emp in ctx.Public.Employees do
@@ -120,6 +126,7 @@ let employeesSortByName =
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
+[<Test>]
 let salesNamedDavid =
     query {
             for emp in ctx.Public.Employees do
@@ -128,6 +135,7 @@ let salesNamedDavid =
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
+[<Test>]
 let employeesJob =
     query {
             for emp in ctx.Public.Employees do
@@ -138,6 +146,7 @@ let employeesJob =
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
+[<Test>]
 let topSales5ByCommission =
     query {
         for emp in ctx.Public.Employees do
@@ -148,6 +157,7 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
+[<Test>]
 let canonicalTest =
     query {
             for emp in ctx.Public.Employees do
@@ -174,6 +184,7 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
+[<Test>]
 let countries =
     query {
         for emp in ctx.Public.Countries do
@@ -192,6 +203,7 @@ let countries =
 
 //************************ CRUD *************************//
 
+[<Test>]
 let antartica =
     let result =
         query {
@@ -218,6 +230,7 @@ ctx.SubmitUpdates()
 
 //********************** Procedures **************************//
 
+[<Test>]
 let removeIfExists employeeId startDate =
     let existing = query { for x in ctx.Public.JobHistory do
                            where ((x.EmployeeId = employeeId) && (x.StartDate = startDate))
@@ -231,6 +244,7 @@ ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7,
 
 
 //Support for sprocs that return ref cursors
+[<Test>]
 let employees =
     [
       for e in ctx.Functions.GetEmployees.Invoke().ReturnValue do
@@ -244,6 +258,7 @@ type Region = {
 }
 
 //Support for MARS procs
+[<Test>]
 let locations_and_regions =
     let results = ctx.Functions.GetLocationsAndRegions.Invoke()
     [
@@ -254,6 +269,7 @@ let locations_and_regions =
     ]
 
 //Support for sprocs that return ref cursors and has in parameters
+[<Test>]
 let getemployees hireDate =
     let results = (ctx.Functions.GetEmployeesStartingAfter.Invoke hireDate)
     [
@@ -270,14 +286,20 @@ ctx.Functions.GetDepartments.Invoke().ReturnValue
 
 //********************** Functions ***************************//
 
+[<Test>]
 let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 
 //********************** Type test ***************************//
+[<Test>]
 let point (x,y) = NpgsqlTypes.NpgsqlPoint(x,y)
+[<Test>]
 let circle (x,y,r) = NpgsqlTypes.NpgsqlCircle (point (x,y), r)
+[<Test>]
 let path pts = NpgsqlTypes.NpgsqlPath(pts: NpgsqlTypes.NpgsqlPoint [])
+[<Test>]
 let polygon pts = NpgsqlTypes.NpgsqlPolygon(pts: NpgsqlTypes.NpgsqlPoint [])
 
+[<Test>]
 let tt = ctx.Public.PostgresqlTypes.Create()
 
 //tt.Abstime0 <- Some DateTime.Today
@@ -341,6 +363,7 @@ tt.Xml0 <- Some("xml")
 
 ctx.SubmitUpdates()
 
+[<Test>]
 let ttb =
     query {
         for t in ctx.Public.PostgresqlTypes do
@@ -351,6 +374,7 @@ let ttb =
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
+[<Test>]
 let printTest (exp: Expr) =
     match exp with
     | Call(_,mi,[Value(name,_)]) ->

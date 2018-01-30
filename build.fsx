@@ -1,3 +1,5 @@
+open SourceLink
+
 // --------------------------------------------------------------------------------------
 // FAKE build script
 // --------------------------------------------------------------------------------------
@@ -134,10 +136,19 @@ Target "SetupPostgreSQL" (fun _ ->
         | _ -> "postgres"      
   
       let runCmd query = 
-        use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
-        conn.Open()
-        use cmd = new Npgsql.NpgsqlCommand(query, conn)
-        cmd.ExecuteNonQuery() |> ignore    
+        // We wait a few seconds for PostgreSQL to be initialized
+        let rec runCmd' attempt = 
+          try
+            use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
+            conn.Open()
+            use cmd = new Npgsql.NpgsqlCommand(query, conn)
+            cmd.ExecuteNonQuery() |> ignore 
+          with e -> 
+            printfn "Connection attempt %i: %A" attempt e
+            Threading.Thread.Sleep 1000
+            if attempt < 30 then runCmd' (attempt + 1)
+
+        runCmd' 0
               
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
