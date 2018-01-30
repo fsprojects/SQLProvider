@@ -589,6 +589,10 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
     member __.AggregateAvg<'T>(columnName) = this.fetchItem<'T> "AVG" columnName
     member __.AggregateMin<'T>(columnName) = this.fetchItem<'T> "MIN" columnName
     member __.AggregateMax<'T>(columnName) = this.fetchItem<'T> "MAX" columnName
+    member __.AggregateStandardDeviation<'T>(columnName) = this.fetchItem<'T> "STDDEV" columnName
+    member __.AggregateStDev<'T>(columnName) = this.fetchItem<'T> "STDDEV" columnName
+    member __.AggregateStdDev<'T>(columnName) = this.fetchItem<'T> "STDDEV" columnName
+    member __.AggregateVariance<'T>(columnName) = this.fetchItem<'T> "VAR" columnName
 
 module internal CommonTasks =
 

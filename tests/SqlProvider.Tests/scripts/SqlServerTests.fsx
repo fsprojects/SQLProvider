@@ -248,6 +248,22 @@ let getemployees hireDate =
 getemployees (new System.DateTime(1999,4,1))
 
 
+// Distinct alias test
+let employeesFirstNameSort = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        sortBy (emp.FirstName)
+        select (emp.FirstName, emp.FirstName)
+    } |> Seq.toList
+
+// Standard deviation test
+let stdDevTest = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        select (float emp.Salary)
+    } |> Seq.stdDevAsync |> Async.RunSynchronously
+
+
 //******************** Delete all test **********************//
 
 query {

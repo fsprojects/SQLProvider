@@ -616,6 +616,36 @@ let ``simplest select query with groupBy``() =
     Assert.IsNotEmpty(qry)
 
 [<Test>]
+let ``simplest select query with groupBy constant``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for p in dc.Main.Products do
+            groupBy 1 into g
+            select (g.Max(fun p -> p.CategoryId), g.Average(fun p -> p.CategoryId))
+        } |> Seq.head
+
+    Assert.AreEqual(fst(qry), 8)
+    Assert.Greater(fst(qry), snd(qry))
+
+[<Test; Ignore("Not Supported")>]
+let ``simple select query with join groupBy constant``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
+            groupBy 1 into g
+            select (g.Max(fun (_,od) -> od.Discount), g.Average(fun (o,_) -> o.Freight),
+                    g.Max(fun (o,od) -> (decimal od.Discount) + o.Freight + 1m),
+                    g.Sum(fun (o,od)-> (if o.OrderDate < DateTime.Now then 0.0 else (float od.Discount))
+                   )
+            )
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
+[<Test>]
 let ``simple select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 

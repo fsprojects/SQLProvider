@@ -73,11 +73,19 @@ type internal MSAccessProvider() =
             | Truncate -> sprintf "Fix(%s)" column
             | Ceil -> sprintf "Fix(%s)+1" column
             | Floor -> sprintf "Int(%s)" column
+            | Sqrt -> sprintf "Sqr(%s)" column
+            | ATan -> sprintf "Atn(%s)" column
+            | ASin -> sprintf "Atn(%s / Sqr(1 - %s * %s))" column column column
+            | ACos -> sprintf "Atn(-%s / Sqr(-%s * %s + 1)) + 2 * Atn(1)" column column column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||", "&")) par
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
+        | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
+        | GroupColumn (VarianceOp key, KeyColumn _) -> sprintf "DVar(%s)" (colSprint key)
+        | GroupColumn (VarianceOp _,x) -> sprintf "DVar(%s)" (fieldNotation al x)
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-
+        
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
             match String.IsNullOrEmpty(al) with
@@ -373,7 +381,7 @@ type internal MSAccessProvider() =
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
                         else
-                            for col in v do
+                            for col in v |> Seq.distinct do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col|]) // F# makes this so easy :)
 
@@ -386,7 +394,7 @@ type internal MSAccessProvider() =
                         let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
-                        [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
+                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] when String.IsNullOrEmpty(selectcolumns) -> "*"
                 | [] -> selectcolumns
@@ -499,8 +507,8 @@ type internal MSAccessProvider() =
                             )))
                     if (numLinks > 0)  then ~~ ")")//append close paren after each JOIN, if necessary
 
-            let groupByBuilder() =
-                sqlQuery.Grouping |> List.map(fst) |> List.concat
+            let groupByBuilder groupkeys =
+                groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
                     ~~ (fieldNotation alias column))
@@ -538,8 +546,10 @@ type internal MSAccessProvider() =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                ~~" GROUP BY "
-                groupByBuilder()
+                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                if groupkeys.Length > 0 then
+                    ~~" GROUP BY "
+                    groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
