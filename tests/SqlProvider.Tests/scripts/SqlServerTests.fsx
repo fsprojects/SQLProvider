@@ -248,6 +248,14 @@ let getemployees hireDate =
 getemployees (new System.DateTime(1999,4,1))
 
 
+// Distinct alias test
+let employeesFirstNameSort = 
+    query {
+        for emp in ctx.Dbo.Employees do
+        sortBy (emp.FirstName)
+        select (emp.FirstName, emp.FirstName)
+    } |> Seq.toList
+
 //******************** Delete all test **********************//
 
 query {

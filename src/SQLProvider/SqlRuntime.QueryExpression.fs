@@ -74,14 +74,21 @@ module internal QueryExpressionTransformer =
             match e.NodeType, e with
             | ExpressionType.Call, (:? MethodCallExpression as me) -> 
                 let isGrouping = 
-                    me.Arguments.Count > 0 &&
-                    me.Arguments.[0].Type.Name.StartsWith("IGrouping")
-                
+                    me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) &&
+                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping"))
+                let isNumType (ty:Type) =
+                    decimalTypes  |> Seq.exists(fun t -> t = ty) || integerTypes |> Seq.exists(fun t -> t = ty)
+
                 let op =
-                    if me.Arguments.Count = 1 && me.Arguments.[0].NodeType = ExpressionType.Parameter then
+                    if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter || (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping"))) then
                         match me.Method.Name with
                         | "Count" -> Some (CountOp "")
+                        | "Sum" when isNumType me.Type -> Some (SumOp "")
+                        | "Avg" | "Average" when (isNumType me.Type) -> Some (AvgOp "")
+                        | "Min" when isNumType me.Type -> Some (MinOp "")
+                        | "Max" when isNumType me.Type -> Some (MaxOp "")
                         | _ -> None
+
                     elif me.Arguments.Count = 2 then
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
@@ -320,22 +327,40 @@ module internal QueryExpressionTransformer =
                 // But currently SQL will always return a list of SqlEntities.
 
                 let initDbParam = 
-                    // The current join would break here, as it fakes anonymous object to be SqlEntity by skipping projection lambda.
-                    if sqlQuery.Aliases.Count > 0 && sqlQuery.Grouping.Length = 0 then //join
-                        Expression.Parameter(typeof<SqlEntity>,"result")
-                    else
+
+                    /// The current join would break here, as it fakes anonymous object to be SqlEntity by skipping projection lambda.
+                    /// So this method finds if type is join and result should be typeof<SqlEntity> and not the original type.
+                    let rec shouldFlattenToSqlEntity (e:Expression) =
+                        let callEntityType (exp:Expression) =
+                            exp.NodeType = ExpressionType.Call &&
+                            (exp :?> MethodCallExpression).Object <> null && 
+                            (exp :?> MethodCallExpression).Object.Type = typeof<SqlEntity>
+
+                        if e.NodeType = ExpressionType.New then
+                            let ne = e :?> NewExpression
+                            ne <> null && (ne.Type.Name.StartsWith("AnonymousObject") || ne.Type.Name.StartsWith("Tuple")) && 
+                                (ne.Arguments |> Seq.forall(fun a -> (callEntityType a) || (shouldFlattenToSqlEntity a))) 
+                        else if e.NodeType = ExpressionType.Parameter then
+                            let p = e :?> ParameterExpression
+                            if (p.Type.Name.StartsWith("AnonymousObject") || p.Type.Name.StartsWith("Tuple")) then
+                                let ps = p.Type.GetGenericArguments()
+                                ps |> Seq.forall(fun t -> t<>null && t = typeof<SqlEntity>) 
+                            else false
+                        else callEntityType e
 
                     // Usually it's just SqlEntity but it can be also tuple in joins etc.
                     let rec foundInitParamType : Expression -> ParameterExpression = function
                         | :? LambdaExpression as lambda when lambda.Parameters.Count = 1 ->
-                            let t = lambda.Parameters.[0].Type
-                            Expression.Parameter(lambda.Parameters.[0].Type,"result")
+                            if shouldFlattenToSqlEntity lambda.Parameters.[0] then
+                                Expression.Parameter(typeof<SqlEntity>,"result")
+                            else Expression.Parameter(lambda.Parameters.[0].Type,"result")
                         | :? MethodCallExpression as meth when meth.Arguments.Count = 1 ->
-                            Expression.Parameter(meth.Arguments.[0].Type,"result")
+                            if shouldFlattenToSqlEntity meth.Arguments.[0] then
+                                Expression.Parameter(typeof<SqlEntity>,"result")
+                            else Expression.Parameter(meth.Arguments.[0].Type,"result")
                         | :? UnaryExpression as ce -> 
                             foundInitParamType ce.Operand
                         | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
-
                     match projs.Head with
                     // We have this wrap and the lambda is the second argument:
                     | :? MethodCallExpression as meth when meth.Arguments.Count = 2 ->
@@ -355,6 +380,20 @@ module internal QueryExpressionTransformer =
                     
                     let rec generateReplacementParams (proj:Expression) = 
                         match proj.NodeType, proj with
+                        //| ExpressionType.Lambda, (:? LambdaExpression as lambda) 
+                        //    when (lambda.Body.NodeType = ExpressionType.New && lambda.Parameters.Count = 1) ->
+                        //        //remove (x => x) Lambda.
+                        //        let t = lambda.Parameters.[0].Type
+                        //        let ne = lambda.Body :?> NewExpression
+                        //        if ne.Type.Name.StartsWith("AnonymousObject") then
+                        //            ne.Arguments |> Seq.iter(fun a -> generateReplacementParams a)
+                        //        else
+                        //            match prevProj with
+                        //            | :? LambdaExpression as prevLambda when prevLambda <> Unchecked.defaultof<LambdaExpression> -> 
+                        //                lambda.Parameters |> Seq.iter(fun p -> replaceParams.[p] <- prevLambda)
+                        //            | _ when prevProj = Unchecked.defaultof<Expression> -> 
+                        //                lambda.Parameters |> Seq.iter(fun p -> replaceParams.[p] <- Expression.Lambda(initDbParam,initDbParam))
+                        //            | _ -> ()
                         | ExpressionType.Lambda, (:? LambdaExpression as lambda) ->  
                             match prevProj with
                             | :? LambdaExpression as prevLambda when prevLambda <> Unchecked.defaultof<LambdaExpression> -> 
@@ -375,7 +414,7 @@ module internal QueryExpressionTransformer =
                     if sqlQuery.Grouping.Length > 0 then
                             
                         let gatheredAggregations = 
-                            sqlQuery.Grouping |> List.map(fun (group,_) ->
+                            sqlQuery.Grouping |> List.map(fun (group,x) ->
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
@@ -384,16 +423,27 @@ module internal QueryExpressionTransformer =
 //                                        match group |> Seq.tryFind(fun (a,s) -> a=aliasAndOps.Key) with
 //                                        | Some(_, keyitm) -> aliasAndOps.Value |> Seq.map(fun ao -> ao, aliasAndOps.Key, keyitm)
 //                                        | None -> Seq.empty
-                                        group 
-                                        |> Seq.choose(fun (a, c) -> 
-                                            match op, c with
-                                            | KeyOp i, KeyColumn c when String.IsNullOrEmpty i -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
-                                            | MaxOp i, KeyColumn c -> Some (a, GroupColumn(MaxOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
-                                            | MinOp i, KeyColumn c -> Some (a, GroupColumn(MinOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
-                                            | SumOp i, KeyColumn c -> Some (a, GroupColumn(SumOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
-                                            | AvgOp i, KeyColumn c -> Some (a, GroupColumn(AvgOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
-                                            | CountOp i, KeyColumn c -> Some (a, GroupColumn(CountOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
-                                            | _ -> None)
+                                        if not (group |> List.isEmpty) then
+                                            group 
+                                            |> Seq.choose(fun (a, cc) -> 
+                                                match op, cc with
+                                                | KeyOp i, KeyColumn c when String.IsNullOrEmpty i -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
+                                                | MaxOp i, KeyColumn c -> Some (a, GroupColumn(MaxOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | MinOp i, KeyColumn c -> Some (a, GroupColumn(MinOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | SumOp i, KeyColumn c -> Some (a, GroupColumn(SumOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | AvgOp i, KeyColumn c -> Some (a, GroupColumn(AvgOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | CountOp i, KeyColumn c -> Some (a, GroupColumn(CountOp (if String.IsNullOrEmpty i then c else i), KeyColumn c))
+                                                | _ -> None)
+                                        else
+                                            let i = 
+                                                match op with
+                                                | MaxOp col -> GroupColumn(MaxOp col, KeyColumn col)
+                                                | MinOp col -> GroupColumn(MinOp col, KeyColumn col)
+                                                | SumOp col -> GroupColumn(SumOp col, KeyColumn col)
+                                                | AvgOp col -> GroupColumn(AvgOp col, KeyColumn col)
+                                                | CountOp col -> GroupColumn(CountOp col, KeyColumn col)
+                                                | x -> failwithf "not supported aggregation %O" x
+                                            ["",i] |> List.toSeq
                                     ) |> Seq.concat |> Seq.toList
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)

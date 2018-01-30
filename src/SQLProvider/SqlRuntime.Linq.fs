@@ -77,7 +77,9 @@ module internal QueryImplementation =
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         match data with
-                        | [||] -> failwith "aggregate not found"
+                        | [||] -> 
+                            let ty = typedefof<GroupResultItems<_>>.MakeGenericType(typeof<int>)
+                            ty.GetConstructors().[1].Invoke [|"";1;e|]
                         | [|keyname, keyvalue|] -> 
                             match keyType with
                             | Some keyTypev ->

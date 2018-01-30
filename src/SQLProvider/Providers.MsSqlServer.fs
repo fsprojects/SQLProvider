@@ -694,7 +694,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
                         else
-                            for col in v do
+                            for col in v |> Seq.distinct do
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col|])
 
@@ -707,7 +707,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                         let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
-                        [String.Join(", ", keys) + (match aggs with [] -> "" | _ -> ", ") + String.Join(", ", res2)] 
+                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
@@ -825,8 +825,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                         ))))
 
-            let groupByBuilder() =
-                sqlQuery.Grouping |> List.map(fst) |> List.concat
+            let groupByBuilder groupkeys =
+                groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
                     ~~ (fieldNotation alias column))
@@ -863,8 +863,10 @@ type internal MSSqlServerProvider(tableNames:string) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                ~~" GROUP BY "
-                groupByBuilder()
+                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                if groupkeys.Length > 0 then
+                    ~~" GROUP BY "
+                    groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
