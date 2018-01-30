@@ -169,6 +169,7 @@ module PostgreSQL =
               "jsonb"                       , typemap<string>                     ["Jsonb"]
               "line"                        , namemap "NpgsqlLine"                ["Line"]
               "lseg"                        , namemap "NpgsqlLSeg"                ["LSeg"]
+              "ltree"                       , typemap<string>                     ["Unknown"]
               "macaddr"                     , typemap<PhysicalAddress>            ["MacAddr"]
               "money"                       , typemap<decimal>                    ["Money"]
               "name"                        , typemap<string>                     ["Name"]
