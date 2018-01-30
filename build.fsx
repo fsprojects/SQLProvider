@@ -144,7 +144,7 @@ Target "SetupPostgreSQL" (fun _ ->
             use cmd = new Npgsql.NpgsqlCommand(query, conn)
             cmd.ExecuteNonQuery() |> ignore 
           with e -> 
-            printfn "Connection attempt %i: %A" attempt e
+            printfn "Connection attempt %i: %s" attempt e.Message
             Threading.Thread.Sleep 1000
             if attempt < 30 then runCmd' (attempt + 1)
 
