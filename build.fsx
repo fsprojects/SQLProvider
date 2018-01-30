@@ -125,7 +125,6 @@ Target "SetupPostgreSQL" (fun _ ->
       connBuilder.Host <- "localhost"
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
-
       connBuilder.Username <- "postgres"
       connBuilder.Password <- 
         match buildServer with
@@ -134,14 +133,23 @@ Target "SetupPostgreSQL" (fun _ ->
         | _ -> "postgres"      
   
       let runCmd query = 
-        use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
-        conn.Open()
-        use cmd = new Npgsql.NpgsqlCommand(query, conn)
-        cmd.ExecuteNonQuery() |> ignore    
+        // We wait up to 30 seconds for PostgreSQL to be initialized
+        let rec runCmd' attempt = 
+          try
+            use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
+            conn.Open()
+            use cmd = new Npgsql.NpgsqlCommand(query, conn)
+            cmd.ExecuteNonQuery() |> ignore 
+          with e -> 
+            printfn "Connection attempt %i: %A" attempt e
+            Threading.Thread.Sleep 1000
+            if attempt < 30 then runCmd' (attempt + 1)
+
+        runCmd' 0
               
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
-      runCmd ("CREATE DATABASE " + testDbName)
+      runCmd (sprintf "CREATE DATABASE %s" testDbName)
       connBuilder.Database <- testDbName
 
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
