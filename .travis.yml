@@ -21,7 +21,7 @@ before_script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -rf /usr/local/var/postgres; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then initdb /usr/local/var/postgres; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pg_ctl -D /usr/local/var/postgres start; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then until pg_ctl status -D /usr/local/var/postgres; do >1 echo "Postgres is unavailable - sleeping"; sleep 1; done; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then until pg_ctl -D /usr/local/var/postgres status; do echo "Postgres is unavailable - sleeping"; sleep 0.05; done; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then createuser -s postgres; fi
 
 script:
