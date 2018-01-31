@@ -628,6 +628,18 @@ let ``simplest select query with groupBy constant``() =
     Assert.AreEqual(fst(qry), 8)
     Assert.Greater(fst(qry), snd(qry))
 
+[<Test>]
+let ``simplest select query with groupBy constant with operation``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for p in dc.Main.Products do
+            groupBy 1 into g
+            select (g.Max(fun p -> p.CategoryId+p.CategoryId+p.CategoryId))
+        } |> Seq.head
+
+    Assert.AreEqual(qry, 24)
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with join groupBy constant``() = 
     let dc = sql.GetDataContext()
@@ -695,14 +707,16 @@ let ``simple select query with groupBy sum``() =
         query {
             for od in dc.Main.OrderDetails do
             groupBy od.ProductId into p
-            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
+            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount), p.Sum(fun f -> f.UnitPrice+1m))
         } |> Seq.toList
-    
-    let _,fstUnitPrice, fstDiscount = qry.[0]
+
+    let _,fstUnitPrice, fstDiscount, plusones = qry.[0]
     Assert.Greater(652m, fstUnitPrice)
     Assert.Less(651m, fstUnitPrice)
     Assert.Greater(2.96m, fstDiscount)
     Assert.Less(2.95m, fstDiscount)
+    Assert.Greater(699m, plusones)
+    Assert.Less(689m, plusones)
         
 [<Test>]
 let ``simple select query with groupBy having count``() = 
