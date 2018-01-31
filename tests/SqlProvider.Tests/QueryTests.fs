@@ -1509,7 +1509,6 @@ let ``simple operations in select query``() =
 
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(6, qry.Length)
-    Assert.IsFalse(qry.[0])
 
 [<Test; Ignore("Not supported: Select operations are never evaluated on server side -> complex contains cannot work.")>]
 let ``simple canonical operations in nested select query``() =
