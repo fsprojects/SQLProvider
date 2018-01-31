@@ -753,9 +753,13 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
-                            for col in v |> Seq.distinct do
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
-                                else yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col|]) // F# makes this so easy :)
+                            for colp in v |> Seq.distinct do
+                                match colp with
+                                | EntityColumn col ->
+                                    if singleEntity then yield sprintf "%s.%s as \"%s\"" k (quoteWhiteSpace col) col
+                                    else yield sprintf "%s.%s as \"%s.%s\"" k (quoteWhiteSpace col) k col // F# makes this so easy :)
+                                | OperationColumn(n,op) ->
+                                    yield sprintf "%s as \"%s\"" (Oracle.fieldNotation k op) n|])
 
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
