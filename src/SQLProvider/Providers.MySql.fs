@@ -140,6 +140,10 @@ module MySql =
             | Truncate -> sprintf "TRUNCATE(%s)" column
             | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
+            | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

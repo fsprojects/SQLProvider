@@ -217,11 +217,16 @@ tan(i)          | TAN        | TAN       | TAN     | TAN   | TAN        | TAN   
 asin(i)         | ASIN       | ASIN      | ASIN    | ASIN  | ASIN       |         | ASIN     |   |
 acos(i)         | ACOS       | ACOS      | ACOS    | ACOS  | ACOS       |         | ACOS     |   |
 atan(i)         | ATAN       | ATAN      | ATAN    | ATAN  | ATAN       | Atn     | ATAN     |   |
+Math.Max(x,y)   | SELECT(MAX) | GREATEST  | GREATEST| GREATEST| MAX      | iif(x>y,x,y)| GREATEST     |   |
+Math.Min(x,y)   | SELECT(MIN) | LEAST     | LEAST   | LEAST | MIN        | iif(x<y,x,y)| LEAST     |   |
 (+)             | +          | +         | +       | +     | +          | +       | +        |   |
 (-)             | -          | -         | -       | -     | -          | -       | -        |   |
 (*)             | *          | *         | *       | *     | *          | *       | *        |   |
 (/)             | /          | /         | /       | /     | /          | /       | /        |   |
 (%)             | %          | %         | %       | %     | %          | %       | %        |   |
+
+Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
+It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
 
 #### Aggregate Functions 
 

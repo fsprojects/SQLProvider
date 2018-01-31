@@ -1461,7 +1461,7 @@ let ``simple canonical operations query``() =
                 && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
                 && (cust.City.Replace("on","xx") + L).Replace("xx","on") + ("O" + L) = "London" + "LOL" 
                 && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
-                && emp.BirthDate.Date.AddYears(3).Month + 1 > 3
+                && Math.Max(emp.BirthDate.Date.AddYears(3).Month + 1, 0) > 3
             )
             sortBy (abs(abs(emp.BirthDate.Day * emp.BirthDate.Day)))
             select (cust.CustomerId, cust.City, emp.BirthDate)

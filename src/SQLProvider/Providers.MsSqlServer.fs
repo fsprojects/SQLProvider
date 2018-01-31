@@ -364,6 +364,10 @@ type internal MSSqlServerProvider(tableNames:string) =
             | Truncate -> sprintf "TRUNCATE(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||","+")) par
+            | Greatest(SqlDecimal x) -> sprintf "(SELECT MAX(V) FROM (VALUES (%M), (%s)) AS VALUE(V))" x column
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "(SELECT MAX(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
+            | Least(SqlDecimal x) -> sprintf "(SELECT MIN(V) FROM (VALUES (%M), (%s)) AS VALUE(V))" x column
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "(SELECT MIN(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
         | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

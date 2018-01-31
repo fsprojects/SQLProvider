@@ -113,6 +113,10 @@ module PostgreSQL =
             | Truncate -> sprintf "TRUNC(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
+            | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         

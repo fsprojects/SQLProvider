@@ -79,6 +79,10 @@ type internal MSAccessProvider() =
             | ACos -> sprintf "Atn(-%s / Sqr(-%s * %s + 1)) + 2 * Atn(1)" column column column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||", "&")) par
+            | Greatest(SqlDecimal x) -> sprintf "(iif(%M > %s, %M, %s))" x column x column
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "(iif(%s > %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
+            | Least(SqlDecimal x) -> sprintf "(iif(%M < %s, %M, %s)" x column x column
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "(iif(%s < %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
         | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

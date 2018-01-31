@@ -89,6 +89,8 @@ module ColumnSchema =
     | ASin
     | ACos
     | ATan
+    | Greatest of SqlDecimalOrColumn
+    | Least of SqlDecimalOrColumn
     // Other
     | BasicMath of string*obj //operation, constant
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
@@ -111,6 +113,11 @@ module ColumnSchema =
     and SqlFloatOrColumn =
     | SqlFloat of float
     | SqlNumCol of string*SqlColumnType //alias*column
+
+    and SqlDecimalOrColumn =
+    | SqlDecimal of decimal
+    | SqlDecimalCol of string*SqlColumnType //alias*column
+
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types

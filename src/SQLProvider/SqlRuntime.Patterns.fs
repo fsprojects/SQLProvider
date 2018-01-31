@@ -311,6 +311,15 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Truncate", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Truncate, col), typ)
             | _ -> failwith "Shouldn't hit"
 
+    | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ))); par])))
+        when ((meth.Name = "Max" || meth.Name = "Min" ) && (decimalTypes |> Array.exists((=) typ) || integerTypes |> Array.exists((=) typ))) -> 
+            match meth.Name, par with
+            | "Max", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlDecimalCol(al2,col2)), col), typ)
+            | "Min", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlDecimalCol(al2,col2)), col), typ)
+            | "Max", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlDecimal(Convert.ToDecimal c)), col), typ)
+            | "Min", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlDecimal(Convert.ToDecimal c)), col), typ)
+            | _ -> None
+
     // Basic math: (x.Column+1), (1+x.Column) and (x.Column1+y.Column2)
     | (ExpressionType.Add as op),      (:? BinaryExpression as be) 
     | (ExpressionType.Subtract as op), (:? BinaryExpression as be) 

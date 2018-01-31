@@ -175,6 +175,10 @@ module Firebird =
             | Truncate -> sprintf "TRUNC(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par            
+            | Greatest(SqlDecimal x) -> sprintf "GREATEST(%M, %s)" x column
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" (fieldNotation al2 col2) column
+            | Least(SqlDecimal x) -> sprintf "LEAST(%M, %s)" x column
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" (fieldNotation al2 col2) column
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

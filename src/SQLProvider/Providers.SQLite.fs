@@ -213,6 +213,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
+            | Greatest(SqlDecimal x) -> sprintf "MAX(%s, %M)" column x
+            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "MAX(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlDecimal x) -> sprintf "MIN(%s, %M)" column x
+            | Least(SqlDecimalCol(al2, col2)) -> sprintf "MIN(%s, %s)" column (fieldNotation al2 col2)
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
         | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
