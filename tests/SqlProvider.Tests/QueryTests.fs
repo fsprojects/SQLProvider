@@ -1452,7 +1452,6 @@ let ``simple canonical operations query``() =
         query {
             // Silly query not hitting indexes, so testing purposes only...
             for cust in dc.Main.Customers do
-            // This is not yet working:
             join emp in dc.Main.Employees on (cust.City.Trim() + "x" + cust.Country = emp.City.Trim() + "x" + emp.Country)
             join secondCust in dc.Main.Customers on (cust.City + emp.City + "A" = secondCust.City + secondCust.City + "A")
             where (
@@ -1472,6 +1471,61 @@ let ``simple canonical operations query``() =
     Assert.AreEqual(12, qry.Length)
     Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
 
+
+[<Test >]
+let ``simple operations in select query``() =
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        let L = "L"
+        query {
+            for cust in dc.Main.Customers do
+            join emp in dc.Main.Employees on (cust.City + "_" + cust.Country = emp.City + "_" + emp.Country)
+            join secondCust in dc.Main.Customers on (cust.City = secondCust.City)
+            select (
+                cust.City + emp.City + cust.City + emp.City + cust.City = cust.City + emp.City + cust.City + emp.City + cust.City
+                && abs(emp.EmployeeId)+1L > 4L 
+                && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
+                && (cust.City.Replace("on","xx") + L).Replace("xx","on") + ("O" + L) = "London" + "LOL" 
+                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
+                && Math.Max(emp.BirthDate.Date.AddYears(3).Month + 1, 0) > 3
+            )
+            distinct
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(6, qry.Length)
+    Assert.IsFalse(qry.[0])
+
+[<Test; Ignore("Not supported: Select operations are never evaluated on server side -> complex contains cannot work.")>]
+let ``simple canonical operations in nested select query``() =
+    let dc = sql.GetDataContext()
+
+    let qry1 = 
+        let L = "L"
+        query {
+            for cust in dc.Main.Customers do
+            join emp in dc.Main.Employees on (cust.City + "_" + cust.Country = emp.City + "_" + emp.Country)
+            join secondCust in dc.Main.Customers on (cust.City = secondCust.City)
+            select (
+                cust.City + emp.City + cust.City + emp.City + cust.City = cust.City + emp.City + cust.City + emp.City + cust.City
+                && abs(emp.EmployeeId)+1L > 4L 
+                && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
+                && (cust.City.Replace("on","xx") + L).Replace("xx","on") + ("O" + L) = "London" + "LOL" 
+                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
+                && Math.Max(emp.BirthDate.Date.AddYears(3).Month + 1, 0) > 3
+            )
+            distinct
+        } 
+    let qry2 = 
+        query {
+            for cust in dc.Main.Customers do
+            where (qry1.Contains(cust.City="London"))
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry2
+    Assert.AreEqual(6, qry2.Length)
 
 [<Test>]
 let ``simple union query test``() = 

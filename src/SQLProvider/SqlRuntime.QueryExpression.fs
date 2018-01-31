@@ -384,20 +384,6 @@ module internal QueryExpressionTransformer =
                     
                     let rec generateReplacementParams (proj:Expression) = 
                         match proj.NodeType, proj with
-                        //| ExpressionType.Lambda, (:? LambdaExpression as lambda) 
-                        //    when (lambda.Body.NodeType = ExpressionType.New && lambda.Parameters.Count = 1) ->
-                        //        //remove (x => x) Lambda.
-                        //        let t = lambda.Parameters.[0].Type
-                        //        let ne = lambda.Body :?> NewExpression
-                        //        if ne.Type.Name.StartsWith("AnonymousObject") then
-                        //            ne.Arguments |> Seq.iter(fun a -> generateReplacementParams a)
-                        //        else
-                        //            match prevProj with
-                        //            | :? LambdaExpression as prevLambda when prevLambda <> Unchecked.defaultof<LambdaExpression> -> 
-                        //                lambda.Parameters |> Seq.iter(fun p -> replaceParams.[p] <- prevLambda)
-                        //            | _ when prevProj = Unchecked.defaultof<Expression> -> 
-                        //                lambda.Parameters |> Seq.iter(fun p -> replaceParams.[p] <- Expression.Lambda(initDbParam,initDbParam))
-                        //            | _ -> ()
                         | ExpressionType.Lambda, (:? LambdaExpression as lambda) ->  
                             match prevProj with
                             | :? LambdaExpression as prevLambda when prevLambda <> Unchecked.defaultof<LambdaExpression> -> 
