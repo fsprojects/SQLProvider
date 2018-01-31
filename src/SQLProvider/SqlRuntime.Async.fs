@@ -64,13 +64,7 @@ module AsyncOperations =
                 match svc.SqlExpression with
                 | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
                     
-                    let key = 
-                        let rec getBaseCol x =
-                            match x with
-                            | KeyColumn k -> k
-                            | CanonicalOperation(_, c) -> getBaseCol c
-                            | GroupColumn(_, c) -> getBaseCol c
-                        getBaseCol op
+                    let key = Utilities.getBaseColumnName op
 
                     let alias =
                             match entity with

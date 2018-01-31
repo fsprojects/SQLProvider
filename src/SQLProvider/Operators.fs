@@ -119,7 +119,7 @@ module ColumnSchema =
     | SqlDecimal of decimal
     | SqlDecimalCol of string*SqlColumnType //alias*column
 
-    type ProjectionItem =
+    type ProjectionParameter =
     | EntityColumn of string
     | OperationColumn of string*SqlColumnType//name*operations
 

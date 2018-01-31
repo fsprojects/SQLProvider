@@ -883,13 +883,7 @@ module internal QueryImplementation =
                              OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity, op,_)))) 
                              ]) ->
 
-                        let key = 
-                            let rec getBaseCol x =
-                                match x with
-                                | KeyColumn k -> k
-                                | CanonicalOperation(_, c) -> getBaseCol c
-                                | GroupColumn(_, c) -> getBaseCol c
-                            getBaseCol op
+                        let key = Utilities.getBaseColumnName op
 
                         let alias =
                              match entity with

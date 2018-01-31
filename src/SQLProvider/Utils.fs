@@ -152,6 +152,12 @@ module internal Utilities =
         | GroupColumn (StdDevOp key,_) -> aliasSprint (sprintf "STDDEV_%s" key)
         | GroupColumn (VarianceOp key,_) -> aliasSprint (sprintf "VAR_%s" key)
 
+    let rec getBaseColumnName x =
+        match x with
+        | KeyColumn k -> k
+        | CanonicalOperation(_, c) -> "c" + getBaseColumnName c
+        | GroupColumn(_, c) -> "g" + getBaseColumnName c
+
 module ConfigHelpers = 
     
     open System
