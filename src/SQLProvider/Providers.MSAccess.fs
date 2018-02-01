@@ -33,23 +33,23 @@ type internal MSAccessProvider() =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Substring(SqlInt startPos) -> sprintf "Mid(%s, %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "Mid(%s, %s)" column (fieldNotation al2 col2)
+            | Substring(SqlCol(al2, col2)) -> sprintf "Mid(%s, %s)" column (fieldNotation al2 col2)
             | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "Mid(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "Mid(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "Mid(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "Mid(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "Mid(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "Mid(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "Mid(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "Trim(%s)" column
             | Length -> sprintf "Len(%s)" column
             | IndexOf(SqlStr search) -> sprintf "InStr('%s',%s)" search column
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "InStr(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOf(SqlCol(al2, col2)) -> sprintf "InStr(%s,%s)" (fieldNotation al2 col2) column
             | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "InStr(%d,'%s',%s)" startPos search column
-            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "InStr(%s,'%s',%s)" (fieldNotation al2 col2) search column
-            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "InStr(%d,%s,%s)" startPos (fieldNotation al2 col2) column
-            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "InStr(%s,%s,%s)" (fieldNotation al3 col3) (fieldNotation al2 col2) column
+            | IndexOfStart(SqlStr(search),SqlCol(al2, col2)) -> sprintf "InStr(%s,'%s',%s)" (fieldNotation al2 col2) search column
+            | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "InStr(%d,%s,%s)" startPos (fieldNotation al2 col2) column
+            | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "InStr(%s,%s,%s)" (fieldNotation al3 col3) (fieldNotation al2 col2) column
             | ToUpper -> sprintf "UCase(%s)" column
             | ToLower -> sprintf "LCase(%s)" column
             // Date functions
@@ -61,13 +61,13 @@ type internal MSAccessProvider() =
             | Minute -> sprintf "Minute(%s)" column
             | Second -> sprintf "Second(%s)" column
             | AddYears(SqlInt x) -> sprintf "DateAdd(\"yyyy\", %d, %s)" x column
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DateAdd(\"yyyy\", %s, %s)" (fieldNotation al2 col2) column
+            | AddYears(SqlCol(al2, col2)) -> sprintf "DateAdd(\"yyyy\", %s, %s)" (fieldNotation al2 col2) column
             | AddMonths x -> sprintf "DateAdd(\"m\", %d, %s)" x column
             | AddDays(SqlFloat x) -> sprintf "DateAdd(\"d\", %f, %s)" x column // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DateAdd(\"d\", %s, %s)" (fieldNotation al2 col2) column
+            | AddDays(SqlCol(al2, col2)) -> sprintf "DateAdd(\"d\", %s, %s)" (fieldNotation al2 col2) column
             | AddHours x -> sprintf "DateAdd(\"h\", %f, %s)" x column
             | AddMinutes(SqlFloat x) -> sprintf "DateAdd(\"n\", %f, %s)" x column
-            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldNotation al2 col2) column
+            | AddMinutes(SqlCol(al2, col2)) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldNotation al2 col2) column
             | AddSeconds x -> sprintf "DateAdd(\"s\", %f, %s)" x column
             // Math functions
             | Truncate -> sprintf "Fix(%s)" column
@@ -80,9 +80,20 @@ type internal MSAccessProvider() =
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||", "&")) par
             | Greatest(SqlDecimal x) -> sprintf "(iif(%M > %s, %M, %s))" x column x column
-            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "(iif(%s > %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
+            | Greatest(SqlCol(al2, col2)) -> sprintf "(iif(%s > %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
             | Least(SqlDecimal x) -> sprintf "(iif(%M < %s, %M, %s)" x column x column
-            | Least(SqlDecimalCol(al2, col2)) -> sprintf "(iif(%s < %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
+            | Least(SqlCol(al2, col2)) -> sprintf "(iif(%s < %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
+            //if-then-else
+            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "iif(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "iif(%s, %s, %d)" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "iif(%s, %d, %s)" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "iif(%s, %s, %M)" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "iif(%s, %M, %s)" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "iif(%s, %s, '%s')" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
+            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "iif(%s, '%s', %s)" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "iif(%s, %s, '%s')" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "iif(%s, '%s', %s)" column itm (fieldNotation al2 col2)
+
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
         | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

@@ -334,65 +334,14 @@ module internal QueryImplementation =
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
                         
                         Some(ti,key,op,Some (box (subquery, modified)))
-                    | SqlSpecialOpArr(ti,op,key,value)
-                    | SqlSpecialNegativeOpArr(ti,op,key,value) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,Some (box value))
-                    | SqlSpecialOp(ti,op,key,value) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,Some value)
-                    // if using nullable types
-                    | OptionIsSome(SqlColumnGet(ti,key,_)) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.NotNull,None)
-                    | OptionIsNone(SqlColumnGet(ti,key,_))
-                    | SqlCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))), (OptionNone | NullConstant)) 
-                    | SqlNegativeCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.IsNull,None)
-                    | SqlCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) 
-                    | SqlNegativeCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.NotNull,None)
-                    // matches column to constant with any operator eg c.name = "john", c.age > 42
-                    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
-                    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))))
-                    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) 
-                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) ->
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,op,c)
                     // matches column to column e.g. c.col1 > c.col2
                     | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) 
                     | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) ->
                         let alias2 = resolveTuplePropertyName ti2 source.TupleIndex
                         Some(ti,key,op,Some((alias2,key2) |> box))
-                    // matches to another property getter, method call or new expression
-                    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-                    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
-                    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
-
+                    | SimpleCondition((ti,_,_,_) as x) ->
                         paramNames.Add(ti) |> ignore
-                        let invokedResult = Expression.Lambda(meth).Compile().DynamicInvoke()
-
-                        let handleNullCompare() =
-                            match op with
-                            | ConditionOperator.Equal -> Some(ti,key,ConditionOperator.IsNull,None)
-                            | ConditionOperator.NotEqual -> Some(ti,key,ConditionOperator.NotNull,None)
-                            | _ -> Some(ti,key,op,Some(invokedResult))
-
-                        if invokedResult = null then handleNullCompare()
-                        else
-                        let retType = invokedResult.GetType()
-                        if retType.IsGenericType && retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") then
-                            let gotVal = retType.GetProperty("Value") // Option type Some should not be SQL-parameter.
-                            match gotVal.GetValue(invokedResult, [||]) with
-                            | null -> handleNullCompare()
-                            | r -> Some(ti,key,op,Some(r))
-                        else Some(ti,key,op,Some(invokedResult))
-                    | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
-                        paramNames.Add(ti) |> ignore
-                        Some(ti,key,ConditionOperator.Equal, Some(true |> box))
+                        Some x
                     | _ -> None
 
                 let rec filterExpression (exp:Expression)  =

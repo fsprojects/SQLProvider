@@ -77,23 +77,23 @@ module internal Oracle =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s, %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
+            | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
             | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTR(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "LENGTH(%s)" column
             | IndexOf(SqlStr search) -> sprintf "INSTR(%s,'%s')" column search
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+            | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
             | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "INSTR(%s,'%s',%d)" column search startPos
-            | IndexOfStart(SqlStr(search), SqlIntCol(al2, col2)) -> sprintf "INSTR(%s,'%s',%s)" column search (fieldNotation al2 col2)
-            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "INSTR(%s,%s,%d)" column (fieldNotation al2 col2) startPos
-            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | IndexOfStart(SqlStr(search), SqlCol(al2, col2)) -> sprintf "INSTR(%s,'%s',%s)" column search (fieldNotation al2 col2)
+            | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "INSTR(%s,%s,%d)" column (fieldNotation al2 col2) startPos
+            | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             // Date functions
             | Date -> sprintf "TRUNC(%s)" column
             | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
@@ -103,13 +103,13 @@ module internal Oracle =
             | Minute -> sprintf "EXTRACT(MINUTE FROM %s)" column
             | Second -> sprintf "EXTRACT(SECOND FROM %s)" column
             | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '%d' YEAR)" column x
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "(%s + INTERVAL %s YEAR)" column (fieldNotation al2 col2)
+            | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s YEAR)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "(%s + INTERVAL '%d' MONTH)" column x
             | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '%f' DAY)" column x // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldNotation al2 col2)
+            | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '%f' HOUR)" column x
             | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '%f' MINUTE)" column x
-            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
+            | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "(%s + INTERVAL '%f' SECOND)" column x
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column
@@ -117,9 +117,19 @@ module internal Oracle =
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
             | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
-            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+            | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
             | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
-            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            //if-then-else
+            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
+            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column itm (fieldNotation al2 col2)
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
@@ -1034,11 +1044,12 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
-                                | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
-                                | _ -> () // if the primary key exists, do nothing
-                                                // this is because non-identity columns will have been set
-                                                // manually and in that case scope_identity would bring back 0 "" or whatever
+                                if primaryKeyColumn.ContainsKey(e.Table.Name) then
+                                    match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
+                                    | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
+                                    | _ -> () // if the primary key exists, do nothing
+                                                    // this is because non-identity columns will have been set
+                                                    // manually and in that case scope_identity would bring back 0 "" or whatever
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

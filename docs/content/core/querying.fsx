@@ -228,6 +228,17 @@ Math.Min(x,y)   | SELECT(MIN) | LEAST     | LEAST   | LEAST | MIN        | iif(x
 Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
 It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
 
+#### Condition operations
+
+| .NET            | MsSqlServer| PostgreSql| MySql    | Oracle   | SQLite   | MSAccess  | Odbc     | Notes
+|-----------------|------------|-----------|----------|----------|----------|-----------|----------|---------------|
+if x then y else z| CASE WHEN  | CASE WHEN | IF(x,y,z)| CASE WHEN| CASE WHEN| iif(x,y,z)| CASE WHEN|   |
+
+If the condition is not using SQL columns, it will be parsed before creation of SQL.
+If the condition is containing columns, it will be parsed into SQL.
+
+If the condition is in the result of projection (the final select clause), it will be parsed after execution of the SQL.
+
 #### Aggregate Functions 
 
 Also you can use these to return an aggregated value, or in a group-by clause:

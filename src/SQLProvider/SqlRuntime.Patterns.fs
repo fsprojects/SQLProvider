@@ -176,6 +176,37 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
+let (|OptionIsSome|_|) = function    
+    | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
+    | _ -> None
+
+let (|OptionIsNone|_|) = function    
+    | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
+    | _ -> None
+
+let (|SqlCondOp|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.Equal,        ce.Left,ce.Right)
+    | ExpressionType.LessThan,           (:? BinaryExpression as ce) -> Some (ConditionOperator.LessThan,     ce.Left,ce.Right)
+    | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as ce) -> Some (ConditionOperator.LessEqual,    ce.Left,ce.Right)
+    | ExpressionType.GreaterThan,        (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterThan,  ce.Left,ce.Right)
+    | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterEqual, ce.Left,ce.Right)
+    | ExpressionType.NotEqual,           (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
+    | _ -> None
+
+let (|SqlNegativeCondOp|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand.NodeType, ue.Operand with
+        | ExpressionType.NotEqual,           (:? BinaryExpression as ce) -> Some (ConditionOperator.Equal,        ce.Left,ce.Right)
+        | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as ce) -> Some (ConditionOperator.LessThan,     ce.Left,ce.Right)
+        | ExpressionType.GreaterThan,        (:? BinaryExpression as ce) -> Some (ConditionOperator.LessEqual,    ce.Left,ce.Right)
+        | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterThan,  ce.Left,ce.Right)
+        | ExpressionType.LessThan,           (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterEqual, ce.Left,ce.Right)
+        | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
+        | _ -> None
+    | _ -> None
+
 let (|SqlPlainColumnGet|_|) = function
     | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
         match o with
@@ -235,11 +266,11 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | t when t = typeof<System.String> || t= typeof<Option<System.String>> -> // String functions
             match meth.Name, par with
             | "Substring", [Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlInt(startPos)), col), typ)
-            | "Substring", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlIntCol(al2,col2)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlCol(al2,col2)), col), typ)
             | "Substring", [Int startPos; Int strLen] -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlInt(strLen)), col), typ)
-            | "Substring", [SqlColumnGet(al2,col2,typ2); Int strLen] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlInt(strLen)), col), typ)
-            | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlIntCol(al2,col2)), col), typ)
-            | "Substring", [SqlColumnGet(al2,col2,ty2); SqlColumnGet(al3,col3,ty3)]  when integerTypes |> Seq.exists(fun t -> t = ty2) && integerTypes |> Seq.exists(fun t -> t = ty3) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlIntCol(al2,col2),SqlIntCol(al3,col3)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,typ2); Int strLen] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlCol(al2,col2),SqlInt(strLen)), col), typ)
+            | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlInt(startPos),SqlCol(al2,col2)), col), typ)
+            | "Substring", [SqlColumnGet(al2,col2,ty2); SqlColumnGet(al3,col3,ty3)]  when integerTypes |> Seq.exists(fun t -> t = ty2) && integerTypes |> Seq.exists(fun t -> t = ty3) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlCol(al2,col2),SqlCol(al3,col3)), col), typ)
             | "ToUpper", []
             | "ToUpperInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToUpper, col), typ)
             | "ToLower", [] 
@@ -247,26 +278,26 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Trim", [] -> Some(alias, CanonicalOperation(CanonicalOp.Trim, col), typ)
             | "Length", [] -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
             | "Replace", [String itm1; String itm2] when not(itm1.Contains("'") || itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStr(itm1), SqlStr(itm2)), col), typ)
-            | "Replace", [SqlColumnGet(al2,col2,_); String itm2] when not(itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStrCol(al2,col2), SqlStr(itm2)), col), typ)
-            | "Replace", [String itm1; SqlColumnGet(al2,col2,_)] when not(itm1.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStr(itm1), SqlStrCol(al2,col2)), col), typ)
-            | "Replace", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,_)] -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStrCol(al2,col2), SqlStrCol(al3,col3)), col), typ)
+            | "Replace", [SqlColumnGet(al2,col2,_); String itm2] when not(itm2.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlCol(al2,col2), SqlStr(itm2)), col), typ)
+            | "Replace", [String itm1; SqlColumnGet(al2,col2,_)] when not(itm1.Contains("'"))  -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlStr(itm1), SqlCol(al2,col2)), col), typ)
+            | "Replace", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,_)] -> Some(alias, CanonicalOperation(CanonicalOp.Replace(SqlCol(al2,col2), SqlCol(al3,col3)), col), typ)
             | "IndexOf", [String search] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStr(search)), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,_)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlStrCol(al2,col2)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_)] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOf(SqlCol(al2,col2)), col), intType typ)
             | "IndexOf", [String search; Int startPos] when not(search.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlInt(startPos)), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,_); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlInt(startPos)), col), intType typ)
-            | "IndexOf", [String search; SqlColumnGet(al2,col2,typ2)] when not(search.Contains("'")) && integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlIntCol(al2,col2)), col), intType typ)
-            | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStrCol(al2,col2), SqlIntCol(al3,col3)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlInt(startPos)), col), intType typ)
+            | "IndexOf", [String search; SqlColumnGet(al2,col2,typ2)] when not(search.Contains("'")) && integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlStr(search), SqlCol(al2,col2)), col), intType typ)
+            | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlCol(al3,col3)), col), intType typ)
             | _ -> None
         | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> -> // DateTime functions
             match meth.Name, par with
             | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlInt(x)), col), typ)
-            | "AddYears", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlIntCol(al2,col2)), col), typ)
+            | "AddYears", [SqlColumnGet(al2,col2,typ2)] when integerTypes |> Seq.exists(fun t -> t = typ2) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
             | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
             | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlFloat(x)), col), typ)
-            | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2))] when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlNumCol(al2,col2)), col), typ)
+            | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2))] when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlCol(al2,col2)), col), typ)
             | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
             | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlFloat(x)), col), typ)
-            | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2))] when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlNumCol(al2,col2)), col), typ)
+            | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2))] when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlCol(al2,col2)), col), typ)
             | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
             | _ -> None
         | _ -> None
@@ -314,8 +345,8 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ))); par])))
         when ((meth.Name = "Max" || meth.Name = "Min" ) && (decimalTypes |> Array.exists((=) typ) || integerTypes |> Array.exists((=) typ))) -> 
             match meth.Name, par with
-            | "Max", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlDecimalCol(al2,col2)), col), typ)
-            | "Min", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlDecimalCol(al2,col2)), col), typ)
+            | "Max", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlCol(al2,col2)), col), typ)
+            | "Min", OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when integerTypes |> Seq.exists(fun t -> t = typ2) || decimalTypes |> Seq.exists(fun t -> t = typ2)  -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlCol(al2,col2)), col), typ)
             | "Max", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlDecimal(Convert.ToDecimal c)), col), typ)
             | "Min", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlDecimal(Convert.ToDecimal c)), col), typ)
             | _ -> None
@@ -364,6 +395,25 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 Some(aliasLeft, CanonicalOperation(CanonicalOp.BasicMathOfColumns(opFix, aliasRight, colRight), colLeft), typLeft)
         | _ -> None
     //
+
+    | ExpressionType.Conditional, (:? ConditionalExpression as ce) ->
+        //Todo: match to condition, not SQL-colum.
+        //Then transfer the condition to SQL
+        match ce.Test with
+        | OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ))) ->
+            match ce.IfTrue, ce.IfFalse with
+            | Constant(c, ct), OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when (integerTypes |> Array.exists((=) ct)) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlInt(Convert.ToInt32(c)), SqlCol(al2,col2)), col), typ2)
+            | OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), Constant(c, ct) when (integerTypes |> Array.exists((=) ct)) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlCol(al2,col2), SqlInt(Convert.ToInt32(c))), col), typ2)
+            | Constant(c, ct), OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when (decimalTypes |> Array.exists((=) ct)) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlDecimal(Convert.ToDecimal(c)), SqlCol(al2,col2)), col), typ2)
+            | OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), Constant(c, ct) when (decimalTypes |> Array.exists((=) ct)) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlCol(al2,col2), SqlDecimal(Convert.ToDecimal(c))), col), typ2)
+            | String c, OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when not(c.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlStr(c.ToString()), SqlCol(al2,col2)), col), typ2)
+            | OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), String c when not(c.Contains("'")) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlCol(al2,col2), SqlStr(c.ToString())), col), typ2)
+            | Constant(c, ct), OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) when (ct = typeof<DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlDateTime(unbox(c)), SqlCol(al2,col2)), col), typ2)
+            | OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), Constant(c, ct) when (ct = typeof<DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlCol(al2,col2), SqlDateTime(unbox(c))), col), typ2)
+            | OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), OptionalConvertOrTypeAs(SqlColumnGet(al3,col3,typ3)) -> Some(alias, CanonicalOperation(CanonicalOp.CaseSql(SqlCol(al2,col2), SqlCol(al3,col3)), col), typ2)
+            | _ -> None
+        | _ -> None
+
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
                            (e.Type = typeof<System.DateTime> || e.Type = typeof<Option<System.DateTime>>) ->
         // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
@@ -373,6 +423,56 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | _ -> None
     | _ -> None
 
+and (|SimpleCondition|_|) exp =
+    match exp with
+    // if using nullable types
+    | OptionIsSome(SqlColumnGet(ti,key,_)) ->
+        Some(ti,key,ConditionOperator.NotNull,None)
+    | OptionIsNone(SqlColumnGet(ti,key,_))
+    | SqlCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))), (OptionNone | NullConstant)) 
+    | SqlNegativeCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
+        Some(ti,key,ConditionOperator.IsNull,None)
+    | SqlCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) 
+    | SqlNegativeCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
+        Some(ti,key,ConditionOperator.NotNull,None)
+    // matches column to constant with any operator eg c.name = "john", c.age > 42
+    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
+    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))))
+    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) 
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) ->
+        Some(ti,key,op,c)
+    // matches column to column e.g. c.col1 > c.col2
+    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) 
+    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) ->
+        Some(ti,key,op,Some(("",key2) |> box))
+    // matches to another property getter, method call or new expression
+    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
+
+        let invokedResult = Expression.Lambda(meth).Compile().DynamicInvoke()
+
+        let handleNullCompare() =
+            match op with
+            | ConditionOperator.Equal -> Some(ti,key,ConditionOperator.IsNull,None)
+            | ConditionOperator.NotEqual -> Some(ti,key,ConditionOperator.NotNull,None)
+            | _ -> Some(ti,key,op,Some(invokedResult))
+
+        if invokedResult = null then handleNullCompare()
+        else
+        let retType = invokedResult.GetType()
+        if retType.IsGenericType && retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") then
+            let gotVal = retType.GetProperty("Value") // Option type Some should not be SQL-parameter.
+            match gotVal.GetValue(invokedResult, [||]) with
+            | null -> handleNullCompare()
+            | r -> Some(ti,key,op,Some(r))
+        else Some(ti,key,op,Some(invokedResult))
+    | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" -> 
+        Some(ti,key,ConditionOperator.Equal, Some(true |> box))
+    | _ -> None
+
+
 let (|TupleSqlColumnsGet|_|) = function 
     | OptionalFSharpOptionValue(NewExpr(cons, args)) when cons.DeclaringType.Name.StartsWith("Tuple") || cons.DeclaringType.Name.StartsWith("AnonymousObject") ->
         let items = args |> List.choose(function
@@ -381,14 +481,6 @@ let (|TupleSqlColumnsGet|_|) = function
         match items with
         | [] -> None
         | li -> Some li
-    | _ -> None
-
-let (|OptionIsSome|_|) = function    
-    | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
-    | _ -> None
-
-let (|OptionIsNone|_|) = function    
-    | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
     | _ -> None
 
 let (|SqlSpecialOpArr|_|) = function
@@ -429,28 +521,6 @@ let (|SqlSpecialOp|_|) : Expression -> _ = function
         | _ -> None
     | _ -> None
                 
-let (|SqlCondOp|_|) (e:Expression) = 
-    match e.NodeType, e with 
-    | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.Equal,        ce.Left,ce.Right)
-    | ExpressionType.LessThan,           (:? BinaryExpression as ce) -> Some (ConditionOperator.LessThan,     ce.Left,ce.Right)
-    | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as ce) -> Some (ConditionOperator.LessEqual,    ce.Left,ce.Right)
-    | ExpressionType.GreaterThan,        (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterThan,  ce.Left,ce.Right)
-    | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterEqual, ce.Left,ce.Right)
-    | ExpressionType.NotEqual,           (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
-    | _ -> None
-
-let (|SqlNegativeCondOp|_|) (e:Expression) = 
-    match e.NodeType, e with
-    | ExpressionType.Not, (:? UnaryExpression as ue) ->
-        match ue.Operand.NodeType, ue.Operand with
-        | ExpressionType.NotEqual,           (:? BinaryExpression as ce) -> Some (ConditionOperator.Equal,        ce.Left,ce.Right)
-        | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as ce) -> Some (ConditionOperator.LessThan,     ce.Left,ce.Right)
-        | ExpressionType.GreaterThan,        (:? BinaryExpression as ce) -> Some (ConditionOperator.LessEqual,    ce.Left,ce.Right)
-        | ExpressionType.LessThanOrEqual,    (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterThan,  ce.Left,ce.Right)
-        | ExpressionType.LessThan,           (:? BinaryExpression as ce) -> Some (ConditionOperator.GreaterEqual, ce.Left,ce.Right)
-        | ExpressionType.Equal,              (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
-        | _ -> None
-    | _ -> None
 
 let (|SqlSpecialNegativeOpArr|_|) (e:Expression) = 
     match e.NodeType, e with

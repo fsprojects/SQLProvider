@@ -102,23 +102,23 @@ module MySql =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Substring(SqlInt startPos) -> sprintf "MID(%s, %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "MID(%s, %s)" column (fieldNotation al2 col2)
+            | Substring(SqlCol(al2, col2)) -> sprintf "MID(%s, %s)" column (fieldNotation al2 col2)
             | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "MID(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "MID(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "MID(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "MID(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(%s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
             | IndexOf(SqlStr search) -> sprintf "LOCATE('%s',%s)" search column
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOf(SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
             | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
-            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "LOCATE('%s',%s,%s)" search column (fieldNotation al2 col2)
-            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
-            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
+            | IndexOfStart(SqlStr(search),SqlCol(al2, col2)) -> sprintf "LOCATE('%s',%s,%s)" search column (fieldNotation al2 col2)
+            | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+            | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
             // Date functions
             | Date -> sprintf "DATE(%s)" column
             | Year -> sprintf "YEAR(%s)" column
@@ -128,22 +128,33 @@ module MySql =
             | Minute -> sprintf "MINUTE(%s)" column
             | Second -> sprintf "SECOND(%s)" column
             | AddYears(SqlInt x) -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
+            | AddYears(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
             | AddDays(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
+            | AddDays(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
             | AddMinutes(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
-            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
+            | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
             // Math functions
             | Truncate -> sprintf "TRUNCATE(%s)" column
             | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
             | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
-            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+            | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
             | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
-            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            //if-then-else
+            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "IF(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "IF(%s, %s, %d)" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "IF(%s, %d, %s)" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "IF(%s, %s, %M)" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "IF(%s, %M, %s)" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "IF(%s, %s, '%s')" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
+            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "IF(%s, '%s', %s)" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "IF(%s, %s, '%s')" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "IF(%s, '%s', %s)" column itm (fieldNotation al2 col2)
+
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

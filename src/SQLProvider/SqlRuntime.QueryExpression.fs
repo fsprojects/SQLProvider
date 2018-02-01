@@ -508,25 +508,33 @@ module internal QueryExpressionTransformer =
                 let resolvedSub =
                     match subItem with
                     | BasicMathOfColumns(op,al,col2) -> BasicMathOfColumns(op,resolver al, visitCanonicals resolverfunc col2)
-                    | Substring(SqlIntCol(al, col2)) -> Substring(SqlIntCol(resolver al, visitCanonicals resolverfunc col2))
+                    | Substring(SqlCol(al, col2)) -> Substring(SqlCol(resolver al, visitCanonicals resolverfunc col2))
 
-                    | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | SubstringWithLength(x,SqlIntCol(al3, col3)) -> SubstringWithLength(x,SqlIntCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | SubstringWithLength(SqlIntCol(al2, col2),x) -> SubstringWithLength(SqlIntCol(resolver al2, visitCanonicals resolverfunc col2),x)
+                    | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> SubstringWithLength(SqlCol(resolver al2, visitCanonicals resolver col2),SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | SubstringWithLength(x,SqlCol(al3, col3)) -> SubstringWithLength(x,SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | SubstringWithLength(SqlCol(al2, col2),x) -> SubstringWithLength(SqlCol(resolver al2, visitCanonicals resolverfunc col2),x)
 
-                    | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlStrCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | Replace(x,SqlStrCol(al3, col3)) -> Replace(x,SqlStrCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | Replace(SqlStrCol(al2, col2),x) -> Replace(SqlStrCol(resolver al2, visitCanonicals resolverfunc col2),x)
+                    | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> Replace(SqlCol(resolver al2, visitCanonicals resolver col2),SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | Replace(x,SqlCol(al3, col3)) -> Replace(x,SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | Replace(SqlCol(al2, col2),x) -> Replace(SqlCol(resolver al2, visitCanonicals resolverfunc col2),x)
 
-                    | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolver col2),SqlIntCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | IndexOfStart(x,SqlIntCol(al3, col3)) -> IndexOfStart(x,SqlIntCol(resolver al3, visitCanonicals resolverfunc col3))
-                    | IndexOfStart(SqlStrCol(al2, col2),x) -> IndexOfStart(SqlStrCol(resolver al2, visitCanonicals resolverfunc col2),x)
+                    | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> IndexOfStart(SqlCol(resolver al2, visitCanonicals resolver col2),SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | IndexOfStart(x,SqlCol(al3, col3)) -> IndexOfStart(x,SqlCol(resolver al3, visitCanonicals resolverfunc col3))
+                    | IndexOfStart(SqlCol(al2, col2),x) -> IndexOfStart(SqlCol(resolver al2, visitCanonicals resolverfunc col2),x)
 
-                    | IndexOf(SqlStrCol(al, col2)) -> IndexOf(SqlStrCol(resolver al, visitCanonicals resolverfunc col2))
+                    | IndexOf(SqlCol(al, col2)) -> IndexOf(SqlCol(resolver al, visitCanonicals resolverfunc col2))
 
-                    | AddYears(SqlIntCol(al, col2)) -> AddYears(SqlIntCol(resolver al, visitCanonicals resolverfunc col2))
-                    | AddDays(SqlNumCol(al, col2)) -> AddDays(SqlNumCol(resolver al, visitCanonicals resolverfunc col2))
-                    | AddMinutes(SqlNumCol(al, col2)) -> AddMinutes(SqlNumCol(resolver al, visitCanonicals resolverfunc col2))
+                    | AddYears(SqlCol(al, col2)) -> AddYears(SqlCol(resolver al, visitCanonicals resolverfunc col2))
+                    | AddDays(SqlCol(al, col2)) -> AddDays(SqlCol(resolver al, visitCanonicals resolverfunc col2))
+                    | AddMinutes(SqlCol(al, col2)) -> AddMinutes(SqlCol(resolver al, visitCanonicals resolverfunc col2))
+
+                    | Greatest(SqlCol(al, col)) -> Greatest(SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | Least(SqlCol(al, col)) -> Least(SqlCol(resolver al, visitCanonicals resolverfunc col))
+
+                    | CaseSql(SqlCol(al, col), SqlCol(al2, col2)) -> CaseSql(SqlCol(resolver al, visitCanonicals resolverfunc col), SqlCol(resolver al2, visitCanonicals resolverfunc col2))
+                    | CaseSql(SqlCol(al, col), x) -> CaseSql(SqlCol(resolver al, visitCanonicals resolverfunc col), x)
+                    | CaseSql(x, SqlCol(al, col)) -> CaseSql(x, SqlCol(resolver al, visitCanonicals resolverfunc col))
+
                     | x -> x
                 CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col) 
             | x -> x

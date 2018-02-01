@@ -52,15 +52,15 @@ module ColumnSchema =
 
     type CanonicalOp =
     //String functions
-    | Substring of SqlIntOrColumn
-    | SubstringWithLength of SqlIntOrColumn*SqlIntOrColumn
+    | Substring of SqlItemOrColumn
+    | SubstringWithLength of SqlItemOrColumn*SqlItemOrColumn
     | ToUpper
     | ToLower
     | Trim
     | Length
-    | Replace of SqlStringOrColumn*SqlStringOrColumn
-    | IndexOf of SqlStringOrColumn
-    | IndexOfStart of SqlStringOrColumn*SqlIntOrColumn
+    | Replace of SqlItemOrColumn*SqlItemOrColumn
+    | IndexOf of SqlItemOrColumn
+    | IndexOfStart of SqlItemOrColumn*SqlItemOrColumn
     // Date functions
     | Date
     | Year
@@ -69,11 +69,11 @@ module ColumnSchema =
     | Hour
     | Minute
     | Second
-    | AddYears of SqlIntOrColumn
+    | AddYears of SqlItemOrColumn
     | AddMonths of int
-    | AddDays of SqlFloatOrColumn
+    | AddDays of SqlItemOrColumn
     | AddHours of float
-    | AddMinutes of SqlFloatOrColumn
+    | AddMinutes of SqlItemOrColumn
     | AddSeconds of float
     // Numerical functions
     | Abs
@@ -89,34 +89,27 @@ module ColumnSchema =
     | ASin
     | ACos
     | ATan
-    | Greatest of SqlDecimalOrColumn
-    | Least of SqlDecimalOrColumn
+    | Greatest of SqlItemOrColumn
+    | Least of SqlItemOrColumn
     // Other
     | BasicMath of string*obj //operation, constant
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
+    | CaseSql of SqlItemOrColumn * SqlItemOrColumn
 
     and SqlColumnType =
     | KeyColumn of string
     | CanonicalOperation of CanonicalOp * SqlColumnType
     | GroupColumn of AggregateOperation * SqlColumnType
 
-    and SqlStringOrColumn =
-    | SqlStr of string
-    | SqlStrCol of string*SqlColumnType //alias*column
-
     // More recursion, because you mighn want to say e.g.
     // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
-    and SqlIntOrColumn =
+    and SqlItemOrColumn =
+    | SqlCol of string*SqlColumnType //alias*column
     | SqlInt of int
-    | SqlIntCol of string*SqlColumnType //alias*column
-
-    and SqlFloatOrColumn =
     | SqlFloat of float
-    | SqlNumCol of string*SqlColumnType //alias*column
-
-    and SqlDecimalOrColumn =
     | SqlDecimal of decimal
-    | SqlDecimalCol of string*SqlColumnType //alias*column
+    | SqlStr of string
+    | SqlDateTime of System.DateTime
 
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like

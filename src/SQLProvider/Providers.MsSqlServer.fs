@@ -326,23 +326,23 @@ type internal MSSqlServerProvider(tableNames:string) =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s, %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s)" column (fieldNotation al2 col2)
+            | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s)" column (fieldNotation al2 col2)
             | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %i, %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "LTRIM(RTRIM(%s))" column
             | Length -> sprintf "DATALENGTH(%s)" column
             | IndexOf(SqlStr search) -> sprintf "CHARINDEX('%s',%s)" search column
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "CHARINDEX(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOf(SqlCol(al2, col2)) -> sprintf "CHARINDEX(%s,%s)" (fieldNotation al2 col2) column
             | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "CHARINDEX('%s',%s,%d)" search column startPos
-            | IndexOfStart(SqlStr(search),SqlIntCol(al2, col2)) -> sprintf "CHARINDEX('%s',%s,%s)" search column (fieldNotation al2 col2)
-            | IndexOfStart(SqlStrCol(al2, col2),(SqlInt startPos)) -> sprintf "CHARINDEX(%s,%s,%d)" (fieldNotation al2 col2) column startPos
-            | IndexOfStart(SqlStrCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
+            | IndexOfStart(SqlStr(search),SqlCol(al2, col2)) -> sprintf "CHARINDEX('%s',%s,%s)" search column (fieldNotation al2 col2)
+            | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "CHARINDEX(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+            | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
             // Date functions
             | Date -> sprintf "CAST(%s AS DATE)" column
             | Year -> sprintf "YEAR(%s)" column
@@ -352,22 +352,33 @@ type internal MSSqlServerProvider(tableNames:string) =
             | Minute -> sprintf "DATEPART(MINUTE, %s)" column
             | Second -> sprintf "DATEPART(SECOND, %s)" column
             | AddYears(SqlInt x) -> sprintf "DATEADD(YEAR, %d, %s)" x column
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "DATEADD(YEAR, %s, %s)" (fieldNotation al2 col2) column
+            | AddYears(SqlCol(al2, col2)) -> sprintf "DATEADD(YEAR, %s, %s)" (fieldNotation al2 col2) column
             | AddMonths x -> sprintf "DATEADD(MONTH, %d, %s)" x column
             | AddDays(SqlFloat x) -> sprintf "DATEADD(DAY, %f, %s)" x column // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "DATEADD(DAY, %s, %s)" (fieldNotation al2 col2) column
+            | AddDays(SqlCol(al2, col2)) -> sprintf "DATEADD(DAY, %s, %s)" (fieldNotation al2 col2) column
             | AddHours x -> sprintf "DATEADD(HOUR, %f, %s)" x column
             | AddMinutes(SqlFloat x) -> sprintf "DATEADD(MINUTE, %f, %s)" x column
-            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "DATEADD(MINUTE, %s, %s)" (fieldNotation al2 col2) column
+            | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATEADD(MINUTE, %s, %s)" (fieldNotation al2 col2) column
             | AddSeconds x -> sprintf "DATEADD(SECOND, %f, %s)" x column
             // Math functions
             | Truncate -> sprintf "TRUNCATE(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column (o.Replace("||","+")) par
             | Greatest(SqlDecimal x) -> sprintf "(SELECT MAX(V) FROM (VALUES (%M), (%s)) AS VALUE(V))" x column
-            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "(SELECT MAX(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
+            | Greatest(SqlCol(al2, col2)) -> sprintf "(SELECT MAX(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
             | Least(SqlDecimal x) -> sprintf "(SELECT MIN(V) FROM (VALUES (%M), (%s)) AS VALUE(V))" x column
-            | Least(SqlDecimalCol(al2, col2)) -> sprintf "(SELECT MIN(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
+            | Least(SqlCol(al2, col2)) -> sprintf "(SELECT MIN(V) FROM (VALUES (%s), (%s)) AS VALUE(V))" (fieldNotation al2 col2) column
+            //if-then-else
+            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
+            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column itm (fieldNotation al2 col2)
+
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
         | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

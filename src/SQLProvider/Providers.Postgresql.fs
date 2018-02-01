@@ -79,19 +79,19 @@ module PostgreSQL =
             let column = fieldNotation al col
             match cf with
             // String functions
-            | Replace(SqlStr(searchItm),SqlStrCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlStrCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlStrCol(al2, col2),SqlStrCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
+            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s from %i)" column startPos
-            | Substring(SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
+            | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
             | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlIntCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlIntCol(al2, col2),SqlIntCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
+            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
+            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
             | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
             | Length -> sprintf "CHAR_LENGTH(%s)" column
             | IndexOf(SqlStr search) -> sprintf "STRPOS('%s',%s)" search column
-            | IndexOf(SqlStrCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
+            | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
             // Date functions
             | Date -> sprintf "DATE_TRUNC('day', %s)" column
             | Year -> sprintf "DATE_PART('year', %s)" column
@@ -101,22 +101,32 @@ module PostgreSQL =
             | Minute -> sprintf "DATE_PART('minute', %s)" column
             | Second -> sprintf "DATE_PART('second', %s)" column
             | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
-            | AddYears(SqlIntCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
+            | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
             | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
             | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
-            | AddDays(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
+            | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
             | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
             | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
-            | AddMinutes(SqlNumCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
+            | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
             | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
             // Math functions
             | Truncate -> sprintf "TRUNC(%s)" column
             | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
             | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
             | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
-            | Greatest(SqlDecimalCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+            | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
             | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
-            | Least(SqlDecimalCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+            //if-then-else
+            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" column itm (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
+            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
+            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) itm
+            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column itm (fieldNotation al2 col2)
             | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         
