@@ -1,3 +1,9 @@
+### 1.1.30 - 01.02.2018
+* Postgres ltree mapping PR #510
+* Single table group-by over a constant value PR #511
+* More aggregate functions: StdDev, Variance
+* More canonical math functions: Sqrt, Sin, Cos, Tan, ASin, ACos, ATan, Math.Max and Math.Min
+
 ### 1.1.29 - 25.01.2018
 * Firebird fixes for numeric columns and column descriptions, PR #508
 
