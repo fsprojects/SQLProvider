@@ -1,3 +1,6 @@
+### 1.1.31 - 01.02.2018
+* Oracle fix insert rows into table without primary key #514
+
 ### 1.1.30 - 01.02.2018
 * Postgres ltree mapping PR #510
 * Single table group-by over a constant value PR #511
