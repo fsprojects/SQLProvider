@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>SqlTypeProvider - SQLProvider</title>
+    <title>SqlDecimalOrColumn - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull">
@@ -35,35 +35,53 @@
 
 
 
-<h1>SqlTypeProvider</h1>
+<h1>SqlDecimalOrColumn</h1>
 <p>
   <span>Namespace: FSharp.Data.Sql</span><br />
+  <span>Parent Module: <a href="fsharp-data-sql-columnschema.html">ColumnSchema</a></span>
 </p>
 <div class="xmldoc">
 </div>
-  <h3>Constructors</h3>
+  <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Union Case</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '295', 295)" onmouseover="showTip(event, '295', 295)">
-            new(config)
+          <code onmouseout="hideTip(event, '254', 254)" onmouseover="showTip(event, '254', 254)">
+            SqlDecimal(decimal)
           </code>
-          <div class="tip" id="295">
-            <strong>Signature:</strong> config:TypeProviderConfig -&gt; SqlTypeProvider<br />
+          <div class="tip" id="254">
+            <strong>Signature:</strong> decimal<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlDesignTime.fs#L30-30" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L118-118" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '255', 255)" onmouseover="showTip(event, '255', 255)">
+            SqlDecimalCol(string,SqlColumnType)
+          </code>
+          <div class="tip" id="255">
+            <strong>Signature:</strong> string * SqlColumnType<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L119-119" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
         </td>
       </tr>
     </tbody>

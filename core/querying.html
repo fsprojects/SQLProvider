@@ -786,6 +786,105 @@ Odbc standard doesn't seem to have a date-add functionality.
 <td></td>
 </tr>
 <tr class="odd">
+<td><p>sqrt(i)</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>Sqr</p></td>
+<td><p>SQRT</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sin(i)</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>cos(i)</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>tan(i)</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>asin(i)</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td></td>
+<td><p>ASIN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>acos(i)</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td></td>
+<td><p>ACOS</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>atan(i)</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>Atn</p></td>
+<td><p>ATAN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>Math.Max(x,y)</p></td>
+<td><p>SELECT(MAX)</p></td>
+<td><p>GREATEST</p></td>
+<td><p>GREATEST</p></td>
+<td><p>GREATEST</p></td>
+<td><p>MAX</p></td>
+<td><p>iif(x&gt;y,x,y)</p></td>
+<td><p>GREATEST</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Math.Min(x,y)</p></td>
+<td><p>SELECT(MIN)</p></td>
+<td><p>LEAST</p></td>
+<td><p>LEAST</p></td>
+<td><p>LEAST</p></td>
+<td><p>MIN</p></td>
+<td><p>iif(x&lt;y,x,y)</p></td>
+<td><p>LEAST</p></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><p>(+)</p></td>
 <td><p>+</p></td>
 <td><p>+</p></td>
@@ -796,7 +895,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 <td><p>+</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>(-)</p></td>
 <td><p>-</p></td>
 <td><p>-</p></td>
@@ -807,7 +906,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 <td><p>-</p></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>(*)</p></td>
 <td><p>*</p></td>
 <td><p>*</p></td>
@@ -818,7 +917,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 <td><p>*</p></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>(/)</p></td>
 <td><p>/</p></td>
 <td><p>/</p></td>
@@ -829,7 +928,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 <td><p>/</p></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>(%)</p></td>
 <td><p>%</p></td>
 <td><p>%</p></td>
@@ -843,9 +942,107 @@ Odbc standard doesn't seem to have a date-add functionality.
 </tbody>
 </table>
 
+<p>Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
+It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
 <h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
-<p>Also you can use these on group-by clause:
-<code>COUNT</code>, <code>SUM</code>, <code>MIN</code>, <code>MAX</code>, <code>AVG</code></p>
+<p>Also you can use these to return an aggregated value, or in a group-by clause:</p>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>count</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sum</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>min</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>max</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>average</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>StdDev</p></td>
+<td><p>STDEV</p></td>
+<td><p>STDDEV</p></td>
+<td><p>STDDEV</p></td>
+<td><p>STDDEV</p></td>
+<td></td>
+<td><p>STDEV</p></td>
+<td><p>STDEV</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Variance</p></td>
+<td><p>VAR</p></td>
+<td><p>VARIANCE</p></td>
+<td><p>VARIANCE</p></td>
+<td><p>VARIANCE</p></td>
+<td></td>
+<td><p>DVAR</p></td>
+<td><p>VAR</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p><code>StdDev</code>, <code>Variance</code> are located in FSharp.Data.Sql.Operators namespace and also Seq.stdDevAsync and Seq.varianceAsync.
+Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumAsync, Seq.minAsync, Seq.maxAsync, Seq.averageAsync.</p>
 <h2><a name="More-details" class="anchor" href="#More-details">More details</a></h2>
 <p>By default <code>query { ... }</code> is <code>IQueryable&lt;T&gt;</code> which is lazy. To execute the query you have to do <code>Seq.toList</code>, <code>Seq.toArray</code>, or some corresponding operation. If you don't do that but just continue inside another <code>query { ... }</code> or use System.Linq <code>.Where(...)</code> etc, that will still be combined to the same SQL-query.</p>
 <p>There are some limitation of complexity of your queries, but for example
