@@ -179,7 +179,7 @@ Operations do support parameters to be either constants or other SQL-columns (e.
 #### .NET DateTime Functions
 
 | .NET         | MsSqlServer    | PostgreSql| MySql    | Oracle    | SQLite  | MSAccess  | Odbc      |  Notes
-|--------------|----------------|-----------|----------|-----------|---------|-----------|-----------|--------------------------|
+|--------------|----------------|-----------|----------|-----------|---------|-----------|-----------|-------------------|
 .Date          | CAST(AS DATE)  | DATE_TRUNC| DATE     | TRUNC     | STRFTIME| DateValue(Format)| CONVERT(SQL_DATE)  |   |
 .Year          | YEAR           | DATE_PART | YEAR     | EXTRACT   | STRFTIME| Year      | YEAR       |   |
 .Month         | MONTH          | DATE_PART | MONTH    | EXTRACT   | STRFTIME| Month     | MONTH      |   |
@@ -203,7 +203,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 #### Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)
 
 | .NET          | MsSqlServer| PostgreSql| MySql   | Oracle| SQLite     | MSAccess| Odbc     |  Notes
-|---------------|------------|-----------|---------|-------|------------|---------|----------|--------------------------|
+|---------------|------------|-----------|---------|-------|------------|---------|----------|-------------------|
 abs(i)          | ABS        | ABS       | ABS     | ABS   | ABS        | Abs     | ABS      |   |
 ceil(i)         | CEILING    | CEILING   | CEILING | CEIL  | CAST + 0.5 | Fix+1   | CEILING  |   |
 floor(i)        | FLOOR      | FLOOR     | FLOOR   | FLOOR | CAST AS INT| Int     | FLOOR    |   |
@@ -233,7 +233,7 @@ It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
 Also you can use these to return an aggregated value, or in a group-by clause:
 
 | .NET          | MsSqlServer| PostgreSql| MySql   | Oracle   | SQLite | MSAccess| Odbc     |  Notes
-|---------------|------------|-----------|---------|----------|--------|---------|----------|--------------------------|
+|---------------|------------|-----------|---------|----------|--------|---------|----------|--------------------|
 count           | COUNT      | COUNT     | COUNT   | COUNT    | COUNT  | COUNT   | COUNT    |   |
 sum             | SUM        | SUM       | SUM     | SUM      | SUM    | SUM     | SUM      |   |
 min             | MIN        | MIN       | MIN     | MIN      | MIN    | MIN     | MIN      |   |

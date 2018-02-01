@@ -1485,6 +1485,22 @@ let ``simple canonical operations query``() =
     Assert.AreEqual(12, qry.Length)
     Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
 
+[<Test; Ignore("Not supported") >]
+let ``simple canonical operations case-when-else``() =
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join emp in dc.Main.Employees on (cust.City.Trim() + "_" + cust.Country = emp.City.Trim() + "_" + emp.Country)
+            where ((if emp.BirthDate.Year > 1000 then "a" else "b") = "a")
+            select (cust.CustomerId, cust.City, emp.BirthDate)
+            distinct
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(24, qry.Length)
+    Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
 
 [<Test >]
 let ``simple operations in select query``() =
