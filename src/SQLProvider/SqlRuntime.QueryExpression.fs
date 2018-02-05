@@ -35,7 +35,7 @@ module internal QueryExpressionTransformer =
             // in the second case we also need to change any property on the input tuple into calls
             // onto GetSubEntity on the result parameter with the correct alias
 
-        let projectionMap = Dictionary<string,string ResizeArray>()
+        let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
         let groupProjectionMap = ResizeArray<SqlColumnType>()
         
         let (|SourceTupleGet|_|) (e:Expression) =
@@ -156,8 +156,8 @@ module internal QueryExpressionTransformer =
                 Some (Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)))
             | _, SourceTupleGet(alias,name,Some(key,mi)) ->
                 match projectionMap.TryGetValue alias with
-                | true, values when values.Count > 0 -> values.Add(key)
-                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
+                | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
+                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
                     (Expression.Call(
@@ -179,8 +179,8 @@ module internal QueryExpressionTransformer =
                 match foundAlias with
                 | Some alias ->
                     match projectionMap.TryGetValue alias with
-                    | true, values when values.Count > 0 -> values.Add(key)
-                    | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield key}))
+                    | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
+                    | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
                     | _ -> ()
                     Some
                         (match databaseParam.Type.Name.StartsWith("IGrouping") with
@@ -326,7 +326,7 @@ module internal QueryExpressionTransformer =
                     match sqlQuery.Grouping.Length > 0 with
                     | true -> Expression.Parameter(typeof<System.Linq.IGrouping<_,SqlEntity>>,"result")
                     | false -> Expression.Parameter(typeof<SqlEntity>,"result")
-                let pmap = Dictionary<string,string ResizeArray>()
+                let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
                 pmap.Add(baseAlias, new ResizeArray<_>())
                 (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
             | projs -> 
@@ -439,7 +439,7 @@ module internal QueryExpressionTransformer =
                     //QueryEvents.PublishExpression fixedParams
                     fixedParams,projectionMap
                 
-                let rec composeProjections projs prevLambda (foundparams : Dictionary<string, ResizeArray<string>>) = 
+                let rec composeProjections projs prevLambda (foundparams : Dictionary<string, ResizeArray<ProjectionParameter>>) = 
                     match projs with 
                     | [] -> prevLambda, foundparams
                     | proj::tail -> 
@@ -447,7 +447,7 @@ module internal QueryExpressionTransformer =
                         dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
                         composeProjections tail lambda1 foundparams
 
-                let generatedMegaLambda, finalParams = composeProjections projs (Unchecked.defaultof<LambdaExpression>) (Dictionary<string, ResizeArray<string>>())
+                let generatedMegaLambda, finalParams = composeProjections projs (Unchecked.defaultof<LambdaExpression>) (Dictionary<string, ResizeArray<ProjectionParameter>>())
                 QueryEvents.PublishExpression generatedMegaLambda
                 (generatedMegaLambda.Compile(),finalParams)
 
@@ -475,7 +475,7 @@ module internal QueryExpressionTransformer =
                             let itms = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat |> Seq.distinct |> Seq.toList
                             let selKey = (projectionColumns.Keys |> Seq.head)
                             projectionColumns.Clear()
-                            projectionColumns.Add(selKey, new ResizeArray<string>(itms))
+                            projectionColumns.Add(selKey, new ResizeArray<ProjectionParameter>(itms))
                             projectionColumns.Keys |> Seq.head
 
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias

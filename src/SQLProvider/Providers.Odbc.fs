@@ -417,10 +417,14 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                 else 
                                     yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose
                         else
-                            for col in v |> Seq.distinct do
-                                if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
-                                else
-                                    yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose |]) // F# makes this so easy :)
+                            for colp in v |> Seq.distinct do
+                                match colp with
+                                | EntityColumn col ->
+                                    if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
+                                    else
+                                        yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose // F# makes this so easy :)
+                                | OperationColumn(n,op) ->
+                                    yield sprintf "%s as %c%s%c" (fieldNotation k op) cOpen n cClose|])
 
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =

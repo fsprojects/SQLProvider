@@ -47,6 +47,7 @@ type AggregateOperation = // Aggregate (column name if not default)
 | StdDevOp of string
 | VarianceOp of string
 
+
 [<AutoOpenAttribute>]
 module ColumnSchema =
 
@@ -111,6 +112,9 @@ module ColumnSchema =
     | SqlStr of string
     | SqlDateTime of System.DateTime
 
+    type ProjectionParameter =
+    | EntityColumn of string
+    | OperationColumn of string*SqlColumnType//name*operations
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types
