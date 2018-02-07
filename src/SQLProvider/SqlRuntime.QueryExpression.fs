@@ -147,6 +147,17 @@ module internal QueryExpressionTransformer =
             | _ -> None
 
         let rec (|ProjectionItem|_|) = function
+            // Todo: Here we should fetch if the projection is only SQL Operations!
+
+            //| _, (SqlColumnGet(name,coltyp,ret) as exp) when (match exp with | SqlPlainColumnGet(_) -> false | _ -> true) -> 
+            //    // Ok, this is an operation but not a plain column...
+            //    match projectionMap.TryGetValue name with
+            //    | true, values when values.Count > 0 -> values.Add(OperationColumn(name, coltyp))
+            //    | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
+            //    | _ -> ()
+            //    //Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
+            //    Expression.Call(Expression.Parameter(ret,name),mi,Expression.Constant(key))
+
             | _, SourceTupleGet(alias,name,None) ->
                 // at any point if we see a property getter where the input is "tupledArg" this
                 // needs to be replaced with a call to GetSubEntity using the result as an input
@@ -531,17 +542,17 @@ module internal QueryExpressionTransformer =
                     | Greatest(SqlCol(al, col)) -> Greatest(SqlCol(resolver al, visitCanonicals resolverfunc col))
                     | Least(SqlCol(al, col)) -> Least(SqlCol(resolver al, visitCanonicals resolverfunc col))
 
-                    | CaseSql(SqlCol(al, col), SqlCol(al2, col2)) -> CaseSql(SqlCol(resolver al, visitCanonicals resolverfunc col), SqlCol(resolver al2, visitCanonicals resolverfunc col2))
-                    | CaseSql(SqlCol(al, col), x) -> CaseSql(SqlCol(resolver al, visitCanonicals resolverfunc col), x)
-                    | CaseSql(x, SqlCol(al, col)) -> CaseSql(x, SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | CaseSql(f, SqlCol(al, col)) -> CaseSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | CaseNotSql(f, SqlCol(al, col)) -> CaseNotSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | CaseSqlPlain(f, a, b) -> CaseSqlPlain(resolveFilterList f, a, b)
 
                     | x -> x
                 CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col) 
             | x -> x
 
-        let resolveC = visitCanonicals resolve
+        and resolveC = visitCanonicals resolve
 
-        let tryResolveC : Option<obj>->Option<obj> = Option.map(function
+        and tryResolveC : Option<obj>->Option<obj> = Option.map(function
             | :? (alias * SqlColumnType) as a ->
                 let al,col = a
                 if al = "" || al.StartsWith "Item" then
@@ -550,11 +561,12 @@ module internal QueryExpressionTransformer =
                     (al, resolveC col) :> obj
             | x -> x)
 
-        let rec resolveFilterList = function
+        and resolveFilterList = function
             | And(xs,y) -> And(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,tryResolveC d),Option.map (List.map resolveFilterList) y)
             | Or(xs,y) -> Or(xs|>List.map(fun (a,b,c,d) -> resolve a,resolveC b,c,tryResolveC d),Option.map (List.map resolveFilterList) y)
             | ConstantTrue -> ConstantTrue
             | ConstantFalse -> ConstantFalse
+            | NotSupported x ->  failwithf "Not supported: %O" x
             
         // the crazy LINQ infrastructure does all kinds of weird things with joins which means some information
         // is lost up and down the expression tree, but now with all the data available we can resolve the problems...

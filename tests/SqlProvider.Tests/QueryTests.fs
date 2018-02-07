@@ -1485,22 +1485,32 @@ let ``simple canonical operations query``() =
     Assert.AreEqual(12, qry.Length)
     Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
 
-[<Test; Ignore("Not supported") >]
-let ``simple canonical operations case-when-else``() =
+[<Test>]
+let ``simple canonical operations case-when-elses``() =
     let dc = sql.GetDataContext()
 
-    let qry = 
+    let qry1 = 
         query {
             for cust in dc.Main.Customers do
             join emp in dc.Main.Employees on (cust.City.Trim() + "_" + cust.Country = emp.City.Trim() + "_" + emp.Country)
-            where ((if emp.BirthDate.Year > 1000 then "a" else "b") = "a")
+            where ((if box(emp.BirthDate)=null then 200 else 100) = 100) 
+            where ((if emp.EmployeeId > 1L then 200 else 100) = 100) 
+            //where ((if emp.BirthDate > emp.BirthDate then 200 else 100) = 100) //doesn't work yet, alias resolving problem
             select (cust.CustomerId, cust.City, emp.BirthDate)
             distinct
         } |> Seq.toArray
 
-    CollectionAssert.IsNotEmpty qry
-    Assert.AreEqual(24, qry.Length)
-    Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
+    CollectionAssert.IsNotEmpty qry1
+
+    let qry2 = 
+        query {
+            for cust in dc.Main.Customers do
+            where ((if cust.City=cust.ContactName then cust.City else cust.Address)<>"x") //does work
+            where ( (if cust.City.Substring(0,3)<>"Lond" then cust.City else cust.Address) = "London") //does work
+            select (cust.City)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry2
 
 [<Test >]
 let ``simple operations in select query``() =

@@ -284,6 +284,13 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 | false, _ -> ()
             instance
 
+    member __.Clone() = 
+        let newItem = SqlEntity(dc, tableName, columns)
+        newItem.SetData(data 
+                        |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
+                        |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
+        newItem
+
     interface System.ComponentModel.INotifyPropertyChanged with
         [<CLIEvent>] member __.PropertyChanged = propertyChanged.Publish
 
@@ -363,19 +370,7 @@ and GroupData =
       AggregateColumns   : (alias * SqlColumnType) list
       Projection         : Expression option }
 
-and alias = string
 and table = string
-
-and Condition =
-    // this is  (table alias * column name * operator * right hand value ) list  * (the same again list)
-    // basically any AND or OR expression can have N terms and can have N nested condition children
-    // this is largely from my CRM type provider. I don't think in practice for the SQL provider
-    // you will ever have more than what is representable in a traditional binary expression tree, but
-    // changing it would be a lot of effort ;)
-    | And of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
-    | Or of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
-    | ConstantTrue
-    | ConstantFalse
 
 and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
 and UnionType = NormalUnion | UnionAll | Intersect | Except

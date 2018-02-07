@@ -170,67 +170,20 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
     let paramterType =    lazy(findType (fun t -> t.Name = if lowercasedll then "SqliteParameter" else "SQLiteParameter"))
     let getSchemaMethod = lazy(connectionType.Value.GetMethod("GetSchema",[|typeof<string>|]))
 
-    let rec fieldNotation (al:alias) (c:SqlColumnType) =
-        let colSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "[%s]"
-            | false -> sprintf "[%s].[%s]" al
-        match c with
-        // Custom database spesific overrides for canonical function:
-        | SqlColumnType.CanonicalOperation(cf,col) ->
-            let column = fieldNotation al col
-            match cf with
-            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s, %i)" column startPos
-            | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
-            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s, %i, %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | Trim -> sprintf "TRIM(%s)" column
-            | Length -> sprintf "LENGTH(%s)" column
-            | IndexOf(SqlStr search) -> sprintf "INSTR(%s,'%s')" column search
-            | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
-            // Date functions
-            | Date -> sprintf "DATE(%s)" column
-            | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
-            | Month -> sprintf "CAST(STRFTIME('%%m', %s) as INTEGER)" column
-            | Day -> sprintf "CAST(STRFTIME('%%d', %s) as INTEGER)" column
-            | Hour -> sprintf "CAST(STRFTIME('%%H', %s) as INTEGER)" column
-            | Minute -> sprintf "CAST(STRFTIME('%%M', %s) as INTEGER)" column
-            | Second -> sprintf "CAST(STRFTIME('%%S', %s) as INTEGER)" column
-            | AddYears(SqlInt x) -> sprintf "DATETIME(%s, '+%d year')" column x
-            | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
-            | AddDays(SqlFloat x) -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
-            | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
-            | AddMinutes(SqlFloat x) -> sprintf "DATETIME(%s, '+%f minute')" column x
-            | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
-            // Math functions
-            | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
-            | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do
-            | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
-            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
-            | Greatest(SqlDecimal x) -> sprintf "MAX(%s, %M)" column x
-            | Greatest(SqlCol(al2, col2)) -> sprintf "MAX(%s, %s)" column (fieldNotation al2 col2)
-            | Least(SqlDecimal x) -> sprintf "MIN(%s, %M)" column x
-            | Least(SqlCol(al2, col2)) -> sprintf "MIN(%s, %s)" column (fieldNotation al2 col2)
-            //if-then-else
-            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" column itm (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" column itm (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
-            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column itm (fieldNotation al2 col2)
-            | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-        | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
-        | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
-        | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+    let mutable typeMappings = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+
+    let createParam name ordinal value =
+        let paramType = 
+            match value with
+            | null -> None
+            | value -> findClrType (value.GetType().FullName)
+        let queryParameter = 
+            match paramType with
+            | None -> QueryParameter.Create( name, ordinal )
+            | Some typeMapping -> QueryParameter.Create( name, ordinal, typeMapping)
+        (this:>ISqlProvider).CreateCommandParameter(queryParameter, value)
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
@@ -244,10 +197,6 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
             getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
         else
             customGetSchema name conn // GetSchema Not supported by Microsoft.Data.SQLite
-
-    let mutable typeMappings = []
-    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
-    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createTypeMappings con =
         let dt = getSchema "DataTypes" con
@@ -276,17 +225,6 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
-
-    let createParam name ordinal value =
-        let paramType = 
-            match value with
-            | null -> None
-            | value -> findClrType (value.GetType().FullName)
-        let queryParameter = 
-            match paramType with
-            | None -> QueryParameter.Create( name, ordinal )
-            | Some typeMapping -> QueryParameter.Create( name, ordinal, typeMapping)
-        (this:>ISqlProvider).CreateCommandParameter(queryParameter, value)
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -583,8 +521,173 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
-            let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
+            // NOTE: really need to assign the parameters their correct db types
+            let param = ref 0
+            let nextParam() =
+                incr param
+                sprintf "@param%i" !param
+            let fieldParam (x:obj)=
+                let p = createParam (nextParam()) !param (box x)
+                parameters.Add p
+                p.ParameterName
+
+            let rec fieldNotation (al:alias) (c:SqlColumnType) =
+                let buildf (c:Condition)= 
+                    let sb = System.Text.StringBuilder()
+                    let (~~) (t:string) = sb.Append t |> ignore
+                    filterBuilder (~~) [c]
+                    sb.ToString()
+                let colSprint =
+                    match String.IsNullOrEmpty(al) with
+                    | true -> sprintf "[%s]"
+                    | false -> sprintf "[%s].[%s]" al
+                match c with
+                // Custom database spesific overrides for canonical function:
+                | SqlColumnType.CanonicalOperation(cf,col) ->
+                    let column = fieldNotation al col
+                    match cf with
+                    | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam (box searchItm)) (fieldNotation al2 col2)
+                    | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam (box toItm))
+                    | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+                    | Substring(SqlInt startPos) -> sprintf "SUBSTR(%s, %s)" column (fieldParam (box startPos))
+                    | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s)" column (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldParam (box startPos)) (fieldParam (box strLen))
+                    | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldParam (box startPos)) (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam (box strLen))
+                    | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+                    | Trim -> sprintf "TRIM(%s)" column
+                    | Length -> sprintf "LENGTH(%s)" column
+                    | IndexOf(SqlStr search) -> sprintf "INSTR(%s,%s)" column (fieldParam (box search))
+                    | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+                    // Date functions
+                    | Date -> sprintf "DATE(%s)" column
+                    | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
+                    | Month -> sprintf "CAST(STRFTIME('%%m', %s) as INTEGER)" column
+                    | Day -> sprintf "CAST(STRFTIME('%%d', %s) as INTEGER)" column
+                    | Hour -> sprintf "CAST(STRFTIME('%%H', %s) as INTEGER)" column
+                    | Minute -> sprintf "CAST(STRFTIME('%%M', %s) as INTEGER)" column
+                    | Second -> sprintf "CAST(STRFTIME('%%S', %s) as INTEGER)" column
+                    | AddYears(SqlInt x) -> sprintf "DATETIME(%s, '+%d year')" column x
+                    | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
+                    | AddDays(SqlFloat x) -> sprintf "DATETIME(%s, '+%f day')" column x // SQL ignores decimal part :-(
+                    | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
+                    | AddMinutes(SqlFloat x) -> sprintf "DATETIME(%s, '+%f minute')" column x
+                    | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
+                    // Math functions
+                    | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
+                    | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do
+                    | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
+                    | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam (box par))
+                    | Greatest(SqlDecimal x) -> sprintf "MAX(%s, %M)" column x
+                    | Greatest(SqlCol(al2, col2)) -> sprintf "MAX(%s, %s)" column (fieldNotation al2 col2)
+                    | Least(SqlDecimal x) -> sprintf "MIN(%s, %M)" column x
+                    | Least(SqlCol(al2, col2)) -> sprintf "MIN(%s, %s)" column (fieldNotation al2 col2)
+                    //if-then-else
+                    | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
+                    | CaseSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" (buildf f) column itm
+                    | CaseSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" (buildf f) column itm
+                    | CaseSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
+                    | CaseSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
+                    | CaseNotSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" (buildf f) itm column
+                    | CaseNotSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" (buildf f) itm column
+                    | CaseNotSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
+                    | CaseNotSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
+                    | CaseSqlPlain(f, SqlInt(itm), SqlInt(itm2)) -> sprintf "CASE WHEN %s THEN %d ELSE %d END" (buildf f) itm itm2
+                    | CaseSqlPlain(f, SqlDecimal(itm), SqlDecimal(itm2)) -> sprintf "CASE WHEN %s THEN %M ELSE %M END" (buildf f) itm itm2
+                    | CaseSqlPlain(f, SqlDateTime(itm), SqlDateTime(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | CaseSqlPlain(f, SqlStr(itm), SqlStr(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
+                | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)
+                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+
+            and filterBuilder (~~) (f:Condition list) =
+
+                // next up is the filter expressions
+
+                let rec filterBuilder' = function
+                    | [] -> ()
+                    | (cond::conds) ->
+                        let build op preds (rest:Condition list option) =
+                            ~~ "("
+                            preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let column = fieldNotation alias col
+                                    let extractData data =
+                                            match data with
+                                            | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
+                                            | Some(x) when (box x :? obj array) ->
+                                                // in and not in operators pass an array
+                                                let strings = box x :?> obj array
+                                                strings 
+                                                |> Array.map (fun x -> createParam (nextParam()) !param x)
+                                            | Some(x) -> [|createParam (nextParam()) !param (box x)|]
+                                            | None ->    [|createParam (nextParam()) !param DBNull.Value|]
+
+                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let paras = extractData data
+                                    ~~(sprintf "%s%s" prefix <|
+                                        match operator with
+                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
+                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.In ->
+                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                            Array.iter parameters.Add paras
+                                            sprintf "%s IN (%s)" column text
+                                        | FSharp.Data.Sql.NestedIn when data.IsSome ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "%s IN (%s)" column innersql
+                                        | FSharp.Data.Sql.NotIn ->
+                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                            Array.iter parameters.Add paras
+                                            sprintf "%s NOT IN (%s)" column text
+                                        | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "%s NOT IN (%s)" column innersql
+                                        | _ ->
+                                            let aliasformat = sprintf "%s %s %s" column
+                                            match data with 
+                                            | Some d when (box d :? alias * SqlColumnType) ->
+                                                let alias2, col2 = box d :?> (alias * SqlColumnType)
+                                                let alias2f = fieldNotation alias2 col2
+                                                aliasformat (operator.ToString()) alias2f
+                                            | _ ->
+                                                parameters.Add paras.[0]
+                                                aliasformat (operator.ToString()) paras.[0].ParameterName
+                            ))
+                            // there's probably a nicer way to do this
+                            let rec aux = function
+                                | x::[] when preds.Length > 0 ->
+                                    ~~ (sprintf " %s " op)
+                                    filterBuilder' [x]
+                                | x::[] -> filterBuilder' [x]
+                                | x::xs when preds.Length > 0 ->
+                                    ~~ (sprintf " %s " op)
+                                    filterBuilder' [x]
+                                    ~~ (sprintf " %s " op)
+                                    aux xs
+                                | x::xs ->
+                                    filterBuilder' [x]
+                                    ~~ (sprintf " %s " op)
+                                    aux xs
+                                | [] -> ()
+
+                            Option.iter aux rest
+                            ~~ ")"
+
+                        match cond with
+                        | Or(preds,rest) -> build "OR" preds rest
+                        | And(preds,rest) ->  build "AND" preds rest
+                        | ConstantTrue -> ~~ " (1=1) "
+                        | ConstantFalse -> ~~ " (1=0) "
+                        | NotSupported x ->  failwithf "Not supported: %O" x
+                        filterBuilder' conds
+                filterBuilder' f
+
+            let sb = System.Text.StringBuilder()
             let (~~) (t:string) = sb.Append t |> ignore
 
             // all tables should be aliased.
@@ -597,7 +700,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
             let singleEntity = sqlQuery.Aliases.Count = 0
 
-            // first build  the select statement, this is easy ...
+            // build the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
@@ -630,94 +733,6 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
-
-            // next up is the filter expressions
-            // NOTE: really need to assign the parameters their correct db types
-            let param = ref 0
-            let nextParam() =
-                incr param
-                sprintf "@param%i" !param
-
-            
-
-            let rec filterBuilder = function
-                | [] -> ()
-                | (cond::conds) ->
-                    let build op preds (rest:Condition list option) =
-                        ~~ "("
-                        preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let column = fieldNotation alias col
-                                let extractData data =
-                                     match data with
-                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
-                                     | Some(x) when (box x :? obj array) ->
-                                         // in and not in operators pass an array
-                                         let strings = box x :?> obj array
-                                         strings 
-                                         |> Array.map (fun x -> createParam (nextParam()) !param x)
-                                     | Some(x) -> [|createParam (nextParam()) !param (box x)|]
-                                     | None ->    [|createParam (nextParam()) !param DBNull.Value|]
-
-                                let prefix = if i>0 then (sprintf " %s " op) else ""
-                                let paras = extractData data
-                                ~~(sprintf "%s%s" prefix <|
-                                    match operator with
-                                    | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                    | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
-                                    | FSharp.Data.Sql.In ->
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        sprintf "%s IN (%s)" column text
-                                    | FSharp.Data.Sql.NestedIn when data.IsSome ->
-                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
-                                        Array.iter parameters.Add innerpars
-                                        sprintf "%s IN (%s)" column innersql
-                                    | FSharp.Data.Sql.NotIn ->
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        sprintf "%s NOT IN (%s)" column text
-                                    | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
-                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
-                                        Array.iter parameters.Add innerpars
-                                        sprintf "%s NOT IN (%s)" column innersql
-                                    | _ ->
-                                        let aliasformat = sprintf "%s %s %s" column
-                                        match data with 
-                                        | Some d when (box d :? alias * SqlColumnType) ->
-                                            let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = fieldNotation alias2 col2
-                                            aliasformat (operator.ToString()) alias2f
-                                        | _ ->
-                                            parameters.Add paras.[0]
-                                            aliasformat (operator.ToString()) paras.[0].ParameterName
-                        ))
-                        // there's probably a nicer way to do this
-                        let rec aux = function
-                            | x::[] when preds.Length > 0 ->
-                                ~~ (sprintf " %s " op)
-                                filterBuilder [x]
-                            | x::[] -> filterBuilder [x]
-                            | x::xs when preds.Length > 0 ->
-                                ~~ (sprintf " %s " op)
-                                filterBuilder [x]
-                                ~~ (sprintf " %s " op)
-                                aux xs
-                            | x::xs ->
-                                filterBuilder [x]
-                                ~~ (sprintf " %s " op)
-                                aux xs
-                            | [] -> ()
-
-                        Option.iter aux rest
-                        ~~ ")"
-
-                    match cond with
-                    | Or(preds,rest) -> build "OR" preds rest
-                    | And(preds,rest) ->  build "AND" preds rest
-                    | ConstantTrue -> ~~ " (1=1) "
-                    | ConstantFalse -> ~~ " (1=0) "
-
-                    filterBuilder conds
 
             // next up is the FROM statement which includes joins ..
             let fromBuilder() =
@@ -764,7 +779,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                 // only logical way to deal with them.
                 let f = [And([],Some sqlQuery.Filters)]
                 ~~"WHERE "
-                filterBuilder f
+                filterBuilder (~~) f
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
@@ -778,7 +793,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
-                filterBuilder f
+                filterBuilder (~~) f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then

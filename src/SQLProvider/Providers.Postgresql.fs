@@ -67,68 +67,36 @@ module PostgreSQL =
     let parseDbType dbTypeName =
         try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
         with _ -> None
-        
-    let rec fieldNotation (al:alias) (c:SqlColumnType) =
-        let colSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "\"%s\""
-            | false -> sprintf "\"%s\".\"%s\"" al
-        match c with
-        // Custom database spesific overrides for canonical functions:
-        | SqlColumnType.CanonicalOperation(cf,col) ->
-            let column = fieldNotation al col
-            match cf with
-            // String functions
-            | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-            | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
-            | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s from %i)" column startPos
-            | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
-            | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
-            | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
-            | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
-            | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
-            | Length -> sprintf "CHAR_LENGTH(%s)" column
-            | IndexOf(SqlStr search) -> sprintf "STRPOS('%s',%s)" search column
-            | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
-            // Date functions
-            | Date -> sprintf "DATE_TRUNC('day', %s)" column
-            | Year -> sprintf "DATE_PART('year', %s)" column
-            | Month -> sprintf "DATE_PART('month', %s)" column
-            | Day -> sprintf "DATE_PART('day', %s)" column
-            | Hour -> sprintf "DATE_PART('hour', %s)" column
-            | Minute -> sprintf "DATE_PART('minute', %s)" column
-            | Second -> sprintf "DATE_PART('second', %s)" column
-            | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
-            | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
-            | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
-            | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
-            | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
-            | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
-            | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
-            | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
-            | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
-            // Math functions
-            | Truncate -> sprintf "TRUNC(%s)" column
-            | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-            | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par
-            | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
-            | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
-            | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
-            | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
-            //if-then-else
-            | CaseSql(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-            | CaseSql(SqlCol(al2, col2), SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlInt(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" column itm (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlDecimal(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" column itm (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) (itm.ToString("yyyy-MM-dd HH:mm:ss"))
-            | CaseSql(SqlDateTime(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column (itm.ToString("yyyy-MM-dd HH:mm:ss")) (fieldNotation al2 col2)
-            | CaseSql(SqlCol(al2, col2), SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" column (fieldNotation al2 col2) itm
-            | CaseSql(SqlStr(itm), SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" column itm (fieldNotation al2 col2)
-            | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-        | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+
+    let tryReadValueProperty instance =
+        let typ = instance.GetType()
+        let prop = typ.GetProperty("Value")
+        if prop <> null
+        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
+        else None
+
+    let isOptionValue value =
+        if value = null then false else
+        let typ = value.GetType()
+        typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
+
+    let createCommandParameter (param:QueryParameter) value =
+        let normalizedValue =
+            if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
+            match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
+        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
+        p.ParameterName <- 
+          let isAnonymousParam =
+            param.Direction <> ParameterDirection.Output &&
+            param.Name.StartsWith ANONYMOUS_PARAMETER_NAME &&
+            Int32.TryParse(param.Name.Substring (ANONYMOUS_PARAMETER_NAME.Length), ref 0)
+          if isAnonymousParam then "" else param.Name
+
+        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
+        p.Value <- normalizedValue
+        p.Direction <- param.Direction
+        Option.iter (fun l -> p.Size <- l) param.Length
+        p
         
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
@@ -273,36 +241,6 @@ module PostgreSQL =
         with
           | :? System.Reflection.TargetInvocationException as e ->
             failwithf "Could not create the command, error from Npgsql %s" e.InnerException.Message
-
-    let tryReadValueProperty instance =
-        let typ = instance.GetType()
-        let prop = typ.GetProperty("Value")
-        if prop <> null
-        then prop.GetGetMethod().Invoke(instance, [||]) |> Some
-        else None
-
-    let isOptionValue value =
-        if value = null then false else
-        let typ = value.GetType()
-        typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
-
-    let createCommandParameter (param:QueryParameter) value =
-        let normalizedValue =
-            if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
-            match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
-        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
-        p.ParameterName <- 
-          let isAnonymousParam =
-            param.Direction <> ParameterDirection.Output &&
-            param.Name.StartsWith ANONYMOUS_PARAMETER_NAME &&
-            Int32.TryParse(param.Name.Substring (ANONYMOUS_PARAMETER_NAME.Length), ref 0)
-          if isAnonymousParam then "" else param.Name
-
-        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
-        p.Value <- normalizedValue
-        p.Direction <- param.Direction
-        Option.iter (fun l -> p.Size <- l) param.Length
-        p
 
     let readParameter (parameter:IDbDataParameter) =
         match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
@@ -885,8 +823,176 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
-            let sb = System.Text.StringBuilder()
             let parameters = ResizeArray<_>()
+            // NOTE: really need to assign the parameters their correct db types
+            let param = ref 0
+            let nextParam() =
+                incr param
+                sprintf "@param%i" !param
+
+            let createParam (value:obj) =
+                let paramName = nextParam()
+                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
+
+            let fieldParam (value:obj) =
+                let p = createParam value
+                parameters.Add p
+                p.ParameterName
+
+            let rec fieldNotation (al:alias) (c:SqlColumnType) =
+                let buildf (c:Condition)= 
+                    let sb = System.Text.StringBuilder()
+                    let (~~) (t:string) = sb.Append t |> ignore
+                    filterBuilder (~~) [c]
+                    sb.ToString()
+                let colSprint =
+                    match String.IsNullOrEmpty(al) with
+                    | true -> sprintf "\"%s\""
+                    | false -> sprintf "\"%s\".\"%s\"" al
+                match c with
+                // Custom database spesific overrides for canonical functions:
+                | SqlColumnType.CanonicalOperation(cf,col) ->
+                    let column = fieldNotation al col
+                    match cf with
+                    // String functions
+                    | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam (box searchItm)) (fieldNotation al2 col2)
+                    | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam (box toItm))
+                    | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+                    | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s from %i)" column startPos
+                    | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
+                    | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
+                    | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+                    | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
+                    | Length -> sprintf "CHAR_LENGTH(%s)" column
+                    | IndexOf(SqlStr search) -> sprintf "STRPOS(%s,%s)" (fieldParam (box search)) column
+                    | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
+                    // Date functions
+                    | Date -> sprintf "DATE_TRUNC('day', %s)" column
+                    | Year -> sprintf "DATE_PART('year', %s)" column
+                    | Month -> sprintf "DATE_PART('month', %s)" column
+                    | Day -> sprintf "DATE_PART('day', %s)" column
+                    | Hour -> sprintf "DATE_PART('hour', %s)" column
+                    | Minute -> sprintf "DATE_PART('minute', %s)" column
+                    | Second -> sprintf "DATE_PART('second', %s)" column
+                    | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
+                    | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
+                    | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
+                    | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
+                    | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
+                    | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
+                    | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
+                    | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
+                    | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
+                    // Math functions
+                    | Truncate -> sprintf "TRUNC(%s)" column
+                    | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam (box par))
+                    | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+                    | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
+                    | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+                    | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+                    //if-then-else
+                    | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
+                    | CaseSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" (buildf f) column itm
+                    | CaseSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" (buildf f) column itm
+                    | CaseSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
+                    | CaseSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
+                    | CaseNotSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" (buildf f) itm column
+                    | CaseNotSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" (buildf f) itm column
+                    | CaseNotSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
+                    | CaseNotSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
+                    | CaseSqlPlain(f, SqlInt(itm), SqlInt(itm2)) -> sprintf "CASE WHEN %s THEN %d ELSE %d END" (buildf f) itm itm2
+                    | CaseSqlPlain(f, SqlDecimal(itm), SqlDecimal(itm2)) -> sprintf "CASE WHEN %s THEN %M ELSE %M END" (buildf f) itm itm2
+                    | CaseSqlPlain(f, SqlDateTime(itm), SqlDateTime(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | CaseSqlPlain(f, SqlStr(itm), SqlStr(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+        
+            and filterBuilder (~~) (f:Condition list) =
+                // the filter expressions
+
+                let rec filterBuilder' = function
+                    | [] -> ()
+                    | (cond::conds) ->
+                        let build op preds (rest:Condition list option) =
+                            ~~ "("
+                            preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let column = fieldNotation alias col
+                                    let extractData data =
+                                            match data with
+                                            | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
+                                            | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn ->
+                                                // in and not in operators pass an array
+                                                (box x :?> obj []) |> Array.map createParam
+                                            | Some(x) ->
+                                                [|createParam (box x)|]
+                                            | None ->    [|createParam DBNull.Value|]
+
+                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let paras = extractData data
+                                    ~~(sprintf "%s%s" prefix <|
+                                        match operator with
+                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
+                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.In ->
+                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                            Array.iter parameters.Add paras
+                                            sprintf "%s IN (%s)" column text
+                                        | FSharp.Data.Sql.NestedIn ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "%s IN (%s)" column innersql
+                                        | FSharp.Data.Sql.NotIn ->
+                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                            Array.iter parameters.Add paras
+                                            sprintf "%s NOT IN (%s)" column text
+                                        | FSharp.Data.Sql.NestedNotIn ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "%s NOT IN (%s)" column innersql
+                                        | _ ->
+                                            let aliasformat = sprintf "%s %s %s" column
+                                            match data with 
+                                            | Some d when (box d :? alias * SqlColumnType) ->
+                                                let alias2, col2 = box d :?> (alias * SqlColumnType)
+                                                let alias2f = fieldNotation alias2 col2
+                                                aliasformat (operator.ToString()) alias2f
+                                            | _ ->
+                                                parameters.Add paras.[0]
+                                                aliasformat (operator.ToString()) paras.[0].ParameterName
+                            ))
+                            // there's probably a nicer way to do this
+                            let rec aux = function
+                                | x::[] when preds.Length > 0 ->
+                                    ~~ (sprintf " %s " op)
+                                    filterBuilder' [x]
+                                | x::[] -> filterBuilder' [x]
+                                | x::xs when preds.Length > 0 ->
+                                    ~~ (sprintf " %s " op)
+                                    filterBuilder' [x]
+                                    ~~ (sprintf " %s " op)
+                                    aux xs
+                                | x::xs ->
+                                    filterBuilder' [x]
+                                    ~~ (sprintf " %s " op)
+                                    aux xs
+                                | [] -> ()
+
+                            Option.iter aux rest
+                            ~~ ")"
+
+                        match cond with
+                        | Or(preds,rest) -> build "OR" preds rest
+                        | And(preds,rest) ->  build "AND" preds rest
+                        | ConstantTrue -> ~~ " (1=1) "
+                        | ConstantFalse -> ~~ " (1=0) "
+                        | NotSupported x ->  failwithf "Not supported: %O" x
+                        filterBuilder' conds
+                filterBuilder' f
+
+            let sb = System.Text.StringBuilder()
             let (~~) (t:string) = sb.Append t |> ignore
 
             // all tables should be aliased.
@@ -900,7 +1006,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             let singleEntity = sqlQuery.Aliases.Count = 0
             // now we can build the sql query that has been simplified by the above expression converter
             // working on the basis that we will alias everything to make my life eaiser
-            // first build  the select statment, this is easy ...
+            // build the select statment, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
                 String.Join(",",
@@ -918,110 +1024,21 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                     else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col // F# makes this so easy :)
                                 | OperationColumn(n,op) ->
-                                    yield sprintf "%s as \"%s\"" (PostgreSQL.fieldNotation k op) n|])
+                                    yield sprintf "%s as \"%s\"" (fieldNotation k op) n|])
 
             // Create sumBy, minBy, maxBy, ... field columns
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates PostgreSQL.fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> PostgreSQL.fieldNotation a c)
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> fieldNotation a c)
                         let aggs = g |> List.map(snd) |> List.concat
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates PostgreSQL.fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
+                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
-
-            // next up is the filter expressions
-            // NOTE: really need to assign the parameters their correct db types
-            let param = ref 0
-            let nextParam() =
-                incr param
-                sprintf "@param%i" !param
-
-            let createParam (value:obj) =
-                let paramName = nextParam()
-                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
-
-            let rec filterBuilder = function
-                | [] -> ()
-                | (cond::conds) ->
-                    let build op preds (rest:Condition list option) =
-                        ~~ "("
-                        preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                let column = PostgreSQL.fieldNotation alias col
-                                let extractData data =
-                                     match data with
-                                     | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
-                                     | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn ->
-                                         // in and not in operators pass an array
-                                            (box x :?> obj []) |> Array.map createParam
-                                     | Some(x) ->
-                                         [|createParam (box x)|]
-                                     | None ->    [|createParam DBNull.Value|]
-
-                                let prefix = if i>0 then (sprintf " %s " op) else ""
-                                let paras = extractData data
-                                ~~(sprintf "%s%s" prefix <|
-                                    match operator with
-                                    | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                    | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
-                                    | FSharp.Data.Sql.In ->
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        sprintf "%s IN (%s)" column text
-                                    | FSharp.Data.Sql.NestedIn ->
-                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
-                                        Array.iter parameters.Add innerpars
-                                        sprintf "%s IN (%s)" column innersql
-                                    | FSharp.Data.Sql.NotIn ->
-                                        let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                        Array.iter parameters.Add paras
-                                        sprintf "%s NOT IN (%s)" column text
-                                    | FSharp.Data.Sql.NestedNotIn ->
-                                        let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
-                                        Array.iter parameters.Add innerpars
-                                        sprintf "%s NOT IN (%s)" column innersql
-                                    | _ ->
-                                        let aliasformat = sprintf "%s %s %s" column
-                                        match data with 
-                                        | Some d when (box d :? alias * SqlColumnType) ->
-                                            let alias2, col2 = box d :?> (alias * SqlColumnType)
-                                            let alias2f = PostgreSQL.fieldNotation alias2 col2
-                                            aliasformat (operator.ToString()) alias2f
-                                        | _ ->
-                                            parameters.Add paras.[0]
-                                            aliasformat (operator.ToString()) paras.[0].ParameterName
-                        ))
-                        // there's probably a nicer way to do this
-                        let rec aux = function
-                            | x::[] when preds.Length > 0 ->
-                                ~~ (sprintf " %s " op)
-                                filterBuilder [x]
-                            | x::[] -> filterBuilder [x]
-                            | x::xs when preds.Length > 0 ->
-                                ~~ (sprintf " %s " op)
-                                filterBuilder [x]
-                                ~~ (sprintf " %s " op)
-                                aux xs
-                            | x::xs ->
-                                filterBuilder [x]
-                                ~~ (sprintf " %s " op)
-                                aux xs
-                            | [] -> ()
-
-                        Option.iter aux rest
-                        ~~ ")"
-
-                    match cond with
-                    | Or(preds,rest) -> build "OR" preds rest
-                    | And(preds,rest) ->  build "AND" preds rest
-                    | ConstantTrue -> ~~ " (1=1) "
-                    | ConstantFalse -> ~~ " (1=0) "
-
-                    filterBuilder conds
 
             // next up is the FROM statement which includes joins ..
             let fromBuilder() =
@@ -1033,21 +1050,21 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             joinType destTable.Schema destTable.Name destAlias)
                     ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
-                            (PostgreSQL.fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
-                            (PostgreSQL.fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
+                            (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
                             ))))
 
             let groupByBuilder groupkeys =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     if i > 0 then ~~ ", "
-                    ~~ (PostgreSQL.fieldNotation alias column))
+                    ~~ (fieldNotation alias column))
 
             let orderByBuilder() =
                 sqlQuery.Ordering
                 |> List.iteri(fun i (alias,column,desc) ->
                     if i > 0 then ~~ ", "
-                    ~~ (sprintf "%s %s" (PostgreSQL.fieldNotation alias column) (if not desc then "DESC " else "")))
+                    ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM \"%s\".\"%s\" " baseTable.Schema baseTable.Name)
@@ -1069,7 +1086,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 // only logical way to deal with them.
                 let f = [And([],Some sqlQuery.Filters)]
                 ~~"WHERE "
-                filterBuilder f
+                filterBuilder (~~) f
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
@@ -1081,9 +1098,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
             if sqlQuery.HavingFilters.Length > 0 then
                 let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
 
-                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving PostgreSQL.fieldNotation keys))]
+                let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
-                filterBuilder f
+                filterBuilder (~~) f
 
             // ORDER BY
             if sqlQuery.Ordering.Length > 0 then

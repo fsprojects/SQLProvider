@@ -51,7 +51,20 @@ type AggregateOperation = // Aggregate (column name if not default)
 [<AutoOpenAttribute>]
 module ColumnSchema =
 
-    type CanonicalOp =
+    type alias = string
+    type Condition =
+        // this is  (table alias * column name * operator * right hand value ) list  * (the same again list)
+        // basically any AND or OR expression can have N terms and can have N nested condition children
+        // this is largely from my CRM type provider. I don't think in practice for the SQL provider
+        // you will ever have more than what is representable in a traditional binary expression tree, but
+        // changing it would be a lot of effort ;)
+        | And of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
+        | Or of (alias * SqlColumnType * ConditionOperator * obj option) list * (Condition list) option
+        | ConstantTrue
+        | ConstantFalse
+        | NotSupported of System.Linq.Expressions.Expression
+
+    and CanonicalOp =
     //String functions
     | Substring of SqlItemOrColumn
     | SubstringWithLength of SqlItemOrColumn*SqlItemOrColumn
@@ -95,7 +108,9 @@ module ColumnSchema =
     // Other
     | BasicMath of string*obj //operation, constant
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
-    | CaseSql of SqlItemOrColumn * SqlItemOrColumn
+    | CaseSql of Condition * SqlItemOrColumn // operation, if-false
+    | CaseNotSql of Condition * SqlItemOrColumn // operation, if-true
+    | CaseSqlPlain of Condition * SqlItemOrColumn * SqlItemOrColumn // with 2 constants
 
     and SqlColumnType =
     | KeyColumn of string
