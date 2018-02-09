@@ -334,13 +334,13 @@ module internal QueryImplementation =
                         
                         Some(ti,key,op,Some (box (subquery, modified)))
                     | SimpleCondition ((ti,key,op,c) as x) -> 
-                        if c.IsNone then Some x
-                        else
-                        match c.Value with
-                        | :? Tuple<string,SqlColumnType> as t ->
-                            let alias2 = resolveTuplePropertyName (fst t) source.TupleIndex
-                            Some(ti,key,op,Some(box (alias2,(snd t))))
-                        | _ -> Some x
+                        match c with
+                        | None -> Some x
+                        | Some t when (t :? (string*SqlColumnType)) ->
+                            let ti2, col = t :?> string*SqlColumnType
+                            let alias2 = resolveTuplePropertyName ti2 source.TupleIndex
+                            Some(ti,key,op,Some(box (alias2,col)))
+                        | Some _ -> Some x
                     | _ -> None
 
                 let rec filterExpression (exp:Expression)  =
