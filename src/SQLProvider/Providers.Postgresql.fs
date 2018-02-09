@@ -855,18 +855,19 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     let column = fieldNotation al col
                     match cf with
                     // String functions
-                    | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam (box searchItm)) (fieldNotation al2 col2)
-                    | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam (box toItm))
+                    | Replace(SqlConstant searchItm,SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam searchItm) (fieldNotation al2 col2)
+                    | Replace(SqlCol(al2, col2), SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam toItm)
                     | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s from %i)" column startPos
+                    | Replace(SqlConstant searchItm, SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam searchItm) (fieldParam toItm)
+                    | Substring(SqlConstant startPos) -> sprintf "SUBSTRING(%s from %s)" column (fieldParam startPos)
                     | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s)" column (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s from %i for %i)" column startPos strLen
-                    | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %i for %s)" column startPos (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s from %s for %i)" column (fieldNotation al2 col2) strLen
+                    | SubstringWithLength(SqlConstant startPos, SqlConstant strLen) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldParam startPos) (fieldParam strLen)
+                    | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldParam startPos) (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
                     | Length -> sprintf "CHAR_LENGTH(%s)" column
-                    | IndexOf(SqlStr search) -> sprintf "STRPOS(%s,%s)" (fieldParam (box search)) column
+                    | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
                     // Date functions
                     | Date -> sprintf "DATE_TRUNC('day', %s)" column
@@ -876,37 +877,29 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     | Hour -> sprintf "DATE_PART('hour', %s)" column
                     | Minute -> sprintf "DATE_PART('minute', %s)" column
                     | Second -> sprintf "DATE_PART('second', %s)" column
-                    | AddYears(SqlInt x) -> sprintf "(%s + INTERVAL '1 year' * %d)" column x
+                    //Todo: Check if these support parameters. If not, use Utilities.fieldConstant instead of fieldParam
+                    | AddYears(SqlConstant x) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldParam x)
                     | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
                     | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
-                    | AddDays(SqlFloat x) -> sprintf "(%s + INTERVAL '1 day' * %f)" column x // SQL ignores decimal part :-(
+                    | AddDays(SqlConstant x) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldParam x) // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
                     | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
-                    | AddMinutes(SqlFloat x) -> sprintf "(%s + INTERVAL '1 minute' * %f)" column x
+                    | AddMinutes(SqlConstant x) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
                     | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam (box par))
-                    | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
+                    | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
-                    | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+                    | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)
                     | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
-                    | CaseSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" (buildf f) column itm
-                    | CaseSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" (buildf f) column itm
-                    | CaseSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
-                    | CaseSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam (box itm))
-                    | CaseNotSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" (buildf f) itm column
-                    | CaseNotSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" (buildf f) itm column
-                    | CaseNotSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
-                    | CaseNotSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) column
-                    | CaseSqlPlain(f, SqlInt(itm), SqlInt(itm2)) -> sprintf "CASE WHEN %s THEN %d ELSE %d END" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDecimal(itm), SqlDecimal(itm2)) -> sprintf "CASE WHEN %s THEN %M ELSE %M END" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDateTime(itm), SqlDateTime(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
-                    | CaseSqlPlain(f, SqlStr(itm), SqlStr(itm2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam itm)
+                    | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         

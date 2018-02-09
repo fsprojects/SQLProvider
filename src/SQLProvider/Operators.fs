@@ -121,11 +121,7 @@ module ColumnSchema =
     // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
     and SqlItemOrColumn =
     | SqlCol of string*SqlColumnType //alias*column
-    | SqlInt of int
-    | SqlFloat of float
-    | SqlDecimal of decimal
-    | SqlStr of string
-    | SqlDateTime of System.DateTime
+    | SqlConstant of obj
 
     type ProjectionParameter =
     | EntityColumn of string

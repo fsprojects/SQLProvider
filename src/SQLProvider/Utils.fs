@@ -107,7 +107,6 @@ module internal Utilities =
             match op with // These are very standard:
             | ToUpper -> sprintf "UPPER(%s)" column
             | ToLower -> sprintf "LOWER(%s)" column
-            | Replace(SqlStr(searchItm),SqlStr(toItm)) -> sprintf "REPLACE(%s,'%s','%s')" column searchItm toItm
             | Abs -> sprintf "ABS(%s)" column
             | Ceil -> sprintf "CEILING(%s)" column
             | Floor -> sprintf "FLOOR(%s)" column
@@ -157,6 +156,14 @@ module internal Utilities =
         | KeyColumn k -> k
         | CanonicalOperation(_, c) -> "c" + getBaseColumnName c
         | GroupColumn(_, c) -> "g" + getBaseColumnName c
+
+    let fieldConstant (value:obj) =
+        //Can we create named parameters in ODBC, and how?
+        match value with
+        | :? Guid
+        | :? DateTime
+        | :? String -> sprintf "'%s'" (value.ToString().Replace("'", ""))
+        | _ -> value.ToString()
 
 module ConfigHelpers = 
     

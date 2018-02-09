@@ -346,23 +346,24 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     let column = fieldNotation al col
                     match cf with
                     // String functions
-                    | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,'%s',%s)" column searchItm (fieldNotation al2 col2)
-                    | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,'%s')" column (fieldNotation al2 col2) toItm
+                    | Replace(SqlConstant searchItm,SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (Utilities.fieldConstant searchItm) (fieldNotation al2 col2)
+                    | Replace(SqlCol(al2, col2), SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (Utilities.fieldConstant toItm)
                     | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Substring(SqlInt startPos) -> sprintf "SUBSTRING(%s, %i)" column startPos
+                    | Replace(SqlConstant searchItm, SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (Utilities.fieldConstant searchItm) (Utilities.fieldConstant toItm)
+                    | Substring(SqlConstant startPos) -> sprintf "SUBSTRING(%s, %s)" column (Utilities.fieldConstant startPos)
                     | Substring(SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s)" column (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "SUBSTRING(%s, %i, %i)" column startPos strLen
-                    | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "SUBSTRING(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+                    | SubstringWithLength(SqlConstant startPos, SqlConstant strLen) -> sprintf "SUBSTRING(%s, %s, %s)" column (Utilities.fieldConstant startPos) (Utilities.fieldConstant strLen)
+                    | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s, %s)" column (Utilities.fieldConstant startPos) (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (Utilities.fieldConstant strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | Trim -> sprintf "LTRIM(RTRIM(%s))" column
                     | Length -> sprintf "LENGTH(%s)" column // ODBC 1.0, works with strings only
                     //| Length -> sprintf "CHARACTER_LENGTH(%s)" column // ODBC 3.0, works with all columns
-                    | IndexOf(SqlStr search) -> sprintf "LOCATE('%s',%s)" search column
+                    | IndexOf(SqlConstant search) -> sprintf "LOCATE(%s,%s)" (Utilities.fieldConstant search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
-                    | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "LOCATE('%s',%s,%d)" search column startPos
-                    | IndexOfStart(SqlStr(search),SqlCol(al2, col2)) -> sprintf "LOCATE('%s',%s,%s)" search column (fieldNotation al2 col2)
-                    | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+                    | IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (Utilities.fieldConstant search) column (Utilities.fieldConstant startPos)
+                    | IndexOfStart(SqlConstant search,SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s,%s)" (Utilities.fieldConstant search) column (fieldNotation al2 col2)
+                    | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (Utilities.fieldConstant startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | ToUpper -> sprintf "UCASE(%s)" column
                     | ToLower -> sprintf "LCASE(%s)" column
@@ -380,24 +381,15 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
-                    | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+                    | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (Utilities.fieldConstant x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
-                    | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+                    | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (Utilities.fieldConstant x)
                     | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
-                    | CaseSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %d END" (buildf f) column itm
-                    | CaseSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE %M END" (buildf f) column itm
-                    | CaseSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" (buildf f) column (itm.ToString("yyyy-MM-dd HH:mm:ss"))
-                    | CaseSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN %s ELSE '%s' END" (buildf f) column itm
-                    | CaseNotSql(f, SqlInt(itm)) -> sprintf "CASE WHEN %s THEN %d ELSE %s END" (buildf f) itm column
-                    | CaseNotSql(f, SqlDecimal(itm)) -> sprintf "CASE WHEN %s THEN %M ELSE %s END" (buildf f) itm column
-                    | CaseNotSql(f, SqlDateTime(itm)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" (buildf f) (itm.ToString("yyyy-MM-dd HH:mm:ss")) column
-                    | CaseNotSql(f, SqlStr(itm)) -> sprintf "CASE WHEN %s THEN '%s' ELSE %s END" (buildf f) itm column
-                    | CaseSqlPlain(f, SqlInt(itm), SqlInt(itm2)) -> sprintf "CASE WHEN %s THEN %d ELSE %d END" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDecimal(itm), SqlDecimal(itm2)) -> sprintf "CASE WHEN %s THEN %M ELSE %M END" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDateTime(itm), SqlDateTime(itm2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE '%s' END" (buildf f) (itm.ToString("yyyy-MM-dd HH:mm:ss")) (itm2.ToString("yyyy-MM-dd HH:mm:ss"))
-                    | CaseSqlPlain(f, SqlStr(itm), SqlStr(itm2)) -> sprintf "CASE WHEN %s THEN '%s' ELSE '%s' END" (buildf f) itm itm2
+                    | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (Utilities.fieldConstant itm)
+                    | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (Utilities.fieldConstant itm) column
+                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (Utilities.fieldConstant itm) (Utilities.fieldConstant itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

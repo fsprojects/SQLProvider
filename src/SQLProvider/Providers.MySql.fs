@@ -628,22 +628,23 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     let column = fieldNotation al col
                     match cf with
                     // String functions
-                    | Replace(SqlStr(searchItm),SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam (box searchItm)) (fieldNotation al2 col2)
-                    | Replace(SqlCol(al2, col2),SqlStr(toItm)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam (box toItm))
+                    | Replace(SqlConstant searchItm,SqlCol(al2, col2)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam searchItm) (fieldNotation al2 col2)
+                    | Replace(SqlCol(al2, col2), SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam toItm)
                     | Replace(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "REPLACE(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Substring(SqlInt startPos) -> sprintf "MID(%s, %i)" column startPos
+                    | Replace(SqlConstant searchItm, SqlConstant toItm) -> sprintf "REPLACE(%s,%s,%s)" column (fieldParam searchItm) (fieldParam toItm)
+                    | Substring(SqlConstant startPos) -> sprintf "MID(%s, %s)" column (fieldParam startPos)
                     | Substring(SqlCol(al2, col2)) -> sprintf "MID(%s, %s)" column (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlInt startPos,SqlInt strLen) -> sprintf "MID(%s, %i, %i)" column startPos strLen
-                    | SubstringWithLength(SqlInt startPos,SqlCol(al2, col2)) -> sprintf "MID(%s, %i, %s)" column startPos (fieldNotation al2 col2)
-                    | SubstringWithLength(SqlCol(al2, col2),SqlInt strLen) -> sprintf "MID(%s, %s, %i)" column (fieldNotation al2 col2) strLen
+                    | SubstringWithLength(SqlConstant startPos, SqlConstant strLen) -> sprintf "MID(%s, %s, %s)" column (fieldParam startPos) (fieldParam strLen)
+                    | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "MID(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
+                    | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | Trim -> sprintf "TRIM(%s)" column
                     | Length -> sprintf "CHAR_LENGTH(%s)" column
-                    | IndexOf(SqlStr search) -> sprintf "LOCATE(%s,%s)" (fieldParam (box search)) column
+                    | IndexOf(SqlConstant search) -> sprintf "LOCATE(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
-                    | IndexOfStart(SqlStr(search),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldParam (box search)) column startPos
-                    | IndexOfStart(SqlStr(search),SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam (box search))  column (fieldNotation al2 col2)
-                    | IndexOfStart(SqlCol(al2, col2),(SqlInt startPos)) -> sprintf "LOCATE(%s,%s,%d)" (fieldNotation al2 col2) column startPos
+                    | IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search) column (fieldParam startPos)
+                    | IndexOfStart(SqlConstant search,SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search)  column (fieldNotation al2 col2)
+                    | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     // Date functions
                     | Date -> sprintf "DATE(%s)" column
@@ -653,37 +654,28 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     | Hour -> sprintf "HOUR(%s)" column
                     | Minute -> sprintf "MINUTE(%s)" column
                     | Second -> sprintf "SECOND(%s)" column
-                    | AddYears(SqlInt x) -> sprintf "DATE_ADD(%s, INTERVAL %d YEAR)" column x
+                    | AddYears(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldParam x)
                     | AddYears(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
                     | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
-                    | AddDays(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f DAY)" column x // SQL ignores decimal part :-(
+                    | AddDays(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldParam x) // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
                     | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
-                    | AddMinutes(SqlFloat x) -> sprintf "DATE_ADD(%s, INTERVAL %f MINUTE)" column x
+                    | AddMinutes(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
                     | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
                     // Math functions
                     | Truncate -> sprintf "TRUNCATE(%s)" column
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
-                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" column (fieldParam (box par)) 
-                    | Greatest(SqlDecimal x) -> sprintf "GREATEST(%s, %M)" column x
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" column (fieldParam par) 
+                    | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
-                    | Least(SqlDecimal x) -> sprintf "LEAST(%s, %M)" column x
+                    | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)
                     | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldNotation al2 col2)
-                    | CaseSql(f, SqlInt(itm)) -> sprintf "IF(%s, %s, %d)" (buildf f) column itm
-                    | CaseSql(f, SqlDecimal(itm)) -> sprintf "IF(%s, %s, %M)" (buildf f) column itm
-                    | CaseSql(f, SqlDateTime(itm)) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldParam (box itm))
-                    | CaseSql(f, SqlStr(itm)) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldParam (box itm))
-                    | CaseNotSql(f, SqlInt(itm)) -> sprintf "IF(%s, %d, %s)" (buildf f) itm column
-                    | CaseNotSql(f, SqlDecimal(itm)) -> sprintf "IF(%s, %M, %s)" (buildf f) itm column
-                    | CaseNotSql(f, SqlDateTime(itm)) -> sprintf "IF(%s, %s, %s)" (buildf f) (fieldParam (box itm)) column
-                    | CaseNotSql(f, SqlStr(itm)) -> sprintf "IF(%s, %s, %s)" (buildf f) (fieldParam (box itm)) column
-                    | CaseSqlPlain(f, SqlInt(itm), SqlInt(itm2)) -> sprintf "IF(%s, %d, %d)" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDecimal(itm), SqlDecimal(itm2)) -> sprintf "IF(%s,%M,%M)" (buildf f) itm itm2
-                    | CaseSqlPlain(f, SqlDateTime(itm), SqlDateTime(itm2)) -> sprintf "IF(%s,%s,%s)" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
-                    | CaseSqlPlain(f, SqlStr(itm), SqlStr(itm2)) -> sprintf "IF(%s,%s,%s)" (buildf f) (fieldParam (box itm)) (fieldParam (box itm2))
+                    | CaseSql(f, SqlConstant itm) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldParam itm)
+                    | CaseNotSql(f, SqlConstant itm) -> sprintf "IF(%s, %s, %s)" (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "IF(%s,%s,%s)" (buildf f) (fieldParam itm) (fieldParam itm2)
 
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c

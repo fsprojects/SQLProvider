@@ -1495,7 +1495,7 @@ let ``simple canonical operations case-when-elses``() =
             join emp in dc.Main.Employees on (cust.City.Trim() + "_" + cust.Country = emp.City.Trim() + "_" + emp.Country)
             where ((if box(emp.BirthDate)=null then 200 else 100) = 100) 
             where ((if emp.EmployeeId > 1L then 200 else 100) = 100) 
-            //where ((if emp.BirthDate > emp.BirthDate then 200 else 100) = 100) //doesn't work yet, alias resolving problem
+            where ((if emp.BirthDate > emp.BirthDate then 200 else 100) = 100)
             select (cust.CustomerId, cust.City, emp.BirthDate)
             distinct
         } |> Seq.toArray
@@ -1505,8 +1505,8 @@ let ``simple canonical operations case-when-elses``() =
     let qry2 = 
         query {
             for cust in dc.Main.Customers do
-            where ((if cust.City=cust.ContactName then cust.City else cust.Address)<>"x") //does work
-            where ( (if cust.City.Substring(0,3)<>"Lond" then cust.City else cust.Address) = "London") //does work
+            where ((if cust.City=cust.ContactName then cust.City else cust.Address)<>"x") 
+            where ( (if cust.City.Substring(0,3)<>"Lond" then cust.City else cust.Address) = "London")
             select (cust.City)
         } |> Seq.toArray
 
