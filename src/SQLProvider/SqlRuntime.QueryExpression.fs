@@ -538,6 +538,8 @@ module internal QueryExpressionTransformer =
                     | AddYears(SqlCol(al, col2)) -> AddYears(SqlCol(resolver al, visitCanonicals resolverfunc col2))
                     | AddDays(SqlCol(al, col2)) -> AddDays(SqlCol(resolver al, visitCanonicals resolverfunc col2))
                     | AddMinutes(SqlCol(al, col2)) -> AddMinutes(SqlCol(resolver al, visitCanonicals resolverfunc col2))
+                    | DateDiffDays(SqlCol(al, col2)) -> DateDiffDays(SqlCol(resolver al, visitCanonicals resolverfunc col2))
+                    | DateDiffSecs(SqlCol(al, col2)) -> DateDiffSecs(SqlCol(resolver al, visitCanonicals resolverfunc col2))
 
                     | Greatest(SqlCol(al, col)) -> Greatest(SqlCol(resolver al, visitCanonicals resolverfunc col))
                     | Least(SqlCol(al, col)) -> Least(SqlCol(resolver al, visitCanonicals resolverfunc col))
@@ -552,7 +554,7 @@ module internal QueryExpressionTransformer =
 
         and resolveC = visitCanonicals resolve
 
-        and tryResolveC : Option<obj>->Option<obj> = Option.map(function
+        and tryResolveC (e: Option<obj>) : Option<obj> = e |> Option.map(function
             | :? (alias * SqlColumnType) as a ->
                 let al,col = a
                 if al = "" || al.StartsWith "Item" then

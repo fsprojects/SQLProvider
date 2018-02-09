@@ -575,6 +575,10 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
                     | AddMinutes(SqlConstant x) -> sprintf "DATETIME(%s, '+%s minute')" column (Utilities.fieldConstant x)
                     | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldNotation al2 col2)
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" (fieldNotation al2 col2) column
+                    | DateDiffDays(SqlConstant x) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldParam x)
+                    | DateDiffSecs(SqlConstant x) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" (fieldParam x) column
                     // Math functions
                     | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
                     | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do

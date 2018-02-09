@@ -108,6 +108,7 @@ let canoncicalOpTest =
         where (
             abs(emp.EmployeeId)+1 > 4
             && emp.BirthDate.Value.Month + 1 > 3
+            && emp.HireDate.Value.Subtract(emp.HireDate.Value).Days = 0
         )
         sortBy emp.BirthDate.Value.Year
         select (cust.CustomerId, cust.City, emp.BirthDate)

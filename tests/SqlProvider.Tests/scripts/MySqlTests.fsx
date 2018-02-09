@@ -141,6 +141,7 @@ let canoncicalOpTest =
             && emp.Email.Length > 2
             && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
             && Math.Min(emp.Salary, 3m) = 3m
+            && emp.HireDate.AddDays(1.).Subtract(emp.HireDate).Days = 1
         )
         sortBy emp.HireDate.Day
         select (emp.HireDate, emp.Email, job.MaxSalary)

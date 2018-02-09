@@ -887,6 +887,10 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     | AddMinutes(SqlConstant x) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
                     | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "CAST(%s AS date) - CAST(%s AS date)" column (fieldNotation al2 col2)
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldNotation al2 col2)
+                    | DateDiffDays(SqlConstant x) -> sprintf "CAST(%s AS date) - CAST(%s AS date)" column (fieldParam x)
+                    | DateDiffSecs(SqlConstant x) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)

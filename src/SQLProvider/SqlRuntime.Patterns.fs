@@ -302,14 +302,14 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> None
         | _ -> None
     // These are canonical properties
-    | _, OptionalFSharpOptionValue(PropertyGet(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), meth)) -> 
+    | _, OptionalFSharpOptionValue(PropertyGet(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), propInfo)) -> 
         match typ with
         | t when t = typeof<System.String> || t = typeof<Option<System.String>> -> // String functions
-            match meth.Name with
+            match propInfo.Name with
             | "Length" -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
             | _ -> None
         | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> -> // DateTime functions
-            match meth.Name with
+            match propInfo.Name with
             | "Date" -> Some(alias, CanonicalOperation(CanonicalOp.Date, col), typ)
             | "Year" -> Some(alias, CanonicalOperation(CanonicalOp.Year, col), intType typ)
             | "Month" -> Some(alias, CanonicalOperation(CanonicalOp.Month, col), intType typ)
@@ -318,7 +318,15 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Minute" -> Some(alias, CanonicalOperation(CanonicalOp.Minute, col), intType typ)
             | "Second" -> Some(alias, CanonicalOperation(CanonicalOp.Second, col), intType typ)
             | _ -> None
+        | _ -> None 
+    | _, OptionalFSharpOptionValue(PropertyGet(Some(MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), meth, [SqlColumnGet(al2,col2,typ2)])), propInfo)) 
+            when (meth.Name = "Subtract" && (meth.ReturnType = typeof<System.TimeSpan> || meth.ReturnType = typeof<Option<System.TimeSpan>>) && 
+                  (typ = typeof<System.DateTime> || typ = typeof<Option<System.DateTime>>) && (typ2 = typeof<System.DateTime> || typ2 = typeof<Option<System.DateTime>>)) -> 
+        match propInfo.Name with
+        | "Days" -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
+        | "Seconds" -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
         | _ -> None
+
     // Numerical functions
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)))] as par)))
         when ((meth.Name = "Abs" || meth.Name = "Ceil" || meth.Name = "Floor" || meth.Name = "Round" || meth.Name = "Truncate" ||

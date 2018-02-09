@@ -181,6 +181,7 @@ let canonicalTest () =
                 && emp.FirstName.Value + "D" = "DavidD"
                 && emp.LastName.Length > 6
                 && emp.HireDate.Date.AddYears(-10).Year < 1990
+                && emp.HireDate.AddDays(1.).Subtract(emp.HireDate).Days = 1
             )
             select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
     } |> Seq.toList |> Assert.IsNotEmpty

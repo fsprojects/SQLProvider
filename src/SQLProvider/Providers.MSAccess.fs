@@ -367,6 +367,10 @@ type internal MSAccessProvider() =
                     | AddMinutes(SqlConstant x) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldParam x) column
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldNotation al2 col2) column
                     | AddSeconds x -> sprintf "DateAdd(\"s\", %f, %s)" x column
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DateDiff('d',%s,%s)" (fieldNotation al2 col2) column
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "DateDiff('s',%s,%s)" (fieldNotation al2 col2) column
+                    | DateDiffDays(SqlConstant x) -> sprintf "DateDiff('d',%s,%s)" (fieldParam x) column
+                    | DateDiffSecs(SqlConstant x) -> sprintf "DateDiff('s',%s,%s)" (fieldParam x) column
                     // Math functions
                     | Truncate -> sprintf "Fix(%s)" column
                     | Ceil -> sprintf "Fix(%s)+1" column

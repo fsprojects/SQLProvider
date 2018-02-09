@@ -741,6 +741,10 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | AddMinutes(SqlConstant x) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
                     | AddSeconds x -> sprintf "(%s + INTERVAL '%f' SECOND)" column x
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "(%s-%s)" column (fieldNotation al2 col2)
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(%s-%s)*60*60*24" column (fieldNotation al2 col2)
+                    | DateDiffDays(SqlConstant x) -> sprintf "(%s-%s)" column (fieldParam x)
+                    | DateDiffSecs(SqlConstant x) -> sprintf "(%s-%s)*60*60*24" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
                     | Ceil -> sprintf "CEIL(%s)" column

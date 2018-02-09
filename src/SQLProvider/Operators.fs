@@ -89,6 +89,9 @@ module ColumnSchema =
     | AddHours of float
     | AddMinutes of SqlItemOrColumn
     | AddSeconds of float
+    | DateDiffDays of SqlItemOrColumn
+    | DateDiffSecs of SqlItemOrColumn
+
     // Numerical functions
     | Abs
     | Ceil

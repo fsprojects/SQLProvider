@@ -663,6 +663,10 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     | AddMinutes(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
                     | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DATEDIFF(%s, %s)" column (fieldNotation al2 col2)
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "TIMESTAMPDIFF(SECOND, %s, %s)" column (fieldNotation al2 col2)
+                    | DateDiffDays(SqlConstant x) -> sprintf "DATEDIFF(%s, %s)" column (fieldParam x)
+                    | DateDiffSecs(SqlConstant x) -> sprintf "TIMESTAMPDIFF(SECOND, %s, %s)" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "TRUNCATE(%s)" column
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)

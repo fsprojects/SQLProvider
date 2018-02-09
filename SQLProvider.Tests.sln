@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{116D77B0-B9B2-4516-8DAF-485D43FE4B18}"
 	ProjectSection(SolutionItems) = preProject
@@ -38,7 +38,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{DB81
 		tests\SqlProvider.Tests\scripts\MySqlTests.fsx = tests\SqlProvider.Tests\scripts\MySqlTests.fsx
 		tests\SqlProvider.Tests\scripts\OdbcTests.fsx = tests\SqlProvider.Tests\scripts\OdbcTests.fsx
 		tests\SqlProvider.Tests\scripts\OracleTests.fsx = tests\SqlProvider.Tests\scripts\OracleTests.fsx
-		tests\SqlProvider.Tests\scripts\PostgreSQLTests.fsx = tests\SqlProvider.Tests\scripts\PostgreSQLTests.fsx
 		tests\SqlProvider.Tests\scripts\SQLLiteTests.fsx = tests\SqlProvider.Tests\scripts\SQLLiteTests.fsx
 		tests\SqlProvider.Tests\scripts\SqlServerTests.fsx = tests\SqlProvider.Tests\scripts\SqlServerTests.fsx
 	EndProjectSection
@@ -65,5 +64,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {266D1D48-A28A-48A9-AAB2-3BE4132FBA88}
 	EndGlobalSection
 EndGlobal

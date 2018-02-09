@@ -728,6 +728,10 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                     | Hour -> sprintf "EXTRACT(HOUR FROM %s)" column
                     | Minute -> sprintf "EXTRACT(MINUTE FROM %s)" column
                     | Second -> sprintf "EXTRACT(SECOND FROM %s)" column
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DATEDIFF(DAY, %s, %s)" (fieldNotation al2 col2) column
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "DATEDIFF(SECOND, %s, %s)" (fieldNotation al2 col2) column
+                    | DateDiffDays(SqlConstant x) -> sprintf "DATEDIFF(DAY, %s, %s)" (fieldParam x) column
+                    | DateDiffSecs(SqlConstant x) -> sprintf "DATEDIFF(SECOND, %s, %s)" (fieldParam x) column
                     //Todo: Check if these support parameters. If not, use Utilities.fieldConstant instead of fieldParam
                     | AddYears(SqlConstant x) -> sprintf "DATEADD(%s YEAR TO %s)" (fieldParam x) column
                     | AddYears(SqlCol(al2, col2)) -> sprintf "DATEADD(%s YEAR TO %s)" (fieldNotation al2 col2) column

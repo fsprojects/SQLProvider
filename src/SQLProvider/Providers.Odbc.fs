@@ -375,6 +375,10 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     | Hour -> sprintf "HOUR(%s)" column
                     | Minute -> sprintf "MINUTE(%s)" column
                     | Second -> sprintf "SECOND(%s)" column
+                    | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DATEDIFF('d', %s, %s)" (fieldNotation al2 col2) column
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "DATEDIFF('s', %s, %s)" (fieldNotation al2 col2) column
+                    | DateDiffDays(SqlConstant x) -> sprintf "DATEDIFF('d', %s, %s)" (Utilities.fieldConstant x) column
+                    | DateDiffSecs(SqlConstant x) -> sprintf "DATEDIFF('s', %s, %s)" (Utilities.fieldConstant x) column
                     // Date additions not supported by standard ODBC
                     // Math functions
                     | Truncate -> sprintf "TRUNCATE(%s)" column
