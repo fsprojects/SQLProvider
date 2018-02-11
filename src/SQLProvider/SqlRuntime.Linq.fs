@@ -822,7 +822,9 @@ module internal QueryImplementation =
                                 member t.TupleIndex = source.TupleIndex }
                         let res = parseWhere meth limitedSource qual
                         res |> Seq.head |> box :?> 'T
-                    | MethodCall(None, (MethodWithName "Average" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min" as meth), [SourceWithQueryData source; 
+                    | MethodCall(None, (MethodWithName "Average" | MethodWithName "Avg" | MethodWithName "Sum" | MethodWithName "Max" | MethodWithName "Min"
+                                         | MethodWithName "Avg"  | MethodWithName "StdDev" | MethodWithName "StDev" | MethodWithName "StandardDeviation"
+                                         | MethodWithName "Variance" as meth), [SourceWithQueryData source; 
                              OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity, op,_)))) 
                              ]) ->
 

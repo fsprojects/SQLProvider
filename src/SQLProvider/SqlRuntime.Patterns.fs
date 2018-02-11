@@ -319,12 +319,14 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Second" -> Some(alias, CanonicalOperation(CanonicalOp.Second, col), intType typ)
             | _ -> None
         | _ -> None 
-    | _, OptionalFSharpOptionValue(PropertyGet(Some(MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), meth, [SqlColumnGet(al2,col2,typ2)])), propInfo)) 
+    | _, OptionalFSharpOptionValue(PropertyGet(Some(MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), meth, [par])), propInfo)) 
             when (meth.Name = "Subtract" && (meth.ReturnType = typeof<System.TimeSpan> || meth.ReturnType = typeof<Option<System.TimeSpan>>) && 
-                  (typ = typeof<System.DateTime> || typ = typeof<Option<System.DateTime>>) && (typ2 = typeof<System.DateTime> || typ2 = typeof<Option<System.DateTime>>)) -> 
-        match propInfo.Name with
-        | "Days" -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
-        | "Seconds" -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
+                  (typ = typeof<System.DateTime> || typ = typeof<Option<System.DateTime>>)) -> 
+        match propInfo.Name, par with
+        | "Days", SqlColumnGet(al2,col2,typ2) when (typ2 = typeof<System.DateTime> || typ2 = typeof<Option<System.DateTime>>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
+        | "Seconds", SqlColumnGet(al2,col2,typ2) when (typ2 = typeof<System.DateTime> || typ2 = typeof<Option<System.DateTime>>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
+        | "Days", Constant(c,t) when t = typeof<System.DateTime> -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlConstant(box c)), col), typ)
+        | "Seconds", Constant(c,t) when t = typeof<System.DateTime> -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlConstant(box c)), col), typ)
         | _ -> None
 
     // Numerical functions
