@@ -1,3 +1,8 @@
+### 1.1.32 - 13.02.2018
+* initial case-when-else support on where-clauses, PR #515
+* mapping SQL server time to TimeSpan, PR #517
+* fixed canonical operations when constant is before column
+
 ### 1.1.31 - 01.02.2018
 * Oracle fix insert rows into table without primary key #514
 
