@@ -53,15 +53,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '103', 103)" onmouseover="showTip(event, '103', 103)">
+          <code onmouseout="hideTip(event, '102', 102)" onmouseover="showTip(event, '102', 102)">
             connect con f
           </code>
-          <div class="tip" id="103">
-            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;?8091) -&gt; &#39;?8091<br />
-                          <strong>Type parameters:</strong> '?8091          </div>
+          <div class="tip" id="102">
+            <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;?8084) -&gt; &#39;?8084<br />
+                          <strong>Type parameters:</strong> '?8084          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L81-81" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L83-83" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '103', 103)" onmouseover="showTip(event, '103', 103)">
+            createCommand commandText connection
+          </code>
+          <div class="tip" id="103">
+            <strong>Signature:</strong> commandText:string -&gt; connection:IDbConnection -&gt; IDbCommand<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L75-75" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -72,10 +90,28 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '104', 104)" onmouseover="showTip(event, '104', 104)">
-            createCommand commandText connection
+            createCommandParameter param value
           </code>
           <div class="tip" id="104">
-            <strong>Signature:</strong> commandText:string -&gt; connection:IDbConnection -&gt; IDbCommand<br />
+            <strong>Signature:</strong> param:QueryParameter -&gt; value:obj -&gt; IDbDataParameter<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L107-107" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '105', 105)" onmouseover="showTip(event, '105', 105)">
+            createConnection connectionString
+          </code>
+          <div class="tip" id="105">
+            <strong>Signature:</strong> connectionString:string -&gt; IDbConnection<br />
                       </div>
         </td>
         <td class="xmldoc">
@@ -89,46 +125,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '105', 105)" onmouseover="showTip(event, '105', 105)">
-            createCommandParameter param value
-          </code>
-          <div class="tip" id="105">
-            <strong>Signature:</strong> param:QueryParameter -&gt; value:obj -&gt; IDbDataParameter<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L105-105" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
           <code onmouseout="hideTip(event, '106', 106)" onmouseover="showTip(event, '106', 106)">
-            createConnection connectionString
-          </code>
-          <div class="tip" id="106">
-            <strong>Signature:</strong> connectionString:string -&gt; IDbConnection<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L71-71" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '107', 107)" onmouseover="showTip(event, '107', 107)">
             createTypeMappings con
           </code>
-          <div class="tip" id="107">
+          <div class="tip" id="106">
             <strong>Signature:</strong> con:IDbConnection -&gt; unit<br />
                       </div>
         </td>
@@ -143,15 +143,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '108', 108)" onmouseover="showTip(event, '108', 108)">
+          <code onmouseout="hideTip(event, '107', 107)" onmouseover="showTip(event, '107', 107)">
             dbUnbox v
           </code>
-          <div class="tip" id="108">
+          <div class="tip" id="107">
             <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L75-75" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L77-77" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '108', 108)" onmouseover="showTip(event, '108', 108)">
+            dbUnboxWithDefault def v
+          </code>
+          <div class="tip" id="108">
+            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
+                          <strong>Type parameters:</strong> 'a          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L80-80" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -162,14 +180,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '109', 109)" onmouseover="showTip(event, '109', 109)">
-            dbUnboxWithDefault def v
+            executeSprocCommand (...)
           </code>
           <div class="tip" id="109">
-            <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
-                          <strong>Type parameters:</strong> 'a          </div>
+            <strong>Signature:</strong> com:IDbCommand -&gt; inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; ReturnValueType<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L78-78" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L263-263" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -180,14 +198,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '110', 110)" onmouseover="showTip(event, '110', 110)">
-            executeSprocCommand (...)
+            executeSprocCommandAsync (...)
           </code>
           <div class="tip" id="110">
-            <strong>Signature:</strong> com:IDbCommand -&gt; inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; ReturnValueType<br />
+            <strong>Signature:</strong> com:DbCommand -&gt; inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; Async&lt;ReturnValueType&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L261-261" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L287-287" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -198,14 +216,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '111', 111)" onmouseover="showTip(event, '111', 111)">
-            executeSprocCommandAsync (...)
+            executeSprocCommandCommon (...)
           </code>
           <div class="tip" id="111">
-            <strong>Signature:</strong> com:DbCommand -&gt; inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; Async&lt;ReturnValueType&gt;<br />
-                      </div>
+            <strong>Signature:</strong> inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; (int * string * IDbDataParameter) [] * (&#39;?8094 -&gt; QueryParameter -&gt; ReturnSetType) * (int * string * IDbDataParameter) []<br />
+                          <strong>Type parameters:</strong> '?8094          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L285-285" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L223-223" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -216,14 +234,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '112', 112)" onmouseover="showTip(event, '112', 112)">
-            executeSprocCommandCommon (...)
+            executeSql sql con
           </code>
           <div class="tip" id="112">
-            <strong>Signature:</strong> inputParameters:QueryParameter [] -&gt; returnCols:QueryParameter [] -&gt; values:obj [] -&gt; (int * string * IDbDataParameter) [] * (&#39;?8101 -&gt; QueryParameter -&gt; ReturnSetType) * (int * string * IDbDataParameter) []<br />
-                          <strong>Type parameters:</strong> '?8101          </div>
+            <strong>Signature:</strong> sql:string -&gt; con:IDbConnection -&gt; SqlDataReader<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L221-221" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L88-88" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -234,27 +252,9 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '113', 113)" onmouseover="showTip(event, '113', 113)">
-            executeSql sql con
-          </code>
-          <div class="tip" id="113">
-            <strong>Signature:</strong> sql:string -&gt; con:IDbConnection -&gt; SqlDataReader<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L86-86" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '114', 114)" onmouseover="showTip(event, '114', 114)">
             findClrType 
           </code>
-          <div class="tip" id="114">
+          <div class="tip" id="113">
             <strong>Signature:</strong> string -&gt; TypeMapping option<br />
                       </div>
         </td>
@@ -269,10 +269,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '115', 115)" onmouseover="showTip(event, '115', 115)">
+          <code onmouseout="hideTip(event, '114', 114)" onmouseover="showTip(event, '114', 114)">
             findDbType 
           </code>
-          <div class="tip" id="115">
+          <div class="tip" id="114">
             <strong>Signature:</strong> string -&gt; TypeMapping option<br />
                       </div>
         </td>
@@ -287,10 +287,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '116', 116)" onmouseover="showTip(event, '116', 116)">
+          <code onmouseout="hideTip(event, '115', 115)" onmouseover="showTip(event, '115', 115)">
             getSchema name args con
           </code>
-          <div class="tip" id="116">
+          <div class="tip" id="115">
             <strong>Signature:</strong> name:string -&gt; args:string [] -&gt; con:IDbConnection -&gt; DataTable<br />
                       </div>
         </td>
@@ -305,15 +305,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '117', 117)" onmouseover="showTip(event, '117', 117)">
+          <code onmouseout="hideTip(event, '116', 116)" onmouseover="showTip(event, '116', 116)">
             getSprocName row
           </code>
-          <div class="tip" id="117">
+          <div class="tip" id="116">
             <strong>Signature:</strong> row:DataRow -&gt; SprocName<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L149-149" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L151-151" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '117', 117)" onmouseover="showTip(event, '117', 117)">
+            getSprocParameters con name
+          </code>
+          <div class="tip" id="117">
+            <strong>Signature:</strong> con:IDbConnection -&gt; name:SprocName -&gt; QueryParameter list<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L156-156" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -324,14 +342,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '118', 118)" onmouseover="showTip(event, '118', 118)">
-            getSprocParameters con name
+            getSprocReturnCols con sname sparams
           </code>
           <div class="tip" id="118">
-            <strong>Signature:</strong> con:IDbConnection -&gt; name:SprocName -&gt; QueryParameter list<br />
+            <strong>Signature:</strong> con:IDbConnection -&gt; sname:SprocName -&gt; sparams:QueryParameter list -&gt; QueryParameter list<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L154-154" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L115-115" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -342,14 +360,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '119', 119)" onmouseover="showTip(event, '119', 119)">
-            getSprocReturnCols con sname sparams
+            getSprocs con
           </code>
           <div class="tip" id="119">
-            <strong>Signature:</strong> con:IDbConnection -&gt; sname:SprocName -&gt; sparams:QueryParameter list -&gt; QueryParameter list<br />
+            <strong>Signature:</strong> con:IDbConnection -&gt; Sproc list<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L113-113" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L187-187" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -360,14 +378,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '120', 120)" onmouseover="showTip(event, '120', 120)">
-            getSprocs con
+            isSQL2012Orlater con
           </code>
           <div class="tip" id="120">
-            <strong>Signature:</strong> con:IDbConnection -&gt; Sproc list<br />
+            <strong>Signature:</strong> con:IDbConnection -&gt; bool<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L185-185" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L98-98" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -378,14 +396,14 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '121', 121)" onmouseover="showTip(event, '121', 121)">
-            isSQL2012Orlater con
+            readParameter parameter
           </code>
           <div class="tip" id="121">
-            <strong>Signature:</strong> con:IDbConnection -&gt; bool<br />
+            <strong>Signature:</strong> parameter:IDbDataParameter -&gt; obj<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L96-96" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L92-92" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -396,27 +414,9 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '122', 122)" onmouseover="showTip(event, '122', 122)">
-            readParameter parameter
-          </code>
-          <div class="tip" id="122">
-            <strong>Signature:</strong> parameter:IDbDataParameter -&gt; obj<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.fs#L90-90" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '123', 123)" onmouseover="showTip(event, '123', 123)">
             typeMappings 
           </code>
-          <div class="tip" id="123">
+          <div class="tip" id="122">
             <strong>Signature:</strong> TypeMapping list<br />
                       </div>
         </td>

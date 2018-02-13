@@ -696,6 +696,28 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <td></td>
 <td></td>
 </tr>
+<tr class="even">
+<td><p>.Subtract(y).Days</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Subtract(y).Seconds</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>EXTRACT(EPOCH)</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 
@@ -944,6 +966,39 @@ Odbc standard doesn't seem to have a date-add functionality.
 
 <p>Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
 It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
+<h4><a name="Condition-operations" class="anchor" href="#Condition-operations">Condition operations</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>if x then y else z</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>IF(x,y,z)</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>iif(x,y,z)</p></td>
+<td><p>CASE WHEN</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>If the condition is not using SQL columns, it will be parsed before creation of SQL.
+If the condition is containing columns, it will be parsed into SQL.</p>
+<p>If the condition is in the result of projection (the final select clause), it will be parsed after execution of the SQL.</p>
 <h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
 <p>Also you can use these to return an aggregated value, or in a group-by clause:</p>
 <table>
