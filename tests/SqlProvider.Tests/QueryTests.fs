@@ -1109,6 +1109,20 @@ let ``simple async sum with operations``() =
         } |> Seq.sumAsync |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
 
+[<Test>]
+let ``simple async sum with operations 2``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            select (decimal(emp.HireDate.Year)*2m*Math.Min(
+                        2m, if emp.HireDate.Subtract(emp.BirthDate.AddYears(1)).Days>0 then
+                                Math.Abs(
+                                    decimal(emp.HireDate.Subtract(emp.BirthDate).Days)/decimal(emp.HireDate.Subtract(emp.BirthDate.AddYears(1)).Days))
+                            else 1m
+                    ))
+        } |> Seq.sumAsync |> Async.RunSynchronously
+    Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
 
 [<Test>]
 let ``simple averageBy``() = 
