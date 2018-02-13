@@ -160,6 +160,22 @@ let nestedQueryTest =
     } |> Seq.toArray
 
 
+let ``simple math operationsquery``() =
+    let itemOf90 = 
+        query {
+            for p in ctx.Dbo.Departments do
+            where (p.DepartmentId - 85 = 5)
+            select p.DepartmentId 
+        } |> Seq.toList
+
+    let ``should be empty`` = 
+        query {
+            for p in ctx.Dbo.Departments do
+            where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
+            select p.DepartmentId 
+        } |> Seq.toList
+    itemOf90, ``should be empty``
+
 
 let canoncicalOpTest = 
     query {

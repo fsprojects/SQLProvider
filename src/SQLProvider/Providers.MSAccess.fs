@@ -381,6 +381,7 @@ type internal MSAccessProvider() =
                     | ACos -> sprintf "Atn(-%s / Sqr(-%s * %s + 1)) + 2 * Atn(1)" column column column
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldParam par)
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) (o.Replace("||", "&")) column
                     | Greatest(SqlConstant x) -> sprintf "(iif(%s > %s, %s, %s))" (fieldParam x) column (fieldParam x) column
                     | Greatest(SqlCol(al2, col2)) -> sprintf "(iif(%s > %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
                     | Least(SqlConstant x) -> sprintf "(iif(%s < %s, %s, %s)" (fieldParam x) column (fieldParam x) column

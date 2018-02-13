@@ -360,6 +360,12 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | "Max", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlConstant(c)), col), typ)
             | "Min", Constant(c,_) -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlConstant(c)), col), typ)
             | _ -> None
+    | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([Constant(c,typ); OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, _)))])))
+        when ((meth.Name = "Max" || meth.Name = "Min" ) && (decimalTypes |> Array.exists((=) typ) || integerTypes |> Array.exists((=) typ))) -> 
+            match meth.Name with
+            | "Max" -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlConstant(c)), col), typ)
+            | "Min" -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlConstant(c)), col), typ)
+            | _ -> None
 
     // Basic math: (x.Column+1), (1+x.Column) and (x.Column1+y.Column2)
     | (ExpressionType.Add as op),      (:? BinaryExpression as be) 
@@ -378,7 +384,6 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
 
         match be.Left, be.Right with
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))), OptionalConvertOrTypeAs(Constant(constVal,constTyp)) 
-        | OptionalConvertOrTypeAs(Constant(constVal,constTyp)), OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)))
             when (typ = constTyp || (typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> && typ.GenericTypeArguments.[0] = constTyp )
                  || be.Left.Type = be.Right.Type) ->  // Support only numeric and string math
                 match typ with
@@ -387,6 +392,16 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                     Some(alias, CanonicalOperation(CanonicalOp.BasicMath("||", constVal), col), typ)
                 | t when (decimalTypes |> Seq.exists((=) t) || integerTypes |> Seq.exists((=) t)) ->
                         Some(alias, CanonicalOperation(CanonicalOp.BasicMath(operation, constVal), col), typ)
+                | _ -> None
+        | OptionalConvertOrTypeAs(Constant(constVal,constTyp)), OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)))
+            when (typ = constTyp || (typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> && typ.GenericTypeArguments.[0] = constTyp )
+                 || be.Left.Type = be.Right.Type) ->  // Support only numeric and string math
+                match typ with
+                | t when (operation = "+" && (t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>>)) -> 
+                    // Standard SQL string concatenation is ||
+                    Some(alias, CanonicalOperation(CanonicalOp.BasicMath("||", constVal), col), typ)
+                | t when (decimalTypes |> Seq.exists((=) t) || integerTypes |> Seq.exists((=) t)) ->
+                        Some(alias, CanonicalOperation(CanonicalOp.BasicMathLeft(operation, constVal), col), typ)
                 | _ -> None
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasLeft, colLeft, typLeft))), OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasRight, colRight, typRight))) 
             when (typLeft = typRight ||

@@ -585,6 +585,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
                     | Greatest(SqlConstant x) -> sprintf "MAX(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "MAX(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "MIN(%s, %s)" column (fieldParam x)

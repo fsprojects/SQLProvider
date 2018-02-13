@@ -754,7 +754,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
-                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s '%O')" column o par            
+                    | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par) 
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
                     | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" (fieldParam x) column
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" (fieldNotation al2 col2) column
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" (fieldParam x) column

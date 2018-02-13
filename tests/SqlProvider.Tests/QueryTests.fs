@@ -1442,6 +1442,28 @@ let ``simple async sum with option operations``() =
     Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
 
 
+[<Test>]
+let ``simple math operations query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for p in dc.Main.Products do
+            where (p.ProductId - 21L = 23L)
+            select p.ProductId
+        } |> Seq.toList
+
+    Assert.AreEqual(44L, qry.Head)
+
+let ``simple math operations query2``() =
+    let dc = sql.GetDataContext()
+    let qry2 = 
+        query {
+            for p in dc.Main.Products do
+            where (p.UnitPrice <> 30m && ((p.UnitPrice - 30m) = (30m - p.UnitPrice)))
+            select p.UnitPrice
+        } |> Seq.toList
+    CollectionAssert.IsEmpty qry2
+
 [<Test >]
 let ``simple canonical operation substing query``() =
     let dc = sql.GetDataContext()

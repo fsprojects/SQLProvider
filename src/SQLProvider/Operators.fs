@@ -110,6 +110,7 @@ module ColumnSchema =
     | Least of SqlItemOrColumn
     // Other
     | BasicMath of string*obj //operation, constant
+    | BasicMathLeft of string*obj //operation, constant
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
     | CaseSql of Condition * SqlItemOrColumn // operation, if-false
     | CaseNotSql of Condition * SqlItemOrColumn // operation, if-true

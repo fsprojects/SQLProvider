@@ -112,7 +112,10 @@ module internal Utilities =
             | Floor -> sprintf "FLOOR(%s)" column
             | Round -> sprintf "ROUND(%s)" column
             | RoundDecimals x -> sprintf "ROUND(%s,%d)" column x
+            | BasicMath(o, c) when o = "/" -> sprintf "(%s %s (1.0*%O))" column o c
+            | BasicMathLeft(o, c) when o = "/" -> sprintf "(%O %s (1.0*%s))" c o column
             | BasicMath(o, c) -> sprintf "(%s %s %O)" column o c
+            | BasicMathLeft(o, c) -> sprintf "(%O %s %s)" c o column
             | Sqrt -> sprintf "SQRT(%s)" column
             | Sin -> sprintf "SIN(%s)" column
             | Cos -> sprintf "COS(%s)" column

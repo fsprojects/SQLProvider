@@ -750,6 +750,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | Ceil -> sprintf "CEIL(%s)" column
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
                     | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)

@@ -671,6 +671,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     | Truncate -> sprintf "TRUNCATE(%s)" column
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" column (fieldParam par) 
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" (fieldParam par) column 
                     | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)

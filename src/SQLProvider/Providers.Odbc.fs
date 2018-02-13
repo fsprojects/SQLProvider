@@ -385,6 +385,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, '%O')" column par
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT('%O', %s)" par column 
                     | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (Utilities.fieldConstant x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (Utilities.fieldConstant x)

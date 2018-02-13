@@ -893,8 +893,10 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     | DateDiffSecs(SqlConstant x) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
+                    | BasicMathOfColumns(o, a, c) when o = "/" -> sprintf "(%s %s (1.0*%s))" column o (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
+                    | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
                     | Greatest(SqlConstant x) -> sprintf "GREATEST(%s, %s)" column (fieldParam x)
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)
