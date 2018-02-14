@@ -367,6 +367,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | ToUpper -> sprintf "UCASE(%s)" column
                     | ToLower -> sprintf "LCASE(%s)" column
+                    | CastVarchar -> sprintf "CONVERT(%s, SQL_VARCHAR)" column
                     // Date functions
                     | Date -> sprintf "CONVERT(%s, SQL_DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -394,7 +395,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (Utilities.fieldConstant itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (Utilities.fieldConstant itm) column
-                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (Utilities.fieldConstant itm) (Utilities.fieldConstant itm2)
+                    | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (Utilities.fieldConstant itm) (Utilities.fieldConstant itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

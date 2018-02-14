@@ -561,6 +561,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     | Length -> sprintf "LENGTH(%s)" column
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+                    | CastVarchar -> sprintf "CAST(%s AS TEXT)" column
                     // Date functions
                     | Date -> sprintf "DATE(%s)" column
                     | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
@@ -594,7 +595,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) column
-                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) (fieldParam itm2)
+                    | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
                 | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

@@ -230,10 +230,11 @@ Math.Min(x,y)   | SELECT(MIN) | LEAST     | LEAST   | LEAST | MIN        | iif(x
 Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
 It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
 
-#### Condition operations
+#### Condition operations and others
 
 | .NET            | MsSqlServer| PostgreSql| MySql    | Oracle   | SQLite   | MSAccess  | Odbc     | Notes
 |-----------------|------------|-----------|----------|----------|----------|-----------|----------|---------------|
+.ToString()       | CAST(NVARCHAR)| ::varchar| CAST(CHAR)| CAST(VARCHAR)| CAST(TEXT)| CStr| CONVERT|   |
 if x then y else z| CASE WHEN  | CASE WHEN | IF(x,y,z)| CASE WHEN| CASE WHEN| iif(x,y,z)| CASE WHEN|   |
 
 If the condition is not using SQL columns, it will be parsed before creation of SQL.

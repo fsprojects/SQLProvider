@@ -723,6 +723,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s,%s)" column (fieldParam search) (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
+                    | CastVarchar -> sprintf "CAST(%s AS VARCHAR)" column
                     // Date functions
                     | Date -> sprintf "TRUNC(%s)" column
                     | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
@@ -759,7 +760,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) column
-                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) (fieldParam itm2)
+                    | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 

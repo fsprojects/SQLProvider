@@ -114,7 +114,9 @@ module ColumnSchema =
     | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
     | CaseSql of Condition * SqlItemOrColumn // operation, if-false
     | CaseNotSql of Condition * SqlItemOrColumn // operation, if-true
-    | CaseSqlPlain of Condition * SqlItemOrColumn * SqlItemOrColumn // with 2 constants
+    | CaseSqlPlain of Condition * obj * obj // with 2 constants
+    | CastVarchar
+
 
     and SqlColumnType =
     | KeyColumn of string

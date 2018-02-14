@@ -20,7 +20,13 @@ module internal QueryExpressionTransformer =
 
 
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) =
-        let (|SingleTable|MultipleTables|) = function
+        let (|SingleTable|MultipleTables|OperationColumnOnly|) = function
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
+                OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) as coltyp),rtyp) as oper))) as exp]) when 
+                    (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
+                let resolved = Utilities.resolveTuplePropertyName entity tupleIndex
+                let al = if String.IsNullOrEmpty resolved then sourceAlias else resolved
+                OperationColumnOnly ((al,coltyp,rtyp), exp, oper.Type)
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
@@ -146,18 +152,43 @@ module internal QueryExpressionTransformer =
                 | _ -> None
             | _ -> None
 
-        let rec (|ProjectionItem|_|) = function
-            // Todo: Here we should fetch if the projection is only SQL Operations!
 
-            //| _, (SqlColumnGet(name,coltyp,ret) as exp) when (match exp with | SqlPlainColumnGet(_) -> false | _ -> true) -> 
-            //    // Ok, this is an operation but not a plain column...
-            //    match projectionMap.TryGetValue name with
-            //    | true, values when values.Count > 0 -> values.Add(OperationColumn(name, coltyp))
-            //    | false, _ -> projectionMap.Add(name,new ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
-            //    | _ -> ()
-            //    //Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
-            //    Expression.Call(Expression.Parameter(ret,name),mi,Expression.Constant(key))
+        let (|OperationItem|_|) = function
+            | _, (SqlColumnGet(alias,(CanonicalOperation(_,c1) as coltyp),ret) as exp) when ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) -> 
+                // Ok, this is an operation but not a plain column...
+                let foundAlias = 
+                    if aliasEntityDict.ContainsKey(alias) then alias
+                    elif alias.StartsWith "Item" then
+                        let al = Utilities.resolveTuplePropertyName alias tupleIndex
+                        if aliasEntityDict.ContainsKey(al) then al
+                        else alias
+                    elif alias="" && ultimateChild.IsSome then fst ultimateChild.Value
+                    else alias
 
+                let name = "op"+abs(coltyp.GetHashCode()).ToString()
+                let meth = 
+                    if exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<Option<_>> then
+                        typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
+                    else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|exp.Type|])
+
+                let projection = Expression.Call(databaseParam,meth,Expression.Constant(name)) 
+
+                match projectionMap.TryGetValue foundAlias with
+                | true, values when values.Count > 0 -> 
+                    match c1 with
+                    | KeyColumn x when values.Contains(EntityColumn x) -> None //We have this column already
+                    | _ ->
+                        values.Add(OperationColumn(name, coltyp))
+                        Some projection
+                | false, _ -> 
+                    projectionMap.Add(foundAlias,new ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
+                    Some projection           
+                | _ -> 
+                    // This table is alredy fetched as all columns
+                    None
+            | _ -> None
+
+        let (|ProjectionItem|_|) = function
             | _, SourceTupleGet(alias,name,None) ->
                 // at any point if we see a property getter where the input is "tupledArg" this
                 // needs to be replaced with a call to GetSubEntity using the result as an input
@@ -206,6 +237,7 @@ module internal QueryExpressionTransformer =
             let e = ExpressionOptimizer.doReduction e
             if e = null then null else
             match e.NodeType, e with
+            | OperationItem me -> upcast me
             | ProjectionItem me -> upcast me
             | ExpressionType.Negate,             (:? UnaryExpression as e)       -> upcast Expression.Negate(transform en e.Operand,e.Method)
             | ExpressionType.NegateChecked,      (:? UnaryExpression as e)       -> upcast Expression.NegateChecked(transform en e.Operand,e.Method)
@@ -297,6 +329,14 @@ module internal QueryExpressionTransformer =
 
         let newProjection =
             match projection with
+            | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
+                projectionMap.Add(al,new ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
+                let meth = 
+                    if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
+                        typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
+                    else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
+                Expression.Lambda(Expression.Call(databaseParam,meth,Expression.Constant("result")),[databaseParam]) :> Expression                //
+                
             | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) ->
                 projectionMap.Add(x,ResizeArray<_>())
                 Expression.Lambda(databaseParam,[databaseParam]) :> Expression
@@ -546,6 +586,8 @@ module internal QueryExpressionTransformer =
 
                     | CaseSql(f, SqlCol(al, col)) -> CaseSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
                     | CaseNotSql(f, SqlCol(al, col)) -> CaseNotSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | CaseSql(f, x) -> CaseSql(resolveFilterList f, x)
+                    | CaseNotSql(f, x) -> CaseNotSql(resolveFilterList f, x)
                     | CaseSqlPlain(f, a, b) -> CaseSqlPlain(resolveFilterList f, a, b)
 
                     | x -> x
@@ -623,6 +665,15 @@ module internal QueryExpressionTransformer =
 
         let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
 
+        let opAliasResolves = seq {
+                for KeyValue(k, v) in projectionColumns do
+                    if v.Exists(fun i -> match i with OperationColumn _ -> true | _ -> false) then
+                        let ops = v |> Seq.map (function | OperationColumn (k,o) -> OperationColumn (k,resolveC o) | x -> x)
+                        yield k, ResizeArray(ops)
+            } 
+
+        opAliasResolves |> Seq.toList |> List.iter(fun (k, ops) -> projectionColumns.[k] <- ops)
+        
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
         |> Seq.iter(function KeyValue(k,_) ->

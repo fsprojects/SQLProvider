@@ -64,7 +64,7 @@ module public QueryEvents =
    with 
       override x.ToString() =
         let paramsString = x.Parameters |> Seq.fold (fun acc (pName, pValue) -> acc + (sprintf "%s - %A; " pName pValue)) ""
-        sprintf "%s - params %s" x.Command paramsString
+        sprintf "%s -- params %s" x.Command paramsString
       
       /// Use this to execute similar queries to test the result of the executed query.
       member x.ToRawSql() =
@@ -283,12 +283,15 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
                 | false, _ -> ()
             instance
-
+    
+    /// Makes a copy of entity (database row), which is a new row with the same values (except Id)
+    /// If column primaty key is something else and not-auto-generated, then, too bad...
     member __.Clone() = 
         let newItem = SqlEntity(dc, tableName, columns)
         newItem.SetData(data 
                         |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
                         |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
+        newItem._State <- Created
         newItem
 
     interface System.ComponentModel.INotifyPropertyChanged with

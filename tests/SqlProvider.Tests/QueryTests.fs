@@ -1573,7 +1573,7 @@ let ``simple operations in select query``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(6, qry.Length)
 
-[<Test; Ignore("Not supported: Select operations are never evaluated on server side -> complex contains cannot work.")>]
+[<Test>]
 let ``simple canonical operations in nested select query``() =
     let dc = sql.GetDataContext()
 
@@ -1583,20 +1583,13 @@ let ``simple canonical operations in nested select query``() =
             for cust in dc.Main.Customers do
             join emp in dc.Main.Employees on (cust.City + "_" + cust.Country = emp.City + "_" + emp.Country)
             join secondCust in dc.Main.Customers on (cust.City = secondCust.City)
-            select (
-                cust.City + emp.City + cust.City + emp.City + cust.City = cust.City + emp.City + cust.City + emp.City + cust.City
-                && abs(emp.EmployeeId)+1L > 4L 
-                && cust.City.Length + secondCust.City.Length + emp.City.Length = 3 * cust.City.Length
-                && (cust.City.Replace("on","xx") + L).Replace("xx","on") + ("O" + L) = "London" + "LOL" 
-                && cust.City.IndexOf("n")>0 && cust.City.IndexOf(cust.City.Substring(1,cust.City.Length-1))>0
-                && Math.Max(emp.BirthDate.Date.AddYears(3).Month + 1, 0) > 3
-            )
+            select (cust.City.Replace("on","xx") + secondCust.City.Length.ToString())
             distinct
         } 
     let qry2 = 
         query {
             for cust in dc.Main.Customers do
-            where (qry1.Contains(cust.City="London"))
+            where (qry1.Contains(cust.City.Replace("on","xx") + "6"))
             select cust
         } |> Seq.toArray
 
