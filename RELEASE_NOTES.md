@@ -1,3 +1,6 @@
+### 1.1.33 - 14.02.2018
+* Canonical operations chaining type-checking fixed
+
 ### 1.1.32 - 13.02.2018
 * initial case-when-else support on where-clauses, PR #515
 * mapping SQL server time to TimeSpan, PR #517
