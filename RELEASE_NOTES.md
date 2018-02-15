@@ -1,3 +1,8 @@
+### 1.1.34 - 15.02.2018
+* Access Date cast fix
+* ToString() as canonical operation
+* Case-clause alias resolution fix
+
 ### 1.1.33 - 14.02.2018
 * Canonical operations chaining type-checking fixed
 
