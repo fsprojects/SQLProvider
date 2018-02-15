@@ -350,8 +350,9 @@ type internal MSAccessProvider() =
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "InStr(%s,%s,%s)" (fieldNotation al3 col3) (fieldNotation al2 col2) column
                     | ToUpper -> sprintf "UCase(%s)" column
                     | ToLower -> sprintf "LCase(%s)" column
+                    | CastVarchar -> sprintf "CStr(%s)" column
                     // Date functions
-                    | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\")" column
+                    | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\"))" column
                     | Year -> sprintf "Year(%s)" column
                     | Month -> sprintf "Month(%s)" column
                     | Day -> sprintf "Day(%s)" column
@@ -390,7 +391,7 @@ type internal MSAccessProvider() =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "iif(%s, %s, %s)" (buildf f) (fieldParam itm) column
-                    | CaseSqlPlain(f, SqlConstant itm, SqlConstant itm2) -> sprintf "iif(%s,%s,%s)" (buildf f) (fieldParam itm) (fieldParam itm2)
+                    | CaseSqlPlain(f, itm, itm2) -> sprintf "iif(%s,%s,%s)" (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
                 | GroupColumn (StdDevOp _,x) -> sprintf "STDEV(%s)" (fieldNotation al x)

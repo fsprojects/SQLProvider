@@ -768,7 +768,7 @@ module internal QueryImplementation =
                         executeQuery svc.DataContext svc.Provider (Take(1,(svc.SqlExpression))) svc.TupleIndex
                         |> Seq.cast<'T>
                         |> Seq.head
-                    | MethodCall(_, (MethodWithName "FirstOrDefault"), [Constant(query, _)]) ->
+                    | MethodCall(_, (MethodWithName "FirstOrDefault"), [ConstantOrNullableConstant(Some query)]) ->
                         let svc = (query :?> IWithSqlService)
                         executeQuery svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
                         |> Seq.cast<'T>
@@ -779,7 +779,7 @@ module internal QueryImplementation =
                         | x::[] -> x
                         | [] -> raise <| InvalidOperationException("Encountered zero elements in the input sequence")
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
-                    | MethodCall(_, (MethodWithName "SingleOrDefault"), [Constant(query, _)]) ->
+                    | MethodCall(_, (MethodWithName "SingleOrDefault"), [ConstantOrNullableConstant(Some query)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
                         | [] -> Unchecked.defaultof<'T>
                         | x::[] -> x

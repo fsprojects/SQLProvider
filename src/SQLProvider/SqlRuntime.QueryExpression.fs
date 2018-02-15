@@ -546,6 +546,8 @@ module internal QueryExpressionTransformer =
 
                     | CaseSql(f, SqlCol(al, col)) -> CaseSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
                     | CaseNotSql(f, SqlCol(al, col)) -> CaseNotSql(resolveFilterList f, SqlCol(resolver al, visitCanonicals resolverfunc col))
+                    | CaseSql(f, x) -> CaseSql(resolveFilterList f, x)
+                    | CaseNotSql(f, x) -> CaseNotSql(resolveFilterList f, x)
                     | CaseSqlPlain(f, a, b) -> CaseSqlPlain(resolveFilterList f, a, b)
 
                     | x -> x
@@ -623,6 +625,15 @@ module internal QueryExpressionTransformer =
 
         let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
 
+        let opAliasResolves = seq {
+                for KeyValue(k, v) in projectionColumns do
+                    if v.Exists(fun i -> match i with OperationColumn _ -> true | _ -> false) then
+                        let ops = v |> Seq.map (function | OperationColumn (k,o) -> OperationColumn (k,resolveC o) | x -> x)
+                        yield k, ResizeArray(ops)
+            } 
+
+        opAliasResolves |> Seq.toList |> List.iter(fun (k, ops) -> projectionColumns.[k] <- ops)
+        
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
         |> Seq.iter(function KeyValue(k,_) ->

@@ -1,10 +1,15 @@
+#if INTERACTIVE
+#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
+#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#else
 module PostgreSQLTests
+#endif
 
 #if LOCALBUILD
 #else
 
 // Postgres Npgsql v.3.2.x has internal reference to System.Threading.Tasks.Extensions.dll:
-// #r "../../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
+// #r "../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 open System
 open FSharp.Data.Sql
 open System.Data
