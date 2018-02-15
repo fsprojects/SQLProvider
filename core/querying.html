@@ -966,7 +966,7 @@ Odbc standard doesn't seem to have a date-add functionality.
 
 <p>Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
 It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
-<h4><a name="Condition-operations" class="anchor" href="#Condition-operations">Condition operations</a></h4>
+<h4><a name="Condition-operations-and-others" class="anchor" href="#Condition-operations-and-others">Condition operations and others</a></h4>
 <table>
 <thead>
 <tr class="header">
@@ -983,6 +983,17 @@ It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
 </thead>
 <tbody>
 <tr class="odd">
+<td><p>.ToString()</p></td>
+<td><p>CAST(NVARCHAR)</p></td>
+<td><p>::varchar</p></td>
+<td><p>CAST(CHAR)</p></td>
+<td><p>CAST(VARCHAR)</p></td>
+<td><p>CAST(TEXT)</p></td>
+<td><p>CStr</p></td>
+<td><p>CONVERT</p></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><p>if x then y else z</p></td>
 <td><p>CASE WHEN</p></td>
 <td><p>CASE WHEN</p></td>
