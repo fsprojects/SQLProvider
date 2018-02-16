@@ -451,7 +451,7 @@ The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
 <tr class="odd">
 <td><p>where</p></td>
 <td align="center"><p>x</p></td>
-<td><p>Server side variables must be plain without .NET operations or use the supported canonical functions.</p></td>
+<td><p>Server side variables must either be plain without .NET operations or use the supported canonical functions.</p></td>
 </tr>
 </tbody>
 </table>
@@ -675,6 +675,28 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <td></td>
 </tr>
 <tr class="even">
+<td><p>.Subtract(y).Days</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Subtract(y).Seconds</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>EXTRACT(EPOCH)</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><p>.AddYears(i)</p></td>
 <td><p>DATEADD YEAR</p></td>
 <td><ul>
@@ -762,28 +784,6 @@ corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('
 <td><p>DATETIME</p></td>
 <td><p>DateAdd</p></td>
 <td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><p>.Subtract(y).Days</p></td>
-<td><p>DATEDIFF</p></td>
-<td><p>y-x</p></td>
-<td><p>DATEDIFF</p></td>
-<td><p>y-x</p></td>
-<td><p>x-y</p></td>
-<td><p>DateDiff</p></td>
-<td><p>DATEDIFF</p></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><p>.Subtract(y).Seconds</p></td>
-<td><p>TIMESTAMPDIFF</p></td>
-<td><p>EXTRACT(EPOCH)</p></td>
-<td><p>TIMESTAMPDIFF</p></td>
-<td><p>y-x</p></td>
-<td><p>x-y</p></td>
-<td><p>DateDiff</p></td>
-<td><p>DATEDIFF</p></td>
 <td></td>
 </tr>
 </tbody>
@@ -1077,7 +1077,8 @@ It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
 
 <p>If the condition is not using SQL columns, it will be parsed before creation of SQL.
 If the condition is containing columns, it will be parsed into SQL.</p>
-<p>If the condition is in the result of projection (the final select clause), it will be parsed after execution of the SQL.</p>
+<p>If the condition is in the result of projection (the final select clause),
+it may be parsed after execution of the SQL, depending on parameter setting <code>selectOperations</code>.</p>
 <h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
 <p>Also you can use these to return an aggregated value, or in a group-by clause:</p>
 <table>
