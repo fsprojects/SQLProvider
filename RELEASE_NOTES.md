@@ -1,3 +1,6 @@
+### 1.1.35 - 15.02.2018
+* selectOperations parameter to enable running canonical operations on select clause, PR #518
+
 ### 1.1.34 - 15.02.2018
 * Access Date cast fix
 * ToString() as canonical operation
