@@ -353,6 +353,7 @@ and ISqlDataContext =
     abstract CreateEntity               : string -> SqlEntity
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
     abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> Async<SqlEntity[]>
+    abstract SqlOperationsInSelect      : SelectOperations
 
 // LinkData is for joins with SelectMany
 and LinkData =

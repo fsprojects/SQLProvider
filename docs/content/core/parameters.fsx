@@ -141,5 +141,6 @@ Besides the static parameters the `.GetDataContext(...)` method has optional par
 * resolutionPath - The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types
 * transactionOptions - TransactionOptions for the transaction created on SubmitChanges.
 * commandTimeout - SQL command timeout. Maximum time for single SQL-command in seconds.
+* selectOperations - Execute select-clause operations in SQL database rahter than .NET-side.
 			  
 *)
