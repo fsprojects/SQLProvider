@@ -827,10 +827,20 @@ let ``simple if query``() =
 
 [<Test;>]
 let ``simple select query with case``() = 
-    // Works but wrong implementation. Doesn't transfer logics to SQL.
-    // Expected: SELECT CASE [cust].[Country] WHEN "UK" THEN [cust].[City] ELSE "Outside UK" END as 'City' FROM main.Customers as [cust]
-    // Actual: SELECT [cust].[Country] as 'Country',[cust].[City] as 'City' FROM main.Customers as [cust]
-    let dc = sql.GetDataContext()
+    // SELECT CASE WHEN ([cust].[Country] = @param1) THEN [cust].[City] ELSE @param2 END as [result] FROM main.Customers as [cust]
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            select (if cust.Country = "UK" then (cust.City)
+                else ("Outside UK"))
+        } |> Seq.toArray
+    CollectionAssert.IsNotEmpty qry
+
+[<Test;>]
+let ``simple select query with case on client``() = 
+    // SELECT [Customers].[Country] as 'Country',[Customers].[City] as 'City' FROM main.Customers as [Customers]
+    let dc = sql.GetDataContext(SelectOperations.DotNetSide)
     let qry = 
         query {
             for cust in dc.Main.Customers do

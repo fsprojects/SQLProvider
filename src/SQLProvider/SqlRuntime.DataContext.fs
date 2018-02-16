@@ -27,7 +27,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>) =
+type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -234,3 +234,5 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
             new SqlEntity(this, tableName, columns)
+
+        member __.SqlOperationsInSelect with get() = sqlOperationsInSelect

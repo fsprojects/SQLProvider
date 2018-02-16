@@ -106,7 +106,7 @@ module internal QueryImplementation =
 
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
-        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
+        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false (dc.SqlOperationsInSelect=SelectOperations.DatabaseSide)
         Common.QueryEvents.PublishSqlQuery query parameters
         // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
         use cmd = provider.CreateCommand(con,query)
@@ -124,7 +124,7 @@ module internal QueryImplementation =
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
-           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
+           let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false (dc.SqlOperationsInSelect=SelectOperations.DatabaseSide)
            Common.QueryEvents.PublishSqlQuery query parameters
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
@@ -147,7 +147,7 @@ module internal QueryImplementation =
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        use con = provider.CreateConnection(dc.ConnectionString)
        con.Open()
-       let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
+       let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false true
        Common.QueryEvents.PublishSqlQuery query parameters
        use cmd = provider.CreateCommand(con,query)
        if dc.CommandTimeout.IsSome then
@@ -163,7 +163,7 @@ module internal QueryImplementation =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false
+           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false true
            Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            if dc.CommandTimeout.IsSome then
@@ -195,7 +195,7 @@ module internal QueryImplementation =
            let sqlExp = modifyAlias sqlExp
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true
+           let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true true
            Common.QueryEvents.PublishSqlQuery query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            if dc.CommandTimeout.IsSome then
@@ -317,7 +317,7 @@ module internal QueryImplementation =
 
                         let svc = (qry :?> IWithSqlService)
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
 
@@ -730,7 +730,7 @@ module internal QueryImplementation =
 
                         let subquery = values :?> IWithSqlService
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false (source.DataContext.SqlOperationsInSelect=SelectOperations.DatabaseSide)
 
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
 

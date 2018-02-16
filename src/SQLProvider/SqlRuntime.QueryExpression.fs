@@ -19,14 +19,17 @@ module internal QueryExpressionTransformer =
         | _ -> failwith "never"
 
 
-    let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) =
-        let (|SingleTable|MultipleTables|OperationColumnOnly|) = function
+    let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect =
+        let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
                 OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) as coltyp),rtyp) as oper))) as exp]) when 
                     (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
                 let resolved = Utilities.resolveTuplePropertyName entity tupleIndex
                 let al = if String.IsNullOrEmpty resolved then sourceAlias else resolved
-                OperationColumnOnly ((al,coltyp,rtyp), exp, oper.Type)
+                Some ((al,coltyp,rtyp), exp, oper.Type)
+            | _ -> None
+
+        let (|SingleTable|MultipleTables|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
@@ -153,7 +156,10 @@ module internal QueryExpressionTransformer =
             | _ -> None
 
 
-        let (|OperationItem|_|) = function
+        let (|OperationItem|_|) e = 
+            if not(useCanonicalsOnSelect) then None
+            else
+            match e with
             | _, (SqlColumnGet(alias,(CanonicalOperation(_,c1) as coltyp),ret) as exp) when ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) -> 
                 // Ok, this is an operation but not a plain column...
                 let foundAlias = 
@@ -328,26 +334,33 @@ module internal QueryExpressionTransformer =
             | _ -> failwith ("encountered unknown LINQ expression: " + e.NodeType.ToString() + " " + e.ToString())
 
         let newProjection =
-            match projection with
-            | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
-                projectionMap.Add(al,new ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
-                let meth = 
-                    if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
-                        typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
-                    else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
-                Expression.Lambda(Expression.Call(databaseParam,meth,Expression.Constant("result")),[databaseParam]) :> Expression                //
-                
-            | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) ->
-                projectionMap.Add(x,ResizeArray<_>())
-                Expression.Lambda(databaseParam,[databaseParam]) :> Expression
-            | SingleTable(OptionalQuote(Lambda([ParamName x], (NewExpr(ci, args ) )))) ->
-                Expression.Lambda(Expression.New(ci, (List.map (transform (Some x)) args)),[databaseParam]) :> Expression
-            | SingleTable(OptionalQuote(lambda))
-            | MultipleTables(OptionalQuote(lambda)) -> transform None lambda
+            let proj = 
+                if useCanonicalsOnSelect then
+                    match projection with
+                    | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
+                        projectionMap.Add(al,new ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
+                        let meth = 
+                            if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
+                                typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
+                            else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
+                        Some meth
+                    | _ -> None
+                else None
+            match proj with
+            | Some meth -> Expression.Lambda(Expression.Call(databaseParam,meth,Expression.Constant("result")),[databaseParam]) :> Expression
+            | None ->
+                match projection with
+                | SingleTable(OptionalQuote(Lambda([ParamName _],ParamName x))) ->
+                    projectionMap.Add(x,ResizeArray<_>())
+                    Expression.Lambda(databaseParam,[databaseParam]) :> Expression
+                | SingleTable(OptionalQuote(Lambda([ParamName x], (NewExpr(ci, args ) )))) ->
+                    Expression.Lambda(Expression.New(ci, (List.map (transform (Some x)) args)),[databaseParam]) :> Expression
+                | SingleTable(OptionalQuote(lambda))
+                | MultipleTables(OptionalQuote(lambda)) -> transform None lambda
 
         newProjection, projectionMap, groupProjectionMap
 
-    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript =
+    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
         // first convert the abstract query tree into a more useful format
         let legaliseName (alias:alias) =
                 if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
@@ -454,7 +467,7 @@ module internal QueryExpressionTransformer =
                         | _ -> ()
 
                     generateReplacementParams(currentProj)
-                    let newProjection, projectionMap, groupProjectionMap = transform currentProj entityIndex dbParam sqlQuery.Aliases sqlQuery.UltimateChild replaceParams
+                    let newProjection, projectionMap, groupProjectionMap = transform currentProj entityIndex dbParam sqlQuery.Aliases sqlQuery.UltimateChild replaceParams useCanonicalsOnSelect
                     let fixedParams = Expression.Lambda((newProjection:?>LambdaExpression).Body,initDbParam)
                     
                     if sqlQuery.Grouping.Length > 0 then

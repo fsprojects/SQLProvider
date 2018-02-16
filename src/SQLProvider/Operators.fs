@@ -47,6 +47,9 @@ type AggregateOperation = // Aggregate (column name if not default)
 | StdDevOp of string
 | VarianceOp of string
 
+type SelectOperations =
+| DotNetSide = 0
+| DatabaseSide = 1 
 
 [<AutoOpenAttribute>]
 module ColumnSchema =

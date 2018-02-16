@@ -97,6 +97,55 @@ let itemAsync =
 
 If you consider using asynchronous queries, read more from the [async documentation](async.html).
 
+## SELECT -clause operations
+
+You can control the execution context of the select-operations by `GetDataContext` parameter `selectOperations`.
+The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
+
+This might have a significant effect on the size of data transferred from the database.
+
+### SelectOperations.DotNetSide (Default)
+
+Fetch the columns and run operations in .NET-side.
+
+```fsharp
+    let dc = sql.GetDataContext(SelectOperations.DotNetSide) // (same as without the parameter)
+    query {
+        for cust in dc.Main.Customers do
+        select (if cust.Country = "UK" then (cust.City)
+            else ("Outside UK"))
+    } |> Seq.toArray
+```
+
+```sql
+SELECT 
+   [cust].[Country] as 'Country',
+   [cust].[City] as 'City' 
+FROM main.Customers as [cust]
+```
+
+### SelectOperations.DatabaseSide
+
+Execute the operations as part of SQL. 
+```
+let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+let qry = 
+    query {
+        for cust in dc.Main.Customers do
+        select (if cust.Country = "UK" then (cust.City)
+            else ("Outside UK"))
+    } |> Seq.toArray
+```
+
+```sql
+SELECT 
+   CASE WHEN ([cust].[Country] = @param1) THEN 
+   [cust].[City] 
+   ELSE @param2 
+END as [result] 
+FROM main.Customers as [cust]
+-- params @param1 - "UK"; @param2 - "Outside UK"
+```
 
 ## Supported Query Expression Keywords
 
