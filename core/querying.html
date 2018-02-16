@@ -150,6 +150,74 @@ against the database.  Though many are supported, not all LINQ expressions are.<
 </tr>
 </table>
 <p>If you consider using asynchronous queries, read more from the <a href="async.html">async documentation</a>.</p>
+<h2><a name="SELECT-clause-operations" class="anchor" href="#SELECT-clause-operations">SELECT -clause operations</a></h2>
+<p>You can control the execution context of the select-operations by <code>GetDataContext</code> parameter <code>selectOperations</code>.
+The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.</p>
+<p>This might have a significant effect on the size of data transferred from the database.</p>
+<h3><a name="SelectOperations-DotNetSide-Default" class="anchor" href="#SelectOperations-DotNetSide-Default">SelectOperations.DotNetSide (Default)</a></h3>
+<p>Fetch the columns and run operations in .NET-side.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">    <span class="k">let</span> <span class="i">dc</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>(<span class="i">SelectOperations</span><span class="o">.</span><span class="i">DotNetSide</span>) <span class="c">// (same as without the parameter)</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">cust</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> (<span class="k">if</span> <span class="i">cust</span><span class="o">.</span><span class="i">Country</span> <span class="o">=</span> <span class="s">&quot;UK&quot;</span> <span class="k">then</span> (<span class="i">cust</span><span class="o">.</span><span class="i">City</span>)
+            <span class="k">else</span> (<span class="s">&quot;Outside UK&quot;</span>))
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> 
+   [cust].[Country] <span class="k">as</span> <span class="s">'Country'</span>,
+   [cust].[City] <span class="k">as</span> <span class="s">'City'</span> 
+<span class="k">FROM</span> main.Customers <span class="k">as</span> [cust]
+</code></pre></td></tr></table>
+<h3><a name="SelectOperations-DatabaseSide" class="anchor" href="#SelectOperations-DatabaseSide">SelectOperations.DatabaseSide</a></h3>
+<p>Execute the operations as part of SQL.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">dc</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>(<span class="i">SelectOperations</span><span class="o">.</span><span class="i">DatabaseSide</span>)
+<span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> 
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">cust</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> (<span class="k">if</span> <span class="i">cust</span><span class="o">.</span><span class="i">Country</span> <span class="o">=</span> <span class="s">&quot;UK&quot;</span> <span class="k">then</span> (<span class="i">cust</span><span class="o">.</span><span class="i">City</span>)
+            <span class="k">else</span> (<span class="s">&quot;Outside UK&quot;</span>))
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> 
+   <span class="k">CASE</span> <span class="k">WHEN</span> ([cust].[Country] = @param<span class="n">1</span>) <span class="k">THEN</span> 
+   [cust].[City] 
+   <span class="k">ELSE</span> @param<span class="n">2</span> 
+<span class="k">END</span> <span class="k">as</span> [<span class="k">result</span>] 
+<span class="k">FROM</span> main.Customers <span class="k">as</span> [cust]
+<span class="c">-- params @param1 - "UK"; @param2 - "Outside UK"</span>
+</code></pre></td></tr></table>
 <h2><a name="Supported-Query-Expression-Keywords" class="anchor" href="#Supported-Query-Expression-Keywords">Supported Query Expression Keywords</a></h2>
 <table>
 <thead>
