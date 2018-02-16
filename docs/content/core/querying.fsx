@@ -147,6 +147,7 @@ FROM main.Customers as [cust]
 -- params @param1 - "UK"; @param2 - "Outside UK"
 ```
 
+
 ## Supported Query Expression Keywords
 
 | Keyword            | Supported  |  Notes
@@ -195,7 +196,7 @@ thenBy	                 |X |                                                    
 thenByDescending	     |X |                                                       |   
 thenByNullable           |X |                                                       | 
 thenByNullableDescending |X |                                                       |
-where                    |x | Server side variables must be plain without .NET operations or use the supported canonical functions. | 
+where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. | 
 
 ### Canonical Functions 
 
@@ -227,8 +228,8 @@ Operations do support parameters to be either constants or other SQL-columns (e.
  
 #### .NET DateTime Functions
 
-| .NET           | MsSqlServer    | PostgreSql| MySql    | Oracle    | SQLite  | MSAccess  | Odbc      |  Notes
-|----------------|----------------|-----------|----------|-----------|---------|-----------|-----------|-------------------|
+| .NET           | MsSqlServer    | PostgreSql| MySql    | Oracle    | SQLite  | MSAccess  | Odbc       | Notes
+|----------------|----------------|-----------|----------|-----------|---------|-----------|------------|-------------------|
 .Date            | CAST(AS DATE)  | DATE_TRUNC| DATE     | TRUNC     | STRFTIME| DateValue(Format)| CONVERT(SQL_DATE)  |   |
 .Year            | YEAR           | DATE_PART | YEAR     | EXTRACT   | STRFTIME| Year      | YEAR       |   |
 .Month           | MONTH          | DATE_PART | MONTH    | EXTRACT   | STRFTIME| Month     | MONTH      |   |
@@ -236,14 +237,14 @@ Operations do support parameters to be either constants or other SQL-columns (e.
 .Hour            | DATEPART HOUR  | DATE_PART | HOUR     | EXTRACT   | STRFTIME| Hour      | HOUR       |   |
 .Minute          | DATEPART MINUTE| DATE_PART | MINUTE   | EXTRACT   | STRFTIME| Minute    | MINUTE     |   |
 .Second          | DATEPART SECOND| DATE_PART | SECOND   | EXTRACT   | STRFTIME| Second    | SECOND     |   |
+.Subtract(y).Days | DATEDIFF      | y-x       | DATEDIFF | y-x       | x-y     | DateDiff  | DATEDIFF   |   |
+.Subtract(y).Seconds| TIMESTAMPDIFF| EXTRACT(EPOCH)| TIMESTAMPDIFF| y-x| x-y   | DateDiff  | DATEDIFF   |   |
 .AddYears(i)     | DATEADD YEAR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddMonths(i)    | DATEADD MONTH  | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddDays(f)      | DATEADD DAY    | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddHours(f)     | DATEADD HOUR   | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddMinutes(f)   | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddSeconds(f)   | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
-.Subtract(y).Days | DATEDIFF      | y-x       | DATEDIFF | y-x       | x-y     | DateDiff  | DATEDIFF   |   |
-.Subtract(y).Seconds| TIMESTAMPDIFF| EXTRACT(EPOCH)| TIMESTAMPDIFF| y-x| x-y   | DateDiff  | DATEDIFF   |   |
 
 AddYears, AddDays and AddMinutes parameter can be either constant or other SQL-column, except in SQLite which supports only constant. 
 AddMonths, AddHours and AddSeconds supports only constants for now. 
@@ -289,7 +290,8 @@ if x then y else z| CASE WHEN  | CASE WHEN | IF(x,y,z)| CASE WHEN| CASE WHEN| ii
 If the condition is not using SQL columns, it will be parsed before creation of SQL.
 If the condition is containing columns, it will be parsed into SQL.
 
-If the condition is in the result of projection (the final select clause), it will be parsed after execution of the SQL.
+If the condition is in the result of projection (the final select clause), 
+it may be parsed after execution of the SQL, depending on parameter setting `selectOperations`.
 
 #### Aggregate Functions 
 
