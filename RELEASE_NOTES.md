@@ -1,3 +1,6 @@
+### 1.1.36 - 24.02.2018
+* distinct count support
+
 ### 1.1.35 - 15.02.2018
 * selectOperations parameter to enable running canonical operations on select clause, PR #518
 

@@ -943,7 +943,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 ~~(sprintf "DELETE FROM %s " basetable)
             else 
                 // SELECT
-                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
                 // FROM

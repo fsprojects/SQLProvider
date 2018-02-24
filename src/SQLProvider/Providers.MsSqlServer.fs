@@ -883,7 +883,8 @@ type internal MSSqlServerProvider(tableNames:string) =
                 ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
             else 
                 // SELECT
-                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with

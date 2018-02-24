@@ -569,7 +569,8 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
             else 
                 // SELECT
                 let columnsFixed = if String.IsNullOrEmpty columns then "*" else columns
-                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
+                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columnsFixed)
                 // FROM

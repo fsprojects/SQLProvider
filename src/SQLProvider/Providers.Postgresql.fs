@@ -1070,7 +1070,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                 ~~(sprintf "DELETE FROM \"%s\".\"%s\" " baseTable.Schema baseTable.Name)
             else 
                 // SELECT
-                if sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
 

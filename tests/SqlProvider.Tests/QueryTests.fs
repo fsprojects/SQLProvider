@@ -68,6 +68,18 @@ let ``simple select with count``() =
         }
     Assert.AreEqual(91, qry)   
 
+[<Test >]
+let ``simple select with distinct count``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            select cust.CustomerId
+            distinct
+            count
+        }
+    Assert.AreEqual(91, qry)   
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select with last``() =
     let dc = sql.GetDataContext()

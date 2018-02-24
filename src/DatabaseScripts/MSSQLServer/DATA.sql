@@ -2,10 +2,10 @@ EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"
 
 -- delete data in all tables
 EXEC sp_MSforeachtable "DELETE FROM ?"
-Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (1,'Europe');
-Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (2,'Americas');
-Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (3,'Asia');
-Insert into dbo.REGIONS (REGION_ID,REGION_NAME) values (4,'Middle East and Africa');
+Insert into dbo.REGIONS (REGION_ID,REGION_NAME,REGION_EXTERNAL_KEY) values (1,'Europe', 'a479c1d0-03ba-46c3-9ade-c7f2995b84db');
+Insert into dbo.REGIONS (REGION_ID,REGION_NAME,REGION_EXTERNAL_KEY) values (2,'Americas', 'd1d879d5-9088-44c6-8d22-dd59282a6a4d');
+Insert into dbo.REGIONS (REGION_ID,REGION_NAME,REGION_EXTERNAL_KEY) values (3,'Asia', '69c91e5b-d955-4cb5-b6cc-a2e73be33dd9');
+Insert into dbo.REGIONS (REGION_ID,REGION_NAME,REGION_EXTERNAL_KEY) values (4,'Middle East and Africa', '2365d388-1183-42c8-9cfc-b95a58b83032');
 Insert into dbo.COUNTRIES (COUNTRY_ID,COUNTRY_NAME,REGION_ID) values ('AR','Argentina',2);
 Insert into dbo.COUNTRIES (COUNTRY_ID,COUNTRY_NAME,REGION_ID) values ('AU','Australia',3);
 Insert into dbo.COUNTRIES (COUNTRY_ID,COUNTRY_NAME,REGION_ID) values ('BE','Belgium',1);
