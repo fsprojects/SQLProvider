@@ -1062,7 +1062,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Created ->
                             async {
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
@@ -1077,7 +1077,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
@@ -1086,7 +1086,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Delete ->
                             async {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
