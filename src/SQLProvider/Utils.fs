@@ -525,3 +525,40 @@ module Sql =
     let ensureOpen (con:IDbConnection) =
         if con.State <> ConnectionState.Open
         then con.Open()
+
+
+// Taken from https://github.com/haf/yolo
+module Bytes =
+
+  open System.IO
+  open System.Security.Cryptography
+
+  let hmacAtOffset (key : byte []) offset count (data : byte[]) =
+#if NETSTANDARD2_0
+    use hmac = new HMACSHA256()
+#else
+    use hmac = HMAC.Create("HMACSHA256")
+#endif
+    hmac.Key <- key
+    hmac.ComputeHash (data, offset, count)
+
+  let hash (algo : unit -> #HashAlgorithm) (bs : byte[]) =
+    use ms = new MemoryStream()
+    ms.Write(bs, 0, bs.Length)
+    ms.Seek(0L, SeekOrigin.Begin) |> ignore
+    use sha = algo ()
+    sha.ComputeHash ms
+
+  let sha1 =
+#if DNXCORE50
+    hash (fun () -> SHA1.Create())
+#else
+    hash (fun () -> new SHA1Managed())
+#endif
+
+  let sha256 =
+#if DNXCORE50
+    hash (fun () -> SHA256.Create())
+#else
+    hash (fun () -> new SHA256Managed())
+#endif

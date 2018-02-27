@@ -53,14 +53,17 @@ type SQLiteLibrary =
     | MicrosoftDataSqlite = 3
 
 module public QueryEvents =
-   open System.Data.SqlClient
-
-   let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
-   
+      
    type SqlEventData = {
+       /// The text of the SQL command being executed.
        Command: string
-       ConnectionString: string
+
+       /// The parameters (if any) passed to the SQL command being executed.
        Parameters: (string*obj) seq
+
+       /// The SHA256 hash of the UTF8-encoded connection string used to perform this command.
+       /// Use this to determine on which database connection the command is going to be executed.
+       ConnectionStringHash: byte[]      
    }
    with 
       override x.ToString() =
@@ -76,25 +79,45 @@ module public QueryEvents =
             | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
 
    let private sqlEvent = new Event<SqlEventData>()
+   
+   [<CLIEvent>]
+   /// This event fires immediately before the execution of every generated query. 
+   /// Listen to this event to display or debug the content of your queries.
+   let SqlQueryEvent = sqlEvent.Publish
 
+   let private publishSqlQuery = 
+      
+      let connStrHashCache = ConcurrentDictionary<string, byte[]>()
+
+      fun connStr qry parameters ->
+        
+        let hashValue = connStrHashCache.GetOrAdd(connStr, fun str -> Text.Encoding.UTF8.GetBytes(str : string) |> Bytes.sha256)
+
+        sqlEvent.Trigger { Command = qry
+                           ConnectionStringHash = hashValue
+                           Parameters = parameters
+                         }
+
+   let PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = 
+      publishSqlQuery connStr qry (spc |> Seq.map(fun p -> p.ParameterName, p.Value))
+
+   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
+      publishSqlQuery connStr qry [ for p in spc -> (p.ParameterName, p.Value) ]
+
+   let PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
+      publishSqlQuery connStr qry [ for op in spc do
+                                      let p = op :?> IDataParameter
+                                      yield (p.ParameterName, p.Value)]
+
+
+   let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
+   
    [<CLIEvent>]
    let LinqExpressionEvent = expressionEvent.Publish
 
-   [<CLIEvent>]
-   let SqlQueryEvent = sqlEvent.Publish
-
    let PublishExpression(e) = expressionEvent.Trigger(e)
-   let PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = sqlEvent.Trigger( {Command = qry; ConnectionString = connStr; Parameters = spc |> Seq.map(fun p -> p.ParameterName, p.Value) })
-   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
-        sqlEvent.Trigger( {Command = qry; ConnectionString = connStr; Parameters = [for p in spc do yield (p.ParameterName, p.Value)] })
-   let PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
-        sqlEvent.Trigger(
-            { Command = qry; 
-              ConnectionString = connStr;
-              Parameters = [ for op in spc do
-                               let p = op :?> IDataParameter
-                               yield (p.ParameterName, p.Value)] })
 
+   
 type EntityState =
     | Unchanged
     | Created
