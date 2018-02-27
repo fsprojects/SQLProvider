@@ -843,7 +843,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
@@ -851,14 +851,14 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
@@ -892,7 +892,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Created ->
                             async {
                                 use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
@@ -902,7 +902,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Modified fields ->
                             async {
                                 use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
@@ -911,7 +911,7 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         | Delete ->
                             async {
                                 use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore

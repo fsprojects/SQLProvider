@@ -1005,7 +1005,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand provider con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
@@ -1018,14 +1018,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand provider con sb e fields
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand provider con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
@@ -1062,7 +1062,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Created ->
                             async {
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
@@ -1077,7 +1077,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
@@ -1086,7 +1086,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         | Delete ->
                             async {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText con.ConnectionString cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore

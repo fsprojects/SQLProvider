@@ -1152,7 +1152,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                     match e._State with
                     | Created ->
                         let cmd = createInsertCommand con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
@@ -1160,14 +1160,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         let cmd = createDeleteCommand con sb e
-                        Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                        Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
@@ -1203,7 +1203,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         | Created ->
                             async {
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
@@ -1213,7 +1213,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         | Modified fields ->
                             async {
                                 let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
@@ -1222,7 +1222,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         | Delete ->
                             async {
                                 let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol cmd.CommandText cmd.Parameters
+                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore

@@ -59,6 +59,7 @@ module public QueryEvents =
    
    type SqlEventData = {
        Command: string
+       ConnectionString: string
        Parameters: (string*obj) seq
    }
    with 
@@ -83,12 +84,13 @@ module public QueryEvents =
    let SqlQueryEvent = sqlEvent.Publish
 
    let PublishExpression(e) = expressionEvent.Trigger(e)
-   let PublishSqlQuery qry (spc:IDbDataParameter seq) = sqlEvent.Trigger( {Command = qry; Parameters = spc |> Seq.map(fun p -> p.ParameterName, p.Value) })
-   let PublishSqlQueryCol qry (spc:DbParameterCollection) = 
-        sqlEvent.Trigger( {Command = qry; Parameters = [for p in spc do yield (p.ParameterName, p.Value)] })
-   let PublishSqlQueryICol qry (spc:IDataParameterCollection) = 
+   let PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = sqlEvent.Trigger( {Command = qry; ConnectionString = connStr; Parameters = spc |> Seq.map(fun p -> p.ParameterName, p.Value) })
+   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
+        sqlEvent.Trigger( {Command = qry; ConnectionString = connStr; Parameters = [for p in spc do yield (p.ParameterName, p.Value)] })
+   let PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
         sqlEvent.Trigger(
             { Command = qry; 
+              ConnectionString = connStr;
               Parameters = [ for op in spc do
                                let p = op :?> IDataParameter
                                yield (p.ParameterName, p.Value)] })

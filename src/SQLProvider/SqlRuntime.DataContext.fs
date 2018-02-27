@@ -45,7 +45,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
-    let initCallSproc (dc:SqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
+    let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
         
         if (providerType <> DatabaseProviderTypes.SQLITE) then 
             com.CommandType <- CommandType.StoredProcedure
@@ -67,7 +67,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
         let param = def.Params |> List.toArray
 
-        Common.QueryEvents.PublishSqlQuery (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
+        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
         param, entity, toEntityArray
 
     interface ISqlDataContext with
