@@ -98,13 +98,13 @@ module public QueryEvents =
                            Parameters = parameters
                          }
 
-   let PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = 
+   let internal PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = 
       publishSqlQuery connStr qry (spc |> Seq.map(fun p -> p.ParameterName, p.Value))
 
-   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
+   let internal PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
       publishSqlQuery connStr qry [ for p in spc -> (p.ParameterName, p.Value) ]
 
-   let PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
+   let internal PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
       publishSqlQuery connStr qry [ for op in spc do
                                       let p = op :?> IDataParameter
                                       yield (p.ParameterName, p.Value)]
@@ -115,7 +115,7 @@ module public QueryEvents =
    [<CLIEvent>]
    let LinqExpressionEvent = expressionEvent.Publish
 
-   let PublishExpression(e) = expressionEvent.Trigger(e)
+   let internal PublishExpression(e) = expressionEvent.Trigger(e)
 
    
 type EntityState =
