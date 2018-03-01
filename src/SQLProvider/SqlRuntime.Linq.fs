@@ -107,7 +107,7 @@ module internal QueryImplementation =
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false (dc.SqlOperationsInSelect=SelectOperations.DatabaseSide)
-        Common.QueryEvents.PublishSqlQuery query parameters
+        Common.QueryEvents.PublishSqlQuery con.ConnectionString query parameters
         // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
         use cmd = provider.CreateCommand(con,query)
         if dc.CommandTimeout.IsSome then
@@ -125,7 +125,7 @@ module internal QueryImplementation =
        async {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false (dc.SqlOperationsInSelect=SelectOperations.DatabaseSide)
-           Common.QueryEvents.PublishSqlQuery query parameters
+           Common.QueryEvents.PublishSqlQuery con.ConnectionString  query parameters
            // todo: make this lazily evaluated? or optionally so. but have to deal with disposing stuff somehow
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            if dc.CommandTimeout.IsSome then
@@ -148,7 +148,7 @@ module internal QueryImplementation =
        use con = provider.CreateConnection(dc.ConnectionString)
        con.Open()
        let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false true
-       Common.QueryEvents.PublishSqlQuery query parameters
+       Common.QueryEvents.PublishSqlQuery con.ConnectionString  query parameters
        use cmd = provider.CreateCommand(con,query)
        if dc.CommandTimeout.IsSome then
            cmd.CommandTimeout <- dc.CommandTimeout.Value
@@ -164,7 +164,7 @@ module internal QueryImplementation =
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false true
-           Common.QueryEvents.PublishSqlQuery query parameters
+           Common.QueryEvents.PublishSqlQuery con.ConnectionString query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value
@@ -196,7 +196,7 @@ module internal QueryImplementation =
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true true
-           Common.QueryEvents.PublishSqlQuery query parameters
+           Common.QueryEvents.PublishSqlQuery con.ConnectionString query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value

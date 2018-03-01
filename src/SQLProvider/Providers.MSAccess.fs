@@ -640,7 +640,7 @@ type internal MSAccessProvider() =
                         | Created ->
                             let cmd = createInsertCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
-                            Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
                                 cmd.CommandTimeout <- timeout.Value
                             let id = cmd.ExecuteScalar()
@@ -649,7 +649,7 @@ type internal MSAccessProvider() =
                         | Modified fields ->
                             let cmd = createUpdateCommand con sb e fields
                             cmd.Transaction <- trnsx :?> OleDbTransaction
-                            Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
                                 cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
@@ -657,7 +657,7 @@ type internal MSAccessProvider() =
                         | Delete ->
                             let cmd = createDeleteCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
-                            Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                            Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
                                 cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
@@ -699,7 +699,7 @@ type internal MSAccessProvider() =
                                 async {
                                     let cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
-                                    Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
                                     let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
@@ -710,7 +710,7 @@ type internal MSAccessProvider() =
                                 async {
                                     let cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
-                                    Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
                                     do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
@@ -720,7 +720,7 @@ type internal MSAccessProvider() =
                                 async {
                                     let cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
-                                    Common.QueryEvents.PublishSqlQueryCol cmd.CommandText cmd.Parameters
+                                    Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
                                     do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
