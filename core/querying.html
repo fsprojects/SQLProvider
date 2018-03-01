@@ -456,6 +456,7 @@ The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
 </tbody>
 </table>
 
+<p>Currently SQL-provider doesn't generate nested queries in from-clauses.</p>
 <h3><a name="Canonical-Functions" class="anchor" href="#Canonical-Functions">Canonical Functions</a></h3>
 <p>Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).
 If you use these, remember to check your database indexes.</p>
@@ -1622,6 +1623,25 @@ is to create a database view and query that from SQLProvider</strong>.</p>
         <span class="i">groupBy</span> <span class="i">o</span><span class="o">.</span><span class="i">ShipCity</span> <span class="i">into</span> <span class="i">cites</span>
         <span class="i">select</span> (<span class="i">cites</span><span class="o">.</span><span class="i">Key</span>, <span class="i">cites</span><span class="o">.</span><span class="i">Sum</span>(<span class="k">fun</span> <span class="i">order</span> <span class="k">-&gt;</span> <span class="i">order</span><span class="o">.</span><span class="i">Freight</span>))
     } <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Group-by is supported for single tables only.
+F# Linq query syntax doesnt support doing <code>select count(1), sum(UnitPrice) from Products</code>
+but you can group by a constant to get that:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> 
+	<span class="i">query</span> {
+		<span class="k">for</span> <span class="i">p</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Products</span> <span class="k">do</span>
+		<span class="i">groupBy</span> <span class="n">1</span> <span class="i">into</span> <span class="i">g</span>
+		<span class="i">select</span> (<span class="i">g</span><span class="o">.</span><span class="i">Count</span>(), <span class="i">g</span><span class="o">.</span><span class="i">Sum</span>(<span class="k">fun</span> <span class="i">p</span> <span class="k">-&gt;</span> <span class="i">p</span><span class="o">.</span><span class="i">UnitPrice</span>))
+	} <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
 </code></pre></td>
 </tr>
 </table>
