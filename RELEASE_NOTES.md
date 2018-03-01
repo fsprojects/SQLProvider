@@ -1,3 +1,6 @@
+### 1.1.37 - 01.03.2018
+* Add ConnectionStringHash property to SqlEventData PR #524
+
 ### 1.1.36 - 24.02.2018
 * distinct count support
 

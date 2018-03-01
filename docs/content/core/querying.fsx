@@ -198,6 +198,8 @@ thenByNullable           |X |                                                   
 thenByNullableDescending |X |                                                       |
 where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. | 
 
+Currently SQL-provider doesn't generate nested queries in from-clauses.
+
 ### Canonical Functions 
 
 Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).
@@ -632,3 +634,18 @@ let freightsByCity =
         groupBy o.ShipCity into cites
         select (cites.Key, cites.Sum(fun order -> order.Freight))
     } |> Array.executeQueryAsync
+
+(**
+
+Group-by is supported for single tables only.
+F# Linq query syntax doesnt support doing `select count(1), sum(UnitPrice) from Products`
+but you can group by a constant to get that:
+
+*)
+	
+let qry = 
+	query {
+		for p in dc.Main.Products do
+		groupBy 1 into g
+		select (g.Count(), g.Sum(fun p -> p.UnitPrice))
+	} |> Seq.head
