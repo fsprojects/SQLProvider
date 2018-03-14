@@ -533,7 +533,8 @@ module internal QueryImplementation =
                                     ForeignTable = {Schema="";Name="";Type=""};
                                     OuterJoin = false; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
-                | OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)) ->
+                | OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)) 
+                | OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity])) ->
                     let sourceAlias =
                         if source.TupleIndex.Contains projectionParams.[0].Name then projectionParams.[0].Name
                         else

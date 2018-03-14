@@ -1,3 +1,8 @@
+### 1.1.38 - 14.03.2018
+* Group-by key canonical operation support
+* Crossjoin support for recent LINQ-trees
+* Reference component updates
+
 ### 1.1.37 - 01.03.2018
 * Add ConnectionStringHash property to SqlEventData PR #524
 

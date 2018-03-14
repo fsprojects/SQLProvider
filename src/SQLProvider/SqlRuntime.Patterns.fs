@@ -137,10 +137,11 @@ let (|OptionalQuote|) (e:Expression) =
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
     | _ -> e
 
-let (|OptionalConvertOrTypeAs|) (e:Expression) = 
+let rec (|OptionalConvertOrTypeAs|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Convert, (:? UnaryExpression as ue ) 
-    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> ue.Operand
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> 
+        match ue.Operand with OptionalConvertOrTypeAs(x) -> x
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
         // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
         e.Arguments.[0]

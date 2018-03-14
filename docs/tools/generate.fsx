@@ -13,7 +13,7 @@ let githubLink = "http://github.com/fsprojects/SQLProvider"
 // Specify more information about your project
 let info =
   [ "project-name", "SQLProvider"
-    "project-author", "Ross McKinlay, Colin Bull"
+    "project-author", "Ross McKinlay, Colin Bull, Tuomas Hietanen"
     "project-summary", "Type providers for SQL server access."
     "project-github", "http://github.com/fsprojects/SQLProvider"
     "project-nuget", "http://nuget.org/packages/SQLProvider" ]

@@ -41,7 +41,7 @@ let summary = "Type providers for SQL database access."
 let description = "Type providers for SQL database access."
 
 // List of author names (for NuGet package)
-let authors = [ "Ross McKinlay, Colin Bull" ]
+let authors = [ "Ross McKinlay, Colin Bull, Tuomas Hietanen" ]
 
 // Tags for your project (for NuGet package)
 let tags = "F#, fsharp, typeprovider, sql, sqlserver"
