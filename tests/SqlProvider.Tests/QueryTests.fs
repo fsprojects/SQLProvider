@@ -628,6 +628,19 @@ let ``simplest select query with groupBy``() =
     Assert.IsNotEmpty(qry)
 
 [<Test>]
+let ``simplest select query with groupBy aggregate``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            groupBy o.OrderDate.Date into g
+            select (g.Key, g.Sum(fun p -> if p.Freight > 1m then p.Freight else 0m))
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
+
+[<Test>]
 let ``simplest select query with groupBy constant``() = 
     let dc = sql.GetDataContext()
     let qry = 

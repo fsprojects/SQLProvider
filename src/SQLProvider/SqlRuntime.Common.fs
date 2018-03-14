@@ -592,12 +592,16 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
             match columnName with
             | None -> fst(keyname).ToUpperInvariant()
             | Some c -> c.ToUpperInvariant()
-        let itm =
+        let itms =
             distinctItem.ColumnValues 
             |> Seq.filter(fun (s,k) -> 
                 let sUp = s.ToUpperInvariant()
                 (sUp.Contains("_"+fetchCol)) && 
-                    (sUp.Contains(itemType+"_"))) |> Seq.head |> snd
+                    (sUp.Contains(itemType+"_")))
+        let itm = 
+            if Seq.isEmpty itms then 
+                failwithf "Unsupported aggregate: %s %s %s" (fst keyname) (snd keyname) (if columnName.IsSome then columnName.Value else "")
+            else itms |> Seq.head |> snd
         if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
         else 
             let returnType = typeof<'ret>

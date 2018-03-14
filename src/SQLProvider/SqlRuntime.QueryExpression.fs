@@ -471,6 +471,12 @@ module internal QueryExpressionTransformer =
                     let fixedParams = Expression.Lambda((newProjection:?>LambdaExpression).Body,initDbParam)
                     
                     if sqlQuery.Grouping.Length > 0 then
+
+                        let rec baseKey(col:SqlColumnType) =
+                            match col with
+                            | KeyColumn c -> KeyColumn c
+                            | CanonicalOperation(op, c) -> baseKey c
+                            | c -> c
                             
                         let gatheredAggregations = 
                             sqlQuery.Grouping |> List.map(fun (group,x) ->
@@ -482,7 +488,7 @@ module internal QueryExpressionTransformer =
                                         if not (group |> List.isEmpty) then 
                                             group 
                                             |> List.choose(fun (a, cc) -> 
-                                                match cc, op with
+                                                match baseKey(cc), op with
                                                 | KeyColumn c, GroupColumn(AvgOp "", KeyColumn "") -> Some (a, GroupColumn(AvgOp c, KeyColumn c))
                                                 | KeyColumn c, GroupColumn(MinOp "", KeyColumn "") -> Some (a, GroupColumn(MinOp c, KeyColumn c))
                                                 | KeyColumn c, GroupColumn(MaxOp "", KeyColumn "") -> Some (a, GroupColumn(MaxOp c, KeyColumn c))
