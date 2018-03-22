@@ -4,6 +4,7 @@ build_script:
   - cmd: build.cmd All
 services:
   - postgresql
+  - mssql2008r2sp2
 test: off
 version: 0.0.1.{build}
 artifacts:
