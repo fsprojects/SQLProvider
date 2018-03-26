@@ -63,11 +63,14 @@ Replace content of Program.fs with this:
 open System
 open FSharp.Data.Sql
 
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + "/libraries"
+
 [<Literal>] // Relative to resolutionPath:
 let connStr = @"Filename=" + @"./../myDatabaseFile.db"
 
 // In case of dependency error, note that SQLite dependencies are processor architecture dependant
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connStr, ResolutionPath = "libraries", SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connStr, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite>
 
 [<EntryPoint>]
 let main argv =

@@ -101,11 +101,14 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + "/libraries"
+
+[<Literal>]
 let connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres"
 
 type HR = SqlDataProvider<
             Common.DatabaseProviderTypes.POSTGRESQL, connStr,
-            ResolutionPath = "libraries", Owner="sqlprovider">
+            ResolutionPath = resolutionPath, Owner="sqlprovider">
 
 [<EntryPoint>]
 let main argv =

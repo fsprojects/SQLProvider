@@ -100,9 +100,12 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + "/libraries"
+
+[<Literal>]
 let connStr =  "Server=localhost;Database=HR;Uid=admin;Pwd=password;Convert Zero Datetime=true;"
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, Owner = "HR", ResolutionPath = "libraries">
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, Owner = "HR", ResolutionPath = resolutionPath>
 
 [<EntryPoint>]
 let main argv =
