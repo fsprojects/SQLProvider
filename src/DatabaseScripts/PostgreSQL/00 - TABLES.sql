@@ -148,3 +148,9 @@ CREATE TABLE IF NOT EXISTS postgresql_types
     xml_0 XML,
     PRIMARY KEY (postgresql_types_id)
 );
+
+CREATE SCHEMA IF NOT EXISTS other_schema;
+
+CREATE TABLE IF NOT EXISTS other_schema.table_in_other_schema (
+    column_in_other_schema int primary key
+);
