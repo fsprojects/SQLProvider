@@ -82,6 +82,18 @@ if it is null in the database.
 
 let [<Literal>] useOptTypes  = true
 
+(**
+### Owner
+
+Indicates the schema or schemas to which SqlProvider will try to provide access to.
+Multiple schemas can be indicated, separated by commas or semicolons.
+Defaults to "public".
+
+*)
+
+let [<Literal>] owner = "public, admin, references"
+
+
 type sql =
     SqlDataProvider<
         dbVendor,
@@ -89,4 +101,5 @@ type sql =
         "",         //ConnectionNameString can be left empty 
         resPath,
         indivAmount,
-        useOptTypes>
+        useOptTypes,
+        owner>
