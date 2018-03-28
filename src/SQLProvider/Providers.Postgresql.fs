@@ -15,7 +15,7 @@ open FSharp.Data.Sql.Common
 
 module PostgreSQL =
     let mutable resolutionPath = String.Empty
-    let mutable owner = "public"
+    let mutable schemas = [| "public" |]
     let mutable referencedAssemblies = [| |]
 
     let assemblyNames = [
@@ -587,7 +587,9 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         PostgreSQL.referencedAssemblies <- referencedAssemblies
 
         if not(String.IsNullOrEmpty owner) then
-            PostgreSQL.owner <- owner
+            PostgreSQL.schemas <- 
+              owner.Split(';', ',', ' ', '\n', '\r')
+              |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
     interface ISqlProvider with
         member __.GetTableDescription(con,tableName) = 
@@ -631,11 +633,13 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
 
         member __.GetTables(con,_) =
+            let schemas = PostgreSQL.schemas |> String.concat "', '" |> sprintf "ARRAY['%s']"
+
             use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type
                                                     FROM  information_schema.tables
-                                                   WHERE  table_schema = '%s'" PostgreSQL.owner) con
+                                                   WHERE  table_schema = ANY(%s)" schemas) con
             [ while reader.Read() do
                 let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
                               Name = Sql.dbUnbox<string> reader.["table_name"]

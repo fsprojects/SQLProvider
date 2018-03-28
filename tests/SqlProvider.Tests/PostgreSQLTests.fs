@@ -26,14 +26,21 @@ let [<Literal>] connStr = "User ID=postgres;Password=postgres;Host=localhost;Por
 #endif
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../packages/scripts/Npgsql/lib/net45"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../packages/scripts/Npgsql/lib/net451"
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.POSTGRESQL, connStr, ResolutionPath=resolutionPath, UseOptionTypes=true>
+type HR = 
+  SqlDataProvider<
+      DatabaseVendor = Common.DatabaseProviderTypes.POSTGRESQL,
+      ConnectionString = connStr,
+      ResolutionPath=resolutionPath,
+      UseOptionTypes=true,
+      Owner = "public, other_schema"
+  >
 
 type Employee = {
     EmployeeId : int32
@@ -494,5 +501,16 @@ let ``Create and print PostgreSQL specific types``() =
   Assert.AreEqual(box0   , """"box_0": <null> => <null>""")
   Assert.AreEqual(interva, """"interval_0": Some 3.00:00:00 => Some 3.00:00:00""")
   Assert.AreEqual(jsonb0 , """"jsonb_0": Some "{ "x": [] }" => Some "{"x": []}"      """.TrimEnd())
+
+//********************** Multiple schemas ***************************//
+
+
+[<Test>]
+let ``Access a different schema than the default one``() = 
+  let ctx = HR.GetDataContext()
+  
+  let testRow = ctx.OtherSchema.TableInOtherSchema.Create()
+  testRow.ColumnInOtherSchema <- 42  
+  ctx.SubmitUpdates()
 
 #endif
