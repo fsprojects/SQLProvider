@@ -1,3 +1,6 @@
+### 1.1.39 - 28.03.2018
+* Allow specifying multiple schemas for PostgreSQL / MySql, PR #530
+
 ### 1.1.38 - 14.03.2018
 * Group-by key canonical operation support
 * Crossjoin support for recent LINQ-trees
