@@ -96,9 +96,13 @@ TableNames to filter amount of tables, and Owner.
 
 This has different meanings when running queries against different database vendors
 
-For PostgreSQL, this sets the schema name where the target tables belong to
-For MySQL, this sets the database name (Or schema name, for MySQL, it's the same thing)
-For Oracle, this sets the owner of the scheme
+For PostgreSQL, this sets the schema name where the target tables belong to. Can be also a list separated by spaces, newlines, commas or semicolons.
+
+For MySQL, this sets the database name (Or schema name, for MySQL, it's the same thing). Can be also a list separated by spaces, newlines, commas or semicolons.
+
+For Oracle, this sets the owner of the scheme.
+
+
 
 ### SQLite
 

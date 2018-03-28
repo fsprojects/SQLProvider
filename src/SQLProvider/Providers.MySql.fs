@@ -11,7 +11,7 @@ open FSharp.Data.Sql.Common
 
 module MySql =
     let mutable resolutionPath = String.Empty
-    let mutable owner = String.Empty
+    let mutable schemas : string[] = [||]
     let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
@@ -196,12 +196,13 @@ module MySql =
         | a -> a
 
     let getSprocName (row:DataRow) =
-        let defaultValue =
-            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"]
-            else row.["routine_schema"]
-        let owner2 = Sql.dbUnboxWithDefault<string> owner defaultValue
+        let sprocSchema =
+            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"].ToString()
+            elif row.Table.Columns.Contains("routine_schema") then row.["routine_schema"].ToString()
+            elif schemas.Length = 1 then schemas |> Seq.head
+            else ""
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
-        { ProcName = procName; Owner = owner2; PackageName = String.Empty; }
+        { ProcName = procName; Owner = sprocSchema; PackageName = String.Empty; }
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
         let createSprocParameters (row:DataRow) =
@@ -230,10 +231,10 @@ module MySql =
                   Ordinal = ordinal_position }
             )
 
-        let dbName = if String.IsNullOrEmpty owner then con.Database else owner
+        let dbName = (if Array.isEmpty schemas then [|con.Database|] else schemas) |> Array.map(fun s -> "'" + s + "'")
 
         //This could filter the query using the Sproc name passed in
-        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA = '%s'" dbName))
+        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA in %s" (String.Join(", ", dbName))))
         |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
         |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
         |> Seq.collect (snd >> Seq.choose id)
@@ -335,7 +336,7 @@ module MySql =
                 return Set(cols |> Array.map (processReturnColumn reader))
         }
 
-type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this =
+type internal MySqlProvider(resolutionPath, owner:string, referencedAssemblies) as this =
     let pkLookup = ConcurrentDictionary<string,string list>()
     let tableLookup = ConcurrentDictionary<string,Table>()
     let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
@@ -442,7 +443,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
 
     do
         MySql.resolutionPath <- resolutionPath
-        MySql.owner <- owner
+        MySql.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
         MySql.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
@@ -485,7 +486,10 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
         member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
 
         member __.GetTables(con,cs) =
-            let dbName = if String.IsNullOrEmpty owner then con.Database else owner
+            let databases = con.Database.Split(';', ',', ' ', '\n', '\r')
+            let dbName = (if String.IsNullOrEmpty owner then databases else owner.Split(';', ',', ' ', '\n', '\r')) 
+                            |> Array.filter (not << String.IsNullOrWhiteSpace) 
+                            |> Array.map(fun x -> "'" + x + "'")
             let caseChane =
                 match cs with
                 | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
@@ -498,7 +502,7 @@ type internal MySqlProvider(resolutionPath, owner, referencedAssemblies) as this
                     [ while reader.Read() do
                         let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
                         yield tableLookup.GetOrAdd(table.FullName,table) ]
-                executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s = '%s'" caseChane dbName) con)
+                executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane (String.Join(",", dbName))) con)
 
         member __.GetPrimaryKey(table) =
             match pkLookup.TryGetValue table.FullName with
