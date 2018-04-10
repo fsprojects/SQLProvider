@@ -335,7 +335,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     [ProvidedMethod("Invoke", parameters, returnType, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
                         <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>));
                      ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
-                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))]
+                        if returnType = typeof<unit> then 
+                            <@@ async {
+                                    let! r = (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))
+                                    return ()
+                                } @@>
+                        else
+                           <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))  @@>
+                        ))]
             )
                               
             let niceUniqueSprocName = 
