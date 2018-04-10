@@ -1,3 +1,6 @@
+### 1.1.40 - 10.04.2018
+* Fix to allow async procedure calls without return values #535
+
 ### 1.1.39 - 28.03.2018
 * Allow specifying multiple schemas for PostgreSQL / MySql, PR #530
 
