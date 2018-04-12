@@ -256,6 +256,7 @@ module internal Oracle =
                       TypeMapping = m
                       IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
                       IsNullable = nullable
+                      IsIdentity = false
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id

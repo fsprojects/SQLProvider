@@ -293,6 +293,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
                                   IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
+                                  IsIdentity = false
                                   TypeInfo = 
                                     if maxlen < 1 then Some dt
                                     else Some (dt + "(" + maxlen.ToString() + ")")
