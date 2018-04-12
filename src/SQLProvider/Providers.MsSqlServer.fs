@@ -513,6 +513,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                // but hey, this works
                let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
+                                              ,COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IsIdentity
                                  FROM INFORMATION_SCHEMA.COLUMNS c
                                  LEFT JOIN (
                                              SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
@@ -545,6 +546,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
+                               IsIdentity = reader.GetInt32(6) = 1
                                TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

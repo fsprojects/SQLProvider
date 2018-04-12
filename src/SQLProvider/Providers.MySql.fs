@@ -545,6 +545,7 @@ type internal MySqlProvider(resolutionPath, owner:string, referencedAssemblies) 
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
+                                  IsIdentity = false
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

@@ -248,6 +248,7 @@ type internal MSAccessProvider() =
                                   TypeMapping = m
                                   IsPrimaryKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                                   IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
+                                  IsIdentity = false
                                   TypeInfo = 
                                     try 
                                         let ti = 

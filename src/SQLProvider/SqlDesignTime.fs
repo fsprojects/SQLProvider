@@ -414,10 +414,17 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     // we are forced to load the columns here, but this is ok as the user has already 
                     // pressed . on an IQueryable type so they are obviously interested in using this entity..                    
                     let columns, _ = getTableData key
+
                     let requiredColumns =
-                        columns
-                        |> Seq.map (fun kvp -> kvp.Value)
-                        |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsPrimaryKey))
+                        match dbVendor with
+                        | DatabaseProviderTypes.MSSQLSERVER ->
+                            columns
+                            |> Seq.map (fun kvp -> kvp.Value)
+                            |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsIdentity))
+                        | _ ->
+                            columns
+                            |> Seq.map (fun kvp -> kvp.Value)
+                            |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsPrimaryKey))
 
                     let normalParameters = 
                         requiredColumns 

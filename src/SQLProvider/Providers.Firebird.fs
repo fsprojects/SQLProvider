@@ -615,6 +615,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "1" then false else true
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
+                                  IsIdentity = false
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.Name, [col.Name], fun key old -> 
