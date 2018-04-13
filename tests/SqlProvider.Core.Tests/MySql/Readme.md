@@ -1,18 +1,11 @@
-# Getting started
-
-Prerequisites:
-
- - FSharp and Dotnet installed. On Mac and Linux: Have also Mono installed.
- - Have a database, with a connection string
- - Have a code editor, e.g. Visual Studio Code and access to internet.
- - On Linux: Sudo permissons
+# MySQL - Getting started
 
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database scripts at /src/DatabaseScripts/MySql)
 or you can start with these tutorials, for Windows, Linux and Mac:
 
-## MySQL, Part 1: Create project
+## Part 1: Create project
 
 ```
 dotnet new console --language f#
@@ -28,12 +21,13 @@ code .
 
 Create a new folder `libraries` under the root folder of your project.
 
-## MySQL, Part 2: Reference libraries and project file - On Windows
+## Part 2: Reference libraries and project file - On Windows
 
 Locate the corresponding dll files of the packages
 (MySqlConnector.dll, System.Buffers.dll, System.Threading.Tasks.Extensions.dll,
 System.Runtime.InteropServices.RuntimeInformation.dll and System.Data.Common.dll)
-from your NuGet cache `C:\Users\(user)\.nuget\packages\` the corresponding packages, versions `lib\netstandard2.0`, 
+from your NuGet cache `C:\Users\(user)\.nuget\packages\` (or `%USERPROFILE%\.nuget\packages\`)
+the corresponding packages, versions `lib\netstandard2.0`, 
 or download those from NuGet.org under Manual Download, nuget-packages are just renamed zip-files.
 
 Copy the dlls to the `libraries` folder.
@@ -49,7 +43,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## MySQL, Part 2: Reference libraries and project file - On Linux
+## Part 2: Reference libraries and project file - On Linux
 
 Locate the corresponding dll files of the packages
 (MySqlConnector.dll, System.Buffers.dll, System.Threading.Tasks.Extensions.dll,
@@ -70,7 +64,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## MySQL, Part 2: Reference libraries and project file - On Mac
+## Part 2: Reference libraries and project file - On Mac
 
 Locate the corresponding dll files of the packages
 (MySqlConnector.dll, System.Buffers.dll, System.Threading.Tasks.Extensions.dll,
@@ -91,7 +85,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## MySQL, Part 3: Source code, build and run
+## Part 3: Source code, build and run
 
 Replace content of Program.fs with this:
 
