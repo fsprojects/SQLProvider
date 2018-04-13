@@ -243,7 +243,13 @@ module internal Oracle =
     let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
         sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
         |> read conn (fun row ->
-                let columnType = Sql.dbUnbox row.[0]
+                let columnType : string = Sql.dbUnbox row.[0]
+                // Remove precision specification from the column type name (can appear in TIMESTAMP and INTERVAL)
+                // Example: 'TIMESTAMP(3) WITH TIMEZONE' must be transformed to 'TIMESTAMP WITH TIMEZONE'
+                let columnType = 
+                    match columnType.IndexOf('('), columnType.IndexOf(')') with
+                    | x,y when x > 0 && y > 0 -> columnType.Substring(0,x) + columnType.Substring(y+1)
+                    | _ -> columnType
                 let nullable   = (Sql.dbUnbox row.[1]) = "Y"
                 let columnName = Sql.dbUnbox row.[2]
                 let typeinfo = 
