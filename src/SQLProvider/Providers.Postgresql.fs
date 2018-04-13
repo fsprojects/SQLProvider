@@ -735,7 +735,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                           TypeMapping = m
                                           IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
                                           IsPrimaryKey = Sql.dbUnbox<bool> reader.["is_primary_key"]
-                                          IsIdentity = false
+                                          IsIdentity = Sql.dbUnbox<bool> reader.["is_primary_key"]
                                           TypeInfo = Some fullTypeName
                                         }
 

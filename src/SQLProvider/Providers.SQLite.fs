@@ -440,12 +440,13 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
+                            let pkColumn = if reader.GetBoolean(5) then true else false
                             let col =
                                 { Column.Name = reader.GetString(1);
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
-                                  IsPrimaryKey = if reader.GetBoolean(5) then true else false
-                                  IsIdentity = false
+                                  IsPrimaryKey = pkColumn
+                                  IsIdentity = pkColumn
                                   TypeInfo = Some dtv }
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

@@ -416,15 +416,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let columns, _ = getTableData key
 
                     let requiredColumns =
-                        match dbVendor with
-                        | DatabaseProviderTypes.MSSQLSERVER ->
-                            columns
-                            |> Seq.map (fun kvp -> kvp.Value)
-                            |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsIdentity))
-                        | _ ->
-                            columns
-                            |> Seq.map (fun kvp -> kvp.Value)
-                            |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsPrimaryKey))
+                        columns
+                        |> Seq.map (fun kvp -> kvp.Value)
+                        |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsIdentity))
 
                     let normalParameters = 
                         requiredColumns 

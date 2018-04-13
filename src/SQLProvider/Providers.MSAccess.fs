@@ -243,12 +243,13 @@ type internal MSAccessProvider() =
                     |> Seq.map (fun row ->
                         match row.["DATA_TYPE"].ToString() |> findDbType with
                         |Some(m) ->
+                            let pkColumn = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
                             let col =
                                 { Column.Name = row.["COLUMN_NAME"].ToString();
                                   TypeMapping = m
-                                  IsPrimaryKey = pks |> List.exists (fun idx -> idx = row.["COLUMN_NAME"].ToString())
+                                  IsPrimaryKey = pkColumn
                                   IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
-                                  IsIdentity = false
+                                  IsIdentity = pkColumn
                                   TypeInfo = 
                                     try 
                                         let ti = 

@@ -252,11 +252,12 @@ module internal Oracle =
                     else columnType + "(" + datalength + ")"
                 findDbType columnType
                 |> Option.map (fun m ->
+                    let pkColumn = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
+                      IsPrimaryKey = pkColumn
                       IsNullable = nullable
-                      IsIdentity = false
+                      IsIdentity = pkColumn
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id
