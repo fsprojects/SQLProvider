@@ -11,9 +11,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
 type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
-    let pkLookup = ConcurrentDictionary<string,string list>()
-    let tableLookup = ConcurrentDictionary<string,Table>()
-    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
+    let schemaCache = SchemaCache.Empty
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -113,8 +111,8 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
-        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
@@ -164,8 +162,8 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
-        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -264,16 +262,16 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                     else string dataTable.[1]
 
                 let table ={ Schema = schema ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
-                yield tableLookup.GetOrAdd(table.FullName,table)
+                yield schemaCache.Tables.GetOrAdd(table.FullName,table)
                 ]
 
         member __.GetPrimaryKey(table) =
-            match pkLookup.TryGetValue table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match columnLookup.TryGetValue table.FullName with
+            match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
                 let con = con :?> OdbcConnection
@@ -298,7 +296,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                     else Some (dt + "(" + maxlen.ToString() + ")")
                                   }
                             if col.IsPrimaryKey then 
-                                pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
@@ -308,7 +306,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                             yield (col.Name,col)
                         | _ -> ()]
                     |> Map.ofList
-                columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(_,_) = ([],[]) // The ODBC type provider does not currently support GetRelationships operations.
         member __.GetSprocs(_) = []
@@ -505,7 +503,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%c%s%c" cOpen col cClose
                                 else 
                                     yield sprintf "%c%s%s%s%c as %c%s_%s%c" cOpen k separator col cClose cOpen k col cClose
@@ -652,7 +650,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         let id = (lastInsertId con).ExecuteScalar()
-                        CommonTasks.checkKey pkLookup id e
+                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -668,7 +666,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 if scope<>null then scope.Complete()
@@ -703,7 +701,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 let id = (lastInsertId con).ExecuteScalar()
-                                CommonTasks.checkKey pkLookup id e
+                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -723,7 +721,7 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"

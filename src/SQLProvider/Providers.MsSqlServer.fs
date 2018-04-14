@@ -311,10 +311,7 @@ module MSSqlServer =
         }
 
 type internal MSSqlServerProvider(tableNames:string) =
-    let pkLookup = ConcurrentDictionary<string,string list>()
-    let tableLookup = ConcurrentDictionary<string,Table>()
-    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
-    let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
+    let schemaCache = SchemaCache.Empty
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 
         let aliasSprint =
@@ -328,8 +325,8 @@ type internal MSSqlServerProvider(tableNames:string) =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -370,8 +367,8 @@ type internal MSSqlServerProvider(tableNames:string) =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         match pk with
         | [x] when changedColumns |> List.exists ((=)x)
@@ -417,8 +414,8 @@ type internal MSSqlServerProvider(tableNames:string) =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         sb.Clear() |> ignore
-        let haspk = pkLookup.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then pkLookup.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -496,16 +493,16 @@ type internal MSSqlServerProvider(tableNames:string) =
             use reader = MSSqlServer.executeSql ("select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" + tableNamesFilter) con
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
-                yield tableLookup.GetOrAdd(table.FullName,table)
+                yield schemaCache.Tables.GetOrAdd(table.FullName,table)
                 ])
 
         member __.GetPrimaryKey(table) =
-            match pkLookup.TryGetValue table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match columnLookup.TryGetValue table.FullName with
+            match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
                // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
@@ -547,7 +544,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
                                TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
-                               pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                               schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
@@ -558,10 +555,10 @@ type internal MSSqlServerProvider(tableNames:string) =
                        | _ -> ()]
                    |> Map.ofList
                con.Close()
-               columnLookup.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+               schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
-          relationshipLookup.GetOrAdd(table.FullName, fun name ->
+          schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
             // mostly stolen from
             // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
             let baseQuery = @"SELECT
@@ -827,7 +824,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnLookup.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
                                 else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
                         else
@@ -973,7 +970,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey pkLookup id e
+                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -989,7 +986,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
@@ -1023,7 +1020,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                CommonTasks.checkKey pkLookup id e
+                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -1043,7 +1040,7 @@ type internal MSSqlServerProvider(tableNames:string) =
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(pkLookup.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"

@@ -580,6 +580,14 @@ and internal ISqlProvider =
     ///Builds a command representing a call to a stored procedure, executing async
     abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> Async<ReturnValueType>
 
+and internal SchemaCache =
+    { PrimaryKeys   : ConcurrentDictionary<string,string list>
+      Tables        : ConcurrentDictionary<string,Table>
+      Columns       : ConcurrentDictionary<string,ColumnLookup>
+      Relationships : ConcurrentDictionary<string,Relationship list * Relationship list> }
+    with
+        static member Empty = { PrimaryKeys = ConcurrentDictionary<string,string list>(); Tables = ConcurrentDictionary<string,Table>(); Columns = ConcurrentDictionary<string,ColumnLookup>(); Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>() }
+
 /// GroupResultItems is an item to create key-igrouping-structure.
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
 /// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
