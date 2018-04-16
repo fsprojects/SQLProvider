@@ -241,7 +241,7 @@ module internal Oracle =
         |> Seq.toList
 
     let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
-        sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
+        sprintf """select data_type, nullable, column_name, data_length, data_default from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
         |> read conn (fun row ->
                 let columnType : string = Sql.dbUnbox row.[0]
                 // Remove precision specification from the column type name (can appear in TIMESTAMP and INTERVAL)
@@ -258,11 +258,13 @@ module internal Oracle =
                     else columnType + "(" + datalength + ")"
                 findDbType columnType
                 |> Option.map (fun m ->
+                    let pkColumn = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
+                      IsPrimaryKey = pkColumn
                       IsNullable = nullable
-                      IsIdentity = false
+                      IsAutonumber = pkColumn
+                      HasDefault = false // Sql.dbUnbox row.[4]
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id

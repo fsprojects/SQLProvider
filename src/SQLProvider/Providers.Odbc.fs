@@ -287,13 +287,15 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                         | Some(m) ->
                             let name = i.[3] :?> string
                             let maxlen = if i.[6] = box(DBNull.Value) then 0 else i.[6] :?> int
-
+                            
+                            let pkColumn = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
                             let col =
                                 { Column.Name = name
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
-                                  IsPrimaryKey = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
-                                  IsIdentity = false
+                                  IsPrimaryKey = pkColumn
+                                  IsAutonumber = pkColumn
+                                  HasDefault = false
                                   TypeInfo = 
                                     if maxlen < 1 then Some dt
                                     else Some (dt + "(" + maxlen.ToString() + ")")
