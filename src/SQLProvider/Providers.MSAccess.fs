@@ -249,7 +249,8 @@ type internal MSAccessProvider() =
                                   TypeMapping = m
                                   IsPrimaryKey = pkColumn
                                   IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
-                                  IsIdentity = pkColumn
+                                  IsAutonumber = row.["DATA_TYPE"].ToString() = "AutoNumber"
+                                  HasDefault = not (row.IsNull "COLUMN_DEFAULT");
                                   TypeInfo = 
                                     try 
                                         let ti = 

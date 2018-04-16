@@ -241,7 +241,7 @@ module internal Oracle =
         |> Seq.toList
 
     let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
-        sprintf """select data_type, nullable, column_name, data_length from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
+        sprintf """select data_type, nullable, column_name, data_length, data_default from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
         |> read conn (fun row ->
                 let columnType = Sql.dbUnbox row.[0]
                 let nullable   = (Sql.dbUnbox row.[1]) = "Y"
@@ -257,7 +257,8 @@ module internal Oracle =
                       TypeMapping = m
                       IsPrimaryKey = pkColumn
                       IsNullable = nullable
-                      IsIdentity = pkColumn
+                      IsAutonumber = pkColumn
+                      HasDefault = false // Sql.dbUnbox row.[4]
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id

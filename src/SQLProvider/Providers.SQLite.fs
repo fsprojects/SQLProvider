@@ -446,7 +446,8 @@ type internal SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssemb
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = pkColumn
-                                  IsIdentity = pkColumn
+                                  IsAutonumber = pkColumn
+                                  HasDefault = not (reader.IsDBNull 4)
                                   TypeInfo = Some dtv }
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

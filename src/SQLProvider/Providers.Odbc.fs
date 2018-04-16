@@ -294,7 +294,8 @@ type internal OdbcProvider(quotechar : OdbcQuoteCharacter) =
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
                                   IsPrimaryKey = pkColumn
-                                  IsIdentity = pkColumn
+                                  IsAutonumber = pkColumn
+                                  HasDefault = false
                                   TypeInfo = 
                                     if maxlen < 1 then Some dt
                                     else Some (dt + "(" + maxlen.ToString() + ")")

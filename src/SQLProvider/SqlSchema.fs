@@ -42,7 +42,8 @@ type Column =
       TypeMapping: TypeMapping
       IsPrimaryKey: bool
       IsNullable: bool
-      IsIdentity: bool
+      IsAutonumber: bool
+      HasDefault: bool
       TypeInfo: string option }
     with
         static member FromQueryParameter(q: QueryParameter) =
@@ -50,7 +51,8 @@ type Column =
               TypeMapping = q.TypeMapping
               IsPrimaryKey = false
               IsNullable = true
-              IsIdentity = false
+              IsAutonumber = false
+              HasDefault = false
               TypeInfo = None }
 
 type ColumnLookup = Map<string,Column>
