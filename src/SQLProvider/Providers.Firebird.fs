@@ -592,7 +592,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                                                     inner join RDB$RELATION_CONSTRAINTS rc on rc.RDB$INDEX_NAME=i.RDB$INDEX_NAME and rc.RDB$RELATION_NAME=c.RDB$RELATION_NAME
                                                    where rc.RDB$CONSTRAINT_TYPE='PRIMARY KEY')
                                                  THEN 'PRIMARY KEY'
-                                               ELSE '' END AS KeyType
+                                               ELSE '' END AS KeyType,
+                                               RDB$DEFAULT_VALUE has_default
                                   FROM rdb$relation_fields c
                                   inner join RDB$FIELDS f on f.RDB$FIELD_NAME=c.RDB$FIELD_SOURCE                                  
                                   
@@ -610,12 +611,14 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                             else reader.GetValue(2).ToString()
                         match Firebird.findDbType dt with
                         | Some(m) ->
+                            let pkColumn = if reader.GetString(5) = "PRIMARY KEY" then true else false 
                             let col =
                                 { Column.Name = reader.GetString(0)
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "1" then false else true
-                                  IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
-                                  IsIdentity = false
+                                  IsPrimaryKey = pkColumn
+                                  IsAutonumber = pkColumn
+                                  HasDefault = not(reader.IsDBNull 6)
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 pkLookup.AddOrUpdate(table.Name, [col.Name], fun key old -> 

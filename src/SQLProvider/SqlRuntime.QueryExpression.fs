@@ -555,7 +555,10 @@ module internal QueryExpressionTransformer =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
             // to the only table in the query, so replace it
-            if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
+            if String.IsNullOrWhiteSpace(name) || name = "__base__" then
+                match defaultTable with
+                | Some(s) -> s
+                | None -> (fst sqlQuery.UltimateChild.Value)
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseAlias else tbl
@@ -675,9 +678,16 @@ module internal QueryExpressionTransformer =
                     if tbl = "" then outerAlias else tbl
 
             let resolvedLinkData =
-                { linkData with PrimaryKey = linkData.PrimaryKey |> List.map(visitCanonicals resolvePrimary)
-                                ForeignKey = linkData.ForeignKey |> List.map(visitCanonicals resolveForeign)
-                }
+                if linkData.RelDirection = RelationshipDirection.Children then
+                    { 
+                        linkData with PrimaryKey = linkData.PrimaryKey |> List.map(visitCanonicals resolvePrimary)
+                                      ForeignKey = linkData.ForeignKey |> List.map(visitCanonicals resolveForeign)
+                    }
+                else
+                    {
+                        linkData with PrimaryKey = linkData.PrimaryKey |> List.map(visitCanonicals resolveForeign)
+                                      ForeignKey = linkData.ForeignKey |> List.map(visitCanonicals resolvePrimary)
+                    }
 
             if linkData.ForeignTable.Name <> "" then (outerAlias, resolvedLinkData, innerAlias)
             else (outerAlias, { resolvedLinkData with ForeignTable = resolved }, innerAlias)
