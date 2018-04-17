@@ -465,15 +465,19 @@ module PostgreSQL =
                                                   ReturnColumns = (fun _ _ -> rcolumns) }))
         )
 
-type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
-    let schemaCache = SchemaCache.Empty
+type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) =
+    let contextSchema = 
+        if String.IsNullOrEmpty(contextSchemaPath) then 
+            ContextSchema.Empty
+        else
+            ContextSchema.Load(contextSchemaPath)
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
         let columnNames, values =
             (([],0),entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out,i) (k,v,c) ->
@@ -509,8 +513,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
@@ -558,8 +562,8 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -628,6 +632,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
         member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
         member __.ExecuteSprocCommandAsync(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommandAsync con param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
+        member __.GetContextSchema() = contextSchema
 
         member __.GetTables(con,_) =
             let schemas = PostgreSQL.schemas |> String.concat "', '" |> sprintf "ARRAY['%s']"
@@ -642,19 +647,19 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                               Name = Sql.dbUnbox<string> reader.["table_name"]
                               Type = (Sql.dbUnbox<string> reader.["table_type"]).ToLower() }
                 
-                yield schemaCache.Tables.GetOrAdd(table.FullName, table)
+                yield contextSchema.Tables.GetOrAdd(table.FullName, table)
                 ]
 
         member __.GetPrimaryKey(table) =
-            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
+            match contextSchema.PrimaryKeys.TryGetValue table.FullName with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            Monitor.Enter schemaCache.Columns
+            Monitor.Enter contextSchema.Columns
 
             try
-                match schemaCache.Columns.TryGetValue table.FullName with
+                match contextSchema.Columns.TryGetValue table.FullName with
                 | (true,data) when data.Count > 0 -> data
                 | _ ->
                     let baseQuery = @"
@@ -736,7 +741,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                         }
 
                                     if col.IsPrimaryKey then
-                                        schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun _ old -> 
+                                        contextSchema.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun _ old -> 
                                             match col.Name with 
                                             | "" -> old 
                                             | x -> match old with
@@ -747,14 +752,14 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     yield col.Name, col
                             ]
                             |> Map.ofList
-                        schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns))
+                        contextSchema.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns))
             finally
-                Monitor.Exit schemaCache.Columns
+                Monitor.Exit contextSchema.Columns
 
         member __.GetRelationships(con,table) =
-            Monitor.Enter schemaCache.Relationships
+            Monitor.Enter contextSchema.Relationships
             try
-                match schemaCache.Relationships.TryGetValue(table.FullName) with
+                match contextSchema.Relationships.TryGetValue(table.FullName) with
                 | true,v -> v
                 | _ ->
                     let baseQuery = @"SELECT
@@ -810,11 +815,11 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey = reader.GetString(2)
                                   } ]
-                    schemaCache.Relationships.[table.FullName] <- (children,parents)
+                    contextSchema.Relationships.[table.FullName] <- (children,parents)
                     con.Close()
                     (children,parents)
                 finally
-                    Monitor.Exit schemaCache.Relationships
+                    Monitor.Exit contextSchema.Relationships
 
         member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
@@ -1015,7 +1020,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in contextSchema.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
                                 else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
                         else
@@ -1157,7 +1162,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                        CommonTasks.checkKey contextSchema.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -1173,7 +1178,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 if scope<>null then scope.Complete()
@@ -1208,7 +1213,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                CommonTasks.checkKey contextSchema.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -1228,7 +1233,7 @@ type internal PostgresqlProvider(resolutionPath, owner, referencedAssemblies) =
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"

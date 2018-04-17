@@ -34,7 +34,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
     
-    let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, odbcquote, sqliteLibrary, rootTypeName) = 
+    let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) = 
         let resolutionPath = 
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -53,7 +53,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     
         let rootType, prov, con = 
             let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
-            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames odbcquote sqliteLibrary
+            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
             let con = prov.CreateConnection conString
             this.Disposing.Add(fun _ -> 
                 if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
@@ -80,7 +80,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, isErased=true)
         let transactionOptions = TransactionOptions.Default
-        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide)
+        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -525,6 +525,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
+              yield ProvidedMethod("SaveContextSchema",[ProvidedParameter("filePath", typeof<string>)],typeof<unit>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SaveContextSchema((%%args.[1] : string)) @@>) :> MemberInfo
              ] @ [
                 for KeyValue(name,pt) in schemaMap do
                     yield pt :> MemberInfo
@@ -552,31 +553,31 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                         | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                                         | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@>);
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@>);
                     [constr], (fun (args:Expr list) ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@> );
                     [constr;respath], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext  @@>);
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext  @@>);
                     [constr; transopt], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], None, %%defaultSelectOperations) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], None, %%defaultSelectOperations) :> ISqlDataContext @@> );
                     [constr; respath; transopt], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], None, %%defaultSelectOperations) :> ISqlDataContext  @@>)
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], None, %%defaultSelectOperations) :> ISqlDataContext  @@>)
                     [constr;cmdTimeout], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@> );
                     [constr;respath;cmdTimeout], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext  @@>);
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext  @@>);
                     [constr; transopt;cmdTimeout], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext @@> );
                     [constr; respath; transopt;cmdTimeout], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%defaultSelectOperations) :> ISqlDataContext  @@>)
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%defaultSelectOperations) :> ISqlDataContext  @@>)
                     [transopt], (fun args ->
                                 let runtimePath = config.ResolutionFolder
                                 let runtimeAssembly = config.ResolutionFolder
@@ -584,7 +585,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                         | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                                         | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], None, %%defaultSelectOperations) :> ISqlDataContext @@>);
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[0], None, %%defaultSelectOperations) :> ISqlDataContext @@>);
                     [cmdTimeout], (fun args ->
                                 let runtimePath = config.ResolutionFolder
                                 let runtimeAssembly = config.ResolutionFolder
@@ -592,7 +593,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                         | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                                         | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0]), %%defaultSelectOperations) :> ISqlDataContext @@>);
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0]), %%defaultSelectOperations) :> ISqlDataContext @@>);
                     [transopt;cmdTimeout], (fun args ->
                                 let runtimePath = config.ResolutionFolder
                                 let runtimeAssembly = config.ResolutionFolder
@@ -600,7 +601,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                         | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                                         | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@>);
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@>);
                     [selectOperations], (fun (args:Expr list) ->
                                 let runtimePath = config.ResolutionFolder
                                 let runtimeAssembly = config.ResolutionFolder
@@ -608,19 +609,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
                                         | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                                         | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[0]) :> ISqlDataContext @@>);
+                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[0]) :> ISqlDataContext @@>);
                     [constr;selectOperations], (fun (args:Expr list) ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[1]) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[1]) :> ISqlDataContext @@> );
                     [constr; transopt;selectOperations], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[1], None, %%args.[2]) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], None, %%args.[2]) :> ISqlDataContext @@> );
                     [constr;cmdTimeout;selectOperations], (fun args ->
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%args.[3]) :> ISqlDataContext @@> );
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%args.[3]) :> ISqlDataContext @@> );
                     [constr; respath; transopt;cmdTimeout;selectOperations], (fun args -> 
                                 let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%args.[4]) :> ISqlDataContext  @@>)
+                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%args.[4]) :> ISqlDataContext  @@>)
 
 
 
@@ -652,6 +653,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>, "")    
     let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.ORIGINAL)
     let tableNames = ProvidedStaticParameter("TableNames", typeof<string>, "")
+    let contextSchemaPath = ProvidedStaticParameter("ContextSchemaPath", typeof<string>, "")
     let odbcquote = ProvidedStaticParameter("OdbcQuote", typeof<OdbcQuoteCharacter>, OdbcQuoteCharacter.DEFAULT_QUOTE)
     let sqliteLibrary = ProvidedStaticParameter("SQLiteLibrary",typeof<SQLiteLibrary>,SQLiteLibrary.AutoSelect)
     let helpText = "<summary>Typed representation of a database</summary>
@@ -664,11 +666,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='Owner'>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>
                     <param name='TableNames'>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)</param>
+                    <param name='ContextSchemaPath'>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</param>
                     <param name='OdbcQuote'>Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]</param>
                     <param name='SQLiteLibrary'>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</param>
                     "
         
-    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; odbcquote; sqliteLibrary], fun typeName args -> 
+    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary], fun typeName args -> 
         
         let arguments =
             args.[1] :?> string,                  // ConnectionString URL
@@ -680,8 +683,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[6] :?> string,                  // Schema owner currently only used for oracle
             args.[7] :?> CaseSensitivityChange,   // Should we do ToUpper or ToLower when generating table names?
             args.[8] :?> string,                  // Table names list (Oracle and MSSQL Only)
-            args.[9] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
-            args.[10] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+            args.[9] :?> string,                  // Context schema path
+            args.[10] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
+            args.[11] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
             typeName
 
         DesignTimeCache.cache.GetOrAdd(arguments, fun args ->

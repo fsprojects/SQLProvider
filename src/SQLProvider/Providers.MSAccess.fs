@@ -11,8 +11,12 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 
-type internal MSAccessProvider() =
-    let schemaCache = SchemaCache.Empty
+type internal MSAccessProvider(contextSchemaPath) =
+    let contextSchema = 
+        if String.IsNullOrEmpty(contextSchemaPath) then 
+            ContextSchema.Empty
+        else
+            ContextSchema.Load(contextSchemaPath)
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -100,9 +104,9 @@ type internal MSAccessProvider() =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         let pk =
-            if not(schemaCache.PrimaryKeys.ContainsKey entity.Table.FullName) then
+            if not(contextSchema.PrimaryKeys.ContainsKey entity.Table.FullName) then
                 failwith("Can't update entity: Table doesn't have a primary key: " + entity.Table.FullName)
-            schemaCache.PrimaryKeys.[entity.Table.FullName]
+            contextSchema.PrimaryKeys.[entity.Table.FullName]
         sb.Clear() |> ignore
 
         match pk with
@@ -149,8 +153,8 @@ type internal MSAccessProvider() =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -206,6 +210,7 @@ type internal MSAccessProvider() =
         member __.ExecuteSprocCommand(_,_,_,_) =  raise(NotImplementedException())
         member __.ExecuteSprocCommandAsync(_,_,_,_) =  raise(NotImplementedException())
         member __.CreateTypeMappings(con) = createTypeMappings (con:?>OleDbConnection)
+        member __.GetContextSchema() = contextSchema
 
         member __.GetTables(con,_) =
             if con.State <> ConnectionState.Open then con.Open()
@@ -214,18 +219,18 @@ type internal MSAccessProvider() =
                 con.GetSchema("Tables").AsEnumerable()
                 |> Seq.filter (fun row -> ["TABLE";"VIEW";"LINK"] |> List.exists (fun typ -> typ = row.["TABLE_TYPE"].ToString())) // = "TABLE" || row.["TABLE_TYPE"].ToString() = "VIEW" || row.["TABLE_TYPE"].ToString() = "LINK")  //The text file specification 'A Link Specification' does not exist. You cannot import, export, or link using the specification.
                 |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
-                                       schemaCache.Tables.GetOrAdd(table.FullName,table)
+                                       contextSchema.Tables.GetOrAdd(table.FullName,table)
                                        )
                 |> List.ofSeq
             tables
 
         member __.GetPrimaryKey(table) =
-            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
+            match contextSchema.PrimaryKeys.TryGetValue table.FullName with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match schemaCache.Columns.TryGetValue table.FullName with
+            match contextSchema.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
                 if con.State <> ConnectionState.Open then con.Open()
@@ -262,13 +267,13 @@ type internal MSAccessProvider() =
                 match pks with
                 | [] -> ()
                 | c -> 
-                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, (c |> List.sort), fun key old -> 
+                    contextSchema.PrimaryKeys.AddOrUpdate(table.FullName, (c |> List.sort), fun key old -> 
                                 match pks.Length with 0 -> old | _ -> (c |> List.sort)) |> ignore
-                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                contextSchema.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
 
         member __.GetRelationships(con,table) =
-          schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
+          contextSchema.Relationships.GetOrAdd(table.FullName, fun name ->
             if con.State <> ConnectionState.Open then con.Open()
             let rels =
                 (con:?>OleDbConnection).GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys,[|null|]).AsEnumerable()
@@ -495,7 +500,7 @@ type internal MSAccessProvider() =
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in contextSchema.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
                                 else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
                         else
@@ -641,7 +646,7 @@ type internal MSAccessProvider() =
                             if timeout.IsSome then
                                 cmd.CommandTimeout <- timeout.Value
                             let id = cmd.ExecuteScalar()
-                            CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                            CommonTasks.checkKey contextSchema.PrimaryKeys id e
                             e._State <- Unchanged
                         | Modified fields ->
                             let cmd = createUpdateCommand con sb e fields
@@ -659,7 +664,7 @@ type internal MSAccessProvider() =
                                 cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
                             // remove the pk to prevent this attempting to be used again
-                            e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                            e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
                             e._State <- Deleted
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                     trnsx.Commit()
@@ -700,7 +705,7 @@ type internal MSAccessProvider() =
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
                                     let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                    CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                    CommonTasks.checkKey contextSchema.PrimaryKeys id e
                                     e._State <- Unchanged
                                 }
                             | Modified fields ->
@@ -722,7 +727,7 @@ type internal MSAccessProvider() =
                                         cmd.CommandTimeout <- timeout.Value
                                     do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                     // remove the pk to prevent this attempting to be used again
-                                    e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                    e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
                                     e._State <- Deleted
                                 }
                             | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"

@@ -5,8 +5,10 @@ open System.Collections.Generic
 open System.ComponentModel
 open System.Data
 open System.Data.Common
+open System.IO
 open System.Linq.Expressions
 open System.Reflection
+open System.Text
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -379,6 +381,7 @@ and ISqlDataContext =
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
     abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> Async<SqlEntity[]>
     abstract SqlOperationsInSelect      : SelectOperations
+    abstract SaveContextSchema          : string -> unit
 
 // LinkData is for joins with SelectMany
 and LinkData =
@@ -567,6 +570,8 @@ and internal ISqlProvider =
     abstract GetIndividualsQueryText : Table * int -> string
     /// Returns the db vendor specific SQL query to select a single row based on the table and column name specified
     abstract GetIndividualQueryText : Table * string -> string
+    /// Returns cached schema information, depending on the provider the cached schema may contain the whole database schema or only the schema for entities referenced in the current context
+    abstract GetContextSchema : unit -> ContextSchema
     /// Writes all pending database changes to database
     abstract ProcessUpdates : IDbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> unit
     /// Asynchronously writes all pending database changes to database
@@ -580,13 +585,23 @@ and internal ISqlProvider =
     ///Builds a command representing a call to a stored procedure, executing async
     abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> Async<ReturnValueType>
 
-and internal SchemaCache =
+and internal ContextSchema =
     { PrimaryKeys   : ConcurrentDictionary<string,string list>
       Tables        : ConcurrentDictionary<string,Table>
       Columns       : ConcurrentDictionary<string,ColumnLookup>
       Relationships : ConcurrentDictionary<string,Relationship list * Relationship list> }
     with
         static member Empty = { PrimaryKeys = ConcurrentDictionary<string,string list>(); Tables = ConcurrentDictionary<string,Table>(); Columns = ConcurrentDictionary<string,ColumnLookup>(); Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>() }
+        static member Load(filePath) =
+            use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
+            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<ContextSchema>)
+            ser.ReadObject(ms) :?> ContextSchema
+        member this.Save(filePath) =
+            use ms = new MemoryStream()
+            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
+            ser.WriteObject(ms, this);  
+            let json = ms.ToArray();  
+            File.AppendAllText(filePath, Encoding.UTF8.GetString(json, 0, json.Length))
 
 /// GroupResultItems is an item to create key-igrouping-structure.
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 

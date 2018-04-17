@@ -399,8 +399,12 @@ module Firebird =
                 return Set(cols |> Array.map (processReturnColumn reader))
         }
 
-type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =
-    let schemaCache = SchemaCache.Empty
+type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =
+    let contextSchema = 
+        if String.IsNullOrEmpty(contextSchemaPath) then 
+            ContextSchema.Empty
+        else
+            ContextSchema.Load(contextSchemaPath)
 
     let getTableNameForQuery (table:Table) =
         match quoteChar with
@@ -427,7 +431,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
             |> Array.unzip
 
         sb.Clear() |> ignore
-        let (hasPK, pks) =  schemaCache.PrimaryKeys.TryGetValue(entity.Table.Name)
+        let (hasPK, pks) =  contextSchema.PrimaryKeys.TryGetValue(entity.Table.Name)
 
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s) %s;" 
             (getTableNameForQuery entity.Table)
@@ -443,8 +447,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.Name)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.Name] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.Name)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.Name] else []
         sb.Clear() |> ignore
 
         match pk with
@@ -491,8 +495,8 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.Name)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.Name] else []
+        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.Name)
+        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.Name] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -554,6 +558,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
         member __.ExecuteSprocCommand(com,definition,retCols,values) = Firebird.executeSprocCommand com definition retCols values
         member __.ExecuteSprocCommandAsync(com,definition,retCols,values) = Firebird.executeSprocCommandAsync com definition retCols values
         member __.CreateTypeMappings(con) = Sql.connect con Firebird.createTypeMappings
+        member __.GetContextSchema() = contextSchema
 
         member __.GetTables(con,cs) =
             let dbName = if String.IsNullOrEmpty owner then con.Database else owner
@@ -568,15 +573,15 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                 use reader = Firebird.executeSql Firebird.createCommand (sprintf "select 'Dbo', trim(RDB$RELATION_NAME), 'BASE TABLE' from RDB$RELATIONS") con
                 [ while reader.Read() do
                     let table ={ Schema = reader.GetString(0); Name = reader.GetString(1).Trim(); Type=reader.GetString(2) }
-                    yield schemaCache.Tables.GetOrAdd(table.Name,table) ])
+                    yield contextSchema.Tables.GetOrAdd(table.Name,table) ])
 
         member __.GetPrimaryKey(table) =
-            match schemaCache.PrimaryKeys.TryGetValue table.Name with
+            match contextSchema.PrimaryKeys.TryGetValue table.Name with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match schemaCache.Columns.TryGetValue table.Name with
+            match contextSchema.Columns.TryGetValue table.Name with
             | (true,data) when data.Count > 0 -> data
             | _ ->
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
@@ -614,7 +619,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
-                                schemaCache.PrimaryKeys.AddOrUpdate(table.Name, [col.Name], fun key old -> 
+                                contextSchema.PrimaryKeys.AddOrUpdate(table.Name, [col.Name], fun key old -> 
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
@@ -625,10 +630,10 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                         | _ -> ()]
                     |> Map.ofList
                 con.Close()
-                schemaCache.Columns.AddOrUpdate(table.Name, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                contextSchema.Columns.AddOrUpdate(table.Name, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
-          schemaCache.Relationships.GetOrAdd(table.Name, fun name ->
+          contextSchema.Relationships.GetOrAdd(table.Name, fun name ->
             let baseQuery = @"SELECT
                                  trim(rc.RDB$CONSTRAINT_NAME) AS FK_CONSTRAINT_NAME
                                 ,trim(RC.RDB$RELATION_NAME) AS FK_TABLE_NAME
@@ -883,7 +888,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                         let cols = (getTable k).Name
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in contextSchema.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as %s" k col col
                                 else yield sprintf "%s.%s as %s_%s " k col k col
                         else
@@ -1027,7 +1032,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                        CommonTasks.checkKey contextSchema.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -1043,7 +1048,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
+                        e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.Name], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
 
@@ -1079,7 +1084,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                CommonTasks.checkKey contextSchema.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -1099,7 +1104,7 @@ type internal FirebirdProvider(resolutionPath, owner, referencedAssemblies, quot
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
+                                e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.Name], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
