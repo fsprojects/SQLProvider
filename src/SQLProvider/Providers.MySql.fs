@@ -337,11 +337,7 @@ module MySql =
         }
 
 type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, referencedAssemblies) as this =
-    let contextSchema = 
-        if String.IsNullOrEmpty(contextSchemaPath) then 
-            ContextSchema.Empty
-        else
-            ContextSchema.Load(contextSchemaPath)
+    let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -374,8 +370,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
 
         match pk with
@@ -422,8 +418,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = contextSchema.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then contextSchema.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -485,7 +481,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         member __.ExecuteSprocCommand(com,definition,retCols,values) = MySql.executeSprocCommand com definition retCols values
         member __.ExecuteSprocCommandAsync(com,definition,retCols,values) = MySql.executeSprocCommandAsync com definition retCols values
         member __.CreateTypeMappings(con) = Sql.connect con MySql.createTypeMappings
-        member __.GetContextSchema() = contextSchema
+        member __.GetSchemaCache() = schemaCache
 
         member __.GetTables(con,cs) =
             let databases = con.Database.Split(';', ',', ' ', '\n', '\r')
@@ -503,16 +499,16 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     use reader = com.ExecuteReader()
                     [ while reader.Read() do
                         let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
-                        yield contextSchema.Tables.GetOrAdd(table.FullName,table) ]
+                        yield schemaCache.Tables.GetOrAdd(table.FullName,table) ]
                 executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane (String.Join(",", dbName))) con)
 
         member __.GetPrimaryKey(table) =
-            match contextSchema.PrimaryKeys.TryGetValue table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
             | true, [v] -> Some v
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match contextSchema.Columns.TryGetValue table.FullName with
+            match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
@@ -549,7 +545,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
-                                contextSchema.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
                                     | "" -> old 
                                     | x -> match old with
@@ -560,10 +556,10 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         | _ -> ()]
                     |> Map.ofList
                 con.Close()
-                contextSchema.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
-          contextSchema.Relationships.GetOrAdd(table.FullName, fun name ->
+          schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
             let baseQuery = @"SELECT
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
                                 ,KCU1.TABLE_NAME AS FK_TABLE_NAME
@@ -811,7 +807,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in contextSchema.Columns.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
                                 else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col
                         else
@@ -955,7 +951,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey contextSchema.PrimaryKeys id e
+                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand con sb e fields
@@ -971,7 +967,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
+                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
 
@@ -1007,7 +1003,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                CommonTasks.checkKey contextSchema.PrimaryKeys id e
+                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
@@ -1027,7 +1023,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(contextSchema.PrimaryKeys.[e.Table.FullName], None)
+                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"

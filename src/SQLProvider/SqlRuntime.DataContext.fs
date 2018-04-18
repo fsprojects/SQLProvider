@@ -240,4 +240,4 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.SaveContextSchema(filePath) =
             use con = provider.CreateConnection(connectionString)
             providerCache
-            |> Seq.iter (fun prov -> prov.Value.GetContextSchema().Save(filePath))
+            |> Seq.iter (fun prov -> prov.Value.GetSchemaCache().Save(filePath))
