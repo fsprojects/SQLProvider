@@ -88,8 +88,8 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         [for t in prov.GetSchemaCache().Tables do
                             yield( t.Value.FullName,
                                 lazy 
-                                    let (_,cols) = prov.GetSchemaCache().Columns.TryGetValue("TODO")
-                                    let (_,rel) = prov.GetSchemaCache().Relationships.TryGetValue("TODO")
+                                    let cols = prov.GetSchemaCache().Columns.TryGetValue(t.Value.FullName) |> snd
+                                    let rel = prov.GetSchemaCache().Relationships.TryGetValue(t.Value.FullName) |> snd
                                     (cols,rel))]
 
         let sprocData = 
@@ -153,7 +153,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                let columns = 
                 match con with
                 | Some con -> prov.GetColumns(con,table)
-                | None -> prov.GetSchemaCache().Columns.TryGetValue("TODO") |> fun (_,col) -> col
+                | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> snd
                match prov.GetPrimaryKey table with
                | Some pkName ->
                    let entities =
@@ -174,7 +174,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    let propertyMap =
                       match con with
                       | Some con -> prov.GetColumns(con,table)
-                      | None -> prov.GetSchemaCache().Columns.TryGetValue("TODO") |> fun (_,x) -> x
+                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> snd
                       |> Seq.choose(fun col -> 
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
