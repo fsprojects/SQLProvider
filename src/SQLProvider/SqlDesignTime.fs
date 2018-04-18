@@ -54,28 +54,54 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let rootType, prov, con = 
             let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
             let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
-            let con = prov.CreateConnection conString
-            this.Disposing.Add(fun _ -> 
-                if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
-                    con.Dispose())
-            con.Open()
-            prov.CreateTypeMappings con
-            rootType, prov, con
+            match prov.GetSchemaCache().IsOffline with
+            | false ->
+                let con = prov.CreateConnection conString
+                this.Disposing.Add(fun _ -> 
+                    if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
+                        con.Dispose())
+                con.Open()
+                prov.CreateTypeMappings con
+                rootType, prov, Some con
+            | true ->
+            rootType, prov, None
         
-        let tables = lazy prov.GetTables(con,caseSensitivity)
+        let tables = 
+            lazy
+                match con with
+                | Some con -> prov.GetTables(con,caseSensitivity)
+                | None -> prov.GetSchemaCache().Tables |> Seq.map (fun kv -> kv.Value) |> Seq.toList
+
         let tableColumns =
             lazy
-                dict
-                  [for t in tables.Force() do
-                    yield( t.FullName, 
-                        lazy
-                            let cols = prov.GetColumns(con,t)
-                            let rel = prov.GetRelationships(con,t)
-                            (cols,rel))]
-        let sprocData = lazy prov.GetSprocs con
+                match con with
+                | Some con -> 
+                    dict
+                        [for t in tables.Force() do
+                            yield( t.FullName, 
+                                lazy
+                                    let cols = prov.GetColumns(con,t)
+                                    let rel = prov.GetRelationships(con,t)
+                                    (cols,rel))]
+                | None -> 
+                    dict 
+                        [for t in prov.GetSchemaCache().Tables do
+                            yield( t.Value.FullName,
+                                lazy 
+                                    let (_,cols) = prov.GetSchemaCache().Columns.TryGetValue("TODO")
+                                    let (_,rel) = prov.GetSchemaCache().Relationships.TryGetValue("TODO")
+                                    (cols,rel))]
+
+        let sprocData = 
+            lazy
+                match con with
+                | Some con -> prov.GetSprocs con
+                | None -> []
 
         let getSprocReturnColumns (sprocDefinition: CompileTimeSprocDefinition) param =
-            (sprocDefinition.ReturnColumns con param)
+            match con with
+            | Some con -> (sprocDefinition.ReturnColumns con param)
+            | None -> []
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, isErased=true)
@@ -87,15 +113,18 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 dict [ let tablesforced = tables.Force()
                        if tablesforced.Length = 0 then
                             let hint =
-                                match caseSensitivity with
-                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
-                                        when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...> \r\nConnection: " + connnectionString
-                                | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
-                                        when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
-                                    ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connnectionString
-                                | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connnectionString
-                                | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
+                                match con with
+                                | Some con ->
+                                    match caseSensitivity with
+                                    | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
+                                            when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
+                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...> \r\nConnection: " + connnectionString
+                                    | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
+                                            when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
+                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connnectionString
+                                    | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connnectionString
+                                    | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
+                                | None -> ""
                             let possibleError = "Tables not found" + hint
                             let errInfo = 
                                 ProvidedProperty("PossibleError", typeof<String>, getterCode = fun _ -> <@@ possibleError @@>)
@@ -121,23 +150,31 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             t.AddXmlDocDelayed(fun _ -> sprintf "<summary>A sample of %s individuals from the SQL object as supplied in the static parameters</summary>" table.Name)
             t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
             t.AddMembersDelayed( fun _ ->
-               let columns = prov.GetColumns(con,table)
+               let columns = 
+                match con with
+                | Some con -> prov.GetColumns(con,table)
+                | None -> prov.GetSchemaCache().Columns.TryGetValue("TODO") |> fun (_,col) -> col
                match prov.GetPrimaryKey table with
                | Some pkName ->
                    let entities =
-                        use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
-                        if con.State <> ConnectionState.Open then con.Open()
-                        use reader = com.ExecuteReader()
-                        let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName, columns, reader)
-                        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
-                        ret
+                        match con with
+                        | Some con ->
+                            use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
+                            if con.State <> ConnectionState.Open then con.Open()
+                            use reader = com.ExecuteReader()
+                            let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName, columns, reader)
+                            if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                            ret
+                        | None -> [||]
                    if Array.isEmpty entities then [] else
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
                    // of the property and the primary key e.g. ``1, Dennis The Squirrel``
                    let buildFieldName = SchemaProjections.buildFieldName
                    let propertyMap =
-                      prov.GetColumns(con,table)
+                      match con with
+                      | Some con -> prov.GetColumns(con,table)
+                      | None -> prov.GetSchemaCache().Columns.TryGetValue("TODO") |> fun (_,x) -> x
                       |> Seq.choose(fun col -> 
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
@@ -244,12 +281,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
-                        let nfo = c.TypeInfo
-                        prop.AddXmlDocDelayed(fun () -> 
-                            let typeInfo = match nfo with None -> "" | Some x -> x.ToString() 
-                            let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
-                            let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                            sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
+                        match con with
+                        | Some con ->
+                            let nfo = c.TypeInfo
+                            prop.AddXmlDocDelayed(fun () -> 
+                                let typeInfo = match nfo with None -> "" | Some x -> x.ToString() 
+                                let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
+                                let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                                sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
+                        | None -> ()
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
@@ -378,12 +418,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | Empty -> createdTypes
 
         let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
-            match sprocs with
-            | [] -> 
-                Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
-                |> Map.toSeq
-                |> Seq.map snd
-            | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
+            match con with
+            | Some con ->
+                match sprocs with
+                | [] -> 
+                    Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
+                    |> Map.toSeq
+                    |> Seq.map snd
+                | sproc::rest -> generateTypeTree (Some con) (walkSproc con [] None createdTypes sproc) rest
+            | None -> Seq.empty
 
         serviceType.AddMembersDelayed( fun () ->
             let schemaMap = new System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
@@ -397,6 +440,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ 
               let containers = generateTypeTree con Map.empty (sprocData.Force())
               yield! containers |> Seq.cast<MemberInfo>
+
               for (KeyValue(key,(entityType,desc,_,schema))) in baseTypes.Force() do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
@@ -503,10 +547,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                 let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
                 let tname = ct.Name
-                prop.AddXmlDocDelayed (fun () -> 
-                    let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
-                    let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                    sprintf "<summary>%s %s %s</summary>" details separator desc)
+                match con with
+                | Some con ->
+                    prop.AddXmlDocDelayed (fun () -> 
+                        let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
+                        let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                        sprintf "<summary>%s %s %s</summary>" details separator desc)
+                | None -> ()
                 schemaType.AddMember ct
                 schemaType.AddMember prop
 
@@ -639,7 +686,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       meth
                   )
             ])
-        if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+        match con with
+        | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+        | None -> ()
         rootType
     
     let paramSqlType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly, FSHARP_DATA_SQL, "SqlDataProvider", Some(typeof<obj>), isErased=true)

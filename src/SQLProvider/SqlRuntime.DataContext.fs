@@ -35,14 +35,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
     let provider =
         providerCache.GetOrAdd(typeName,
             fun typeName -> 
-                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
-                use con = prov.CreateConnection(connectionString)
-                con.Open()
-                // create type mappings and also trigger the table info read so the provider has
-                // the minimum base set of data available
-                prov.CreateTypeMappings(con)
-                prov.GetTables(con,caseSensitivity) |> ignore
-                if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
+                if not (prov.GetSchemaCache().IsOffline) then
+                    use con = prov.CreateConnection(connectionString)
+                    con.Open()
+                    // create type mappings and also trigger the table info read so the provider has
+                    // the minimum base set of data available
+                    prov.CreateTypeMappings(con)
+                    prov.GetTables(con,caseSensitivity) |> ignore
+                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
     let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
@@ -76,10 +77,18 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.CreateConnection() = provider.CreateConnection(connectionString)
 
         member __.GetPrimaryKeyDefinition(tableName) =
-            use con = provider.CreateConnection(connectionString)
-            provider.GetTables(con, caseSensitivity)
-            |> List.tryFind (fun t -> t.Name = tableName)
-            |> Option.bind (fun t -> provider.GetPrimaryKey(t))
+            let schemaCache = provider.GetSchemaCache()
+            match schemaCache.IsOffline with
+            | false ->
+                use con = provider.CreateConnection(connectionString)
+                provider.GetTables(con, caseSensitivity)
+                |> List.tryFind (fun t -> t.Name = tableName)
+                |> Option.bind (fun t -> provider.GetPrimaryKey(t))
+            | true ->
+                schemaCache.Tables.TryGetValue(tableName)
+                |> function
+                    | true, t -> provider.GetPrimaryKey(t)
+                    | false, _ -> None
             |> (fun x -> defaultArg x "")
 
         member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
@@ -238,6 +247,5 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
 
         member __.SaveContextSchema(filePath) =
-            use con = provider.CreateConnection(connectionString)
             providerCache
             |> Seq.iter (fun prov -> prov.Value.GetSchemaCache().Save(filePath))
