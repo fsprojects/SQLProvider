@@ -5,14 +5,12 @@ open System.Data
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
-open ProviderImplementation.ProvidedTypes
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Runtime
 open FSharp.Data.Sql.Common
-open ProviderImplementation
-open ProviderImplementation.ProvidedTypes
 open FSharp.Data.Sql
+open ProviderImplementation.ProvidedTypes
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly = 
@@ -74,22 +72,24 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let tableColumns =
             lazy
-                match con with
-                | Some con -> 
-                    dict
-                        [for t in tables.Force() do
-                            yield( t.FullName, 
-                                lazy
+                dict
+                    [for t in tables.Force() do
+                        yield( t.FullName, 
+                            lazy
+                                match con with
+                                | Some con ->
                                     let cols = prov.GetColumns(con,t)
                                     let rel = prov.GetRelationships(con,t)
-                                    (cols,rel))]
-                | None -> 
-                    dict 
-                        [for t in prov.GetSchemaCache().Tables do
-                            yield( t.Value.FullName,
-                                lazy 
-                                    let cols = prov.GetSchemaCache().Columns.TryGetValue(t.Value.FullName) |> snd
-                                    let rel = prov.GetSchemaCache().Relationships.TryGetValue(t.Value.FullName) |> snd
+                                    (cols,rel)
+                                | None -> 
+                                    let cols = 
+                                        match prov.GetSchemaCache().Columns.TryGetValue(t.FullName) with
+                                        | true,cols -> cols
+                                        | false,_ -> Map.empty
+                                    let rel =
+                                        match prov.GetSchemaCache().Relationships.TryGetValue(t.FullName) with
+                                        | true,rel -> rel
+                                        | false,_ -> ([],[])
                                     (cols,rel))]
 
         let sprocData = 
@@ -153,7 +153,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                let columns = 
                 match con with
                 | Some con -> prov.GetColumns(con,table)
-                | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> snd
+                | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
                match prov.GetPrimaryKey table with
                | Some pkName ->
                    let entities =
@@ -174,7 +174,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                    let propertyMap =
                       match con with
                       | Some con -> prov.GetColumns(con,table)
-                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> snd
+                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
                       |> Seq.choose(fun col -> 
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
