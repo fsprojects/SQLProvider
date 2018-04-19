@@ -477,7 +477,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                       typeof<string*obj>,
                                       args
                                       |> Seq.toList
-                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name 
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name 
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
                               let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
