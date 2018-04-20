@@ -28,6 +28,7 @@ module internal DesignTimeCache =
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces(config)
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
+    let mySaveLock = new Object();
     
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
@@ -572,7 +573,30 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
-              yield ProvidedMethod("SaveContextSchema",[ProvidedParameter("filePath", typeof<string>)],typeof<unit>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SaveContextSchema((%%args.[1] : string)) @@>) :> MemberInfo
+              
+              let saveResponse = ProvidedTypeDefinition("SaveContextResponse",None, isErased=true)
+              saveResponse.AddMember(ProvidedConstructor([], empty))
+              saveResponse.AddMemberDelayed(fun () -> 
+                  let result = 
+                      if not(String.IsNullOrEmpty contextSchemaPath) then
+                          try
+                              lock mySaveLock (fun() ->
+                                  prov.GetSchemaCache().Save contextSchemaPath
+                                  "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
+                              )
+                          with
+                          | e -> "Save failed: " + e.Message
+                      else "ContextSchemaPath is not defined"
+                  ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
+              )
+              let m = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
+              m.AddXmlDocComputed(fun () -> 
+                  if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
+                  else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema() to save the schema at design time."
+                  )
+              serviceType.AddMember saveResponse
+              yield m :> MemberInfo
+
              ] @ [
                 for KeyValue(name,pt) in schemaMap do
                     yield pt :> MemberInfo
