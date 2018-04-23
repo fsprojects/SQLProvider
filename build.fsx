@@ -189,27 +189,25 @@ Target "SetupMSSQL2008R2" (fun _ ->
           if attempt < 30 then runCmd' (attempt + 1)
 
       runCmd' 0
-              
-    let runScript lines =
-      let runCache cache = 
-        let lines = "COMMIT" :: cache |> List.rev
-        runCmd (String.concat "\r\n" lines)
 
-      let finalCache = 
-        lines |> Seq.fold (fun cache (line : string) ->
-          match cache with 
-          | [] -> [ "BEGIN TRANSACTION" ]
-          | xs ->
-             match (line.Trim().ToUpper()) with 
-             | "GO" -> 
-                runCache cache
-                []
-             | sql ->
-                sql :: cache
-        ) []
-        
-      runCache finalCache
 
+
+    let runScript fileLines =            
+            
+      // We replace the "GO"s with "COMMIT", yielding the individual SQL commands
+      let rec cmdGen cache (lines : string list) =
+        seq {
+          match cache, lines with
+          | [], [] -> ()
+          | [], ls -> yield! cmdGen [ "BEGIN TRANSACTION" ] ls
+          | cmds, [] -> yield "COMMIT" :: cmds
+          | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield "COMMIT" :: cmds; yield! cmdGen [] ls
+          | cmds, l :: ls -> yield! cmdGen (l :: cmds) ls
+        }      
+
+      for cmd in cmdGen [] (fileLines |> Seq.toList) do
+        let query = cmd |> List.rev |> String.concat "\r\n"
+        runCmd query
 
     let testDbName = "sqlprovider"
     printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
