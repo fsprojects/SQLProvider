@@ -181,7 +181,7 @@ Target "SetupMSSQL2008R2" (fun _ ->
         try
           use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
           conn.Open()
-          use cmd = new Data.SqlClient.SqlCommand(query, conn)
+          use cmd = new Data.SqlClient.SqlCommand(sqlLine, conn)
           cmd.ExecuteNonQuery() |> ignore 
         with e -> 
           printfn "Connection attempt %i: %A" attempt e
@@ -190,6 +190,27 @@ Target "SetupMSSQL2008R2" (fun _ ->
 
       runCmd' 0
               
+    let runScript lines =
+      let runCache cache = 
+        let lines = "COMMIT" :: cache |> List.rev
+        runCmd (String.concat "\r\n" lines)
+
+      let finalCache = 
+        lines |> Seq.fold (fun cache (line : string) ->
+          match cache with 
+          | [] -> [ "BEGIN TRANSACTION" ]
+          | xs ->
+             match (line.Trim().ToUpper()) with 
+             | "GO" -> 
+                runCache cache
+                []
+             | sql ->
+                sql :: cache
+        ) []
+        
+      runCache finalCache
+
+
     let testDbName = "sqlprovider"
     printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
     runCmd (sprintf "CREATE DATABASE %s" testDbName)
@@ -197,8 +218,8 @@ Target "SetupMSSQL2008R2" (fun _ ->
 
     (!! "src/DatabaseScripts/MSSQLServer/*.sql")
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
-    |> Seq.map IO.File.ReadAllText      
-    |> Seq.iter runCmd
+    |> Seq.map IO.File.ReadAllLines
+    |> Seq.iter runScript
 )
 
 // --------------------------------------------------------------------------------------
