@@ -117,7 +117,7 @@ Target "BuildCore" (fun _ ->
 )
 
 // --------------------------------------------------------------------------------------
-// Set up a PostgreSQL database in the CI pipeline to run Postgres tests
+// Set up a PostgreSQL database in the CI pipeline to run tests
 
 Target "SetupPostgreSQL" (fun _ ->
     let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
@@ -159,7 +159,7 @@ Target "SetupPostgreSQL" (fun _ ->
 )
 
 // --------------------------------------------------------------------------------------
-// Set up a MS SQL Server 2008R2 database in the AppVeyor pipeline to run Postgres tests
+// Set up a MS SQL Server 2008R2 database in the AppVeyor pipeline to run tests
 
 Target "SetupMSSQL2008R2" (fun _ ->
     let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()
@@ -176,7 +176,7 @@ Target "SetupMSSQL2008R2" (fun _ ->
         
   
     let runCmd query = 
-      // We wait up to 30 seconds for PostgreSQL to be initialized
+      // We wait up to 30 seconds for MSSQL to be initialized
       let rec runCmd' attempt = 
         try
           use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
