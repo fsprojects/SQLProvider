@@ -1,12 +1,30 @@
-﻿#I @"../../../bin/net451"
-#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
+﻿#if INTERACTIVE
+#I @"../../bin/net451"
+#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
+#I @"../../packages/scripts/Newtonsoft.Json/lib/net45"
+#r @"../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+#else
+module SqlServerTests
+#endif
+
+#if LOCALBUILD
+#else
+
+open System
+open FSharp.Data.Sql
+open System.Data
+open NUnit.Framework
+
+#if APPVEYOR
+let [<Literal>] connStr = "Server=(local)\SQL2008R2SP2;Database=master;UID=sa;PWD=Password12!; Initial Catalog=HR;"
+#else
+let [<Literal>] connStr = "Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+#endif 
+#endif
 
 open System
 open FSharp.Data.Sql
 
-[<Literal>]
-let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
-//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
@@ -110,9 +128,6 @@ let pagingTest =
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
-
-#I @"../../../packages/scripts/Newtonsoft.Json/lib/net45"
-#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
 
