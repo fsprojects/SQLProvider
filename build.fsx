@@ -181,7 +181,7 @@ Target "SetupMSSQL2008R2" (fun _ ->
         try
           use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
           conn.Open()
-          use cmd = new Data.SqlClient.SqlCommand(sqlLine, conn)
+          use cmd = new Data.SqlClient.SqlCommand(query, conn)
           cmd.ExecuteNonQuery() |> ignore 
         with e -> 
           printfn "Connection attempt %i: %A" attempt e
