@@ -603,7 +603,7 @@ and internal SchemaCache =
             let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
             { (ser.ReadObject(ms) :?> SchemaCache) with IsOffline = true }
         static member LoadOrEmpty(filePath) =
-            if String.IsNullOrEmpty(filePath) then 
+            if String.IsNullOrEmpty(filePath) || (not(System.IO.File.Exists filePath)) then 
                 SchemaCache.Empty
             else
                 SchemaCache.Load(filePath)
