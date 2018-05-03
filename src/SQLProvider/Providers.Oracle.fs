@@ -249,7 +249,7 @@ module internal Oracle =
                 |> Option.map (fun m ->
                     { Name = columnName
                       TypeMapping = m
-                      IsPrimaryKey = primaryKeys.Values |> Seq.exists (fun x -> x = [columnName])
+                      IsPrimaryKey = primaryKeys.TryGetValue(table.Name) |> function | true, pks -> pks = [columnName] | false, _ -> false
                       IsNullable = nullable
                       TypeInfo = Some typeinfo }
                 ))
