@@ -1,3 +1,8 @@
+### 1.1.42 - 03.05.2018
+* Context schema cache support PR #545
+* Improved option type support in convertTypes. PR #544
+* Fixed broken overload of Create-method #545
+
 ### 1.1.41 - 16.04.2018
 * Oracle: Added support for TIMESTAMP with precision specification. 
 * Generate Create method params: nullable / default values / identity columns
