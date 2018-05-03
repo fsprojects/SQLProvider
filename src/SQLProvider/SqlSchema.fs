@@ -97,12 +97,6 @@ and CompileTimePackageDefinition =
       Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
     }
 
-type PrimaryKey =
-    { Name: string
-      Table: string
-      Column: string list
-      IndexName: string }
-
 type Table =
     { Schema: string
       Name: string

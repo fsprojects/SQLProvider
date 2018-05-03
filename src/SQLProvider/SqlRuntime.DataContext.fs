@@ -13,21 +13,21 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote sqliteLibrary =
+    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary =
         match vendor with
-        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(tableNames) :> ISqlProvider
-        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) :> ISqlProvider
-        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
-        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, owner, referencedAssemblies) :> ISqlProvider
-        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) :> ISqlProvider
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
 #if !NETSTANDARD
-        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider() :> ISqlProvider
-        | DatabaseProviderTypes.ODBC -> OdbcProvider(odbcquote) :> ISqlProvider
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(contextSchemaPath) :> ISqlProvider
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
 #endif
-        | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
+        | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect) =
+type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
     let myLock2 = new Object();
@@ -35,14 +35,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
     let provider =
         providerCache.GetOrAdd(typeName,
             fun typeName -> 
-                let prov = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames odbcquote sqliteLibrary
-                use con = prov.CreateConnection(connectionString)
-                con.Open()
-                // create type mappings and also trigger the table info read so the provider has
-                // the minimum base set of data available
-                prov.CreateTypeMappings(con)
-                prov.GetTables(con,caseSensitivity) |> ignore
-                if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
+                if not (prov.GetSchemaCache().IsOffline) then
+                    use con = prov.CreateConnection(connectionString)
+                    con.Open()
+                    // create type mappings and also trigger the table info read so the provider has
+                    // the minimum base set of data available
+                    prov.CreateTypeMappings(con)
+                    prov.GetTables(con,caseSensitivity) |> ignore
+                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov)
 
     let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
@@ -76,10 +77,18 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.CreateConnection() = provider.CreateConnection(connectionString)
 
         member __.GetPrimaryKeyDefinition(tableName) =
-            use con = provider.CreateConnection(connectionString)
-            provider.GetTables(con, caseSensitivity)
-            |> List.tryFind (fun t -> t.Name = tableName)
-            |> Option.bind (fun t -> provider.GetPrimaryKey(t))
+            let schemaCache = provider.GetSchemaCache()
+            match schemaCache.IsOffline with
+            | false ->
+                use con = provider.CreateConnection(connectionString)
+                provider.GetTables(con, caseSensitivity)
+                |> List.tryFind (fun t -> t.Name = tableName)
+                |> Option.bind (fun t -> provider.GetPrimaryKey(t))
+            | true ->
+                schemaCache.Tables.TryGetValue(tableName)
+                |> function
+                    | true, t -> provider.GetPrimaryKey(t)
+                    | false, _ -> None
             |> (fun x -> defaultArg x "")
 
         member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
@@ -236,3 +245,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             new SqlEntity(this, tableName, columns)
 
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
+
+        member __.SaveContextSchema(filePath) =
+            providerCache
+            |> Seq.iter (fun prov -> prov.Value.GetSchemaCache().Save(filePath))

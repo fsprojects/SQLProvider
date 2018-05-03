@@ -217,14 +217,9 @@ module internal Oracle =
                    where c.constraint_type = 'P' and a.table_name not like 'BIN$%%'
                    %s""" whereTableName
         |> read conn (fun row -> 
-            let pkName     = Sql.dbUnbox row.[0]
             let tableName  = Sql.dbUnbox row.[1]
             let columnName = [Sql.dbUnbox row.[2]]
-            let indexName  = Sql.dbUnbox row.[3]
-            tableName, { PrimaryKey.Name = pkName
-                         Table = tableName
-                         Column = columnName
-                         IndexName = indexName })
+            tableName, columnName)
         |> dict
 
     let getTables tableNames conn = 
@@ -258,13 +253,13 @@ module internal Oracle =
                     else columnType + "(" + datalength + ")"
                 findDbType columnType
                 |> Option.map (fun m ->
-                    let pkColumn = primaryKeys.Values |> Seq.exists (fun x -> x.Table = table.Name && x.Column = [columnName])
+                    let pkColumn = primaryKeys.TryGetValue(table.Name) |> function | true, pks -> pks = [columnName] | false, _ -> false
                     { Name = columnName
                       TypeMapping = m
                       IsPrimaryKey = pkColumn
                       IsNullable = nullable
                       IsAutonumber = pkColumn
-                      HasDefault = false // Sql.dbUnbox row.[4]
+                      HasDefault = row.[4] <> null
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id
@@ -282,7 +277,7 @@ module internal Oracle =
                 let name = Sql.dbUnbox row.[4]
                 match primaryKeys.TryGetValue(table) with
                 | true, pks ->
-                    match pks.Column, foreignKeyCols.TryFind name with
+                    match pks, foreignKeyCols.TryFind name with
                     | [pk], Some(fk) ->
                          { Name = name
                            PrimaryTable = Table.CreateFullName(Sql.dbUnbox row.[1],Sql.dbUnbox row.[2])
@@ -497,15 +492,12 @@ module internal Oracle =
                 return Set(returnValues)
         }
 
-type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableNames) =
-    let mutable primaryKeyColumn : IDictionary<string,PrimaryKey> = null
-    let relationshipCache = new ConcurrentDictionary<string, Relationship list * Relationship list>()
-    let columnCache = new ConcurrentDictionary<string,ColumnLookup>()
-    let mutable tableCache : Table list = []
+type internal OracleProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, tableNames) =
+    let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
 
     let isPrimaryKey tableName columnName = 
-        match primaryKeyColumn.TryGetValue tableName with
-        | true, pk when pk.Column = [columnName] -> true
+        match schemaCache.PrimaryKeys.TryGetValue tableName with
+        | true, pk when pk = [columnName] -> true
         | _ -> false
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
@@ -538,9 +530,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         if changedColumns |> List.exists (isPrimaryKey entity.Table.Name) 
         then failwith "Error - you cannot change the primary key of an entity."
 
-        let pk = primaryKeyColumn.[entity.Table.Name]
+        let pk = schemaCache.PrimaryKeys.[entity.Table.Name]
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk.Column with
+            match entity.GetPkColumnOption<obj> pk with
             | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
             | v -> v
 
@@ -558,7 +550,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
             |> List.toArray
             |> Array.unzip
 
-        match pk.Column with
+        match pk with
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE %s SET (%s) = (SELECT %s FROM DUAL) WHERE "
@@ -577,14 +569,14 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
 
     let createDeleteCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let pk = primaryKeyColumn.[entity.Table.Name]
+        let pk = schemaCache.PrimaryKeys.[entity.Table.Name]
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk.Column with
+            match entity.GetPkColumnOption<obj> pk with
             | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
             | v -> v
 
-        match pk.Column with
+        match pk with
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
@@ -645,35 +637,35 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
         member __.CreateCommandParameter(param, value) = Oracle.createCommandParameter param value
         member __.ExecuteSprocCommand(con, param ,retCols, values:obj array) = Oracle.executeSprocCommand con param retCols values
         member __.ExecuteSprocCommandAsync(con, param ,retCols, values:obj array) = Oracle.executeSprocCommandAsync con param retCols values
+        member __.GetSchemaCache() = schemaCache
 
         member __.CreateTypeMappings(con) =
             Sql.connect con (fun con ->
                 Oracle.createTypeMappings con
-                primaryKeyColumn <- (Oracle.getPrimaryKeys tableNames con))
+                Oracle.getPrimaryKeys tableNames con
+                |> Seq.iter (fun pk -> schemaCache.PrimaryKeys.GetOrAdd(pk.Key, pk.Value) |> ignore))
 
         member __.GetTables(con,_) =
-               match tableCache with
-               | [] ->
-                    let tables = Sql.connect con (Oracle.getTables tableNames)
-                    tableCache <- tables
-                    tables
-                | a -> a
+               if schemaCache.Tables.IsEmpty then
+                    Sql.connect con (Oracle.getTables tableNames)
+                    |> List.map (fun t -> schemaCache.Tables.GetOrAdd(t.FullName, t))
+               else schemaCache.Tables |> Seq.map (fun t -> t.Value) |> Seq.toList
 
         member __.GetPrimaryKey(table) =
-            match primaryKeyColumn.TryGetValue table.Name with
-            | true, v -> match v.Column with [x] -> Some(x) | _ -> None
+            match schemaCache.PrimaryKeys.TryGetValue table.Name with
+            | true, v -> match v with [x] -> Some(x) | _ -> None
             | _ -> None
 
         member __.GetColumns(con,table) =
-            match columnCache.TryGetValue table.FullName  with
+            match schemaCache.Columns.TryGetValue table.FullName  with
             | true, cols when cols.Count > 0 -> cols
             | _ ->
-                let cols = Sql.connect con (Oracle.getColumns primaryKeyColumn table)
-                columnCache.GetOrAdd(table.FullName, cols)
+                let cols = Sql.connect con (Oracle.getColumns schemaCache.PrimaryKeys table)
+                schemaCache.Columns.GetOrAdd(table.FullName, cols)
 
         member __.GetRelationships(con,table) =
-            relationshipCache.GetOrAdd(table.FullName, fun name ->
-                    let rels = Sql.connect con (Oracle.getRelationships primaryKeyColumn table.Name)
+            schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
+                    let rels = Sql.connect con (Oracle.getRelationships schemaCache.PrimaryKeys table.Name)
                     rels)
 
         member __.GetSprocs(con) = Sql.connect con Oracle.getSprocs
@@ -874,7 +866,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
-                            for col in columnCache.[cols] |> Seq.map (fun c -> c.Key) do
+                            for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
                                 if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
                                 else yield sprintf "%s.%s as \"%s.%s\"" k col k col
                         else
@@ -1018,9 +1010,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        if primaryKeyColumn.ContainsKey e.Table.Name then
-                            match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
-                            | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
+                        if schemaCache.PrimaryKeys.ContainsKey e.Table.Name then
+                            match e.GetPkColumnOption schemaCache.PrimaryKeys.[e.Table.Name] with
+                            | [] ->  e.SetPkColumnSilent(schemaCache.PrimaryKeys.[e.Table.Name], id)
                             | _ -> () // if the primary key exists, do nothing
                                             // this is because non-identity columns will have been set
                                             // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1039,7 +1031,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
+                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
                 if scope<>null then scope.Complete()
@@ -1075,9 +1067,9 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
-                                if primaryKeyColumn.ContainsKey e.Table.Name then
-                                    match e.GetPkColumnOption primaryKeyColumn.[e.Table.Name].Column with
-                                    | [] ->  e.SetPkColumnSilent(primaryKeyColumn.[e.Table.Name].Column, id)
+                                if schemaCache.PrimaryKeys.ContainsKey e.Table.Name then
+                                    match e.GetPkColumnOption schemaCache.PrimaryKeys.[e.Table.Name] with
+                                    | [] ->  e.SetPkColumnSilent(schemaCache.PrimaryKeys.[e.Table.Name], id)
                                     | _ -> () // if the primary key exists, do nothing
                                                     // this is because non-identity columns will have been set
                                                     // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1100,7 +1092,7 @@ type internal OracleProvider(resolutionPath, owner, referencedAssemblies, tableN
                                     cmd.CommandTimeout <- timeout.Value
                                 do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(primaryKeyColumn.[e.Table.Name].Column, None)
+                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
