@@ -68,35 +68,66 @@ module internal Utilities =
         parseAggregates' fieldNotat fieldNotationAlias query []
 
     let rec convertTypes (itm:obj) (returnType:Type) =
-        if returnType.Name.StartsWith("Option") && returnType.GenericTypeArguments.Length = 1 then
+        if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
             if itm = null then None |> box
-            else Option.Some(convertTypes itm (returnType.GenericTypeArguments.[0]) |> unbox) |> box
+            else
+            match convertTypes itm (returnType.GenericTypeArguments.[0]) with
+            | :? String as t -> Option.Some t |> box
+            | :? Int32 as t -> Option.Some t |> box
+            | :? Decimal as t -> Option.Some t |> box
+            | :? Int64 as t -> Option.Some t |> box
+            | :? Single as t -> Option.Some t |> box
+            | :? UInt32 as t -> Option.Some t |> box
+            | :? Double as t -> Option.Some t |> box
+            | :? UInt64 as t -> Option.Some t |> box
+            | :? Int16 as t -> Option.Some t |> box
+            | :? UInt16 as t -> Option.Some t |> box
+            | :? DateTime as t -> Option.Some t |> box
+            | :? Boolean as t -> Option.Some t |> box
+            | :? Byte as t -> Option.Some t |> box
+            | :? SByte as t -> Option.Some t |> box
+            | :? Char as t -> Option.Some t |> box
+            | :? DateTimeOffset as t -> Option.Some t |> box
+            | :? TimeSpan as t -> Option.Some t |> box
+            | t -> Option.Some t |> box
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then
             if itm = null then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])
         else
         match itm, returnType with
+        | :? string as s, t when t = typeof<String> -> s |> box
         | :? string as s, t when t = typeof<Int32> && Int32.TryParse s |> fst -> Int32.Parse s |> box
         | :? string as s, t when t = typeof<Decimal> && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
         | :? string as s, t when t = typeof<Int64> && Int64.TryParse s |> fst -> Int64.Parse s |> box
+        | :? string as s, t when t = typeof<Single> && Single.TryParse s |> fst -> Single.Parse s |> box
         | :? string as s, t when t = typeof<UInt32> && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
+        | :? string as s, t when t = typeof<Double> && Double.TryParse s |> fst -> Double.Parse s |> box
         | :? string as s, t when t = typeof<UInt64> && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
-        | :? string as s, t when t = typeof<float32> && Single.TryParse s |> fst -> Single.Parse s |> box
         | :? string as s, t when t = typeof<Int16> && Int16.TryParse s |> fst -> Int16.Parse s |> box
+        | :? string as s, t when t = typeof<UInt16> && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
+        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
         | :? string as s, t when t = typeof<Boolean> && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
+        | :? string as s, t when t = typeof<Byte> && Byte.TryParse s |> fst -> Byte.Parse s |> box
+        | :? string as s, t when t = typeof<SByte> && SByte.TryParse s |> fst -> SByte.Parse s |> box
+        | :? string as s, t when t = typeof<Char> && Char.TryParse s |> fst -> Char.Parse s |> box
+        | :? string as s, t when t = typeof<DateTimeOffset> && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
+        | :? string as s, t when t = typeof<TimeSpan> && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
         | _ -> 
-            if returnType = typeof<Int32> then Convert.ToInt32 itm |> box
-            elif returnType = typeof<decimal> then Convert.ToDecimal itm |> box
+            if returnType = typeof<String> then Convert.ToString itm |> box
+            elif returnType = typeof<Int32> then Convert.ToInt32 itm |> box
+            elif returnType = typeof<Decimal> then Convert.ToDecimal itm |> box
             elif returnType = typeof<Int64> then Convert.ToInt64 itm |> box
-            elif returnType = typeof<float32> then Convert.ToSingle itm |> box
+            elif returnType = typeof<Single> then Convert.ToSingle itm |> box
             elif returnType = typeof<UInt32> then Convert.ToUInt32 itm |> box
-            elif returnType = typeof<double> then Convert.ToDouble itm |> box
+            elif returnType = typeof<Double> then Convert.ToDouble itm |> box
             elif returnType = typeof<UInt64> then Convert.ToUInt64 itm |> box
             elif returnType = typeof<Int16> then Convert.ToInt16 itm |> box
             elif returnType = typeof<UInt16> then Convert.ToUInt16 itm |> box
             elif returnType = typeof<DateTime> then Convert.ToDateTime itm |> box
             elif returnType = typeof<Boolean> then Convert.ToBoolean itm |> box
+            elif returnType = typeof<Byte> then Convert.ToByte itm |> box
+            elif returnType = typeof<SByte> then Convert.ToSByte itm |> box
+            elif returnType = typeof<Char> then Convert.ToChar itm |> box
             else itm |> box
 
     /// Standard SQL. Provider spesific overloads can be done before this.
