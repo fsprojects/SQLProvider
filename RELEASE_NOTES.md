@@ -1,3 +1,12 @@
+### 1.1.41 - 16.04.2018
+* Oracle: Added support for TIMESTAMP with precision specification. 
+* Generate Create method params: nullable / default values / identity columns
+* Fixed incorrect table alias on canonical join issue #533
+* Reverted some component updateds to address build issue and .Net standard issue
+
+### 1.1.40 - 10.04.2018
+* Fix to allow async procedure calls without return values #535
+
 ### 1.1.39 - 28.03.2018
 * Allow specifying multiple schemas for PostgreSQL / MySql, PR #530
 

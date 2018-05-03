@@ -32,11 +32,22 @@ let sqliteConnectionString =
 ### ConnectionStringName
 
 Instead of storing the connection string in the source code / `fsx` script, you
-can store values in the `App.config` file.  This is the name of the
-connectionString key/value pair stored in App.config 
+can store values in the `App.config` file:
+
+```xml
+<connectionStrings>  
+  <add name="MyConnectionString"   
+   providerName="System.Data.ProviderName"   
+   connectionString="Valid Connection String;" />  
+</connectionStrings>
+```
+
+Another, usually easier option is to give a runtime connection string as parameter for `.GetDataContext(...)` method.
+
+In your source file:
 *)
 
-let connexStringName = "MyDatabase"
+let connexStringName = "MyConnectionString"
 
 (**
 ### DatabaseVendor

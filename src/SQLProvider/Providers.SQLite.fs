@@ -437,11 +437,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
+                            let pkColumn = if reader.GetBoolean(5) then true else false
                             let col =
                                 { Column.Name = reader.GetString(1);
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
-                                  IsPrimaryKey = if reader.GetBoolean(5) then true else false
+                                  IsPrimaryKey = pkColumn
+                                  IsAutonumber = pkColumn
+                                  HasDefault = not (reader.IsDBNull 4)
                                   TypeInfo = Some dtv }
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

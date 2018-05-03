@@ -1632,6 +1632,32 @@ let ``simple canonical operations in nested select query``() =
     Assert.AreEqual(6, qry2.Length)
 
 [<Test>]
+let ``simple canonical join query``() =
+    let dc = sql.GetDataContext()
+
+    let qry1 = 
+        query {
+            for cust in dc.Main.Customers do
+            join emp in dc.Main.Employees on (cust.City = if emp.City = "" then "" else emp.City)
+            sortBy (cust.ContactName)
+            select (cust.ContactName)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry1
+
+    let qry2 = 
+        query {
+            for emp in dc.Main.Employees do
+            join cust in dc.Main.Customers on ((if emp.City = "" then "" else emp.City) = cust.City)
+            sortBy (cust.ContactName)
+            select (cust.ContactName)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry2
+    CollectionAssert.AreEqual(qry1, qry2)
+
+
+[<Test>]
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 

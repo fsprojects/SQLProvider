@@ -1,18 +1,11 @@
-# Getting started
-
-Prerequisites:
-
- - FSharp and Dotnet installed. On Mac and Linux: Have also Mono installed.
- - Have a database, with a connection string
- - Have a code editor, e.g. Visual Studio Code and access to internet.
- - On Linux: Sudo permissons
+# SQLite - Getting started
 
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database file at /tests/SqlProvider.Tests/db/northwindEF.db)
 or you can start with this simple tutorial, for Windows.
 
-## SQLite, Part 1: Create project
+## Part 1: Create project
 
 ```
 dotnet new console --language f#
@@ -30,9 +23,9 @@ code .
 
 Create a new folder `libraries` under the root folder of your project.
 
-## SQLite, Part 2: Reference libraries and project file - On Windows
+## Part 2: Reference libraries and project file - On Windows
 
-From your NuGet cache `C:\Users\(user)\.nuget\packages\` (versions `lib\netstandard2.0`)
+From your NuGet cache `C:\Users\(user)\.nuget\packages\` (or `%USERPROFILE%\.nuget\packages\`) versions `lib\netstandard2.0`
 locate the following dll files:
 
  - e_sqlite3.dll - package sqlitepclraw.lib.e_sqlite3.v110_xp, under runtimes-folder (the physical architecture has to be correct), 
@@ -55,7 +48,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## SQLite, Part 3: Source code, build and run
+## Part 3: Source code, build and run
 
 Replace content of Program.fs with this:
 

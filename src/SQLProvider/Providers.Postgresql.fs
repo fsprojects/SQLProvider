@@ -667,6 +667,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             ,(not pg_attribute.attnotnull)                                 AS is_nullable
                             ,coalesce(pg_index.indisprimary, false)                        AS is_primary_key
                             ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
+                            ,pg_attribute.atthasdef                                        AS has_default
                         FROM pg_attribute 
                         LEFT JOIN pg_index
                             ON pg_attribute.attrelid = pg_index.indrelid
@@ -727,12 +728,14 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 | None ->                                                     
                                     failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName fullTypeName
                                 | Some m ->
-
+                                    let isPk = Sql.dbUnbox<bool> reader.["is_primary_key"]
                                     let col =
                                         { Column.Name = Sql.dbUnbox<string> reader.["column_name"]
                                           TypeMapping = m
                                           IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
-                                          IsPrimaryKey = Sql.dbUnbox<bool> reader.["is_primary_key"]
+                                          IsPrimaryKey = isPk
+                                          IsAutonumber = isPk
+                                          HasDefault = Sql.dbUnbox<bool> reader.["has_default"]
                                           TypeInfo = Some fullTypeName
                                         }
 

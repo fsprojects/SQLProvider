@@ -376,7 +376,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     [ProvidedMethod("Invoke", parameters, returnType, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
                         <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>));
                      ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var -> 
-                        <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>))]
+                        if returnType = typeof<unit> then 
+                            <@@ async {
+                                    let! r = (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))
+                                    return ()
+                                } @@>
+                        else
+                           <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))  @@>
+                        ))]
             )
                               
             let niceUniqueSprocName = 
@@ -452,17 +459,26 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     // we are forced to load the columns here, but this is ok as the user has already 
                     // pressed . on an IQueryable type so they are obviously interested in using this entity..                    
                     let columns, _ = getTableData key
+
                     let requiredColumns =
                         columns
-                        |> Seq.map (fun kvp -> kvp.Value)
-                        |> Seq.filter (fun c-> (not c.IsNullable) && (not c.IsPrimaryKey))
+                        |> Seq.toArray
+                        |> Array.map (fun kvp -> kvp.Value)
+                        |> Array.filter (fun c-> (not c.IsNullable) && (not c.IsAutonumber))
+
+                    let backwardCompatibilityOnly =
+                        requiredColumns
+                        |> Array.filter (fun c-> not c.IsPrimaryKey)
+                        |> Array.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
+                        |> Array.sortBy(fun p -> p.Name)
+                        |> Array.toList
 
                     let normalParameters = 
                         requiredColumns 
-                        |> Seq.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
-                        |> Seq.sortBy(fun p -> p.Name)
-                        |> Seq.toList
-                    
+                        |> Array.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
+                        |> Array.sortBy(fun p -> p.Name)
+                        |> Array.toList
+
                     // Create: unit -> SqlEntity 
                     let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->                         
                         <@@ 
@@ -473,7 +489,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         @@> )
                     
                     // Create: ('a * 'b * 'c * ...) -> SqlEntity 
-                    let create2 = ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args -> 
+                    let create2 = 
+                        if normalParameters.Length = 0 then Unchecked.defaultof<ProvidedMethod> else
+                        ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args -> 
                           
                           let dc = args.Head
                           let args = args.Tail
@@ -491,7 +509,29 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
-                    
+
+                    // Create: ('a * 'b * 'c * ...) -> SqlEntity 
+                    let create2old = 
+                        if backwardCompatibilityOnly.Length = 0 || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
+                        ProvidedMethod("Create", backwardCompatibilityOnly, entityType, invokeCode = fun args -> 
+                          
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                              e._State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+
                     // Create: (data : seq<string*obj>) -> SqlEntity 
                     let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, invokeCode = fun args -> 
                           let dc = args.[0]
@@ -508,13 +548,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         "Item array of database columns: \r\n" + String.Join(",", cols)
                     create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
 
-
                     // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity 
-
-                    let template=
-                        let cols = normalParameters |> Seq.map(fun c -> c.Name )
-                        "Create(" + String.Join(", ", cols) + ")"
-                    let create4 = ProvidedMethod(template, normalParameters, entityType, invokeCode = fun args -> 
+                    let create4 = 
+                        if normalParameters.Length = 0 then Unchecked.defaultof<ProvidedMethod> else
+                        let template=
+                            let cols = normalParameters |> Seq.map(fun c -> c.Name )
+                            "Create(" + String.Join(", ", cols) + ")"
+                        ProvidedMethod(template, normalParameters, entityType, invokeCode = fun args -> 
                           let dc = args.Head
                           let args = args.Tail
                           let columns =
@@ -531,8 +571,64 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                               e 
                           @@>)
-                    create4.AddXmlDoc("Create version that breaks if your columns change.")
                     
+                    let minimalParameters = 
+                        requiredColumns
+                        |> Array.filter (fun c-> (not c.HasDefault))
+                        |> Array.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
+                        |> Array.sortBy(fun p -> p.Name)
+                        |> Array.toList
+
+                    // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity 
+                    let create4old = 
+                        if backwardCompatibilityOnly.Length = 0 || backwardCompatibilityOnly.Length = normalParameters.Length ||
+                            backwardCompatibilityOnly.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
+                        let template=
+                            let cols = backwardCompatibilityOnly |> Seq.map(fun c -> c.Name )
+                            "Create(" + String.Join(", ", cols) + ")"
+                        ProvidedMethod(template, backwardCompatibilityOnly, entityType, invokeCode = fun args -> 
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                              e._State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+                    
+                    // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity 
+                    let create5 = 
+                        if minimalParameters.Length = 0 || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
+                        let template=
+                            let cols = minimalParameters |> Seq.map(fun c -> c.Name )
+                            "Create(" + String.Join(", ", cols) + ")"
+                        ProvidedMethod(template, minimalParameters, entityType, invokeCode = fun args -> 
+                          let dc = args.Head
+                          let args = args.Tail
+                          let columns =
+                              Expr.NewArray(
+                                      typeof<string*obj>,
+                                      args
+                                      |> Seq.toList
+                                      |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value minimalParameters.[i].Name 
+                                                                              Expr.Coerce(v, typeof<obj>) ] ))
+                          <@@
+                              let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                              e._State <- Created                            
+                              e.SetData(%%columns : (string *obj) array)
+                              ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                              e 
+                          @@>)
+
+
                     // This genertes a template.
 
                     seq {
@@ -540,9 +636,23 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                      individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
                      yield individuals :> MemberInfo
                      if normalParameters.Length > 0 then yield create2 :> MemberInfo
+                     if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then 
+                        create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                        yield create2old :> MemberInfo
                      yield create3 :> MemberInfo
                      yield create1 :> MemberInfo
-                     yield create4 :> MemberInfo } |> Seq.toList
+                     if normalParameters.Length > 0 then 
+                        create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
+                        yield create4 :> MemberInfo 
+                     if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then 
+                        create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
+                        yield create5 :> MemberInfo 
+                     if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
+                        backwardCompatibilityOnly.Length <> minimalParameters.Length then 
+                            create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                            yield create4old :> MemberInfo 
+                     
+                     } |> Seq.toList
                 )
 
                 let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck

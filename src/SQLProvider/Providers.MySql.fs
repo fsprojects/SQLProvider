@@ -514,7 +514,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 // note this data can be obtained using con.GetSchema, but with an epic schema we only want to get the data
                 // we are interested in on demand
                 let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.COLUMN_TYPE
+				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.COLUMN_TYPE, EXTRA,
+                                                     COLUMN_DEFAULT
 				                  FROM INFORMATION_SCHEMA.COLUMNS c
                                   left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
                                    on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
@@ -534,7 +535,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         let maxlen = 
                             if reader.IsDBNull(2) then ""
                             else reader.GetValue(2).ToString()
-                        let isUnsigned = not(reader.IsDBNull(6)) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
+                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
                         let udt = if isUnsigned then dt + " unsigned" else dt
                         match MySql.findDbType udt with
                         | Some(m) ->
@@ -543,7 +544,9 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                   TypeMapping = m
                                   IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
-                                  TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
+                                  IsAutonumber = if reader.GetString(7).Contains("auto_increment") then true else false 
+                                  HasDefault = not(reader.IsDBNull 8)
+                                  TypeInfo = if String.IsNullOrEmpty maxlen then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 

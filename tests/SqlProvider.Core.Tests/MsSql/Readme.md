@@ -1,18 +1,11 @@
-# Getting started
-
-Prerequisites:
-
- - FSharp and Dotnet installed. On Mac and Linux: Have also Mono installed.
- - Have a database, with a connection string
- - Have a code editor, e.g. Visual Studio Code and access to internet.
- - On Linux: Sudo permissons
+# Ms SQL Server - Getting started
 
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database scripts at /src/DatabaseScripts/MSSQLServer)
 or you can start with these tutorials, for Windows, Linux and Mac:
 
-## Ms SQL Server, Part 1: Create project
+## Part 1: Create project
 
 ```
 dotnet new console --language f#
@@ -22,7 +15,7 @@ dotnet restore
 code .
 ```
 
-## Ms SQL Server, Part 2: Project file - On Windows
+## Part 2: Project file - On Windows
 
 Add this to the .fsproj-file:
 
@@ -33,7 +26,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## Ms SQL Server, Part 2: Project file - On Linux
+## Part 2: Project file - On Linux
 
 Add this to the .fsproj-file:
 
@@ -44,7 +37,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## Ms SQL Server, Part 2: Project file - On Mac
+## Part 2: Project file - On Mac
 
 Add this to the .fsproj-file:
 
@@ -55,7 +48,7 @@ Add this to the .fsproj-file:
   </PropertyGroup>
 ```
 
-## Ms SQL Server, Part 3: Source code, build and run
+## Part 3: Source code, build and run
 
 Replace content of Program.fs with this:
 

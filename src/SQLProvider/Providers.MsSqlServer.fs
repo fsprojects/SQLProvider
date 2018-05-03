@@ -511,6 +511,8 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                // but hey, this works
                let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
                                               ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
+                                              ,COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IsIdentity, 
+                                              case when COLUMN_DEFAULT is not null then 1 else 0 end as HasDefault
                                  FROM INFORMATION_SCHEMA.COLUMNS c
                                  LEFT JOIN (
                                              SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
@@ -543,6 +545,8 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                TypeMapping = m
                                IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
+                               IsAutonumber = reader.GetInt32(6) = 1
+                               HasDefault = reader.GetInt32(7) = 1
                                TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
