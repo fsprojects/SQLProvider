@@ -5,7 +5,7 @@
     <title>SqlDataProvider - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
 
     <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
     <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
@@ -184,7 +184,7 @@
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>The owner of the schema for this provider to resolve (Oracle Only)</p>
+          <p>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</p>
 
 
         </td>
@@ -233,9 +233,29 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '301', 301)" onmouseover="showTip(event, '301', 301)">
-            OdbcQuote
+            ContextSchemaPath
           </code>
           <div class="tip" id="301">
+            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '302', 302)" onmouseover="showTip(event, '302', 302)">
+            OdbcQuote
+          </code>
+          <div class="tip" id="302">
             <strong>Signature:</strong> OdbcQuoteCharacter (optional, default = DEFAULT_QUOTE)<br />
                       </div>
         </td>
@@ -252,10 +272,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '302', 302)" onmouseover="showTip(event, '302', 302)">
+          <code onmouseout="hideTip(event, '303', 303)" onmouseover="showTip(event, '303', 303)">
             SQLiteLibrary
           </code>
-          <div class="tip" id="302">
+          <div class="tip" id="303">
             <strong>Signature:</strong> SQLiteLibrary (optional, default = AutoSelect)<br />
                       </div>
         </td>

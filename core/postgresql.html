@@ -6,7 +6,7 @@
 </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Type providers for SQL server access.">
-    <meta name="author" content="Ross McKinlay, Colin Bull">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
 
     <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
     <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
@@ -89,6 +89,16 @@ for further info.</p>
 <p>If true, F# option types will be used in place of nullable database columns.<br />
 If false, you will always receive the default value of the column's type, even
 if it is null in the database.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> [&lt;<span class="i">Literal</span>&gt;] <span class="i">useOptTypes</span>  <span class="o">=</span> <span class="k">true</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Owner" class="anchor" href="#Owner">Owner</a></h3>
+<p>Indicates the schema or schemas to which SqlProvider will try to provide access to.
+Multiple schemas can be indicated, separated by commas or semicolons.
+Defaults to "public".</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
 <span class="l"> 2: </span>
 <span class="l"> 3: </span>
@@ -99,8 +109,11 @@ if it is null in the database.</p>
 <span class="l"> 8: </span>
 <span class="l"> 9: </span>
 <span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> [&lt;<span class="i">Literal</span>&gt;] <span class="i">useOptTypes</span>  <span class="o">=</span> <span class="k">true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> [&lt;<span class="i">Literal</span>&gt;] <span class="i">owner</span> <span class="o">=</span> <span class="s">&quot;public, admin, references&quot;</span>
+
 
 <span class="k">type</span> <span class="i">sql</span> <span class="o">=</span>
     <span class="i">SqlDataProvider</span><span class="o">&lt;</span>
@@ -109,7 +122,8 @@ if it is null in the database.</p>
         <span class="s">&quot;&quot;</span>,         <span class="c">//ConnectionNameString can be left empty </span>
         <span class="i">resPath</span>,
         <span class="i">indivAmount</span>,
-        <span class="i">useOptTypes</span><span class="o">&gt;</span>
+        <span class="i">useOptTypes</span>,
+        <span class="i">owner</span><span class="o">&gt;</span>
 </code></pre></td>
 </tr>
 </table>

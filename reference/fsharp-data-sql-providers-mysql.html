@@ -5,7 +5,7 @@
     <title>MySql - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
 
     <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
     <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
@@ -129,8 +129,8 @@
             createCommand commandText connection
           </code>
           <div class="tip" id="126">
-            <strong>Signature:</strong> commandText:&#39;?8059 -&gt; connection:&#39;?8060 -&gt; IDbCommand<br />
-                          <strong>Type parameters:</strong> '?8059, '?8060          </div>
+            <strong>Signature:</strong> commandText:&#39;?8070 -&gt; connection:&#39;?8071 -&gt; IDbCommand<br />
+                          <strong>Type parameters:</strong> '?8070, '?8071          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L187-187" class="github-link">
@@ -165,8 +165,8 @@
             createConnection connectionString
           </code>
           <div class="tip" id="128">
-            <strong>Signature:</strong> connectionString:&#39;?8057 -&gt; IDbConnection<br />
-                          <strong>Type parameters:</strong> '?8057          </div>
+            <strong>Signature:</strong> connectionString:&#39;?8068 -&gt; IDbConnection<br />
+                          <strong>Type parameters:</strong> '?8068          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L171-171" class="github-link">
@@ -183,8 +183,8 @@
             createParam name i v
           </code>
           <div class="tip" id="129">
-            <strong>Signature:</strong> name:string -&gt; i:int -&gt; v:&#39;?8052 -&gt; QueryParameter<br />
-                          <strong>Type parameters:</strong> '?8052          </div>
+            <strong>Signature:</strong> name:string -&gt; i:int -&gt; v:&#39;?8063 -&gt; QueryParameter<br />
+                          <strong>Type parameters:</strong> '?8063          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L112-112" class="github-link">
@@ -241,7 +241,7 @@
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L292-292" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L293-293" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -259,7 +259,7 @@
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L314-314" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L315-315" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -273,11 +273,11 @@
             executeSprocCommandCommon (...)
           </code>
           <div class="tip" id="134">
-            <strong>Signature:</strong> inputParams:QueryParameter [] -&gt; retCols:QueryParameter [] -&gt; values:obj [] -&gt; (int * IDbDataParameter) [] * (&#39;?8067 -&gt; QueryParameter -&gt; ReturnSetType) * (int * IDbDataParameter) []<br />
-                          <strong>Type parameters:</strong> '?8067          </div>
+            <strong>Signature:</strong> inputParams:QueryParameter [] -&gt; retCols:QueryParameter [] -&gt; values:obj [] -&gt; (int * IDbDataParameter) [] * (&#39;?8078 -&gt; QueryParameter -&gt; ReturnSetType) * (int * IDbDataParameter) []<br />
+                          <strong>Type parameters:</strong> '?8078          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L260-260" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L261-261" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -421,7 +421,7 @@
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L206-206" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L207-207" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -457,7 +457,7 @@
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L243-243" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L244-244" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -468,27 +468,9 @@
         <td class="member-name">
 
           <code onmouseout="hideTip(event, '145', 145)" onmouseover="showTip(event, '145', 145)">
-            owner 
-          </code>
-          <div class="tip" id="145">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L14-14" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '146', 146)" onmouseover="showTip(event, '146', 146)">
             parameterType 
           </code>
-          <div class="tip" id="146">
+          <div class="tip" id="145">
             <strong>Signature:</strong> Lazy&lt;Type&gt;<br />
                       </div>
         </td>
@@ -503,15 +485,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '147', 147)" onmouseover="showTip(event, '147', 147)">
+          <code onmouseout="hideTip(event, '146', 146)" onmouseover="showTip(event, '146', 146)">
             readParameter parameter
           </code>
-          <div class="tip" id="147">
+          <div class="tip" id="146">
             <strong>Signature:</strong> parameter:IDbDataParameter -&gt; obj<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L254-254" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L255-255" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -521,10 +503,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '148', 148)" onmouseover="showTip(event, '148', 148)">
+          <code onmouseout="hideTip(event, '147', 147)" onmouseover="showTip(event, '147', 147)">
             referencedAssemblies 
           </code>
-          <div class="tip" id="148">
+          <div class="tip" id="147">
             <strong>Signature:</strong> string []<br />
                       </div>
         </td>
@@ -539,10 +521,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '149', 149)" onmouseover="showTip(event, '149', 149)">
+          <code onmouseout="hideTip(event, '148', 148)" onmouseover="showTip(event, '148', 148)">
             resolutionPath 
           </code>
-          <div class="tip" id="149">
+          <div class="tip" id="148">
             <strong>Signature:</strong> string<br />
                       </div>
         </td>
@@ -557,15 +539,33 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '150', 150)" onmouseover="showTip(event, '150', 150)">
+          <code onmouseout="hideTip(event, '149', 149)" onmouseover="showTip(event, '149', 149)">
             ripQuotes str
           </code>
-          <div class="tip" id="150">
+          <div class="tip" id="149">
             <strong>Signature:</strong> str:String -&gt; string<br />
                       </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L127-127" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '150', 150)" onmouseover="showTip(event, '150', 150)">
+            schemas 
+          </code>
+          <div class="tip" id="150">
+            <strong>Signature:</strong> string []<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MySql.fs#L14-14" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
