@@ -522,8 +522,8 @@ let ``Access a different schema than the default one``() =
   
   let wg = ctx.Public.Countries.Create()
   wg.CountryId <- "DE"
-  wg.Name <- "West Germany"
-  wg.RegionId <- 1
+  wg.CountryName <- Some "West Germany"
+  wg.RegionId <- Some 1
   wg.OnConflict <- Update
   ctx.SubmitUpdates()
 
@@ -531,10 +531,10 @@ let ``Access a different schema than the default one``() =
     query { 
       for country in ctx.Public.Countries do 
       where (country.CountryId = "DE") 
-      select country.Name
+      select country.CountryName
     }
 
-  Assert.AreEqual(Seq.head readGermany = "West Germany")
+  Assert.AreEqual(Seq.head readGermany = Some "West Germany")
 
 
 
