@@ -524,7 +524,7 @@ let ``Upsert on table with single primary key``() =
     query { 
       for country in ctx.Public.Countries do 
       where (country.CountryId = "DE") 
-      select country.CountryName
+      select country.CountryName.Value
     }
     
   let oldGermany = Seq.head readGermany
