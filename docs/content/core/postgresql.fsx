@@ -103,3 +103,35 @@ type sql =
         indivAmount,
         useOptTypes,
         owner>
+
+        
+(**
+### OnConflict
+
+Beginning with version 9.5, [PostgreSQL supports the ON CONFLICT clause to INSERT statements.](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT)
+It allows the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).
+SqlProvider can leverage this feature by setting the `OnConflict` property on a row object. Setting it to `DoNothing` will add the DO NOTHING clause. Setting it to `Update` will add a DO UPDATE clause that updates all existing columns if the conflict happened on the primary key constraint.
+
+It is not currently supported to emit a DO UPDATE clause for non-primary key unique constraints.
+*)
+
+let ctx = sql.GetDataContext()
+
+let orders = ctx.Main.Orders
+
+let row = orders.Create()
+row.CustomerId <- customer.CustomerId
+row.EmployeeId <- employee.EmployeeId
+row.Freight <- 10M
+row.OrderDate <- now.AddDays(-1.0)
+row.RequiredDate <- now.AddDays(1.0)
+row.ShipAddress <- "10 Downing St"
+row.ShipCity <- "London"
+row.ShipName <- "Dragons den"
+row.ShipPostalCode <- "SW1A 2AA"
+row.ShipRegion <- "UK"
+row.ShippedDate <- now
+
+row.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+
+ctx.SubmitUpdates()

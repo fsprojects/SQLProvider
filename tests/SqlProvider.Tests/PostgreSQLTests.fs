@@ -519,13 +519,6 @@ let ``Access a different schema than the default one``() =
 [<Test>]
 let ``Upsert on table with single primary key``() = 
   let ctx = HR.GetDataContext()
-  
-  let wg = ctx.Public.Countries.Create()
-  wg.CountryId <- "DE"
-  wg.CountryName <- Some "West Germany"
-  wg.RegionId <- Some 1
-  wg.OnConflict <- Common.OnConflict.Update
-  ctx.SubmitUpdates()
 
   let readGermany =
     query { 
@@ -533,8 +526,20 @@ let ``Upsert on table with single primary key``() =
       where (country.CountryId = "DE") 
       select country.CountryName
     }
+    
+  let oldGermany = Seq.head readGermany
+  let newGermany = "West " + oldGermany
 
-  Assert.AreEqual(Seq.head readGermany, Some "West Germany")
+  let wg = ctx.Public.Countries.Create()
+  wg.CountryId <- "DE"
+  wg.CountryName <- Some newGermany
+  wg.RegionId <- Some 1
+  wg.OnConflict <- Common.OnConflict.Update
+  ctx.SubmitUpdates()
+
+  let newGermanyDb = Seq.head readGermany
+
+  Assert.AreEqual(newGermany, newGermanyDb)
 
 [<Test>]
 let ``Upsert on table with composite primary key``() = 
@@ -569,5 +574,29 @@ let ``Upsert on table with composite primary key``() =
 
   Assert.AreEqual(newEndDate, newEndDateDb)
 
+[<Test>]
+let ``Upsert with DO NOTHING leaves data unchanged``() = 
+  let ctx = HR.GetDataContext()
+  
+  let readGermanyRegion =
+    query { 
+      for country in ctx.Public.Countries do 
+      where (country.CountryId = "DE") 
+      select country.RegionId.Value
+    }
+
+  let oldGermanyRegion = Seq.head readGermanyRegion
+  let newGermanyRegionThatShouldNotBeSet = oldGermanyRegion + 1
+
+  let wg = ctx.Public.Countries.Create()
+  wg.CountryId <- "DE"
+  wg.CountryName <- Some "Germany"
+  wg.RegionId <- Some newGermanyRegionThatShouldNotBeSet
+  wg.OnConflict <- Common.OnConflict.DoNothing 
+  ctx.SubmitUpdates()
+
+  let newGermanyRegionDb = Seq.head readGermanyRegion
+
+  Assert.AreEqual(oldGermanyRegion, newGermanyRegionDb)
 
 #endif
