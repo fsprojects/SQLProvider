@@ -151,7 +151,7 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
 
 
 [<Test>]
-let ``Insert on conflict replace applies correctly``() = 
+let ``Conflict resolution is correctly applied``() = 
     let dc = sql.GetDataContext()
     
     let getCustomer = 
@@ -187,28 +187,3 @@ let ``Insert on conflict replace applies correctly``() =
     let notUpdatedCustomer = getCustomer |> Seq.head
 
     Assert.AreEqual(notUpdatedCustomer.Address, newAddress)
-
-    // let's create new context just to test that it is actually there.
-    let dc2 = sql.GetDataContext()
- 
-    let newCustomers = 
-        query { for cust in dc2.Main.Customers do
-                select cust  }
-        |> Seq.toList
-    
-    let created = 
-        newCustomers |> List.find (fun x -> x.CustomerId = "SQLPROVIDER")
-
-    Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
-
-    Assert.AreEqual("Updated Number", created.Phone)
-    created.Delete()
-    dc2.SubmitUpdates()    
-    dc2.SubmitUpdates()
-
-    let reallyDeleted = 
-        query { for cust in dc2.Main.Customers do
-                select cust  }
-        |> Seq.toList
-
-    Assert.AreEqual(originalCustomers.Length, reallyDeleted.Length)
