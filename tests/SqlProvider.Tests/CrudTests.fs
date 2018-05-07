@@ -153,39 +153,46 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
 [<Test>]
 let ``Conflict resolution is correctly applied``() = 
     let dc = sql.GetDataContext()
-    
-    let getCustomer = 
-        query { for cust in dc.Main.Customers do
-                where (cust.CustomerId = "SQLPROVIDER")
-                select cust
-        }
-     
-    let originalCustomer = getCustomer |> Seq.head
 
     let ent = createCustomer dc
+    dc.SubmitUpdates()    
 
-    let newAddress = "FsProjects 2.0"
-
-    ent.CustomerId <- originalCustomer.CustomerId
+    let getCurrentAddress = 
+        query { for cust in dc.Main.Customers do
+                where (cust.CustomerId = ent.CustomerId)
+                select (cust.Address)
+        } 
+    
+    // Works when reusing the same entity with changed properties    
+    let newAddress = "FsProjects 2.0"    
     ent.Address <- newAddress
     ent.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
-
     dc.SubmitUpdates()    
-    dc.SubmitUpdates() // run twice just to test extra won't hurt
-
-    let updatedCustomer = getCustomer |> Seq.head
-
-    Assert.AreEqual(updatedCustomer.Address, newAddress)
-        
-    let ent2 = createCustomer dc
     
-    ent2.CustomerId <- updatedCustomer.CustomerId
-    ent2.Address <- "asdkjskdjsldjskjdls"
-    ent2.OnConflict <- FSharp.Data.Sql.Common.OnConflict.DoNothing
+    Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
 
+    // Works when creating a fresh entity
+    let ent2 = createCustomer dc
+    let newerAddress = "FsProjects 3.0"    
+    ent.Address <- newerAddress
+    ent.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
     dc.SubmitUpdates()    
+    
+    Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
+    
+    // DoNothing doesn't update the address
+    let ent3 = createCustomer dc        
+    ent3.Address <- "asdkjskdjsldjskjdls"
+    ent3.OnConflict <- FSharp.Data.Sql.Common.OnConflict.DoNothing
     dc.SubmitUpdates()
 
-    let notUpdatedCustomer = getCustomer |> Seq.head
+    Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
 
-    Assert.AreEqual(notUpdatedCustomer.Address, newAddress)
+    // Cleanup after testing
+    query { for cust in dc.Main.Customers do
+                where (cust.CustomerId = ent.CustomerId)
+                select cust
+    }
+    |> Seq.head
+    |> (fun c -> c.Delete())
+    dc.SubmitUpdates()
