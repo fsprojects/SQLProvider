@@ -524,7 +524,7 @@ let ``Upsert on table with single primary key``() =
   wg.CountryId <- "DE"
   wg.CountryName <- Some "West Germany"
   wg.RegionId <- Some 1
-  wg.OnConflict <- Update
+  wg.OnConflict <- Common.OnConflict.Update
   ctx.SubmitUpdates()
 
   let readGermany =
@@ -534,7 +534,7 @@ let ``Upsert on table with single primary key``() =
       select country.CountryName
     }
 
-  Assert.AreEqual(Seq.head readGermany = Some "West Germany")
+  Assert.AreEqual(Seq.head readGermany, Some "West Germany")
 
 [<Test>]
 let ``Upsert on table with composite primary key``() = 
@@ -546,8 +546,8 @@ let ``Upsert on table with composite primary key``() =
       select (jobHistory.EmployeeId, jobHistory.StartDate, jobHistory.JobId, jobHistory.EndDate)
     }
     |> Seq.head
-
-  let newEndDate = oldEndDate.AddDays(1)
+  
+  let newEndDate = oldEndDate.AddDays(1.0)
     
   let jh = ctx.Public.JobHistory.Create()
   jh.EmployeeId <- employeeId
@@ -555,7 +555,7 @@ let ``Upsert on table with composite primary key``() =
   jh.EndDate <- newEndDate
   jh.JobId <- jobId
 
-  jh.OnConflict <- Update
+  jh.OnConflict <- Common.OnConflict.Update
   ctx.SubmitUpdates()
 
   let newEndDateDb =
