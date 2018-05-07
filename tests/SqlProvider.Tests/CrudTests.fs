@@ -156,7 +156,9 @@ let ``Conflict resolution is correctly applied``() =
     
     let getCustomer = 
         query { for cust in dc.Main.Customers do
-                select cust }
+                where (cust.CustomerId = "SQLPROVIDER")
+                select cust
+        }
      
     let originalCustomer = getCustomer |> Seq.head
 
