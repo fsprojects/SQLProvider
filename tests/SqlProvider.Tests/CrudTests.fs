@@ -148,3 +148,67 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
         |> Seq.toList
 
     Assert.AreEqual([], created)
+
+
+[<Test>]
+let ``Insert on conflict replace applies correctly``() = 
+    let dc = sql.GetDataContext()
+    
+    let getCustomer = 
+        query { for cust in dc.Main.Customers do
+                select cust }
+     
+    let originalCustomer = getCustomer |> Seq.head
+
+    let ent = createCustomer dc
+
+    let newAddress = "FsProjects 2.0"
+
+    ent.CustomerId <- originalCustomer.CustomerId
+    ent.Address <- newAddress
+    ent.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+
+    dc.SubmitUpdates()    
+    dc.SubmitUpdates() // run twice just to test extra won't hurt
+
+    let updatedCustomer = getCustomer |> Seq.head
+
+    Assert.AreEqual(updatedCustomer.Address, newAddress)
+        
+    let ent2 = createCustomer dc
+    
+    ent2.CustomerId <- updatedCustomer.CustomerId
+    ent2.Address <- "asdkjskdjsldjskjdls"
+    ent2.OnConflict <- FSharp.Data.Sql.Common.OnConflict.DoNothing
+
+    dc.SubmitUpdates()    
+    dc.SubmitUpdates()
+
+    let notUpdatedCustomer = getCustomer |> Seq.head
+
+    Assert.AreEqual(notUpdatedCustomer.Address, newAddress)
+
+    // let's create new context just to test that it is actually there.
+    let dc2 = sql.GetDataContext()
+ 
+    let newCustomers = 
+        query { for cust in dc2.Main.Customers do
+                select cust  }
+        |> Seq.toList
+    
+    let created = 
+        newCustomers |> List.find (fun x -> x.CustomerId = "SQLPROVIDER")
+
+    Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
+
+    Assert.AreEqual("Updated Number", created.Phone)
+    created.Delete()
+    dc2.SubmitUpdates()    
+    dc2.SubmitUpdates()
+
+    let reallyDeleted = 
+        query { for cust in dc2.Main.Customers do
+                select cust  }
+        |> Seq.toList
+
+    Assert.AreEqual(originalCustomers.Length, reallyDeleted.Length)

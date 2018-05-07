@@ -189,6 +189,31 @@ SQLProvider also supports async database operations:
 *)
 
 ctx.SubmitUpdatesAsync() |> Async.StartAsTask
+        
+(**
+### OnConflict
+
+The [SQLite](http://sqlite.org/lang_conflict.html) and [PostgreSQL 9.5+](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT) providers support conflict resolution for INSERT statements.
+
+They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).
+
+You can leverage this feature by setting the `OnConflict` property on a row object:
+ * Setting it to `DoNothing` will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite). 
+ * Setting it to `Update` will add a DO UPDATE clause on the primary key constraint for all columns (PostgreSQL) or a OR REPLACE clause (SQLite).
+
+Sql Server has a similar feature in the form of the MERGE statement. This is not yet supported.
+*)
+
+let ctx = sql.GetDataContext()
+
+let emp = ctx.Main.Employees.Create()
+emp.Id <- 1
+emp.FirstName <- "Jane"
+emp.LastName <- "Doe"
+
+emp.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+
+ctx.SubmitUpdates()
 
 (**
 
