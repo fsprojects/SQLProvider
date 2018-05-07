@@ -513,4 +513,30 @@ let ``Access a different schema than the default one``() =
   testRow.ColumnInOtherSchema <- 42  
   ctx.SubmitUpdates()
 
+//********************** Upsert ***************************//
+
+
+[<Test>]
+let ``Access a different schema than the default one``() = 
+  let ctx = HR.GetDataContext()
+  
+  let wg = ctx.Public.Countries.Create()
+  wg.CountryId <- "DE"
+  wg.Name <- "West Germany"
+  wg.RegionId <- 1
+  wg.OnConflict <- Update
+  ctx.SubmitUpdates()
+
+  let readGermany =
+    query { 
+      for country in ctx.Public.Countries do 
+      where (country.CountryId = "DE") 
+      select country.Name
+    }
+
+  Assert.AreEqual(Seq.head readGermany = "West Germany")
+
+
+
+
 #endif

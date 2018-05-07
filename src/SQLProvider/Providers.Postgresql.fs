@@ -474,9 +474,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         cmd.Connection <- con
         let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
         let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
-        let columnNames, values =
-            (([],0),entity.ColumnValuesWithDefinition)
-            ||> Seq.fold(fun (out,i) (k,v,c) ->
+
+        let columnNamesWithValues = 
+            (([],0), entity.ColumnValuesWithDefinition)
+            ||> Seq.fold(fun (out, i) (k,v,c) ->
                 let name = sprintf "@param%i" i
                 let qp = match c with
                          | Some(c) -> QueryParameter.Create(name,i,c.TypeMapping)
@@ -485,23 +486,30 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
             |> List.rev
-            |> List.toArray
-            |> Array.unzip
+
+        let columnNames, values = List.unzip columnNamesWithValues
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO \"%s\".\"%s\" " entity.Table.Schema entity.Table.Name)
 
         match columnNames with
-        | [||] -> ~~(sprintf "DEFAULT VALUES")
+        | [] -> ~~(sprintf "DEFAULT VALUES")
         | _ -> ~~(sprintf "(%s) VALUES (%s)"
-                    (String.Join(",",columnNames |> Array.map (fun c -> sprintf "\"%s\"" c)))
-                    (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+                    (String.Join(",",columnNames |> List.map (fun c -> sprintf "\"%s\"" c)))
+                    (String.Join(",",values |> List.map(fun p -> p.ParameterName))))
+
+        match entity.OnConflict with
+        | Throw -> ()
+        | Update ->
+          ~~(sprintf " ON CONFLICT (%s) DO UPDATE SET %s "                
+                (String.Join(",", pk |> List.map (sprintf "\"%s\"")))
+                (String.Join(",", columnNamesWithValues |> List.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
 
         match haspk, pk with
         | true, [itm] -> ~~(sprintf " RETURNING \"%s\";" itm)
         | _ -> ()
 
-        values |> Array.iter (cmd.Parameters.Add >> ignore)
+        values |> List.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
