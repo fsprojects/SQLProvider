@@ -127,6 +127,16 @@ type EntityState =
     | Delete
     | Deleted
 
+type OnConflict = 
+    /// Throws an exception if the primary key already exists. Default behaviour
+    | Throw
+    /// If the primary key already exists, updates the existing row's columns to match the new entity.
+    /// Currently supported only on PostgreSQL 9.5+
+    | Update
+    /// TODO: implement
+    /// If the primary key already exists, leaves the existing row unchanged
+    /// | DoNothing
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
@@ -320,6 +330,9 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                         |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
         newItem._State <- Created
         newItem
+
+    /// Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
+    member val OnConflict = Throw with get, set
 
     interface System.ComponentModel.INotifyPropertyChanged with
         [<CLIEvent>] member __.PropertyChanged = propertyChanged.Publish
