@@ -517,7 +517,7 @@ let ``Access a different schema than the default one``() =
 
 
 [<Test>]
-let ``Access a different schema than the default one``() = 
+let ``Upsert on table with single primary key``() = 
   let ctx = HR.GetDataContext()
   
   let wg = ctx.Public.Countries.Create()
@@ -536,7 +536,38 @@ let ``Access a different schema than the default one``() =
 
   Assert.AreEqual(Seq.head readGermany = Some "West Germany")
 
+[<Test>]
+let ``Upsert on table with composite primary key``() = 
+  let ctx = HR.GetDataContext()
+  
+  let employeeId, startDate, jobId, oldEndDate =
+    query { 
+      for jobHistory in ctx.Public.JobHistory do 
+      select (jobHistory.EmployeeId, jobHistory.StartDate, jobHistory.JobId, jobHistory.EndDate)
+    }
+    |> Seq.head
 
+  let newEndDate = oldEndDate.AddDays(1)
+    
+  let jh = ctx.Public.JobHistory.Create()
+  jh.EmployeeId <- employeeId
+  jh.StartDate <- startDate
+  jh.EndDate <- newEndDate
+  jh.JobId <- jobId
+
+  jh.OnConflict <- Update
+  ctx.SubmitUpdates()
+
+  let newEndDateDb =
+    query { 
+      for jobHistory in ctx.Public.JobHistory do 
+      where (jobHistory.EmployeeId = employeeId)
+      where (jobHistory.StartDate = startDate)
+      select (jobHistory.EndDate)
+    }
+    |> Seq.head
+
+  Assert.AreEqual(newEndDate, newEndDateDb)
 
 
 #endif
