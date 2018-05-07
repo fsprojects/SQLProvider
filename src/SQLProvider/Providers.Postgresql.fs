@@ -504,6 +504,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
           ~~(sprintf " ON CONFLICT (%s) DO UPDATE SET %s "                
                 (String.Join(",", pk |> List.map (sprintf "\"%s\"")))
                 (String.Join(",", columnNamesWithValues |> List.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
+        | DoNothing ->
+          ~~(sprintf " ON CONFLICT DO NOTHING ")
 
         match haspk, pk with
         | true, [itm] -> ~~(sprintf " RETURNING \"%s\";" itm)

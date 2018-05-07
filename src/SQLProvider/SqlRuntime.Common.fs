@@ -128,14 +128,14 @@ type EntityState =
     | Deleted
 
 type OnConflict = 
-    /// Throws an exception if the primary key already exists. Default behaviour
+    /// Throws an exception if the primary key already exists (default behaviour).
     | Throw
     /// If the primary key already exists, updates the existing row's columns to match the new entity.
     /// Currently supported only on PostgreSQL 9.5+
     | Update
-    /// TODO: implement
-    /// If the primary key already exists, leaves the existing row unchanged
-    /// | DoNothing
+    /// If the primary key already exists, leaves the existing row unchanged.
+    /// Currently supported only on PostgreSQL 9.5+
+    | DoNothing
 
 type MappedColumnAttribute(name: string) = 
     inherit Attribute()
