@@ -477,38 +477,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
 
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
-    match exp with
-    | SqlSpecialOpArr(ti,op,key,value)
-    | SqlSpecialNegativeOpArr(ti,op,key,value) ->
-        Some(ti,key,op,Some (box value))
-    | SqlSpecialOp(ti,op,key,value) ->
-        Some(ti,key,op,Some value)
-    // if using nullable types
-    | OptionIsSome(SqlColumnGet(ti,key,_)) ->
-        Some(ti,key,ConditionOperator.NotNull,None)
-    | OptionIsNone(SqlColumnGet(ti,key,_))
-    | SqlCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))), (OptionNone | NullConstant)) 
-    | SqlNegativeCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
-        Some(ti,key,ConditionOperator.IsNull,None)
-    | SqlCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) 
-    | SqlNegativeCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
-        Some(ti,key,ConditionOperator.NotNull,None)
-    // matches column to constant with any operator eg c.name = "john", c.age > 42
-    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
-    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))))
-    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) 
-    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) ->
-        Some(ti,key,op,c)
-    // matches column to column e.g. c.col1 > c.col2
-    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) 
-    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) ->
-        Some(ti,key,op,Some((ti2,key2) |> box))
-    // matches to another property getter, method call or new expression
-    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
-    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
-    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
-
+    let extractProperty op meth ti key =
         let invokation = 
             // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
             try Some(Expression.Lambda(meth).Compile().DynamicInvoke())
@@ -532,6 +501,46 @@ and (|SimpleCondition|_|) exp =
                 | null -> handleNullCompare()
                 | r -> Some(ti,key,op,Some(r))
             else Some(ti,key,op,Some(invokedResult))
+    let swapOp = function // Because we serialize db column first, these have to revert (#553)
+        | ConditionOperator.LessThan -> ConditionOperator.GreaterThan
+        | ConditionOperator.LessEqual -> ConditionOperator.GreaterEqual
+        | ConditionOperator.GreaterThan -> ConditionOperator.LessThan
+        | ConditionOperator.GreaterEqual -> ConditionOperator.LessEqual
+        | x -> x
+    match exp with
+    | SqlSpecialOpArr(ti,op,key,value)
+    | SqlSpecialNegativeOpArr(ti,op,key,value) ->
+        Some(ti,key,op,Some (box value))
+    | SqlSpecialOp(ti,op,key,value) ->
+        Some(ti,key,op,Some value)
+    // if using nullable types
+    | OptionIsSome(SqlColumnGet(ti,key,_)) ->
+        Some(ti,key,ConditionOperator.NotNull,None)
+    | OptionIsNone(SqlColumnGet(ti,key,_))
+    | SqlCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))), (OptionNone | NullConstant)) 
+    | SqlNegativeCondOp(ConditionOperator.Equal,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
+        Some(ti,key,ConditionOperator.IsNull,None)
+    | SqlCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) 
+    | SqlNegativeCondOp(ConditionOperator.NotEqual,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionNone | NullConstant)) ->
+        Some(ti,key,ConditionOperator.NotNull,None)
+    // matches column to constant with any operator eg c.name = "john", c.age > 42
+    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) 
+    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c)))) ->
+        Some(ti,key,op,c)
+    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) 
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue(ConstantOrNullableConstant(c))),(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))) ->
+        Some(ti,key,(swapOp op),c)
+    // matches column to column e.g. c.col1 > c.col2
+    | SqlCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) 
+    | SqlNegativeCondOp(op,(OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))),(OptionalConvertOrTypeAs(SqlColumnGet(ti2,key2,_)))) ->
+        Some(ti,key,op,Some((ti2,key2) |> box))
+    // matches to another property getter, method call or new expression
+    | SqlCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))))
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)),OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth)))) ->
+        extractProperty op meth ti key
+    | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
+    | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
+        extractProperty (swapOp op) meth ti key
     | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" || ret = typeof<bool> -> 
         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
     | _ -> None

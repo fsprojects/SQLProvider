@@ -1529,6 +1529,19 @@ let ``simple canonical operation substing query``() =
     Assert.IsTrue(qry.Contains("ANATR"))
 
 [<Test >]
+let ``simple canonical operation inverted operations query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where (500m < o.Freight)
+            select o.OrderId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(13, qry.Length)
+
+[<Test >]
 let ``simple canonical operations query``() =
     let dc = sql.GetDataContext()
 
