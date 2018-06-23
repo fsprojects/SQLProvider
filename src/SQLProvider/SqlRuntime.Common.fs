@@ -127,7 +127,7 @@ type EntityState =
     | Delete
     | Deleted
 
-type MapFromAttribute(name: string) = 
+type MappedColumnAttribute(name: string) = 
     inherit Attribute()
     member x.Name with get() = name
 
@@ -295,8 +295,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         let propertyTypeMapping = defaultArg propertyTypeMapping snd
         let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
         let clean (pi: PropertyInfo) = 
-            match pi.GetCustomAttribute(typeof<MapFromAttribute>) with
-            | :? MapFromAttribute as attr -> attr.Name
+            match pi.GetCustomAttribute(typeof<MappedColumnAttribute>) with
+            | :? MappedColumnAttribute as attr -> attr.Name
             | _ -> pi.Name
             |> cleanName
         let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
