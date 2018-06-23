@@ -68,7 +68,7 @@ let qry = query { for row in employees do
 
 (**
 The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
-The target field name can also be different thant the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:
+The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:
 *)
 
 open FSharp.Data.Sql.Common
