@@ -75,7 +75,7 @@ open FSharp.Data.Sql.Common
 
 type Employee3 = {
     [<MappedColumn("FirstName")>] GivenName:string
-    [<MappedColumn("FirstName")>] FamilyName:string
+    [<MappedColumn("LastName")>] FamilyName:string
     }
 
 let qry = query { for row in employees do
