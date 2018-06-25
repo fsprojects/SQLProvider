@@ -39,6 +39,9 @@
 By passing functions as parameters you are able to generate higher-order query operations.
 Therefore composable query means that you can do logics to compose just one database-SQL-query from multiple queryables.
 By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.</p>
+<p>One common anti-pattern is a trial to solve all the problems in the world by a single code.
+So when you use this kind of features to achieve "common logics", keep in mind the software mainainability.
+One solution is to add a database view and query that from SQLProvider.</p>
 <h2><a name="Generate-composable-queries-by-using-Linq-IQueryable" class="anchor" href="#Generate-composable-queries-by-using-Linq-IQueryable">Generate composable queries by using Linq IQueryable</a></h2>
 <p>With composable queries you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
 To see how this works, let’s look at a simple query:</p>
@@ -134,20 +137,32 @@ They are both lazy by nature, meaning they aren’t evaluated until you enumerat
 </tr>
 </table>
 <p>Then you can define a composable query outside the main query</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-<span class="l">7: </span>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">companyNameFilter</span> <span class="i">inUse</span> <span class="i">queryable</span> <span class="o">=</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">CustomersEntity</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">dataContext</span><span class="o">.</span><span class="i">``main.CustomersEntity``</span>
+
+<span class="k">let</span> <span class="i">companyNameFilter</span> <span class="i">inUse</span> <span class="o">=</span>
+
+    <span class="k">let</span> <span class="i">myFilter2</span> <span class="o">:</span> <span class="i">IQueryable</span><span class="o">&lt;</span><span class="i">CustomersEntity</span><span class="o">&gt;</span> <span class="k">-&gt;</span> <span class="i">IQueryable</span><span class="o">&lt;</span><span class="i">CustomersEntity</span><span class="o">&gt;</span> <span class="o">=</span> <span class="k">fun</span> <span class="i">x</span> <span class="k">-&gt;</span> <span class="i">x</span><span class="o">.</span><span class="i">Where</span>(<span class="k">fun</span> <span class="i">i</span> <span class="k">-&gt;</span> <span class="i">i</span><span class="o">.</span><span class="i">CustomerId</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span>)
+
     <span class="k">let</span> <span class="i">queryable</span><span class="o">:</span>(<span class="i">IQueryable</span><span class="o">&lt;</span><span class="i">CustomersEntity</span><span class="o">&gt;</span> <span class="k">-&gt;</span> <span class="i">IQueryable</span><span class="o">&lt;</span><span class="i">CustomersEntity</span><span class="o">&gt;</span>) <span class="o">=</span>
         <span class="k">match</span> <span class="i">inUse</span> <span class="k">with</span>
         |<span class="k">true</span> <span class="k">-&gt;</span>
             (<span class="k">fun</span> <span class="i">iq</span> <span class="k">-&gt;</span> <span class="i">iq</span><span class="o">.</span><span class="i">Where</span>(<span class="k">fun</span> (<span class="i">c</span><span class="o">:</span><span class="i">CustomersEntity</span>) <span class="k">-&gt;</span> <span class="i">c</span><span class="o">.</span><span class="i">CompanyName</span> <span class="o">=</span> <span class="s">&quot;The Big Cheese&quot;</span>))
-        |<span class="k">false</span> <span class="k">-&gt;</span> (<span class="k">fun</span> <span class="i">iq</span> <span class="k">-&gt;</span> <span class="i">iq</span><span class="o">.</span><span class="i">Where</span>(<span class="k">fun</span> (<span class="i">c</span><span class="o">:</span><span class="i">CustomersEntity</span>) <span class="k">-&gt;</span> <span class="i">c</span>))
+        |<span class="k">false</span> <span class="k">-&gt;</span> 
+            <span class="i">myFilter2</span>
     <span class="i">queryable</span>
 </code></pre></td>
 </tr>
@@ -170,43 +185,9 @@ E.g. Your sub-queries would come from other functions. Basic booleans you can ju
 </tr>
 </table>
 <p>and now call you are able to call the second query like this</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
-<span class="l"> 2: </span>
-<span class="l"> 3: </span>
-<span class="l"> 4: </span>
-<span class="l"> 5: </span>
-<span class="l"> 6: </span>
-<span class="l"> 7: </span>
-<span class="l"> 8: </span>
-<span class="l"> 9: </span>
-<span class="l">10: </span>
-<span class="l">11: </span>
-<span class="l">12: </span>
-<span class="l">13: </span>
-<span class="l">14: </span>
-<span class="l">15: </span>
-<span class="l">16: </span>
-<span class="l">17: </span>
-<span class="l">18: </span>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">query2</span> <span class="o">=</span>
-    <span class="i">companyNameFilter</span> <span class="k">true</span> <span class="i">query1</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
-
-    <span class="k">let</span> <span class="i">qry1</span> <span class="o">=</span>
-        <span class="i">query</span> { <span class="k">for</span> <span class="i">u</span> <span class="k">in</span> <span class="i">dbContext</span><span class="o">.</span><span class="i">Users</span> <span class="k">do</span>
-                <span class="i">select</span> (<span class="i">u</span><span class="o">.</span><span class="i">Id</span>, <span class="i">u</span><span class="o">.</span><span class="i">Name</span>, <span class="i">u</span><span class="o">.</span><span class="i">Email</span>)
-        }
-
-    <span class="k">let</span> <span class="i">qry2</span> <span class="o">=</span>
-        <span class="i">query</span> { <span class="k">for</span> <span class="i">c</span> <span class="k">in</span> <span class="i">dbContext</span><span class="o">.</span><span class="i">Cars</span> <span class="k">do</span>
-                <span class="i">select</span> (<span class="i">c</span><span class="o">.</span><span class="i">UserId</span>, <span class="i">c</span><span class="o">.</span><span class="i">Brand</span>, <span class="i">c</span><span class="o">.</span><span class="i">Year</span>)
-        }
-
-    <span class="i">query</span> { <span class="k">for</span> (<span class="i">i</span>,<span class="i">n</span>,<span class="i">e</span>) <span class="k">in</span> <span class="i">qry1</span> <span class="k">do</span>
-            <span class="i">join</span> (<span class="i">u</span>,<span class="i">b</span>,<span class="i">y</span>) <span class="k">in</span> <span class="i">qry2</span> <span class="i">on</span> (<span class="i">i</span> <span class="o">=</span> <span class="i">u</span>)
-            <span class="i">where</span> (<span class="i">y</span> <span class="o">&gt;</span> <span class="n">2015</span>)
-            <span class="i">select</span> (<span class="i">i</span>,<span class="i">n</span>,<span class="i">e</span>,<span class="i">u</span>,<span class="i">b</span>,<span class="i">y</span>)
-        } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">res</span> <span class="o">=</span> <span class="i">companyNameFilter</span> <span class="k">true</span> <span class="i">query1</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
 </code></pre></td>
 </tr>
 </table>
@@ -283,6 +264,26 @@ This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p
 </code></pre></td>
 </tr>
 </table>
+<h3><a name="Using-non-strongly-typed-GetColumn-name" class="anchor" href="#Using-non-strongly-typed-GetColumn-name">Using non-strongly-typed <em></em>.GetColumn "name"</a></h3>
+<p>All the entities inherit from SqlEntity which has GetColumn-method.
+So you can use non-strongly-typed columns like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> 
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">x</span> <span class="k">in</span> <span class="i">query1</span> <span class="k">do</span>
+        <span class="i">where</span> ((<span class="i">x</span><span class="o">.</span><span class="i">GetColumn</span><span class="o">&lt;</span><span class="i">string</span><span class="o">&gt;</span> <span class="s">&quot;CustomerId&quot;</span>) <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span>)
+        <span class="i">select</span> (<span class="i">x</span><span class="o">.</span><span class="i">GetColumn</span><span class="o">&lt;</span><span class="i">string</span><span class="o">&gt;</span> <span class="s">&quot;CustomerId&quot;</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
+</code></pre></td>
+</tr>
+</table>
+<p>However this is not recommended as one of the SQLProvider's key benefits is strong typing.</p>
 <h2><a name="Generate-composable-queries-from-quotations" class="anchor" href="#Generate-composable-queries-from-quotations">Generate composable queries from quotations</a></h2>
 <p>You can also construct composable queries using the F# quotation mechanism. For
 example, if you need to select a filter function at runtime, you could write the
@@ -305,12 +306,13 @@ filters as quotations, and then include them into query like that:</p>
 <span class="k">let</span> <span class="i">employees</span> <span class="o">=</span>
     <span class="i">query</span> {
         <span class="k">for</span> <span class="i">emp</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
-        <span class="i">where</span> ((<span class="o">%</span><span class="i">runtimeSelectedFilter</span>) <span class="i">emp</span>)
+        <span class="i">where</span> ((<span class="o">%</span><span class="i">runtimeSelectedFilter</span>) <span class="i">emp</span>) 
         <span class="i">select</span> <span class="i">emp</span>
     } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
 </code></pre></td>
 </tr>
 </table>
+<p>Quotations are AST representations which the Linq-to-SQL translator can use.</p>
 
 
         </div>

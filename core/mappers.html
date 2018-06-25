@@ -111,6 +111,30 @@
 </code></pre></td>
 </tr>
 </table>
+<p>The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
+The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span><span class="o">.</span><span class="i">Common</span>
+
+<span class="k">type</span> <span class="i">Employee3</span> <span class="o">=</span> {
+    [&lt;<span class="i">MappedColumn</span>(<span class="s">&quot;FirstName&quot;</span>)&gt;] <span class="i">GivenName</span><span class="o">:</span><span class="i">string</span>
+    [&lt;<span class="i">MappedColumn</span>(<span class="s">&quot;LastName&quot;</span>)&gt;] <span class="i">FamilyName</span><span class="o">:</span><span class="i">string</span>
+    }
+
+<span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> <span class="i">query</span> { <span class="k">for</span> <span class="i">row</span> <span class="k">in</span> <span class="i">employees</span> <span class="k">do</span>
+                  <span class="i">select</span> <span class="i">row</span>} <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">map</span> (<span class="k">fun</span> <span class="i">x</span> <span class="k">-&gt;</span> <span class="i">x</span><span class="o">.</span><span class="i">MapTo</span><span class="o">&lt;</span><span class="i">Employee3</span><span class="o">&gt;</span>())
+</code></pre></td>
+</tr>
+</table>
 <p>Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
 column as a key:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>

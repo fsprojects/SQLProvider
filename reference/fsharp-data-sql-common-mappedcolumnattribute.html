@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>SprocName - SQLProvider</title>
+    <title>MappedColumnAttribute - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
@@ -35,70 +35,35 @@
 
 
 
-<h1>SprocName</h1>
+<h1>MappedColumnAttribute</h1>
 <p>
-  <span>Namespace: FSharp.Data.Sql.Schema</span><br />
+  <span>Namespace: FSharp.Data.Sql.Common</span><br />
 </p>
 <div class="xmldoc">
 </div>
-  <h3>Record Fields</h3>
+  <h3>Constructors</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Record Field</td><td>Description</td></tr>
+      <tr><td>Constructor</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '458', 458)" onmouseover="showTip(event, '458', 458)">
-            Owner
+          <code onmouseout="hideTip(event, '368', 368)" onmouseover="showTip(event, '368', 368)">
+            new(name)
           </code>
-          <div class="tip" id="458">
-            <strong>Signature:</strong> string<br />
+          <div class="tip" id="368">
+            <strong>Signature:</strong> name:string -&gt; MappedColumnAttribute<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L69-69" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L130-130" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '459', 459)" onmouseover="showTip(event, '459', 459)">
-            PackageName
-          </code>
-          <div class="tip" id="459">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L70-70" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '460', 460)" onmouseover="showTip(event, '460', 460)">
-            ProcName
-          </code>
-          <div class="tip" id="460">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L68-68" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
+              <p>CompiledName: <code>.ctor</code></p>
         </td>
       </tr>
     </tbody>
@@ -112,76 +77,20 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '461', 461)" onmouseover="showTip(event, '461', 461)">
-            DbName
+          <code onmouseout="hideTip(event, '369', 369)" onmouseover="showTip(event, '369', 369)">
+            Name
           </code>
-          <div class="tip" id="461">
+          <div class="tip" id="369">
             <strong>Signature:</strong> string<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L75-75" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L132-132" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-              <p>CompiledName: <code>get_DbName</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '462', 462)" onmouseover="showTip(event, '462', 462)">
-            FriendlyName
-          </code>
-          <div class="tip" id="462">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L76-76" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_FriendlyName</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '463', 463)" onmouseover="showTip(event, '463', 463)">
-            FullName
-          </code>
-          <div class="tip" id="463">
-            <strong>Signature:</strong> string<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L77-77" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_FullName</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '464', 464)" onmouseover="showTip(event, '464', 464)">
-            ToList()
-          </code>
-          <div class="tip" id="464">
-            <strong>Signature:</strong> unit -&gt; string list<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlSchema.fs#L72-72" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
+              <p>CompiledName: <code>get_Name</code></p>
         </td>
       </tr>
     </tbody>
