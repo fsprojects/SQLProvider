@@ -1,3 +1,6 @@
+### 1.1.44 - 25.06.2018
+* Extend SQLEntity.MapTo to allow mapping when field names are different than column names, PR #556
+
 ### 1.1.43 - 12.06.2018
 * Comparison being flipped around when a constant comes first #553
 
