@@ -1,3 +1,6 @@
+### 1.1.43 - 12.06.2018
+* Comparison being flipped around when a constant comes first #553
+
 ### 1.1.42 - 03.05.2018
 * Context schema cache support PR #545
 * Improved option type support in convertTypes. PR #544

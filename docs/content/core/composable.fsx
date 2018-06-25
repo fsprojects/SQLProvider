@@ -28,6 +28,10 @@ By passing functions as parameters you are able to generate higher-order query o
 Therefore composable query means that you can do logics to compose just one database-SQL-query from multiple queryables.
 By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.
 
+One common anti-pattern is a trial to solve all the problems in the world by a single code. 
+So when you use this kind of features to achieve "common logics", keep in mind the software mainainability.
+One solution is to add a database view and query that from SQLProvider.
+
 ## Generate composable queries by using Linq IQueryable
 
 With composable queries you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
@@ -103,12 +107,18 @@ open System.Linq
 Then you can define a composable query outside the main query
 *)
 
-let companyNameFilter inUse queryable =
+type CustomersEntity = sql.dataContext.``main.CustomersEntity``
+
+let companyNameFilter inUse =
+
+    let myFilter2 : IQueryable<CustomersEntity> -> IQueryable<CustomersEntity> = fun x -> x.Where(fun i -> i.CustomerId = "ALFKI")
+
     let queryable:(IQueryable<CustomersEntity> -> IQueryable<CustomersEntity>) =
         match inUse with
         |true ->
             (fun iq -> iq.Where(fun (c:CustomersEntity) -> c.CompanyName = "The Big Cheese"))
-        |false -> (fun iq -> iq.Where(fun (c:CustomersEntity) -> c))
+        |false -> 
+            myFilter2
     queryable
 
 (**
@@ -127,24 +137,8 @@ let query1 =
 (**
 and now call you are able to call the second query like this
 *)
-let query2 =
-    companyNameFilter true query1 |> Seq.toArray
 
-    let qry1 =
-        query { for u in dbContext.Users do
-                select (u.Id, u.Name, u.Email)
-        }
-
-    let qry2 =
-        query { for c in dbContext.Cars do
-                select (c.UserId, c.Brand, c.Year)
-        }
-
-    query { for (i,n,e) in qry1 do
-            join (u,b,y) in qry2 on (i = u)
-            where (y > 2015)
-            select (i,n,e,u,b,y)
-        } |> Seq.toArray
+let res = companyNameFilter true query1 |> Seq.toArray
 
 (**
 ### Generate composable queries by using FSharp.Linq.ComposableQuery
@@ -198,6 +192,23 @@ let nestedQueryTest =
 
 (**
 
+### Using non-strongly-typed __.GetColumn "name"
+
+All the entities inherit from SqlEntity which has GetColumn-method.
+So you can use non-strongly-typed columns like this:
+
+*)
+let qry = 
+    query {
+        for x in query1 do
+        where ((x.GetColumn<string> "CustomerId") = "ALFKI")
+        select (x.GetColumn<string> "CustomerId")
+    } |> Seq.head
+
+(**
+
+However this is not recommended as one of the SQLProvider's key benefits is strong typing.
+
 ## Generate composable queries from quotations
 
 You can also construct composable queries using the F# quotation mechanism. For
@@ -213,6 +224,12 @@ let runtimeSelectedFilter = if 1 = 1 then johnFilter else pamFilter
 let employees =
     query {
         for emp in ctx.Main.Employees do
-        where ((%runtimeSelectedFilter) emp)
+        where ((%runtimeSelectedFilter) emp) 
         select emp
     } |> Seq.toArray
+
+(**
+
+Quotations are AST representations which the Linq-to-SQL translator can use.
+
+*)

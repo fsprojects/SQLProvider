@@ -649,3 +649,13 @@ let qry =
 		groupBy 1 into g
 		select (g.Count(), g.Sum(fun p -> p.UnitPrice))
 	} |> Seq.head
+
+(**
+
+For more info see:
+
+ * [Composable Query](core/composable.html)
+ * [Mapping to record types](core/mappers.html)
+ * [CRUD operations](core/crud.html)
+
+*)
