@@ -654,8 +654,8 @@ let qry =
 
 For more info see:
 
- * [Composable Query](core/composable.html)
- * [Mapping to record types](core/mappers.html)
- * [CRUD operations](core/crud.html)
+ * [Composable Query](composable.html)
+ * [Mapping to record types](mappers.html)
+ * [CRUD operations](crud.html)
 
 *)
