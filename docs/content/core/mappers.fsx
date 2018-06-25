@@ -66,6 +66,21 @@ type Employee2 = {
 let qry = query { for row in employees do
                   select row} |> Seq.map (fun x -> x.MapTo<Employee2>())
 
+(**
+The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
+The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:
+*)
+
+open FSharp.Data.Sql.Common
+
+type Employee3 = {
+    [<MappedColumn("FirstName")>] GivenName:string
+    [<MappedColumn("LastName")>] FamilyName:string
+    }
+
+let qry = query { for row in employees do
+                  select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
+
 
 (**
 Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
@@ -77,8 +92,4 @@ let rows = query { for row in employees do
 
 let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
 let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])
-
-
-
-
 

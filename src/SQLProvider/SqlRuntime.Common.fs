@@ -127,6 +127,10 @@ type EntityState =
     | Delete
     | Deleted
 
+type MappedColumnAttribute(name: string) = 
+    inherit Attribute()
+    member x.Name with get() = name
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
@@ -290,6 +294,11 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         let typ = typeof<'a>
         let propertyTypeMapping = defaultArg propertyTypeMapping snd
         let cleanName (n:string) = n.Replace("_","").Replace(" ","").ToLower()
+        let clean (pi: PropertyInfo) = 
+            match pi.GetCustomAttribute(typeof<MappedColumnAttribute>) with
+            | :? MappedColumnAttribute as attr -> attr.Name
+            | _ -> pi.Name
+            |> cleanName
         let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
         if FSharpType.IsRecord typ
         then
@@ -298,7 +307,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
             let values =
                 [|
                     for prop in fields do
-                        match dataMap.TryGetValue(cleanName prop.Name) with
+                        match dataMap.TryGetValue(clean prop) with
                         | true, data -> yield propertyTypeMapping (prop.Name,data)
                         | false, _ -> ()
                 |]
@@ -306,7 +315,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         else
             let instance = Activator.CreateInstance<'a>()
             for prop in typ.GetProperties() do
-                match dataMap.TryGetValue(cleanName prop.Name) with
+                match dataMap.TryGetValue(clean prop) with
                 | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
                 | false, _ -> ()
             instance
