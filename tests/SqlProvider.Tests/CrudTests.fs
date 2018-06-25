@@ -166,16 +166,16 @@ let ``Conflict resolution is correctly applied``() =
     // Works when reusing the same entity with changed properties    
     let newAddress = "FsProjects 2.0"    
     ent.Address <- newAddress
-    ent.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+    ent.OnConflict <- Common.OnConflict.Update
     dc.SubmitUpdates()    
     
-    Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
+    Assert.AreEqual(getCurrentAddress |> Seq.head, newAddress)
 
     // Works when creating a fresh entity
     let ent2 = createCustomer dc
     let newerAddress = "FsProjects 3.0"    
-    ent.Address <- newerAddress
-    ent.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+    ent2.Address <- newerAddress
+    ent2.OnConflict <- Common.OnConflict.Update
     dc.SubmitUpdates()    
     
     Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
@@ -183,7 +183,7 @@ let ``Conflict resolution is correctly applied``() =
     // DoNothing doesn't update the address
     let ent3 = createCustomer dc        
     ent3.Address <- "asdkjskdjsldjskjdls"
-    ent3.OnConflict <- FSharp.Data.Sql.Common.OnConflict.DoNothing
+    ent3.OnConflict <- Common.OnConflict.DoNothing
     dc.SubmitUpdates()
 
     Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
