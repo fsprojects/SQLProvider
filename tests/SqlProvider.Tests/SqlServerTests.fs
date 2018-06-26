@@ -16,9 +16,9 @@ open System.Data
 open NUnit.Framework
 
 #if APPVEYOR
-let [<Literal>] connStr = "Server=(local)\SQL2008R2SP2;Database=master;UID=sa;PWD=Password12!; Initial Catalog=HR;"
+let [<Literal>] connStr = "Data Source=(local)\SQL2008R2SP2;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
 #else
-let [<Literal>] connStr = "Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+let [<Literal>] connStr = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
 #endif 
 #endif
 
