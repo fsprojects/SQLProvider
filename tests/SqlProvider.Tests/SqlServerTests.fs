@@ -192,7 +192,7 @@ let ``simple math operationsquery``() =
             select p.DepartmentId 
         } |> Seq.toList |> Assert.IsNotEmpty
 
-    let ``should be empty`` = 
+    let ``should be empty``() = 
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
@@ -221,7 +221,7 @@ let canoncicalOpTest =
 
 
 [<Test>]
-let ```can successfully update records``` = 
+let ``can successfully update records``() = 
   let antartica =
     let result =
         query {
@@ -248,7 +248,7 @@ let ```can successfully update records``` =
 //********************** Procedures **************************//
 
 [<Test>]
-let ```can invoke a sproc``` = 
+let ``can invoke a sproc``() = 
   ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
@@ -276,7 +276,7 @@ type Region = {
 }
 
 [<Test>]
-let ```Support for MARS procs``` =   
+let ``Support for MARS procs``() =   
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
     [
@@ -289,7 +289,7 @@ let ```Support for MARS procs``` =
     |> Assert.IsNotEmpty
 
 [<Test>]
-let ```Support for sprocs that return ref cursors and has in parameters``` = 
+let ``Support for sprocs that return ref cursors and has in parameters``() = 
   let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
@@ -300,7 +300,7 @@ let ```Support for sprocs that return ref cursors and has in parameters``` =
   getemployees (new System.DateTime(1999,4,1))
 
 [<Test>]
-let ```Distinct alias test``` = 
+let ``Distinct alias test``() = 
     query {
         for emp in ctx.Dbo.Employees do
         sortBy (emp.FirstName)
@@ -308,7 +308,7 @@ let ```Distinct alias test``` =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let ```Standard deviation test``` = 
+let ``Standard deviation test``() = 
     query {
         for emp in ctx.Dbo.Employees do
         select (float emp.Salary)
@@ -316,7 +316,7 @@ let ```Standard deviation test``` =
 
 
 //******************** Delete all test **********************//
-let ```Delte all tests``` = 
+let ``Delte all tests``() = 
   query {
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
