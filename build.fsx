@@ -190,18 +190,15 @@ Target "SetupMSSQL2008R2" (fun _ ->
 
       runCmd' 0
 
-
-
     let runScript fileLines =            
             
-      // We replace the "GO"s with "COMMIT", yielding the individual SQL commands
+      // We look for the 'GO' lines that complete the individual SQL commands
       let rec cmdGen cache (lines : string list) =
         seq {
           match cache, lines with
           | [], [] -> ()
-          | [], ls -> yield! cmdGen [ "BEGIN TRANSACTION" ] ls
-          | cmds, [] -> yield "COMMIT" :: cmds
-          | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield "COMMIT" :: cmds; yield! cmdGen [] ls
+          | cmds, [] -> yield cmds
+          | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield cmds; yield! cmdGen [] ls
           | cmds, l :: ls -> yield! cmdGen (l :: cmds) ls
         }      
 
