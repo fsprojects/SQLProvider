@@ -309,10 +309,12 @@ let ``Distinct alias test``() =
 
 [<Test>]
 let ``Standard deviation test``() = 
-    query {
-        for emp in ctx.Dbo.Employees do
-        select (float emp.Salary)
-    } |> Seq.stdDevAsync |> Async.RunSynchronously |> Assert.IsNotEmpty
+    let salaryStdDev : float = 
+      query {
+          for emp in ctx.Dbo.Employees do
+          select (float emp.Salary)
+      } |> Seq.stdDevAsync |> Async.RunSynchronously
+    Assert.Greater(salaryStdDev, 0.0)
 
 
 //******************** Delete all test **********************//
