@@ -120,42 +120,42 @@ Target "BuildCore" (fun _ ->
 // Set up a PostgreSQL database in the CI pipeline to run tests
 
 Target "SetupPostgreSQL" (fun _ ->
-    let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
-
-    connBuilder.Host <- "localhost"
-    connBuilder.Port <- 5432
-    connBuilder.Database <- "postgres"
-    connBuilder.Username <- "postgres"
-    connBuilder.Password <- 
-      match buildServer with
-      | Travis -> ""
-      | AppVeyor -> "Password12!"
-      | _ -> "postgres"      
+      let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
   
-    let runCmd query = 
-      // We wait up to 30 seconds for PostgreSQL to be initialized
-      let rec runCmd' attempt = 
-        try
-          use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
-          conn.Open()
-          use cmd = new Npgsql.NpgsqlCommand(query, conn)
-          cmd.ExecuteNonQuery() |> ignore 
-        with e -> 
-          printfn "Connection attempt %i: %A" attempt e
-          Threading.Thread.Sleep 1000
-          if attempt < 30 then runCmd' (attempt + 1)
-
-      runCmd' 0
-              
-    let testDbName = "sqlprovider"
-    printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
-    runCmd (sprintf "CREATE DATABASE %s" testDbName)
-    connBuilder.Database <- testDbName
-
-    (!! "src/DatabaseScripts/PostgreSQL/*.sql")
-    |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
-    |> Seq.map IO.File.ReadAllText      
-    |> Seq.iter runCmd
+      connBuilder.Host <- "localhost"
+      connBuilder.Port <- 5432
+      connBuilder.Database <- "postgres"
+      connBuilder.Username <- "postgres"
+      connBuilder.Password <- 
+        match buildServer with
+        | Travis -> ""
+        | AppVeyor -> "Password12!"
+        | _ -> "postgres"      
+  
+      let runCmd query = 
+        // We wait up to 30 seconds for PostgreSQL to be initialized
+        let rec runCmd' attempt = 
+          try
+            use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
+            conn.Open()
+            use cmd = new Npgsql.NpgsqlCommand(query, conn)
+            cmd.ExecuteNonQuery() |> ignore 
+          with e -> 
+            printfn "Connection attempt %i: %A" attempt e
+            Threading.Thread.Sleep 1000
+            if attempt < 30 then runCmd' (attempt + 1)
+  
+        runCmd' 0
+                
+      let testDbName = "sqlprovider"
+      printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
+      runCmd (sprintf "CREATE DATABASE %s" testDbName)
+      connBuilder.Database <- testDbName
+  
+      (!! "src/DatabaseScripts/PostgreSQL/*.sql")
+      |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
+      |> Seq.map IO.File.ReadAllText      
+      |> Seq.iter runCmd
 )
 
 // --------------------------------------------------------------------------------------

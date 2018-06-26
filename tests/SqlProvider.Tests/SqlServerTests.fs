@@ -29,6 +29,7 @@ open FSharp.Data.Sql
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
+[<Test>]
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
@@ -53,41 +54,45 @@ let employeesFirstName =
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
+[<Test>]
 let employeesFirstNameAsync = 
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
-    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+    } |> Seq.executeQueryAsync |> Async.RunSynchronously |> Assert.IsNotEmpty
 
 // Note that Employees-table should have a Description-field in database, visible as XML-tooltip in your IDE.
 // Column-level descriptions work also, but they are not included to exported SQL-scripts by SQL-server.
 
 //Ref issue #92
+[<Test>]
 let employeesFirstNameEmptyList = 
     query {
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
         select emp
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
+[<Test>]
 let regionsEmptyTable = 
     query {
         for r in ctx.Dbo.Regions do
         select r
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 //let tableWithNoKey = 
 //    query {
 //        for r in ctx.Dbo.Table1 do
 //        select r.Col
-//    } |> Seq.toList
+//    } |> Seq.toList |> Assert.IsNotEmpty
 //
 //let entity = ctx.Table1.Create()
 //entity.Col <- 123uy
 //ctx.SubmitUpdates()
 
+[<Test>]
 let salesNamedDavid = 
     query {
             for emp in ctx.Dbo.Employees do
@@ -95,8 +100,9 @@ let salesNamedDavid =
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
             
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
+[<Test>]
 let employeesJob = 
     let dbo = ctx.Dbo
     query {
@@ -105,7 +111,7 @@ let employeesJob =
             join dept in dbo.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
@@ -116,8 +122,9 @@ let topSales5ByCommission =
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList
+    |> Seq.toList |> Assert.IsNotEmpty
 
+[<Test>]
 let pagingTest = 
     query {
         for emp in ctx.Dbo.Employees do
@@ -127,7 +134,7 @@ let pagingTest =
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList
+    |> Seq.toList |> Assert.IsNotEmpty
 
 open Newtonsoft.Json
 
@@ -157,11 +164,12 @@ let countries =
                                                | _ -> value
                                          )
                )
-    |> Seq.toList
+    |> Seq.toList |> Assert.IsNotEmpty
 
 
 open System.Linq
 
+[<Test>]
 let nestedQueryTest = 
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
@@ -172,26 +180,28 @@ let nestedQueryTest =
         for emp in ctx.Dbo.Employees do
         where (qry1.Contains(emp.FirstName))
         select (emp.FirstName, emp.LastName)
-    } |> Seq.toArray
+    } |> Seq.toArray |> Assert.IsNotEmpty
 
 
+[<Test>]
 let ``simple math operationsquery``() =
     let itemOf90 = 
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId - 85 = 5)
             select p.DepartmentId 
-        } |> Seq.toList
+        } |> Seq.toList |> Assert.IsNotEmpty
 
     let ``should be empty`` = 
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
             select p.DepartmentId 
-        } |> Seq.toList
+        } |> Seq.toList |> Assert.IsEmpty
     itemOf90, ``should be empty``
 
 
+[<Test>]
 let canoncicalOpTest = 
     query {
         // Silly query not hitting indexes, so testing purposes only...
@@ -205,18 +215,21 @@ let canoncicalOpTest =
         )
         sortBy emp.HireDate.Day
         select (emp.HireDate, emp.Email, job.MaxSalary)
-    } |> Seq.toArray
+    } |> Seq.toArray |> Assert.IsNotEmpty
 
 //************************ CRUD *************************//
 
 
-let antartica =
+[<Test>]
+let ```can successfully update records``` = 
+  let antartica =
     let result =
         query {
             for reg in ctx.Dbo.Regions do
             where (reg.RegionId = 5)
             select reg
         } |> Seq.toList
+    result |> Assert.IsNotEmpty |> ignore
     match result with
     | [ant] -> ant
     | _ -> 
@@ -226,29 +239,35 @@ let antartica =
         ctx.SubmitUpdates()
         newRegion
 
-antartica.RegionName <- "ant"
-ctx.SubmitUpdates()
+  antartica.RegionName <- "ant"
+  ctx.SubmitUpdates()
 
-antartica.Delete()
-ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
+  antartica.Delete()
+  ctx.SubmitUpdatesAsync() |> Async.RunSynchronously  
 
 //********************** Procedures **************************//
 
-ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+[<Test>]
+let ```can invoke a sproc``` = 
+  ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+
 
 
 //Support for sprocs that return ref cursors
+[<Test>]
 let employees =
     [
       for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
         yield e.MapTo<Employee>()
     ]
+    |> Assert.IsNotEmpty
 
+[<Test>]
 let employeesAsync =
     async {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
         return ia.ResultSet
-    } |> Async.RunSynchronously
+    } |> Async.RunSynchronously |> Assert.IsNotNull
 
 type Region = {
     RegionId : int
@@ -256,8 +275,8 @@ type Region = {
     RegionDescription : string
 }
 
-//Support for MARS procs
-let locations_and_regions =
+[<Test>]
+let ```Support for MARS procs``` =   
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
     [
@@ -267,39 +286,39 @@ let locations_and_regions =
       for e in results.ResultSet_1 do
         yield e.MapTo<Region>() |> box
     ]
+    |> Assert.IsNotEmpty
 
-
-//Support for sprocs that return ref cursors and has in parameters
-let getemployees hireDate =
+[<Test>]
+let ```Support for sprocs that return ref cursors and has in parameters``` = 
+  let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ResultSet do
         yield e.MapTo<Employee>()
     ]
 
-getemployees (new System.DateTime(1999,4,1))
+  getemployees (new System.DateTime(1999,4,1))
 
-
-// Distinct alias test
-let employeesFirstNameSort = 
+[<Test>]
+let ```Distinct alias test``` = 
     query {
         for emp in ctx.Dbo.Employees do
         sortBy (emp.FirstName)
         select (emp.FirstName, emp.FirstName)
-    } |> Seq.toList
+    } |> Seq.toList |> Assert.IsNotEmpty
 
-// Standard deviation test
-let stdDevTest = 
+[<Test>]
+let ```Standard deviation test``` = 
     query {
         for emp in ctx.Dbo.Employees do
         select (float emp.Salary)
-    } |> Seq.stdDevAsync |> Async.RunSynchronously
+    } |> Seq.stdDevAsync |> Async.RunSynchronously |> Assert.IsNotEmpty
 
 
 //******************** Delete all test **********************//
-
-query {
-    for c in ctx.Dbo.Employees do
-    where (c.FirstName = "Tuomas")
-} |> Seq.``delete all items from single table`` 
-|> Async.RunSynchronously
+let ```Delte all tests``` = 
+  query {
+      for c in ctx.Dbo.Employees do
+      where (c.FirstName = "Tuomas")
+  } |> Seq.``delete all items from single table`` 
+  |> Async.RunSynchronously
