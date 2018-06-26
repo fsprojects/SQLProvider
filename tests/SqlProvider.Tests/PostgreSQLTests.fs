@@ -513,4 +513,90 @@ let ``Access a different schema than the default one``() =
   testRow.ColumnInOtherSchema <- 42  
   ctx.SubmitUpdates()
 
+//********************** Upsert ***************************//
+
+
+[<Test>]
+let ``Upsert on table with single primary key``() = 
+  let ctx = HR.GetDataContext()
+
+  let readGermany =
+    query { 
+      for country in ctx.Public.Countries do 
+      where (country.CountryId = "DE") 
+      select country.CountryName.Value
+    }
+    
+  let oldGermany = Seq.head readGermany
+  let newGermany = "West " + oldGermany
+
+  let wg = ctx.Public.Countries.Create()
+  wg.CountryId <- "DE"
+  wg.CountryName <- Some newGermany
+  wg.RegionId <- Some 1
+  wg.OnConflict <- Common.OnConflict.Update
+  ctx.SubmitUpdates()
+
+  let newGermanyDb = Seq.head readGermany
+
+  Assert.AreEqual(newGermany, newGermanyDb)
+
+[<Test>]
+let ``Upsert on table with composite primary key``() = 
+  let ctx = HR.GetDataContext()
+  
+  let employeeId, startDate, jobId, oldEndDate =
+    query { 
+      for jobHistory in ctx.Public.JobHistory do 
+      select (jobHistory.EmployeeId, jobHistory.StartDate, jobHistory.JobId, jobHistory.EndDate)
+    }
+    |> Seq.head
+  
+  let newEndDate = oldEndDate.AddDays(1.0)
+    
+  let jh = ctx.Public.JobHistory.Create()
+  jh.EmployeeId <- employeeId
+  jh.StartDate <- startDate
+  jh.EndDate <- newEndDate
+  jh.JobId <- jobId
+
+  jh.OnConflict <- Common.OnConflict.Update
+  ctx.SubmitUpdates()
+
+  let newEndDateDb =
+    query { 
+      for jobHistory in ctx.Public.JobHistory do 
+      where (jobHistory.EmployeeId = employeeId)
+      where (jobHistory.StartDate = startDate)
+      select (jobHistory.EndDate)
+    }
+    |> Seq.head
+
+  Assert.AreEqual(newEndDate, newEndDateDb)
+
+[<Test>]
+let ``Upsert with DO NOTHING leaves data unchanged``() = 
+  let ctx = HR.GetDataContext()
+  
+  let readGermanyRegion =
+    query { 
+      for country in ctx.Public.Countries do 
+      where (country.CountryId = "DE") 
+      select country.RegionId.Value
+    }
+
+  let oldGermanyRegion = Seq.head readGermanyRegion
+  let newGermanyRegionThatShouldNotBeSet = oldGermanyRegion + 1
+
+  let wg = ctx.Public.Countries.Create()
+  wg.CountryId <- "DE"
+  wg.CountryName <- Some "Germany"
+  wg.RegionId <- Some newGermanyRegionThatShouldNotBeSet
+  wg.OnConflict <- Common.OnConflict.DoNothing 
+  ctx.SubmitUpdates()
+
+  let newGermanyRegionDb = Seq.head readGermanyRegion
+
+  Assert.AreEqual(oldGermanyRegion, newGermanyRegionDb)
+
 #endif

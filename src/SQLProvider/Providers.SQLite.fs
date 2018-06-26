@@ -240,8 +240,15 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             |> List.toArray
             |> Array.unzip
 
+        let conflictClause =
+          match entity.OnConflict with
+          | Throw -> ""
+          | Update -> " OR REPLACE "
+          | DoNothing -> " OR IGNORE "
+
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT last_insert_rowid();"
+        ~~(sprintf "INSERT %s INTO %s (%s) VALUES (%s); SELECT last_insert_rowid();"
+            conflictClause
             entity.Table.FullName
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))

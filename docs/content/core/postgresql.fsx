@@ -103,3 +103,4 @@ type sql =
         indivAmount,
         useOptTypes,
         owner>
+
