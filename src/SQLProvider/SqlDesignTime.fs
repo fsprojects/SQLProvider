@@ -807,55 +807,54 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                
                let PARAMETER_COUNT = Array.length customParameters 
                
-               // bit of a throwback: we generate all possible bitflags of the appropriate length                 
-               for bitflag in 0 .. (pown 2 PARAMETER_COUNT) - 1 do
-                   
-                   // flag at 0 = provide a custom parameter and use it
-                   // flag at 1 = do not provider parameter, use the default static one
-                   let inline flagAt position = (bitflag >>> position) &&& 1
-                   
-                   let paramList = 
-                     [ for position in 0 .. PARAMETER_COUNT - 1 do
-                          match flagAt position with
-                          | 0 -> yield customParameters.[position]
-                          | _ -> ()
-                     ]                  
-                   
-                   let invoker (args: Expr list) =
-                   
-                     let actualArgs = 
-                       [| 
-                          let mutable argPosition = 0
-                          for position in 0 .. PARAMETER_COUNT - 1 do
-                              match flagAt position with
-                              | 0 -> yield args.[argPosition]; argPosition <- argPosition + 1
-                              | _ -> yield defaultParameters.[position]
-                       |]
-                   
-                     <@@ 
+               for actualConstr in [| Choice1Of2 constr; Choice2Of2 conStrExpr; |] do
+                 for actualResPath in [| Choice1Of2 respath; Choice2Of2 <@@ resolutionPath @@> |] do
+                   for actualTransOptions in [| Choice1Of2 transopt; Choice2Of2 defaultTransactionOptionsExpr |] do
+                     for actualCmdTimeout in [| Choice1Of2 cmdTimeout; Choice2Of2 <@@ NO_COMMAND_TIMEOUT @@> |] do
+                       for actualSelectOps in [| Choice1Of2 selectOperations; Choice2Of2 defaultSelectOperations |] do
 
-                        let cmdTimeout = 
-                          let argTimeout = %%actualArgs.[3]
-                          if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
+                         let actualParams = [| actualConstr; actualResPath; actualTransOptions; actualCmdTimeout; actualSelectOps |]
 
-                        SqlDataContext(rootTypeName, %%actualArgs.[0], dbVendor, %%actualArgs.[1], %%referencedAssemblyExpr, 
-                                         runtimeAssembly, owner, caseSensitivity, tableNames, "", odbcquote, 
-                                         sqliteLibrary, %%actualArgs.[2], cmdTimeout, %%actualArgs.[4]) :> ISqlDataContext @@>
+                         let paramList = 
+                           [ for actualParam in actualParams do
+                               match actualParam with 
+                               | Choice1Of2 p -> yield p
+                               | Choice2Of2 _ -> ()                      
+                           ]
+
+                         let invoker (args: Expr list) =
+                           let actualArgs = 
+                              [| 
+                                 let mutable argPosition = 0
+                                 for actualParam in actualParams do
+                                     match actualParam with 
+                                     | Choice1Of2 _ -> yield args.[argPosition]; argPosition <- argPosition + 1
+                                     | Choice2Of2 p -> yield p
+                              |]
                    
-                   let providerParams = 
-                       paramList |> List.map(fun (pname, _, ptype) -> ProvidedParameter(pname, ptype))
+                           <@@ 
+
+                              let cmdTimeout = 
+                                let argTimeout = %%actualArgs.[3]
+                                if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
+
+                              SqlDataContext(rootTypeName, %%actualArgs.[0], dbVendor, %%actualArgs.[1], %%referencedAssemblyExpr, 
+                                               runtimeAssembly, owner, caseSensitivity, tableNames, "", odbcquote, 
+                                               sqliteLibrary, %%actualArgs.[2], cmdTimeout, %%actualArgs.[4]) :> ISqlDataContext @@>
                    
-                   let meth = 
-                       ProvidedMethod("GetDataContext", providerParams, serviceType, isStatic = true, invokeCode = invoker)
-                   
-                   let xmlComment = 
-                       let all = paramList |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
-                       String.Join("", all)
-                   
-                   meth.AddXmlDoc ("<summary>Returns an instance of the SQL Provider using the static parameters</summary>" + xmlComment)
-                   
-                   yield meth
-                   
+                         let providerParams = 
+                             paramList |> List.map(fun (pname, _, ptype) -> ProvidedParameter(pname, ptype))
+                         
+                         let meth = 
+                             ProvidedMethod("GetDataContext", providerParams, serviceType, isStatic = true, invokeCode = invoker)
+                         
+                         let xmlComment = 
+                             let all = paramList |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
+                             String.Join("", all)
+                         
+                         meth.AddXmlDoc ("<summary>Returns an instance of the SQL Provider using the static parameters</summary>" + xmlComment)
+                         
+                         yield meth                   
             ])
 
         match con with
