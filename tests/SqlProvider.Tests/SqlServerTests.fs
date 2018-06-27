@@ -163,9 +163,9 @@ let topSales5ByCommission(runtimeConnStr) =
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let pagingTest  (runtimeConnStr) =
+let ``test that paging works``  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+    
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
@@ -174,8 +174,26 @@ let pagingTest  (runtimeConnStr) =
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList |> Assert.IsNotEmpty
+    |> Seq.toList 
+    |> Assert.IsNotEmpty
+    
+[<TestCase(connStr2017)>]
+let ``test that paging uses OFFSET insted of CTEs in MSSQL2017``  (runtimeConnStr) =
+    
+    let checkForPaging = Handler<string>(fun _ queryString -> 
+        let offsetString = sprintfn "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" 2 5
+        let usesOffset = queryString.Contains offsetString
+        Assert.True usesOffset
+    )
 
+    // add
+    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.AddHandler handler
+
+    ``test that paging works``(runtimeConnStr)
+    
+    // remove
+    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.RemoveHandler handler    
+    
 open Newtonsoft.Json
 
 type OtherCountryInformation = {

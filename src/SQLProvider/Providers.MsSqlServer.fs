@@ -309,11 +309,9 @@ type internal MSSQLPagingCompatibility =
 
 type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let pkLookup = ConcurrentDictionary<string,string list>()
-    let tableLookup = ConcurrentDictionary<string,Table>()
-    let columnLookup = ConcurrentDictionary<string,ColumnLookup>()
-    let mssqlVersionCache = ConcurrentBag<Version>()
-    let relationshipLookup = ConcurrentDictionary<string,Relationship list * Relationship list>()
+    
+    // Remembers the version of each instance it connects to
+    let mssqlVersionCache = ConcurrentDictionary<string, Version>()
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 
         let aliasSprint =
@@ -535,13 +533,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                if con.State <> ConnectionState.Open then con.Open()
 
                // While the connection is open, fetches the server version for query generation purposes
-               if mssqlVersionCache.IsEmpty then      
+               if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
                   printfn "Detecting MSSQL version..."
                   let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
                   printfn "Version found: %b; version = %A" success version
-                  if success then mssqlVersionCache.Add(version)
+                  if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
                else
-                  printfn "MSSQL version already known: %A" (mssqlVersionCache.TryPeek())
+                  printfn "MSSQL version already known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
 
                use reader = com.ExecuteReader()
                let columns =
@@ -629,7 +627,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later..
             let param = ref 0
@@ -647,8 +645,8 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 paramName
                             
             let mssqlPaging = 
-              printfn "MSSQL version currently known: %A" (mssqlVersionCache.TryPeek())
-              match mssqlVersionCache.TryPeek() with
+              printfn "MSSQL version currently known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
+              match mssqlVersionCache.TryGetValue(con.ConnectionString) with
               // SQL 2008 and earlier do not support OFFSET
               | true, mssqlVersion when mssqlVersion.Major < 11 -> printfn "Using old-style paging"; MSSQLPagingCompatibility.RowNumber
               | _ -> printfn "Using new-style paging"; MSSQLPagingCompatibility.Offset
@@ -832,7 +830,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             outerSb.Append "WITH CTE AS ( "  |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requries an orderBy clause."
+            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =

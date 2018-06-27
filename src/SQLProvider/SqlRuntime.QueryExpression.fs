@@ -711,6 +711,6 @@ module internal QueryExpressionTransformer =
                                             | None -> snd sqlQuery.UltimateChild.Value
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 
-        let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript)
+        let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript,con)
 
         (sql,parameters,projectionDelegate,baseTable)
