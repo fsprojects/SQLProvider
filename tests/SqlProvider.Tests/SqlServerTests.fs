@@ -4,6 +4,11 @@
 #I @"../../packages/scripts/Newtonsoft.Json/lib/net45"
 #r @"../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 #else
+
+#if TRAVIS
+[<Ignore>]
+#endif
+[<TestFixture>]
 module SqlServerTests
 #endif
 
