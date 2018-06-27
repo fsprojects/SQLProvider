@@ -4,15 +4,11 @@
 #I @"../../packages/scripts/Newtonsoft.Json/lib/net45"
 #r @"../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 #else
+module SqlServerTests
 
 #if TRAVIS
 // Do not run on Travis
-[<NUnit.Framework.Ignore>]
-#endif
-[<NUnit.Framework.TestFixture>]
-module SqlServerTests
-#endif
-
+#else
 #if LOCALBUILD
 #else
 
