@@ -84,7 +84,7 @@ let employeesFirstNameEmptyList  () =
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
         select emp
-    } |> Seq.toList |> Assert.IsNotEmpty
+    } |> Seq.toList |> Assert.IsEmpty
 
 [<Test>]
 let regionsEmptyTable  () =
@@ -126,7 +126,7 @@ let employeesJob  () =
             for emp in dbo.Employees do
             for manager in emp.``dbo.EMPLOYEES by EMPLOYEE_ID`` do
             join dept in dbo.Departments on (emp.DepartmentId = dept.DepartmentId)
-            where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
+            where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "Steve%")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)
     } |> Seq.toList |> Assert.IsNotEmpty
 
@@ -251,28 +251,47 @@ let canoncicalOpTest  () =
 let ``can successfully update records`` () =
   let ctx = HR.GetDataContext()
  
-  let antartica =
-    let result =
+  let antarctica =
+    let existingAntarctica =
         query {
             for reg in ctx.Dbo.Regions do
             where (reg.RegionId = 5)
             select reg
-        } |> Seq.toList
-    result |> Assert.IsNotEmpty |> ignore
-    match result with
+        } |> Seq.toList   
+
+    match existingAntarctica with
     | [ant] -> ant
     | _ -> 
         let newRegion = ctx.Dbo.Regions.Create() 
-        newRegion.RegionName <- "Antartica"
+        newRegion.RegionName <- "Antarctica"
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
         newRegion
 
-  antartica.RegionName <- "ant"
+  antarctica.RegionName <- "ant"
   ctx.SubmitUpdates()
 
-  antartica.Delete()
+  let newName = 
+    query {
+            for reg in ctx.Dbo.Regions do
+            where (reg.RegionId = 5)
+            select (reg.RegionName)
+    }
+    |> Seq.head
+
+  Assert.Equals(newName, "ant") |> ignore
+
+  antarctica.Delete()
   ctx.SubmitUpdatesAsync() |> Async.RunSynchronously  
+
+  let newRecords = 
+    query {
+        for reg in ctx.Dbo.Regions do
+        where (reg.RegionId = 5)
+        select reg
+    } |> Seq.toList   
+
+  Assert.IsEmpty(newRecords) |> ignore
 
 //********************** Procedures **************************//
 
