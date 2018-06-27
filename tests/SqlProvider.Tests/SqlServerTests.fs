@@ -29,11 +29,10 @@ open FSharp.Data.Sql
 let resolutionFolder = __SOURCE_DIRECTORY__
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
-[<Test>]
+
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
-let ctx = HR.GetDataContext()
 
 type Employee = {
     EmployeeId : int32
@@ -44,20 +43,30 @@ type Employee = {
 
 
 //***************** Individuals ***********************//
-let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
+[<Test>]
+let ``get individuals``  () =
+    let ctx = HR.GetDataContext()
+ 
+  let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 
-indv.FirstName + " " + indv.LastName + " " + indv.Email
+  indv.FirstName + " " + indv.LastName + " " + indv.Email
+  |> Assert.IsNotNullOrEmpty
 
 
 //*************** QUERY ************************//
-let employeesFirstName = 
-    query {
-        for emp in ctx.Dbo.Employees do
-        select emp.FirstName
-    } |> Seq.toList |> Assert.IsNotEmpty
+[<Test>]
+let employeesFirstName  () =
+    let ctx = HR.GetDataContext()
+ 
+  query {
+      for emp in ctx.Dbo.Employees do
+      select emp.FirstName
+  } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesFirstNameAsync = 
+let employeesFirstNameAsync  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
@@ -68,7 +77,9 @@ let employeesFirstNameAsync =
 
 //Ref issue #92
 [<Test>]
-let employeesFirstNameEmptyList = 
+let employeesFirstNameEmptyList  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
@@ -76,7 +87,9 @@ let employeesFirstNameEmptyList =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let regionsEmptyTable = 
+let regionsEmptyTable  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         for r in ctx.Dbo.Regions do
         select r
@@ -93,7 +106,9 @@ let regionsEmptyTable =
 //ctx.SubmitUpdates()
 
 [<Test>]
-let salesNamedDavid = 
+let salesNamedDavid  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
             for emp in ctx.Dbo.Employees do
             join d in ctx.Dbo.Departments on (emp.DepartmentId = d.DepartmentId)
@@ -103,7 +118,9 @@ let salesNamedDavid =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesJob = 
+let employeesJob  () =
+    let ctx = HR.GetDataContext()
+ 
     let dbo = ctx.Dbo
     query {
             for emp in dbo.Employees do
@@ -125,7 +142,9 @@ let topSales5ByCommission =
     |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let pagingTest = 
+let pagingTest  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
@@ -149,28 +168,32 @@ type Country = {
     Other : OtherCountryInformation
 }
 
-//Can customise SQLEntity mapping
-let countries = 
-    query {
-        for emp in ctx.Dbo.Countries do
-        select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
-                                               match prop with
-                                               | "Other" -> 
-                                                    if value <> null
-                                                    then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
-                                                    else Unchecked.defaultof<OtherCountryInformation> |> box
-                                               | _ -> value
-                                         )
-               )
-    |> Seq.toList |> Assert.IsNotEmpty
+[<Test>]
+let ``Can customise SQLEntity mapping`` () =
+  let ctx = HR.GetDataContext()
+  let countries = 
+      query {
+          for emp in ctx.Dbo.Countries do
+          select emp
+      } 
+      |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+                                                 match prop with
+                                                 | "Other" -> 
+                                                      if value <> null
+                                                      then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
+                                                      else Unchecked.defaultof<OtherCountryInformation> |> box
+                                                 | _ -> value
+                                           )
+                 )
+      |> Seq.toList |> Assert.IsNotEmpty
 
 
 open System.Linq
 
 [<Test>]
-let nestedQueryTest = 
+let nestedQueryTest  () =
+    let ctx = HR.GetDataContext()
+ 
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -184,7 +207,9 @@ let nestedQueryTest =
 
 
 [<Test>]
-let ``simple math operationsquery``() =
+let ``simple math operationsquery`` () =
+    let ctx = HR.GetDataContext()
+
     let itemOf90 = 
         query {
             for p in ctx.Dbo.Departments do
@@ -202,7 +227,9 @@ let ``simple math operationsquery``() =
 
 
 [<Test>]
-let canoncicalOpTest = 
+let canoncicalOpTest  () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for job in ctx.Dbo.Jobs do
@@ -221,7 +248,9 @@ let canoncicalOpTest =
 
 
 [<Test>]
-let ``can successfully update records``() = 
+let ``can successfully update records`` () =
+  let ctx = HR.GetDataContext()
+ 
   let antartica =
     let result =
         query {
@@ -248,7 +277,9 @@ let ``can successfully update records``() =
 //********************** Procedures **************************//
 
 [<Test>]
-let ``can invoke a sproc``() = 
+let ``can invoke a sproc`` () =
+    let ctx = HR.GetDataContext()
+ 
   ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
@@ -256,7 +287,9 @@ let ``can invoke a sproc``() =
 
 //Support for sprocs that return ref cursors
 [<Test>]
-let employees =
+let employees  () =
+    let ctx = HR.GetDataContext()
+
     [
       for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
         yield e.MapTo<Employee>()
@@ -264,7 +297,9 @@ let employees =
     |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesAsync =
+let employeesAsync  () =
+    let ctx = HR.GetDataContext()
+
     async {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
         return ia.ResultSet
@@ -277,7 +312,9 @@ type Region = {
 }
 
 [<Test>]
-let ``Support for MARS procs``() =   
+let ``Support for MARS procs`` () =
+    let ctx = HR.GetDataContext()
+   
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
     [
@@ -290,7 +327,9 @@ let ``Support for MARS procs``() =
     |> Assert.IsNotEmpty
 
 [<Test>]
-let ``Support for sprocs that return ref cursors and has in parameters``() = 
+let ``Support for sprocs that return ref cursors and has in parameters`` () =
+  let ctx = HR.GetDataContext()
+ 
   let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
@@ -301,7 +340,9 @@ let ``Support for sprocs that return ref cursors and has in parameters``() =
   getemployees (new System.DateTime(1999,4,1))
 
 [<Test>]
-let ``Distinct alias test``() = 
+let ``Distinct alias test`` () =
+    let ctx = HR.GetDataContext()
+ 
     query {
         for emp in ctx.Dbo.Employees do
         sortBy (emp.FirstName)
@@ -309,7 +350,9 @@ let ``Distinct alias test``() =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let ``Standard deviation test``() = 
+let ``Standard deviation test`` () =
+    let ctx = HR.GetDataContext()
+ 
     let salaryStdDev : float = 
       query {
           for emp in ctx.Dbo.Employees do
@@ -320,6 +363,7 @@ let ``Standard deviation test``() =
 
 //******************** Delete all test **********************//
 let ``Delte all tests``() = 
+  let ctx = HR.GetDataContext()
   query {
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
