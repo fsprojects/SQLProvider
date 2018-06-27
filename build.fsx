@@ -166,9 +166,7 @@ let setupMssql url saPassword =
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
-    connBuilder.Password <- saPassword        
-    connBuilder.DataSource <- "localhost"
-    connBuilder.IntegratedSecurity <- true
+    connBuilder.Password <- saPassword   
           
     let runCmd query = 
       // We wait up to 30 seconds for MSSQL to be initialized

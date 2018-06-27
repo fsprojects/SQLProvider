@@ -46,7 +46,7 @@ type Employee = {
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``get individuals``  (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
   let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 
@@ -58,7 +58,7 @@ let ``get individuals``  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesFirstName  (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
   query {
       for emp in ctx.Dbo.Employees do
@@ -70,7 +70,7 @@ let employeesFirstName  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesFirstNameAsync  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -87,7 +87,7 @@ let employeesFirstNameAsync  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesFirstNameEmptyList  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -100,7 +100,7 @@ let employeesFirstNameEmptyList  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let regionsEmptyTable  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         for r in ctx.Dbo.Regions do
@@ -122,7 +122,7 @@ let regionsEmptyTable  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let salesNamedDavid  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
             for emp in ctx.Dbo.Employees do
@@ -135,7 +135,7 @@ let salesNamedDavid  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesJob  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     let dbo = ctx.Dbo
     query {
@@ -152,7 +152,7 @@ let employeesJob  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let topSales5ByCommission(runtimeConnStr) = 
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
@@ -166,7 +166,7 @@ let topSales5ByCommission(runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let pagingTest  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -194,7 +194,7 @@ type Country = {
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Can customise SQLEntity mapping`` (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)  
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)  
   query {
       for emp in ctx.Dbo.Countries do
       select emp
@@ -216,7 +216,7 @@ open System.Linq
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let nestedQueryTest  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
@@ -233,7 +233,7 @@ let nestedQueryTest  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``simple math operationsquery`` (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
     let itemOf90 = 
         query {
@@ -254,7 +254,7 @@ let ``simple math operationsquery`` (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let canoncicalOpTest  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         // Silly query not hitting indexes, so testing purposes only...
@@ -276,7 +276,7 @@ let canoncicalOpTest  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``can successfully update records`` (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
   let antarctica =
     let existingAntarctica =
@@ -326,7 +326,7 @@ let ``can successfully update records`` (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``can invoke a sproc`` (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
   ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
@@ -335,7 +335,7 @@ let ``can invoke a sproc`` (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employees  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
     [
       for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
@@ -346,7 +346,7 @@ let employees  (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesAsync  (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
     async {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
@@ -362,7 +362,7 @@ type Region = {
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Support for MARS procs`` (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
    
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
@@ -378,7 +378,7 @@ let ``Support for MARS procs`` (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Support for sprocs that return ref cursors and has in parameters`` (runtimeConnStr) =
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
   let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
@@ -392,7 +392,7 @@ let ``Support for sprocs that return ref cursors and has in parameters`` (runtim
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Distinct alias test`` (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -403,7 +403,7 @@ let ``Distinct alias test`` (runtimeConnStr) =
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Standard deviation test`` (runtimeConnStr) =
-    let ctx = HR.GetDataContext(runtimeConnStr)
+    let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
  
     let salaryStdDev : float = 
       query {
@@ -415,7 +415,7 @@ let ``Standard deviation test`` (runtimeConnStr) =
 
 //******************** Delete all test **********************//
 let ``Delte all tests``(runtimeConnStr) = 
-  let ctx = HR.GetDataContext(runtimeConnStr)
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
   query {
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
