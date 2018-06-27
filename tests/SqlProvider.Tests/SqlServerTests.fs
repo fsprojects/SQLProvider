@@ -181,18 +181,18 @@ let ``test that paging works``  (runtimeConnStr) =
 let ``test that paging uses OFFSET insted of CTEs in MSSQL2017``  (runtimeConnStr) =
     
     let checkForPaging = Handler<string>(fun _ queryString -> 
-        let offsetString = sprintfn "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" 2 5
+        let offsetString = sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" 2 5
         let usesOffset = queryString.Contains offsetString
         Assert.True usesOffset
     )
 
     // add
-    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.AddHandler handler
+    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.AddHandler checkForPaging
 
     ``test that paging works``(runtimeConnStr)
     
     // remove
-    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.RemoveHandler handler    
+    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.RemoveHandler checkForPaging    
     
 open Newtonsoft.Json
 
