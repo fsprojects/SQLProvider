@@ -503,8 +503,20 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             | _ -> None
 
         member __.GetColumns(con,table) =
+            // While the connection is open, fetches the server version for query generation purposes
+            if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
+                printfn "Detecting MSSQL version..."
+                if con.State <> ConnectionState.Open then con.Open()
+                let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
+                printfn "Version found: %b; version = %A" success version
+                if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
+            else
+                printfn "MSSQL version already known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
+                
             match schemaCache.Columns.TryGetValue table.FullName with
-            | (true,data) when data.Count > 0 -> data
+            | (true,data) when data.Count > 0 -> 
+               if con.State = ConnectionState.Open then con.Close()
+               data
             | _ ->
                // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
                // pass in to filter by table name etc - we should probably swap this code to use that instead at some point
@@ -531,15 +543,6 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                com.Parameters.AddWithValue("@schema",table.Schema) |> ignore
                com.Parameters.AddWithValue("@table",table.Name) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
-
-               // While the connection is open, fetches the server version for query generation purposes
-               if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
-                  printfn "Detecting MSSQL version..."
-                  let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-                  printfn "Version found: %b; version = %A" success version
-                  if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
-               else
-                  printfn "MSSQL version already known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
 
                use reader = com.ExecuteReader()
                let columns =
