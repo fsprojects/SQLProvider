@@ -170,22 +170,21 @@ type Country = {
 
 [<Test>]
 let ``Can customise SQLEntity mapping`` () =
-  let ctx = HR.GetDataContext()
-  let countries = 
-      query {
-          for emp in ctx.Dbo.Countries do
-          select emp
-      } 
-      |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
-                                                 match prop with
-                                                 | "Other" -> 
-                                                      if value <> null
-                                                      then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
-                                                      else Unchecked.defaultof<OtherCountryInformation> |> box
-                                                 | _ -> value
-                                           )
-                 )
-      |> Seq.toList |> Assert.IsNotEmpty
+  let ctx = HR.GetDataContext()  
+  query {
+      for emp in ctx.Dbo.Countries do
+      select emp
+  } 
+  |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+                                              match prop with
+                                              | "Other" -> 
+                                                  if value <> null
+                                                  then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
+                                                  else Unchecked.defaultof<OtherCountryInformation> |> box
+                                              | _ -> value
+                                        )
+              )
+  |> Seq.toList |> Assert.IsNotEmpty
 
 
 open System.Linq
