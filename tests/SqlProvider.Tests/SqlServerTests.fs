@@ -45,7 +45,7 @@ type Employee = {
 //***************** Individuals ***********************//
 [<Test>]
 let ``get individuals``  () =
-    let ctx = HR.GetDataContext()
+  let ctx = HR.GetDataContext()
  
   let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 
@@ -56,7 +56,7 @@ let ``get individuals``  () =
 //*************** QUERY ************************//
 [<Test>]
 let employeesFirstName  () =
-    let ctx = HR.GetDataContext()
+  let ctx = HR.GetDataContext()
  
   query {
       for emp in ctx.Dbo.Employees do
