@@ -3,13 +3,20 @@
 #r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
 #I @"../../packages/scripts/Newtonsoft.Json/lib/net45"
 #r @"../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+
+let [<Literal>] connStr2008R2 = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
+let [<Literal>] connStr2017 = connStr2008R2
+
 #else
 module SqlServerTests
 
+let [<Literal>] connStr2008R2 = "Data Source=(local)\SQL2008R2SP2;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
+let [<Literal>] connStr2017 = "Data Source=(local)\SQL2017;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
+
+#endif
+
+// Do not compile on Travis
 #if TRAVIS
-// Do not run on Travis
-#else
-#if LOCALBUILD
 #else
 
 open System
@@ -17,17 +24,6 @@ open FSharp.Data.Sql
 open System.Data
 open NUnit.Framework
 
-#if APPVEYOR
-let [<Literal>] connStr2008R2 = "Data Source=(local)\SQL2008R2SP2;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
-let [<Literal>] connStr2017 = "Data Source=(local)\SQL2017;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
-#else
-let [<Literal>] connStr2008R2 = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
-let [<Literal>] connStr2017 = connStr2008R2
-#endif 
-#endif
-
-open System
-open FSharp.Data.Sql
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
@@ -427,3 +423,5 @@ let ``Delte all tests``(runtimeConnStr) =
       where (c.FirstName = "Tuomas")
   } |> Seq.``delete all items from single table`` 
   |> Async.RunSynchronously
+
+#endif
