@@ -6,9 +6,10 @@
 #else
 
 #if TRAVIS
-[<Ignore>]
+// Do not run on Travis
+[<NUnit.Framework.Ignore>]
 #endif
-[<TestFixture>]
+[<NUnit.Framework.TestFixture>]
 module SqlServerTests
 #endif
 
