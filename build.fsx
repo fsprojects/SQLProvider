@@ -159,22 +159,17 @@ Target "SetupPostgreSQL" (fun _ ->
 )
 
 // --------------------------------------------------------------------------------------
-// Set up a MS SQL Server 2008R2 database in the AppVeyor pipeline to run tests
+// Set up a MS SQL Server database to run tests
 
-Target "SetupMSSQL2008R2" (fun _ ->
-    let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()
-      
+let setupMssql url saPassword = 
+    let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
-    match buildServer with        
-    | AppVeyor -> 
-        connBuilder.DataSource <- "(local)\SQL2008R2SP2"
-        connBuilder.Password <- "Password12!"            
-    | _ ->
-        connBuilder.DataSource <- "localhost"
-        connBuilder.IntegratedSecurity <- true
-        
-  
+    connBuilder.DataSource <- url
+    connBuilder.Password <- saPassword        
+    connBuilder.DataSource <- "localhost"
+    connBuilder.IntegratedSecurity <- true
+          
     let runCmd query = 
       // We wait up to 30 seconds for MSSQL to be initialized
       let rec runCmd' attempt = 
@@ -215,7 +210,15 @@ Target "SetupMSSQL2008R2" (fun _ ->
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
     |> Seq.map IO.File.ReadAllLines
     |> Seq.iter runScript
+    
+Target "SetupMSSQL2008R2" (fun _ ->
+    setupMssql "(local)\SQL2008R2SP2" "Password12!"
 )
+
+Target "SetupMSSQL2017" (fun _ ->
+    setupMssql "(local)\SQL2017" "Password12!"
+)
+
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
@@ -391,8 +394,9 @@ Target "BuildDocs" DoNothing
   ==> "AssemblyInfo"  
   // In CI mode, we setup a Postgres database before building
   =?> ("SetupPostgreSQL", not isLocalBuild)
-  // On AppVeyor, we also add a SQL Server 2008R2 one
+  // On AppVeyor, we also add a SQL Server 2008R2 one and a SQL Server 2017 for compatibility
   =?> ("SetupMSSQL2008R2", buildServer = AppVeyor)
+  =?> ("SetupMSSQL2017", buildServer = AppVeyor)
   ==> "Build"
   =?> ("BuildCore", isLocalBuild || not isMono)
   ==> "RunTests"

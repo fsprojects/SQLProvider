@@ -5,6 +5,7 @@ build_script:
 services:
   - postgresql
   - mssql2008r2sp2
+  - mssql2017
 test: off
 version: 0.0.1.{build}
 artifacts:

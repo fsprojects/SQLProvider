@@ -16,9 +16,11 @@ open System.Data
 open NUnit.Framework
 
 #if APPVEYOR
-let [<Literal>] connStr = "Data Source=(local)\SQL2008R2SP2;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
+let [<Literal>] connStr2008R2 = "Data Source=(local)\SQL2008R2SP2;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
+let [<Literal>] connStr2017 = "Data Source=(local)\SQL2017;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
 #else
-let [<Literal>] connStr = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
+let [<Literal>] connStr2008R2 = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
+let [<Literal>] connStr2017 = connStr2008R2
 #endif 
 #endif
 
@@ -27,12 +29,10 @@ open FSharp.Data.Sql
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__
+
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
-
-let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr2008R2, ResolutionPath = resolutionFolder>
 
 type Employee = {
     EmployeeId : int32
@@ -43,9 +43,10 @@ type Employee = {
 
 
 //***************** Individuals ***********************//
-[<Test>]
-let ``get individuals``  () =
-  let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``get individuals``  (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)
  
   let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 
@@ -54,46 +55,59 @@ let ``get individuals``  () =
 
 
 //*************** QUERY ************************//
-[<Test>]
-let employeesFirstName  () =
-  let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employeesFirstName  (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)
  
   query {
       for emp in ctx.Dbo.Employees do
       select emp.FirstName
-  } |> Seq.toList |> Assert.IsNotEmpty
+  } 
+  |> Seq.toList 
+  |> Assert.IsNotEmpty
 
-[<Test>]
-let employeesFirstNameAsync  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employeesFirstNameAsync  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
-    } |> Seq.executeQueryAsync |> Async.RunSynchronously |> Assert.IsNotEmpty
+    }
+    |> Seq.executeQueryAsync 
+    |> Async.RunSynchronously 
+    |> Assert.IsNotEmpty
 
 // Note that Employees-table should have a Description-field in database, visible as XML-tooltip in your IDE.
 // Column-level descriptions work also, but they are not included to exported SQL-scripts by SQL-server.
 
 //Ref issue #92
-[<Test>]
-let employeesFirstNameEmptyList  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employeesFirstNameEmptyList  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
         select emp
-    } |> Seq.toList |> Assert.IsEmpty
+    } 
+    |> Seq.toList 
+    |> Assert.IsEmpty
 
-[<Test>]
-let regionsEmptyTable  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let regionsEmptyTable  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         for r in ctx.Dbo.Regions do
         select r
-    } |> Seq.toList |> Assert.IsNotEmpty
+    } 
+    |> Seq.toList
+    |> Assert.IsNotEmpty
 
 //let tableWithNoKey = 
 //    query {
@@ -105,9 +119,10 @@ let regionsEmptyTable  () =
 //entity.Col <- 123uy
 //ctx.SubmitUpdates()
 
-[<Test>]
-let salesNamedDavid  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let salesNamedDavid  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
             for emp in ctx.Dbo.Employees do
@@ -117,9 +132,10 @@ let salesNamedDavid  () =
             
     } |> Seq.toList |> Assert.IsNotEmpty
 
-[<Test>]
-let employeesJob  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employeesJob  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     let dbo = ctx.Dbo
     query {
@@ -128,11 +144,15 @@ let employeesJob  () =
             join dept in dbo.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "Steve%")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)
-    } |> Seq.toList |> Assert.IsNotEmpty
+    } 
+    |> Seq.toList
+    |> Assert.IsNotEmpty
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let topSales5ByCommission(runtimeConnStr) = 
+    let ctx = HR.GetDataContext(runtimeConnStr)
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
@@ -140,11 +160,13 @@ let topSales5ByCommission =
         take 5
     } 
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList |> Assert.IsNotEmpty
+    |> Seq.toList
+    |> Assert.IsNotEmpty
 
-[<Test>]
-let pagingTest  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let pagingTest  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -169,9 +191,10 @@ type Country = {
     Other : OtherCountryInformation
 }
 
-[<Test>]
-let ``Can customise SQLEntity mapping`` () =
-  let ctx = HR.GetDataContext()  
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``Can customise SQLEntity mapping`` (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)  
   query {
       for emp in ctx.Dbo.Countries do
       select emp
@@ -190,9 +213,10 @@ let ``Can customise SQLEntity mapping`` () =
 
 open System.Linq
 
-[<Test>]
-let nestedQueryTest  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let nestedQueryTest  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
@@ -206,9 +230,10 @@ let nestedQueryTest  () =
     } |> Seq.toArray |> Assert.IsNotEmpty
 
 
-[<Test>]
-let ``simple math operationsquery`` () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``simple math operationsquery`` (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
 
     let itemOf90 = 
         query {
@@ -217,7 +242,7 @@ let ``simple math operationsquery`` () =
             select p.DepartmentId 
         } |> Seq.toList |> Assert.IsNotEmpty
 
-    let ``should be empty``() = 
+    let ``should be empty``(runtimeConnStr) = 
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
@@ -226,9 +251,10 @@ let ``simple math operationsquery`` () =
     itemOf90, ``should be empty``
 
 
-[<Test>]
-let canoncicalOpTest  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let canoncicalOpTest  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         // Silly query not hitting indexes, so testing purposes only...
@@ -247,9 +273,10 @@ let canoncicalOpTest  () =
 //************************ CRUD *************************//
 
 
-[<Test>]
-let ``can successfully update records`` () =
-  let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``can successfully update records`` (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)
  
   let antarctica =
     let existingAntarctica =
@@ -279,7 +306,8 @@ let ``can successfully update records`` () =
     }
     |> Seq.head
 
-  Assert.True(newName = "ant") |> ignore
+  let nameWasUpdated = (newName = "ant")
+  Assert.True(nameWasUpdated) |> ignore
 
   antarctica.Delete()
   ctx.SubmitUpdatesAsync() |> Async.RunSynchronously  
@@ -295,17 +323,19 @@ let ``can successfully update records`` () =
 
 //********************** Procedures **************************//
 
-[<Test>]
-let ``can invoke a sproc`` () =
-  let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``can invoke a sproc`` (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)
  
   ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
 //Support for sprocs that return ref cursors
-[<Test>]
-let employees  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employees  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
 
     [
       for e in ctx.Procedures.GetEmployees.Invoke().ResultSet do
@@ -313,9 +343,10 @@ let employees  () =
     ]
     |> Assert.IsNotEmpty
 
-[<Test>]
-let employeesAsync  () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let employeesAsync  (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
 
     async {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
@@ -328,9 +359,10 @@ type Region = {
     RegionDescription : string
 }
 
-[<Test>]
-let ``Support for MARS procs`` () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``Support for MARS procs`` (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
    
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
@@ -343,9 +375,10 @@ let ``Support for MARS procs`` () =
     ]
     |> Assert.IsNotEmpty
 
-[<Test>]
-let ``Support for sprocs that return ref cursors and has in parameters`` () =
-  let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``Support for sprocs that return ref cursors and has in parameters`` (runtimeConnStr) =
+  let ctx = HR.GetDataContext(runtimeConnStr)
  
   let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
@@ -356,9 +389,10 @@ let ``Support for sprocs that return ref cursors and has in parameters`` () =
 
   getemployees (new System.DateTime(1999,4,1))
 
-[<Test>]
-let ``Distinct alias test`` () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``Distinct alias test`` (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     query {
         for emp in ctx.Dbo.Employees do
@@ -366,9 +400,10 @@ let ``Distinct alias test`` () =
         select (emp.FirstName, emp.FirstName)
     } |> Seq.toList |> Assert.IsNotEmpty
 
-[<Test>]
-let ``Standard deviation test`` () =
-    let ctx = HR.GetDataContext()
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``Standard deviation test`` (runtimeConnStr) =
+    let ctx = HR.GetDataContext(runtimeConnStr)
  
     let salaryStdDev : float = 
       query {
@@ -379,8 +414,8 @@ let ``Standard deviation test`` () =
 
 
 //******************** Delete all test **********************//
-let ``Delte all tests``() = 
-  let ctx = HR.GetDataContext()
+let ``Delte all tests``(runtimeConnStr) = 
+  let ctx = HR.GetDataContext(runtimeConnStr)
   query {
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
