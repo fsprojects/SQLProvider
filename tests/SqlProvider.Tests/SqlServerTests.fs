@@ -279,7 +279,7 @@ let ``can successfully update records`` () =
     }
     |> Seq.head
 
-  Assert.Equals(newName, "ant") |> ignore
+  Assert.True(newName = "ant") |> ignore
 
   antarctica.Delete()
   ctx.SubmitUpdatesAsync() |> Async.RunSynchronously  
