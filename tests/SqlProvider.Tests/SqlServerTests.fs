@@ -232,7 +232,7 @@ let nestedQueryTest  (runtimeConnStr) =
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let ``simple math operationsquery`` (runtimeConnStr) =
+let ``simple math operations in query `` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
     let itemOf90 = 
@@ -240,15 +240,18 @@ let ``simple math operationsquery`` (runtimeConnStr) =
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId - 85 = 5)
             select p.DepartmentId 
-        } |> Seq.toList |> Assert.IsNotEmpty
+        } |> Seq.toList 
 
-    let ``should be empty``(runtimeConnStr) = 
+    itemOf90 |> Assert.IsNotEmpty
+    
+    let ``should be empty`` = 
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
             select p.DepartmentId 
-        } |> Seq.toList |> Assert.IsEmpty
-        
+        } |> Seq.toList
+    
+    ``should be empty`` |> Assert.IsEmpty
 
 
 [<TestCase(connStr2008R2)>]
