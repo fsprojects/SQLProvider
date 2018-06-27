@@ -132,6 +132,7 @@ let employeesJob  () =
 
 //Can map SQLEntities to a domain type
 let topSales5ByCommission = 
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
