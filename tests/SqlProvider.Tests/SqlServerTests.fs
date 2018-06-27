@@ -248,7 +248,7 @@ let ``simple math operationsquery`` (runtimeConnStr) =
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
             select p.DepartmentId 
         } |> Seq.toList |> Assert.IsEmpty
-    itemOf90, ``should be empty``
+        
 
 
 [<TestCase(connStr2008R2)>]
@@ -331,10 +331,9 @@ let ``can invoke a sproc`` (runtimeConnStr) =
   ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
 
 
-//Support for sprocs that return ref cursors
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let employees  (runtimeConnStr) =
+let ``support for sprocs that return ref cursors`` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
     [
@@ -388,6 +387,8 @@ let ``Support for sprocs that return ref cursors and has in parameters`` (runtim
     ]
 
   getemployees (new System.DateTime(1999,4,1))
+  |> Assert.IsNotEmpty
+  
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
