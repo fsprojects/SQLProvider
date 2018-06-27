@@ -535,9 +535,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                if con.State <> ConnectionState.Open then con.Open()
 
                // While the connection is open, fetches the server version for query generation purposes
-               if mssqlVersionCache.IsEmpty then                   
+               if mssqlVersionCache.IsEmpty then      
+                  printfn "Detecting MSSQL version..."
                   let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
+                  printfn "Version found: %b; version = %A" success version
                   if success then mssqlVersionCache.Add(version)
+               else
+                  printfn "MSSQL version already known: %A" (mssqlVersionCache.TryPeek())
 
                use reader = com.ExecuteReader()
                let columns =
@@ -643,10 +647,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 paramName
                             
             let mssqlPaging = 
+              printfn "MSSQL version currently known: %A" (mssqlVersionCache.TryPeek())
               match mssqlVersionCache.TryPeek() with
               // SQL 2008 and earlier do not support OFFSET
-              | true, mssqlVersion when mssqlVersion.Major < 11 -> MSSQLPagingCompatibility.RowNumber
-              | _ -> MSSQLPagingCompatibility.Offset
+              | true, mssqlVersion when mssqlVersion.Major < 11 -> printfn "Using old-style paging"; MSSQLPagingCompatibility.RowNumber
+              | _ -> printfn "Using new-style paging"; MSSQLPagingCompatibility.Offset
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) = 
                 let buildf (c:Condition)= 
