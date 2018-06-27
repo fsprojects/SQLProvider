@@ -180,9 +180,9 @@ let ``test that paging works``  (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``test that paging uses OFFSET insted of CTEs in MSSQL2017``  (runtimeConnStr) =
     
-    let checkForPaging = Handler<string>(fun _ queryString -> 
+    let checkForPaging = Handler<Common.QueryEvents.SqlEventData>(fun _ sqlEventData -> 
         let offsetString = sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" 2 5
-        let usesOffset = queryString.Contains offsetString
+        let usesOffset = sqlEventData.Command.Contains offsetString
         Assert.True usesOffset
     )
 
