@@ -277,11 +277,9 @@ let ``can successfully update records`` () =
 
 [<Test>]
 let ``can invoke a sproc`` () =
-    let ctx = HR.GetDataContext()
+  let ctx = HR.GetDataContext()
  
   ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
-
-
 
 
 //Support for sprocs that return ref cursors
