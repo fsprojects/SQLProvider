@@ -1,5 +1,10 @@
 init:
-  - git config --global core.autocrlf input
+  - git config --global core.autocrlf input# SQL 2018
+  # Set dynamic ports for SQL2008 and SQL2017 so they don't conflict
+  -  set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql10_50.SQL2008R2SP2\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpDynamicPorts -value '0'
+  -  set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql10_50.SQL2008R2SP2\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpPort -value ''    
+  -  set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql14.SQL2017\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpDynamicPorts -value '0'
+  -  set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql14.SQL2017\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpPort -value ''
 build_script:
   - cmd: build.cmd All
 services:
