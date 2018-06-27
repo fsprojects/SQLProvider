@@ -668,7 +668,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT first %i * FROM %s;" amount (getTableNameForQuery table)
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.%s = @id" (getTableNameForQuery table) (getTableNameForQuery table) column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns, isDeleteScript) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns, isDeleteScript, con) =
             let parameters = ResizeArray<_>()
 
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
