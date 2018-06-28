@@ -503,18 +503,16 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             | _ -> None
 
         member __.GetColumns(con,table) =
-            // While the connection is open, fetches the server version for query generation purposes
+            
+            // If we don't know this server's version already, open the connection ahead-of-time and read it 
             if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
-                printfn "Detecting MSSQL version..."
                 if con.State <> ConnectionState.Open then con.Open()
                 let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-                printfn "Version found: %b; version = %A" success version
                 if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
-            else
-                printfn "MSSQL version already known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
                 
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> 
+               // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
                if con.State = ConnectionState.Open then con.Close()
                data
             | _ ->
@@ -647,12 +645,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 parameters.Add(SqlParameter(paramName,value):> IDbDataParameter)
                 paramName
                             
-            let mssqlPaging = 
-              printfn "MSSQL version currently known: %A" (mssqlVersionCache.TryGetValue(con.ConnectionString))
+            let mssqlPaging =               
               match mssqlVersionCache.TryGetValue(con.ConnectionString) with
               // SQL 2008 and earlier do not support OFFSET
-              | true, mssqlVersion when mssqlVersion.Major < 11 -> printfn "Using old-style paging"; MSSQLPagingCompatibility.RowNumber
-              | _ -> printfn "Using new-style paging"; MSSQLPagingCompatibility.Offset
+              | true, mssqlVersion when mssqlVersion.Major < 11 -> MSSQLPagingCompatibility.RowNumber
+              | _ -> MSSQLPagingCompatibility.Offset
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) = 
                 let buildf (c:Condition)= 
