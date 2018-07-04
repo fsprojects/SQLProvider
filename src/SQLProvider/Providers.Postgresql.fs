@@ -834,7 +834,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.

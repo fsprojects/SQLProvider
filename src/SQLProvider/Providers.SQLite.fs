@@ -528,7 +528,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
         member __.GetSchemaCache() = schemaCache
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
             let parameters = ResizeArray<_>()
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0

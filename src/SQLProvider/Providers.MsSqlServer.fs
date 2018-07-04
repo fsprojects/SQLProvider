@@ -95,15 +95,6 @@ module MSSqlServer =
             par.Value
         else null
 
-    let isSQL2012Orlater (con:IDbConnection) =
-        try
-            let reader = executeSql "SELECT SERVERPROPERTY('productversion')" con
-            let version = reader.GetSqlString(0)
-            match version.Value.[0..1] |> Double.TryParse with
-            | true, v -> v >= 11.0
-            | _ -> false
-        with _ -> false
-
     let createCommandParameter (param:QueryParameter) (value:obj) =
         let p = SqlParameter(param.Name,value)
         p.DbType <- param.TypeMapping.DbType
@@ -309,9 +300,18 @@ module MSSqlServer =
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 return Set(cols |> Array.map (processReturnColumn reader))
         }
+        
+type internal MSSQLPagingCompatibility =
+  // SQL SERVER versions since 2012
+  | Offset = 0
+  // SQL SERVER versions prior to 2012
+  | RowNumber = 1
 
 type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    
+    // Remembers the version of each instance it connects to
+    let mssqlVersionCache = ConcurrentDictionary<string, Version>()
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 
         let aliasSprint =
@@ -503,8 +503,18 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             | _ -> None
 
         member __.GetColumns(con,table) =
+            
+            // If we don't know this server's version already, open the connection ahead-of-time and read it 
+            if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
+                if con.State <> ConnectionState.Open then con.Open()
+                let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
+                if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
+                
             match schemaCache.Columns.TryGetValue table.FullName with
-            | (true,data) when data.Count > 0 -> data
+            | (true,data) when data.Count > 0 -> 
+               // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
+               if con.State = ConnectionState.Open then con.Close()
+               data
             | _ ->
                // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
                // pass in to filter by table name etc - we should probably swap this code to use that instead at some point
@@ -531,6 +541,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                com.Parameters.AddWithValue("@schema",table.Schema) |> ignore
                com.Parameters.AddWithValue("@table",table.Name) |> ignore
                if con.State <> ConnectionState.Open then con.Open()
+
                use reader = com.ExecuteReader()
                let columns =
                    [ while reader.Read() do
@@ -617,7 +628,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript) =
+        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later..
             let param = ref 0
@@ -633,6 +644,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 let paramName = nextParam()
                 parameters.Add(SqlParameter(paramName,value):> IDbDataParameter)
                 paramName
+                            
+            let mssqlPaging =               
+              match mssqlVersionCache.TryGetValue(con.ConnectionString) with
+              // SQL 2008 and earlier do not support OFFSET
+              | true, mssqlVersion when mssqlVersion.Major < 11 -> MSSQLPagingCompatibility.RowNumber
+              | _ -> MSSQLPagingCompatibility.Offset
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) = 
                 let buildf (c:Condition)= 
@@ -807,11 +824,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 filterBuilder' f
 
             let sb = System.Text.StringBuilder()
+            let outerSb = System.Text.StringBuilder()
 
             let (~~) (t:string) = sb.Append t |> ignore
+            outerSb.Append "WITH CTE AS ( "  |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requries an orderBy clause."
+            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -892,6 +911,15 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     match sqlQuery.Skip, sqlQuery.Take with
                     | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
+                //ROW_NUMBER
+                match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
+                | MSSQLPagingCompatibility.RowNumber, Some _, _ -> 
+                    //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
+                    if sqlQuery.Ordering.Length > 0 then
+                        ~~", ROW_NUMBER() OVER(ORDER BY  "
+                        orderByBuilder()
+                        ~~" ) AS RN  "
+                | _ -> ()
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
                 ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name bal)
@@ -921,9 +949,15 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 filterBuilder (~~) f
 
             // ORDER BY
-            if sqlQuery.Ordering.Length > 0 then
-                ~~"ORDER BY "
-                orderByBuilder()
+            match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
+            | MSSQLPagingCompatibility.Offset, _, _
+            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+              if sqlQuery.Ordering.Length > 0 then
+                  ~~"ORDER BY "
+                  orderByBuilder()
+            | _ -> 
+              //when RowNumber compatibility with SKIP, ommit order by clause as it's already in CTE
+              ()
 
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) ->
@@ -939,17 +973,34 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 parameters.AddRange pars
                 ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
+            
+            let sql = 
+                match mssqlPaging with
+                | MSSQLPagingCompatibility.RowNumber ->               
+                    match sqlQuery.Skip, sqlQuery.Take with
+                    | Some skip, Some take ->
+                        outerSb.Append (sb.ToString()) |> ignore
+                        outerSb.Append ")" |> ignore
+                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns baseAlias (skip+1) (skip+take))  |> ignore
+                        outerSb.ToString()
+                    | Some skip, None ->
+                        outerSb.Append (sb.ToString()) |> ignore
+                        outerSb.Append ")" |> ignore
+                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns baseAlias skip)  |> ignore
+                        outerSb.ToString()
+                    | _ -> 
+                      sb.ToString()
+                | _ ->
+                    match sqlQuery.Skip, sqlQuery.Take with
+                    | Some skip, Some take ->
+                        // Note: this only works in >=SQL2012
+                        ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+                    | Some skip, None ->
+                        // Note: this only works in >=SQL2012
+                        ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
+                    | _ -> ()
+                    sb.ToString()
 
-            match sqlQuery.Skip, sqlQuery.Take with
-            | Some skip, Some take ->
-                // Note: this only works in >=SQL2012
-                ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-            | Some skip, None ->
-                // Note: this only works in >=SQL2012
-                ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
-            | _ -> ()
-
-            let sql = sb.ToString()
             (sql,parameters)
 
         member this.ProcessUpdates(con, entities, transactionOptions, timeout) =

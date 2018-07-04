@@ -117,11 +117,11 @@ Target "BuildCore" (fun _ ->
 )
 
 // --------------------------------------------------------------------------------------
-// Set up a PostgreSQL database in the CI pipeline to run Postgres tests
+// Set up a PostgreSQL database in the CI pipeline to run tests
 
 Target "SetupPostgreSQL" (fun _ ->
       let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
-
+  
       connBuilder.Host <- "localhost"
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
@@ -144,18 +144,77 @@ Target "SetupPostgreSQL" (fun _ ->
             printfn "Connection attempt %i: %A" attempt e
             Threading.Thread.Sleep 1000
             if attempt < 30 then runCmd' (attempt + 1)
-
+  
         runCmd' 0
-              
+                
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
       runCmd (sprintf "CREATE DATABASE %s" testDbName)
       connBuilder.Database <- testDbName
-
+  
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
       |> Seq.map IO.File.ReadAllText      
       |> Seq.iter runCmd
+)
+
+// --------------------------------------------------------------------------------------
+// Set up a MS SQL Server database to run tests
+
+let setupMssql url saPassword = 
+    let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()    
+    connBuilder.InitialCatalog <- "master"
+    connBuilder.UserID <- "sa"
+    connBuilder.DataSource <- url
+    connBuilder.Password <- saPassword   
+          
+    let runCmd query = 
+      // We wait up to 30 seconds for MSSQL to be initialized
+      let rec runCmd' attempt = 
+        try
+          use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
+          conn.Open()
+          use cmd = new Data.SqlClient.SqlCommand(query, conn)
+          cmd.ExecuteNonQuery() |> ignore 
+        with e -> 
+          printfn "Connection attempt %i: %A" attempt e
+          Threading.Thread.Sleep 1000
+          if attempt < 30 then runCmd' (attempt + 1)
+
+      runCmd' 0
+
+    let runScript fileLines =            
+            
+      // We look for the 'GO' lines that complete the individual SQL commands
+      let rec cmdGen cache (lines : string list) =
+        seq {
+          match cache, lines with
+          | [], [] -> ()
+          | cmds, [] -> yield cmds
+          | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield cmds; yield! cmdGen [] ls
+          | cmds, l :: ls -> yield! cmdGen (l :: cmds) ls
+        }      
+
+      for cmd in cmdGen [] (fileLines |> Seq.toList) do
+        let query = cmd |> List.rev |> String.concat "\r\n"
+        runCmd query
+
+    let testDbName = "sqlprovider"
+    printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
+    runCmd (sprintf "CREATE DATABASE %s" testDbName)
+    connBuilder.InitialCatalog <- testDbName
+
+    (!! "src/DatabaseScripts/MSSQLServer/*.sql")
+    |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
+    |> Seq.map IO.File.ReadAllLines
+    |> Seq.iter runScript
+    
+Target "SetupMSSQL2008R2" (fun _ ->
+    setupMssql "(local)\SQL2008R2SP2" "Password12!"
+)
+
+Target "SetupMSSQL2017" (fun _ ->
+    setupMssql "(local)\SQL2017" "Password12!"
 )
 
 
@@ -333,6 +392,9 @@ Target "BuildDocs" DoNothing
   ==> "AssemblyInfo"  
   // In CI mode, we setup a Postgres database before building
   =?> ("SetupPostgreSQL", not isLocalBuild)
+  // On AppVeyor, we also add a SQL Server 2008R2 one and a SQL Server 2017 for compatibility
+  =?> ("SetupMSSQL2008R2", buildServer = AppVeyor)
+  =?> ("SetupMSSQL2017", buildServer = AppVeyor)
   ==> "Build"
   =?> ("BuildCore", isLocalBuild || not isMono)
   ==> "RunTests"
