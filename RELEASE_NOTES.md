@@ -1,3 +1,7 @@
+### 1.1.45 - 05.07.2018
+*  Paging support for SQL Server 2008, PR #558
+*  Upsert, PR #557
+
 ### 1.1.44 - 25.06.2018
 * Extend SQLEntity.MapTo to allow mapping when field names are different than column names, PR #556
 
