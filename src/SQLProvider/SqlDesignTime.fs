@@ -836,9 +836,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               let argTimeout = %%actualArgs.[3]
                               if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
 
-                            SqlDataContext(rootTypeName, %%actualArgs.[0], dbVendor, %%actualArgs.[1], %%referencedAssemblyExpr, 
-                                              resolutionFolder, owner, caseSensitivity, tableNames, "", odbcquote, 
-                                              sqliteLibrary, %%actualArgs.[2], cmdTimeout, %%actualArgs.[4]) :> ISqlDataContext @@>
+                            // **important**: contextSchemaPath is empty because we do not want 
+                            // to load the schema cache from (the developer's) local filesystem in production
+                            SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor, 
+                                           resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr, 
+                                           runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
+                                           tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote, 
+                                           sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2], 
+                                           commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4])
+                            :> ISqlDataContext 
+                          @@>
                         
                         // builds the definitions
                         let paramList = 
