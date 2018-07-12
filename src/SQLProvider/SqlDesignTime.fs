@@ -804,76 +804,106 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let defaultCmdTimeout = <@@ NO_COMMAND_TIMEOUT @@>
         let defaultTransOpts = <@@ TransactionOptions.Default @@>
         let defaultSelectOps = <@@ SelectOperations.DotNetSide @@>             
+        
+        let optionPairs = [|              
+          customConnStr, defaultConnStr
+          customResPath, defaultResPath
+          customTransOpts, defaultTransOpts
+          customCmdTimeout, defaultCmdTimeout
+          customSelectOps, defaultSelectOps
+        |]
+
+        // generates the .GetDataContext() overloads
+        // each parameter can either be present (passed as argument at runtime) or missing (uses the default value)
+        let overloads = [|
+          [| |] 
+          [| customConnStr |]
+          [| customConnStr; customResPath |]
+          [| customConnStr; customTransOpts |]
+          [| customConnStr; customResPath; customTransOpts |]
+          [| customConnStr; customCmdTimeout |]
+          [| customConnStr; customResPath; customCmdTimeout |]
+          [| customConnStr; customTransOpts; customCmdTimeout |]
+          [| customConnStr; customResPath; customTransOpts; customCmdTimeout |]
+          [| customTransOpts |]
+          [| customCmdTimeout |]
+          [| customTransOpts; customCmdTimeout |]
+          [| customSelectOps |]
+          [| customConnStr; customSelectOps |]
+          [| customConnStr; customTransOpts; customSelectOps |]
+          [| customConnStr; customCmdTimeout; customSelectOps |]
+          [| customConnStr; customResPath; customTransOpts; customCmdTimeout; customSelectOps |]
+        |]
 
         rootType.AddMembersDelayed (fun () -> 
             [ 
-              // generates the .GetDataContext() overloads
-              // each parameter can either be present (passed as argument at runtime) or missing (uses the default value)
-              for actualConstr in [| UserProvided customConnStr; Default defaultConnStr |] do
-                for actualResPath in [| UserProvided customResPath; Default defaultResPath |] do
-                  for actualTransOpts in [| UserProvided customTransOpts; Default defaultTransOpts |] do
-                    for actualCmdTimeout in [| UserProvided customCmdTimeout; Default defaultCmdTimeout |] do
-                      for actualSelectOps in [| UserProvided customSelectOps; Default defaultSelectOps |] do
 
-                        let actualParams = [| actualConstr; actualResPath; actualTransOpts; actualCmdTimeout; actualSelectOps |]
+              for overload in overloads do
+
+                let actualParams = [|
+                  for (customParam, defaultParam) in optionPairs do 
+                    match overload |> Array.exists ((=) customParam) with
+                    | true -> yield UserProvided customParam 
+                    | false -> yield Default defaultParam
+                |]
+    
+                // The code that gets actually executed
+                let invoker (args: Expr list) =
+
+                  let actualArgs = 
+                    [| 
+                        let mutable argPosition = 0
+                        for actualParam in actualParams do
+                            match actualParam with 
+                            // if the parameter appears, we read it from the argument list and advance
+                            | UserProvided _ -> yield args.[argPosition]; argPosition <- argPosition + 1
+                            // otherwise, we use the default value
+                            | Default p -> yield p
+                    |]
+
+                  <@@ 
+                    let cmdTimeout = 
+                      let argTimeout = %%actualArgs.[3]
+                      if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
+
+                    // **important**: contextSchemaPath is empty because we do not want 
+                    // to load the schema cache from (the developer's) local filesystem in production
+                    SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor, 
+                                    resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr, 
+                                    runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
+                                    tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote, 
+                                    sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2], 
+                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4])
+                    :> ISqlDataContext 
+                  @@>
                         
-                        // The code that gets actually executed
-                        let invoker (args: Expr list) =
+                // builds the definitions
+                let paramList = 
+                  [ for actualParam in actualParams do
+                      match actualParam with 
+                      | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
+                      | _ -> ()                      
+                  ]
 
-                          let actualArgs = 
-                            [| 
-                                let mutable argPosition = 0
-                                for actualParam in actualParams do
-                                    match actualParam with 
-                                    // if the parameter appears, we read it from the argument list and advance
-                                    | UserProvided _ -> yield args.[argPosition]; argPosition <- argPosition + 1
-                                    // otherwise, we use the default value
-                                    | Default p -> yield p
-                            |]
-
-                          <@@ 
-                            let cmdTimeout = 
-                              let argTimeout = %%actualArgs.[3]
-                              if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
-
-                            // **important**: contextSchemaPath is empty because we do not want 
-                            // to load the schema cache from (the developer's) local filesystem in production
-                            SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor, 
-                                           resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr, 
-                                           runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
-                                           tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote, 
-                                           sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2], 
-                                           commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4])
-                            :> ISqlDataContext 
-                          @@>
-                        
-                        // builds the definitions
-                        let paramList = 
-                          [ for actualParam in actualParams do
-                              match actualParam with 
-                              | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
-                              | _ -> ()                      
-                          ]
-
-                        let providerParams = 
-                          [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
+                let providerParams = 
+                  [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
                          
-                        let xmlComments = 
-                          [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
-                              for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
-                          |]
+                let xmlComments = 
+                  [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
+                      for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                  |]
 
-                        let method = 
-                          ProvidedMethod( methodName = "GetDataContext"
-                                        , parameters = providerParams
-                                        , returnType = serviceType
-                                        , isStatic = true
-                                        , invokeCode = invoker
-                                        )                        
+                let method = 
+                  ProvidedMethod( methodName = "GetDataContext"
+                                , parameters = providerParams
+                                , returnType = serviceType
+                                , isStatic = true
+                                , invokeCode = invoker
+                                )                        
                          
-                        method.AddXmlDoc (String.concat "" xmlComments)
+                method.AddXmlDoc (String.concat "" xmlComments)
                          
-                        yield method                   
+                yield method                   
             ])
 
         match con with

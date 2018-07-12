@@ -15,9 +15,8 @@ let [<Literal>] connStr2017 = "Data Source=(local)\SQL2017;User Id=sa;Password=P
 
 #endif
 
-// Do not compile on Travis
-#if TRAVIS
-#else
+// Compile only on AppVeyor
+// #if APPVEYOR
 
 open System
 open FSharp.Data.Sql
@@ -39,6 +38,33 @@ type Employee = {
     HireDate : DateTime
 }
 
+//***************** API *****************//
+[<TestCase(connStr2008R2)>]
+[<TestCase(connStr2017)>]
+let ``test that overloads aren't broken`` (runtimeConnStr)= 
+  let customConnStr = runtimeConnStr
+  let customResPath = resolutionFolder + "////" // semantically neutral change
+  let customTransOpts = { FSharp.Data.Sql.Transactions.TransactionOptions.Default with IsolationLevel = FSharp.Data.Sql.Transactions.IsolationLevel.Chaos } 
+  let customCmdTimeout = 999
+  let customSelectOps = FSharp.Data.Sql.SelectOperations.DatabaseSide
+  let _ : ISqlDataContext = HR.GetDataContext() 
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customResPath)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customTransOpts)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customResPath, customTransOpts)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customResPath, customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customTransOpts, customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customTransOpts)
+  let _ : ISqlDataContext = HR.GetDataContext(customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customTransOpts, customCmdTimeout)
+  let _ : ISqlDataContext = HR.GetDataContext(customSelectOps)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customSelectOps)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customTransOpts, customSelectOps)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customCmdTimeout, customSelectOps)
+  let _ : ISqlDataContext = HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout, customSelectOps)
+  Assert.True(true)
 
 //***************** Individuals ***********************//
 [<TestCase(connStr2008R2)>]
@@ -442,4 +468,5 @@ let ``Delte all tests``(runtimeConnStr) =
   } |> Seq.``delete all items from single table`` 
   |> Async.RunSynchronously
 
+#else
 #endif
