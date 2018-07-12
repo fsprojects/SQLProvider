@@ -16,7 +16,7 @@ let [<Literal>] connStr2017 = "Data Source=(local)\SQL2017;User Id=sa;Password=P
 #endif
 
 // Compile only on AppVeyor
-// #if APPVEYOR
+#if APPVEYOR
 
 open System
 open FSharp.Data.Sql
