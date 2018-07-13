@@ -591,7 +591,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                                    where rc.RDB$CONSTRAINT_TYPE='PRIMARY KEY')
                                                  THEN 'PRIMARY KEY'
                                                ELSE '' END AS KeyType,
-                                               RDB$DEFAULT_VALUE has_default
+                                               c.RDB$DEFAULT_VALUE has_default
                                   FROM rdb$relation_fields c
                                   inner join RDB$FIELDS f on f.RDB$FIELD_NAME=c.RDB$FIELD_SOURCE                                  
                                   
