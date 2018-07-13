@@ -41,29 +41,31 @@ type Employee = {
 //***************** API *****************//
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let ``test that overloads aren't broken`` (runtimeConnStr : string)= 
+let ``test that existing overloads aren't broken`` (runtimeConnStr : string)= 
   let customConnStr = runtimeConnStr
   let customResPath = resolutionFolder + "////" // semantically neutral change
   let customTransOpts = { FSharp.Data.Sql.Transactions.TransactionOptions.Default with IsolationLevel = FSharp.Data.Sql.Transactions.IsolationLevel.Chaos } 
   let customCmdTimeout = 999
   let customSelectOps = FSharp.Data.Sql.SelectOperations.DatabaseSide
-  let _ = HR.GetDataContext() 
-  let _ = HR.GetDataContext(customConnStr)
-  let _ = HR.GetDataContext(customConnStr, customResPath)
-  let _ = HR.GetDataContext(customConnStr, customTransOpts)
-  let _ = HR.GetDataContext(customConnStr, customResPath, customTransOpts)
-  let _ = HR.GetDataContext(customConnStr, customCmdTimeout)
-  let _ = HR.GetDataContext(customConnStr, customResPath, customCmdTimeout)
-  let _ = HR.GetDataContext(customConnStr, customTransOpts, customCmdTimeout)
-  let _ = HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout)
-  let _ = HR.GetDataContext(customTransOpts)
-  let _ = HR.GetDataContext(commandTimeout = customCmdTimeout) // this one is already ambiguous due to implicit conversion rules
-  let _ = HR.GetDataContext(customTransOpts, customCmdTimeout)
-  let _ = HR.GetDataContext(customSelectOps)
-  let _ = HR.GetDataContext(customConnStr, customSelectOps)
-  let _ = HR.GetDataContext(customConnStr, customTransOpts, customSelectOps)
-  let _ = HR.GetDataContext(customConnStr, customCmdTimeout, customSelectOps)
-  let _ = HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout, customSelectOps)
+  // execute no-ops to ensure no exceptions are thrown and that ctx isn't null
+  HR.GetDataContext().SubmitUpdates()
+  (HR.GetDataContext customConnStr).SubmitUpdates()
+  HR.GetDataContext(customConnStr).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customResPath).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customTransOpts).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customResPath, customTransOpts).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customResPath, customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customTransOpts, customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customTransOpts).SubmitUpdates()
+  HR.GetDataContext(customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customTransOpts, customCmdTimeout).SubmitUpdates()
+  HR.GetDataContext(customSelectOps).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customSelectOps).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customTransOpts, customSelectOps).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customCmdTimeout, customSelectOps).SubmitUpdates()
+  HR.GetDataContext(customConnStr, customResPath, customTransOpts, customCmdTimeout, customSelectOps).SubmitUpdates()
   Assert.True(true)
 
 //***************** Individuals ***********************//
