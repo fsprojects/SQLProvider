@@ -271,7 +271,12 @@ module MSSqlServer =
                 com.ExecuteNonQuery() |> ignore
                 match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                 | Some(_,name,p) -> Scalar(name, readParameter p)
-                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                | None -> 
+                    if com.Parameters.Contains retCol.Name then
+                        let p = com.Parameters.Item retCol.Name :?> IDataParameter
+                        Scalar(p.ParameterName, p.Value)
+                    else
+                        failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         | cols ->
             use reader = com.ExecuteReader() :?> SqlDataReader
             Set(cols |> Array.map (processReturnColumn com reader))
@@ -297,7 +302,9 @@ module MSSqlServer =
                     do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
-                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                    | None ->  
+                        let p = com.Parameters.Item retCol.Name
+                        return Scalar(p.ParameterName, p.Value)
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 return Set(cols |> Array.map (processReturnColumn com reader))
