@@ -303,6 +303,8 @@ module MSSqlServer =
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
                     | None ->  
+                        if not (com.Parameters.Contains retCol.Name) then
+                            failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
                         let p = com.Parameters.Item retCol.Name
                         return Scalar(p.ParameterName, p.Value)
             | cols ->
