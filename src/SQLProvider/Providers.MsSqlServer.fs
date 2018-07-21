@@ -97,7 +97,7 @@ module MSSqlServer =
         
     let readInOutParameterFromCommand name (com:IDbCommand) = 
         if not (com.Parameters.Contains name) then 
-            failwithf "Excepted column %A but could not find it in the parameter set" name
+            failwithf "Expected column %A but could not find it in the parameter set" name
         match com.Parameters.Item name :?> IDataParameter with
         | p when p.Direction = ParameterDirection.InputOutput -> p.ParameterName, p.Value
         | p -> failwithf "Unsupported direction %A for parameter %A" p.Direction p.ParameterName
