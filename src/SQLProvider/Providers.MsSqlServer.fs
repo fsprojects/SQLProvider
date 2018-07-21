@@ -99,7 +99,7 @@ module MSSqlServer =
         if not (com.Parameters.Contains name) then 
             failwithf "Excepted column %A but could not find it in the parameter set" name
         match com.Parameters.Item name :?> IDataParameter with
-        | p when p.Direction = ParameterDirection.InputOutput -> Scalar(p.ParameterName, p.Value)
+        | p when p.Direction = ParameterDirection.InputOutput -> p.ParameterName, p.Value
         | p -> failwithf "Unsupported direction %A for parameter %A" p.Direction p.ParameterName
             
 
@@ -253,12 +253,7 @@ module MSSqlServer =
                 let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
-            | _ ->
-                if com.Parameters.Contains retCol.Name then
-                    let p = com.Parameters.Item retCol.Name :?> IDataParameter
-                    ScalarResultSet(p.ParameterName, p.Value)
-                else failwithf "Expected return column %s but could not find it in the parameter set" retCol.Name
-        
+            | _ -> readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
         allParams, processReturnColumn, outps
 
     let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
@@ -279,7 +274,7 @@ module MSSqlServer =
                 com.ExecuteNonQuery() |> ignore
                 match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                 | Some(_,name,p) -> Scalar(name, readParameter p)
-                | None -> readInOutParameterFromCommand retCol.Name com
+                | None -> readInOutParameterFromCommand retCol.Name com |> Scalar
         | cols ->
             use reader = com.ExecuteReader() :?> SqlDataReader
             Set(cols |> Array.map (processReturnColumn com reader))
@@ -305,7 +300,7 @@ module MSSqlServer =
                     do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
-                    | None -> return readInOutParameterFromCommand retCol.Name com
+                    | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 return Set(cols |> Array.map (processReturnColumn com reader))
