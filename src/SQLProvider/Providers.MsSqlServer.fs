@@ -94,6 +94,14 @@ module MSSqlServer =
             let par = parameter :?> SqlParameter
             par.Value
         else null
+        
+    let readInOutParameterFromCommand name (com:IDbCommand) = 
+        if not (com.Parameters.Contains name) then 
+            failwithf "Expected column %A but could not find it in the parameter set" name
+        match com.Parameters.Item name :?> IDataParameter with
+        | p when p.Direction = ParameterDirection.InputOutput -> p.ParameterName, p.Value
+        | p -> failwithf "Unsupported direction %A for parameter %A" p.Direction p.ParameterName
+            
 
     let createCommandParameter (param:QueryParameter) (value:obj) =
         let p = SqlParameter(param.Name,value)
@@ -132,7 +140,9 @@ module MSSqlServer =
             |> List.choose id
         let retValueCols =
             sparams
-            |> List.filter (fun x -> x.Direction = ParameterDirection.ReturnValue)
+            |> List.filter (fun x -> 
+                x.Direction = ParameterDirection.ReturnValue
+                || x.Direction = ParameterDirection.InputOutput)
             |> List.mapi (fun i p ->
                 if String.IsNullOrEmpty p.Name then
                     { p with Name = (if i = 0 then "ReturnValue" else "ReturnValue_" + (string i))}
@@ -212,7 +222,6 @@ module MSSqlServer =
         |> Seq.toList
     
     let executeSprocCommandCommon (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
-        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
 
         let outps =
              returnCols
@@ -238,17 +247,13 @@ module MSSqlServer =
             Array.append returnValues inps
             |> Array.sortBy (fun (x,_,_) -> x)
         
-        let processReturnColumn reader (retCol:QueryParameter) =
+        let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
             match retCol.TypeMapping.ProviderTypeName with
             | Some "cursor" ->
                 let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
-            | _ ->
-                match outps |> Array.tryFind (fun (_,_,p) -> p.ParameterName = retCol.Name) with
-                | Some(_,_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
-                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
-
+            | _ -> readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
         allParams, processReturnColumn, outps
 
     let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
@@ -269,10 +274,10 @@ module MSSqlServer =
                 com.ExecuteNonQuery() |> ignore
                 match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                 | Some(_,name,p) -> Scalar(name, readParameter p)
-                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                | None -> readInOutParameterFromCommand retCol.Name com |> Scalar
         | cols ->
             use reader = com.ExecuteReader() :?> SqlDataReader
-            Set(cols |> Array.map (processReturnColumn reader))
+            Set(cols |> Array.map (processReturnColumn com reader))
 
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
@@ -295,10 +300,10 @@ module MSSqlServer =
                     do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
-                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                    | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                return Set(cols |> Array.map (processReturnColumn reader))
+                return Set(cols |> Array.map (processReturnColumn com reader))
         }
         
 type internal MSSQLPagingCompatibility =
