@@ -346,8 +346,8 @@ let ``can successfully update records`` (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``can invoke a sproc`` (runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
-  ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
+  let year = 1900 + (System.Random().Next(93))
+  ignore <| ctx.Procedures.AddJobHistory.Invoke(100, DateTime(year, 1, 13), DateTime(year+5, 7, 24), "IT_PROG", 60)
 
 
 [<TestCase(connStr2008R2)>]
