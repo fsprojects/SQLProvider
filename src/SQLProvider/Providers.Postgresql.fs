@@ -358,7 +358,7 @@ module PostgreSQL =
                             let results = ref [ResultSet("ReturnValue", r)]
                             let i = ref 1
                             let mutable hasNext = true
-                            while hasNext do // This could be done more simply with List.evaluateOneByOne like other providers do!
+                            while hasNext do // This could be done more simply with Sql.evaluateOneByOne like other providers do!
                                 let! h = reader.NextResultAsync() |> Async.AwaitTask
                                 hasNext <- h
                                 if hasNext then

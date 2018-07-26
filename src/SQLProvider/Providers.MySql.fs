@@ -348,7 +348,7 @@ module MySql =
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                let! r = cols |> Array.toList |> List.evaluateOneByOne (processReturnColumnAsync reader outps)
+                let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync reader outps)
                 return Set(r)
         }
 

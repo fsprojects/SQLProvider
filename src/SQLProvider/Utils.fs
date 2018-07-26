@@ -557,7 +557,6 @@ module Sql =
         if con.State <> ConnectionState.Open
         then con.Open()
 
-module List =
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
     let evaluateOneByOne asyncFunc entityList =
