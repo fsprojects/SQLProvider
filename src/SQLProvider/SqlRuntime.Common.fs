@@ -330,15 +330,28 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 | false, _ -> ()
             instance
     
-    /// Makes a copy of entity (database row), which is a new row with the same values (except Id)
+    /// Attach/copy entity to a different data-context.
+    /// Second parameter: SQL UPDATE or INSERT clause?  
+    /// Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
+    /// If column primaty key is something else and not-auto-generated, then, too bad...
+    member __.CloneTo(secondContext, itemExistsAlready:bool) = 
+        let newItem = SqlEntity(secondContext, tableName, columns)
+        if itemExistsAlready then 
+            newItem.SetData(data |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
+            newItem._State <- Modified (data |> Seq.toList 
+                                             |> List.map(fun kvp -> kvp.Key)
+                                             |> List.filter(fun k -> k <> "Id"))
+        else 
+            newItem.SetData(data 
+                      |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
+                      |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
+            newItem._State <- Created
+        newItem
+
+    /// Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
     /// If column primaty key is something else and not-auto-generated, then, too bad...
     member __.Clone() = 
-        let newItem = SqlEntity(dc, tableName, columns)
-        newItem.SetData(data 
-                        |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
-                        |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
-        newItem._State <- Created
-        newItem
+        __.CloneTo(dc, false)
 
     /// Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
     member val OnConflict = Throw with get, set
