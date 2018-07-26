@@ -401,7 +401,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 | cols ->
                     use! reader = pcom.ExecuteReaderAsync() |> Async.AwaitTask
                     let processReturnColumn (col:QueryParameter) =
-                        let result = ResultSet(col.Name, Sql.dataReaderToArray reader)
+                        let! r = Sql.dataReaderToArrayAsync reader
+                        let result = ResultSet(col.Name, r)
                         reader.NextResult() |> ignore
                         result
                     return Set(cols |> Array.map (processReturnColumn))

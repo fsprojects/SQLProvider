@@ -341,7 +341,8 @@ module PostgreSQL =
                         match col.TypeMapping.ProviderTypeName with
                         | Some "record" ->
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                            return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                            let! r = Sql.dataReaderToArrayAsync reader
+                            return SingleResultSet(col.Name, r)
                         | Some "refcursor" ->
                             if not isLegacyVersion.Value then
                                 let! cur = com.ExecuteScalarAsync() |> Async.AwaitTask
@@ -349,13 +350,16 @@ module PostgreSQL =
                                 com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
                                 com.CommandType <- CommandType.Text
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                            return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                            let! r = Sql.dataReaderToArrayAsync reader
+                            return SingleResultSet(col.Name, r)
                         | Some "SETOF refcursor" ->
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                            let results = ref [ResultSet("ReturnValue", Sql.dataReaderToArray reader)]
+                            let! r = Sql.dataReaderToArrayAsync reader
+                            let results = ref [ResultSet("ReturnValue", r)]
                             let i = ref 1
                             while reader.NextResult() do
-                                    results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
+                                    let! r = Sql.dataReaderToArrayAsync reader
+                                    results := ResultSet("ReturnValue" + (string !i), r) :: !results
                                     incr(i)
                             return Set(!results)
                         | _ ->

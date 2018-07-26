@@ -288,7 +288,8 @@ module MSSqlServer =
                 | Some "cursor" ->
                     use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
                     let reader = readera :?> SqlDataReader
-                    let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
+                    let! r = Sql.dataReaderToArrayAsync reader
+                    let result = SingleResultSet(retCol.Name, r)
                     reader.NextResult() |> ignore
                     return result
                 | _ ->

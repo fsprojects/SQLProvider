@@ -387,7 +387,8 @@ module Firebird =
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 match retCol.TypeMapping.ProviderTypeName with
                 | Some "cursor" ->
-                    let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
+                    let! r = Sql.dataReaderToArrayAsync reader
+                    let result = SingleResultSet(retCol.Name, r)
                     reader.NextResult() |> ignore
                     return result
                 | _ ->

@@ -472,7 +472,9 @@ module internal Oracle =
             | [|col|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 match col.TypeMapping.ProviderTypeName with
-                | Some "REF CURSOR" -> return SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                | Some "REF CURSOR" -> 
+                    let! r = Sql.dataReaderToArrayAsync reader
+                    return SingleResultSet(col.Name, r)
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                     | Some(_,p) -> return Scalar(p.ParameterName, readParameter p)
