@@ -332,8 +332,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     
     /// Attach/copy entity to a different data-context.
     /// Second parameter: SQL UPDATE or INSERT clause?  
-    /// Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
-    /// If column primaty key is something else and not-auto-generated, then, too bad...
+    /// UPDATE: Updates the exising database entity with the values that this entity contains.
+    /// INSERT: Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
     member __.CloneTo(secondContext, itemExistsAlready:bool) = 
         let newItem = SqlEntity(secondContext, tableName, columns)
         if itemExistsAlready then 
@@ -625,6 +625,7 @@ and internal SchemaCache =
       Tables        : ConcurrentDictionary<string,Table>
       Columns       : ConcurrentDictionary<string,ColumnLookup>
       Relationships : ConcurrentDictionary<string,Relationship list * Relationship list>
+      Sprocs        : ResizeArray<Sproc>
       IsOffline     : bool }
     with
         static member Empty = { 
@@ -632,6 +633,7 @@ and internal SchemaCache =
             Tables = ConcurrentDictionary<string,Table>()
             Columns = ConcurrentDictionary<string,ColumnLookup>()
             Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>()
+            Sprocs = ResizeArray()
             IsOffline = false }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))

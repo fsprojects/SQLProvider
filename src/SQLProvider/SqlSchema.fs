@@ -79,7 +79,9 @@ type SprocName =
 
 type CompileTimeSprocDefinition =
     { Name: SprocName
+      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
       Params: (IDbConnection -> QueryParameter list)
+      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
       ReturnColumns: (IDbConnection -> QueryParameter list -> QueryParameter list) }
     override x.ToString() = x.Name.ToString()
 
@@ -94,6 +96,7 @@ type Sproc =
     | Empty
 and CompileTimePackageDefinition =
     { Name : string
+      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
       Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
     }
 

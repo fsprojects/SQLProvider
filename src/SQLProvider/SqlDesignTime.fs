@@ -446,7 +446,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     schemaMap.Add(name, pt)
                     pt
             [ 
-              let containers = generateTypeTree con Map.empty (sprocData.Force())
+              let containers = 
+                    let sprocs = 
+                        if prov.GetSchemaCache().IsOffline then
+                            prov.GetSchemaCache().Sprocs |> Seq.toList
+                        else
+                            let sprocList = sprocData.Force()
+                            prov.GetSchemaCache().Sprocs.AddRange sprocList
+                            sprocList
+                    generateTypeTree con Map.empty sprocs
               yield! containers |> Seq.cast<MemberInfo>
 
               for (KeyValue(key,(entityType,desc,_,schema))) in baseTypes.Force() do
