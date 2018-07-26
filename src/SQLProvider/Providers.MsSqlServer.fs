@@ -220,7 +220,25 @@ module MSSqlServer =
              | _ -> Empty
            )
         |> Seq.toList
-    
+
+    let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
+        match retCol.TypeMapping.ProviderTypeName with
+        | Some "cursor" ->
+            let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
+            reader.NextResult() |> ignore
+            result
+        | _ -> readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
+
+    let processReturnColumnAsync (com:IDbCommand) reader (retCol:QueryParameter) =
+        async {
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" ->
+                let! r = Sql.dataReaderToArrayAsync reader
+                let result = ResultSet(retCol.Name, r)
+                let! _ = reader.NextResultAsync() |> Async.AwaitTask
+                return result
+            | _ -> return readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
+        }
     let executeSprocCommandCommon (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
 
         let outps =
@@ -247,18 +265,11 @@ module MSSqlServer =
             Array.append returnValues inps
             |> Array.sortBy (fun (x,_,_) -> x)
         
-        let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
-            match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
-                let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
-                reader.NextResult() |> ignore
-                result
-            | _ -> readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
-        allParams, processReturnColumn, outps
+        allParams, outps
 
     let executeSprocCommand (com:IDbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
 
-        let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParameters returnCols values
+        let allParams, outps = executeSprocCommandCommon inputParameters returnCols values
         allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
         match returnCols with
@@ -282,7 +293,7 @@ module MSSqlServer =
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
         async {
-            let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParameters returnCols values
+            let allParams, outps = executeSprocCommandCommon inputParameters returnCols values
             allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
             match returnCols with
@@ -295,7 +306,7 @@ module MSSqlServer =
                     let reader = readera :?> SqlDataReader
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
-                    reader.NextResult() |> ignore
+                    let! _ = reader.NextResultAsync() |> Async.AwaitTask
                     return result
                 | _ ->
                     do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
@@ -304,7 +315,8 @@ module MSSqlServer =
                     | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                return Set(cols |> Array.map (processReturnColumn com reader))
+                let! r = cols |> Array.toList |> List.evaluateOneByOne (processReturnColumnAsync com reader)
+                return Set(r |> List.toArray)
         }
         
 type internal MSSQLPagingCompatibility =

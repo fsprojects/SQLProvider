@@ -320,6 +320,32 @@ module Firebird =
             par.Value
         else null
 
+
+    let processReturnColumn reader (outps:(int*IDbDataParameter)[]) (retCol:QueryParameter) =
+        match retCol.TypeMapping.ProviderTypeName with
+        | Some "cursor" ->
+            let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
+            reader.NextResult() |> ignore
+            result
+        | _ ->
+            match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+            | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
+            | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+
+    let processReturnColumnAsync reader (outps:(int*IDbDataParameter)[]) (retCol:QueryParameter) =
+        async {
+            match retCol.TypeMapping.ProviderTypeName with
+            | Some "cursor" ->
+                let! r = Sql.dataReaderToArrayAsync reader
+                let result = ResultSet(retCol.Name, r)
+                let! _ = reader.NextResultAsync() |> Async.AwaitTask
+                return result
+            | _ ->
+                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                | Some(_,p) -> return ScalarResultSet(p.ParameterName, readParameter p)
+                | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+        }
+
     let executeSprocCommandCommon (inputParams:QueryParameter [])  (retCols:QueryParameter[]) (values:obj[]) =
 
         let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
@@ -340,22 +366,11 @@ module Firebird =
             Array.append outps inps
             |> Array.sortBy fst
 
-        let processReturnColumn reader (retCol:QueryParameter) =
-            match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
-                let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
-                reader.NextResult() |> ignore
-                result
-            | _ ->
-                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
-                | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
-                | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
-
-        allParams, processReturnColumn, outps
+        allParams, outps
 
     let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
 
-        let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParams retCols values
+        let allParams, outps = executeSprocCommandCommon inputParams retCols values
         allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
         match retCols with
@@ -373,11 +388,11 @@ module Firebird =
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         | cols ->
             use reader = com.ExecuteReader()
-            Set(cols |> Array.map (processReturnColumn reader))
+            Set(cols |> Array.map (processReturnColumn reader outps))
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         async {
-            let allParams, processReturnColumn, outps = executeSprocCommandCommon inputParams retCols values
+            let allParams, outps = executeSprocCommandCommon inputParams retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             match retCols with
@@ -389,7 +404,7 @@ module Firebird =
                 | Some "cursor" ->
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
-                    reader.NextResult() |> ignore
+                    let! _ = reader.NextResultAsync() |> Async.AwaitTask
                     return result
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
@@ -397,7 +412,8 @@ module Firebird =
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                return Set(cols |> Array.map (processReturnColumn reader))
+                let! r = cols |> Array.toList |> List.evaluateOneByOne (processReturnColumnAsync reader outps)
+                return Set(r)
         }
 
 type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =

@@ -557,6 +557,19 @@ module Sql =
         if con.State <> ConnectionState.Open
         then con.Open()
 
+module List =
+    /// Helper function to run async computation non-parallel style for list of objects.
+    /// This is needed if async database opreation is executed for a list of entities.
+    let evaluateOneByOne asyncFunc entityList =
+        let rec executeOneByOne' asyncFunc entityList acc =
+            match entityList with
+            | [] -> async { return acc }
+            | h::t -> 
+                async {
+                    let! res = asyncFunc h
+                    return! executeOneByOne' asyncFunc t (res::acc)
+                }
+        executeOneByOne' asyncFunc entityList []
 
 // Taken from https://github.com/haf/yolo
 module Bytes =

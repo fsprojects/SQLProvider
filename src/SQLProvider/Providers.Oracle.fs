@@ -188,6 +188,26 @@ module internal Oracle =
             | Some(obj) -> obj |> box
             | _ -> parameter.Value |> box
 
+    let readParameterAsync (parameter:IDbDataParameter) =
+        async {
+            let parameterType = parameterType.Value
+            let oracleDbTypeGetter =
+                parameterType.GetProperty("OracleDbType").GetGetMethod()
+
+            match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
+            | DbType.Object, 121 ->
+                 if parameter.Value = null
+                 then return null
+                 else
+                    let! data =
+                        Sql.dataReaderToArrayAsync (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> Common.DbDataReader)
+                    return data |> Seq.ofArray |> box
+            | _, _ ->
+                match tryReadValueProperty parameter.Value with
+                | Some(obj) -> return obj |> box
+                | _ -> return parameter.Value |> box
+        }
+
     let read conn f sql =
       seq { use cmd = createCommand sql conn
             use reader = cmd.ExecuteReader()
@@ -477,19 +497,24 @@ module internal Oracle =
                     return SingleResultSet(col.Name, r)
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
-                    | Some(_,p) -> return Scalar(p.ParameterName, readParameter p)
+                    | Some(_,p) -> 
+                        let! r = readParameterAsync p
+                        return Scalar(p.ParameterName, r)
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
             | cols ->
                 do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
-                let returnValues =
-                    cols
-                    |> Array.map (fun col ->
-                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
-                        | Some(_,p) ->
-                            match col.TypeMapping.ProviderTypeName with
-                            | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
-                            | _ -> ScalarResultSet(col.Name, readParameter p)
-                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                let! returnValues =
+                    cols |> Array.toList
+                    |> List.evaluateOneByOne (fun col ->
+                        async {
+                            match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                            | Some(_,p) ->
+                                let! r = readParameterAsync p
+                                match col.TypeMapping.ProviderTypeName with
+                                | Some "REF CURSOR" -> return ResultSet(col.Name, r :?> ResultSet)
+                                | _ -> return ScalarResultSet(col.Name, r)
+                            | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                        }
                     )
                 return Set(returnValues)
         }

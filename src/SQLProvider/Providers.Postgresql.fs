@@ -357,7 +357,11 @@ module PostgreSQL =
                             let! r = Sql.dataReaderToArrayAsync reader
                             let results = ref [ResultSet("ReturnValue", r)]
                             let i = ref 1
-                            while reader.NextResult() do
+                            let mutable hasNext = true
+                            while hasNext do // This could be done more simply with List.evaluateOneByOne like other providers do!
+                                let! h = reader.NextResultAsync() |> Async.AwaitTask
+                                hasNext <- h
+                                if hasNext then
                                     let! r = Sql.dataReaderToArrayAsync reader
                                     results := ResultSet("ReturnValue" + (string !i), r) :: !results
                                     incr(i)
