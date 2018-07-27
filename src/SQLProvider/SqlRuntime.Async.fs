@@ -135,5 +135,8 @@ module Array =
     let executeQueryAsync query = async { let! x = executeAsync query in return x |> Seq.toArray }
 
 module List =
+    /// Helper function to run async computation non-parallel style for list of objects.
+    /// This is needed if async database opreation is executed for a list of entities.
+    let evaluateOneByOne = Sql.evaluateOneByOne 
     /// Execute SQLProvider query and release the OS thread while query is being executed.
     let executeQueryAsync query = async { let! x = executeAsync query in return x |> Seq.toList }

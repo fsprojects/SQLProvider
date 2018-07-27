@@ -505,7 +505,7 @@ module internal Oracle =
                 do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
                 let! returnValues =
                     cols |> Array.toList
-                    |> List.evaluateOneByOne (fun col ->
+                    |> Sql.evaluateOneByOne (fun col ->
                         async {
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->

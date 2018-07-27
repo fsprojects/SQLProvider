@@ -407,7 +407,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             let! _ = reader.NextResultAsync() |> Async.AwaitTask
                             return result
                         }
-                    let! r = cols |> Seq.toList |> List.evaluateOneByOne (processReturnColumnAsync)
+                    let! r = cols |> Seq.toList |> Sql.evaluateOneByOne (processReturnColumnAsync)
                     return Set(r |> List.toArray)
             }
 

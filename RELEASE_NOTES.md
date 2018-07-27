@@ -1,3 +1,9 @@
+### 1.1.47 - 26.07.2018
+* Firebird provider fix PR #562
+* Fix for SQL Server sproc output parameters PR #564
+* More asynchronous sprocs execution
+* CloneTo to attach entities to contexts, #561
+
 ### 1.1.45 - 05.07.2018
 *  Paging support for SQL Server 2008, PR #558
 *  Upsert, PR #557

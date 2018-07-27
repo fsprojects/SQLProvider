@@ -315,7 +315,7 @@ module MSSqlServer =
                     | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
             | cols ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
-                let! r = cols |> Array.toList |> List.evaluateOneByOne (processReturnColumnAsync com reader)
+                let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync com reader)
                 return Set(r |> List.toArray)
         }
         
