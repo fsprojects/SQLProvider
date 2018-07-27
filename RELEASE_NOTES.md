@@ -1,3 +1,6 @@
+### 1.1.48 - 27.07.2018
+* Ordering fixed on async sproc resultset
+
 ### 1.1.47 - 26.07.2018
 * Firebird provider fix PR #562
 * Fix for SQL Server sproc output parameters PR #564
