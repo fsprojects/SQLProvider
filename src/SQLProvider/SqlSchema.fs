@@ -5,6 +5,7 @@ open System.Data
 open System.Data.SqlClient
 open System.Text.RegularExpressions
 open FSharp.Data.Sql.Common.Utilities
+open System.Reflection
 
 module internal Patterns =
     let (|Match|_|) (pat:string) (inp:string) =
@@ -89,11 +90,16 @@ type RunTimeSprocDefinition =
     { Name: SprocName
       Params: QueryParameter list }
 
+[<System.Runtime.Serialization.KnownType("GetKnownTypes")>]
 type Sproc =
     | Root of string * Sproc
     | Package of string * CompileTimePackageDefinition
     | Sproc of CompileTimeSprocDefinition
     | Empty
+    static member GetKnownTypes() =
+        typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic) 
+        |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
+
 and CompileTimePackageDefinition =
     { Name : string
       [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
