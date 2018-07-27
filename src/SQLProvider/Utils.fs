@@ -509,7 +509,7 @@ module Sql =
             }
         async {
             let! items = readitems []
-            return items |> List.toArray
+            return items |> List.toArray |> Array.rev
         }
 
     let dbUnbox<'a> (v:obj) : 'a = 
