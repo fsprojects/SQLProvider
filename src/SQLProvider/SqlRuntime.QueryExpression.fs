@@ -408,6 +408,12 @@ module internal QueryExpressionTransformer =
                             exp.NodeType = ExpressionType.Call &&
                             (exp :?> MethodCallExpression).Object <> null && 
                             (exp :?> MethodCallExpression).Object.Type = typeof<SqlEntity>
+                        
+                        let rec tupleofentities (tupleType:Type) =
+                            if (tupleType.Name.StartsWith("AnonymousObject") || tupleType.Name.StartsWith("Tuple")) then
+                                let ps = tupleType.GetGenericArguments()
+                                ps |> Seq.forall(fun t -> t<>null && (t = typeof<SqlEntity> || (tupleofentities t))) 
+                            else false
 
                         if e.NodeType = ExpressionType.New then
                             let ne = e :?> NewExpression
@@ -415,10 +421,7 @@ module internal QueryExpressionTransformer =
                                 (ne.Arguments |> Seq.forall(fun a -> (callEntityType a) || (shouldFlattenToSqlEntity a))) 
                         else if e.NodeType = ExpressionType.Parameter then
                             let p = e :?> ParameterExpression
-                            if (p.Type.Name.StartsWith("AnonymousObject") || p.Type.Name.StartsWith("Tuple")) then
-                                let ps = p.Type.GetGenericArguments()
-                                ps |> Seq.forall(fun t -> t<>null && t = typeof<SqlEntity>) 
-                            else false
+                            tupleofentities p.Type
                         else callEntityType e
 
                     // Usually it's just SqlEntity but it can be also tuple in joins etc.
