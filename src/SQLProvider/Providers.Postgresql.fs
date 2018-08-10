@@ -475,6 +475,7 @@ module PostgreSQL =
 
 type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -607,6 +608,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
               |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->
                 use reader = 

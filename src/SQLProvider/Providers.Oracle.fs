@@ -521,6 +521,7 @@ module internal Oracle =
 
 type internal OracleProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, tableNames) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     let isPrimaryKey tableName columnName = 
         match schemaCache.PrimaryKeys.TryGetValue tableName with
@@ -622,6 +623,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         Oracle.resolutionPath <- resolutionPath
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 

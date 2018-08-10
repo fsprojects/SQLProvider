@@ -619,6 +619,8 @@ and internal ISqlProvider =
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
     ///Builds a command representing a call to a stored procedure, executing async
     abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> Async<ReturnValueType>
+    ///Provider specific lock to do provider specific locking
+    abstract GetLockObject : unit -> obj
 
 and internal SchemaCache =
     { PrimaryKeys   : ConcurrentDictionary<string,string list>

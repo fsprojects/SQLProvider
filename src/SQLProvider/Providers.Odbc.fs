@@ -12,6 +12,7 @@ open FSharp.Data.Sql.Common
 
 type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -183,6 +184,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         cmd
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
             let desc = 

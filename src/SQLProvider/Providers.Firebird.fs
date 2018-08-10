@@ -418,6 +418,7 @@ module Firebird =
 
 type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     let getTableNameForQuery (table:Table) =
         match quoteChar with
@@ -534,6 +535,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         Firebird.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 

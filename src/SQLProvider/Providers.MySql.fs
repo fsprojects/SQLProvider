@@ -354,6 +354,7 @@ module MySql =
 
 type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, referencedAssemblies) as this =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -460,6 +461,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         MySql.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 

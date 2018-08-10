@@ -327,6 +327,7 @@ type internal MSSQLPagingCompatibility =
 
 type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
     
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Version>()
@@ -453,6 +454,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         cmd
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
             let baseq =

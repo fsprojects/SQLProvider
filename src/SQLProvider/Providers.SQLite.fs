@@ -15,6 +15,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let myLock = new Object()
 
     /// This is custom getSchema operation for data libraries that doesn't support System.Data.Common GetSchema interface.
     let customGetSchema name conn =
@@ -337,6 +338,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | _ -> failwith "Unsupported pragma"
 
     interface ISqlProvider with
+        member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = "" // SQLite doesn't support table descriptions/comments
         member __.GetColumnDescription(con,tableName,columnName) = "" // SQLite doesn't support column descriptions/comments
         member __.CreateConnection(connectionString) =
