@@ -341,7 +341,15 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             
             resultType.AddMembersDelayed(fun () ->
                     Sql.ensureOpen con
-                    let sprocParameters = sproc.Params con        
+                    let sprocParameters = 
+                        let cache = prov.GetSchemaCache()
+                        if cache.IsOffline then
+                            cache.SprocsParams |> Seq.toList
+                        else
+                            let ps = sproc.Params con  
+                            cache.SprocsParams.AddRange ps
+                            ps
+
                     let parameters =
                         sprocParameters
                         |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
