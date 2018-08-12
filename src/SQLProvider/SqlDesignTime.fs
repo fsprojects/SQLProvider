@@ -97,12 +97,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             lazy
                 match con with
                 | Some con -> prov.GetSprocs con
-                | None -> []
+                | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
         let getSprocReturnColumns (sprocDefinition: CompileTimeSprocDefinition) param =
             match con with
             | Some con -> (sprocDefinition.ReturnColumns con param)
-            | None -> []
+            | None -> 
+                if prov.GetSchemaCache().SprocsParams.ContainsKey(sprocDefinition.Name.ProcName) then
+                    prov.GetSchemaCache().SprocsParams.[sprocDefinition.Name.ProcName]
+                    |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
+                else []
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", None, isErased=true)
@@ -344,10 +348,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     let sprocParameters = 
                         let cache = prov.GetSchemaCache()
                         if cache.IsOffline then
-                            cache.SprocsParams |> Seq.toList
+                            cache.SprocsParams.[sprocname]
                         else
                             let ps = sproc.Params con  
-                            cache.SprocsParams.AddRange ps
+                            cache.SprocsParams.[sprocname] <- ps
                             ps
 
                     let parameters =
