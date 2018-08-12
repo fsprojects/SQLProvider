@@ -361,9 +361,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         match haspk, pk with
         | true, [itm] ->
             if values |> Array.isEmpty then
-                ~~(sprintf "INSERT INTO [%s].[%s] OUTPUT inserted.%s DEFAULT VALUES;" entity.Table.Schema entity.Table.Name itm)
+                ~~(sprintf "INSERT INTO [%s].[%s] OUTPUT inserted.[%s] DEFAULT VALUES;" entity.Table.Schema entity.Table.Name itm)
             else
-                ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.%s VALUES (%s);"
+                ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.[%s] VALUES (%s);"
                     entity.Table.Schema entity.Table.Name
                     (String.Join(",",columnNames))
                     itm
