@@ -1,3 +1,7 @@
+### 1.1.49 - 15.08.2018
+* MsSql: Add brackets around the OUTPUT column name of the INSERT command PR #567
+* ContextSchemaCache to support stored procedures #PR 566
+
 ### 1.1.48 - 27.07.2018
 * Ordering fixed on async sproc resultset
 
