@@ -628,6 +628,9 @@ and internal SchemaCache =
       Columns       : ConcurrentDictionary<string,ColumnLookup>
       Relationships : ConcurrentDictionary<string,Relationship list * Relationship list>
       Sprocs        : ResizeArray<Sproc>
+      SprocsParams  : ConcurrentDictionary<string,QueryParameter list> //sproc name and params
+      Packages      : ResizeArray<CompileTimeSprocDefinition>
+      Individuals   : ResizeArray<SqlEntity>
       IsOffline     : bool }
     with
         static member Empty = { 
@@ -636,6 +639,9 @@ and internal SchemaCache =
             Columns = ConcurrentDictionary<string,ColumnLookup>()
             Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>()
             Sprocs = ResizeArray()
+            SprocsParams = ConcurrentDictionary<string,QueryParameter list>()
+            Packages = ResizeArray()
+            Individuals = ResizeArray()
             IsOffline = false }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
