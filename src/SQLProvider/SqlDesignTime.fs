@@ -99,13 +99,16 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some con -> prov.GetSprocs con
                 | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
-        let getSprocReturnColumns (sprocDefinition: CompileTimeSprocDefinition) param =
+        let getSprocReturnColumns sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
             match con with
-            | Some con -> (sprocDefinition.ReturnColumns con param)
+            | Some con -> 
+                let returnParams = sprocDefinition.ReturnColumns con param
+                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
+                returnParams
             | None -> 
-                if prov.GetSchemaCache().SprocsParams.ContainsKey(sprocDefinition.Name.ProcName) then
-                    prov.GetSchemaCache().SprocsParams.[sprocDefinition.Name.ProcName]
-                    |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
+                let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
+                if ok then
+                    pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
                 else []
 
         let getTableData name = tableColumns.Force().[name].Force()
@@ -129,7 +132,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connnectionString
                                     | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connnectionString
                                     | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
-                                | None -> ""
+                                | None -> ". Offline mode."
                             let possibleError = "Tables not found" + hint
                             let errInfo = 
                                 ProvidedProperty("PossibleError", typeof<String>, getterCode = fun _ -> <@@ possibleError @@>)
@@ -169,8 +172,10 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             use reader = com.ExecuteReader()
                             let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName, columns, reader)
                             if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                            if ret.Length > 0 then 
+                                prov.GetSchemaCache().Individuals.AddRange ret
                             ret
-                        | None -> [||]
+                        | None -> prov.GetSchemaCache().Individuals |> Seq.toArray
                    if Array.isEmpty entities then [] else
                    // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                    // inside that type the individuals will be listed again but with the text for the relevant column as the name 
@@ -286,15 +291,17 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
+                        let nfo = c.TypeInfo
+                        let typeInfo = match nfo with None -> "" | Some x -> x.ToString() 
                         match con with
                         | Some con ->
-                            let nfo = c.TypeInfo
                             prop.AddXmlDocDelayed(fun () -> 
-                                let typeInfo = match nfo with None -> "" | Some x -> x.ToString() 
                                 let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
                                 let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
                                 sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
-                        | None -> ()
+                        | None -> 
+                            prop.AddXmlDocDelayed(fun () -> sprintf "<summary>Offline mode. %s</summary>" typeInfo)
+                            ()
                         prop
                     List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps = 
@@ -332,7 +339,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         yield prop ]
                 attProps @ relProps)
         
-        let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection) (sproc:CompileTimeSprocDefinition) =    
+        let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (sproc:CompileTimeSprocDefinition) =    
             
             let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName) 
                             |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
@@ -344,21 +351,24 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             container.AddMember(rt)
             
             resultType.AddMembersDelayed(fun () ->
-                    Sql.ensureOpen con
                     let sprocParameters = 
                         let cache = prov.GetSchemaCache()
-                        if cache.IsOffline then
-                            cache.SprocsParams.[sprocname]
-                        else
+                        match con with
+                        | None -> 
+                            match cache.SprocsParams.TryGetValue sprocname with
+                            | true, x -> x
+                            | false, _ -> []
+                        | Some con ->
+                            Sql.ensureOpen con
                             let ps = sproc.Params con  
-                            cache.SprocsParams.[sprocname] <- ps
+                            cache.SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
                             ps
 
                     let parameters =
                         sprocParameters
                         |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
                         |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
-                    let retCols = getSprocReturnColumns sproc sprocParameters |> List.toArray
+                    let retCols = getSprocReturnColumns sprocname sproc sprocParameters |> List.toArray
                     let runtimeSproc = {Name = sproc.Name; Params = sprocParameters} : RunTimeSprocDefinition
                     let returnType = 
                         match retCols.Length with
@@ -427,26 +437,36 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     parent.AddMember(typ)
                     parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
                     typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-                    typ.AddMembersDelayed(fun () -> Sql.ensureOpen con; (packageDefn.Sprocs con) |> List.map (generateSprocMethod typ con)) 
+                    match con with
+                    | Some co ->
+                        typ.AddMembersDelayed(fun () -> 
+                            Sql.ensureOpen co
+                            let p = (packageDefn.Sprocs co) 
+                            prov.GetSchemaCache().Packages.AddRange p
+                            p |> List.map (generateSprocMethod typ con)) 
+                    | None -> 
+                        typ.AddMembersDelayed(fun () ->  
+                        prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con)) 
                     createdTypes.Add(path, typ)
                 | _ -> failwithf "Could not generate package path type undefined root or previous type"    
             | Sproc(sproc) ->
                     match parent with
                     | Some(parent) ->
-                        parent.AddMemberDelayed(fun () -> Sql.ensureOpen con;  generateSprocMethod parent con sproc); createdTypes
+                        match con with
+                        | Some co ->
+                            parent.AddMemberDelayed(fun () -> Sql.ensureOpen co;  generateSprocMethod parent con sproc); createdTypes
+                        | None -> 
+                            parent.AddMemberDelayed(fun () -> generateSprocMethod parent con sproc); createdTypes
                     | _ -> failwithf "Could not generate sproc undefined root or previous type"
             | Empty -> createdTypes
 
         let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) = 
-            match con with
-            | Some con ->
-                match sprocs with
-                | [] -> 
-                    Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
-                    |> Map.toSeq
-                    |> Seq.map snd
-                | sproc::rest -> generateTypeTree (Some con) (walkSproc con [] None createdTypes sproc) rest
-            | None -> Seq.empty
+            match sprocs with
+            | [] -> 
+                Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
+                |> Map.toSeq
+                |> Seq.map snd
+            | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
 
         serviceType.AddMembersDelayed( fun () ->
             let schemaMap = new System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
@@ -460,9 +480,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             [ 
               let containers = 
                     let sprocs = 
-                        if prov.GetSchemaCache().IsOffline then
-                            prov.GetSchemaCache().Sprocs |> Seq.toList
-                        else
+                        match con with
+                        | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
+                        | Some _ ->
                             let sprocList = sprocData.Force()
                             prov.GetSchemaCache().Sprocs.AddRange sprocList
                             sprocList
@@ -684,7 +704,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
                         let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
                         sprintf "<summary>%s %s %s</summary>" details separator desc)
-                | None -> ()
+                | None -> 
+                    prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
+                    ()
                 schemaType.AddMember ct
                 schemaType.AddMember prop
 
