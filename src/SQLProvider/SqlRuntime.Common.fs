@@ -737,3 +737,38 @@ module internal CommonTasks =
                         Condition.Or(curr, tail |> Option.map parseFilters)
                     | x -> x)
             parseFilters conditionList
+
+module public OfflineTools =
+
+    let mergeCacheFiles(sourcefile1, sourcefile2, targetfile) =
+        if not(System.IO.File.Exists sourcefile1) then "File not found: " + sourcefile1
+        elif not(System.IO.File.Exists sourcefile2) then "File not found: " + sourcefile2
+        else
+        if System.IO.File.Exists targetfile then
+            System.IO.File.Delete targetfile
+        let s1 = SchemaCache.Load sourcefile1
+        let s2 = SchemaCache.Load sourcefile2
+        let merged = 
+            {   PrimaryKeys = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.PrimaryKeys ; s2.PrimaryKeys |] |> Seq.distinctBy(fun d -> d.Key));
+                Tables = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.Tables ; s2.Tables |] |> Seq.distinctBy(fun d -> d.Key));
+                Columns = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.Columns ; s2.Columns |] |> Seq.distinctBy(fun d -> d.Key));
+                Relationships = System.Collections.Concurrent.ConcurrentDictionary( 
+                                    Seq.concat [|s1.Relationships ; s2.Relationships |] |> Seq.distinctBy(fun d -> d.Key));
+                Sprocs = ResizeArray(Seq.concat [| s1.Sprocs ; s2.Sprocs |] |> Seq.distinctBy(fun s ->
+                                        let rec getName = 
+                                            function
+                                            | Root(name, sp) -> name + "_" + (getName sp)
+                                            | Package(n, ctpd) -> n + "_" + ctpd.ToString()
+                                            | Sproc ctpd -> ctpd.ToString()
+                                            | Empty -> ""
+                                        getName s));
+                SprocsParams = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.SprocsParams ; s2.SprocsParams |] |> Seq.distinctBy(fun d -> d.Key));
+                Packages = ResizeArray(Seq.concat [| s1.Packages ; s2.Packages |] |> Seq.distinctBy(fun s -> s.ToString()));
+                Individuals = ResizeArray(Seq.concat [| s1.Individuals ; s2.Individuals |] |> Seq.distinct);
+                IsOffline = s1.IsOffline || s2.IsOffline}
+        merged.Save targetfile
+        "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
