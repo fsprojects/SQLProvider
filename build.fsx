@@ -238,13 +238,21 @@ Target "NuGet" (fun _ ->
 
 #if MONO
 #else
-    let dotnetSdk = @"C:\Program Files\dotnet\sdk\2.1.100\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
-    if directoryExists dotnetSdk then
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
+    let copyDotnetLibraries dotnetSdk =
+        CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
+        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
+        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
+        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
+        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
+    let netDir version = 
+        @"C:\Program Files\dotnet\sdk\" + version + @"\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
+    let dotnetSdk211 = netDir "2.1.100"
+    let dotnetSdk212 = netDir "2.1.202"
+    if directoryExists dotnetSdk211 then 
+        copyDotnetLibraries dotnetSdk211
+    elif directoryExists dotnetSdk212 then 
+        copyDotnetLibraries dotnetSdk212
+
     CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
 #endif
 
