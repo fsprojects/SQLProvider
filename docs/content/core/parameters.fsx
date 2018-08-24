@@ -109,6 +109,8 @@ is saved, the outcome of the method execution is stored in memory, so the file w
 In case the database schema changes and the schema file must be updated, remove the outdated file, reload
 the solution and retype or uncomment a call to `SaveContextSchema` to regenerate the schema file.
 
+There is a tool method FSharp.Data.Sql.Common.OfflineTools.mergeCacheFiles to merge multiple files together.
+
 *)
 
 [<Literal>]

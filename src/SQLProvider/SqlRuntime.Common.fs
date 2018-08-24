@@ -740,6 +740,8 @@ module internal CommonTasks =
 
 module public OfflineTools =
 
+    /// Merges two ContexSchemaPath offline schema files into one target schema file.
+    /// This is a tool method that can be useful in multi-project solution using the same database with different tables.
     let mergeCacheFiles(sourcefile1, sourcefile2, targetfile) =
         if not(System.IO.File.Exists sourcefile1) then "File not found: " + sourcefile1
         elif not(System.IO.File.Exists sourcefile2) then "File not found: " + sourcefile2
