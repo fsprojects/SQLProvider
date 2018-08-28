@@ -24,6 +24,10 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
 module internal DesignTimeCache = 
     let cache = System.Collections.Concurrent.ConcurrentDictionary<_,ProvidedTypeDefinition>()
 
+type internal ParameterValue =
+  | UserProvided of string * string * Type
+  | Default of Expr
+
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =     
     inherit TypeProviderForNamespaces(config)
@@ -33,7 +37,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
     
-    let createTypes(connnectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) = 
+    let createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) = 
         let resolutionPath = 
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -46,7 +50,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | _ -> (fun x -> x)
 
         let conString = 
-            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connnectionString with
+            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString with
             | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
             | cs -> cs
                     
@@ -126,13 +130,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     match caseSensitivity with
                                     | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOLOWER
                                             when prov.GetTables(con,CaseSensitivityChange.TOUPPER).Length > 0 ->
-                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...> \r\nConnection: " + connnectionString
+                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOUPPER, ...> \r\nConnection: " + connectionString
                                     | CaseSensitivityChange.ORIGINAL | CaseSensitivityChange.TOUPPER 
                                             when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
-                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connnectionString
-                                    | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connnectionString
-                                    | _ -> " for schema or database " + owner + ". Connection: " + connnectionString
-                                | None -> ". Offline mode."
+                                        ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connectionString
+                                    | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connectionString
+                                    | _ -> " for schema or database " + owner + ". Connection: " + connectionString
+                                | None -> ""
                             let possibleError = "Tables not found" + hint
                             let errInfo = 
                                 ProvidedProperty("PossibleError", typeof<String>, getterCode = fun _ -> <@@ possibleError @@>)
@@ -755,113 +759,153 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
              ])
         
-        let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
-        let defaultTransactionOptionsExpr = <@@ TransactionOptions.Default @@>
-        let defaultSelectOperations = <@@ SelectOperations.DotNetSide @@>
         rootType.AddMembers [ serviceType ]
+        
+        let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd        
+        let resolutionFolder = config.ResolutionFolder
+
+        // using a magic number for the lack of a command timeout; otherwise we'd need to convert an untyped Expr to an untyped option Expr
+        // i'm pretty sure no SQL driver actually wants this as a value. still, can this be handled better?
+        let NO_COMMAND_TIMEOUT = Int32.MinValue 
+                  
+        // these are the definitions for the parameters that may appear in the .GetDataContext() overload
+        let customConnStr = 
+          "connectionString", 
+          "The database runtime connection string", 
+          typeof<string>
+
+        let customResPath = 
+          "resolutionPath", 
+          "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types", 
+          typeof<string>
+
+        let customTransOpts = 
+          "transactionOptions", 
+          "TransactionOptions for the transaction created on SubmitChanges.", 
+          typeof<TransactionOptions>
+
+        let customCmdTimeout = 
+          "commandTimeout", 
+          "SQL command timeout. Maximum time for single SQL-command in seconds.", 
+          typeof<int>
+
+        let customSelectOps = 
+          "selectOperations", 
+          "Execute select-clause operations in SQL database rather than .NET-side.", 
+          typeof<SelectOperations>
+             
+        // these are the default values to be used if the .GetDataContext() overload doesn't include the parameter
+        let defaultConnStr =         
+            <@@ match ConfigHelpers.tryGetConnectionString true resolutionFolder conStringName connectionString with
+                | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                | cs -> cs 
+            @@>
+        let defaultResPath = <@@ resolutionFolder @@>                
+        let defaultCmdTimeout = <@@ NO_COMMAND_TIMEOUT @@>
+        let defaultTransOpts = <@@ TransactionOptions.Default @@>
+        let defaultSelectOps = <@@ SelectOperations.DotNetSide @@>             
+        
+        let optionPairs = [|              
+          customConnStr, defaultConnStr
+          customResPath, defaultResPath
+          customTransOpts, defaultTransOpts
+          customCmdTimeout, defaultCmdTimeout
+          customSelectOps, defaultSelectOps
+        |]
+
+        // generates the .GetDataContext() overloads
+        // each parameter can either be present (passed as argument at runtime) or missing (uses the default value)
+        let overloads = [|
+          [| |] 
+          [| customConnStr |]
+          [| customConnStr; customResPath |]
+          [| customConnStr; customTransOpts |]
+          [| customConnStr; customResPath; customTransOpts |]
+          [| customConnStr; customCmdTimeout |]
+          [| customConnStr; customResPath; customCmdTimeout |]
+          [| customConnStr; customTransOpts; customCmdTimeout |]
+          [| customConnStr; customResPath; customTransOpts; customCmdTimeout |]
+          [| customTransOpts |]
+          [| customCmdTimeout |]
+          [| customTransOpts; customCmdTimeout |]
+          [| customSelectOps |]
+          [| customConnStr; customSelectOps |]
+          [| customConnStr; customTransOpts; customSelectOps |]
+          [| customConnStr; customCmdTimeout; customSelectOps |]
+          [| customConnStr; customResPath; customTransOpts; customCmdTimeout; customSelectOps |]
+        |]
 
         rootType.AddMembersDelayed (fun () -> 
             [ 
-              let constr =     "connectionString","The database runtime connection string",typeof<string>
-              let respath =    "resolutionPath", "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types",typeof<string>
-              let transopt =   "transactionOptions", "TransactionOptions for the transaction created on SubmitChanges.", typeof<TransactionOptions>
-              let cmdTimeout = "commandTimeout", "SQL command timeout. Maximum time for single SQL-command in seconds.", typeof<int>
-              let selectOperations = "selectOperations", "Execute select-clause operations in SQL database rahter than .NET-side.", typeof<SelectOperations>
 
-              let crossTargetParameterCombinations = [
-                    [], (fun (_:Expr list) ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@>);
-                    [constr], (fun (args:Expr list) ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext @@> );
-                    [constr;respath], (fun args -> 
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%defaultSelectOperations) :> ISqlDataContext  @@>);
-                    [constr; transopt], (fun args ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], None, %%defaultSelectOperations) :> ISqlDataContext @@> );
-                    [constr; respath; transopt], (fun args -> 
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], None, %%defaultSelectOperations) :> ISqlDataContext  @@>)
-                    [constr;cmdTimeout], (fun args ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@> );
-                    [constr;respath;cmdTimeout], (fun args -> 
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext  @@>);
-                    [constr; transopt;cmdTimeout], (fun args ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], (Some %%args.[2]), %%defaultSelectOperations) :> ISqlDataContext @@> );
-                    [constr; respath; transopt;cmdTimeout], (fun args -> 
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%defaultSelectOperations) :> ISqlDataContext  @@>)
-                    [transopt], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[0], None, %%defaultSelectOperations) :> ISqlDataContext @@>);
-                    [cmdTimeout], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[0]), %%defaultSelectOperations) :> ISqlDataContext @@>);
-                    [transopt;cmdTimeout], (fun args ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[0], (Some %%args.[1]), %%defaultSelectOperations) :> ISqlDataContext @@>);
-                    [selectOperations], (fun (args:Expr list) ->
-                                let runtimePath = config.ResolutionFolder
-                                let runtimeAssembly = config.ResolutionFolder
-                                let runtimeConStr = 
-                                    <@@ match ConfigHelpers.tryGetConnectionString true runtimePath conStringName connnectionString with
-                                        | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                                        | cs -> cs @@>
-                                <@@ SqlDataContext(rootTypeName, %%runtimeConStr, dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[0]) :> ISqlDataContext @@>);
-                    [constr;selectOperations], (fun (args:Expr list) ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, None, %%args.[1]) :> ISqlDataContext @@> );
-                    [constr; transopt;selectOperations], (fun args ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[1], None, %%args.[2]) :> ISqlDataContext @@> );
-                    [constr;cmdTimeout;selectOperations], (fun args ->
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, resolutionPath, %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%defaultTransactionOptionsExpr, (Some %%args.[1]), %%args.[3]) :> ISqlDataContext @@> );
-                    [constr; respath; transopt;cmdTimeout;selectOperations], (fun args -> 
-                                let runtimeAssembly = config.ResolutionFolder
-                                <@@ SqlDataContext(rootTypeName, %%args.[0], dbVendor, %%args.[1], %%referencedAssemblyExpr, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, %%args.[2], (Some %%args.[3]), %%args.[4]) :> ISqlDataContext  @@>)
+              for overload in overloads do
 
+                let actualParams = [|
+                  for (customParam, defaultParam) in optionPairs do 
+                    match overload |> Array.exists ((=) customParam) with
+                    | true -> yield UserProvided customParam 
+                    | false -> yield Default defaultParam
+                |]
+    
+                // The code that gets actually executed
+                let invoker (args: Expr list) =
 
+                  let actualArgs = 
+                    [| 
+                        let mutable argPosition = 0
+                        for actualParam in actualParams do
+                            match actualParam with 
+                            // if the parameter appears, we read it from the argument list and advance
+                            | UserProvided _ -> yield args.[argPosition]; argPosition <- argPosition + 1
+                            // otherwise, we use the default value
+                            | Default p -> yield p
+                    |]
 
+                  <@@ 
+                    let cmdTimeout = 
+                      let argTimeout = %%actualArgs.[3]
+                      if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
 
-                ]
-              yield! 
-                  crossTargetParameterCombinations |> Seq.map(fun (parmArr, invoker) ->
-                      let providerParams = parmArr |> List.map(fun (pname, _, ptype) -> ProvidedParameter(pname, ptype))
-                      let meth = 
-                        ProvidedMethod("GetDataContext", providerParams, serviceType, isStatic = true, invokeCode = invoker)
-                      let xmlComment = 
-                            let all = parmArr |> List.map(fun (pname, xmlInfo, _) -> "<param name='" + pname + "'>" + xmlInfo + "</param>") |> List.toArray
-                            String.Join("", all)
-                      meth.AddXmlDoc ("<summary>Returns an instance of the SQL Provider using the static parameters</summary>" + xmlComment)
-                      meth
-                  )
+                    // **important**: contextSchemaPath is empty because we do not want 
+                    // to load the schema cache from (the developer's) local filesystem in production
+                    SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor, 
+                                    resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr, 
+                                    runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
+                                    tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote, 
+                                    sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2], 
+                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4])
+                    :> ISqlDataContext 
+                  @@>
+                        
+                // builds the definitions
+                let paramList = 
+                  [ for actualParam in actualParams do
+                      match actualParam with 
+                      | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
+                      | _ -> ()                      
+                  ]
+
+                let providerParams = 
+                  [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
+                         
+                let xmlComments = 
+                  [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
+                      for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                  |]
+
+                let method = 
+                  ProvidedMethod( methodName = "GetDataContext"
+                                , parameters = providerParams
+                                , returnType = serviceType
+                                , isStatic = true
+                                , invokeCode = invoker
+                                )                        
+                         
+                method.AddXmlDoc (String.concat "" xmlComments)
+                         
+                yield method                   
             ])
+
         match con with
         | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
         | None -> ()
