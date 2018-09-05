@@ -1,3 +1,7 @@
+### 1.1.50 - 05.09.2018
+* TypeProvider SDK update
+* Context schema path fix PR #560
+
 ### 1.1.49 - 15.08.2018
 * MsSql: Add brackets around the OUTPUT column name of the INSERT command PR #567
 * ContextSchemaCache to support stored procedures #PR 566
