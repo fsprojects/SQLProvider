@@ -159,6 +159,43 @@ let ``option from join select with exactly one``() =
     | None ->
         Assert.Fail()
 
+[<Test; Ignore("Not supported over 7 joins") >]
+let ``8 joins test``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join ord1 in dc.Main.Orders on (cust.CustomerId = ord1.CustomerId)
+            join ord2 in dc.Main.Orders on (cust.CustomerId = ord2.CustomerId)
+            join ord3 in dc.Main.Orders on (cust.CustomerId = ord3.CustomerId)
+            join ord4 in dc.Main.Orders on (cust.CustomerId = ord4.CustomerId)
+            join ord5 in dc.Main.Orders on (cust.CustomerId = ord5.CustomerId)
+            join ord6 in dc.Main.Orders on (cust.CustomerId = ord6.CustomerId)
+            join ord7 in dc.Main.Orders on (cust.CustomerId = ord7.CustomerId)
+            join ord8 in dc.Main.Orders on (cust.CustomerId = ord8.CustomerId)
+            where (cust.CustomerId = "ALFKI"
+                && ord1.OrderId = (int64 10643)
+                && ord2.OrderId = (int64 10643)
+                && ord3.OrderId = (int64 10643)
+                && ord4.OrderId = (int64 10643)
+                && ord5.OrderId = (int64 10643)
+                && ord6.OrderId = (int64 10643)
+                && ord7.OrderId = (int64 10643)
+                && ord8.OrderId = (int64 10643)
+                )
+            select (Some (cust, ord8))
+            exactlyOneOrDefault
+        } 
+
+    match qry with
+    | Some(cust, ord) ->
+        let id = cust.CustomerId
+        let ordId = ord.OrderId
+        Assert.AreEqual("ALFKI",id)
+        Assert.AreEqual(10643,ordId)
+    | None ->
+        Assert.Fail()
+
 [<Test >]
 let ``option from simple select with exactly one``() =
     let dc = sql.GetDataContext()
@@ -579,6 +616,20 @@ let ``simple select query with sumBy``() =
             for od in dc.Main.OrderDetails do
             sumBy od.UnitPrice
         }
+    Assert.Greater(56501m, qry)
+    Assert.Less(56499m, qry)
+
+[<Test; Ignore("Not supported, but you can do this via: query { ... select od.UnitPrice } |> Seq.sumAsync")>]
+let ``simple select query with sumBy join``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            join o in dc.Main.Orders on (od.OrderId=o.OrderId)
+            sumBy od.UnitPrice
+        }
+
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
@@ -1781,3 +1832,17 @@ let ``simple quert sproc result``() =
         dc.Pragma.Get.InvokeAsync("schema_version")
         |> Async.RunSynchronously
     Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
+
+[<Test; Ignore("Unsupported nested query")>]
+let ``simple select with subquery contains query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where(query {
+                    for cust in dc.Main.Customers do
+                    exists(cust.CustomerId = "ALFKI")
+                })
+            select cust.CustomerId
+        }
+    Assert.IsNotEmpty(qry)    
