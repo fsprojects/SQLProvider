@@ -1,3 +1,6 @@
+### 1.1.51 - 10.09.2018
+* Corrected use of concurrent dictionary in MS-SQL ServerVersion
+
 ### 1.1.50 - 05.09.2018
 * TypeProvider SDK update
 * Context schema path fix PR #560
