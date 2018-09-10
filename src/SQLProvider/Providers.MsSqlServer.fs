@@ -525,10 +525,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         member __.GetColumns(con,table) =
             
             // If we don't know this server's version already, open the connection ahead-of-time and read it 
-            if not (mssqlVersionCache.ContainsKey con.ConnectionString) then      
+            
+            mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
                 if con.State <> ConnectionState.Open then con.Open()
                 let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-                if success then mssqlVersionCache.TryAdd(con.ConnectionString, version) |> ignore
+                if success then version else Version("12.0")
+            ) |> ignore 
                 
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> 
