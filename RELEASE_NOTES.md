@@ -1,3 +1,6 @@
+### 1.1.52 - 13.09.2018
+* No limitation of 7 joins, fixes #190
+
 ### 1.1.51 - 10.09.2018
 * Corrected use of concurrent dictionary in MS-SQL ServerVersion
 
