@@ -209,9 +209,22 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
     | _ -> None
 
 let (|SqlPlainColumnGet|_|) = function
-    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) -> 
+    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
         match o with
-        | :? MemberExpression as m  -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) 
+        | :? MemberExpression as m  -> 
+            match m.Expression with
+            | null -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) // Nested tuples:
+            | :? MemberExpression as x when x.Type.Name.StartsWith("AnonymousObject") && x.Member.Name = "Item8" ->
+                let rec findNested (expr:MemberExpression) depth = 
+                    match expr.Expression with
+                    | :? MemberExpression as xx when xx.Type.Name.StartsWith("AnonymousObject") && xx.Member.Name = "Item8" ->
+                        findNested xx (depth+7)
+                    | _ -> depth
+                let isOk, memberName = Int32.TryParse(m.Member.Name.Replace("Item","")) 
+                if not isOk then None
+                else
+                Some(("Item"+(memberName+(findNested x 7)).ToString()),KeyColumn key,meth.ReturnType) 
+            | _ -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) 
         | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,KeyColumn key,meth.ReturnType) 
         | _ -> None
     | _ -> None

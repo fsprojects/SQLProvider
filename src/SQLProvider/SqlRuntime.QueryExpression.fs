@@ -55,7 +55,6 @@ module internal QueryExpressionTransformer =
                 elif ultimateChild.IsSome then
                     Some (alias, fst(ultimateChild.Value), None)
                 else None
-
             | MethodCall(Some(PropertyGet(Some(ParamWithName "tupledArg"),info) as getter),
                          (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi) ,
                          [String key]) when info.PropertyType = typeof<SqlEntity> ->
@@ -74,6 +73,26 @@ module internal QueryExpressionTransformer =
                     elif ultimateChild.IsSome then
                         Some (alias,snd(ultimateChild.Value).FullName, None)
                     else None
+                else None
+            | PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) 
+                    when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                // After 7 members tuple starts to nest Item:s.
+                let foundMember, name = Int32.TryParse((e :?> MemberExpression).Member.Name.Replace("Item", ""))
+                if not foundMember then None
+                else
+                let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
+                if aliasEntityDict.ContainsKey(alias) then
+                    Some (alias,aliasEntityDict.[alias].FullName, None)
+                else None
+            | MethodCall(Some(PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) as getter),
+                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi) ,
+                         [String key]) when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                let foundMember, name = Int32.TryParse((getter :?> MemberExpression).Member.Name.Replace("Item", ""))
+                if not foundMember then None
+                else
+                let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
+                if aliasEntityDict.ContainsKey(alias) then
+                    Some (alias,aliasEntityDict.[alias].FullName, Some(key,mi))
                 else None
             | _ -> None
 
@@ -211,7 +230,8 @@ module internal QueryExpressionTransformer =
                         Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
                             mi,Expression.Constant(key)))
 
-            | ExpressionType.Call, MethodCall(Some(ParamName pname),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key])  ->
+            | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) 
+                    when p.Type = typeof<SqlEntity> ->
 
                 let foundAlias = 
                     if aliasEntityDict.ContainsKey(pname) then Some pname

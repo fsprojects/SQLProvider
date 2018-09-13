@@ -159,8 +159,8 @@ let ``option from join select with exactly one``() =
     | None ->
         Assert.Fail()
 
-[<Test; Ignore("Not supported over 7 joins") >]
-let ``8 joins test``() =
+[<Test>]
+let ``over 8 joins test``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -173,17 +173,13 @@ let ``8 joins test``() =
             join ord6 in dc.Main.Orders on (cust.CustomerId = ord6.CustomerId)
             join ord7 in dc.Main.Orders on (cust.CustomerId = ord7.CustomerId)
             join ord8 in dc.Main.Orders on (cust.CustomerId = ord8.CustomerId)
+            join ord9 in dc.Main.Orders on (cust.CustomerId = ord9.CustomerId)
             where (cust.CustomerId = "ALFKI"
-                && ord1.OrderId = (int64 10643)
-                && ord2.OrderId = (int64 10643)
-                && ord3.OrderId = (int64 10643)
-                && ord4.OrderId = (int64 10643)
-                && ord5.OrderId = (int64 10643)
-                && ord6.OrderId = (int64 10643)
-                && ord7.OrderId = (int64 10643)
-                && ord8.OrderId = (int64 10643)
+                && ord1.OrderId = 10643L && ord2.OrderId = 10643L && ord3.OrderId = 10643L
+                && ord4.OrderId = 10643L && ord5.OrderId = 10643L && ord6.OrderId = 10643L
+                && ord7.OrderId = 10643L && ord8.OrderId = 10643L && ord9.OrderId = 10643L
                 )
-            select (Some (cust, ord8))
+            select (Some (cust, ord9))
             exactlyOneOrDefault
         } 
 
@@ -1651,6 +1647,7 @@ let ``simple canonical operations case-when-elses``() =
 [<Test >]
 let ``simple operations in select query``() =
     let dc = sql.GetDataContext()
+    //let dc = sql.GetDataContext(SelectOperations.DatabaseSide) // same results, maybe different order
 
     let qry = 
         let L = "L"
@@ -1817,7 +1814,7 @@ let ``simple left join``() =
 
 
 [<Test>]
-let ``simple quert sproc result``() = 
+let ``simple query sproc result``() = 
     let dc = sql.GetDataContext()
     let pragmaSchemav = dc.Pragma.Get.Invoke("schema_version")
     let res = pragmaSchemav.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
