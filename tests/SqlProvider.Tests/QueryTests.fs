@@ -9,6 +9,7 @@ open System
 open FSharp.Data.Sql
 open System.Linq
 open NUnit.Framework
+open System.Linq
 
 [<Literal>]
 let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
@@ -1842,4 +1843,31 @@ let ``simple select with subquery contains query``() =
                 })
             select cust.CustomerId
         }
-    Assert.IsNotEmpty(qry)    
+    Assert.IsNotEmpty(qry)
+
+[<Test;>]
+let ``simple select with subquery of subqueries``() =
+    let dc = sql.GetDataContext()
+    let subquery (subQueryIds:IQueryable<string>) = 
+        query {
+            for cust in dc.Main.Customers do
+            where(subQueryIds.Contains(cust.CustomerId))
+            select cust.CustomerId
+        }
+    let initial1 = ["ALFKI"].AsQueryable()
+    let initial2 = ["ANATR"].AsQueryable()
+    let initial3 = ["AROUT"].AsQueryable()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where(
+                subquery(subquery(subquery(subquery(initial1)))).Contains(cust.CustomerId) ||
+                subquery(subquery(subquery(subquery(initial2)))).Contains(cust.CustomerId) || 
+                subquery(initial3).Contains(cust.CustomerId))
+            select cust.CustomerId
+        }
+    let eval = qry |> Seq.toList
+    Assert.IsNotEmpty(eval)
+    Assert.AreEqual(3, eval.Length)
+    Assert.IsTrue(eval.Contains("ANATR"))
+

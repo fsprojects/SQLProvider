@@ -308,6 +308,8 @@ module internal QueryImplementation =
              let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
 
                 let isHaving = source.SqlExpression.hasGroupBy().IsSome
+                // if same query contains multiple subqueries, the parameter names in those should be different.
+                let mutable nestCount = 0
 
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
@@ -319,7 +321,9 @@ module internal QueryImplementation =
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
-                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
+                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
+                        let phash = parameters.GetHashCode()
+                        nestCount <- nestCount + 1
 
                         let modified = 
                             parameters |> Seq.map(fun p ->
