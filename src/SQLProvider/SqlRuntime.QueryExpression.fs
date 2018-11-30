@@ -635,7 +635,8 @@ module internal QueryExpressionTransformer =
                     | CaseSqlPlain(f, a, b) -> CaseSqlPlain(resolveFilterList f, a, b)
 
                     | x -> x
-                CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col) 
+                CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col)
+            | GroupColumn(op, col) -> GroupColumn(op, visitCanonicals resolverfunc col)
             | x -> x
 
         and resolveC = visitCanonicals resolve
@@ -669,6 +670,7 @@ module internal QueryExpressionTransformer =
                                                             | a,c,b -> a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
                                        Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> ga, resolveC gk), a|>List.map(fun(ag,aa)->ag,resolveC aa)) 
+                                       AggregateOp = sqlQuery.AggregateOp |> List.map(fun (a,c) -> (a, resolveC c))
                        }
 
         // 2.

@@ -1193,6 +1193,28 @@ let ``simple async sum with operations``() =
     Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
 
 [<Test>]
+let ``simple async sum with join and operations``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            join o in dc.Main.Orders on (od.OrderId = o.OrderId)
+            select ((od.UnitPrice+1m)*od.UnitPrice)
+        } |> Seq.sumAsync |> Async.RunSynchronously
+
+    Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
+
+    let qry2 = 
+        query {
+            for o in dc.Main.Orders do
+            join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
+            select ((od.UnitPrice+1m)*od.UnitPrice)
+        } |> Seq.sumAsync |> Async.RunSynchronously
+
+    Assert.That(qry2, Is.EqualTo(3454230.7769M).Within(0.1M))
+
+
+[<Test>]
 let ``simple async sum with operations 2``() = 
     let dc = sql.GetDataContext()
     let qry = 
