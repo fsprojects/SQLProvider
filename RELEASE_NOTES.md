@@ -1,3 +1,8 @@
+### 1.1.53 - 30.11.2018
+* Fix old SQL server paging, #581
+* Multiple similar sub-queries: parameter name generation fix
+* Alias resolving fixed on async aggregate operations in multi-table queries
+
 ### 1.1.52 - 13.09.2018
 * No limitation of 7 joins, fixes #190
 
