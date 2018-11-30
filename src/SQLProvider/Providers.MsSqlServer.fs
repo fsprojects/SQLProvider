@@ -846,10 +846,8 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 filterBuilder' f
 
             let sb = System.Text.StringBuilder()
-            let outerSb = System.Text.StringBuilder()
 
             let (~~) (t:string) = sb.Append t |> ignore
-            outerSb.Append "WITH CTE AS ( "  |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
             | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
@@ -998,17 +996,19 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             
             let sql = 
                 match mssqlPaging with
-                | MSSQLPagingCompatibility.RowNumber ->               
+                | MSSQLPagingCompatibility.RowNumber ->
+                    let outerSb = System.Text.StringBuilder()
+                    outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
                     | Some skip, Some take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
-                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns baseAlias (skip+1) (skip+take))  |> ignore
+                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
                     | Some skip, None ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
-                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns baseAlias skip)  |> ignore
+                        outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
                         outerSb.ToString()
                     | _ -> 
                       sb.ToString()
