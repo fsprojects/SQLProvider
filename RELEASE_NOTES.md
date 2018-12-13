@@ -1,3 +1,6 @@
+### 1.1.54 - 13.12.2018
+* FIPS compliance #586
+
 ### 1.1.53 - 30.11.2018
 * Fix old SQL server paging, #581
 * Multiple similar sub-queries: parameter name generation fix
