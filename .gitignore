@@ -195,3 +195,4 @@ docs/content/core/northwindEF.db
 /src/scripts/Script1.fsx
 /tests/**/dataTemp/
 /tests/**/connectorTemp/
+.ionide/
