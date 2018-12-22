@@ -1573,10 +1573,10 @@ let ``simple select query with left join``() =
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.AreEquivalent(
         [|
-            "VINET", None
-            "TOMSP", None
-            "HANAR", None
-            "VICTE", None
+            "ALFKI", None
+            "ANATR", None
+            "ANTON", None
+            "AROUT", None
         |], qry.[0..3])
 
 
