@@ -1571,15 +1571,7 @@ let ``simple select query with left join``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
-    CollectionAssert.AreEquivalent(
-        [|
-            "ALFKI", None
-            "ANATR", None
-            "ANTON", None
-            "AROUT", None
-        |], qry.[0..3])
-
-
+    Assert.AreEqual(91, qry.Length)
 
 [<Test>]
 let ``simple math operations query``() =
