@@ -1560,6 +1560,18 @@ let ``simple async sum with option operations``() =
         } |> Seq.sumAsync |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
 
+[<Test >]
+let ``simple select query with left join``() = 
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join order in (!!) dc.Main.Orders on (cust.CustomerId = order.OrderId.ToString())
+            select (cust.CustomerId, order.OrderDate)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(91, qry.Length)
 
 [<Test>]
 let ``simple math operations query``() =

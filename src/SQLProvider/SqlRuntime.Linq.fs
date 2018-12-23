@@ -39,6 +39,12 @@ module internal QueryImplementation =
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
 
+    let (|OptionalOuterJoin|) e =
+        match e with
+        | MethodCall(None, (!!), [inner]) -> (true,inner)
+        | MethodCall(None,MethodWithName("op_BangBang"), [inner]) -> (true,inner)
+        | _ -> (false,e)
+
     let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
         let args = projector.GetType().GenericTypeArguments
         seq { 
@@ -435,10 +441,6 @@ module internal QueryImplementation =
 
              // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
              let rec processSelectManys (toAlias:string) (inExp:Expression) (outExp:SqlExp) (projectionParams : ParameterExpression list) (source:IWithSqlService) =
-                let (|OptionalOuterJoin|) e =
-                    match e with
-                    | MethodCall(None, (!!), [inner]) -> (true,inner)
-                    | _ -> (false,e)
                 match inExp with
                 | MethodCall(None, (MethodWithName "SelectMany"), [ createRelated ; OptionalQuote (Lambda([_], inner)); OptionalQuote (Lambda(projectionParams,_)) ]) ->
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
@@ -466,7 +468,6 @@ module internal QueryImplementation =
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
                     let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
                     SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
-
                 | MethodCall(None, (MethodWithName "Join"),
                                         [createRelated
                                          ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
@@ -537,8 +538,8 @@ module internal QueryImplementation =
                                     ForeignTable = {Schema="";Name="";Type=""};
                                     OuterJoin = false; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
-                | OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)) 
-                | OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity])) ->
+                | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))) 
+                | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity]))) ->
                     let sourceAlias =
                         if source.TupleIndex.Contains projectionParams.[0].Name then projectionParams.[0].Name
                         else
@@ -644,15 +645,16 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                       OptionalQuote projection ]) ->
-                        let destEntity =
+                        let destEntity, isOuter =
                             match dest.SqlExpression with
-                            | BaseTable(_,destEntity) -> destEntity
+                            | BaseTable(_,destEntity) -> destEntity, false
+                            | Projection(MethodCall(None, MethodWithName("Select"),  [_ ; OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]),BaseTable(_,destEntity)) -> destEntity, true
                             | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
                                 // special case here as above - this is the first call so replace the top of the tree here with the current base table alias and the select many
-                                let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey]; ForeignTable = entity; OuterJoin = false; RelDirection = RelationshipDirection.Parents}
+                                let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey]; ForeignTable = entity; OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                                 SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
@@ -664,7 +666,7 @@ module internal QueryImplementation =
                                 // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                                 let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey];
                                              ForeignTable = {Schema="";Name="";Type=""};
-                                             OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                                             OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let ty =
@@ -678,9 +680,10 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                       OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                       OptionalQuote projection ]) ->
-                        let destEntity =
+                        let destEntity, isOuter =
                             match dest.SqlExpression with
-                            | BaseTable(_,destEntity) -> destEntity
+                            | BaseTable(_,destEntity) -> destEntity, false
+                            | Projection(MethodCall(None, MethodWithName("Select"), [_ ;OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]),BaseTable(_,destEntity)) -> destEntity, true
                             | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let destKeys = multidest |> List.map(fun(_,dest,_)->dest)
                         let sourceKeys = multisource |> List.map(fun(_,source,_)->source)
@@ -688,7 +691,7 @@ module internal QueryImplementation =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
                                 // special case here as above - this is the first call so replace the top of the tree here with the current base table alias and the select many
-                                let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys; ForeignTable = entity; OuterJoin = false; RelDirection = RelationshipDirection.Parents}
+                                let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys; ForeignTable = entity; OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                                 SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
@@ -701,7 +704,7 @@ module internal QueryImplementation =
                                 // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                                 let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys;
                                              ForeignTable = {Schema="";Name="";Type=""};
-                                             OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                                             OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let ty =

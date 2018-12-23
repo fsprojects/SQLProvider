@@ -149,7 +149,8 @@ module Operators =
     /// Not Like
     let (<>%) (a:'a) (b:string) = false
     /// Left join
-    let (!!) (a:IQueryable<_>) = a
+    let private leftJoin (a:'a) = a
+    let (!!) (a:IQueryable<'a>) = query { for x in a do select (leftJoin x) } 
     
     /// Standard Deviation
     let StdDev (a:'a) = 1m
