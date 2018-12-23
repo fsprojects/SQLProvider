@@ -1,3 +1,6 @@
+### 1.1.55 - 13.12.2018
+* Left join with op_bangbang to non-fk columns #588
+
 ### 1.1.54 - 13.12.2018
 * FIPS compliance #586
 
