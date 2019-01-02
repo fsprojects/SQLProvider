@@ -73,7 +73,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | "Tables" -> 
             dt.Columns.AddRange([|"TABLE_TYPE";"TABLE_CATALOG";"TABLE_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
 
-            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='table';"
+            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='table' OR type ='view';"
 
             use com = (this:>ISqlProvider).CreateCommand(conn,query)
             use reader = com.ExecuteReader()
@@ -421,12 +421,16 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetTables(con,_) =
             if con.State <> ConnectionState.Open then con.Open()
             let ret =
-                [ for row in (getSchema "Tables" con).Rows do
-                    let ty = string row.["TABLE_TYPE"]
-                    if ty <> "SYSTEM_TABLE" then
-                        let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty }
-                        yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                        ]
+                let tbls = getSchema "Tables" con
+                let views = getSchema "Views" con
+                let getItems (drs:DataRowCollection) isView =
+                    [ for row in drs do
+                        let ty = if isView then "VIEW" else string row.["TABLE_TYPE"]
+                        if ty <> "SYSTEM_TABLE" then
+                            let table = { Schema = string row.["TABLE_CATALOG"] ; Name = string row.["TABLE_NAME"]; Type=ty }
+                            yield schemaCache.Tables.GetOrAdd(table.FullName,table)
+                            ]
+                getItems tbls.Rows false @ getItems views.Rows true
             con.Close()
             ret
 
