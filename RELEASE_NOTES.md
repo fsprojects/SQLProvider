@@ -1,3 +1,6 @@
+### 1.1.56 - 02.01.2019
+* SQLite support for views #591
+
 ### 1.1.55 - 13.12.2018
 * Left join with op_bangbang to non-fk columns #588
 
