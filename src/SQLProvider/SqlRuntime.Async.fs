@@ -22,7 +22,18 @@ module AsyncOperations =
                 return yieldseq en
             | c ->
                 let en = c.GetEnumerator()
-                return yieldseq en
+                let source = 
+                    match en.GetType() with
+                    | null -> null
+                    | x -> x.GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+                if source <> null then
+                    match source.GetValue en with
+                    | :? IAsyncEnumerable as coll ->
+                        do! coll.EvaluateQuery()
+                        return yieldseq en
+                    | c -> return yieldseq en
+                else 
+                    return yieldseq en
         }
 
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =

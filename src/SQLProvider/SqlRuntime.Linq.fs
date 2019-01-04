@@ -35,6 +35,8 @@ module internal QueryImplementation =
     /// Interface for async enumerations as .NET doesn't have it out-of-the-box
     type IAsyncEnumerable<'T> =
         abstract GetAsyncEnumerator : unit -> Async<IEnumerator<'T>>
+    type IAsyncEnumerable =
+        abstract EvaluateQuery : unit -> Async<unit>
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
@@ -219,6 +221,7 @@ module internal QueryImplementation =
        }
 
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
+        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
             SqlQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
         interface IQueryable<'T>
@@ -227,7 +230,10 @@ module internal QueryImplementation =
             member x.Expression =  Expression.Constant(x,typeof<IQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+             member __.GetEnumerator() = 
+                match asyncModePreEvaluated.TryPop() with
+                | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
              member x.GetEnumerator() = (x :> seq<'T>).GetEnumerator() :> IEnumerator
         interface IWithDataContext with
@@ -237,6 +243,13 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
+        interface IAsyncEnumerable with
+             member __.EvaluateQuery() = 
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    asyncModePreEvaluated.Push executeSql 
+                    return ()
+                }
         interface IAsyncEnumerable<'T> with
              member __.GetAsyncEnumerator() =
                 async {
@@ -245,6 +258,7 @@ module internal QueryImplementation =
                 }
     
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
+        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
             SqlOrderedQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
         interface IOrderedQueryable<'T>
@@ -254,7 +268,10 @@ module internal QueryImplementation =
             member x.Expression =  Expression.Constant(x,typeof<IOrderedQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+             member __.GetEnumerator() = 
+                match asyncModePreEvaluated.TryPop() with
+                | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
              member x.GetEnumerator() = (x :> seq<'T>).GetEnumerator() :> IEnumerator
         interface IWithDataContext with
@@ -264,6 +281,13 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
+        interface IAsyncEnumerable with
+             member __.EvaluateQuery() = 
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    asyncModePreEvaluated.Push executeSql 
+                    return ()
+                }
         interface IAsyncEnumerable<'T> with
              member __.GetAsyncEnumerator() =
                 async {
@@ -273,6 +297,7 @@ module internal QueryImplementation =
 
     /// Structure to make it easier to return IGrouping from GroupBy
     and SqlGroupingQueryable<'TKey, 'TEntity>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
+        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
             let res = SqlGroupingQueryable<'TKey, 'TEntity>(conString,provider,BaseTable("",table),ResizeArray<_>())
             res :> IQueryable<IGrouping<'TKey, 'TEntity>>
@@ -286,9 +311,12 @@ module internal QueryImplementation =
                 typeof<IGrouping<'TKey, 'TEntity>>
         interface seq<IGrouping<'TKey, 'TEntity>> with
              member __.GetEnumerator() = 
-                executeQuery dc provider sqlQuery tupleIndex
-                |> Seq.cast<IGrouping<'TKey, 'TEntity>>
-                |> fun res -> res.GetEnumerator()
+                match asyncModePreEvaluated.TryPop() with
+                | false, _ -> 
+                    executeQuery dc provider sqlQuery tupleIndex
+                    |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                    |> fun res -> res.GetEnumerator()
+                | true, res -> (Seq.cast<IGrouping<'TKey, 'TEntity>> res).GetEnumerator()
         interface IEnumerable with
              member x.GetEnumerator() = 
                 let itms = (x :> seq<IGrouping<'TKey, 'TEntity>>)
@@ -300,6 +328,13 @@ module internal QueryImplementation =
              member __.SqlExpression = sqlQuery
              member __.TupleIndex = tupleIndex
              member __.Provider = provider
+        interface IAsyncEnumerable with
+             member __.EvaluateQuery() = 
+                async {
+                    let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
+                    asyncModePreEvaluated.Push executeSql 
+                    return ()
+                }
         interface IAsyncEnumerable<IGrouping<'TKey, 'TEntity>> with
              member __.GetAsyncEnumerator() =
                 async {
