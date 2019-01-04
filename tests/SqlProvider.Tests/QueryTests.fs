@@ -1518,6 +1518,21 @@ let ``simple select query async``() =
     task.Wait()
     CollectionAssert.IsNotEmpty task.Result
 
+[<Test >]
+let ``simple select query async2``() = 
+    let dc = sql.GetDataContext() 
+    let res = 
+        async {
+            let! asyncquery =
+                query {
+                    for cust in dc.Main.Customers do
+                    where (cust.City <> "")
+                    select (cust.Address, cust.City, cust.ContactName)
+                } |> Seq.executeQueryAsync 
+            return asyncquery
+        } |> Async.RunSynchronously
+    CollectionAssert.IsNotEmpty res
+
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
 [<Test>]
