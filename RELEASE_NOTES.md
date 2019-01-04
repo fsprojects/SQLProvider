@@ -1,3 +1,6 @@
+### 1.1.57 - 04.01.2019
+* More asynchronous queries, fix #519
+
 ### 1.1.56 - 02.01.2019
 * SQLite support for views #591
 
