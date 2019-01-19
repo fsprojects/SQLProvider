@@ -254,6 +254,7 @@ module MSSqlServer =
 
         let inps =
              inputParameters
+             |> Array.filter (fun p -> p.Direction <> ParameterDirection.ReturnValue)
              |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal, ip.Name, p))
