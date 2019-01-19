@@ -1,3 +1,6 @@
+### 1.1.58 - 19.01.2019
+* SQL Server scalar function return parameter fix, #598
+
 ### 1.1.57 - 04.01.2019
 * More asynchronous queries, fix #519
 
