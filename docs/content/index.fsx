@@ -58,6 +58,8 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
 Example
 -------
 
+![No OR-mapping: FSharp compiles your database to .NET-types.](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/sqlprovider.gif "No OR-mapping: FSharp compiles your database to .NET-types.")
+
 This example demonstrates the use of the SQL type provider:
 
 *)

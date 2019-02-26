@@ -56,6 +56,9 @@ loading dynamic assemblies, they can likely be resolved by applying the
 following element into the configuration files of  fsi.exe, devenv.exe and 
 your program or the program using your library : http://msdn.microsoft.com/en-us/library/dd409252(VS.100).aspx
 
+## Example
+
+![No OR-mapping: FSharp compiles your database to .NET-types.](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/sqlprovider.gif "No OR-mapping: FSharp compiles your database to .NET-types.")
 
 ## Maintainer(s)
 
