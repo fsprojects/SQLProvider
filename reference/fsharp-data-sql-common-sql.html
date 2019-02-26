@@ -53,10 +53,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '53', 53)" onmouseover="showTip(event, '53', 53)">
+          <code onmouseout="hideTip(event, '54', 54)" onmouseover="showTip(event, '54', 54)">
             connect con f
           </code>
-          <div class="tip" id="53">
+          <div class="tip" id="54">
             <strong>Signature:</strong> con:IDbConnection -&gt; f:(IDbConnection -&gt; &#39;a) -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
@@ -71,10 +71,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '54', 54)" onmouseover="showTip(event, '54', 54)">
+          <code onmouseout="hideTip(event, '55', 55)" onmouseover="showTip(event, '55', 55)">
             connectAsync con f
           </code>
-          <div class="tip" id="54">
+          <div class="tip" id="55">
             <strong>Signature:</strong> con:DbConnection -&gt; f:(DbConnection -&gt; unit) -&gt; Async&lt;unit&gt;<br />
                       </div>
         </td>
@@ -89,10 +89,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '55', 55)" onmouseover="showTip(event, '55', 55)">
+          <code onmouseout="hideTip(event, '56', 56)" onmouseover="showTip(event, '56', 56)">
             dataReaderToArray reader
           </code>
-          <div class="tip" id="55">
+          <div class="tip" id="56">
             <strong>Signature:</strong> reader:IDataReader -&gt; (string * obj) [] []<br />
                       </div>
         </td>
@@ -107,10 +107,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '56', 56)" onmouseover="showTip(event, '56', 56)">
+          <code onmouseout="hideTip(event, '57', 57)" onmouseover="showTip(event, '57', 57)">
             dataReaderToArrayAsync reader
           </code>
-          <div class="tip" id="56">
+          <div class="tip" id="57">
             <strong>Signature:</strong> reader:DbDataReader -&gt; Async&lt;(string * obj) [] []&gt;<br />
                       </div>
         </td>
@@ -125,10 +125,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '57', 57)" onmouseover="showTip(event, '57', 57)">
+          <code onmouseout="hideTip(event, '58', 58)" onmouseover="showTip(event, '58', 58)">
             dbUnbox v
           </code>
-          <div class="tip" id="57">
+          <div class="tip" id="58">
             <strong>Signature:</strong> v:obj -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
@@ -143,10 +143,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '58', 58)" onmouseover="showTip(event, '58', 58)">
+          <code onmouseout="hideTip(event, '59', 59)" onmouseover="showTip(event, '59', 59)">
             dbUnboxWithDefault def v
           </code>
-          <div class="tip" id="58">
+          <div class="tip" id="59">
             <strong>Signature:</strong> def:&#39;a -&gt; v:obj -&gt; &#39;a<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
@@ -161,10 +161,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '59', 59)" onmouseover="showTip(event, '59', 59)">
+          <code onmouseout="hideTip(event, '60', 60)" onmouseover="showTip(event, '60', 60)">
             ensureOpen con
           </code>
-          <div class="tip" id="59">
+          <div class="tip" id="60">
             <strong>Signature:</strong> con:IDbConnection -&gt; unit<br />
                       </div>
         </td>
@@ -179,10 +179,31 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '60', 60)" onmouseover="showTip(event, '60', 60)">
+          <code onmouseout="hideTip(event, '61', 61)" onmouseover="showTip(event, '61', 61)">
+            evaluateOneByOne asyncFunc entityList
+          </code>
+          <div class="tip" id="61">
+            <strong>Signature:</strong> asyncFunc:(&#39;a -&gt; Async&lt;&#39;b&gt;) -&gt; entityList:&#39;a list -&gt; Async&lt;&#39;b list&gt;<br />
+                          <strong>Type parameters:</strong> 'a, 'b          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L562-562" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Helper function to run async computation non-parallel style for list of objects.
+This is needed if async database opreation is executed for a list of entities.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '62', 62)" onmouseover="showTip(event, '62', 62)">
             executeSql createCommand sql con
           </code>
-          <div class="tip" id="60">
+          <div class="tip" id="62">
             <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; IDataReader<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
@@ -197,10 +218,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '61', 61)" onmouseover="showTip(event, '61', 61)">
+          <code onmouseout="hideTip(event, '63', 63)" onmouseover="showTip(event, '63', 63)">
             executeSqlAsDataTable (...)
           </code>
-          <div class="tip" id="61">
+          <div class="tip" id="63">
             <strong>Signature:</strong> createCommand:(&#39;a -&gt; IDbConnection -&gt; IDbCommand) -&gt; sql:&#39;a -&gt; con:IDbConnection -&gt; DataTable<br />
                           <strong>Type parameters:</strong> 'a          </div>
         </td>
@@ -215,12 +236,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '62', 62)" onmouseover="showTip(event, '62', 62)">
+          <code onmouseout="hideTip(event, '64', 64)" onmouseover="showTip(event, '64', 64)">
             executeSqlAsDataTableAsync (...)
           </code>
-          <div class="tip" id="62">
-            <strong>Signature:</strong> createCommand:(&#39;?8467 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8467 -&gt; con:IDbConnection -&gt; Async&lt;DataTable&gt;<br />
-                          <strong>Type parameters:</strong> '?8467          </div>
+          <div class="tip" id="64">
+            <strong>Signature:</strong> createCommand:(&#39;?8513 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8513 -&gt; con:IDbConnection -&gt; Async&lt;DataTable&gt;<br />
+                          <strong>Type parameters:</strong> '?8513          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L548-548" class="github-link">
@@ -233,12 +254,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '63', 63)" onmouseover="showTip(event, '63', 63)">
+          <code onmouseout="hideTip(event, '65', 65)" onmouseover="showTip(event, '65', 65)">
             executeSqlAsync createCommand sql con
           </code>
-          <div class="tip" id="63">
-            <strong>Signature:</strong> createCommand:(&#39;?8463 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8463 -&gt; con:IDbConnection -&gt; Async&lt;DbDataReader&gt;<br />
-                          <strong>Type parameters:</strong> '?8463          </div>
+          <div class="tip" id="65">
+            <strong>Signature:</strong> createCommand:(&#39;?8509 -&gt; IDbConnection -&gt; DbCommand) -&gt; sql:&#39;?8509 -&gt; con:IDbConnection -&gt; Async&lt;DbDataReader&gt;<br />
+                          <strong>Type parameters:</strong> '?8509          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Utils.fs#L538-538" class="github-link">

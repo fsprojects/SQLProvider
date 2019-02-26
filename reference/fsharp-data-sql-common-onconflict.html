@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ExpressionOptimizer - SQLProvider</title>
+    <title>OnConflict - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
@@ -35,57 +35,35 @@
 
 
 
-<h1>ExpressionOptimizer</h1>
+<h1>OnConflict</h1>
 <p>
-  <span>Namespace: global</span><br />
+  <span>Namespace: FSharp.Data.Sql.Common</span><br />
 </p>
 <div class="xmldoc">
-<p>This is just a light-weight expression optimizer.
-It won't do any heavy stuff...</p>
-
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-  <h2>Nested types and modules</h2>
-  <div>
-      <table class="table table-bordered module-list">
-    <thead>
-      <tr><td>Module</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td class="module-name">
-            <a href="expressionoptimizer-methods.html">Methods</a>
-          </td>
-          <td class="xmldoc"></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-  <h3>Functions and values</h3>
+  <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Union Case</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
-            doReduction exp
+          <code onmouseout="hideTip(event, '384', 384)" onmouseover="showTip(event, '384', 384)">
+            DoNothing
           </code>
-          <div class="tip" id="194">
-            <strong>Signature:</strong> exp:Expression -&gt; Expression<br />
+          <div class="tip" id="384">
+            <strong>Signature:</strong> <br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L389-389" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L138-138" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Does reductions just for a current node.</p>
+          <p>If the primary key already exists, leaves the existing row unchanged.
+Currently supported only on PostgreSQL 9.5+</p>
 
 
         </td>
@@ -93,19 +71,19 @@ It won't do any heavy stuff...</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '195', 195)" onmouseover="showTip(event, '195', 195)">
-            reductionMethods 
+          <code onmouseout="hideTip(event, '385', 385)" onmouseover="showTip(event, '385', 385)">
+            Throw
           </code>
-          <div class="tip" id="195">
-            <strong>Signature:</strong> (Expression -&gt; Expression) list<br />
+          <div class="tip" id="385">
+            <strong>Signature:</strong> <br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L380-380" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L132-132" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Used optimization methods</p>
+          <p>Throws an exception if the primary key already exists (default behaviour).</p>
 
 
         </td>
@@ -113,40 +91,20 @@ It won't do any heavy stuff...</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '196', 196)" onmouseover="showTip(event, '196', 196)">
-            tryVisit exp
+          <code onmouseout="hideTip(event, '386', 386)" onmouseover="showTip(event, '386', 386)">
+            Update
           </code>
-          <div class="tip" id="196">
-            <strong>Signature:</strong> exp:Expression -&gt; Expression<br />
+          <div class="tip" id="386">
+            <strong>Signature:</strong> <br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L459-459" class="github-link">
+            <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L135-135" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Expression tree visitor: go through the whole expression tree.
-Catches the exceptions.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '197', 197)" onmouseover="showTip(event, '197', 197)">
-            visit exp
-          </code>
-          <div class="tip" id="197">
-            <strong>Signature:</strong> exp:Expression -&gt; Expression<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L454-454" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Expression tree visitor: go through the whole expression tree.</p>
+          <p>If the primary key already exists, updates the existing row's columns to match the new entity.
+Currently supported only on PostgreSQL 9.5+</p>
 
 
         </td>

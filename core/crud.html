@@ -310,8 +310,41 @@ output of .ColumnValues:</p>
 <p>Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.</p>
 <p>SQLProvider also supports async database operations:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdatesAsync</span>() <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+        
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="OnConflict" class="anchor" href="#OnConflict">OnConflict</a></h3>
+<p>The <a href="http://sqlite.org/lang_conflict.html">SQLite</a> and <a href="https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT">PostgreSQL 9.5+</a> providers support conflict resolution for INSERT statements.</p>
+<p>They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).</p>
+<p>You can leverage this feature by setting the <code>OnConflict</code> property on a row object:
+<em> Setting it to <code>DoNothing</code> will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite).
+</em> Setting it to <code>Update</code> will add a DO UPDATE clause on the primary key constraint for all columns (PostgreSQL) or a OR REPLACE clause (SQLite).</p>
+<p>Sql Server has a similar feature in the form of the MERGE statement. This is not yet supported.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+
+<span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">Create</span>()
+<span class="i">emp</span><span class="o">.</span><span class="i">Id</span> <span class="o">&lt;-</span> <span class="n">1</span>
+<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="s">&quot;Jane&quot;</span>
+<span class="i">emp</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="s">&quot;Doe&quot;</span>
+
+<span class="i">emp</span><span class="o">.</span><span class="i">OnConflict</span> <span class="o">&lt;-</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span><span class="o">.</span><span class="i">Common</span><span class="o">.</span><span class="i">OnConflict</span><span class="o">.</span><span class="i">Update</span>
+
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
 </code></pre></td>
 </tr>
 </table>
