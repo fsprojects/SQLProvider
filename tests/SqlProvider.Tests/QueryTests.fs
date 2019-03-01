@@ -1880,8 +1880,8 @@ let ``simple query sproc result``() =
         |> Async.RunSynchronously
     Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
 
-[<Test; Ignore("Unsupported nested query")>]
-let ``simple select with subquery contains query``() =
+[<Test>]
+let ``simple select with subquery exists subquery``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -1891,7 +1891,21 @@ let ``simple select with subquery contains query``() =
                     exists(cust.CustomerId = "ALFKI")
                 })
             select cust.CustomerId
-        }
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+
+[<Test>]
+let ``simple select with subquery exists parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where(query {
+                    for od in dc.Main.OrderDetails do
+                    exists(od.OrderId = o.OrderId)
+                })
+            select o.OrderId
+        } |> Seq.toList
     Assert.IsNotEmpty(qry)
 
 [<Test;>]
@@ -1903,6 +1917,17 @@ let ``simple select with subquery of subqueries``() =
             where(subQueryIds.Contains(cust.CustomerId))
             select cust.CustomerId
         }
+    let subquery2 = 
+        query {
+            for custc in dc.Main.Customers do
+            where(custc.City |=| (query {
+                        for ord in dc.Main.Orders do
+                        where(ord.ShipCity ="Helsinki")
+                        distinct
+                        select ord.ShipCity
+                    }))
+            select custc.CustomerId //"WILMK"
+        }
     let initial1 = ["ALFKI"].AsQueryable()
     let initial2 = ["ANATR"].AsQueryable()
     let initial3 = ["AROUT"].AsQueryable()
@@ -1912,11 +1937,12 @@ let ``simple select with subquery of subqueries``() =
             where(
                 subquery(subquery(subquery(subquery(initial1)))).Contains(cust.CustomerId) ||
                 subquery(subquery(subquery(subquery(initial2)))).Contains(cust.CustomerId) || 
-                subquery(initial3).Contains(cust.CustomerId))
+                subquery(initial3).Contains(cust.CustomerId) ||
+                subquery2.Contains(cust.CustomerId))
             select cust.CustomerId
         }
     let eval = qry |> Seq.toList
     Assert.IsNotEmpty(eval)
-    Assert.AreEqual(3, eval.Length)
+    Assert.AreEqual(4, eval.Length)
     Assert.IsTrue(eval.Contains("ANATR"))
 

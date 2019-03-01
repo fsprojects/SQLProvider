@@ -346,7 +346,12 @@ module internal QueryImplementation =
     and SqlQueryProvider() =
          static member val Provider =
 
-             let parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
+             let rec parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
+             
+                match qual with
+                | Lambda([ParamName sourceAlias],_) when sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not ->
+                    source.TupleIndex.Add sourceAlias
+                | _ -> ()
 
                 let isHaving = source.SqlExpression.hasGroupBy().IsSome
                 // if same query contains multiple subqueries, the parameter names in those should be different.
@@ -359,15 +364,18 @@ module internal QueryImplementation =
                     | SqlSpecialNegativeOpArrQueryable(ti,op,key,qry) ->
 
                         let svc = (qry :?> IWithSqlService)
+                        source.TupleIndex |> Seq.filter(fun s -> not(svc.TupleIndex.Contains s)) |> Seq.iter(fun s -> svc.TupleIndex.Add s)
+
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
-                        let phash = parameters.GetHashCode()
                         nestCount <- nestCount + 1
 
                         let modified = 
-                            parameters |> Seq.map(fun p ->
+                            parameters 
+                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
+                            |> Seq.map(fun p ->
                                 p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray
@@ -378,12 +386,40 @@ module internal QueryImplementation =
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
                         
                         Some(ti,key,op,Some (box (subquery, modified)))
+                    | MethodCall(None, (MethodWithName "Any" as meth), [ SeqValuesQueryable src; OptionalQuote qual ]) -> // Exists clause
+
+                        let innersrc = (src :?> IWithSqlService)
+                        source.TupleIndex |> Seq.filter(fun s -> not(innersrc.TupleIndex.Contains s)) |> Seq.iter(fun s -> innersrc.TupleIndex.Add s)
+                        let qry = parseWhere meth innersrc qual :> IQueryable
+                        let svc = (qry :?> IWithSqlService)
+                        use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
+
+                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
+                        nestCount <- nestCount + 1
+
+                        let modified = 
+                            parameters 
+                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
+                            |> Seq.map(fun p ->
+                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
+                                p
+                            ) |> Seq.toArray
+                        let subquery = 
+                            let paramfixed = query.Replace("@param", ``nested param names``)
+                            match paramfixed.EndsWith(";") with
+                            | false -> paramfixed
+                            | true -> paramfixed.Substring(0, paramfixed.Length-1)
+                        
+                        Some("",KeyColumn(""),ConditionOperator.NestedExists,Some (box (subquery, modified)))
                     | SimpleCondition ((ti,key,op,c) as x) -> 
                         match c with
                         | None -> Some x
                         | Some t when (t :? (string*SqlColumnType)) ->
                             let ti2, col = t :?> string*SqlColumnType
-                            let alias2 = resolveTuplePropertyName ti2 source.TupleIndex
+                            let alias2 = 
+                                if ti2.StartsWith "Item" then resolveTuplePropertyName ti2 source.TupleIndex
+                                else ti2
                             Some(ti,key,op,Some(box (alias2,col)))
                         | Some _ -> Some x
                     | _ -> None

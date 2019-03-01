@@ -591,7 +591,9 @@ module internal QueryExpressionTransformer =
             // to the only table in the query, so replace it
             if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
             else 
-                let tbl = Utilities.resolveTuplePropertyName name entityIndex
+                let tbl = 
+                    if name.StartsWith "Item" then Utilities.resolveTuplePropertyName name entityIndex
+                    else name
                 if tbl = "" then baseAlias else tbl
 
         

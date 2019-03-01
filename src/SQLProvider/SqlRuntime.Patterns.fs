@@ -225,7 +225,9 @@ let (|SqlPlainColumnGet|_|) = function
                 else
                 Some(("Item"+(memberName+(findNested x 7)).ToString()),KeyColumn key,meth.ReturnType) 
             | _ -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) 
-        | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,KeyColumn key,meth.ReturnType) 
+        | p when p.NodeType = ExpressionType.Parameter ->
+            let par = p :?> ParameterExpression
+            Some((if String.IsNullOrEmpty par.Name then String.Empty else par.Name),KeyColumn key,meth.ReturnType) 
         | _ -> None
     | _ -> None
 
@@ -581,7 +583,6 @@ and (|SqlSpecialOpArrQueryable|_|) = function
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValuesQueryable values]) -> Some(ti, ConditionOperator.NestedNotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
     | _ -> None
-
     
 and (|SqlSpecialOp|_|) : Expression -> _ = function
     | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())

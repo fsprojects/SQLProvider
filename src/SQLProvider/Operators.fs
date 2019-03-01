@@ -17,6 +17,7 @@ type ConditionOperator =
     | NotIn
     | NestedIn
     | NestedNotIn
+    | NestedExists
     with 
     override x.ToString() =
         // NOTE: these are MS SQL Server textual representations of the operators.
@@ -35,7 +36,8 @@ type ConditionOperator =
         | In            -> "IN"
         | NestedIn      -> "IN"
         | NotIn         -> "NOT IN"
-        | NestedNotIn      -> "NOT IN"
+        | NestedNotIn   -> "NOT IN"
+        | NestedExists  -> "EXISTS"
 
 type AggregateOperation = // Aggregate (column name if not default)
 | KeyOp of string
