@@ -1921,6 +1921,21 @@ let ``simple select with subquery exists parameter from main query``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
 
+[<Test>]
+let ``simple select with subquery not exists parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where(not(query {
+                    for od in dc.Main.OrderDetails do
+                    exists(od.OrderId = o.OrderId)
+                }))
+            select o.OrderId
+        } |> Seq.toList
+    Assert.IsEmpty(qry)
+
+
 [<Test;>]
 let ``simple select with subquery of subqueries``() =
     let dc = sql.GetDataContext()

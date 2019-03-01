@@ -386,7 +386,8 @@ module internal QueryImplementation =
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
                         
                         Some(ti,key,op,Some (box (subquery, modified)))
-                    | MethodCall(None, (MethodWithName "Any" as meth), [ SeqValuesQueryable src; OptionalQuote qual ]) -> // Exists clause
+                    | SqlExistsClause(meth,op,src,qual)
+                    | SqlNotExistsClause(meth,op,src,qual) ->
 
                         let innersrc = (src :?> IWithSqlService)
                         source.TupleIndex |> Seq.filter(fun s -> not(innersrc.TupleIndex.Contains s)) |> Seq.iter(fun s -> innersrc.TupleIndex.Add s)
@@ -411,7 +412,7 @@ module internal QueryImplementation =
                             | false -> paramfixed
                             | true -> paramfixed.Substring(0, paramfixed.Length-1)
                         
-                        Some("",KeyColumn(""),ConditionOperator.NestedExists,Some (box (subquery, modified)))
+                        Some("",KeyColumn(""),op,Some (box (subquery, modified)))
                     | SimpleCondition ((ti,key,op,c) as x) -> 
                         match c with
                         | None -> Some x

@@ -834,6 +834,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedExists -> sprintf "EXISTS (%s)" innersql
+                                        | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | _ -> failwith "Should not be called with any other operator"
 
                                     ~~(sprintf "%s%s" prefix <|
@@ -843,6 +844,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                         | FSharp.Data.Sql.In 
                                         | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                         | FSharp.Data.Sql.NestedExists
+                                        | FSharp.Data.Sql.NestedNotExists
                                         | FSharp.Data.Sql.NestedIn 
                                         | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                         | _ ->

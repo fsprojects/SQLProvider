@@ -602,7 +602,9 @@ module internal QueryExpressionTransformer =
         let rec visitCanonicals resolverfunc = function
             | CanonicalOperation(subItem, col) -> 
                 let resolver (al:string) = // Don't try to resolve if already resolved
-                    if al = "" || al.StartsWith "Item" then resolverfunc al else al
+                    if al = "" || al.StartsWith "Item" then resolverfunc al 
+                    elif sqlQuery.Aliases.Count > 0 then al
+                    else resolverfunc al 
                 let resolvedSub =
                     match subItem with
                     | BasicMathOfColumns(op,al,col2) -> BasicMathOfColumns(op,resolver al, visitCanonicals resolverfunc col2)
