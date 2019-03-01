@@ -1769,6 +1769,19 @@ let ``simple canonical join query``() =
 
 
 [<Test>]
+let ``simple query yield test``() = 
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cus in dc.Main.Customers do
+            where (cus.City = "London")
+            yield (cus.City + "1")
+        }
+
+    let res = query1 |> Seq.toList
+    CollectionAssert.IsNotEmpty res
+
+[<Test>]
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 

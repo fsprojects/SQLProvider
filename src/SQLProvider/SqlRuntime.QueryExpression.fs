@@ -593,7 +593,8 @@ module internal QueryExpressionTransformer =
             else 
                 let tbl = 
                     if name.StartsWith "Item" then Utilities.resolveTuplePropertyName name entityIndex
-                    else name
+                    elif sqlQuery.Aliases.Count > 0 then name
+                    else ""
                 if tbl = "" then baseAlias else tbl
 
         
