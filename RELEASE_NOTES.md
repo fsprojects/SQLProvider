@@ -1,3 +1,7 @@
+### 1.1.59 - 02.03.2019
+* Provided types update
+* .NET Standard ODBC support
+
 ### 1.1.58 - 19.01.2019
 * SQL Server scalar function return parameter fix, #598
 

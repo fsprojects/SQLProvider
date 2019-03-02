@@ -163,6 +163,4 @@ module Operators =
 namespace FSharp.Data.Sql.Providers
 type internal MSAccessProvider() = 
     member __.Note = "Not Supported in .NET core"
-type internal OdbcProvider(quotehcar) =
-    member __.Note = "Not Supported in .NET core"
 #endif

@@ -55,6 +55,9 @@
     <Compile Include="..\SQLProvider\Providers.MySql.fs">
       <Link>Providers.MySql.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider\Providers.Odbc.fs">
+      <Link>Providers.Odbc.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider\Providers.Oracle.fs">
       <Link>Providers.Oracle.fs</Link>
     </Compile>
@@ -92,6 +95,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.Odbc" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.ServiceModel" />

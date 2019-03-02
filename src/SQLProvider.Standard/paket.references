@@ -11,3 +11,4 @@ group Standard
       System.Reflection.TypeExtensions
       System.Data.SqlClient
       System.Data.Common
+      System.Data.Odbc

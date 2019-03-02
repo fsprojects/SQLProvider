@@ -254,6 +254,7 @@ Target "NuGet" (fun _ ->
         copyDotnetLibraries dotnetSdk212
 
     CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
+    CopyFile "bin/netstandard2.0" "packages/standard/System.Data.Odbc/lib/net461/System.Data.Odbc.dll" 
 #endif
 
     CopyDir @"temp/lib" "bin" allFiles
