@@ -28,6 +28,7 @@
 		<dependency id="System.Reflection.TypeExtensions" version="4.3" />
 		<dependency id="System.Data.SqlClient" version="4.4" />
 		<dependency id="System.Data.Common" version="4.3" />
+		<dependency id="System.Data.Odbc" version="4.5" />
       </group>
 	</dependencies>
   </metadata>

@@ -257,6 +257,11 @@ Target "NuGet" (fun _ ->
     CopyFile "bin/netstandard2.0" "packages/standard/System.Data.Odbc/lib/net461/System.Data.Odbc.dll" 
 #endif
 
+    CopyFile "bin/typeproviders/fsharp41/net451/" "bin/net451/FSharp.Data.SqlProvider.dll" 
+    CopyFile "bin/typeproviders/fsharp41/net451/" "bin/net451/FSharp.Data.SqlProvider.pdb" 
+    CopyFile "bin/typeproviders/fsharp41/netcoreapp2.0/" "bin/netstandard2.0/FSharp.Data.SqlProvider.dll" 
+    CopyFile "bin/typeproviders/fsharp41/netcoreapp2.0/" "bin/netstandard2.0/FSharp.Data.SqlProvider.pdb" 
+
     CopyDir @"temp/lib" "bin" allFiles
 
     NuGet (fun p ->

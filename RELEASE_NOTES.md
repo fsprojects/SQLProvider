@@ -1,3 +1,6 @@
+### 1.1.60 - 20.03.2019
+* Experimental ProvidedTypes.fs to fix .NET Standard stackoverflow issue
+
 ### 1.1.59 - 02.03.2019
 * Provided types update
 * .NET Standard ODBC support
