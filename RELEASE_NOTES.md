@@ -1,3 +1,6 @@
+### 1.1.61 - 09.04.2019
+* Reverted .NET Standard library to fix stackoverflow issue
+
 ### 1.1.60 - 20.03.2019
 * Experimental ProvidedTypes.fs to fix .NET Standard stackoverflow issue
 
