@@ -1,10 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Can build: -->
-    <!-- <TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks> -->
-    <!-- Lets use: -->
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.0;netstandard2.0</TargetFrameworks>
     <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OutputPath>..\..\bin</OutputPath>
@@ -89,7 +86,7 @@
       <Link>SqlDesignTime.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461' Or '$(TargetFramework)' == 'net472'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -111,7 +108,7 @@
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'net461'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'net472'">
     <PackageReference Include="System.IO" Version="4.3.0" />
     <PackageReference Include="System.Console" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />

@@ -233,8 +233,7 @@ Target "RunTests" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 
-Target "NuGet" (fun _ ->
-    // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
+Target "CopyFiles" (fun _ ->
 
 #if MONO
 #else
@@ -244,23 +243,30 @@ Target "NuGet" (fun _ ->
         CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
         CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
         CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
-    let netDir version = 
-        @"C:\Program Files\dotnet\sdk\" + version + @"\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
-    let dotnetSdk211 = netDir "2.1.100"
-    let dotnetSdk212 = netDir "2.1.202"
-    if directoryExists dotnetSdk211 then 
-        copyDotnetLibraries dotnetSdk211
-    elif directoryExists dotnetSdk212 then 
-        copyDotnetLibraries dotnetSdk212
+    // See https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/292
+    // let netDir version = 
+    //     @"C:\Program Files\dotnet\sdk\" + version + @"\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
+    // let dotnetSdk211 = netDir "2.1.100"
+    // let dotnetSdk212 = netDir "2.1.202"
+    // if directoryExists dotnetSdk211 then 
+    //     copyDotnetLibraries dotnetSdk211
+    // elif directoryExists dotnetSdk212 then 
+    //     copyDotnetLibraries dotnetSdk212
+    copyDotnetLibraries "packages/standard/NETStandard.Library/build/netstandard2.0/ref/"
 
     CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
-    CopyFile "bin/netstandard2.0" "packages/standard/System.Data.Odbc/lib/net461/System.Data.Odbc.dll" 
+
 #endif
 
-    CopyFile "bin/typeproviders/fsharp41/net451/" "bin/net451/FSharp.Data.SqlProvider.dll" 
-    CopyFile "bin/typeproviders/fsharp41/net451/" "bin/net451/FSharp.Data.SqlProvider.pdb" 
-    CopyFile "bin/typeproviders/fsharp41/netcoreapp2.0/" "bin/netstandard2.0/FSharp.Data.SqlProvider.dll" 
-    CopyFile "bin/typeproviders/fsharp41/netcoreapp2.0/" "bin/netstandard2.0/FSharp.Data.SqlProvider.pdb" 
+    CreateDir "bin/typeproviders/fsharp41"
+    CopyDir "bin/typeproviders/fsharp41/net472" "bin/net472" allFiles
+    CopyDir "bin/typeproviders/fsharp41/netcoreapp2.0" "bin/netcoreapp2.0" allFiles
+    DeleteDir "bin/net472"
+    DeleteDir "bin/netcoreapp2.0"
+)
+
+Target "NuGet" (fun _ ->
+    // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
 
     CopyDir @"temp/lib" "bin" allFiles
 
@@ -418,6 +424,11 @@ Target "BuildDocs" DoNothing
   =?> ("GenerateHelp", isLocalBuild && not isMono)
   ==> "All"
 
+"Build"
+  =?> ("BuildCore", isLocalBuild || not isMono)
+  ==> "CopyFiles"
+  ==> "NuGet"
+  
 "All"
   ==> "BuildDocs"
 
