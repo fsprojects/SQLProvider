@@ -1,3 +1,6 @@
+### 1.1.62 - 23.04.2019
+* .NET Core editor fix, PR #611
+
 ### 1.1.61 - 09.04.2019
 * Reverted .NET Standard library to fix stackoverflow issue
 
