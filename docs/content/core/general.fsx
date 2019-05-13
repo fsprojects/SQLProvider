@@ -263,3 +263,19 @@ using both the primary key and the text of the column you have selected.
 *)
 
 let christina = ctx.Main.Customers.Individuals.``As ContactName``.``BERGS, Christina Berglund``
+
+(**
+## DataContext
+You should create and use one data context as long as it has the parameters you need.
+An example of when to use multiple data contexts is when you need to pass different
+connection strings to connect to different instances of the same database,
+e.g. to copy data between them.
+
+The connection itself is not stored and reused with an instance of the data context.
+The data context creates a connection when you execute a query or when you call 
+`SubmitUpdates()`. In terms of transactions, the data context object tracks (full)
+entities that were retrieved using it via queries or `Individuals` and manages their
+states. Upon calling `SubmitUpdates()`, all entities modified/created that belong to
+that data context are wrapped in a single transaction scope, and then a connection
+is created and thus enlisted into the transaction.
+*)
