@@ -1,3 +1,6 @@
+### 1.1.63 - 14.05.2019
+* Fix for multiple outer joins #614
+
 ### 1.1.62 - 23.04.2019
 * .NET Core editor fix, PR #611
 
