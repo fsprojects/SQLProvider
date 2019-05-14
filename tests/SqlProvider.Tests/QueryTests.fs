@@ -211,7 +211,7 @@ let ``outer join with inner join test``() =
             head
         } 
 
-    Assert.AreEqual(None,qry)
+    Assert.AreNotEqual(None,qry)
 
 [<Test >]
 let ``option from simple select with exactly one``() =
