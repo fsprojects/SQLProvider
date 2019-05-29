@@ -1478,10 +1478,10 @@ GROUP SourceFiles
 
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (18459e8b23b44b389dc8f2b8fe444fedf2b47a8c)
-    src/ProvidedTypes.fsi (18459e8b23b44b389dc8f2b8fe444fedf2b47a8c)
+    src/ProvidedTypes.fs (592d23a96db79b4248ed23a062db3a17433282ce)
+    src/ProvidedTypes.fsi (592d23a96db79b4248ed23a062db3a17433282ce)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (75add801762b25df6f256ce9d25b81ee8f1b1b12)
+    src/Code/ExpressionOptimizer.fs (c9c558f4b7774930d5103adebddd673f8271363d)
 GROUP Standard
 NUGET
   remote: https://www.nuget.org/api/v2
