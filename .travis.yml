@@ -10,7 +10,7 @@ addons:
   postgresql: "9.5"
   
 mono:
-  - 5.18.0
+  - 5.0.1
 
 os:
   - linux
