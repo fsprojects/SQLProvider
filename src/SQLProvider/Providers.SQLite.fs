@@ -20,14 +20,25 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
     /// This is custom getSchema operation for data libraries that doesn't support System.Data.Common GetSchema interface.
     let customGetSchema name conn =
         let dt = new DataTable(name)
+        let updateDataTableByTableOrView (masterType:string) =
+            dt.Columns.AddRange([|"TABLE_TYPE";"TABLE_CATALOG";"TABLE_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
+
+            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='" + masterType + "';"
+
+            use com = (this:>ISqlProvider).CreateCommand(conn,query)
+            use reader = com.ExecuteReader()
+            while reader.Read() do
+                dt.Rows.Add([|box(reader.GetString(0));box(reader.GetString(1));box(reader.GetString(2));|]) |> ignore
+            dt
+
         match name with
-        | "DataTypes" -> 
+        | "DataTypes" ->
             dt.Columns.AddRange([|"DataType",typeof<string>;"TypeName",typeof<string>;"ProviderDbType",typeof<int>|]|>Array.map(fun (x,t) -> new DataColumn(x,t)))
             let addrow(a:string,b:string,c:int) = dt.Rows.Add([|box(a);box(b);box(c);|]) |> ignore
             [   "System.Int16","smallint",10
                 "System.Int32","int",11
                 "System.Double","real",8
-                "System.Single","single",15 
+                "System.Single","single",15
                 "System.Double","float",8
                 "System.Double","double",8
                 "System.Decimal","money",7
@@ -70,19 +81,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.Guid","uniqueidentifier",4
                 "System.Guid","guid",4 ] |> List.iter(addrow)
             dt
-        | "Tables" -> 
-            dt.Columns.AddRange([|"TABLE_TYPE";"TABLE_CATALOG";"TABLE_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
-
-            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='table' OR type ='view';"
-
-            use com = (this:>ISqlProvider).CreateCommand(conn,query)
-            use reader = com.ExecuteReader()
-            while reader.Read() do
-                dt.Rows.Add([|box(reader.GetString(0));box(reader.GetString(1));box(reader.GetString(2));|]) |> ignore
-            dt
+        | "Tables" -> updateDataTableByTableOrView "table"
+        | "Views" -> updateDataTableByTableOrView "view"
         | "ForeignKeys" ->
             let tablequery = "SELECT name as TABLE_NAME FROM sqlite_master WHERE type='table';"
-            let tables = 
+            let tables =
                 use com = (this:>ISqlProvider).CreateCommand(conn,tablequery)
                 use reader = com.ExecuteReader()
                 [while reader.Read() do yield reader.GetString(0)]
@@ -93,15 +96,15 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 let query = sprintf "pragma foreign_key_list(%s)" tablename
                 use com = (this:>ISqlProvider).CreateCommand(conn,query)
                 use reader = com.ExecuteReader()
-                while reader.Read() do 
+                while reader.Read() do
                     dt.Rows.Add([|box(tablename); box("main"); box("main"); box(reader.GetString(2));box(reader.GetString(3));box(reader.GetString(4));box("fk_"+tablename+reader.GetString(0));|]) |> ignore
             )
             dt
-        | _ -> failwith "Not supported. This custom getSchema will be removed when the corresponding System.Data.Common interface is supported by the connection driver. "
+        | s -> failwith ("Not supported [ " + s.ToString() + " ]. This custom getSchema will be removed when the corresponding System.Data.Common interface is supported by the connection driver. ")
 
     // Dynamically load the SQLite assembly so we don't have a dependency on it in the project
     let assemblyNames =
-        let fileStart = 
+        let fileStart =
             match sqliteLibrary with
             | SQLiteLibrary.SystemDataSQLite -> "System"
             | SQLiteLibrary.MonoDataSQLite -> "Mono"
@@ -116,8 +119,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
            fileStart + ".Data.SQLite.dll"
            fileStart + ".Data.Sqlite.dll"
         ]
-    
-    let lowercasedll = 
+
+    let lowercasedll =
             match sqliteLibrary with
             | SQLiteLibrary.SystemDataSQLite -> false
             | SQLiteLibrary.MonoDataSQLite
@@ -136,24 +139,24 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #if NETSTANDARD
         let example = "Microsoft.Data.Sqlite.Core"
 #else
-        let example = 
+        let example =
             match sqliteLibrary with
             | SQLiteLibrary.MicrosoftDataSqlite -> "Microsoft.Data.Sqlite.Core"
             | _ -> "System.Data.SQLite.Core"
 #endif
         match assembly.Value with
-        | Choice1Of2(assembly) -> 
-            let types = 
-                try assembly.GetTypes() 
+        | Choice1Of2(assembly) ->
+            let types =
+                try assembly.GetTypes()
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     failwith (e.Message + Environment.NewLine + details)
             types |> Array.find f
         | Choice2Of2(paths, errors) ->
-           let details = 
-                match errors with 
-                | [] -> "" 
+           let details =
+                match errors with
+                | [] -> ""
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
            failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
@@ -173,11 +176,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createParam name ordinal value =
-        let paramType = 
+        let paramType =
             match value with
             | null -> None
             | value -> findClrType (value.GetType().FullName)
-        let queryParameter = 
+        let queryParameter =
             match paramType with
             | None -> QueryParameter.Create( name, ordinal )
             | Some typeMapping -> QueryParameter.Create( name, ordinal, typeMapping)
@@ -291,7 +294,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
         match pk with
         | [] -> ()
-        | ks -> 
+        | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 entity.Table.FullName
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
@@ -322,13 +325,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
         match pk with
         | [] -> ()
-        | ks -> 
+        | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
     let pragmacheck (values:obj array) =
-        let checkp p = 
+        let checkp p =
             let p = p.ToString()
             if p.Contains("'") || p.Contains("\"") || p.Contains(";") then failwithf "Unsupported pragma: %s" p
             p
@@ -348,8 +351,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 then runtimeAssembly
                 else resolutionPath
                 |> Path.GetFullPath
-             
-            let connectionString = 
+
+            let connectionString =
                 connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
                     .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
                     .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
@@ -366,7 +369,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
                 let ex = te.InnerException :?> System.Reflection.TargetInvocationException
                 let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException))
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
@@ -377,11 +380,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             Option.iter (fun l -> p.Size <- l) param.Length
             p
 
-        member __.ExecuteSprocCommand(com, _, returnCols, values:obj array) = 
+        member __.ExecuteSprocCommand(com, _, returnCols, values:obj array) =
             let pars = pragmacheck values
             use pcom = (this:>ISqlProvider).CreateCommand(com.Connection, ("PRAGMA " + pars))
             match returnCols with
-            | [||] -> 
+            | [||] ->
                 pcom.ExecuteNonQuery() |> ignore
                 Unit
             | cols ->
@@ -392,12 +395,12 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     result
                 Set(cols |> Array.map (processReturnColumn))
 
-        member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =  
+        member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
             async {
                 let pars = pragmacheck values
                 use pcom = (this:>ISqlProvider).CreateCommand(com.Connection, ("PRAGMA " + pars)) :?> Common.DbCommand
                 match returnCols with
-                | [||] -> 
+                | [||] ->
                     do! pcom.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
                     return Unit
                 | cols ->
@@ -463,10 +466,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                   IsAutonumber = pkColumn
                                   HasDefault = not (reader.IsDBNull 4)
                                   TypeInfo = Some dtv }
-                            if col.IsPrimaryKey then 
-                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
-                                    match col.Name with 
-                                    | "" -> old 
+                            if col.IsPrimaryKey then
+                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                                    match col.Name with
+                                    | "" -> old
                                     | x -> match old with
                                            | [] -> [x]
                                            | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
@@ -523,14 +526,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
              let inParamType = (findDbType "text").Value
              let outParamType = (findDbType "cursor").Value
              [
-                Root("Pragma", Sproc({ 
-                                        Name = { ProcName = "Get"; Owner = "Main"; PackageName = String.Empty; }; 
-                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input)]; 
+                Root("Pragma", Sproc({
+                                        Name = { ProcName = "Get"; Owner = "Main"; PackageName = String.Empty; };
+                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input)];
                                         ReturnColumns = (fun _ name -> [QueryParameter.Create("ResultSet",0,outParamType,ParameterDirection.Output)])
                 }))
-                Root("Pragma", Sproc({ 
-                                        Name = { ProcName = "GetOf"; Owner = "Main"; PackageName = String.Empty; }; 
-                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input); QueryParameter.Create("Param", 0, inParamType, ParameterDirection.Input)]; 
+                Root("Pragma", Sproc({
+                                        Name = { ProcName = "GetOf"; Owner = "Main"; PackageName = String.Empty; };
+                                        Params = fun _ -> [QueryParameter.Create("Name", 0, inParamType, ParameterDirection.Input); QueryParameter.Create("Param", 0, inParamType, ParameterDirection.Input)];
                                         ReturnColumns = (fun _ name -> [QueryParameter.Create("ResultSet",0,outParamType,ParameterDirection.Output)])
                 }))
              ]
@@ -551,7 +554,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 p.ParameterName
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) =
-                let buildf (c:Condition)= 
+                let buildf (c:Condition)=
                     let sb = System.Text.StringBuilder()
                     let (~~) (t:string) = sb.Append t |> ignore
                     filterBuilder (~~) [c]
@@ -636,7 +639,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
-                                                strings 
+                                                strings
                                                 |> Array.map (fun x -> createParam (nextParam()) !param x)
                                             | Some(x) -> [|createParam (nextParam()) !param (box x)|]
                                             | None ->    [|createParam (nextParam()) !param DBNull.Value|]
@@ -665,7 +668,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                             sprintf "%s NOT IN (%s)" column innersql
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
-                                            match data with 
+                                            match data with
                                             | Some d when (box d :? alias * SqlColumnType) ->
                                                 let alias2, col2 = box d :?> (alias * SqlColumnType)
                                                 let alias2f = fieldNotation alias2 col2
@@ -741,11 +744,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 let extracolumns =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
-                    | g  -> 
+                    | g  ->
                         let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
-                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
+                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
@@ -778,7 +781,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM %s " baseTable.FullName)
-            else 
+            else
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
@@ -818,16 +821,16 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 orderByBuilder()
 
             match sqlQuery.Union with
-            | Some(UnionType.UnionAll, suquery, pars) -> 
+            | Some(UnionType.UnionAll, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " UNION ALL %s " suquery)
-            | Some(UnionType.NormalUnion, suquery, pars) -> 
+            | Some(UnionType.NormalUnion, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " UNION %s " suquery)
-            | Some(UnionType.Intersect, suquery, pars) -> 
+            | Some(UnionType.Intersect, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " INTERSECT %s " suquery)
-            | Some(UnionType.Except, suquery, pars) -> 
+            | Some(UnionType.Except, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
@@ -846,7 +849,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then 
+            if entities.Count = 0 then
                 ()
             else
 
@@ -894,7 +897,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then 
+            if entities.Count = 0 then
                 async { () }
             else
 
