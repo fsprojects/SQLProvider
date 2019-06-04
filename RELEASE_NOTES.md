@@ -1,3 +1,6 @@
+### 1.1.64 - 04.06.2019
+* Views for SQLite, PR #618
+
 ### 1.1.63 - 14.05.2019
 * Fix for multiple outer joins #614
 
