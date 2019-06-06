@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.QueryExpression
+namespace FSharp.Data.Sql.QueryExpression
 
 open System
 open System.Reflection
@@ -647,7 +647,7 @@ module internal QueryExpressionTransformer =
                 if al = "" || al.StartsWith "Item" then
                     (resolve al, resolveC col) :> obj
                 else // Already resolved
-                    (al, resolveC col) :> obj
+                    (legaliseName al, resolveC col) :> obj
             | x -> x)
 
         and resolveFilterList = function

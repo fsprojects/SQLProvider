@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Runtime
+namespace FSharp.Data.Sql.Runtime
 
 open System
 open System.Collections
@@ -551,7 +551,13 @@ module internal QueryImplementation =
                     sqlExpression
                 | MethodCall(None, (MethodWithName "Join"),
                                         [createRelated
-                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)))
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))))
+                                         OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
+                                         OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
+                                         OptionalQuote (Lambda(projectionParams,_))])
+                | MethodCall(None, (MethodWithName "Join"),
+                                        [createRelated
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity])))) 
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                          OptionalQuote (Lambda(projectionParams,_))]) ->
