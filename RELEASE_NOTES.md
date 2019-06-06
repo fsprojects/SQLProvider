@@ -1,3 +1,6 @@
+### 1.1.65 - 06.06.2019
+* Left join parameter aliases underscore fix
+
 ### 1.1.64 - 04.06.2019
 * Views for SQLite, PR #618
 
