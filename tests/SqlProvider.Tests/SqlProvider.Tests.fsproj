@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(VisualStudioVersion)' != '11.0' And Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\')">
     <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(VisualStudioVersion)' != '11.0' And Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(MSBuildToolsVersion)\FSharp\')">
+  <PropertyGroup Condition="'$(VisualStudioVersion)' != '11.0' And Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(MSBuildToolsVersion)\FSharp\') And '$(FSharpTargetsPath)'==''">
     <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(MSBuildToolsVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
   </PropertyGroup>  
   
