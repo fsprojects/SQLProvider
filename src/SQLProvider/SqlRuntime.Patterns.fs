@@ -1,4 +1,4 @@
-﻿module internal FSharp.Data.Sql.Patterns
+module internal FSharp.Data.Sql.Patterns
 
 open System
 open System.Linq.Expressions
@@ -370,18 +370,21 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> failwith "Shouldn't hit"
 
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as p1); par])))
-        when (meth.Name = "Max" || meth.Name = "Min") -> 
+        when (meth.Name = "Max" || meth.Name = "Min" || meth.Name = "Pow") -> 
             match meth.Name, par with
             | "Max", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlCol(al2,col2)), col), typ)
             | "Min", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlCol(al2,col2)), col), typ)
             | "Max", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlConstant(c)), col), typ)
             | "Min", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlConstant(c)), col), typ)
+            | "Pow", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Pow(SqlCol(al2,col2)), col), typ)
+            | "Pow", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Pow(SqlConstant(c)), col), typ)
             | _ -> None
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([Constant(c,typ); OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ2)) as p1)])))
-        when ((meth.Name = "Max" || meth.Name = "Min" ) && typ = p1.Type) -> 
+        when ((meth.Name = "Max" || meth.Name = "Min" || meth.Name = "Pow") && typ = p1.Type) -> 
             match meth.Name with
             | "Max" -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlConstant(c)), col), typ2)
             | "Min" -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlConstant(c)), col), typ2)
+            | "Pow" -> Some(alias, CanonicalOperation(CanonicalOp.PowConst(SqlConstant(c)), col), typ2)
             | _ -> None
 
     // Basic math: (x.Column+1), (1+x.Column) and (x.Column1+y.Column2)

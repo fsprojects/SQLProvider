@@ -633,6 +633,7 @@ module internal QueryExpressionTransformer =
                     | CaseSql(f, x) -> CaseSql(resolveFilterList f, x)
                     | CaseNotSql(f, x) -> CaseNotSql(resolveFilterList f, x)
                     | CaseSqlPlain(f, a, b) -> CaseSqlPlain(resolveFilterList f, a, b)
+                    | Pow(SqlCol(al, col2)) -> Pow(SqlCol(resolver al, visitCanonicals resolverfunc col2))
 
                     | x -> x
                 CanonicalOperation(resolvedSub, visitCanonicals resolverfunc col)

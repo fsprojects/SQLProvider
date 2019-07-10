@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql
+namespace FSharp.Data.Sql
 
 open System.Linq
 
@@ -109,6 +109,8 @@ module ColumnSchema =
     | ASin
     | ACos
     | ATan
+    | Pow of SqlItemOrColumn
+    | PowConst of SqlItemOrColumn
     | Greatest of SqlItemOrColumn
     | Least of SqlItemOrColumn
     // Other

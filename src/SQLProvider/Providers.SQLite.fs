@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Providers
+namespace FSharp.Data.Sql.Providers
 
 open System
 open System.IO
@@ -612,6 +612,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | Greatest(SqlCol(al2, col2)) -> sprintf "MAX(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "MIN(%s, %s)" column (fieldParam x)
                     | Least(SqlCol(al2, col2)) -> sprintf "MIN(%s, %s)" column (fieldNotation al2 col2)
+                    | Pow(SqlCol(al2, col2)) -> sprintf "POW(%s, %s)" column (fieldNotation al2 col2)
+                    | Pow(SqlConstant x) -> sprintf "POW(%s, %s)" column (fieldParam x)
+                    | PowConst(SqlConstant x) -> sprintf "POW(%s, %s)" (fieldParam x) column
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END" (buildf f) column (fieldParam itm)
