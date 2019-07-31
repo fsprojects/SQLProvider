@@ -324,7 +324,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             let ft = r.ForeignTable
                             let fk = r.ForeignKey
                             <@@ (%%args.[0] : SqlEntity).DataContext.CreateRelated((%%args.[0] : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
-                        prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constriant: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
+                        prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
                         yield prop ] @
                     [ for r in parents do
                        if bts.ContainsKey(r.PrimaryTable) then
