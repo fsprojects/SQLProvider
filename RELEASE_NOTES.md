@@ -1,3 +1,7 @@
+### 1.1.66 - 31.07.2019
+* Math.pow operator
+* Typo fix, PR #627
+
 ### 1.1.65 - 06.06.2019
 * Left join parameter aliases underscore fix
 
