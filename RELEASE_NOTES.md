@@ -1,3 +1,6 @@
+### 1.1.67 - 29.08.2019
+* Param naming fix, PR #632
+
 ### 1.1.66 - 31.07.2019
 * Math.pow operator
 * Typo fix, PR #627
