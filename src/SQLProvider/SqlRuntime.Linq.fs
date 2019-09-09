@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Runtime
+namespace FSharp.Data.Sql.Runtime
 
 open System
 open System.Collections
@@ -348,11 +348,6 @@ module internal QueryImplementation =
 
              let rec parseWhere (meth:Reflection.MethodInfo) (source:IWithSqlService) (qual:Expression) =
              
-                match qual with
-                | Lambda([ParamName sourceAlias],_) when sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not ->
-                    source.TupleIndex.Add sourceAlias
-                | _ -> ()
-
                 let isHaving = source.SqlExpression.hasGroupBy().IsSome
                 // if same query contains multiple subqueries, the parameter names in those should be different.
                 let mutable nestCount = 0
@@ -364,7 +359,6 @@ module internal QueryImplementation =
                     | SqlSpecialNegativeOpArrQueryable(ti,op,key,qry) ->
 
                         let svc = (qry :?> IWithSqlService)
-                        source.TupleIndex |> Seq.filter(fun s -> not(svc.TupleIndex.Contains s)) |> Seq.iter(fun s -> svc.TupleIndex.Add s)
 
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
@@ -418,9 +412,7 @@ module internal QueryImplementation =
                         | None -> Some x
                         | Some t when (t :? (string*SqlColumnType)) ->
                             let ti2, col = t :?> string*SqlColumnType
-                            let alias2 = 
-                                if ti2.StartsWith "Item" then resolveTuplePropertyName ti2 source.TupleIndex
-                                else ti2
+                            let alias2 = resolveTuplePropertyName ti2 source.TupleIndex
                             Some(ti,key,op,Some(box (alias2,col)))
                         | Some _ -> Some x
                     | _ -> None
@@ -477,14 +469,10 @@ module internal QueryImplementation =
                     match source.SqlExpression with
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
-                        if sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                        if destAlias <> "" && source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                         sourceEntity
 
                     | SelectMany(a1, a2,selectdata,sqlExp)  ->
                         let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                        if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                        if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                         failwithf "Grouping over multiple tables is not supported yet"
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 
@@ -542,13 +530,13 @@ module internal QueryImplementation =
                     SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
                 | MethodCall(None, (MethodWithName "Join"),
                                         [createRelated
-                                         ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                          OptionalQuote (Lambda(projectionParams,_))])
                 | MethodCall(None, (MethodWithName "Join"),
                                         [createRelated
-                                         ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] ))
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] )))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                          OptionalQuote (Lambda(projectionParams,_))]) ->
@@ -563,7 +551,7 @@ module internal QueryImplementation =
                     // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                     let data = { PrimaryKey = [destKey]; PrimaryTable = Table.FromFullName destEntity; ForeignKey = [sourceKey];
                                     ForeignTable = {Schema="";Name="";Type=""};
-                                    OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                                    OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                 | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
                                 
@@ -588,7 +576,13 @@ module internal QueryImplementation =
                     sqlExpression
                 | MethodCall(None, (MethodWithName "Join"),
                                         [createRelated
-                                         ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))))
+                                         OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
+                                         OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
+                                         OptionalQuote (Lambda(projectionParams,_))])
+                | MethodCall(None, (MethodWithName "Join"),
+                                        [createRelated
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity])))) 
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                          OptionalQuote (Lambda(projectionParams,_))]) ->
@@ -608,7 +602,7 @@ module internal QueryImplementation =
 
                     let data = { PrimaryKey = destKeys; PrimaryTable = Table.FromFullName destEntity; ForeignKey = sourceKeys;
                                     ForeignTable = {Schema="";Name="";Type=""};
-                                    OuterJoin = false; RelDirection = RelationshipDirection.Parents }
+                                    OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                 | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))) 
                 | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity]))) ->

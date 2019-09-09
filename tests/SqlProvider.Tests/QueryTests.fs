@@ -193,6 +193,26 @@ let ``over 8 joins test``() =
     | None ->
         Assert.Fail()
 
+[<Test>]
+let ``outer join with inner join test``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join ord1 in dc.Main.Orders on (cust.CustomerId = ord1.CustomerId)
+            join ord2 in (!!) dc.Main.Orders on (cust.CustomerId = ord2.CustomerId)
+            for ord3 in ord2.``main.OrderDetails by OrderID`` do
+            join ord4 in (!!) dc.Main.Orders on (ord2.CustomerId = ord4.CustomerId)
+            where (cust.CustomerId = "ALFKI"
+                && ord1.OrderId = 10643L && ord2.OrderId = 10643L && ord3.OrderId = 10643L
+                && ord4.OrderId = 10643L
+                )
+            select (Some (cust, ord1))
+            head
+        } 
+
+    Assert.AreNotEqual(None,qry)
+
 [<Test >]
 let ``option from simple select with exactly one``() =
     let dc = sql.GetDataContext()

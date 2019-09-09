@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Providers
+namespace FSharp.Data.Sql.Providers
 
 open System
 open System.Collections.Concurrent
@@ -700,6 +700,9 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     | Greatest(SqlCol(al2, col2)) -> sprintf "GREATEST(%s, %s)" column (fieldNotation al2 col2)
                     | Least(SqlConstant x) -> sprintf "LEAST(%s, %s)" column (fieldParam x)
                     | Least(SqlCol(al2, col2)) -> sprintf "LEAST(%s, %s)" column (fieldNotation al2 col2)
+                    | Pow(SqlCol(al2, col2)) -> sprintf "POWER(%s, %s)" column (fieldNotation al2 col2)
+                    | Pow(SqlConstant x) -> sprintf "POWER(%s, %s)" column (fieldParam x)
+                    | PowConst(SqlConstant x) -> sprintf "POWER(%s, %s)" (fieldParam x) column
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "IF(%s, %s, %s)" (buildf f) column (fieldParam itm)

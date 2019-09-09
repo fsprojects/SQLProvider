@@ -1,3 +1,32 @@
+### 1.1.67 - 29.08.2019
+* Param naming fix, PR #632
+
+### 1.1.66 - 31.07.2019
+* Math.pow operator
+* Typo fix, PR #627
+
+### 1.1.65 - 06.06.2019
+* Left join parameter aliases underscore fix
+
+### 1.1.64 - 04.06.2019
+* Views for SQLite, PR #618
+
+### 1.1.63 - 14.05.2019
+* Fix for multiple outer joins #614
+
+### 1.1.62 - 23.04.2019
+* .NET Core editor fix, PR #611
+
+### 1.1.61 - 09.04.2019
+* Reverted .NET Standard library to fix stackoverflow issue
+
+### 1.1.60 - 20.03.2019
+* Experimental ProvidedTypes.fs to fix .NET Standard stackoverflow issue
+
+### 1.1.59 - 02.03.2019
+* Provided types update
+* .NET Standard ODBC support
+
 ### 1.1.58 - 19.01.2019
 * SQL Server scalar function return parameter fix, #598
 

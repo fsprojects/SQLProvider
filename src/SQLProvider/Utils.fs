@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Common
+namespace FSharp.Data.Sql.Common
     
 open System
 open System.Collections.Generic
@@ -29,9 +29,12 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
-                (int <| name.Remove(0, 4))
+                match Int32.TryParse (name.Remove(0, 4)) with
+                | (true, n) -> n
+                | (false, _) -> Int32.MaxValue
             else Int32.MaxValue
-        if(tupleIndex.Count < itemid) then ""
+        if itemid = Int32.MaxValue && tupleIndex.Contains(name) then name //already resolved
+        elif tupleIndex.Count < itemid then ""
         else tupleIndex.[itemid - 1]
 
 

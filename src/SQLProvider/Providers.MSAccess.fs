@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Providers
+namespace FSharp.Data.Sql.Providers
 
 open System
 open System.Collections.Concurrent
@@ -390,6 +390,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | Greatest(SqlCol(al2, col2)) -> sprintf "(iif(%s > %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
                     | Least(SqlConstant x) -> sprintf "(iif(%s < %s, %s, %s)" (fieldParam x) column (fieldParam x) column
                     | Least(SqlCol(al2, col2)) -> sprintf "(iif(%s < %s, %s, %s))" (fieldNotation al2 col2) column (fieldNotation al2 col2) column
+                    | Pow(SqlConstant x) -> sprintf "(%s^%s)" column (fieldParam x)
+                    | Pow(SqlCol(al2, col2)) -> sprintf "(%s^%s)" column (fieldNotation al2 col2)
+                    | PowConst(SqlConstant x) -> sprintf "(%s^%s)" (fieldParam x) column
                     //if-then-else
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldParam itm)

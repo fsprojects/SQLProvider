@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I "../../../bin/net451"
 (*** hide ***)
 [<Literal>]
@@ -273,6 +273,7 @@ acos(i)         | ACOS       | ACOS      | ACOS    | ACOS  | ACOS       |       
 atan(i)         | ATAN       | ATAN      | ATAN    | ATAN  | ATAN       | Atn     | ATAN     |   |
 Math.Max(x,y)   | SELECT(MAX) | GREATEST  | GREATEST| GREATEST| MAX      | iif(x>y,x,y)| GREATEST     |   |
 Math.Min(x,y)   | SELECT(MIN) | LEAST     | LEAST   | LEAST | MIN        | iif(x<y,x,y)| LEAST     |   |
+Math.Pow(x,y)   | POWER(x,y) | POWER(x,y) | POWER(x,y) | POWER(x,y) |    | x^y    | POWER(x,y) |   |
 (+)             | +          | +         | +       | +     | +          | +       | +        |   |
 (-)             | -          | -         | -       | -     | -          | -       | -        |   |
 (*)             | *          | *         | *       | *     | *          | *       | *        |   |

@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql
+namespace FSharp.Data.Sql
 
 open System.Linq
 
@@ -113,6 +113,8 @@ module ColumnSchema =
     | ASin
     | ACos
     | ATan
+    | Pow of SqlItemOrColumn
+    | PowConst of SqlItemOrColumn
     | Greatest of SqlItemOrColumn
     | Least of SqlItemOrColumn
     // Other
@@ -166,7 +168,5 @@ module Operators =
 // Hacks for .NET Core.
 namespace FSharp.Data.Sql.Providers
 type internal MSAccessProvider() = 
-    member __.Note = "Not Supported in .NET core"
-type internal OdbcProvider(quotehcar) =
     member __.Note = "Not Supported in .NET core"
 #endif
