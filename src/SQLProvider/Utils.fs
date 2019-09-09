@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Common
+namespace FSharp.Data.Sql.Common
     
 open System
 open System.Collections.Generic
@@ -33,7 +33,8 @@ module internal Utilities =
                 | (true, n) -> n
                 | (false, _) -> Int32.MaxValue
             else Int32.MaxValue
-        if(tupleIndex.Count < itemid) then ""
+        if itemid = Int32.MaxValue && tupleIndex.Contains(name) then name //already resolved
+        elif tupleIndex.Count < itemid then ""
         else tupleIndex.[itemid - 1]
 
 

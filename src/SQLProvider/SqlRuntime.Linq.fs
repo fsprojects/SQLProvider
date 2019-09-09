@@ -440,14 +440,10 @@ module internal QueryImplementation =
                     match source.SqlExpression with
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
-                        if sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                        if destAlias <> "" && source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                         sourceEntity
 
                     | SelectMany(a1, a2,selectdata,sqlExp)  ->
                         let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                        if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
-                        if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                         failwithf "Grouping over multiple tables is not supported yet"
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 

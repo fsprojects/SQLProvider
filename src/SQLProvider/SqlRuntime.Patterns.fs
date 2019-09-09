@@ -224,8 +224,10 @@ let (|SqlPlainColumnGet|_|) = function
                 if not isOk then None
                 else
                 Some(("Item"+(memberName+(findNested x 7)).ToString()),KeyColumn key,meth.ReturnType) 
-            | _ -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) 
-        | p when p.NodeType = ExpressionType.Parameter -> Some(String.Empty,KeyColumn key,meth.ReturnType) 
+            | _ -> Some(m.Member.Name,KeyColumn key,meth.ReturnType)
+        | p when p.NodeType = ExpressionType.Parameter ->
+            let par = p :?> ParameterExpression
+            Some((if String.IsNullOrEmpty par.Name then String.Empty else par.Name),KeyColumn key,meth.ReturnType) 
         | _ -> None
     | _ -> None
 

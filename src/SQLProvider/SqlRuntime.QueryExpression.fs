@@ -577,7 +577,7 @@ module internal QueryExpressionTransformer =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
             // to the only table in the query, so replace it
-            if String.IsNullOrWhiteSpace(name) || name = "__base__" then
+            if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then
                 match defaultTable with
                 | Some(s) -> s
                 | None -> (fst sqlQuery.UltimateChild.Value)
@@ -589,7 +589,7 @@ module internal QueryExpressionTransformer =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
             // to the only table in the query, so replace it
-            if String.IsNullOrWhiteSpace(name) || name = "__base__" then (fst sqlQuery.UltimateChild.Value)
+            if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then (fst sqlQuery.UltimateChild.Value)
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseAlias else tbl
@@ -599,7 +599,7 @@ module internal QueryExpressionTransformer =
         let rec visitCanonicals resolverfunc = function
             | CanonicalOperation(subItem, col) -> 
                 let resolver (al:string) = // Don't try to resolve if already resolved
-                    if al = "" || al.StartsWith "Item" then resolverfunc al else al
+                    if al = "" || al.StartsWith "Item" || entityIndex.Count = 0 then resolverfunc al else al
                 let resolvedSub =
                     match subItem with
                     | BasicMathOfColumns(op,al,col2) -> BasicMathOfColumns(op,resolver al, visitCanonicals resolverfunc col2)
@@ -645,7 +645,7 @@ module internal QueryExpressionTransformer =
         and tryResolveC (e: Option<obj>) : Option<obj> = e |> Option.map(function
             | :? (alias * SqlColumnType) as a ->
                 let al,col = a
-                if al = "" || al.StartsWith "Item" then
+                if al = "" || al.StartsWith "Item" || entityIndex.Count = 0 then
                     (resolve al, resolveC col) :> obj
                 else // Already resolved
                     (legaliseName al, resolveC col) :> obj
@@ -668,10 +668,10 @@ module internal QueryExpressionTransformer =
         let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters
                                        Ordering = List.map(function 
                                                             |("",b,c) -> (resolve "",resolveC b,c) 
-                                                            | a,c,b -> a, resolveC c,b) sqlQuery.Ordering 
+                                                            | a,c,b -> resolve a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
-                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> ga, resolveC gk), a|>List.map(fun(ag,aa)->ag,resolveC aa)) 
-                                       AggregateOp = sqlQuery.AggregateOp |> List.map(fun (a,c) -> (a, resolveC c))
+                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> resolve ga, resolveC gk), a|>List.map(fun(ag,aa)->resolve ag,resolveC aa)) 
+                                       AggregateOp = sqlQuery.AggregateOp |> List.map(fun (a,c) -> (resolve a, resolveC c))
                        }
 
         // 2.
