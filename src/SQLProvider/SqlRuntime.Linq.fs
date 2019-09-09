@@ -367,7 +367,9 @@ module internal QueryImplementation =
                         nestCount <- nestCount + 1
 
                         let modified = 
-                            parameters |> Seq.map(fun p ->
+                            parameters
+                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
+                            |> Seq.map(fun p ->
                                 p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray
@@ -780,7 +782,9 @@ module internal QueryImplementation =
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
 
                         let modified = 
-                            parameters |> Seq.map(fun p ->
+                            parameters
+                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
+                            |> Seq.map(fun p ->
                                 p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray
