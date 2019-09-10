@@ -1,3 +1,7 @@
+### 1.1.68 - 10.09.2019
+* Query-translation fixes #634
+* Initial exist-sub-query support, PR #603
+
 ### 1.1.67 - 29.08.2019
 * Param naming fix, PR #632
 
