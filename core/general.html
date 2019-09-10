@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SQL Provider Basics
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="SQL-Provider-Basics" class="anchor" href="#SQL-Provider-Basics">SQL Provider Basics</a></h1>
+<p>The SQL provider is an erasing type provider which enables you to instantly
+connect to a variety of database sources in the IDE and explore them in a
+type-safe manner, without the inconvenience of a code-generation step.</p>
+<p>SQL Provider supports the following database types:</p>
+<ul>
+<li><a href="mssql.html">MSSQL</a></li>
+<li><a href="oracle.html">Oracle</a></li>
+<li><a href="sqlite.html">SQLite</a></li>
+<li><a href="postgresql.html">PostgreSQL</a></li>
+<li><a href="mysql.html">MySQL</a></li>
+<li><a href="msaccess.html">MsAccess</a></li>
+<li><a href="odbc.html">ODBC</a> (<em>Experimental</em>, only supports SELECT &amp; MAKE)</li>
+</ul>
+<p>After you have installed the nuget package or built the type provider assembly
+from source, you should reference the assembly either as a project reference
+or by using an F# interactive script file.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// when using the SQLProvider in a script file (.fsx), the file needs to be referenced</span>
+<span class="c">// using F#&#39;s `#r` command:</span>
+<span class="prep">#r</span> <span class="s">&quot;../../packages/SQLProvider.1.0.1/lib/net40/FSharp.Data.SqlProvider.dll&quot;</span>
+<span class="c">// whether referencing in a script, or added to project as an assembly</span>
+<span class="c">// reference, the library needs to be opened</span>
+</code></pre></td>
+</tr>
+</table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span>
+</code></pre></td>
+</tr>
+</table>
+<p>To use the type provider you must first create a type alias.</p>
+<p>In this declaration you are able to pass various pieces of information known
+as static parameters to initialize properties such as the connection string
+and database vendor type that you are connecting to.</p>
+<p>In the following examples a SQLite database will be used.  You can read in
+more detail about the available static parameters in other areas of the
+documentation.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">sql</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">SQLITE</span>,
+                           <span class="i">connectionString</span>,
+                           <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionPath</span>,
+                           <span class="i">CaseSensitivityChange</span> <span class="o">=</span> <span class="i">Common</span><span class="o">.</span><span class="i">CaseSensitivityChange</span><span class="o">.</span><span class="i">ORIGINAL</span><span class="o">&gt;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Now we have a type <code>sql</code> that represents the SQLite database provided in
+the connectionString parameter.  In order to start exploring the database's
+schema and reading its data, you create a <em>DataContext</em> value.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>If you want to use non-literal connectionString at runtime (e.g. crypted production
+passwords), you can pass your runtime connectionString parameter to GetDataContext:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">ctx2</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span> <span class="i">connectionString2</span>
+</code></pre></td>
+</tr>
+</table>
+<p>When you press <code>.</code> on <code>ctx</code>, intellisense will display a list of properties
+representing the available tables and views within the database.</p>
+<p>In the simplest case, you can treat these properties as sequences that can
+be enumerated.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">customers</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>This is the equivalent of executing a query that selects all rows and
+columns from the <code>[main].[customers]</code> table.</p>
+<p>Notice the resulting type is an array of <code>[Main].[Customers]Entity</code>.  These
+entities will contain properties relating to each column name from the table.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">firstCustomer</span> <span class="o">=</span> <span class="i">customers</span><span class="o">.</span>[<span class="n">0</span>]
+<span class="k">let</span> <span class="i">name</span> <span class="o">=</span> <span class="i">firstCustomer</span><span class="o">.</span><span class="i">ContactName</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Each property is correctly typed depending on the database column
+definitions.  In this example, <code>firstCustomer.ContactName</code> is a string.</p>
+<p>Most of the databases support some kind of comments/descriptions/remarks to
+tables and columns for documentation purposes. These descriptions are fetched
+to tooltips for the tables and columns.</p>
+<h2><a name="Constraints-and-Relationships" class="anchor" href="#Constraints-and-Relationships">Constraints and Relationships</a></h2>
+<p>A typical relational database will have many connected tables and views
+through foreign key constraints.  The SQL provider is able to show you these
+constraints on entities.  They appear as properties named the same as the
+constraint in the database.</p>
+<p>You can gain access to these child or parent entities by simply enumerating
+the property in question.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">orders</span> <span class="o">=</span> <span class="i">firstCustomer</span><span class="o">.</span><span class="i">``main.Orders by CustomerID``</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p><code>orders</code> now contains all the orders belonging to firstCustomer. You will
+see the orders type is an array of <code>[Main].[Orders]Entity</code> indicating the
+resulting entities are from the <code>[main].[Orders]</code> table in the database.
+If you hover over <code>FK_Orders_0_0</code> intellisense will display information
+about the constraint in question including the names of the tables involved
+and the key names.</p>
+<p>Behind the scenes the SQL provider has automatically constructed and executed
+a relevant query using the entity's primary key.</p>
+<h2><a name="Basic-Querying" class="anchor" href="#Basic-Querying">Basic Querying</a></h2>
+<p>The SQL provider supports LINQ queries using F#'s <em>query expression</em> syntax.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">customersQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="i">select</span> <span class="i">customer</span>
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Support also async queries</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">customersQueryAsync</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="i">select</span> <span class="i">customer</span>
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">executeQueryAsync</span> <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The above example is identical to the query that was executed when
+<code>ctx.[main].[Customers] |&gt; Seq.toArray</code> was evaluated.</p>
+<p>You can extend this basic query include to filter criteria by introducing
+one or more <em>where</em> clauses</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">filteredQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="i">where</span> (<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;John Smith&quot;</span>)
+            <span class="i">select</span> <span class="i">customer</span>
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+
+<span class="k">let</span> <span class="i">multipleFilteredQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="i">where</span> ((<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;John Smith&quot;</span> <span class="o">&amp;&amp;</span> <span class="i">customer</span><span class="o">.</span><span class="i">Country</span> <span class="o">=</span> <span class="s">&quot;England&quot;</span>) <span class="o">||</span> <span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;Joe Bloggs&quot;</span>)
+            <span class="i">select</span> <span class="i">customer</span>
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The SQL provider will accept any level of nested complex conditional logic
+in the <em>where</em> clause.</p>
+<p>To access related data, you can either enumerate directly over the constraint
+property of an entity, or you can perform an explicit join.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">automaticJoinQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">customer</span><span class="o">.</span><span class="i">``main.Orders by CustomerID``</span> <span class="k">do</span>
+                <span class="i">where</span> (<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;John Smith&quot;</span>)
+                <span class="i">select</span> (<span class="i">customer</span>, <span class="i">order</span>)
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+
+<span class="k">let</span> <span class="i">explicitJoinQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="i">join</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="i">on</span> (<span class="i">customer</span><span class="o">.</span><span class="i">CustomerId</span> <span class="o">=</span> <span class="i">order</span><span class="o">.</span><span class="i">CustomerId</span>)
+            <span class="i">where</span> (<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;John Smith&quot;</span>)
+            <span class="i">select</span> (<span class="i">customer</span>, <span class="i">order</span>)
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Both of these queries have identical results, the only difference is that one
+requires explicit knowledge of which tables join where and how, and the other doesn't.
+You might have noticed the select expression has now changed to (customer, order).
+As you may expect, this will return an array of tuples where the first item
+is a <code>[Main].[Customers]Entity</code> and the second a <code>[Main].[Orders]Entity</code>.
+Often you will not be interested in selecting entire entities from the database.
+Changing the select expression to use the entities' properties will cause the
+SQL provider to select only the columns you have asked for, which is an
+important optimization.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">ordersQuery</span> <span class="o">=</span> 
+    <span class="i">query</span> { 
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+            <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">customer</span><span class="o">.</span><span class="i">``main.Orders by CustomerID``</span> <span class="k">do</span>
+                <span class="i">where</span> (<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span> <span class="o">=</span> <span class="s">&quot;John Smith&quot;</span>)
+                <span class="i">select</span> (<span class="i">customer</span><span class="o">.</span><span class="i">ContactName</span>, <span class="i">order</span><span class="o">.</span><span class="i">OrderDate</span>, <span class="i">order</span><span class="o">.</span><span class="i">ShipAddress</span>)
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The results of this query will return the name, order date and ship address
+only.  By doing this you no longer have access to entity types.
+The SQL provider supports various other query keywords and features that you
+can read about elsewhere in this documentation.</p>
+<h2><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h2>
+<p>The SQL provider has the ability via intellisense to navigate the actual data
+held within a table or view. You can then bind that data as an entity to a value.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">BERGS</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">BERGS</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Every table and view has an <code>Individuals</code> property. When you press dot on
+this property, intellisense will display a list of the data in that table,
+using whatever the primary key is as the text for each one.
+In this case, the primary key for <code>[main].[Customers]</code> is a string, and I
+have selected one named BERGS. You will see the resulting type is
+<code>[main].[Customers]Entity</code>.</p>
+<p>The primary key is not usually very useful for identifying data however, so
+in addition to this you will see a series of properties named "As X" where X
+is the name of a column in the table.
+When you press . on one of these properties, the data is re-projected to you
+using both the primary key and the text of the column you have selected.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">christina</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">``As ContactName``</span><span class="o">.</span><span class="i">``BERGS, Christina Berglund``</span>
+</code></pre></td>
+</tr>
+</table>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>

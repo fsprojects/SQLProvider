@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Querying
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h2><a name="How-to-see-the-SQL-clause" class="anchor" href="#How-to-see-the-SQL-clause">How to see the SQL-clause?</a></h2>
+<p>To display / debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span><span class="o">.</span><span class="i">Common</span><span class="o">.</span><span class="i">QueryEvents</span><span class="o">.</span><span class="i">SqlQueryEvent</span> <span class="o">|&gt;</span> <span class="i">Event</span><span class="o">.</span><span class="i">add</span> (<span class="i">printfn</span> <span class="s">&quot;Executing SQL: %O&quot;</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>The event has separate fields of Command and Parameters
+for you to store your clauses with a strongly typed logging system like <a href="https://github.com/logary/logary">Logary</a>.</p>
+<h1><a name="Querying" class="anchor" href="#Querying">Querying</a></h1>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">sql</span>  <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span>
+                <span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">SQLITE</span>,
+                <span class="i">connectionString</span>,
+                <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionPath</span>, 
+                <span class="i">CaseSensitivityChange</span> <span class="o">=</span> <span class="i">Common</span><span class="o">.</span><span class="i">CaseSensitivityChange</span><span class="o">.</span><span class="i">ORIGINAL</span>
+            <span class="o">&gt;</span>
+<span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>SQLProvider leverages F#'s <code>query {}</code> expression syntax to perform queries
+against the database.  Though many are supported, not all LINQ expressions are.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">example</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">order</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+        <span class="i">sortBy</span> (<span class="i">order</span><span class="o">.</span><span class="i">ShipPostalCode</span>)
+        <span class="i">skip</span> <span class="n">3</span>
+        <span class="i">take</span> <span class="n">4</span>
+        <span class="i">select</span> (<span class="i">order</span>)
+    }
+
+<span class="k">let</span> <span class="i">test</span> <span class="o">=</span> <span class="i">example</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">map</span>(<span class="k">fun</span> <span class="i">i</span> <span class="k">-&gt;</span> <span class="i">i</span><span class="o">.</span><span class="i">ColumnValues</span> <span class="o">|&gt;</span> <span class="i">Map</span><span class="o">.</span><span class="i">ofSeq</span>)
+
+<span class="k">let</span> <span class="i">item</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">order</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+        <span class="i">head</span>
+    }
+</code></pre></td>
+</tr>
+</table>
+<p>Or async versions:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">exampleAsync</span> <span class="o">=</span>
+    <span class="i">async</span> {
+        <span class="k">let!</span> <span class="i">res</span> <span class="o">=</span>
+            <span class="i">query</span> {
+                <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+                <span class="i">where</span> (<span class="i">order</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+                <span class="i">select</span> (<span class="i">order</span>)
+            } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+        <span class="k">return</span> <span class="i">res</span>
+    } <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+
+<span class="k">let</span> <span class="i">itemAsync</span> <span class="o">=</span>
+    <span class="i">async</span> {
+        <span class="k">let!</span> <span class="i">item</span> <span class="o">=</span>
+            <span class="i">query</span> {
+                <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+                <span class="i">where</span> (<span class="i">order</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>)
+            } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">headAsync</span>
+        <span class="k">return</span> <span class="i">item</span>
+    } <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+</code></pre></td>
+</tr>
+</table>
+<p>If you consider using asynchronous queries, read more from the <a href="async.html">async documentation</a>.</p>
+<h2><a name="SELECT-clause-operations" class="anchor" href="#SELECT-clause-operations">SELECT -clause operations</a></h2>
+<p>You can control the execution context of the select-operations by <code>GetDataContext</code> parameter <code>selectOperations</code>.
+The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.</p>
+<p>This might have a significant effect on the size of data transferred from the database.</p>
+<h3><a name="SelectOperations-DotNetSide-Default" class="anchor" href="#SelectOperations-DotNetSide-Default">SelectOperations.DotNetSide (Default)</a></h3>
+<p>Fetch the columns and run operations in .NET-side.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">    <span class="k">let</span> <span class="i">dc</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>(<span class="i">SelectOperations</span><span class="o">.</span><span class="i">DotNetSide</span>) <span class="c">// (same as without the parameter)</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">cust</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> (<span class="k">if</span> <span class="i">cust</span><span class="o">.</span><span class="i">Country</span> <span class="o">=</span> <span class="s">&quot;UK&quot;</span> <span class="k">then</span> (<span class="i">cust</span><span class="o">.</span><span class="i">City</span>)
+            <span class="k">else</span> (<span class="s">&quot;Outside UK&quot;</span>))
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> 
+   [cust].[Country] <span class="k">as</span> <span class="s">'Country'</span>,
+   [cust].[City] <span class="k">as</span> <span class="s">'City'</span> 
+<span class="k">FROM</span> main.Customers <span class="k">as</span> [cust]
+</code></pre></td></tr></table>
+<h3><a name="SelectOperations-DatabaseSide" class="anchor" href="#SelectOperations-DatabaseSide">SelectOperations.DatabaseSide</a></h3>
+<p>Execute the operations as part of SQL.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">dc</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>(<span class="i">SelectOperations</span><span class="o">.</span><span class="i">DatabaseSide</span>)
+<span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> 
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">cust</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> (<span class="k">if</span> <span class="i">cust</span><span class="o">.</span><span class="i">Country</span> <span class="o">=</span> <span class="s">&quot;UK&quot;</span> <span class="k">then</span> (<span class="i">cust</span><span class="o">.</span><span class="i">City</span>)
+            <span class="k">else</span> (<span class="s">&quot;Outside UK&quot;</span>))
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> 
+   <span class="k">CASE</span> <span class="k">WHEN</span> ([cust].[Country] = @param<span class="n">1</span>) <span class="k">THEN</span> 
+   [cust].[City] 
+   <span class="k">ELSE</span> @param<span class="n">2</span> 
+<span class="k">END</span> <span class="k">as</span> [<span class="k">result</span>] 
+<span class="k">FROM</span> main.Customers <span class="k">as</span> [cust]
+<span class="c">-- params @param1 - "UK"; @param2 - "Outside UK"</span>
+</code></pre></td></tr></table>
+<h2><a name="Supported-Query-Expression-Keywords" class="anchor" href="#Supported-Query-Expression-Keywords">Supported Query Expression Keywords</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th><p>Keyword</p></th>
+<th align="center"><p>Supported</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.Contains()</p></td>
+<td align="center"><p>X</p></td>
+<td><p><code>open System.Linq</code>, in where, SQL IN-clause, nested query</p></td>
+</tr>
+<tr class="even">
+<td><p>.Concat()</p></td>
+<td align="center"><p>X</p></td>
+<td><p><code>open System.Linq</code>, SQL UNION ALL-clause</p></td>
+</tr>
+<tr class="odd">
+<td><p>.Union()</p></td>
+<td align="center"><p>X</p></td>
+<td><p><code>open System.Linq</code>, SQL UNION-clause</p></td>
+</tr>
+<tr class="even">
+<td><p>all</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>averageBy</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="even">
+<td><p>averageByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="odd">
+<td><p>contains</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>count</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>distinct</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>exactlyOne</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>exactlyOneOrDefault</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>exists</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>find</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>groupBy</p></td>
+<td align="center"><p>x</p></td>
+<td><p>Initially only very simple groupBy (and having) is supported: On single-table with direct aggregates like <code>.Count()</code> or direct parameter calls like <code>.Sum(fun entity -&gt; entity.UnitPrice)</code>.</p></td>
+</tr>
+<tr class="odd">
+<td><p>groupJoin</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>groupValBy</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>head</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>headOrDefault</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>if</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>join</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>last</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>lastOrDefault</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>leftOuterJoin</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>let</p></td>
+<td align="center"><p>x</p></td>
+<td><p>...but not using tmp variables in where-clauses</p></td>
+</tr>
+<tr class="odd">
+<td><p>maxBy</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="even">
+<td><p>maxByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="odd">
+<td><p>minBy</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="even">
+<td><p>minByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="odd">
+<td><p>nth</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>select</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>skip</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>skipWhile</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>sortBy</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sortByDescending</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>sortByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sortByNullableDescending</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>sumBy</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="even">
+<td><p>sumByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td><p>Single table</p></td>
+</tr>
+<tr class="odd">
+<td><p>take</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>takeWhile</p></td>
+<td align="center"></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>thenBy</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>thenByDescending</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>thenByNullable</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>thenByNullableDescending</p></td>
+<td align="center"><p>X</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>where</p></td>
+<td align="center"><p>x</p></td>
+<td><p>Server side variables must either be plain without .NET operations or use the supported canonical functions.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Currently SQL-provider doesn't generate nested queries in from-clauses.</p>
+<h3><a name="Canonical-Functions" class="anchor" href="#Canonical-Functions">Canonical Functions</a></h3>
+<p>Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).
+If you use these, remember to check your database indexes.</p>
+<h4><a name="NET-String-Functions-NET" class="anchor" href="#NET-String-Functions-NET">.NET String Functions (.NET)</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.Substring(x)</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>MID</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>SUBSTR</p></td>
+<td><p>Mid</p></td>
+<td><p>SUBSTRING</p></td>
+<td><p>Start position may vary (0 or 1 based.)</p></td>
+</tr>
+<tr class="even">
+<td><p>.ToUpper()</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UPPER</p></td>
+<td><p>UCase</p></td>
+<td><p>UCASE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.ToLower()</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LOWER</p></td>
+<td><p>LCase</p></td>
+<td><p>LCASE</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Trim()</p></td>
+<td><p>LTRIM(RTRIM)</p></td>
+<td><p>TRIM(BOTH...)</p></td>
+<td><p>TRIM</p></td>
+<td><p>TRIM</p></td>
+<td><p>TRIM</p></td>
+<td><p>Trim</p></td>
+<td><p>LTRIM(RTRIM)</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Length()</p></td>
+<td><p>DATALENGTH</p></td>
+<td><p>CHAR_LENGTH</p></td>
+<td><p>CHAR_LENGTH</p></td>
+<td><p>LENGTH</p></td>
+<td><p>LENGTH</p></td>
+<td><p>Len</p></td>
+<td><p>CHARACTER_LENGTH</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Replace(a,b)</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>REPLACE</p></td>
+<td><p>Replace</p></td>
+<td><p>REPLACE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.IndexOf(x)</p></td>
+<td><p>CHARINDEX</p></td>
+<td><p>STRPOS</p></td>
+<td><p>LOCATE</p></td>
+<td><p>INSTR</p></td>
+<td><p>INSTR</p></td>
+<td><p>InStr</p></td>
+<td><p>LOCATE</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.IndexOf(x, i)</p></td>
+<td><p>CHARINDEX</p></td>
+<td></td>
+<td><p>LOCATE</p></td>
+<td><p>INSTR</p></td>
+<td></td>
+<td><p>InStr</p></td>
+<td><p>LOCATE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(+)</p></td>
+<td><p><code>+</code></p></td>
+<td><p><code>||</code></p></td>
+<td><p>CONCAT</p></td>
+<td><p><code>||</code></p></td>
+<td><p><code>||</code></p></td>
+<td><p>&amp;</p></td>
+<td><p>CONCAT</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>In where-clauses you can also use <code>.Contains("...")</code>, <code>.StartsWith("...")</code> and <code>.EndsWith("...")</code>, which are translated to
+corresponding <code>LIKE</code>-clauses (e.g. StartsWith("abc") is <code>LIKE ('asdf%')</code>.</p>
+<p><code>Substring(startpos,length)</code> is supported. IndexOf with length paramter is supported except PostgreSql and SQLite.</p>
+<p>Operations do support parameters to be either constants or other SQL-columns (e.g. <code>x.Substring(x.Length() - 1)</code>).</p>
+<h4><a name="NET-DateTime-Functions" class="anchor" href="#NET-DateTime-Functions">.NET DateTime Functions</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.Date</p></td>
+<td><p>CAST(AS DATE)</p></td>
+<td><p>DATE_TRUNC</p></td>
+<td><p>DATE</p></td>
+<td><p>TRUNC</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>DateValue(Format)</p></td>
+<td><p>CONVERT(SQL_DATE)</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Year</p></td>
+<td><p>YEAR</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>YEAR</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Year</p></td>
+<td><p>YEAR</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Month</p></td>
+<td><p>MONTH</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>MONTH</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Month</p></td>
+<td><p>MONTH</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Day</p></td>
+<td><p>DAY</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>DAY</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Day</p></td>
+<td><p>DAYOFMONTH</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Hour</p></td>
+<td><p>DATEPART HOUR</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>HOUR</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Hour</p></td>
+<td><p>HOUR</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Minute</p></td>
+<td><p>DATEPART MINUTE</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>MINUTE</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Minute</p></td>
+<td><p>MINUTE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Second</p></td>
+<td><p>DATEPART SECOND</p></td>
+<td><p>DATE_PART</p></td>
+<td><p>SECOND</p></td>
+<td><p>EXTRACT</p></td>
+<td><p>STRFTIME</p></td>
+<td><p>Second</p></td>
+<td><p>SECOND</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.Subtract(y).Days</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>DATEDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.Subtract(y).Seconds</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>EXTRACT(EPOCH)</p></td>
+<td><p>TIMESTAMPDIFF</p></td>
+<td><p>y-x</p></td>
+<td><p>x-y</p></td>
+<td><p>DateDiff</p></td>
+<td><p>DATEDIFF</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.AddYears(i)</p></td>
+<td><p>DATEADD YEAR</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.AddMonths(i)</p></td>
+<td><p>DATEADD MONTH</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.AddDays(f)</p></td>
+<td><p>DATEADD DAY</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.AddHours(f)</p></td>
+<td><p>DATEADD HOUR</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>.AddMinutes(f)</p></td>
+<td><p>DATEADD MINUTE</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>.AddSeconds(f)</p></td>
+<td><p>DATEADD SECOND</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATE_ADD</p></td>
+<td><ul>
+<li>INTERVAL</li>
+</ul></td>
+<td><p>DATETIME</p></td>
+<td><p>DateAdd</p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>AddYears, AddDays and AddMinutes parameter can be either constant or other SQL-column, except in SQLite which supports only constant.
+AddMonths, AddHours and AddSeconds supports only constants for now.
+Odbc standard doesn't seem to have a date-add functionality.
+.NET has float parameters on some time-functions like AddDays, but SQL may ignore the decimal fraction.</p>
+<h4><a name="Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators" class="anchor" href="#Numerical-Functions-e-g-Microsoft-FSharp-Core-Operators">Numerical Functions (e.g. Microsoft.FSharp.Core.Operators)</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>abs(i)</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>ABS</p></td>
+<td><p>Abs</p></td>
+<td><p>ABS</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>ceil(i)</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEILING</p></td>
+<td><p>CEIL</p></td>
+<td><p>CAST + 0.5</p></td>
+<td><p>Fix+1</p></td>
+<td><p>CEILING</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>floor(i)</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>FLOOR</p></td>
+<td><p>CAST AS INT</p></td>
+<td><p>Int</p></td>
+<td><p>FLOOR</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>round(i)</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>Round</p></td>
+<td><p>ROUND</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Math.Round(i,x)</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>ROUND</p></td>
+<td><p>Round</p></td>
+<td><p>ROUND</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>truncate(i)</p></td>
+<td><p>TRUNCATE</p></td>
+<td><p>TRUNC</p></td>
+<td><p>TRUNCATE</p></td>
+<td><p>TRUNC</p></td>
+<td></td>
+<td><p>Fix</p></td>
+<td><p>TRUNCATE</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>sqrt(i)</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>SQRT</p></td>
+<td><p>Sqr</p></td>
+<td><p>SQRT</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sin(i)</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td><p>SIN</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>cos(i)</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td><p>COS</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>tan(i)</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td><p>TAN</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>asin(i)</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td><p>ASIN</p></td>
+<td></td>
+<td><p>ASIN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>acos(i)</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td><p>ACOS</p></td>
+<td></td>
+<td><p>ACOS</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>atan(i)</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>ATAN</p></td>
+<td><p>Atn</p></td>
+<td><p>ATAN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>Math.Max(x,y)</p></td>
+<td><p>SELECT(MAX)</p></td>
+<td><p>GREATEST</p></td>
+<td><p>GREATEST</p></td>
+<td><p>GREATEST</p></td>
+<td><p>MAX</p></td>
+<td><p>iif(x&gt;y,x,y)</p></td>
+<td><p>GREATEST</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Math.Min(x,y)</p></td>
+<td><p>SELECT(MIN)</p></td>
+<td><p>LEAST</p></td>
+<td><p>LEAST</p></td>
+<td><p>LEAST</p></td>
+<td><p>MIN</p></td>
+<td><p>iif(x&lt;y,x,y)</p></td>
+<td><p>LEAST</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(+)</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td><p>+</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(-)</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td><p>-</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(*)</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td><p>*</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>(/)</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td><p>/</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>(%)</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td><p>%</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
+It might also not be standard ODBC, but should work e.g. on Amazon Redshift.</p>
+<h4><a name="Condition-operations-and-others" class="anchor" href="#Condition-operations-and-others">Condition operations and others</a></h4>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>.ToString()</p></td>
+<td><p>CAST(NVARCHAR)</p></td>
+<td><p>::varchar</p></td>
+<td><p>CAST(CHAR)</p></td>
+<td><p>CAST(VARCHAR)</p></td>
+<td><p>CAST(TEXT)</p></td>
+<td><p>CStr</p></td>
+<td><p>CONVERT</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>if x then y else z</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>IF(x,y,z)</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>CASE WHEN</p></td>
+<td><p>iif(x,y,z)</p></td>
+<td><p>CASE WHEN</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>If the condition is not using SQL columns, it will be parsed before creation of SQL.
+If the condition is containing columns, it will be parsed into SQL.</p>
+<p>If the condition is in the result of projection (the final select clause),
+it may be parsed after execution of the SQL, depending on parameter setting <code>selectOperations</code>.</p>
+<h4><a name="Aggregate-Functions" class="anchor" href="#Aggregate-Functions">Aggregate Functions</a></h4>
+<p>Also you can use these to return an aggregated value, or in a group-by clause:</p>
+<table>
+<thead>
+<tr class="header">
+<th><p>.NET</p></th>
+<th><p>MsSqlServer</p></th>
+<th><p>PostgreSql</p></th>
+<th><p>MySql</p></th>
+<th><p>Oracle</p></th>
+<th><p>SQLite</p></th>
+<th><p>MSAccess</p></th>
+<th><p>Odbc</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>count</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td><p>COUNT</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>sum</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td><p>SUM</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>min</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td><p>MIN</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>max</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td><p>MAX</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>average</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td><p>AVG</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><p>StdDev</p></td>
+<td><p>STDEV</p></td>
+<td><p>STDDEV</p></td>
+<td><p>STDDEV</p></td>
+<td><p>STDDEV</p></td>
+<td></td>
+<td><p>STDEV</p></td>
+<td><p>STDEV</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Variance</p></td>
+<td><p>VAR</p></td>
+<td><p>VARIANCE</p></td>
+<td><p>VARIANCE</p></td>
+<td><p>VARIANCE</p></td>
+<td></td>
+<td><p>DVAR</p></td>
+<td><p>VAR</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p><code>StdDev</code>, <code>Variance</code> are located in FSharp.Data.Sql.Operators namespace and also Seq.stdDevAsync and Seq.varianceAsync.
+Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumAsync, Seq.minAsync, Seq.maxAsync, Seq.averageAsync.</p>
+<h2><a name="More-details" class="anchor" href="#More-details">More details</a></h2>
+<p>By default <code>query { ... }</code> is <code>IQueryable&lt;T&gt;</code> which is lazy. To execute the query you have to do <code>Seq.toList</code>, <code>Seq.toArray</code>, or some corresponding operation. If you don't do that but just continue inside another <code>query { ... }</code> or use System.Linq <code>.Where(...)</code> etc, that will still be combined to the same SQL-query.</p>
+<p>There are some limitation of complexity of your queries, but for example
+this is still ok and will give you very simple select-clause:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">randomBoolean</span> <span class="o">=</span> 
+    <span class="k">let</span> <span class="i">r</span> <span class="o">=</span> <span class="i">System</span><span class="o">.</span><span class="i">Random</span>()
+    <span class="k">fun</span> () <span class="k">-&gt;</span> <span class="i">r</span><span class="o">.</span><span class="i">NextDouble</span>() <span class="o">&gt;</span> <span class="n">0.5</span>
+<span class="k">let</span> <span class="i">c1</span> <span class="o">=</span> <span class="i">randomBoolean</span>()
+<span class="k">let</span> <span class="i">c2</span> <span class="o">=</span> <span class="i">randomBoolean</span>()
+<span class="k">let</span> <span class="i">c3</span> <span class="o">=</span> <span class="i">randomBoolean</span>()
+
+<span class="k">let</span> <span class="i">sample</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="i">where</span> ((<span class="i">c1</span> <span class="o">||</span> <span class="i">order</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&gt;</span> <span class="n">0m</span>) <span class="o">&amp;&amp;</span> <span class="i">c2</span>)
+        <span class="k">let</span> <span class="i">x</span> <span class="o">=</span> <span class="s">&quot;Region: &quot;</span> <span class="o">+</span> <span class="i">order</span><span class="o">.</span><span class="i">ShipAddress</span>
+        <span class="i">select</span> (<span class="i">x</span>, <span class="k">if</span> <span class="i">c3</span> <span class="k">then</span> <span class="i">order</span><span class="o">.</span><span class="i">ShipCountry</span> <span class="k">else</span> <span class="i">order</span><span class="o">.</span><span class="i">ShipRegion</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>It can be for example (but it can also leave [Freight]-condition away and select ShipRegion instead of ShipAddress, depending on your randon values):</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql">    <span class="k">SELECT</span> 
+        [_arg<span class="n">2</span>].[ShipAddress] <span class="k">as</span> <span class="s">'ShipAddress'</span>,
+        [_arg<span class="n">2</span>].[ShipCountry] <span class="k">as</span> <span class="s">'ShipCountry'</span> 
+    <span class="k">FROM</span> main.Orders <span class="k">as</span> [_arg<span class="n">2</span>] 
+    <span class="k">WHERE</span> (([_arg<span class="n">2</span>].[Freight]&gt; @param<span class="n">1</span>)) 
+</code></pre></td></tr></table>
+<h2><a name="Expressions" class="anchor" href="#Expressions">Expressions</a></h2>
+<p>These operators perform no specific function in the code itself, rather they
+are placeholders replaced by their database-specific server-side operations.
+Their utility is in forcing the compiler to check against the correct types.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">bergs</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">BERGS</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Operators" class="anchor" href="#Operators">Operators</a></h3>
+<p>You can find some custom operators <code>using FSharp.Data.Sql</code>:</p>
+<ul>
+<li><code>|=|</code> (In set)</li>
+<li><code>|&lt;&gt;|</code> (Not in set)</li>
+<li><code>=%</code> (Like)</li>
+<li><code>&lt;&gt;%</code> (Not like)</li>
+<li><code>!!</code> (Left join)</li>
+</ul>
+<h2><a name="Best-practices-working-with-queries" class="anchor" href="#Best-practices-working-with-queries">Best practices working with queries</a></h2>
+<h3><a name="When-using-Option-types-check-IsSome-in-where-clauses" class="anchor" href="#When-using-Option-types-check-IsSome-in-where-clauses">When using Option types, check IsSome in where-clauses.</a></h3>
+<p>You may want to use F# Option to represent database null, with SQLProvider
+static constructor parameter <code>UseOptionTypes = true</code>.
+Database null-checking is done with <code>x IS NULL</code>.
+With option types, easiest way to do that is to check <code>IsSome</code> and <code>IsNone</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">result</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="i">where</span> (
+            <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span><span class="o">.</span><span class="i">IsSome</span> <span class="o">&amp;&amp;</span> 
+            <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span><span class="o">.</span><span class="i">Value</span><span class="o">.</span><span class="i">Year</span> <span class="o">=</span> <span class="n">2015</span>)
+        <span class="i">select</span> (<span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>, <span class="i">order</span><span class="o">.</span><span class="i">Freight</span>)
+    } <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Using-booleans-and-simple-variables-from-outside-a-scope-in-where-clauses" class="anchor" href="#Using-booleans-and-simple-variables-from-outside-a-scope-in-where-clauses">Using booleans and simple variables (from outside a scope) in where-clauses</a></h3>
+<p>This is how you make your code easier to read when you have multiple code paths.
+SQLProvider will optimize the SQL-clause before sending it to the database,
+so it will still be simple.</p>
+<p>Consider how clean is this source-code compared to other with similar logic:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">System</span><span class="o">.</span><span class="i">Linq</span>
+<span class="k">let</span> <span class="i">getOrders</span>(<span class="i">futureOrders</span><span class="o">:</span><span class="i">bool</span>, <span class="i">shipYears</span><span class="o">:</span><span class="i">int</span> <span class="i">list</span>) <span class="o">=</span>
+
+    <span class="k">let</span> <span class="i">today</span> <span class="o">=</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">Date</span>
+    <span class="k">let</span> <span class="i">pastOrders</span> <span class="o">=</span> <span class="i">not</span> <span class="i">futureOrders</span>
+    <span class="k">let</span> <span class="i">noYearFilter</span> <span class="o">=</span> <span class="i">shipYears</span><span class="o">.</span><span class="i">IsEmpty</span>
+
+    <span class="k">let</span> <span class="i">result</span> <span class="o">=</span>
+        <span class="i">query</span> {
+            <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+            <span class="i">where</span> ( 
+                (<span class="i">noYearFilter</span> <span class="o">||</span> <span class="i">shipYears</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span><span class="o">.</span><span class="i">Year</span>))
+                <span class="o">&amp;&amp;</span>
+                ((<span class="i">futureOrders</span> <span class="o">&amp;&amp;</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderDate</span> <span class="o">&gt;</span> <span class="i">today</span>) <span class="o">||</span>
+                 (<span class="i">pastOrders</span>   <span class="o">&amp;&amp;</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderDate</span> <span class="o">&lt;=</span> <span class="i">today</span>))
+            ) 
+            <span class="i">select</span> (<span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>, <span class="i">order</span><span class="o">.</span><span class="i">Freight</span>)
+        } <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+    <span class="i">result</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Don-t-select-all-the-fields-if-you-don-t-need-them" class="anchor" href="#Don-t-select-all-the-fields-if-you-don-t-need-them">Don't select all the fields if you don't need them</a></h3>
+<p>In general you should select only columns you need
+and not a whole object if you don't update its fields.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Select all the fields from a table, basically:</span>
+<span class="c">// SELECT TOP 1 Address, City, CompanyName, </span>
+<span class="c">//      ContactName, ContactTitle, Country, </span>
+<span class="c">//      CustomerID, Fax, Phone, PostalCode, </span>
+<span class="c">//      Region FROM main.Customers</span>
+<span class="k">let</span> <span class="i">selectFullObject</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> <span class="i">customer</span>
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">tryHeadAsync</span>
+
+<span class="c">// Select only two fields, basically:</span>
+<span class="c">// SELECT TOP 1 Address, City FROM main.Customers</span>
+<span class="k">let</span> <span class="i">selectSmallObject</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="i">select</span> (<span class="i">customer</span><span class="o">.</span><span class="i">Address</span>, <span class="i">customer</span><span class="o">.</span><span class="i">City</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">tryHeadAsync</span>
+</code></pre></td>
+</tr>
+</table>
+<p>If you still want the whole objects and return those to a client
+as untyped records, you can use <code>ColumnValues |&gt; Map.ofSeq</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">someQuery</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">customer</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="k">do</span>
+        <span class="c">//where(...)</span>
+        <span class="i">select</span> <span class="i">customer</span>
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+
+<span class="i">someQuery</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">map</span>(<span class="k">fun</span> <span class="i">c</span> <span class="k">-&gt;</span> <span class="i">c</span><span class="o">.</span><span class="i">ColumnValues</span> <span class="o">|&gt;</span> <span class="i">Map</span><span class="o">.</span><span class="i">ofSeq</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>F# Map values are accessed like this: <code>myItem.["City"]</code></p>
+<h3><a name="Using-code-logic-in-select-clause" class="anchor" href="#Using-code-logic-in-select-clause">Using code logic in select-clause</a></h3>
+<p>Don't be scared to insert non-Sql syntax to select-clauses.
+They will be parsed business-logic side!</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">fetchOrders</span> <span class="i">customerZone</span> <span class="o">=</span>
+    <span class="k">let</span> <span class="i">currentDate</span> <span class="o">=</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">Date</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="c">// where(...)</span>
+        <span class="i">select</span> {
+            <span class="i">OrderId</span> <span class="o">=</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>
+            <span class="i">Timezone</span> <span class="o">=</span> 
+                <span class="i">parseTimezoneFunction</span>(<span class="i">order</span><span class="o">.</span><span class="i">ShipRegion</span>, <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span>, <span class="i">customerZone</span>);
+            <span class="i">Status</span> <span class="o">=</span> 
+                <span class="k">if</span> <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Shipped&quot;</span>
+                <span class="k">elif</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Ordered&quot;</span>
+                <span class="k">elif</span> <span class="i">order</span><span class="o">.</span><span class="i">RequiredDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Late&quot;</span>
+                <span class="k">else</span> <span class="s">&quot;Waiting&quot;</span>
+            <span class="i">OrderRows</span> <span class="o">=</span> [||];
+        }
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>You can't have a <code>let</code> inside a select, but you can have custom function calls like
+<code>parseTimezoneFunction</code> here. Just be careful, they are executed for each result item separately.
+So if you want also SQL to execute there, it's rather better to do a separate function taking
+a collection as parameter. See below.</p>
+<h3><a name="Using-one-sub-query-to-populate-items" class="anchor" href="#Using-one-sub-query-to-populate-items">Using one sub-query to populate items</a></h3>
+<p>Sometimes you want to fetch efficiently sub-items, like
+"Give me all orders with their order-rows"</p>
+<p>In the previous example we fetched OrderRows as empty array.
+Now we populate those with one query in immutable way:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">orders</span> <span class="o">=</span> <span class="i">fetchOrders</span> <span class="n">123</span>
+
+<span class="k">let</span> <span class="i">orderIds</span> <span class="o">=</span> 
+    <span class="i">orders</span> 
+    <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">map</span>(<span class="k">fun</span> <span class="i">o</span> <span class="k">-&gt;</span> <span class="i">o</span><span class="o">.</span><span class="i">OrderId</span>) 
+    <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">distinct</span>
+    
+<span class="c">// Fetch all rows with one query</span>
+<span class="k">let</span> <span class="i">subItems</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">row</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">OrderDetails</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">orderIds</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">row</span><span class="o">.</span><span class="i">OrderId</span>))
+        <span class="i">select</span> (<span class="i">row</span><span class="o">.</span><span class="i">OrderId</span>, <span class="i">row</span><span class="o">.</span><span class="i">ProductId</span>, <span class="i">row</span><span class="o">.</span><span class="i">Quantity</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+    
+<span class="k">let</span> <span class="i">ordersWithDetails</span> <span class="o">=</span>
+    <span class="i">orders</span> 
+    <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">map</span>(<span class="k">fun</span> <span class="i">order</span> <span class="k">-&gt;</span>
+        {<span class="i">order</span> <span class="k">with</span> 
+            <span class="c">// Match the corresponding sub items</span>
+            <span class="c">// to a parent item&#39;s colleciton:</span>
+            <span class="i">OrderRows</span> <span class="o">=</span> 
+                <span class="i">subItems</span> 
+                <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">filter</span>(<span class="k">fun</span> (<span class="i">orderId</span>,_,_) <span class="k">-&gt;</span> 
+                    <span class="i">order</span><span class="o">.</span><span class="i">OrderId</span> <span class="o">=</span> <span class="i">orderId</span>)
+                })
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="How-to-deal-with-large-IN-queries" class="anchor" href="#How-to-deal-with-large-IN-queries">How to deal with large IN-queries?</a></h3>
+<p>The pervious query had <code>orderIds.Contains(row.OrderId)</code>.
+Which is fine if your collection has 50 items but what if there are 5000 orderIds?
+SQL-IN will fail. You have two easy options to deal with that.</p>
+<h4><a name="Chunk-your-collection" class="anchor" href="#Chunk-your-collection">Chunk your collection:</a></h4>
+<p>F# has built-in chunkBySize function!</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">chunked</span> <span class="o">=</span> <span class="i">orderIds</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">chunkBySize</span> <span class="n">100</span>
+
+<span class="k">for</span> <span class="i">chunk</span> <span class="k">in</span> <span class="i">chunked</span> <span class="k">do</span>
+    <span class="k">let</span> <span class="i">all</span> <span class="o">=</span>
+        <span class="i">query</span> {
+            <span class="k">for</span> <span class="i">row</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">OrderDetails</span> <span class="k">do</span>
+            <span class="i">where</span> (<span class="i">chunk</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">row</span><span class="o">.</span><span class="i">OrderId</span>))
+            <span class="i">select</span> (<span class="i">row</span>)
+        } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+
+    <span class="i">all</span> <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">iter</span>(<span class="k">fun</span> <span class="i">row</span> <span class="k">-&gt;</span> <span class="i">row</span><span class="o">.</span><span class="i">Discount</span> <span class="o">&lt;-</span> <span class="n">0.1</span>)
+    <span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<h4><a name="Creating-a-nested-query" class="anchor" href="#Creating-a-nested-query">Creating a nested query</a></h4>
+<p>By leaving the last <code>|&gt; Seq.toArray</code> away from your main query you create a lazy
+<code>IQueryable&lt;...&gt;</code>-query. Which means your IN-objects are not fetched from
+the database, but is actually a nested query.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
+<span class="l">30: </span>
+<span class="l">31: </span>
+<span class="l">32: </span>
+<span class="l">33: </span>
+<span class="l">34: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">nestedOrders</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="c">// where(...)</span>
+        <span class="i">select</span> (<span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>)
+    } 
+
+<span class="k">let</span> <span class="i">subItemsAll</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">row</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">OrderDetails</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">nestedOrders</span><span class="o">.</span><span class="i">Contains</span>(<span class="i">row</span><span class="o">.</span><span class="i">OrderId</span>))
+        <span class="i">select</span> (<span class="i">row</span><span class="o">.</span><span class="i">OrderId</span>, <span class="i">row</span><span class="o">.</span><span class="i">ProductId</span>, <span class="i">row</span><span class="o">.</span><span class="i">Quantity</span>)
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+
+<span class="c">// similar as previous fetchOrders</span>
+<span class="k">let</span> <span class="i">fetchOrders2</span> <span class="i">customerZone</span> <span class="o">=</span>
+    <span class="k">let</span> <span class="i">currentDate</span> <span class="o">=</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">Date</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">order</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="c">// where(...)</span>
+        <span class="i">select</span> {
+            <span class="i">OrderId</span> <span class="o">=</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderId</span>
+            <span class="i">Timezone</span> <span class="o">=</span> 
+                <span class="i">parseTimezoneFunction</span>(<span class="i">order</span><span class="o">.</span><span class="i">ShipRegion</span>, <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span>, <span class="i">customerZone</span>);
+            <span class="i">Status</span> <span class="o">=</span> 
+                <span class="k">if</span> <span class="i">order</span><span class="o">.</span><span class="i">ShippedDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Shipped&quot;</span>
+                <span class="k">elif</span> <span class="i">order</span><span class="o">.</span><span class="i">OrderDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Ordered&quot;</span>
+                <span class="k">elif</span> <span class="i">order</span><span class="o">.</span><span class="i">RequiredDate</span> <span class="o">&gt;</span> <span class="i">currentDate</span> <span class="k">then</span> <span class="s">&quot;Late&quot;</span>
+                <span class="k">else</span> <span class="s">&quot;Waiting&quot;</span>
+            <span class="i">OrderRows</span> <span class="o">=</span> 
+                <span class="i">subItemsAll</span> <span class="o">|&gt;</span> (<span class="i">Array</span><span class="o">.</span><span class="i">filter</span>(<span class="k">fun</span> (<span class="i">orderId</span>,_,_) <span class="k">-&gt;</span> 
+                    <span class="i">order</span><span class="o">.</span><span class="i">OrderId</span> <span class="o">=</span> <span class="i">orderId</span>));
+        }
+    } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">toArray</span>
+</code></pre></td>
+</tr>
+</table>
+<p>That way order hit count doesn't matter as the database is taking care of it.</p>
+<h3><a name="Group-by-and-more-complex-query-scenarios" class="anchor" href="#Group-by-and-more-complex-query-scenarios">Group-by and more complex query scenarios</a></h3>
+<p>One problem with SQLProvider is that monitorin the SQL-clause performance hitting to
+database indexes is hard to track. So <strong>the best way to handle complex SQL
+is to create a database view and query that from SQLProvider</strong>.</p>
+<p>Still, if you want to use LINQ groupBy, this is how it's done:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">freightsByCity</span> <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">o</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span> <span class="k">do</span>
+        <span class="c">//where (...)</span>
+        <span class="i">groupBy</span> <span class="i">o</span><span class="o">.</span><span class="i">ShipCity</span> <span class="i">into</span> <span class="i">cites</span>
+        <span class="i">select</span> (<span class="i">cites</span><span class="o">.</span><span class="i">Key</span>, <span class="i">cites</span><span class="o">.</span><span class="i">Sum</span>(<span class="k">fun</span> <span class="i">order</span> <span class="k">-&gt;</span> <span class="i">order</span><span class="o">.</span><span class="i">Freight</span>))
+    } <span class="o">|&gt;</span> <span class="i">Array</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Group-by is supported for single tables only.
+F# Linq query syntax doesnt support doing <code>select count(1), sum(UnitPrice) from Products</code>
+but you can group by a constant to get that:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">qry</span> <span class="o">=</span> 
+	<span class="i">query</span> {
+		<span class="k">for</span> <span class="i">p</span> <span class="k">in</span> <span class="i">dc</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Products</span> <span class="k">do</span>
+		<span class="i">groupBy</span> <span class="n">1</span> <span class="i">into</span> <span class="i">g</span>
+		<span class="i">select</span> (<span class="i">g</span><span class="o">.</span><span class="i">Count</span>(), <span class="i">g</span><span class="o">.</span><span class="i">Sum</span>(<span class="k">fun</span> <span class="i">p</span> <span class="k">-&gt;</span> <span class="i">p</span><span class="o">.</span><span class="i">UnitPrice</span>))
+	} <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
+</code></pre></td>
+</tr>
+</table>
+<p>For more info see:</p>
+<ul>
+<li><a href="composable.html">Composable Query</a></li>
+<li><a href="mappers.html">Mapping to record types</a></li>
+<li><a href="crud.html">CRUD operations</a></li>
+</ul>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>

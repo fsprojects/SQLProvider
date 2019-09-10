@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Individuals
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h1>
+<p>Find individual rows in tables with code completion in the editor.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">System</span>
+<span class="k">open</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span>
+
+<span class="k">type</span> <span class="i">sql</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">SQLITE</span>,
+                           <span class="i">connectionString</span>,
+                           <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionPath</span>,
+                           <span class="i">CaseSensitivityChange</span> <span class="o">=</span> <span class="i">Common</span><span class="o">.</span><span class="i">CaseSensitivityChange</span><span class="o">.</span><span class="i">ORIGINAL</span><span class="o">&gt;</span>
+
+<span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+
+<span class="k">let</span> <span class="i">customers</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Get individual customer row by primary key value</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">COMMI</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Get individual customer row using address</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">``As ContactName``</span><span class="o">.</span><span class="i">``COMMI, Pedro Afonso``</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Get individual customer row using address</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">customers</span><span class="o">.</span><span class="i">Individuals</span><span class="o">.</span><span class="i">``As Address``</span><span class="o">.</span><span class="i">``CONSH, Berkeley Gardens 12  Brewery``</span>
+</code></pre></td>
+</tr>
+</table>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>

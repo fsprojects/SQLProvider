@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Asynchronous Database Operation
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="Asynchronous-Database-Operation" class="anchor" href="#Asynchronous-Database-Operation">Asynchronous Database Operation</a></h1>
+<p>You get more performance by concurrency. The idea of async database operations
+is to release the business logics thread while the database is doing its job.
+This can lead a huge performance difference on heavy traffic environment
+(basically, will your business logics server / web-server crash or not).</p>
+<p><img src="https://i.imgur.com/DBPLRlP.png" alt="" /></p>
+<p>In the picture, we talk about the red block, which can be released to serve other customers.
+As usual with async operations, there will be more thread context switching,
+which may cause minor performance delays, but concurrency benefits should outweigh the
+context switching cons.</p>
+<p>This is the theory. In practice SQLProvider is calling implementation of async methods from
+abstract classes under System.Data.Common. The implementation quality of your database
+connection .NET drivers will define if async is good for you or not. (E.g. The current
+situation is that MS-SQL-server handles async well and MySQL not so.)</p>
+<p>Currently SQLProvider supports async operations on runtime, not design-time.</p>
+<p>Your execution thread may change. For transactions to support this,
+.NET 4.5.1 has a fix for asynchronous transactions that has to be explicitly used.</p>
+<h3><a name="Async-queries-and-updates" class="anchor" href="#Async-queries-and-updates">Async queries and updates</a></h3>
+<p>Concept for async queries is this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">System</span>
+<span class="k">open</span> <span class="i">System</span><span class="o">.</span><span class="i">Threading</span><span class="o">.</span><span class="i">Tasks</span>
+<span class="k">open</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span>
+
+<span class="k">type</span> <span class="i">MyWebServer</span>() <span class="o">=</span> 
+    <span class="k">member</span> <span class="i">__</span><span class="o">.</span><span class="i">``Execute Business Logics``</span> (<span class="i">id</span> <span class="o">:</span> <span class="i">Guid</span>) <span class="o">:</span> <span class="i">Task</span><span class="o">&lt;</span>_<span class="o">&gt;</span> <span class="o">=</span> 
+        <span class="i">async</span> {
+            <span class="k">use</span> <span class="i">transaction</span> <span class="o">=</span> 
+                <span class="k">new</span> <span class="i">System</span><span class="o">.</span><span class="i">Transactions</span><span class="o">.</span><span class="i">TransactionScope</span>(
+                <span class="c">// .NET 4.5.1 fix for asynchronous transactions:</span>
+                    <span class="i">System</span><span class="o">.</span><span class="i">Transactions</span><span class="o">.</span><span class="i">TransactionScopeAsyncFlowOption</span><span class="o">.</span><span class="i">Enabled</span>
+                )
+            <span class="k">let</span> <span class="i">context</span> <span class="o">=</span> <span class="i">TypeProviderConnection</span><span class="o">.</span><span class="i">GetDataContext</span> <span class="i">cstr</span>
+            <span class="k">let!</span> <span class="i">fetched</span> <span class="o">=</span>
+                <span class="i">query</span> {
+                    <span class="k">for</span>  <span class="i">t2</span> <span class="k">in</span> <span class="i">context</span><span class="o">.</span><span class="i">MyDataBase</span><span class="o">.</span><span class="i">MyTable2</span> <span class="k">do</span>
+                    <span class="i">join</span> <span class="i">t1</span> <span class="k">in</span> <span class="i">context</span><span class="o">.</span><span class="i">MyDataBase</span><span class="o">.</span><span class="i">MyTable1</span> <span class="i">on</span> (<span class="i">t2</span><span class="o">.</span><span class="i">ForeignId</span> <span class="o">=</span> <span class="i">t1</span><span class="o">.</span><span class="i">Id</span>)
+                    <span class="i">where</span> (<span class="i">t2</span><span class="o">.</span><span class="i">Id</span> <span class="o">=</span> <span class="i">id</span>)
+                    <span class="i">select</span> (<span class="i">t1</span>)
+                } <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">executeQueryAsync</span>
+
+            <span class="i">fetched</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">iter</span> (<span class="k">fun</span> <span class="i">entity</span> <span class="k">-&gt;</span>
+                <span class="i">entity</span><span class="o">.</span><span class="i">SetColumn</span>(<span class="s">&quot;Updated&quot;</span>, <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span> <span class="o">|&gt;</span> <span class="i">box</span>)
+            )
+            <span class="k">do!</span> <span class="i">context</span><span class="o">.</span><span class="i">SubmitUpdatesAsync</span>()
+
+            <span class="i">transaction</span><span class="o">.</span><span class="i">Complete</span>()
+            <span class="k">return</span> <span class="s">&quot;done!&quot;</span>
+        } <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The functions to work with asynchrony are:</p>
+<ul>
+<li>Array.executeQueryAsync : IQueryable<'a> -&gt; Async<<'a> []&gt;</li>
+<li>List.executeQueryAsync : IQueryable<'a> -&gt; Async<'a list></li>
+<li>Seq.executeQueryAsync : IQueryable<'a> -&gt; Async<seq<'a>&gt;</li>
+<li>Seq.lengthAsync : IQueryable<'a> -&gt; Async<int></li>
+<li>Seq.headAsync : IQueryable<'a> -&gt; Async<'a></li>
+<li>Seq.tryHeadAsync : IQueryable<'a> -&gt; Async<'a option></li>
+<li>and for your data context: SubmitUpdatesAsync : unit -&gt; Async<Unit></li>
+<li>Seq.sumAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.minAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.maxAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+<li>Seq.averageAsync : IQueryable<'a when 'a : comparison> -&gt; Async<'a></li>
+</ul>
+<p>Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync
+to not execute your queries several times.</p>
+<p>Also stored procedures do support InvokeAsync.</p>
+<h4><a name="Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context" class="anchor" href="#Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context">Database asynchrony can't be used as a way to do parallelism inside one context.</a></h4>
+<p>Usually database operations can't be executed as parallel inside one context/transaction.
+That is an anti-pattern in general: the network lag between database and your logics server
+is probably the bottleneck of your system. So, in this order:</p>
+<ol>
+<li>Try to execute your business logics as database queries, as one big query.</li>
+<li>Or sometimes, not often, load eagerly data with single query and process it in the logics server.</li>
+<li>Avoid case that you create as many queries as your collection has items.</li>
+</ol>
+<p>So if you are still in the worst case, 3, and have to deal with a List<Async<T>&gt;, you cannot
+say Async.Parallel as that may corrupt your data. To avoid custom imperative while-loops,
+we have provided a little helper function for you, that is List.evaluateOneByOne.</p>
+<p>Avoid network traffic between business logics (BL) and database (DB).
+When you exit the query-computation, you cause the traffic.</p>
+<h3><a name="Why-Not-to-Use-Async" class="anchor" href="#Why-Not-to-Use-Async">Why Not to Use Async</a></h3>
+<p>As with all the technical choices, there are drawbacks to consider.</p>
+<ul>
+<li>Your codebase will be more complex. This will slow down your development speed if your developers are not F#-professionals.</li>
+<li>You have to use other technologies that support async or .NET tasks, like WCF or SignalR. There is no point of doing async and then still using <code>RunSynchronously</code> at the end.</li>
+<li>You may consider async as premature optimization. Starting without async and converting all later is an option, although your APIs will have to change.</li>
+<li>Async and transactions is a problem with Mono environment.</li>
+<li>Async will make your error stacktraces are harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.</li>
+</ul>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>

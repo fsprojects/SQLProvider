@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>CRUD sample
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Type providers for SQL server access.">
+    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link type="text/css" rel="stylesheet" href="../content/style.css" />
+    <script type="text/javascript" src="../content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="CRUD-sample" class="anchor" href="#CRUD-sample">CRUD sample</a></h1>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span class="i">System</span>
+<span class="k">open</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span>
+
+<span class="k">type</span> <span class="i">sql</span> <span class="o">=</span> <span class="i">SqlDataProvider</span><span class="o">&lt;</span><span class="i">Common</span><span class="o">.</span><span class="i">DatabaseProviderTypes</span><span class="o">.</span><span class="i">SQLITE</span>,
+                           <span class="i">connectionString</span>,
+                           <span class="i">ResolutionPath</span> <span class="o">=</span> <span class="i">resolutionPath</span>,
+                           <span class="i">CaseSensitivityChange</span> <span class="o">=</span> <span class="i">Common</span><span class="o">.</span><span class="i">CaseSensitivityChange</span><span class="o">.</span><span class="i">ORIGINAL</span><span class="o">&gt;</span>
+
+<span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+
+<span class="k">let</span> <span class="i">orders</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Orders</span>
+<span class="k">let</span> <span class="i">employees</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span>
+
+<span class="k">let</span> <span class="i">customer</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Customers</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span> 
+<span class="k">let</span> <span class="i">employee</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span> <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">head</span>
+<span class="k">let</span> <span class="i">now</span> <span class="o">=</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">Now</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Create() has various overloads to make inserting records simple.</p>
+<p>Create a new row</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">row</span> <span class="o">=</span> <span class="i">orders</span><span class="o">.</span><span class="i">Create</span>()
+<span class="i">row</span><span class="o">.</span><span class="i">CustomerId</span> <span class="o">&lt;-</span> <span class="i">customer</span><span class="o">.</span><span class="i">CustomerId</span>
+<span class="i">row</span><span class="o">.</span><span class="i">EmployeeId</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">EmployeeId</span>
+<span class="i">row</span><span class="o">.</span><span class="i">Freight</span> <span class="o">&lt;-</span> <span class="n">10M</span>
+<span class="i">row</span><span class="o">.</span><span class="i">OrderDate</span> <span class="o">&lt;-</span> <span class="i">now</span><span class="o">.</span><span class="i">AddDays</span>(<span class="o">-</span><span class="n">1.0</span>)
+<span class="i">row</span><span class="o">.</span><span class="i">RequiredDate</span> <span class="o">&lt;-</span> <span class="i">now</span><span class="o">.</span><span class="i">AddDays</span>(<span class="n">1.0</span>)
+<span class="i">row</span><span class="o">.</span><span class="i">ShipAddress</span> <span class="o">&lt;-</span> <span class="s">&quot;10 Downing St&quot;</span>
+<span class="i">row</span><span class="o">.</span><span class="i">ShipCity</span> <span class="o">&lt;-</span> <span class="s">&quot;London&quot;</span>
+<span class="i">row</span><span class="o">.</span><span class="i">ShipName</span> <span class="o">&lt;-</span> <span class="s">&quot;Dragons den&quot;</span>
+<span class="i">row</span><span class="o">.</span><span class="i">ShipPostalCode</span> <span class="o">&lt;-</span> <span class="s">&quot;SW1A 2AA&quot;</span>
+<span class="i">row</span><span class="o">.</span><span class="i">ShipRegion</span> <span class="o">&lt;-</span> <span class="s">&quot;UK&quot;</span>
+<span class="i">row</span><span class="o">.</span><span class="i">ShippedDate</span> <span class="o">&lt;-</span> <span class="i">now</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Submit updates to the database</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>After updating your item (row) will have the Id property.</p>
+<p>You can also create with the longer ``Create(...)``(parameters)-method like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">``Create(FirstName, LastName)``</span>(<span class="s">&quot;Don&quot;</span>, <span class="s">&quot;Syme&quot;</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>Delete the row</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">row</span><span class="o">.</span><span class="i">Delete</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Submit updates to the database</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Insert a list of records:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">Employee</span> <span class="o">=</span> {
+    <span class="i">FirstName</span><span class="o">:</span><span class="i">string</span>
+    <span class="i">LastName</span><span class="o">:</span><span class="i">string</span>
+}
+
+<span class="k">let</span> <span class="i">mvps1</span> <span class="o">=</span> [
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;Andrew&quot;</span>; <span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Kennedy&quot;</span>};
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;Mads&quot;</span>; <span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Torgersen&quot;</span>};
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;Martin&quot;</span>;<span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Odersky&quot;</span>};
+]
+
+<span class="i">mvps1</span> 
+    <span class="o">|&gt;</span> <span class="i">List</span><span class="o">.</span><span class="i">map</span> (<span class="k">fun</span> <span class="i">x</span> <span class="k">-&gt;</span>
+                    <span class="k">let</span> <span class="i">row</span> <span class="o">=</span> <span class="i">employees</span><span class="o">.</span><span class="i">Create</span>()
+                    <span class="i">row</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="i">x</span><span class="o">.</span><span class="i">FirstName</span>
+                    <span class="i">row</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="i">x</span><span class="o">.</span><span class="i">LastName</span>)
+
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Or directly specify the fields:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">mvps2</span> <span class="o">=</span> [
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;Byron&quot;</span>; <span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Cook&quot;</span>};
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;James&quot;</span>; <span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Huddleston&quot;</span>};
+    {<span class="i">FirstName</span><span class="o">=</span><span class="s">&quot;Xavier&quot;</span>;<span class="i">LastName</span><span class="o">=</span><span class="s">&quot;Leroy&quot;</span>};
+]
+
+<span class="i">mvps2</span>
+    <span class="o">|&gt;</span> <span class="i">List</span><span class="o">.</span><span class="i">map</span> (<span class="k">fun</span> <span class="i">x</span> <span class="k">-&gt;</span>                                 
+                   <span class="i">employees</span><span class="o">.</span><span class="i">Create</span>(<span class="i">x</span><span class="o">.</span><span class="i">FirstName</span>, <span class="i">x</span><span class="o">.</span><span class="i">LastName</span>)                  
+                    )
+
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>update a single row
+assuming Id is unique</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
+<span class="l">30: </span>
+<span class="l">31: </span>
+<span class="l">32: </span>
+<span class="l">33: </span>
+<span class="l">34: </span>
+<span class="l">35: </span>
+<span class="l">36: </span>
+<span class="l">37: </span>
+<span class="l">38: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="i">Employee2</span> <span class="o">=</span> {
+    <span class="i">Id</span><span class="o">:</span><span class="i">int</span>
+    <span class="i">FirstName</span><span class="o">:</span><span class="i">string</span>
+    <span class="i">LastName</span><span class="o">:</span><span class="i">string</span>
+}
+
+<span class="k">let</span> <span class="i">updateEmployee</span> (<span class="i">employee</span><span class="o">:</span> <span class="i">Employee2</span>) <span class="o">=</span>
+    <span class="k">let</span> <span class="i">foundEmployeeMaybe</span> <span class="o">=</span> <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">p</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Public</span><span class="o">.</span><span class="i">Employee2</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">p</span><span class="o">.</span><span class="i">Id</span> <span class="o">=</span> <span class="i">employee</span><span class="o">.</span><span class="i">Id</span>)
+        <span class="i">select</span> (<span class="i">Some</span> <span class="i">p</span>)
+        <span class="i">exactlyOneOrDefault</span>
+    }
+    <span class="k">match</span> <span class="i">foundEmployeeMaybe</span> <span class="k">with</span>
+    | <span class="i">Some</span> <span class="i">foundEmployee</span> <span class="k">-&gt;</span>
+        <span class="i">foundEmployee</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">FirstName</span>
+        <span class="i">foundEmployee</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">LastName</span>
+        <span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+    | <span class="i">None</span> <span class="k">-&gt;</span> ()
+
+<span class="k">let</span> <span class="i">updateEmployee&#39;</span> (<span class="i">employee</span><span class="o">:</span> <span class="i">Employee2</span>) <span class="o">=</span>
+    <span class="i">query</span> {
+        <span class="k">for</span> <span class="i">p</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Public</span><span class="o">.</span><span class="i">Employee2</span> <span class="k">do</span>
+        <span class="i">where</span> (<span class="i">p</span><span class="o">.</span><span class="i">Id</span> <span class="o">=</span> <span class="i">employee</span><span class="o">.</span><span class="i">Id</span>)
+    }
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">iter</span>( <span class="k">fun</span> <span class="i">e</span> <span class="k">-&gt;</span>
+        <span class="i">e</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">FirstName</span>
+        <span class="i">e</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="i">employee</span><span class="o">.</span><span class="i">LastName</span>
+    )
+    <span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+
+<span class="k">let</span> <span class="i">john</span> <span class="o">=</span> {
+  <span class="i">Id</span> <span class="o">=</span> <span class="n">1</span>
+  <span class="i">FirstName</span> <span class="o">=</span> <span class="s">&quot;John&quot;</span>
+  <span class="i">LastName</span> <span class="o">=</span> <span class="s">&quot;Doe&quot;</span> }
+
+<span class="i">updateEmployee</span> <span class="i">john</span>
+<span class="i">updateEmployee&#39;</span> <span class="i">john</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Finally it is also possible to specify a seq of <code>string * obj</code> which is exactly the
+output of .ColumnValues:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">employees</span> 
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">map</span> (<span class="k">fun</span> <span class="i">x</span> <span class="k">-&gt;</span>
+                <span class="i">employee</span><span class="o">.</span><span class="i">Create</span>(<span class="i">x</span><span class="o">.</span><span class="i">ColumnValues</span>)) <span class="c">// create twins</span>
+    <span class="o">|&gt;</span>  <span class="i">Seq</span><span class="o">.</span><span class="i">toList</span>
+
+<span class="k">let</span> <span class="i">twins</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">GetUpdates</span>() <span class="c">// Retrieve the FSharp.Data.Sql.Common.SqlEntity objects</span>
+
+<span class="i">ctx</span><span class="o">.</span><span class="i">ClearUpdates</span>() <span class="c">// delete the updates</span>
+<span class="i">ctx</span><span class="o">.</span><span class="i">GetUpdates</span>() <span class="c">// Get the updates</span>
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>() <span class="c">// no record is added</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.</p>
+<p>SQLProvider also supports async database operations:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdatesAsync</span>() <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">StartAsTask</span>
+        
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="OnConflict" class="anchor" href="#OnConflict">OnConflict</a></h3>
+<p>The <a href="http://sqlite.org/lang_conflict.html">SQLite</a> and <a href="https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT">PostgreSQL 9.5+</a> providers support conflict resolution for INSERT statements.</p>
+<p>They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).</p>
+<p>You can leverage this feature by setting the <code>OnConflict</code> property on a row object:
+<em> Setting it to <code>DoNothing</code> will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite).
+</em> Setting it to <code>Update</code> will add a DO UPDATE clause on the primary key constraint for all columns (PostgreSQL) or a OR REPLACE clause (SQLite).</p>
+<p>Sql Server has a similar feature in the form of the MERGE statement. This is not yet supported.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">ctx</span> <span class="o">=</span> <span class="i">sql</span><span class="o">.</span><span class="i">GetDataContext</span>()
+
+<span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">Create</span>()
+<span class="i">emp</span><span class="o">.</span><span class="i">Id</span> <span class="o">&lt;-</span> <span class="n">1</span>
+<span class="i">emp</span><span class="o">.</span><span class="i">FirstName</span> <span class="o">&lt;-</span> <span class="s">&quot;Jane&quot;</span>
+<span class="i">emp</span><span class="o">.</span><span class="i">LastName</span> <span class="o">&lt;-</span> <span class="s">&quot;Doe&quot;</span>
+
+<span class="i">emp</span><span class="o">.</span><span class="i">OnConflict</span> <span class="o">&lt;-</span> <span class="i">FSharp</span><span class="o">.</span><span class="i">Data</span><span class="o">.</span><span class="i">Sql</span><span class="o">.</span><span class="i">Common</span><span class="o">.</span><span class="i">OnConflict</span><span class="o">.</span><span class="i">Update</span>
+
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Delete-query-for-multiple-items" class="anchor" href="#Delete-query-for-multiple-items">Delete-query for multiple items</a></h3>
+<p>If you want to delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call <code>ctx.SubmitUpdates()</code>.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">query</span> {
+    <span class="k">for</span> <span class="i">c</span> <span class="k">in</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Dbo</span><span class="o">.</span><span class="i">Employees</span> <span class="k">do</span>
+    <span class="i">where</span> (<span class="o">..</span><span class="o">.</span>)
+} <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">``delete all items from single table``</span>  <span class="o">|&gt;</span> <span class="i">Async</span><span class="o">.</span><span class="i">RunSynchronously</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Selecting-which-Create-to-use" class="anchor" href="#Selecting-which-Create-to-use">Selecting which Create() to use</a></h3>
+<p>There are 3 overrides of create.</p>
+<p><strong>The ideal one to use is the long one ``Create(...)``(...):</strong></p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">emp</span> <span class="o">=</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">``Create(FirstName, LastName)``</span>(<span class="s">&quot;Don&quot;</span>, <span class="s">&quot;Syme&quot;</span>)
+</code></pre></td>
+</tr>
+</table>
+<p>This is because it will fail if your database structure changes.
+So, when your table gets new columns, the code will fail at compile time.
+Then you decide what to do with the new columns, and not let a bug to customers.</p>
+<p>But you may want to use the plain .Create() if your setup is not optimal.
+Try to avoid these conditions:</p>
+<ul>
+<li>If your editor intellisense is not working for backtick-variables.</li>
+<li>You have lot of nullable columns in your database.</li>
+<li>You want to use F# like a dynamic language.</li>
+</ul>
+<p>In the last case you'll be maintaining code like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">employeeId</span> <span class="o">=</span> <span class="n">123</span>
+<span class="c">// Got some untyped array of data from the client</span>
+<span class="k">let</span> <span class="i">createSomeItem</span> (<span class="i">data</span><span class="o">:</span> <span class="i">seq</span><span class="o">&lt;</span><span class="i">string</span><span class="o">*</span><span class="i">obj</span><span class="o">&gt;</span>)  <span class="o">=</span> 
+    <span class="i">data</span>
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">map</span>( <span class="c">// Some parsing and validation:</span>
+        <span class="k">function</span> 
+        <span class="c">// Skip some fields</span>
+        | <span class="s">&quot;EmployeeId&quot;</span>, <span class="i">x</span>
+        | <span class="s">&quot;PermissionLevel&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> <span class="s">&quot;&quot;</span>, <span class="i">x</span>
+        <span class="c">// Convert and validate some fields</span>
+        | <span class="s">&quot;PostalCode&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> 
+            <span class="s">&quot;PostalCode&quot;</span>, <span class="i">x</span><span class="o">.</span><span class="i">ToString</span>()<span class="o">.</span><span class="i">ToUpper</span>()<span class="o">.</span><span class="i">Replace</span>(<span class="s">&quot; &quot;</span>, <span class="s">&quot;&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>
+        | <span class="s">&quot;BirthDate&quot;</span>, <span class="i">x</span> <span class="k">-&gt;</span> 
+            <span class="k">let</span> <span class="i">bdate</span> <span class="o">=</span> <span class="i">x</span><span class="o">.</span><span class="i">ToString</span>() <span class="o">|&gt;</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">Parse</span>
+            <span class="k">if</span> <span class="i">bdate</span><span class="o">.</span><span class="i">AddYears</span>(<span class="n">18</span>) <span class="o">&gt;</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span> <span class="k">then</span>
+                <span class="i">failwith</span> <span class="s">&quot;Too young!&quot;</span>
+            <span class="k">else</span>
+                <span class="s">&quot;BirthDate&quot;</span>, <span class="i">bdate</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;yyyy-MM-dd&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>
+        | <span class="i">others</span> <span class="k">-&gt;</span> <span class="i">others</span>)
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">filter</span> (<span class="k">fun</span> (<span class="i">key</span>,_) <span class="k">-&gt;</span> <span class="i">key</span> <span class="o">&lt;&gt;</span> <span class="s">&quot;&quot;</span>)
+                  <span class="c">// Add some fields:</span>
+    <span class="o">|&gt;</span> <span class="i">Seq</span><span class="o">.</span><span class="i">append</span> [|<span class="s">&quot;EmployeeId&quot;</span>, <span class="i">employeeId</span> <span class="o">|&gt;</span> <span class="i">box</span>; 
+                    <span class="s">&quot;Country&quot;</span>, <span class="s">&quot;UK&quot;</span> <span class="o">|&gt;</span> <span class="i">box</span> |]
+    <span class="o">|&gt;</span> <span class="i">ctx</span><span class="o">.</span><span class="i">Main</span><span class="o">.</span><span class="i">Employees</span><span class="o">.</span><span class="i">Create</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="What-to-do-if-your-creation-fails-systematically-every-time" class="anchor" href="#What-to-do-if-your-creation-fails-systematically-every-time">What to do if your creation fails systematically every time</a></h3>
+<p>Some underlying database connection libraries have problems with serializing underlying data types.
+So, if this fails:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">emp</span><span class="o">.</span><span class="i">BirthDate</span> <span class="o">&lt;-</span> <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span>
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>Try using <code>.SetColumn("ColumnName", value |&gt; box)</code>
+for example:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">emp</span><span class="o">.</span><span class="i">SetColumn</span>(<span class="s">&quot;BirthDate&quot;</span>, <span class="i">DateTime</span><span class="o">.</span><span class="i">UtcNow</span><span class="o">.</span><span class="i">ToString</span>(<span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span>) <span class="o">|&gt;</span> <span class="i">box</span>)
+<span class="i">ctx</span><span class="o">.</span><span class="i">SubmitUpdates</span>()
+</code></pre></td>
+</tr>
+</table>
+<p>SetColumn takes object, so you have more control over the type serialization.</p>
+
+
+        </div>
+        <div class="span3">
+          <ul class="nav nav-list" id="menu">
+            <li class="nav-header">SQLProvider</li>
+            <li><a href="../index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+        
+            <li class="nav-header">Documentation</li>
+              <li><a href="../core/general.html">General</a></li>
+              <li><a href="../core/parameters.html">Static Parameters</a></li>
+              <li><a href="../core/querying.html">Querying</a></li>
+              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
+              <li><a href="../core/crud.html">CRUD</a></li>
+              <li><a href="../core/programmability.html">Programmability</a></li>
+              <li><a href="../core/individuals.html">Individuals</a></li>
+              <li><a href="../core/composable.html">Composable Query</a></li>
+              <li><a href="../core/mssql.html">SQL Server</a></li>
+              <li><a href="../core/oracle.html">Oracle</a></li>
+              <li><a href="../core/sqlite.html">SQLite</a></li>
+              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
+              <li><a href="../core/mysql.html">MySQL</a></li>
+              <li><a href="../core/odbc.html">ODBC</a></li>
+              <li><a href="../reference/index.html">Internal API Docs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  </body>
+  </html>
