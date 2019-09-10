@@ -367,7 +367,7 @@ module internal QueryImplementation =
                         nestCount <- nestCount + 1
 
                         let modified = 
-                            parameters 
+                            parameters
                             |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
                             |> Seq.map(fun p ->
                                 p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
@@ -383,11 +383,17 @@ module internal QueryImplementation =
                     | SqlExistsClause(meth,op,src,qual)
                     | SqlNotExistsClause(meth,op,src,qual) ->
 
+                        match qual with
+                        | Lambda([ParamName sourceAlias],_) when sourceAlias <> "" && source.TupleIndex.Any(fun v -> v = sourceAlias) |> not ->
+                            source.TupleIndex.Add sourceAlias
+                        | _ -> ()
+
                         let innersrc = (src :?> IWithSqlService)
                         source.TupleIndex |> Seq.filter(fun s -> not(innersrc.TupleIndex.Contains s)) |> Seq.iter(fun s -> innersrc.TupleIndex.Add s)
                         let qry = parseWhere meth innersrc qual :> IQueryable
                         let svc = (qry :?> IWithSqlService)
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
+
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
@@ -412,7 +418,9 @@ module internal QueryImplementation =
                         | None -> Some x
                         | Some t when (t :? (string*SqlColumnType)) ->
                             let ti2, col = t :?> string*SqlColumnType
-                            let alias2 = resolveTuplePropertyName ti2 source.TupleIndex
+                            let alias2 = 
+                                if ti2.StartsWith "Item" then resolveTuplePropertyName ti2 source.TupleIndex
+                                else ti2
                             Some(ti,key,op,Some(box (alias2,col)))
                         | Some _ -> Some x
                     | _ -> None
@@ -809,7 +817,9 @@ module internal QueryImplementation =
                         let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
 
                         let modified = 
-                            parameters |> Seq.map(fun p ->
+                            parameters
+                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
+                            |> Seq.map(fun p ->
                                 p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
                                 p
                             ) |> Seq.toArray

@@ -1,4 +1,4 @@
-﻿#if INTERACTIVE
+#if INTERACTIVE
 #r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
@@ -69,7 +69,7 @@ let ``simple select with count``() =
         }
     Assert.AreEqual(91, qry)   
 
-[<Test >]
+[<Test >] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -78,6 +78,17 @@ let ``simple select with distinct count``() =
             select cust.CustomerId
             distinct
             count
+        }
+    Assert.AreEqual(91, qry)   
+
+[<Test; Ignore("AVG-DISTINCT not supported. Generates 'DISTINCT AVG(UnitPrice)' where maybe should generate 'AVG(DISTINCT UnitPrice)' ")>]
+let ``simple select with distinct avg``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.OrderDetails do
+            distinct
+            averageBy(o.UnitPrice)
         }
     Assert.AreEqual(91, qry)   
 
@@ -1920,12 +1931,13 @@ let ``simple select with subquery exists subquery``() =
         query {
             for cust in dc.Main.Customers do
             where(query {
-                    for cust in dc.Main.Customers do
-                    exists(cust.CustomerId = "ALFKI")
+                    for cust2 in dc.Main.Customers do
+                    exists(cust2.CustomerId = "ALFKI")
                 })
             select cust.CustomerId
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
+    Assert.AreEqual(91, qry.Count())
 
 [<Test>]
 let ``simple select with subquery exists parameter from main query``() =
@@ -1935,11 +1947,13 @@ let ``simple select with subquery exists parameter from main query``() =
             for o in dc.Main.Orders do
             where(query {
                     for od in dc.Main.OrderDetails do
+                    where (od.Quantity > (int16 10))
                     exists(od.OrderId = o.OrderId)
                 })
             select o.OrderId
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
+    Assert.AreEqual(718, qry.Count())
 
 [<Test>]
 let ``simple select with subquery not exists parameter from main query``() =
@@ -1949,12 +1963,30 @@ let ``simple select with subquery not exists parameter from main query``() =
             for o in dc.Main.Orders do
             where(not(query {
                     for od in dc.Main.OrderDetails do
+                    where (od.Quantity < (int16 10))
                     exists(od.OrderId = o.OrderId)
                 }))
             select o.OrderId
         } |> Seq.toList
-    Assert.IsEmpty(qry)
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(506, qry.Count())
 
+[<Test; Ignore("Not supported")>]
+let ``simple select with subquery in parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where( o.OrderId |=| query {
+                    for od in dc.Main.OrderDetails do
+                    where (od.Quantity > (int16 10) &&
+                           o.Freight > 100m)
+                    select (od.OrderId)
+                })
+            select o.OrderId
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(718, qry.Count())
 
 [<Test;>]
 let ``simple select with subquery of subqueries``() =
