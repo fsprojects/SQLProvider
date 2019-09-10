@@ -1,4 +1,4 @@
-﻿#if INTERACTIVE
+#if INTERACTIVE
 #r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
@@ -69,7 +69,7 @@ let ``simple select with count``() =
         }
     Assert.AreEqual(91, qry)   
 
-[<Test >]
+[<Test >] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -78,6 +78,17 @@ let ``simple select with distinct count``() =
             select cust.CustomerId
             distinct
             count
+        }
+    Assert.AreEqual(91, qry)   
+
+[<Test; Ignore("AVG-DISTINCT not supported. Generates 'DISTINCT AVG(UnitPrice)' where maybe should generate 'AVG(DISTINCT UnitPrice)' ")>]
+let ``simple select with distinct avg``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.OrderDetails do
+            distinct
+            averageBy(o.UnitPrice)
         }
     Assert.AreEqual(91, qry)   
 
@@ -1789,6 +1800,19 @@ let ``simple canonical join query``() =
 
 
 [<Test>]
+let ``simple query yield test``() = 
+    let dc = sql.GetDataContext()
+    let query1 = 
+        query {
+            for cus in dc.Main.Customers do
+            where (cus.City = "London")
+            yield (cus.City + "1")
+        }
+
+    let res = query1 |> Seq.toList
+    CollectionAssert.IsNotEmpty res
+
+[<Test>]
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 
@@ -1900,19 +1924,69 @@ let ``simple query sproc result``() =
         |> Async.RunSynchronously
     Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
 
-[<Test; Ignore("Unsupported nested query")>]
-let ``simple select with subquery contains query``() =
+[<Test>]
+let ``simple select with subquery exists subquery``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
             for cust in dc.Main.Customers do
             where(query {
-                    for cust in dc.Main.Customers do
-                    exists(cust.CustomerId = "ALFKI")
+                    for cust2 in dc.Main.Customers do
+                    exists(cust2.CustomerId = "ALFKI")
                 })
             select cust.CustomerId
-        }
+        } |> Seq.toList
     Assert.IsNotEmpty(qry)
+    Assert.AreEqual(91, qry.Count())
+
+[<Test>]
+let ``simple select with subquery exists parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where(query {
+                    for od in dc.Main.OrderDetails do
+                    where (od.Quantity > (int16 10))
+                    exists(od.OrderId = o.OrderId)
+                })
+            select o.OrderId
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(718, qry.Count())
+
+[<Test>]
+let ``simple select with subquery not exists parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where(not(query {
+                    for od in dc.Main.OrderDetails do
+                    where (od.Quantity < (int16 10))
+                    exists(od.OrderId = o.OrderId)
+                }))
+            select o.OrderId
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(506, qry.Count())
+
+[<Test; Ignore("Not supported")>]
+let ``simple select with subquery in parameter from main query``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where( o.OrderId |=| query {
+                    for od in dc.Main.OrderDetails do
+                    where (od.Quantity > (int16 10) &&
+                           o.Freight > 100m)
+                    select (od.OrderId)
+                })
+            select o.OrderId
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(718, qry.Count())
 
 [<Test;>]
 let ``simple select with subquery of subqueries``() =
@@ -1923,6 +1997,17 @@ let ``simple select with subquery of subqueries``() =
             where(subQueryIds.Contains(cust.CustomerId))
             select cust.CustomerId
         }
+    let subquery2 = 
+        query {
+            for custc in dc.Main.Customers do
+            where(custc.City |=| (query {
+                        for ord in dc.Main.Orders do
+                        where(ord.ShipCity ="Helsinki")
+                        distinct
+                        select ord.ShipCity
+                    }))
+            select custc.CustomerId //"WILMK"
+        }
     let initial1 = ["ALFKI"].AsQueryable()
     let initial2 = ["ANATR"].AsQueryable()
     let initial3 = ["AROUT"].AsQueryable()
@@ -1932,11 +2017,12 @@ let ``simple select with subquery of subqueries``() =
             where(
                 subquery(subquery(subquery(subquery(initial1)))).Contains(cust.CustomerId) ||
                 subquery(subquery(subquery(subquery(initial2)))).Contains(cust.CustomerId) || 
-                subquery(initial3).Contains(cust.CustomerId))
+                subquery(initial3).Contains(cust.CustomerId) ||
+                subquery2.Contains(cust.CustomerId))
             select cust.CustomerId
         }
     let eval = qry |> Seq.toList
     Assert.IsNotEmpty(eval)
-    Assert.AreEqual(3, eval.Length)
+    Assert.AreEqual(4, eval.Length)
     Assert.IsTrue(eval.Contains("ANATR"))
 

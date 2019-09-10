@@ -586,7 +586,6 @@ and (|SqlSpecialOpArrQueryable|_|) = function
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValuesQueryable values]) -> Some(ti, ConditionOperator.NestedNotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
     | _ -> None
-
     
 and (|SqlSpecialOp|_|) : Expression -> _ = function
     | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
@@ -625,5 +624,18 @@ and (|SqlSpecialNegativeOpArrQueryable|_|) (e:Expression) =
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedNotIn, key, values)
+        | _ -> None
+    | _ -> None
+
+and (|SqlExistsClause|_|) = function 
+    | MethodCall(None, (MethodWithName "Any" as meth), [ SeqValuesQueryable src; OptionalQuote qual ]) ->
+        Some(meth, ConditionOperator.NestedExists, src, qual)
+    | _ -> None
+
+and (|SqlNotExistsClause|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand with
+        | MethodCall(None, (MethodWithName "Any" as meth), [ SeqValuesQueryable src; OptionalQuote qual ]) -> Some(meth, ConditionOperator.NestedNotExists, src, qual)
         | _ -> None
     | _ -> None

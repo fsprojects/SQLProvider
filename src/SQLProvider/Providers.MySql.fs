@@ -753,6 +753,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
                                         match operator with
+                                        | FSharp.Data.Sql.NestedExists -> sprintf "EXISTS (%s)" innersql
+                                        | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
                                         | _ -> failwith "Should not be called with any other operator"
@@ -763,6 +765,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                         | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
                                         | FSharp.Data.Sql.In 
                                         | FSharp.Data.Sql.NotIn -> operatorIn operator paras
+                                        | FSharp.Data.Sql.NestedExists 
+                                        | FSharp.Data.Sql.NestedNotExists 
                                         | FSharp.Data.Sql.NestedIn 
                                         | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                         | _ ->

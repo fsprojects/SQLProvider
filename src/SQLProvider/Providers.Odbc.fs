@@ -460,6 +460,14 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
                                             sprintf "%s NOT IN (%s)" column innersql
+                                        | FSharp.Data.Sql.NestedExists when data.IsSome ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "EXISTS (%s)" innersql
+                                        | FSharp.Data.Sql.NestedNotExists when data.IsSome ->
+                                            let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
+                                            Array.iter parameters.Add innerpars
+                                            sprintf "NOT EXISTS (%s)" innersql
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
                                             match data with 
