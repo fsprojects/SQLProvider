@@ -128,6 +128,6 @@ As with all the technical choices, there are drawbacks to consider.
 * You have to use other technologies that support async or .NET tasks, like WCF or SignalR. There is no point of doing async and then still using `RunSynchronously` at the end.
 * You may consider async as premature optimization. Starting without async and converting all later is an option, although your APIs will have to change.
 * Async and transactions is a problem with Mono environment.
-* Async will make your error stacktraces are harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.
+* Async will make your error stacktraces harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.
 
 *)
