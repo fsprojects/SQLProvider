@@ -1,6 +1,6 @@
 NUGET
   remote: https://www.nuget.org/api/v2
-    FAKE (4.64.11)
+    FAKE (4.64.17)
     FSharp.Compiler.Service (2.0.0.6)
     FSharp.Core (3.1.2.5) - redirects: force
     FSharp.Formatting (3.0.0-beta01)
@@ -1481,7 +1481,7 @@ GITHUB
     src/ProvidedTypes.fs (18459e8b23b44b389dc8f2b8fe444fedf2b47a8c)
     src/ProvidedTypes.fsi (18459e8b23b44b389dc8f2b8fe444fedf2b47a8c)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (c9c558f4b7774930d5103adebddd673f8271363d)
+    src/Code/ExpressionOptimizer.fs (2936f77f9269d72d0372441fff42152ff8cec2b9)
 GROUP Standard
 NUGET
   remote: https://www.nuget.org/api/v2
@@ -2300,5 +2300,5 @@ NUGET
       System.Xml.ReaderWriter (>= 4.3) - restriction: || (&& (< monoandroid) (< monotouch) (< net45) (>= netstandard1.3) (< win8) (< wpa81) (< xamarinios) (< xamarinmac) (< xamarintvos) (< xamarinwatchos)) (&& (< monoandroid) (< net45) (>= netstandard1.0) (< netstandard1.3) (< win8) (< wp8) (< wpa81)) (< portable-net45+win8+wp8+wpa81)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (502d1a20a31bd47ad93643ef618d647e0b1510c6)
+    modules/Octokit/Octokit.fsx (0515d2c964b6da3abec3f6961a6aefe91e8283b0)
       Octokit (>= 0.20)
