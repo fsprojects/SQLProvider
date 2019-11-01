@@ -667,7 +667,10 @@ module internal QueryExpressionTransformer =
         // much easier at this stage once we have knowledge of the whole query
         let sqlQuery = { sqlQuery with Filters = List.map resolveFilterList sqlQuery.Filters
                                        Ordering = List.map(function 
-                                                            |("",b,c) -> (resolve "",resolveC b,c) 
+                                                            |("",b,c) ->
+                                                                match resolve "" with
+                                                                | "" when baseAlias <> "" -> (baseAlias,resolveC b,c) 
+                                                                | x -> (x,resolveC b,c) 
                                                             | a,c,b -> resolve a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
                                        Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> resolve ga, resolveC gk), a|>List.map(fun(ag,aa)->resolve ag,resolveC aa)) 

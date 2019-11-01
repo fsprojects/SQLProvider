@@ -669,6 +669,7 @@ let ``simple where before join test``() =
             for od in dc.Main.OrderDetails do
             where(od.OrderId > 0L)
             join o in dc.Main.Orders on (od.OrderId=o.OrderId)
+            sortBy od.OrderId
             select (od.OrderId, o.OrderId)
         } |> Seq.toArray
 
