@@ -2,7 +2,7 @@
 // FAKE build script
 // --------------------------------------------------------------------------------------
 
-#r @"packages/FAKE/tools/FakeLib.dll"
+#r @"packages/Build/FAKE/tools/FakeLib.dll"
 open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
@@ -12,7 +12,7 @@ open System.IO
 
 #if MONO
 #else
-#load @"packages/SourceLink.Fake/tools/SourceLink.fsx"
+#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
 #r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"

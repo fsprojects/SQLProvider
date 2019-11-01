@@ -22,9 +22,9 @@ let info =
 // For typical project, no changes are needed below
 // --------------------------------------------------------------------------------------
 
-#load "../../packages/FSharp.Formatting/FSharp.Formatting.fsx"
-#r "../../packages/FAKE/tools/NuGet.Core.dll"
-#r "../../packages/FAKE/tools/FakeLib.dll"
+#load "../../packages/Build/FSharp.Formatting/FSharp.Formatting.fsx"
+#r "../../packages/Build/FAKE/tools/NuGet.Core.dll"
+#r "../../packages/Build/FAKE/tools/FakeLib.dll"
 open Fake
 open System.IO
 open Fake.FileHelper
@@ -53,12 +53,20 @@ subDirectories (directoryInfo templates)
                                    formatting @@ "templates"
                                    formatting @@ "templates/reference" ]))
 
+let rec copyFilesRecursively (source: DirectoryInfo) (target: DirectoryInfo) (overwrite:bool) =
+    source.GetDirectories()
+    |> Seq.iter (fun dir -> copyFilesRecursively dir (target.CreateSubdirectory dir.Name) overwrite)
+    source.GetFiles()
+    |> Seq.map (fun file -> 
+        file.CopyTo(target.FullName @@ file.Name, overwrite) |> ignore
+        file.Name)
+    |> Log "Copying file: "
+
 // Copy static files and CSS + JS from F# Formatting
 let copyFiles () =
-  CopyRecursive files output true |> Log "Copying file: "
+  copyFilesRecursively (DirectoryInfo files) (DirectoryInfo output) true
   ensureDirectory (output @@ "content")
-  CopyRecursive (formatting @@ "styles") (output @@ "content") true 
-    |> Log "Copying styles and scripts: "
+  copyFilesRecursively (DirectoryInfo (formatting @@ "styles")) (DirectoryInfo(output @@ "content")) true
 
 // Build API reference from XML comments
 let buildReference () =

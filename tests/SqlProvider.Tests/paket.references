@@ -1,6 +1,7 @@
 NUnit
 FSharp.Core
-Fake
+group Build
+      Fake
 
 group Scripts
 
