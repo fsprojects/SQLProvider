@@ -30,8 +30,8 @@ module internal Utilities =
         let itemid = 
             if name.Length > 4 then
                 match Int32.TryParse (name.Remove(0, 4)) with
-                | (true, n) -> n
-                | (false, _) -> Int32.MaxValue
+                | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
+                | _ -> Int32.MaxValue
             else Int32.MaxValue
         if itemid = Int32.MaxValue && tupleIndex.Contains(name) then name //already resolved
         elif tupleIndex.Count < itemid then ""

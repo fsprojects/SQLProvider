@@ -1,5 +1,6 @@
-### 1.1.70 - 01.11.2019
+### 1.1.71 - 01.11.2019
 * Fixed where-before-join -query
+* Param naming fix, part 2
 
 ### 1.1.68 - 10.09.2019
 * Query-translation fixes #634
