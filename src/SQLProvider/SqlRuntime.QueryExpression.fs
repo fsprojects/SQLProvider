@@ -715,7 +715,9 @@ module internal QueryExpressionTransformer =
                     }
 
             if linkData.ForeignTable.Name <> "" then (outerAlias, resolvedLinkData, innerAlias)
-            else (outerAlias, { resolvedLinkData with ForeignTable = resolved }, innerAlias)
+            else
+                let oa = if outerAlias = "" then resolved.Name else outerAlias
+                (oa, { resolvedLinkData with ForeignTable = resolved }, innerAlias)
 
         let sqlQuery = { sqlQuery with Links = List.map resolveLinks sqlQuery.Links }
 

@@ -661,6 +661,19 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
+let ``simple where before join test``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            where(od.OrderId > 0L)
+            join o in dc.Main.Orders on (od.OrderId=o.OrderId)
+            select (od.OrderId, o.OrderId)
+        } |> Seq.toArray
+
+    Assert.AreEqual(qry.Length, 2155)
+
 [<Test>]
 let ``simple select query with sumBy times two``() = 
     let dc = sql.GetDataContext()
