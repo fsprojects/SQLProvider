@@ -1,3 +1,6 @@
+### 1.1.69 - 01.11.2019
+* Fixed where-before-join -query
+
 ### 1.1.68 - 10.09.2019
 * Query-translation fixes #634
 * Initial exist-sub-query support, PR #603
