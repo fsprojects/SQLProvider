@@ -732,6 +732,21 @@ let ``simplest select query with groupBy aggregate``() =
 
     Assert.IsNotEmpty(qry)
 
+[<Test>]
+let ``simplest select query with groupBy aggregate temp total``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            groupBy o.OrderDate.Date into g
+            let total = query {
+                for s in g do
+                sumBy s.Freight
+            }
+            select (g.Key, total)
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
 
 [<Test>]
 let ``simplest select query with groupBy constant``() = 

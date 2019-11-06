@@ -28,10 +28,17 @@ module internal QueryExpressionTransformer =
                 Some ((al,coltyp,rtyp), exp, oper.Type)
             | _ -> None
 
+        let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
+        let groupProjectionMap = ResizeArray<SqlColumnType>()
+
         let (|SingleTable|MultipleTables|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
+                MultipleTables exp
+            | Lambda([ParamName sourceAlias],(SqlColumnGet(entity,ct,rtyp) as oper)) as exp ->
+                if not(groupProjectionMap.Contains ct) then
+                    groupProjectionMap.Add(ct)
                 MultipleTables exp
             | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
 
@@ -42,9 +49,6 @@ module internal QueryExpressionTransformer =
             //   previously selected individual columns.
             // in the second case we also need to change any property on the input tuple into calls
             // onto GetSubEntity on the result parameter with the correct alias
-
-        let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
-        let groupProjectionMap = ResizeArray<SqlColumnType>()
         
         let (|SourceTupleGet|_|) (e:Expression) =
             match e with
@@ -162,7 +166,7 @@ module internal QueryExpressionTransformer =
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(me.Method.ReturnType);
-                    let replacementExpr = 
+                    let replacementExpr =
                         Expression.Call(Expression.Convert(me.Arguments.[0], ty), generic, aggregateColumn)
                     let res =
                         match calcs with
@@ -226,9 +230,15 @@ module internal QueryExpressionTransformer =
                 | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
-                    (Expression.Call(
-                        Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
-                            mi,Expression.Constant(key)))
+                    (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                     | false ->
+                        (Expression.Call(
+                            Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
+                                mi,Expression.Constant(key)))
+                     | true ->
+                        (Expression.Call(
+                            Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
+                                mi,Expression.Constant(key))))
 
             | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) 
                     when p.Type = typeof<SqlEntity> ->
@@ -330,7 +340,8 @@ module internal QueryExpressionTransformer =
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     match transformed with
                                                                                     | GroupByAggregate(param, callreplace) -> 
-                                                                                        groupProjectionMap.Add(param)
+                                                                                        if not(groupProjectionMap.Contains param) then
+                                                                                            groupProjectionMap.Add(param)
                                                                                         upcast callreplace
                                                                                     | _ -> 
                                                                                         upcast transformed
@@ -521,6 +532,7 @@ module internal QueryExpressionTransformer =
                                                 | KeyColumn c, GroupColumn(CountOp "", KeyColumn "") -> Some (a, GroupColumn(CountOp c, KeyColumn c))
                                                 | KeyColumn c, GroupColumn(agg, KeyColumn g) when g <> "" -> Some (a, op)
                                                 | KeyColumn c, GroupColumn(_) when Utilities.getBaseColumnName op <> "" -> Some (a, op)
+                                                | KeyColumn c, KeyColumn(c2) when Utilities.getBaseColumnName op <> "" -> Some (c2, op)
                                                 | _ -> None)
 
                                         else ["",op]

@@ -491,6 +491,16 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> 
             -> Some(alias, col, e.Type)
         | _ -> None
+
+    // Subtables
+    | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+        match o.NodeType, o with
+        | ExpressionType.Call, (:? MethodCallExpression as ce)
+                when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression) ->
+            let par = ce.Object :?> ParameterExpression
+            Some((if String.IsNullOrEmpty par.Name then String.Empty else par.Name),KeyColumn key,meth.ReturnType)
+        | _ -> None
+
     | _ -> None
 
 //Simpler version of where Condition-pattern, used on case-when-clause
