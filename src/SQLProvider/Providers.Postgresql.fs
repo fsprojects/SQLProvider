@@ -177,7 +177,7 @@ module PostgreSQL =
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
                                          else typemap<DateTimeOffset>             ["TimeTZ"])
               "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
-              "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
+              "timestamp with time zone"    , typemap<DateTimeOffset>             ["TimestampTZ"]
               "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
               "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
             //"txid_snapshot"               , typemap<???>                        ["???"]
