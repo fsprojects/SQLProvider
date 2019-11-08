@@ -570,6 +570,18 @@ module internal QueryExpressionTransformer =
                    | x -> // Multiple aliases for same basetable name. We have to select one and merge columns.
                         let starSelect = projectionColumns |> Seq.tryPick(fun p -> match p.Value.Count with | 0 -> Some p | _ -> None)
                         match starSelect with
+                        | Some sel when useCanonicalsOnSelect && projectionColumns |> Seq.exists(fun kvp ->
+                                        kvp.Value |> Seq.exists(fun co -> match co with | OperationColumn _ -> true | EntityColumn _ -> false)) ->
+                            // Whole entity plus operation columns. We need urgent table lookup.
+                            let myLock = provider.GetLockObject()
+                            let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
+                            let opcols = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat
+                            let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
+                            let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
+                            let tmp = sel
+                            projectionColumns.Clear()
+                            projectionColumns.Add(tmp.Key, new ResizeArray<ProjectionParameter>(itms))
+                            tmp.Key
                         | Some sel ->
                             let tmp = sel
                             projectionColumns.Clear()

@@ -390,6 +390,18 @@ let ``simple select query let temp used in where``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual("Berlintest", qry.[0])
 
+[<Test>]
+let ``simple select query let temp used in select database``() = 
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            let t1 = cust.City + "te"
+            select (t1 + "st", cust.PostalCode)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Berlintest", fst qry.[0])
 
 [<Test >]
 let ``simple select query with operations in select``() = 
