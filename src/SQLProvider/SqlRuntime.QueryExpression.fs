@@ -126,20 +126,23 @@ module internal QueryExpressionTransformer =
                     elif me.Arguments.Count = 2 then
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
+
+                            let getOp op =
+                                let key = Utilities.getBaseColumnName op
+                                match me.Method.Name with
+                                | "Count" -> Some (CountOp key, Some op)
+                                | "Sum" -> Some (SumOp key, Some op)
+                                | "Avg" | "Average" -> Some (AvgOp key, Some op)
+                                | "Min" -> Some (MinOp key, Some op)
+                                | "Max" -> Some (MaxOp key, Some op)
+                                | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some op)
+                                | "Variance" -> Some (VarianceOp key, Some op)
+                                | _ -> None
+
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
                                 | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
-                                    let key = Utilities.getBaseColumnName op
-
-                                    match me.Method.Name with
-                                    | "Count" -> Some (CountOp key, Some op)
-                                    | "Sum" -> Some (SumOp key, Some op)
-                                    | "Avg" | "Average" -> Some (AvgOp key, Some op)
-                                    | "Min" -> Some (MinOp key, Some op)
-                                    | "Max" -> Some (MaxOp key, Some op)
-                                    | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some op)
-                                    | "Variance" -> Some (VarianceOp key, Some op)
-                                    | _ -> None
+                                    getOp op
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
                                 | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
@@ -148,6 +151,13 @@ module internal QueryExpressionTransformer =
                                     | _ -> None
                                 // This lamda could be parsed more if we would want to support
                                 // more complex aggregate scenarios.
+                                // Subtables
+                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+                                    match o.NodeType, o with
+                                    | ExpressionType.Call, (:? MethodCallExpression as ce)
+                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression) ->
+                                        getOp (KeyColumn key)
+                                    | _ -> None
                                 | _ -> None
                             directAggregate la.Body
                         | _ -> None

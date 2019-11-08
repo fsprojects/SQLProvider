@@ -352,6 +352,38 @@ module internal QueryImplementation =
                 // if same query contains multiple subqueries, the parameter names in those should be different.
                 let mutable nestCount = 0
 
+                let (|KnownTemporaryVariable|_|) (exp:Expression) =
+                    if exp.Type.Name <> "Boolean" then None
+                    else
+                    let rec composeLambdas (traversable:Expression) sqlExprProj =
+
+                        // Detect a LINQ-"helper" and unwrap it
+                        // There are two types of nesting-generation: into-keyword and let-keyword.
+                        // Let creates anonymous tuple of Item1 Item2 where into hides the previous tree.
+                        // We have to merge exp + qual expressions
+                        match traversable, sqlExprProj with
+                        | :? LambdaExpression as le,
+                                Projection(MethodCall(None, MethodWithName("Select"), [a ; OptionalQuote(Lambda([pe], nexp) as lambda1)]),innerProj)
+                                when le.Parameters.Count = 1 && nexp.Type = le.Parameters.[0].Type ->
+
+                            let visitor =
+                                { new ExpressionVisitor() with
+                                    member __.VisitParameter _ = nexp
+                                    member __.VisitLambda x =
+                                        let visitedBody = base.Visit x.Body
+                                        Expression.Lambda(visitedBody, pe) :> Expression
+                                    }
+                            let visited = visitor.Visit traversable
+                            let opt = ExpressionOptimizer.visit visited
+
+                            if pe.Type = typeof<SqlEntity> then
+
+                                Some opt
+                            else
+                                composeLambdas opt innerProj
+                        | _ -> None
+                    composeLambdas qual source.SqlExpression
+
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
                     match exp with
@@ -449,6 +481,8 @@ module internal QueryImplementation =
                     | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
+                    | KnownTemporaryVariable(Lambda(_,Condition(cond))) ->
+                        Condition.And([cond],None)
                     | _ -> 
                         failwith ("Unsupported expression. Ensure all server-side objects won't have any .NET-operators/methods that can't be converted to SQL. The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
