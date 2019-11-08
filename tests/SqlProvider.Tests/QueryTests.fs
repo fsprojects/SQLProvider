@@ -90,7 +90,7 @@ let ``simple select with distinct avg``() =
             distinct
             averageBy(o.UnitPrice)
         }
-    Assert.AreEqual(91, qry)   
+    Assert.AreEqual(91, qry)
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select with last``() =
@@ -323,6 +323,20 @@ let ``simplest select query into temp``() =
     CollectionAssert.IsNotEmpty qry
 
 [<Test>]
+let ``simplest select into where``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust.City + "te") into y
+            select (y+"st") into y
+            where (y <> "Helsinktest")
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Aachentest", qry.[0])
+
+[<Test>]
 let ``simplest select query let temp``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -376,7 +390,7 @@ let ``simple select query let where``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual("Berlintest", qry.[0])
 
-[<Test; Ignore("Not supported")>]
+[<Test>]
 let ``simple select query let temp used in where``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -390,6 +404,18 @@ let ``simple select query let temp used in where``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual("Berlintest", qry.[0])
 
+[<Test>]
+let ``simple select query let temp used in select database``() = 
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            let t1 = cust.City + "te"
+            select (t1 + "st", cust.PostalCode)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Berlintest", fst qry.[0])
 
 [<Test >]
 let ``simple select query with operations in select``() = 
@@ -732,6 +758,21 @@ let ``simplest select query with groupBy aggregate``() =
 
     Assert.IsNotEmpty(qry)
 
+[<Test>]
+let ``simplest select query with groupBy aggregate temp total``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            groupBy o.OrderDate.Date into g
+            let total = query {
+                for s in g do
+                sumBy s.Freight
+            }
+            select (g.Key, total)
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
 
 [<Test>]
 let ``simplest select query with groupBy constant``() = 

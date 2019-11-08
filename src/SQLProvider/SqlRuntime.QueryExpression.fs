@@ -28,10 +28,17 @@ module internal QueryExpressionTransformer =
                 Some ((al,coltyp,rtyp), exp, oper.Type)
             | _ -> None
 
+        let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
+        let groupProjectionMap = ResizeArray<SqlColumnType>()
+
         let (|SingleTable|MultipleTables|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
+                MultipleTables exp
+            | Lambda([ParamName sourceAlias],(SqlColumnGet(entity,ct,rtyp) as oper)) as exp ->
+                if not(groupProjectionMap.Contains ct) then
+                    groupProjectionMap.Add(ct)
                 MultipleTables exp
             | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
 
@@ -42,9 +49,6 @@ module internal QueryExpressionTransformer =
             //   previously selected individual columns.
             // in the second case we also need to change any property on the input tuple into calls
             // onto GetSubEntity on the result parameter with the correct alias
-
-        let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
-        let groupProjectionMap = ResizeArray<SqlColumnType>()
         
         let (|SourceTupleGet|_|) (e:Expression) =
             match e with
@@ -122,20 +126,23 @@ module internal QueryExpressionTransformer =
                     elif me.Arguments.Count = 2 then
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
+
+                            let getOp op =
+                                let key = Utilities.getBaseColumnName op
+                                match me.Method.Name with
+                                | "Count" -> Some (CountOp key, Some op)
+                                | "Sum" -> Some (SumOp key, Some op)
+                                | "Avg" | "Average" -> Some (AvgOp key, Some op)
+                                | "Min" -> Some (MinOp key, Some op)
+                                | "Max" -> Some (MaxOp key, Some op)
+                                | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some op)
+                                | "Variance" -> Some (VarianceOp key, Some op)
+                                | _ -> None
+
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
                                 | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
-                                    let key = Utilities.getBaseColumnName op
-
-                                    match me.Method.Name with
-                                    | "Count" -> Some (CountOp key, Some op)
-                                    | "Sum" -> Some (SumOp key, Some op)
-                                    | "Avg" | "Average" -> Some (AvgOp key, Some op)
-                                    | "Min" -> Some (MinOp key, Some op)
-                                    | "Max" -> Some (MaxOp key, Some op)
-                                    | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some op)
-                                    | "Variance" -> Some (VarianceOp key, Some op)
-                                    | _ -> None
+                                    getOp op
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
                                 | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
@@ -144,6 +151,13 @@ module internal QueryExpressionTransformer =
                                     | _ -> None
                                 // This lamda could be parsed more if we would want to support
                                 // more complex aggregate scenarios.
+                                // Subtables
+                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+                                    match o.NodeType, o with
+                                    | ExpressionType.Call, (:? MethodCallExpression as ce)
+                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression) ->
+                                        getOp (KeyColumn key)
+                                    | _ -> None
                                 | _ -> None
                             directAggregate la.Body
                         | _ -> None
@@ -162,7 +176,7 @@ module internal QueryExpressionTransformer =
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(me.Method.ReturnType);
-                    let replacementExpr = 
+                    let replacementExpr =
                         Expression.Call(Expression.Convert(me.Arguments.[0], ty), generic, aggregateColumn)
                     let res =
                         match calcs with
@@ -226,9 +240,15 @@ module internal QueryExpressionTransformer =
                 | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
-                    (Expression.Call(
-                        Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
-                            mi,Expression.Constant(key)))
+                    (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                     | false ->
+                        (Expression.Call(
+                            Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
+                                mi,Expression.Constant(key)))
+                     | true ->
+                        (Expression.Call(
+                            Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
+                                mi,Expression.Constant(key))))
 
             | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) 
                     when p.Type = typeof<SqlEntity> ->
@@ -330,7 +350,8 @@ module internal QueryExpressionTransformer =
             | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     match transformed with
                                                                                     | GroupByAggregate(param, callreplace) -> 
-                                                                                        groupProjectionMap.Add(param)
+                                                                                        if not(groupProjectionMap.Contains param) then
+                                                                                            groupProjectionMap.Add(param)
                                                                                         upcast callreplace
                                                                                     | _ -> 
                                                                                         upcast transformed
@@ -521,6 +542,7 @@ module internal QueryExpressionTransformer =
                                                 | KeyColumn c, GroupColumn(CountOp "", KeyColumn "") -> Some (a, GroupColumn(CountOp c, KeyColumn c))
                                                 | KeyColumn c, GroupColumn(agg, KeyColumn g) when g <> "" -> Some (a, op)
                                                 | KeyColumn c, GroupColumn(_) when Utilities.getBaseColumnName op <> "" -> Some (a, op)
+                                                | KeyColumn c, KeyColumn(c2) when Utilities.getBaseColumnName op <> "" -> Some (c2, op)
                                                 | _ -> None)
 
                                         else ["",op]
@@ -558,6 +580,18 @@ module internal QueryExpressionTransformer =
                    | x -> // Multiple aliases for same basetable name. We have to select one and merge columns.
                         let starSelect = projectionColumns |> Seq.tryPick(fun p -> match p.Value.Count with | 0 -> Some p | _ -> None)
                         match starSelect with
+                        | Some sel when useCanonicalsOnSelect && projectionColumns |> Seq.exists(fun kvp ->
+                                        kvp.Value |> Seq.exists(fun co -> match co with | OperationColumn _ -> true | EntityColumn _ -> false)) ->
+                            // Whole entity plus operation columns. We need urgent table lookup.
+                            let myLock = provider.GetLockObject()
+                            let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
+                            let opcols = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat
+                            let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
+                            let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
+                            let tmp = sel
+                            projectionColumns.Clear()
+                            projectionColumns.Add(tmp.Key, new ResizeArray<ProjectionParameter>(itms))
+                            tmp.Key
                         | Some sel ->
                             let tmp = sel
                             projectionColumns.Clear()

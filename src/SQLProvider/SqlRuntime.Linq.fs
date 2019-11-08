@@ -314,8 +314,8 @@ module internal QueryImplementation =
                 match asyncModePreEvaluated.TryPop() with
                 | false, _ -> 
                     executeQuery dc provider sqlQuery tupleIndex
-                    |> Seq.cast<IGrouping<'TKey, 'TEntity>>
-                    |> fun res -> res.GetEnumerator()
+                        |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                        |> fun res -> res.GetEnumerator()
                 | true, res -> (Seq.cast<IGrouping<'TKey, 'TEntity>> res).GetEnumerator()
         interface IEnumerable with
              member x.GetEnumerator() = 
@@ -351,6 +351,38 @@ module internal QueryImplementation =
                 let isHaving = source.SqlExpression.hasGroupBy().IsSome
                 // if same query contains multiple subqueries, the parameter names in those should be different.
                 let mutable nestCount = 0
+
+                let (|KnownTemporaryVariable|_|) (exp:Expression) =
+                    if exp.Type.Name <> "Boolean" then None
+                    else
+                    let rec composeLambdas (traversable:Expression) sqlExprProj =
+
+                        // Detect a LINQ-"helper" and unwrap it
+                        // There are two types of nesting-generation: into-keyword and let-keyword.
+                        // Let creates anonymous tuple of Item1 Item2 where into hides the previous tree.
+                        // We have to merge exp + qual expressions
+                        match traversable, sqlExprProj with
+                        | :? LambdaExpression as le,
+                                Projection(MethodCall(None, MethodWithName("Select"), [a ; OptionalQuote(Lambda([pe], nexp) as lambda1)]),innerProj)
+                                when le.Parameters.Count = 1 && nexp.Type = le.Parameters.[0].Type ->
+
+                            let visitor =
+                                { new ExpressionVisitor() with
+                                    member __.VisitParameter _ = nexp
+                                    member __.VisitLambda x =
+                                        let visitedBody = base.Visit x.Body
+                                        Expression.Lambda(visitedBody, pe) :> Expression
+                                    }
+                            let visited = visitor.Visit traversable
+                            let opt = ExpressionOptimizer.visit visited
+
+                            if pe.Type = typeof<SqlEntity> then
+
+                                Some opt
+                            else
+                                composeLambdas opt innerProj
+                        | _ -> None
+                    composeLambdas qual source.SqlExpression
 
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
@@ -449,6 +481,8 @@ module internal QueryImplementation =
                     | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
+                    | KnownTemporaryVariable(Lambda(_,Condition(cond))) ->
+                        Condition.And([cond],None)
                     | _ -> 
                         failwith ("Unsupported expression. Ensure all server-side objects won't have any .NET-operators/methods that can't be converted to SQL. The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
@@ -473,21 +507,28 @@ module internal QueryImplementation =
                 | _ -> failwith "only support lambdas in a where"
 
              let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
-                let sourceEntity =
+                let sAlias, sourceEntity =
                     match source.SqlExpression with
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
-                        sourceEntity
+                        sourceAlias, sourceEntity
 
                     | SelectMany(a1, a2,selectdata,sqlExp)  ->
-                        let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                        failwithf "Grouping over multiple tables is not supported yet"
+                        //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                        //if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
+
+                        match sqlExp with
+                        | BaseTable(alias,sourceEntity)
+                        | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
+                        | BaseTable(alias,sourceEntity)
+                        | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
+                        | _ -> failwithf "Grouping over multiple tables is not supported yet"
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 
                 let getAlias ti =
                         match ti, source.SqlExpression with
-                        | "", _ when source.SqlExpression.HasAutoTupled() -> sourceAlias
-                        | "", FilterClause(alias,sourceEntity) -> sourceAlias
+                        | "", _ when source.SqlExpression.HasAutoTupled() -> sAlias
+                        | "", FilterClause(alias,sourceEntity) -> sAlias
                         | "", _ -> ""
                         | _ -> resolveTuplePropertyName ti source.TupleIndex
 
@@ -503,8 +544,14 @@ module internal QueryImplementation =
                     AggregateColumns = [] // Aggregates will be populated later: [CountOp,alias,"City"]
                     Projection = None //lambda2 ?
                 }
-                let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
-                ty, data, sourceAlias
+
+                let ty =
+                    match lambdas with
+                    | [x] -> typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType,  meth.GetGenericArguments().[0])
+                    | [x1;x2] -> typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, lambdas.[1].ReturnType)
+                    | _ -> failwith "Unknown grouping lambdas"
+
+                ty, data, sAlias
 
 
              // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
@@ -703,7 +750,19 @@ module internal QueryImplementation =
 //                    | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
 //                                    [ SourceWithQueryData source;
 //                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
-//                                      OptionalQuote (Lambda([ParamName _], _))]) 
+//                                      OptionalQuote (Lambda([ParamName _], _))])
+                    | MethodCall(None, (MethodWithName "GroupBy" as meth),
+                                    [ SourceWithQueryData source;
+                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
+                                      OptionalQuote (Lambda([ParamName lambdaparam2], exp2) as lambda2) ]) ->
+                        let lambda = lambda1 :?> LambdaExpression
+                        let lambdae2 = lambda2 :?> LambdaExpression
+                        let ty, data, sourceEntityName = parseGroupBy meth source lambdaparam "" [lambda; lambdae2] exp ""
+                        let vals = { data with Projection = Some lambda2 }
+                        let expr = SelectMany(sourceEntityName,"grp",GroupQuery(vals), source.SqlExpression)
+
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; expr; source.TupleIndex;|] :?> IQueryable<'T>
+
                     | MethodCall(None, (MethodWithName "GroupBy" as meth),
                                     [ SourceWithQueryData source;
                                       OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1)]) ->
