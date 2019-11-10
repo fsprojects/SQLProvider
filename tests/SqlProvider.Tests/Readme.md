@@ -2157,6 +2157,7 @@ ORDER BY
 
 ### Select with over 8 joins
 ```fsharp
+query {
     for cust in dc.Main.Customers do
     join ord1 in dc.Main.Orders 
        on (cust.CustomerId = ord1.CustomerId)
@@ -2189,6 +2190,7 @@ ORDER BY
         )
     select (Some (cust, ord9))
     exactlyOneOrDefault
+}
 ```
 
 ```SQL
