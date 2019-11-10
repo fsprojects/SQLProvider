@@ -1637,7 +1637,7 @@ is to create a database view and query that from SQLProvider</strong>.</p>
 </code></pre></td>
 </tr>
 </table>
-<p>Group-by is supported for single tables only.
+<p>Group-by is support is limited, mostly for single tables only.
 F# Linq query syntax doesnt support doing <code>select count(1), sum(UnitPrice) from Products</code>
 but you can group by a constant to get that:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
@@ -1661,6 +1661,7 @@ but you can group by a constant to get that:</p>
 <li><a href="composable.html">Composable Query</a></li>
 <li><a href="mappers.html">Mapping to record types</a></li>
 <li><a href="crud.html">CRUD operations</a></li>
+<li><a href="https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/Readme.md">Sample queries</a></li>
 </ul>
 
 
