@@ -1111,19 +1111,50 @@ let ``simple select query with join``() =
         |], qry.[0..3])
 
 
-[<Test; Ignore("Grouping over multiple tables is not supported yet")>]
+[<Test>]
 let ``simple select query with join and then groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
         query {
-            for cust in dc.Main.Customers do
-            join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
-            groupBy cust.City into c
-            select (c.Key, c.Count())
-        }
+                for cust in dc.Main.Customers do
+                join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+                groupBy (cust.City, order.ShipCity) into g
+                select (g.Key, g.Max(fun (c,o) -> c.PostalCode))
+            }
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
-    Assert.AreEqual(6, res.["London"])
+    Assert.AreEqual("WX3 6FW", res.["London","London"])
+
+[<Test>]
+let ``simple select query with joins and then groupBy``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+                for cust in dc.Main.Customers do
+                join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+                join order2 in dc.Main.Orders on (cust.CustomerId = order2.CustomerId)
+                groupBy (cust.City, order.ShipCity) into g
+                select (g.Key, g.Max(fun (c,o,o2) -> c.PostalCode))
+            }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual("WX3 6FW", res.["London","London"])
+
+[<Test; Ignore("Grouping over 4 tables is not supported yet")>]
+let ``simple select query with many joins and then groupBy``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+                for cust in dc.Main.Customers do
+                join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+                join order2 in dc.Main.Orders on (cust.CustomerId = order2.CustomerId)
+                join order3 in dc.Main.Orders on (cust.CustomerId = order3.CustomerId)
+                groupBy (cust.City, order.ShipCity) into g
+                select (g.Key, g.Max(fun (c,o,o2,o3) -> c.PostalCode))
+            }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual("WX3 6FW", res.["London","London"])
 
 [<Test; Ignore("Joining over grouping is not supported yet")>]
 let ``simple select query with groupBy and then join``() = 
@@ -1133,12 +1164,10 @@ let ``simple select query with groupBy and then join``() =
             for cust in dc.Main.Customers do
             groupBy cust.City into c
             join order in dc.Main.Orders on (c.Key = order.ShipCity)
-            select (c.Key, c.Count())
+            select (c.Key, c.Count(), order.ShipCity)
         }
-    let res = qry |> dict  
+    let res = qry |> Seq.toList  
     Assert.IsNotEmpty(res)
-    Assert.AreEqual(6, res.["London"])
-
 
 [<Test >]
 let ``simple select query with join multi columns``() = 
@@ -2042,6 +2071,24 @@ let ``simple select with subquery in parameter from main query``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(718, qry.Count())
+
+
+[<Test; Ignore("Not supported nested Group-bys")>]
+let ``simple select query with groupBy over groupBy``() = 
+    let dc = sql.GetDataContext()
+
+    let qry =
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            join o in dc.Main.Orders on (c.Key = o.ShipCity)
+            groupBy o.ShipName into c2
+            select (c2.Key, c2.Count())
+        }
+    let res = qry |> dict  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(6, res.["London"])
+
 
 [<Test;>]
 let ``simple select with subquery of subqueries``() =

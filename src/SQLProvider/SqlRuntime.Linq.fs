@@ -50,16 +50,30 @@ module internal QueryImplementation =
     let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
         let args = projector.GetType().GenericTypeArguments
         seq { 
-            if args.Length > 0 && args.[0].Name.StartsWith("IGrouping") then
-                let keyType = 
-                    if args.[0].GenericTypeArguments.Length = 0 then None
-                    else 
-                        let kt = args.[0].GenericTypeArguments.[0]
-                        if kt = typeof<obj> then None else Some kt
-                let keyConstructor = 
-                    keyType |> Option.map(fun kt ->
-                        let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kt)
-                        tyo.GetConstructors())
+            if args.Length > 0 && (args.[0].Name.StartsWith("IGrouping") ||
+                                      (args.[0].Name.StartsWith("AnonymousObject") && args.[0].GenericTypeArguments.Length > 0 && args.[0].GenericTypeArguments |> Array.exists(fun a -> a.Name.StartsWith("IGrouping")))
+                        ) then
+                let keyType, keyConstructor, itemEntityType = 
+                    if args.[0].Name.StartsWith("IGrouping") then
+                        if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
+                        else 
+                            let kt = args.[0].GenericTypeArguments.[0]
+                            let itmType = if args.[0].GenericTypeArguments.Length > 1 then args.[0].GenericTypeArguments.[1] else typeof<SqlEntity>
+                            if kt = typeof<obj> then None, None, itmType
+                            else
+                                let tyo = typedefof<GroupResultItems<_,SqlEntity>>.MakeGenericType(kt, itmType)
+                                Some kt, Some (tyo.GetConstructors()), itmType
+                    else
+                        let baseItmType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
+                        let gen = args.[0].GenericTypeArguments |> Array.find(fun a -> a.Name.StartsWith("IGrouping"))
+                        if gen.GenericTypeArguments.Length = 0 then None, None, baseItmType
+                        else
+                            let kt = gen.GenericTypeArguments.[0]
+                            let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
+                            if kt = typeof<obj> then None, None, itmType
+                            else
+                                let tyo = typedefof<GroupResultItems<_,_>>.MakeGenericType(kt, itmType)
+                                Some kt, Some (tyo.GetConstructors()), itmType
 
                 let getval (key:obj) idx = 
                     if keyType.Value.IsGenericType then
@@ -84,26 +98,42 @@ module internal QueryImplementation =
                         let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                        let entity =
+                            if itemEntityType = typeof<SqlEntity> then box e
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_>(e, e))
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_,_>(e, e, e))
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_,_,_>(e, e, e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
+                            else failwith ("Not supported grouping: " + itemEntityType.Name)
+                            
                         match data with
                         | [||] -> 
-                            let ty = typedefof<GroupResultItems<_>>.MakeGenericType(typeof<int>)
-                            ty.GetConstructors().[1].Invoke [|"";1;e|]
+                            let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(typeof<int>, itemEntityType)
+                            ty.GetConstructors().[1].Invoke [|"";1;entity|]
                         | [|keyname, keyvalue|] -> 
                             match keyType with
                             | Some keyTypev ->
                                 let x = 
                                     let b = Utilities.convertTypes keyvalue keyTypev |> unbox
                                     if b.GetType() = typeof<obj> then unbox b else b
-                                keyConstructor.Value.[1].Invoke [|keyname; x; e;|]
+                                keyConstructor.Value.[1].Invoke [|keyname; x; entity;|]
                             | None ->
-                                let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
-                                ty.GetConstructors().[1].Invoke [|keyname; keyvalue; e;|]
+                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(keyvalue.GetType(), itemEntityType)
+                                ty.GetConstructors().[1].Invoke [|keyname; keyvalue; entity;|]
                         | [|kn1, kv1; kn2, kv2|] when keyType.IsSome ->
                             let v1, v2 = getval kv1 0, getval kv2 1
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); e;|]
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
                         | [|kn1, kv1; kn2, kv2; kn3; kv3|] when keyType.IsSome ->
                             let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup3.Invoke(null, [|v1;v2;v3|]); e;|]
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
 
@@ -508,12 +538,13 @@ module internal QueryImplementation =
 
              let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
                 let sAlias, sourceEntity =
+
                     match source.SqlExpression with
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
                         sourceAlias, sourceEntity
-
-                    | SelectMany(a1, a2,selectdata,sqlExp)  ->
+                    | SelectMany(a1, a2,CrossJoin(_,_),sqlExp)
+                    | SelectMany(a1, a2,LinkQuery(_),sqlExp)  ->
                         //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
                         //if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
 
@@ -522,7 +553,15 @@ module internal QueryImplementation =
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
                         | BaseTable(alias,sourceEntity)
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
-                        | _ -> failwithf "Grouping over multiple tables is not supported yet"
+                        | SelectMany(a3, a4,CrossJoin(_,_),sqlExp2)
+                        | SelectMany(a3, a4,LinkQuery(_),sqlExp2)  ->
+                            match sqlExp2 with
+                            | BaseTable(alias,sourceEntity)
+                            | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a3 -> alias, sourceEntity
+                            | BaseTable(alias,sourceEntity)
+                            | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a4 -> alias, sourceEntity
+                            | _ -> failwithf "Grouping over multiple tables is not supported yet (%A)." source.SqlExpression
+                        | _ -> failwithf "Grouping over multiple tables is not supported yet (%A)." source.SqlExpression
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 
                 let getAlias ti =
@@ -595,6 +634,11 @@ module internal QueryImplementation =
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                          OptionalQuote (Lambda(projectionParams,_))]) ->
+                    let sourceTi,sourceKey =
+                        match sourceKey, source.SqlExpression with
+                        | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
+                            g.KeyColumns.[0]
+                        | _ -> sourceTi, sourceKey
                     // this case happens when the select many also includes one or more joins in the same tree.
                     // in this situation, the first agrument will either be an additional nested join method call,
                     // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
@@ -778,6 +822,11 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                       OptionalQuote projection ]) ->
+                        let sourceTi,sourceKey =
+                            match sourceKey, source.SqlExpression with
+                            | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
+                                g.KeyColumns.[0]
+                            | _ -> sourceTi, sourceKey
                         let destEntity, isOuter =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity, false

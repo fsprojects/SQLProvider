@@ -29,7 +29,7 @@ module internal QueryExpressionTransformer =
             | _ -> None
 
         let projectionMap = Dictionary<string,ProjectionParameter ResizeArray>()
-        let groupProjectionMap = ResizeArray<SqlColumnType>()
+        let groupProjectionMap = ResizeArray<alias*SqlColumnType>()
 
         let (|SingleTable|MultipleTables|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
@@ -37,8 +37,8 @@ module internal QueryExpressionTransformer =
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
             | Lambda([ParamName sourceAlias],(SqlColumnGet(entity,ct,rtyp) as oper)) as exp ->
-                if not(groupProjectionMap.Contains ct) then
-                    groupProjectionMap.Add(ct)
+                if not(groupProjectionMap.Contains (entity,ct)) then
+                    groupProjectionMap.Add(entity,ct)
                 MultipleTables exp
             | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
 
@@ -112,7 +112,10 @@ module internal QueryExpressionTransformer =
                     decimalTypes  |> Seq.exists(fun t -> t = ty) || integerTypes |> Seq.exists(fun t -> t = ty)
 
                 let op =
-                    if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter || (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping"))) then
+                    if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter ||
+                                                    (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
+                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && me.Arguments.[0].Type.Name.StartsWith("IGrouping"))
+                                                 ) then
                         match me.Method.Name with
                         | "Count" -> Some (CountOp "", None)
                         | "Sum" when isNumType me.Type -> Some (SumOp "", None)
@@ -127,22 +130,22 @@ module internal QueryExpressionTransformer =
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
 
-                            let getOp op =
+                            let getOp al op =
                                 let key = Utilities.getBaseColumnName op
                                 match me.Method.Name with
-                                | "Count" -> Some (CountOp key, Some op)
-                                | "Sum" -> Some (SumOp key, Some op)
-                                | "Avg" | "Average" -> Some (AvgOp key, Some op)
-                                | "Min" -> Some (MinOp key, Some op)
-                                | "Max" -> Some (MaxOp key, Some op)
-                                | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some op)
-                                | "Variance" -> Some (VarianceOp key, Some op)
+                                | "Count" -> Some (CountOp key, Some (al,op))
+                                | "Sum" -> Some (SumOp key, Some (al,op))
+                                | "Avg" | "Average" -> Some (AvgOp key, Some (al,op))
+                                | "Min" -> Some (MinOp key, Some (al,op))
+                                | "Max" -> Some (MaxOp key, Some (al,op))
+                                | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, Some (al,op))
+                                | "Variance" -> Some (VarianceOp key, Some (al,op))
                                 | _ -> None
 
                             let rec directAggregate (exp:Expression) =
                                 match exp.NodeType, exp with
                                 | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
-                                    getOp op
+                                    getOp entity op
                                 | ExpressionType.Quote, (:? UnaryExpression as ce) 
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
                                 | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
@@ -155,8 +158,9 @@ module internal QueryExpressionTransformer =
                                 | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
                                     match o.NodeType, o with
                                     | ExpressionType.Call, (:? MethodCallExpression as ce)
-                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression) ->
-                                        getOp (KeyColumn key)
+                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression ) ->
+                                        let alias = (ce.Object :?> ParameterExpression).Name
+                                        getOp alias (KeyColumn key)
                                     | _ -> None
                                 | _ -> None
                             directAggregate la.Body
@@ -172,7 +176,12 @@ module internal QueryExpressionTransformer =
                             | KeyOp x -> x
                     //Count 1 is over all the items
                     let vf = if v = "" then None else Some v
-                    let ty = typedefof<GroupResultItems<_>>.MakeGenericType(me.Arguments.[0].Type.GetGenericArguments().[0])
+                    let ty =
+                        let retType =
+                            if me.Arguments.[0].Type.GetGenericArguments().Length > 1 then
+                                me.Arguments.[0].Type.GetGenericArguments().[1]
+                            else typeof<SqlEntity>
+                        typedefof<GroupResultItems<_,_>>.MakeGenericType(me.Arguments.[0].Type.GetGenericArguments().[0], retType)
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(me.Method.ReturnType);
@@ -180,8 +189,8 @@ module internal QueryExpressionTransformer =
                         Expression.Call(Expression.Convert(me.Arguments.[0], ty), generic, aggregateColumn)
                     let res =
                         match calcs with
-                        | None -> Some (GroupColumn(o,SqlColumnType.KeyColumn(v)), replacementExpr)
-                        | Some calculation -> Some (GroupColumn(o,calculation), replacementExpr)
+                        | None -> Some (("",GroupColumn(o,SqlColumnType.KeyColumn(v))), replacementExpr)
+                        | Some (al,calculation) -> Some ((al,GroupColumn(o,calculation)), replacementExpr)
                     if res.IsSome && groupProjectionMap.Contains(fst(res.Value)) then None
                     else res
                 | _ -> None
@@ -427,9 +436,12 @@ module internal QueryExpressionTransformer =
                 // select x
                 // this does not create a call to .select() after .where(), therefore in this case we must provide our own projection that simply selects a whole row
                 let initDbParam = 
-                    match sqlQuery.Grouping.Length > 0 with
-                    | true -> Expression.Parameter(typeof<System.Linq.IGrouping<_,SqlEntity>>,"result")
-                    | false -> Expression.Parameter(typeof<SqlEntity>,"result")
+                    match sqlQuery.Grouping.Length > 0, sqlQuery.Links.Length with
+                    | true, 0 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,SqlEntity>>,"result")
+                    | true, 1 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>>,"result")
+                    | true, 2 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>>,"result")
+                    | true, 3 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>>,"result")
+                    | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
                 let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
                 pmap.Add(baseAlias, new ResizeArray<_>())
                 (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
@@ -526,26 +538,26 @@ module internal QueryExpressionTransformer =
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
-                                    groupProjectionMap 
+                                    List.concat [ x; (groupProjectionMap |> Seq.toList)]
                                     |> Seq.map(fun op ->
                                         if not (group |> List.isEmpty) then 
                                             group 
-                                            |> List.choose(fun (a, cc) -> 
+                                            |> List.choose(fun (baseal, cc) -> 
                                                 match baseKey(cc), op with
-                                                | KeyColumn c, GroupColumn(AvgOp "", KeyColumn "") -> Some (a, GroupColumn(AvgOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(MinOp "", KeyColumn "") -> Some (a, GroupColumn(MinOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(MaxOp "", KeyColumn "") -> Some (a, GroupColumn(MaxOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(SumOp "", KeyColumn "") -> Some (a, GroupColumn(SumOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(StdDevOp "", KeyColumn "") -> Some (a, GroupColumn(StdDevOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(VarianceOp "", KeyColumn "") -> Some (a, GroupColumn(VarianceOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(KeyOp "", KeyColumn "") -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(CountOp "", KeyColumn "") -> Some (a, GroupColumn(CountOp c, KeyColumn c))
-                                                | KeyColumn c, GroupColumn(agg, KeyColumn g) when g <> "" -> Some (a, op)
-                                                | KeyColumn c, GroupColumn(_) when Utilities.getBaseColumnName op <> "" -> Some (a, op)
-                                                | KeyColumn c, KeyColumn(c2) when Utilities.getBaseColumnName op <> "" -> Some (c2, op)
+                                                | KeyColumn c, (a,GroupColumn(AvgOp "", KeyColumn "")) -> Some (a, GroupColumn(AvgOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(MinOp "", KeyColumn "")) -> Some (a, GroupColumn(MinOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(MaxOp "", KeyColumn "")) -> Some (a, GroupColumn(MaxOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(SumOp "", KeyColumn "")) -> Some (a, GroupColumn(SumOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(StdDevOp "", KeyColumn "")) -> Some (a, GroupColumn(StdDevOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(VarianceOp "", KeyColumn "")) -> Some (a, GroupColumn(VarianceOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(KeyOp "", KeyColumn "")) -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(CountOp "", KeyColumn "")) -> Some (a, GroupColumn(CountOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(agg, KeyColumn g)) when g <> "" -> Some (op)
+                                                | KeyColumn c, (a,GroupColumn(_)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)
+                                                | KeyColumn c, (a,KeyColumn(c2)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)
                                                 | _ -> None)
 
-                                        else ["",op]
+                                        else [op]
                                     ) |> Seq.concat |> Seq.toList
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
@@ -567,7 +579,12 @@ module internal QueryExpressionTransformer =
 
         let sqlQuery = 
             if groupgin.Count > 0 then
-                { sqlQuery with Grouping = groupgin |> Seq.toList }
+                let cleaned =
+                    let lst = groupgin |> Seq.toList
+                    match lst |> List.filter(fun (keys,agg) -> not agg.IsEmpty) with
+                    | [] -> lst
+                    | filtered -> filtered
+                { sqlQuery with Grouping = cleaned |> Seq.distinct |> Seq.toList }
             else sqlQuery
 
         // a special case here to handle queries that start from the relationship of an individual
