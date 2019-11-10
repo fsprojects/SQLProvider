@@ -681,21 +681,21 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String, keyval, distinctI
                         (sUp.Contains("_"+fetchCol)) && 
                             (sUp.Contains(itemType+"_")))
             | :? Tuple<SqlEntity,SqlEntity> ->
-                let ent1, ent2 = unbox<Tuple<SqlEntity,SqlEntity>> distinctItem
+                let ent1, ent2 = unbox<SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; |]
                     |> Seq.distinct |> Seq.filter(fun (s,k) -> 
                         let sUp = s.ToUpperInvariant()
                         (sUp.Contains("_"+fetchCol)) && 
                             (sUp.Contains(itemType+"_")))
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity> ->
-                let ent1, ent2, ent3 = unbox<Tuple<SqlEntity,SqlEntity,SqlEntity>> distinctItem
+                let ent1, ent2, ent3 = unbox<SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;|]
                     |> Seq.distinct |> Seq.filter(fun (s,k) -> 
                         let sUp = s.ToUpperInvariant()
                         (sUp.Contains("_"+fetchCol)) && 
                             (sUp.Contains(itemType+"_")))
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
-                let ent1, ent2, ent3, ent4 = unbox<Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> distinctItem
+                let ent1, ent2, ent3, ent4 = unbox<SqlEntity*SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;ent4.ColumnValues;|]
                     |> Seq.distinct |> Seq.filter(fun (s,k) -> 
                         let sUp = s.ToUpperInvariant()
