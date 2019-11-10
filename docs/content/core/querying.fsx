@@ -638,7 +638,7 @@ let freightsByCity =
 
 (**
 
-Group-by is supported for single tables only.
+Group-by is support is limited, mostly for single tables only.
 F# Linq query syntax doesnt support doing `select count(1), sum(UnitPrice) from Products`
 but you can group by a constant to get that:
 
@@ -658,5 +658,6 @@ For more info see:
  * [Composable Query](composable.html)
  * [Mapping to record types](mappers.html)
  * [CRUD operations](crud.html)
+ * [Sample queries](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/Readme.md)
 
 *)
