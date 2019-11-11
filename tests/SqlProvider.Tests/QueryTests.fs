@@ -1118,6 +1118,7 @@ let ``simple select query with join and then groupBy``() =
         query {
                 for cust in dc.Main.Customers do
                 join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+                where(cust.Address <> "Road" && order.ShipName <> "mcboatface")
                 groupBy (cust.City, order.ShipCity) into g
                 select (g.Key, g.Max(fun (c,o) -> c.PostalCode))
             }

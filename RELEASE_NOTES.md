@@ -1,6 +1,9 @@
+### 1.1.73 - 11.11.2019
+* Better filter support to group-by join over 2 or 3 tables
+
 ### 1.1.72 - 01.11.2019
 * Possibility to join 2 or 3 tables to group-by PR #650
-* Better let and into -keyword handlings PR #648
+* Better let and into -keyword handling PR #648
 
 ### 1.1.71 - 01.11.2019
 * Fixed where-before-join -query

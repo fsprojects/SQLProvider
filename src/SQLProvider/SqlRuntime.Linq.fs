@@ -544,7 +544,7 @@ module internal QueryImplementation =
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
                         sourceAlias, sourceEntity
                     | FilterClause(_, SelectMany(a1, a2,CrossJoin(_,_),sqlExp))
-                    | FilterClause(_, SelectMany(a1, a2,LinkQuery(_,_),sqlExp))
+                    | FilterClause(_, SelectMany(a1, a2,LinkQuery(_),sqlExp))
                     | SelectMany(a1, a2,CrossJoin(_,_),sqlExp)
                     | SelectMany(a1, a2,LinkQuery(_),sqlExp)  ->
                         //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
@@ -555,8 +555,8 @@ module internal QueryImplementation =
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
                         | BaseTable(alias,sourceEntity)
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
-                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_,_)),sqlExp2)
-                        | FilterClause(_, SelectMany(a3, a4,LinkQuery(_)),sqlExp2) 
+                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_,_),sqlExp2))
+                        | FilterClause(_, SelectMany(a3, a4,LinkQuery(_),sqlExp2))
                         | SelectMany(a3, a4,CrossJoin(_,_),sqlExp2)
                         | SelectMany(a3, a4,LinkQuery(_),sqlExp2)  ->
                             match sqlExp2 with
