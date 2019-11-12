@@ -1,3 +1,6 @@
+### 1.1.74 - 12.11.2019
+* Fix for #652, alias generation
+
 ### 1.1.73 - 11.11.2019
 * Better filter support to group-by join over 2 or 3 tables
 

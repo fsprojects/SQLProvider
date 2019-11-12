@@ -308,6 +308,7 @@ let ``simple select query``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Obere Str. 57", qry.[0].Address)  
 
 
 [<Test>]
@@ -321,6 +322,7 @@ let ``simplest select query into temp``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Germany", fst qry.[0])
 
 [<Test>]
 let ``simplest select into where``() = 
@@ -334,7 +336,7 @@ let ``simplest select into where``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
-    Assert.AreEqual("Aachentest", qry.[0])
+    CollectionAssert.Contains(qry, "Aachentest")
 
 [<Test>]
 let ``simplest select query let temp``() = 
@@ -347,6 +349,7 @@ let ``simplest select query let temp``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "Obere Str. 57")
 
 [<Test>]
 let ``simple select query let temp nested``() = 
@@ -360,6 +363,7 @@ let ``simple select query let temp nested``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual("Obere Str. 57", fst qry.[0])
 
 [<Test>]
 let ``simple select query let temp``() = 
@@ -372,6 +376,8 @@ let ``simple select query let temp``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "Berlintest")
+    
     //Assert.AreEqual("Aachentest", qry.[0])
     //Assert.AreEqual("Berlintest", qry.[0])
 
@@ -388,7 +394,7 @@ let ``simple select query let where``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
-    Assert.AreEqual("Berlintest", qry.[0])
+    CollectionAssert.Contains(qry, "Berlintest")
 
 [<Test>]
 let ``simple select query let temp used in where``() = 
@@ -402,7 +408,7 @@ let ``simple select query let temp used in where``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
-    Assert.AreEqual("Berlintest", qry.[0])
+    CollectionAssert.Contains(qry, "Berlintest")
 
 [<Test>]
 let ``simple select query let temp used in select database``() = 
@@ -427,6 +433,7 @@ let ``simple select query with operations in select``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "Germany Berliner Platz 431")
 
 [<Test >]
 let ``simple select where query``() =
@@ -589,6 +596,7 @@ let ``simple select where inner-join box-check and not in queryable query``() =
 
     CollectionAssert.IsNotEmpty query2
     Assert.AreEqual(3, query2.Length)
+    CollectionAssert.Contains(query2, "FISSA")
 
 [<Test >]
 let ``simple select where in query custom syntax``() =
@@ -616,6 +624,7 @@ let ``simple select where like query``() =
         } |> Seq.toArray
 
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "FRANR")
 
 [<Test >]
 let ``simple select where query with operations in where``() =
@@ -700,6 +709,7 @@ let ``simple where before join test``() =
         } |> Seq.toArray
 
     Assert.AreEqual(qry.Length, 2155)
+    CollectionAssert.Contains(qry, (10257L, 10257L))
 
 [<Test>]
 let ``simple select query with sumBy times two``() = 
@@ -995,6 +1005,8 @@ let ``simple select query with case``() =
                 else ("Outside UK"))
         } |> Seq.toArray
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "London")
+    CollectionAssert.Contains(qry, "Outside UK")
 
 [<Test;>]
 let ``simple select query with case on client``() = 
@@ -1007,6 +1019,8 @@ let ``simple select query with case on client``() =
                 else ("Outside UK"))
         } |> Seq.toArray
     CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "London")
+    CollectionAssert.Contains(qry, "Outside UK")
 
 [<Test >]
 let ``simple select and sort query``() =
@@ -1523,7 +1537,9 @@ let ``simple select cross-join test``() =
             select (cust.ContactName, emp.LastName)
             take 3
         } |> Seq.toList
-    Assert.IsNotNull(qry) 
+    Assert.IsNotNull(qry)
+    CollectionAssert.Contains(qry, ("Maria Anders", "Buchanan"))
+
 
 [<Test >]
 let ``simple select cross-join test 3 tables``() = 
@@ -1538,6 +1554,7 @@ let ``simple select cross-join test 3 tables``() =
             take 3
         } |> Seq.toList
     Assert.IsNotNull(qry) 
+    CollectionAssert.Contains(qry, ("Karl Jablonski", "Davolio", 4L))
 
 [<Test >]
 let ``simple select join and cross-join test``() = 
@@ -1571,6 +1588,7 @@ let ``simple select nested query``() =
             select c3
         } |> Seq.toList
     Assert.IsNotNull(qry)    
+    CollectionAssert.Contains(qry, "Fuller")
 
 [<Test >]
 let ``simple select nested emp query``() = 
@@ -1582,10 +1600,30 @@ let ``simple select nested emp query``() =
                 for emp in dc.Main.Employees do
                 select (emp)
             }) do
-            where(a1.FirstName = cust.ContactName)
+            where(a1.FirstName = cust.ContactName || a1.City = cust.City)
             select (a1.FirstName)
         } |> Seq.toList
     Assert.IsNotNull(qry)    
+    CollectionAssert.Contains(qry, "Anne")
+
+[<Test >]
+let ``simple select entityValue form another query``() = 
+    let dc = sql.GetDataContext()
+    let ent1 = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust)
+        } |> Seq.head
+
+    let ent2 = 
+        query {
+            for c in dc.Main.Customers do
+            where (c.CustomerId = ent1.CustomerId)
+            select (c)
+        } |> Seq.head
+
+    Assert.IsNotNull(ent2)    
+    Assert.AreEqual(ent1.CustomerId, ent2.CustomerId)    
 
 [<Test; Ignore("Not supported, issue #405")>]
 let ``simple select nested query sort``() = 
@@ -1648,6 +1686,8 @@ let ``simple select query async2``() =
             return asyncquery
         } |> Async.RunSynchronously
     CollectionAssert.IsNotEmpty res
+    let r = res |> Seq.toArray
+    CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
 
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
@@ -1753,6 +1793,7 @@ let ``simple canonical operation inverted operations query``() =
 
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(13, qry.Length)
+    CollectionAssert.Contains(qry, 10514L)
 
 [<Test >]
 let ``simple canonical operations query``() =
@@ -1809,6 +1850,7 @@ let ``simple canonical operations case-when-elses``() =
         } |> Seq.toArray
 
     CollectionAssert.IsNotEmpty qry2
+    CollectionAssert.Contains(qry2, "London")
 
 [<Test >]
 let ``simple operations in select query``() =
@@ -1871,6 +1913,7 @@ let ``simple canonical join query``() =
         } |> Seq.toArray
 
     CollectionAssert.IsNotEmpty qry1
+    CollectionAssert.Contains(qry1, "Simon Crowther")
 
     let qry2 = 
         query {
@@ -1882,7 +1925,6 @@ let ``simple canonical join query``() =
 
     CollectionAssert.IsNotEmpty qry2
     CollectionAssert.AreEqual(qry1, qry2)
-
 
 [<Test>]
 let ``simple query yield test``() = 
@@ -1896,6 +1938,7 @@ let ``simple query yield test``() =
 
     let res = query1 |> Seq.toList
     CollectionAssert.IsNotEmpty res
+    CollectionAssert.Contains(query1, "London1")
 
 [<Test>]
 let ``simple union query test``() = 
@@ -1916,12 +1959,15 @@ let ``simple union query test``() =
     // Union: query1 contains 69 distinct values, query2 distinct 5 and res1 is 71 distinct values
     let res1 = query1.Union(query2) |> Seq.toArray
     Assert.IsNotEmpty(res1)
+    CollectionAssert.Contains(res1, "Portland")
     // Intersect contains 3 values:
     let res2 = query1.Intersect(query2) |> Seq.toArray
     Assert.IsNotEmpty(res2)
+    CollectionAssert.Contains(res2, "Seattle")
     // Except contains 2 values:
     let res3 = query2.Except(query1) |> Seq.toArray
     Assert.IsNotEmpty(res3)
+    CollectionAssert.Contains(res3, "Redmond")
     
 
 [<Test>]
@@ -1942,6 +1988,7 @@ let ``simple union all query test``() =
     // query1 contains 91 values and query2 contains 8 so res2 contains 99 values.
     let res2 = query1.Concat(query2) |> Seq.toArray
     Assert.IsNotEmpty(res2)
+    CollectionAssert.Contains(res2, "Sevilla")
     
 [<Test>]
 let ``verify groupBy results``() = 
@@ -2023,6 +2070,7 @@ let ``simple select with subquery exists subquery``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(91, qry.Count())
+    CollectionAssert.Contains(qry, "QUEEN")
 
 [<Test>]
 let ``simple select with subquery exists parameter from main query``() =
@@ -2039,6 +2087,7 @@ let ``simple select with subquery exists parameter from main query``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(718, qry.Count())
+    CollectionAssert.Contains(qry, 10305L)
 
 [<Test>]
 let ``simple select with subquery not exists parameter from main query``() =
@@ -2055,6 +2104,7 @@ let ``simple select with subquery not exists parameter from main query``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(506, qry.Count())
+    CollectionAssert.Contains(qry, 10372L)
 
 [<Test; Ignore("Not supported")>]
 let ``simple select with subquery in parameter from main query``() =
@@ -2090,6 +2140,31 @@ let ``simple select query with groupBy over groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+
+let ``where join order shouldn't matter``() = 
+    let dc = sql.GetDataContext()
+
+    let qry1 = 
+        query {
+            for o in dc.Main.Orders do
+            join od in dc.Main.OrderDetails on (o.OrderId=od.OrderId)
+            where (o.Freight > 800m)
+            select (o.OrderId, od.OrderId)
+        } |> Seq.toArray
+
+    let qry2 = 
+        query {
+            for o in dc.Main.Orders do
+            where (o.Freight > 800m)
+            join od in dc.Main.OrderDetails on (o.OrderId=od.OrderId)
+            select (o.OrderId, od.OrderId)
+        } |> Seq.toArray
+
+    let l1 = qry1.Length
+    let l2 = qry2.Length
+    Assert.AreEqual(l1, l2)
+    CollectionAssert.Contains(qry1, (10372L, 10372L))
+    CollectionAssert.Contains(qry2, (10372L, 10372L))
 
 [<Test;>]
 let ``simple select with subquery of subqueries``() =

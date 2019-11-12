@@ -75,7 +75,7 @@ module internal QueryExpressionTransformer =
                     if aliasEntityDict.ContainsKey(alias) then
                         Some (alias,aliasEntityDict.[alias].FullName, None)
                     elif ultimateChild.IsSome then
-                        Some (alias,snd(ultimateChild.Value).FullName, None)
+                        Some (fst(ultimateChild.Value),snd(ultimateChild.Value).FullName, None)
                     else None
                 else None
             | PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) 
@@ -624,6 +624,7 @@ module internal QueryExpressionTransformer =
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
             else sqlQuery,baseAlias
 
+        let baseName = if baseAlias <> "" then baseAlias else (fst sqlQuery.UltimateChild.Value)
         let resolve defaultTable name =
             // name will be blank when there is only a single table as it never gets
             // tupled by the LINQ infrastructure. In this case we know it must be referring
@@ -631,10 +632,10 @@ module internal QueryExpressionTransformer =
             if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then
                 match defaultTable with
                 | Some(s) -> s
-                | None -> (fst sqlQuery.UltimateChild.Value)
+                | None -> baseName
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
-                if tbl = "" then baseAlias else tbl
+                if tbl = "" then baseName else tbl
 
         let resolve name =
             // name will be blank when there is only a single table as it never gets
@@ -643,7 +644,7 @@ module internal QueryExpressionTransformer =
             if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then (fst sqlQuery.UltimateChild.Value)
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
-                if tbl = "" then baseAlias else tbl
+                if tbl = "" then baseName else tbl
 
         
         // Resolves aliases on canonical multi-column functions

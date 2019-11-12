@@ -33,8 +33,8 @@ module internal Utilities =
                 | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
                 | _ -> Int32.MaxValue
             else Int32.MaxValue
-        if itemid = Int32.MaxValue && tupleIndex.Contains(name) then name //already resolved
-        elif tupleIndex.Count < itemid then ""
+        if itemid = Int32.MaxValue && tupleIndex.Contains(name) && name <> "" then name //already resolved
+        elif tupleIndex.Count < itemid then name
         else tupleIndex.[itemid - 1]
 
 
