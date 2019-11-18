@@ -644,7 +644,7 @@ module internal QueryExpressionTransformer =
             if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then (fst sqlQuery.UltimateChild.Value)
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
-                if tbl = "" then baseName else tbl
+                if tbl = "" || not(entityIndex.Contains tbl) then baseName else tbl
 
         
         // Resolves aliases on canonical multi-column functions

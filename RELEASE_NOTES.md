@@ -1,3 +1,6 @@
+### 1.1.75 - 18.11.2019
+* More alias query generation fixes
+
 ### 1.1.74 - 12.11.2019
 * Fix for #652, alias generation
 

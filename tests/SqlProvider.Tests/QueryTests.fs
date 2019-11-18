@@ -711,6 +711,37 @@ let ``simple where before join test``() =
     Assert.AreEqual(qry.Length, 2155)
     CollectionAssert.Contains(qry, (10257L, 10257L))
 
+let ``simple where before join test2``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            where(od.UnitPrice > 100m)
+            for ord in od.``main.Orders by OrderID`` do
+            sortBy ord.ShipCity
+            select (ord)
+        } |> Seq.toArray
+
+    Assert.AreEqual(qry.Length, 46)
+
+let ``simple where before join test3``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            for prod in od.``main.Products by ProductID`` do
+            where(od.UnitPrice > 100m && prod.Discontinued = false)
+            for ord in od.``main.Orders by OrderID`` do
+            for cust in ord.``main.Customers by CustomerID`` do
+            where (cust.CustomerId <> "ALFKI")
+            sortBy ord.ShipCity
+            select (ord)
+        } |> Seq.toArray
+
+    Assert.AreEqual(qry.Length, 24)
+
 [<Test>]
 let ``simple select query with sumBy times two``() = 
     let dc = sql.GetDataContext()
