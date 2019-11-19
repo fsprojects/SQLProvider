@@ -709,6 +709,7 @@ let ``simple where before join test``() =
         } |> Seq.toArray
 
     Assert.AreEqual(qry.Length, 2155)
+    Assert.LessOrEqual((fst qry.[0]), (fst qry.[1000]))
     CollectionAssert.Contains(qry, (10257L, 10257L))
 
 let ``simple where before join test2``() = 
@@ -724,6 +725,7 @@ let ``simple where before join test2``() =
         } |> Seq.toArray
 
     Assert.AreEqual(qry.Length, 46)
+    Assert.LessOrEqual(qry.[0].ShipCity, qry.[40].ShipCity)
 
 let ``simple where before join test3``() = 
     let dc = sql.GetDataContext()
@@ -741,6 +743,7 @@ let ``simple where before join test3``() =
         } |> Seq.toArray
 
     Assert.AreEqual(qry.Length, 24)
+    Assert.LessOrEqual(qry.[0].ShipCity, qry.[20].ShipCity)
 
 [<Test>]
 let ``simple select query with sumBy times two``() = 
@@ -1945,6 +1948,7 @@ let ``simple canonical join query``() =
 
     CollectionAssert.IsNotEmpty qry1
     CollectionAssert.Contains(qry1, "Simon Crowther")
+    Assert.LessOrEqual(qry1.[0], qry1.[10])
 
     let qry2 = 
         query {
