@@ -1,3 +1,20 @@
+### 1.1.75 - 18.11.2019
+* More alias query generation fixes
+
+### 1.1.74 - 12.11.2019
+* Fix for #652, alias generation
+
+### 1.1.73 - 11.11.2019
+* Better filter support to group-by join over 2 or 3 tables
+
+### 1.1.72 - 01.11.2019
+* Possibility to join 2 or 3 tables to group-by PR #650
+* Better let and into -keyword handling PR #648
+
+### 1.1.71 - 01.11.2019
+* Fixed where-before-join -query
+* Param naming fix, part 2
+
 ### 1.1.68 - 10.09.2019
 * Query-translation fixes #634
 * Initial exist-sub-query support, PR #603
