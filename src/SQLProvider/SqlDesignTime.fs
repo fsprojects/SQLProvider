@@ -31,6 +31,7 @@ type internal ParameterValue =
 [<TypeProvider>]
 type SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config)
+    do config.ReferencedAssemblies <- (FSharp.Data.Sql.Common.ConfigHelpers.referencedAssemblyPaths config |> List.toArray)
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
 

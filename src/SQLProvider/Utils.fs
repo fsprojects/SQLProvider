@@ -256,6 +256,98 @@ module ConfigHelpers =
 #endif
             connectionString
 
+    open System.Reflection
+    let private isNull x = match x with null -> true | _ -> false
+    let private bindAll = BindingFlags.DeclaredOnly ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static ||| BindingFlags.Instance
+    type private System.Object with
+        member x.GetProperty(nm) =
+            let ty = x.GetType()
+            let prop = ty.GetProperty(nm, bindAll)
+            let v = prop.GetValue(x,null)
+            v
+
+        member x.GetField(nm) =
+            let ty = x.GetType()
+            let fld = ty.GetField(nm, bindAll)
+            let v = fld.GetValue(x)
+            v
+
+        member x.HasProperty(nm) =
+            let ty = x.GetType()
+            let p = ty.GetProperty(nm, bindAll)
+            p |> isNull |> not
+
+        member x.HasField(nm) =
+            let ty = x.GetType()
+            let fld = ty.GetField(nm, bindAll)
+            fld |> isNull |> not
+
+        member x.GetElements() = [ for v in (x :?> System.Collections.IEnumerable) do yield v ]
+
+    // Taken from ProvidedTypes.fs when removed at commit hash a4e21970f97e2d745c1043cb21cd681306ec80e6:
+    // https://github.com/fsprojects/FSharp.TypeProviders.SDK/commit/a4e21970f97e2d745c1043cb21cd681306ec80e6
+    // Use the reflection hack to determine the set of referenced assemblies by reflecting over the SystemRuntimeContainsType
+    // closure in the TypeProviderConfig object.
+    let referencedAssemblyPaths (config:Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig) =
+              try
+
+                let hostConfigType = config.GetType()
+                let hostAssembly = hostConfigType.Assembly
+                let hostAssemblyLocation = hostAssembly.Location
+
+                let msg = sprintf "Host is assembly '%A' at location '%s'" (hostAssembly.GetName()) hostAssemblyLocation
+
+                if isNull (hostConfigType.GetField("systemRuntimeContainsType",bindAll)) then
+                    failwithf "Invalid host of cross-targeting type provider: a field called systemRuntimeContainsType must exist in the TypeProviderConfiguration object. Please check that the type provider being hosted by the F# compiler tools or a simulation of them. %s" msg
+
+                let systemRuntimeContainsTypeObj = config.GetField("systemRuntimeContainsType")
+
+                // Account for https://github.com/Microsoft/visualfsharp/pull/591
+                let systemRuntimeContainsTypeObj2 =
+                    if systemRuntimeContainsTypeObj.HasField("systemRuntimeContainsTypeRef") then
+                        systemRuntimeContainsTypeObj.GetField("systemRuntimeContainsTypeRef").GetProperty("Value")
+                    else
+                        systemRuntimeContainsTypeObj
+
+                if not (systemRuntimeContainsTypeObj2.HasField("tcImports")) then
+                    failwithf "Invalid host of cross-targeting type provider: a field called tcImports must exist in the systemRuntimeContainsType closure. Please check that the type provider being hosted by the F# compiler tools or a simulation of them. %s" msg
+
+                let tcImports = systemRuntimeContainsTypeObj2.GetField("tcImports")
+
+                if not (tcImports.HasField("dllInfos")) then
+                    failwithf "Invalid host of cross-targeting type provider: a field called dllInfos must exist in the tcImports object. Please check that the type provider being hosted by the F# compiler tools or a simulation of them. %s" msg
+
+                if not (tcImports.HasProperty("Base")) then
+                    failwithf "Invalid host of cross-targeting type provider: a field called Base must exist in the tcImports object. Please check that the type provider being hosted by the F# compiler tools or a simulation of them. %s" msg
+
+                let dllInfos = tcImports.GetField("dllInfos")
+                if isNull dllInfos then
+                    let ty = dllInfos.GetType()
+                    let fld = ty.GetField("dllInfos", bindAll)
+                    failwithf """Invalid host of cross-targeting type provider: unexpected 'null' value in dllInfos field of TcImports, ty = %A, fld = %A. %s""" ty fld msg
+
+                let baseObj = tcImports.GetProperty("Base")
+
+                [ for dllInfo in dllInfos.GetElements() -> (dllInfo.GetProperty("FileName") :?> string)
+                  if not (isNull baseObj) then
+                    let baseObjValue = baseObj.GetProperty("Value")
+                    if isNull baseObjValue then
+                        let ty = baseObjValue.GetType()
+                        let prop = ty.GetProperty("Value", bindAll)
+                        failwithf """Invalid host of cross-targeting type provider: unexpected 'null' value in Value property of baseObj, ty = %A, prop = %A. %s""" ty prop msg
+
+                    let baseDllInfos = baseObjValue.GetField("dllInfos")
+
+                    if isNull baseDllInfos then
+                        let ty = baseDllInfos.GetType()
+                        let fld = ty.GetField("dllInfos", bindAll)
+                        failwithf """Invalid host of cross-targeting type provider: unexpected 'null' value in dllInfos field of baseDllInfos, ty = %A, fld = %A. %s""" ty fld msg
+
+                    for baseDllInfo in baseDllInfos.GetElements() -> (baseDllInfo.GetProperty("FileName") :?> string) ]
+              with e ->
+                failwithf "Invalid host of cross-targeting type provider. Exception: %A" e
+
+
 module internal SchemaProjections = 
     
     //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
