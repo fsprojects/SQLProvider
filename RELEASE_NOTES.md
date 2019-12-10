@@ -1,3 +1,6 @@
+### 1.1.76 - 10.12.2019
+* TypeProvider SDK-update: Perf by caching improvements
+
 ### 1.1.75 - 18.11.2019
 * More alias query generation fixes
 
