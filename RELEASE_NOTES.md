@@ -1,3 +1,7 @@
+### 1.1.77 - 04.02.2020
+* Fix for async stored procedure exception handling, #667
+* MS Access provider included in .NET Core
+
 ### 1.1.76 - 10.12.2019
 * TypeProvider SDK-update: Perf by caching improvements
 
