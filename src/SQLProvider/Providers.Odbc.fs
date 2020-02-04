@@ -9,18 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-
-#if NETSTANDARD
-module StandardExtensions =
-    type DataTable with
-        member x.AsEnumerable() = 
-            seq {
-                for r in x.Rows do
-                yield r
-            }
-
 open StandardExtensions
-#endif
 
 type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)

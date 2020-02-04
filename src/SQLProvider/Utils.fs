@@ -3,6 +3,16 @@ namespace FSharp.Data.Sql.Common
 open System
 open System.Collections.Generic
 
+#if NETSTANDARD
+module StandardExtensions =
+    type System.Data.DataTable with
+        member x.AsEnumerable() = 
+            seq {
+                for r in x.Rows do
+                yield r
+            }
+#endif
+
 module internal Utilities = 
     
     open System.IO

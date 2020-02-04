@@ -10,6 +10,7 @@ open System.IO
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open StandardExtensions
 
 type internal MSAccessProvider(contextSchemaPath) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
