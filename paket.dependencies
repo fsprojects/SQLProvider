@@ -1,5 +1,6 @@
 source https://nuget.org/api/v2
 
+nuget FSharp.Compiler.Tools
 nuget Nuget.CommandLine
 nuget FAKE
 nuget FSharp.Formatting >= 3.0.0-beta01
@@ -14,6 +15,7 @@ group Standard
     source https://nuget.org/api/v2
 
     nuget FSharp.Core
+    nuget System.Data.OleDb
     nuget System.Runtime
     nuget System.Runtime.Loader
     nuget System.Runtime.Serialization.Primitives

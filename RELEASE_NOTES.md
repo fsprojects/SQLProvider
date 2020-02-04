@@ -1,6 +1,7 @@
-### 1.1.77 - 04.02.2020
+### 1.1.79 - 04.02.2020
 * Fix for async stored procedure exception handling, #667
 * MS Access provider included in .NET Core
+* .NET Core package references updated, e.g. System.Data.SqlClient
 
 ### 1.1.76 - 10.12.2019
 * TypeProvider SDK-update: Perf by caching improvements
