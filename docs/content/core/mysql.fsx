@@ -18,7 +18,7 @@ open System
 
 Basic connection string used to connect to MySQL instance; typical connection 
 string parameters apply here.  See 
-[MySQL Connector/NET Connection Strings Documentation](https://dev.mysql.com/doc/connector-net/en/connector-net-connection-options.html) 
+[MySQL Connector/NET Connection Strings Documentation](https://dev.mysql.com/doc/connectors/en/connector-net-connections-string.html) 
 for a complete list of connection string options.
 
 *)
