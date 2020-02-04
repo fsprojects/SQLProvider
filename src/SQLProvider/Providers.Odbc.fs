@@ -9,7 +9,9 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+#if NETSTANDARD
 open StandardExtensions
+#endif
 
 type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
