@@ -298,7 +298,7 @@ module MSSqlServer =
             allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
             match returnCols with
-            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
@@ -310,7 +310,7 @@ module MSSqlServer =
                     let! _ = reader.NextResultAsync() |> Async.AwaitTask
                     return result
                 | _ ->
-                    do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
                     | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 

@@ -332,7 +332,7 @@ module MySql =
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             match retCols with
-            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                       return Unit
             | [|retCol|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask

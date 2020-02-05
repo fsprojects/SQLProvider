@@ -250,7 +250,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
                 odbcCommand.CommandType <- CommandType.StoredProcedure;
                 inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
-                do! odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                let! r = odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitTask
                 return ReturnValueType.Unit
             }
 

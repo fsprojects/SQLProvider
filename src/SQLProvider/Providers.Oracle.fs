@@ -487,7 +487,7 @@ module internal Oracle =
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             match retCols with
-            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                       return Unit
             | [|col|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
@@ -502,7 +502,7 @@ module internal Oracle =
                         return Scalar(p.ParameterName, r)
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
             | cols ->
-                do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                 let! returnValues =
                     cols |> Array.toList
                     |> Sql.evaluateOneByOne (fun col ->

@@ -335,7 +335,7 @@ module PostgreSQL =
             let entities = 
                 async {
                     match retCols with
-                    | [||] -> do! com.ExecuteNonQueryAsync()|> Async.AwaitIAsyncResult |> Async.Ignore
+                    | [||] -> do! com.ExecuteNonQueryAsync()|> Async.AwaitTask |> Async.Ignore
                               return Unit
                     | [|col|] ->
                         match col.TypeMapping.ProviderTypeName with
