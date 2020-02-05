@@ -406,10 +406,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                 <@@ async {
                                         let! r =
                                             (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))
-                                            |> Async.Catch
-                                        match r with
-                                        | Choice1Of2 x -> return ()
-                                        | Choice2Of2 err -> return raise err
+                                        return ()
                                     } @@>
                             else
                                <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))  @@>

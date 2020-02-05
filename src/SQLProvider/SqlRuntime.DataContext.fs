@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Runtime
+namespace FSharp.Data.Sql.Runtime
 
 open System
 open System.Collections.Generic
@@ -163,22 +163,30 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     com.CommandTimeout <- commandTimeout.Value
                 let param, entity, toEntityArray = initCallSproc (this) def values con com
 
-                let! res = provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
+                let! resOrErr =
+                    provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
+                     |> Async.Catch
                 let entities =
-                    match res with
-                    | Unit -> Unchecked.defaultof<SqlEntity>
-                    | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity
-                    | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity
-                    | Set(rowSet) ->
-                        for row in rowSet do
-                            match row with
-                            | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
-                            | ResultSet(name, rs) ->
-                                let data = toEntityArray rs
-                                entity.SetColumnSilent(name, data)
-                        entity
+                    match resOrErr with
+                    | Choice1Of2 res ->
+                        match res with
+                        | Unit -> Unchecked.defaultof<SqlEntity>
+                        | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity
+                        | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity
+                        | Set(rowSet) ->
+                            for row in rowSet do
+                                match row with
+                                | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                                | ResultSet(name, rs) ->
+                                    let data = toEntityArray rs
+                                    entity.SetColumnSilent(name, data)
 
-                if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                            entity
+                    | Choice2Of2 err ->
+                        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                        raise err
+
                 return entities
             }
 
