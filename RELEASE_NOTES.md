@@ -1,4 +1,4 @@
-### 1.1.80 - 05.02.2020
+### 1.1.81 - 05.02.2020
 * Fix for regression of fixing the async stored procedure exception handling, #667
 
 ### 1.1.79 - 04.02.2020

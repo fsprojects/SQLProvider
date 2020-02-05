@@ -5,13 +5,13 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("SQLProvider")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for SQL database access.")>]
-[<assembly: AssemblyVersionAttribute("1.1.80")>]
-[<assembly: AssemblyFileVersionAttribute("1.1.80")>]
+[<assembly: AssemblyVersionAttribute("1.1.81")>]
+[<assembly: AssemblyFileVersionAttribute("1.1.81")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "SQLProvider"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for SQL database access."
-    let [<Literal>] AssemblyVersion = "1.1.80"
-    let [<Literal>] AssemblyFileVersion = "1.1.80"
+    let [<Literal>] AssemblyVersion = "1.1.81"
+    let [<Literal>] AssemblyFileVersion = "1.1.81"
