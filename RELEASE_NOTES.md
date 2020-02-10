@@ -1,3 +1,6 @@
+### 1.1.82 - 10.02.2020
+* Fix for MS Access in .NET Core
+
 ### 1.1.81 - 05.02.2020
 * Fix for regression of fixing the async stored procedure exception handling, #667
 
