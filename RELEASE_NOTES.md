@@ -1,3 +1,6 @@
+### 1.1.83 - 11.02.2020
+* MS Access in .NET Core dll deployment
+
 ### 1.1.82 - 10.02.2020
 * Fix for MS Access in .NET Core
 
