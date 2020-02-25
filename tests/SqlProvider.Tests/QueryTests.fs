@@ -1169,10 +1169,26 @@ let ``simple select query with join and then groupBy``() =
                 where(cust.Address <> "Road" && order.ShipName <> "mcboatface")
                 groupBy (cust.City, order.ShipCity) into g
                 select (g.Key, g.Max(fun (c,o) -> c.PostalCode))
-            }
+            } 
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual("WX3 6FW", res.["London","London"])
+
+[<Test>]
+let ``simple select query with join and then groupBy 2``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+                for cust in dc.Main.Customers do
+                join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+                join order2 in dc.Main.Orders on (order.OrderId = order2.OrderId)
+                where(order2.ShipCity = "London")
+                groupBy (order.ShipName, order.ShipCity, order2.ShipCity, order.ShipCountry, order2.ShippedDate) into g
+                select (g.Key, g.Max(fun (c,o1,o2) -> c.PostalCode))
+            }
+    let res = qry |> Seq.toList  
+    Assert.IsNotEmpty(res)
+    Assert.AreEqual(32, res.Length)
 
 [<Test>]
 let ``simple select query with joins and then groupBy``() = 

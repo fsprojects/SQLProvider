@@ -15,11 +15,19 @@ open FSharp.Data.Sql.Schema
 type IWithDataContext =
     abstract DataContext : ISqlDataContext
 
-type CastTupleMaker<'T1,'T2,'T3> = 
+type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box
     static member makeTuple3(t1:obj, t2:obj, t3:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3) |> box
+    static member makeTuple4(t1:obj, t2:obj, t3:obj, t4:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4) |> box
+    static member makeTuple5(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5) |> box
+    static member makeTuple6(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj, t6:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5, t6 :?> 'T6) |> box
+    static member makeTuple7(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj, t6:obj, t7:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5, t6 :?> 'T6, t7 :?> 'T7) |> box
 
 module internal QueryImplementation =
     open System.Linq
@@ -80,16 +88,17 @@ module internal QueryImplementation =
                         Utilities.convertTypes key keyType.Value.GenericTypeArguments.[idx]
                     else key
                 
-                let tup2, tup3 = 
+                let tup2, tup3, tup4, tup5, tup6, tup7 = 
                     let genArg idx = 
                         if keyType.IsSome && keyType.Value.GenericTypeArguments.Length > idx then
                             keyType.Value.GenericTypeArguments.[idx]
                         else typeof<Object>
                     let tup =
-                        typedefof<CastTupleMaker<_,_,_>>.MakeGenericType(
-                            genArg 0, genArg 1, genArg 2
+                        typedefof<CastTupleMaker<_,_,_,_,_,_,_>>.MakeGenericType(
+                            genArg 0, genArg 1, genArg 2, genArg 3, genArg 4, genArg 5, genArg 6
                         )
-                    tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3")
+                    tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3"), tup.GetMethod("makeTuple4"),
+                    tup.GetMethod("makeTuple5"), tup.GetMethod("makeTuple6"), tup.GetMethod("makeTuple7")
 
                 // do group-read
                 let collected = 
@@ -130,10 +139,22 @@ module internal QueryImplementation =
                                 ty.GetConstructors().[1].Invoke [|keyname; keyvalue; entity;|]
                         | [|kn1, kv1; kn2, kv2|] when keyType.IsSome ->
                             let v1, v2 = getval kv1 0, getval kv2 1
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
-                        | [|kn1, kv1; kn2, kv2; kn3; kv3|] when keyType.IsSome ->
+                            keyConstructor.Value.[2].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3|] when keyType.IsSome ->
                             let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
+                            keyConstructor.Value.[3].Invoke [|(kn1,kn2,kn3); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4|] when keyType.IsSome ->
+                            let v1, v2, v3, v4 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3
+                            keyConstructor.Value.[4].Invoke [|(kn1,kn2,kn3,kn4); tup4.Invoke(null, [|v1;v2;v3;v4|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4
+                            keyConstructor.Value.[5].Invoke [|(kn1,kn2,kn3,kn4,kn5); tup5.Invoke(null, [|v1;v2;v3;v4;v5|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5; kn6, kv6|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5, v6 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4, getval kv6 5
+                            keyConstructor.Value.[6].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6); tup6.Invoke(null, [|v1;v2;v3;v4;v5;v6|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5; kn6, kv6; kn7, kv7|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5, v6, v7 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4, getval kv6 5, getval kv7 6
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6,kn7); tup7.Invoke(null, [|v1;v2;v3;v4;v5;v6;v7|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
 
