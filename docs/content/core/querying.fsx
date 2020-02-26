@@ -199,7 +199,7 @@ thenByNullableDescending |X |                                                   
 where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. | 
 
 Currently SQL-provider doesn't generate nested queries in from-clauses, the query is flattened to a single select. Nested in-clauses in where-clauses are supported.
-(1) Single table, if you want multiple tables, use corresponding async aggregates, like Seq.sumAsync.
+(1) Single table, if you want multiple tables, use corresponding Seq query or async aggregates, like Seq.sumQuery or Seq.sumAsync.
 (2) Very simple groupBy (and having) is supported: Single table, or max 3 table joins before groupBy, with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`, and max 7 key columns. No nested grouping.
  
 ### Canonical Functions 
