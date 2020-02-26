@@ -1099,3 +1099,52 @@ module internal QueryImplementation =
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
 
+    let getAgg<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : 'T =
+        match s with
+        | :? IWithSqlService as svc ->
+            match svc.SqlExpression with
+            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
+                    
+                let key = Utilities.getBaseColumnName op
+
+                let alias =
+                        match entity with
+                        | "" when source.SqlExpression.HasAutoTupled() -> param
+                        | "" -> ""
+                        | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                let sqlExpression =
+
+                    let opName = 
+                        match agg with
+                        | "Sum" -> SumOp(key)
+                        | "Max" -> MaxOp(key)
+                        | "Count" -> CountOp(key)
+                        | "Min" -> MinOp(key)
+                        | "Average" | "Avg" -> AvgOp(key)
+                        | "StdDev" | "StDev" | "StandardDeviation" -> StdDevOp(key)
+                        | "Variance" -> VarianceOp(key)
+                        | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
+
+                    match source.SqlExpression with
+                    | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
+                    | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
+
+                let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
+                (Utilities.convertTypes res typeof<'T>) |> unbox
+            | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+        | c -> failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
+
+module Seq =
+    /// Execute SQLProvider query to get the sum of elements.
+    let sumQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Sum"
+    /// Execute SQLProvider query to get the max of elements.
+    let maxQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Max"
+    /// Execute SQLProvider query to get the min of elements.
+    let minQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Min"
+    /// Execute SQLProvider query to get the avg of elements.
+    let averageQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Average"
+    /// Execute SQLProvider query to get the standard deviation of elements.
+    let stdDevQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "StdDev"
+    /// Execute SQLProvider query to get the variance of elements.
+    let varianceQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Variance"

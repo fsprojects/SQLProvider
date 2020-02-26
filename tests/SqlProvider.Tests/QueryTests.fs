@@ -682,7 +682,7 @@ let ``simple select query with sumBy``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
-[<Test; Ignore("Not supported, but you can do this via: query { ... select od.UnitPrice } |> Seq.sumAsync")>]
+[<Test; Ignore("Not supported, but you can do this via: query { ... select od.UnitPrice } |> Seq.sumAsync or |> Seq.sumQuery")>]
 let ``simple select query with sumBy join``() = 
     let dc = sql.GetDataContext()
 

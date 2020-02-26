@@ -156,8 +156,8 @@ FROM main.Customers as [cust]
 .Concat()                |X | `open System.Linq`, SQL UNION ALL-clause                     | 
 .Union()                 |X | `open System.Linq`, SQL UNION-clause                         | 
 all	                     |X |                                                       | 
-averageBy                |X | Single table                                          | 
-averageByNullable        |X | Single table                                          | 
+averageBy                |X | Single table (1)                                       | 
+averageByNullable        |X | Single table (1)                                      | 
 contains                 |X |                                                       | 
 count                    |X |                                                       | 
 distinct                 |X |                                                       | 
@@ -165,7 +165,7 @@ exactlyOne               |X |                                                   
 exactlyOneOrDefault      |X |                                                       | 
 exists                   |X |                                                       | 
 find                     |X |                                                       | 
-groupBy                  |x | Initially only very simple groupBy (and having) is supported: On single-table with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`. | 
+groupBy                  |x | Simple support (2) | 
 groupJoin                |  |                                                       | 
 groupValBy	             |  |                                                       | 
 head                     |X |                                                       | 
@@ -176,10 +176,10 @@ last                     |  |                                                   
 lastOrDefault            |  |                                                       | 
 leftOuterJoin            |  |                                                       | 
 let                      |x | ...but not using tmp variables in where-clauses       |
-maxBy                    |X | Single table                                          | 
-maxByNullable            |X | Single table                                          | 
-minBy                    |X | Single table                                          | 
-minByNullable            |X | Single table                                          | 
+maxBy                    |X | Single table (1)                                      | 
+maxByNullable            |X | Single table (1)                                      | 
+minBy                    |X | Single table (1)                                      | 
+minByNullable            |X | Single table (1)                                      | 
 nth                      |X |                                                       | 
 select                   |X |                                                       | 
 skip                     |X |                                                       | 
@@ -188,8 +188,8 @@ sortBy                   |X |                                                   
 sortByDescending	     |X |                                                       | 
 sortByNullable           |X |                                                       | 
 sortByNullableDescending |X |                                                       | 
-sumBy                    |X | Single table                                          | 
-sumByNullable            |X | Single table                                          | 
+sumBy                    |X | Single table (1)                                      | 
+sumByNullable            |X | Single table (1)                                      | 
 take                     |X |                                                       | 
 takeWhile                |  |                                                       | 
 thenBy	                 |X |                                                       |     
@@ -198,8 +198,10 @@ thenByNullable           |X |                                                   
 thenByNullableDescending |X |                                                       |
 where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. | 
 
-Currently SQL-provider doesn't generate nested queries in from-clauses.
-
+Currently SQL-provider doesn't generate nested queries in from-clauses, the query is flattened to a single select. Nested in-clauses in where-clauses are supported.
+(1) Single table, if you want multiple tables, use corresponding async aggregates, like Seq.sumAsync.
+(2) Very simple groupBy (and having) is supported: Single table, or max 3 table joins before groupBy, with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`, and max 7 key columns. No nested grouping.
+ 
 ### Canonical Functions 
 
 Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).

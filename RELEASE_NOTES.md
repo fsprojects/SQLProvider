@@ -1,3 +1,7 @@
+### 1.1.84 - 26.02.2020
+* Non-async query aggregates: Seq.sumQuery, Seq.maxQuery, ...
+* Supported Group-by key-column count increased
+
 ### 1.1.83 - 11.02.2020
 * MS Access in .NET Core dll deployment
 
