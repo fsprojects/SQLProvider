@@ -993,6 +993,39 @@ let ``simple select query with groupBy2``() =
     Assert.IsNotNull(qry)
     Assert.AreEqual(7, qry.Sum(fun k -> k.Value))
 
+[<Test>]
+let ``simple select query with groupBy complex operations``() = 
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let old = System.DateTime(1990,01,01)
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            where (o.OrderDate > old)
+            groupBy (o.ShipCountry, o.ShipCity) into c
+            select (
+                c.Key,
+                c.Sum(fun (ord) -> if ord.ShipCity = "London" then ord.Freight+1m else ord.Freight))
+        } |> dict
+    Assert.IsNotNull(qry)
+    Assert.AreEqual(458.91m, qry.["Belgium", "Bruxelles"])
+    Assert.AreEqual(2151.67m, qry.["UK", "London"])
+
+[<Test; Ignore("Not Supported")>]
+let ``simple select query with groupBy join complex operations``() = 
+    let dc = sql.GetDataContext()
+    let old = System.DateTime(1990,01,01)
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
+            where (o.OrderDate > old)
+            groupBy (o.ShipCountry, o.ShipCity) into c
+            select (
+                c.Key,
+                c.Sum(fun (ord,od) -> if ord.ShipCity = "London" then ord.Freight+1m else ord.Freight))
+        } |> Seq.toArray
+    Assert.IsNotNull(qry)
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with groupValBy``() = 
     let dc = sql.GetDataContext()
