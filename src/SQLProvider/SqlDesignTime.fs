@@ -754,18 +754,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               serviceType.AddMember saveResponse
               yield m :> MemberInfo
 
-              let invalidateActionResponse = ProvidedTypeDefinition("", Some typeof<obj>, isErased=true)
+              let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
               invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
               invalidateActionResponse.AddMemberDelayed(fun () ->
                   let result =
+                      DesignTimeCache.cache.Clear()
                       this.Invalidate()
-                      "Database schema cahce invalidated."
+                      "Database schema cache cleared."
                   ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
               )
-              let m2 = ProvidedMethod("RefreshDatabaseSchemaCache", [], (invalidateActionResponse :> Type), invokeCode = empty)
+              let m2 = ProvidedMethod("ClearDatabaseSchemaCache", [], (invalidateActionResponse :> Type), invokeCode = empty)
               m2.AddXmlDocComputed(fun () ->
-                  "This method can be used to detect recent database schema changes. " +
-                  "Write dot after RefreshDatabaseSchemaCache() to invalidate the schema cache."
+                  "This method can be used to refresh and detect recent database schema changes. " +
+                  "Write dot after ClearDatabaseSchemaCache() to invalidate and clear the schema cache."
                   )
               serviceType.AddMember invalidateActionResponse
               yield m2 :> MemberInfo
