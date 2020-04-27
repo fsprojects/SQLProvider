@@ -767,7 +767,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                   "This method can be used to detect recent database schema changes. " +
                   "Write dot after RefreshDatabaseSchemaCache() to invalidate the schema cache."
                   )
-              serviceType.AddMember saveResponse
+              serviceType.AddMember invalidateActionResponse
               yield m2 :> MemberInfo
              ] @ [
                 for KeyValue(name,pt) in schemaMap do
