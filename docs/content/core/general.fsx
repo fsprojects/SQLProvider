@@ -278,4 +278,10 @@ entities that were retrieved using it via queries or `Individuals` and manages t
 states. Upon calling `SubmitUpdates()`, all entities modified/created that belong to
 that data context are wrapped in a single transaction scope, and then a connection
 is created and thus enlisted into the transaction.
+
+Database schema is cached lazily meanwhile you use it. Sometimes your schema
+may change meanwhile you develop your code, and you would like to refresh and invalidate
+the database schema cache without restarting your IDE. This can be done via method 
+`ClearDatabaseSchemaCache().` under `Design Time Commands`.
+
 *)

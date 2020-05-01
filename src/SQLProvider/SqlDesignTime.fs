@@ -731,6 +731,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
 
+              let designTimeCommandsContainer = ProvidedTypeDefinition("DesignTimeCommands", Some typeof<obj>, isErased=true)
+              let designTime = ProvidedProperty("Design Time Commands", designTimeCommandsContainer, getterCode = empty)
+              designTime.AddXmlDocDelayed(fun () -> "Developer's design time commands to TypeProvider.")
+
+
               let saveResponse = ProvidedTypeDefinition("SaveContextResponse", Some typeof<obj>, isErased=true)
               saveResponse.AddMember(ProvidedConstructor([], empty))
               saveResponse.AddMemberDelayed(fun () ->
@@ -746,13 +751,42 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                       else "ContextSchemaPath is not defined"
                   ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
               )
+
               let m = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
+              let mOld = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
               m.AddXmlDocComputed(fun () ->
                   if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
                   else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema() to save the schema at design time."
                   )
+              let expirationMessage = "Expired, moved under: .``Design Time Commands``"
+              mOld.AddXmlDocComputed(fun () -> expirationMessage)
+              mOld.AddObsoleteAttribute expirationMessage
+
+              // ClearDatabaseSchemaCache only in online-mode
+              if String.IsNullOrEmpty contextSchemaPath then
+                  let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
+                  invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
+                  invalidateActionResponse.AddMemberDelayed(fun () ->
+                      let result =
+                          DesignTimeCache.cache.Clear()
+                          this.Invalidate()
+                          "Database schema cache cleared."
+                      ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
+                  )
+                  let m2 = ProvidedMethod("ClearDatabaseSchemaCache", [], (invalidateActionResponse :> Type), invokeCode = empty)
+                  m2.AddXmlDocComputed(fun () ->
+                      "This method can be used to refresh and detect recent database schema changes. " +
+                      "Write dot after ClearDatabaseSchemaCache() to invalidate and clear the schema cache."
+                      )
+                  serviceType.AddMember invalidateActionResponse
+                  designTimeCommandsContainer.AddMember m2
+
               serviceType.AddMember saveResponse
-              yield m :> MemberInfo
+              designTimeCommandsContainer.AddMember m
+              yield mOld :> MemberInfo
+
+              serviceType.AddMember designTimeCommandsContainer
+              yield designTime :> MemberInfo
 
              ] @ [
                 for KeyValue(name,pt) in schemaMap do
