@@ -1,3 +1,8 @@
+### 1.1.85 - 01.05.2020
+* Moved SaveContextSchema under Design Time Commands -property
+* Added ClearDatabaseSchemaCache under Design Time Commands -property
+* Initial support to query SQLServer spatial types: geometry, geography, hierarchyid
+
 ### 1.1.84 - 26.02.2020
 * Non-async query aggregates: Seq.sumQuery, Seq.maxQuery, ...
 * Supported Group-by key-column count increased
