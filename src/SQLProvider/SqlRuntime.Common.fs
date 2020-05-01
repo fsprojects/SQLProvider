@@ -185,7 +185,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 unbox arr
            // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
            | data when typeof<'T> <> data.GetType() && 
-                       typeof<'T> <> typeof<obj>
+                       typeof<'T> <> typeof<obj> &&
+                       (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
         else defaultValue()
