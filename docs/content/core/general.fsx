@@ -282,6 +282,6 @@ is created and thus enlisted into the transaction.
 Database schema is cached lazily meanwhile you use it. Sometimes your schema
 may change meanwhile you develop your code, and you would like to refresh and invalidate
 the database schema cache without restarting your IDE. This can be done via method 
-`ClearDatabaseSchemaCache().` 
+`ClearDatabaseSchemaCache().` under `Design Time Commands`.
 
 *)
