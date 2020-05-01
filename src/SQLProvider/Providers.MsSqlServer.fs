@@ -66,6 +66,11 @@ module MSSqlServer =
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
 
+        let dbMappings =
+            dbMappings.Add("geometry", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+                      .Add("geography", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+                      .Add("hierarchyid", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
@@ -581,7 +586,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
-                               TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
+                               TypeInfo = if maxlen > 0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
