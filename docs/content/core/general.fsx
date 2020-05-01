@@ -280,8 +280,8 @@ that data context are wrapped in a single transaction scope, and then a connecti
 is created and thus enlisted into the transaction.
 
 Database schema is cached lazily meanwhile you use it. Sometimes your schema
-may change meanwhile you develop your code, and you would like to invalidate
+may change meanwhile you develop your code, and you would like to refresh and invalidate
 the database schema cache without restarting your IDE. This can be done via method 
-`RefreshDatabaseSchemaCache().` 
+`ClearDatabaseSchemaCache().` 
 
 *)
