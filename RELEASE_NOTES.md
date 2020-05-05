@@ -1,3 +1,7 @@
+### 1.1.86 - 05.05.2020
+* Design Time Command methods to properties for easier usability.
+* Fix for insert and update of SQLServer spatial data types #157
+
 ### 1.1.85 - 01.05.2020
 * Moved SaveContextSchema under Design Time Commands -property
 * Added ClearDatabaseSchemaCache under Design Time Commands -property
