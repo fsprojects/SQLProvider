@@ -499,8 +499,9 @@ module Sql =
 
     let private collectfunc(reader:IDataReader) = 
         [|
-            for i = 0 to reader.FieldCount - 1 do 
-                match reader.GetValue(i) with
+            for i = 0 to reader.FieldCount - 1 do
+                let v = reader.GetValue i // if we would like to swallow unknown types errors: try reader.GetValue(i) with | :? System.IO.FileNotFoundException as ex -> box ex
+                match v with
                 | null | :? DBNull ->  yield (reader.GetName(i),null)
                 | value -> yield (reader.GetName(i),value)
         |]
