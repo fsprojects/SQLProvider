@@ -114,6 +114,11 @@ module MSSqlServer =
         Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
         Option.iter (fun l -> p.Size <- l) param.Length
+        match param.TypeMapping.ProviderTypeName with
+        | Some "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+        | Some "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+        | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+        | _ -> ()
         p :> IDbDataParameter
 
     let getSprocReturnCols (con: IDbConnection) (sname: SprocName) (sparams: QueryParameter list) =
@@ -357,6 +362,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
                 let p = SqlParameter(name,v)
+                match v.GetType().FullName with
+                | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                | _ -> ()
                 (sprintf "[%s]" k,p)::out,i+1)
             |> fst
             |> List.rev
@@ -411,7 +421,14 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 let name = sprintf "@param%i" i
                 let p =
                     match entity.GetColumnOption<obj> col with
-                    | Some v -> SqlParameter(name,v)
+                    | Some v ->
+                        let p = SqlParameter(name,v)
+                        match v.GetType().FullName with
+                        | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                        | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                        | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                        | _ -> ()
+                        p
                     | None -> SqlParameter(name,DBNull.Value)
                 (col,p)::out,i+1)
             |> fst
@@ -666,7 +683,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                SqlParameter(paramName,value):> IDbDataParameter
+                let p = SqlParameter(paramName,value)
+                match value.GetType().FullName with
+                | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                | _ -> ()
+                p :> IDbDataParameter
 
             let fieldParam (value:obj) =
                 let paramName = nextParam()

@@ -749,14 +749,14 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                           with
                           | e -> "Save failed: " + e.Message
                       else "ContextSchemaPath is not defined"
-                  ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
+                  ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo
               )
 
-              let m = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
+              let m = ProvidedProperty("SaveContextSchema", (saveResponse :> Type), getterCode = empty)
               let mOld = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
               m.AddXmlDocComputed(fun () ->
                   if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
-                  else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema() to save the schema at design time."
+                  else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema at design time."
                   )
               let expirationMessage = "Expired, moved under: .``Design Time Commands``"
               mOld.AddXmlDocComputed(fun () -> expirationMessage)
@@ -771,12 +771,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                           DesignTimeCache.cache.Clear()
                           this.Invalidate()
                           "Database schema cache cleared."
-                      ProvidedMethod(result,[],typeof<unit>, invokeCode = empty) :> MemberInfo
+                      ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo
                   )
-                  let m2 = ProvidedMethod("ClearDatabaseSchemaCache", [], (invalidateActionResponse :> Type), invokeCode = empty)
+                  let m2 = ProvidedProperty("ClearDatabaseSchemaCache", (invalidateActionResponse :> Type), getterCode = empty)
                   m2.AddXmlDocComputed(fun () ->
                       "This method can be used to refresh and detect recent database schema changes. " +
-                      "Write dot after ClearDatabaseSchemaCache() to invalidate and clear the schema cache."
+                      "Write dot after ClearDatabaseSchemaCache to invalidate and clear the schema cache."
                       )
                   serviceType.AddMember invalidateActionResponse
                   designTimeCommandsContainer.AddMember m2
