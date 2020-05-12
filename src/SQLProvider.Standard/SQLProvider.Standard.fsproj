@@ -7,6 +7,7 @@
     <OutputPath>..\..\bin</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
+    <DocumentationFile>..\..\bin\net472\FSharp.Data.SqlProvider.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <!--Compile Include="Init.fs" / -->

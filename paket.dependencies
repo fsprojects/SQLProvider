@@ -11,8 +11,8 @@ group Build
     source https://nuget.org/api/v2
 
     nuget FSharp.Core
-    nuget FSharp.Formatting >= 3.1.0
-    nuget FAKE = 4.64.17
+    nuget FSharp.Formatting >= 4.0.0
+    nuget FAKE < 5.0.0
     nuget SourceLink.Fake
     nuget Nuget.CommandLine
 

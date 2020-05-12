@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------------------------
 
 #r @"packages/Build/FAKE/tools/FakeLib.dll"
+
 open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
@@ -307,21 +308,32 @@ Target "PackNuGet" (fun _ ->
 // Generate the documentation
 
 Target "GenerateReferenceDocs" (fun _ ->
-    if not <| executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"; "--define:REFERENCE"] [] then
-      failwith "generating reference documentation failed"
+
+    //let result =
+        Fake.DotNetCli.RunCommand
+            (fun p -> { p with WorkingDir = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
+            "fsi --define:RELEASE --define:REFERENCE --exec generate.fsx"
+    //if not result.OK then failwith "generating reference documentation failed"
+
+    //if not <| executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"; "--define:REFERENCE"] [] then
+    //  failwith "generating reference documentation failed"
 )
 
 let generateHelp' fail debug =
     let args =
-        if debug then ["--define:HELP"]
-        else ["--define:RELEASE"; "--define:HELP"]
-    if executeFSIWithArgs "docs/tools" "generate.fsx" args [] then
-        traceImportant "Help generated"
-    else
-        if fail then
-            failwith "generating help documentation failed"
-        else
-            traceImportant "generating help documentation failed"
+        if debug then "--define:HELP"
+        else "--define:RELEASE --define:HELP"
+    //let result =
+    Fake.DotNetCli.RunCommand
+        (fun p -> { p with WorkingDir = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
+        ("fsi " + args + "  --exec generate.fsx")
+    //if result.OK then
+    //    traceImportant "Help generated"
+    //else
+    //    if fail then
+    //        failwith "generating help documentation failed"
+    //    else
+    //        traceImportant "generating help documentation failed"
 
 let generateHelp fail =
     generateHelp' fail false
