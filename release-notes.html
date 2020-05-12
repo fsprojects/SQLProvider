@@ -31,7 +31,109 @@
       <hr />
       <div class="row">
         <div class="span9" id="main">
-          
+          <h3><a name="1-1-86-05-05-2020" class="anchor" href="#1-1-86-05-05-2020">1.1.86 - 05.05.2020</a></h3>
+<ul>
+<li>Design Time Command methods to properties for easier usability.</li>
+<li>Fix for insert and update of SQLServer spatial data types #157</li>
+</ul>
+<h3><a name="1-1-85-01-05-2020" class="anchor" href="#1-1-85-01-05-2020">1.1.85 - 01.05.2020</a></h3>
+<ul>
+<li>Moved SaveContextSchema under Design Time Commands -property</li>
+<li>Added ClearDatabaseSchemaCache under Design Time Commands -property</li>
+<li>Initial support to query SQLServer spatial types: geometry, geography, hierarchyid</li>
+</ul>
+<h3><a name="1-1-84-26-02-2020" class="anchor" href="#1-1-84-26-02-2020">1.1.84 - 26.02.2020</a></h3>
+<ul>
+<li>Non-async query aggregates: Seq.sumQuery, Seq.maxQuery, ...</li>
+<li>Supported Group-by key-column count increased</li>
+</ul>
+<h3><a name="1-1-83-11-02-2020" class="anchor" href="#1-1-83-11-02-2020">1.1.83 - 11.02.2020</a></h3>
+<ul>
+<li>MS Access in .NET Core dll deployment</li>
+</ul>
+<h3><a name="1-1-82-10-02-2020" class="anchor" href="#1-1-82-10-02-2020">1.1.82 - 10.02.2020</a></h3>
+<ul>
+<li>Fix for MS Access in .NET Core</li>
+</ul>
+<h3><a name="1-1-81-05-02-2020" class="anchor" href="#1-1-81-05-02-2020">1.1.81 - 05.02.2020</a></h3>
+<ul>
+<li>Fix for regression of fixing the async stored procedure exception handling, #667</li>
+</ul>
+<h3><a name="1-1-79-04-02-2020" class="anchor" href="#1-1-79-04-02-2020">1.1.79 - 04.02.2020</a></h3>
+<ul>
+<li>Fix for async stored procedure exception handling, #667</li>
+<li>MS Access provider included in .NET Core</li>
+<li>.NET Core package references updated, e.g. System.Data.SqlClient</li>
+</ul>
+<h3><a name="1-1-76-10-12-2019" class="anchor" href="#1-1-76-10-12-2019">1.1.76 - 10.12.2019</a></h3>
+<ul>
+<li>TypeProvider SDK-update: Perf by caching improvements</li>
+</ul>
+<h3><a name="1-1-75-18-11-2019" class="anchor" href="#1-1-75-18-11-2019">1.1.75 - 18.11.2019</a></h3>
+<ul>
+<li>More alias query generation fixes</li>
+</ul>
+<h3><a name="1-1-74-12-11-2019" class="anchor" href="#1-1-74-12-11-2019">1.1.74 - 12.11.2019</a></h3>
+<ul>
+<li>Fix for #652, alias generation</li>
+</ul>
+<h3><a name="1-1-73-11-11-2019" class="anchor" href="#1-1-73-11-11-2019">1.1.73 - 11.11.2019</a></h3>
+<ul>
+<li>Better filter support to group-by join over 2 or 3 tables</li>
+</ul>
+<h3><a name="1-1-72-01-11-2019" class="anchor" href="#1-1-72-01-11-2019">1.1.72 - 01.11.2019</a></h3>
+<ul>
+<li>Possibility to join 2 or 3 tables to group-by PR #650</li>
+<li>Better let and into -keyword handling PR #648</li>
+</ul>
+<h3><a name="1-1-71-01-11-2019" class="anchor" href="#1-1-71-01-11-2019">1.1.71 - 01.11.2019</a></h3>
+<ul>
+<li>Fixed where-before-join -query</li>
+<li>Param naming fix, part 2</li>
+</ul>
+<h3><a name="1-1-68-10-09-2019" class="anchor" href="#1-1-68-10-09-2019">1.1.68 - 10.09.2019</a></h3>
+<ul>
+<li>Query-translation fixes #634</li>
+<li>Initial exist-sub-query support, PR #603</li>
+</ul>
+<h3><a name="1-1-67-29-08-2019" class="anchor" href="#1-1-67-29-08-2019">1.1.67 - 29.08.2019</a></h3>
+<ul>
+<li>Param naming fix, PR #632</li>
+</ul>
+<h3><a name="1-1-66-31-07-2019" class="anchor" href="#1-1-66-31-07-2019">1.1.66 - 31.07.2019</a></h3>
+<ul>
+<li>Math.pow operator</li>
+<li>Typo fix, PR #627</li>
+</ul>
+<h3><a name="1-1-65-06-06-2019" class="anchor" href="#1-1-65-06-06-2019">1.1.65 - 06.06.2019</a></h3>
+<ul>
+<li>Left join parameter aliases underscore fix</li>
+</ul>
+<h3><a name="1-1-64-04-06-2019" class="anchor" href="#1-1-64-04-06-2019">1.1.64 - 04.06.2019</a></h3>
+<ul>
+<li>Views for SQLite, PR #618</li>
+</ul>
+<h3><a name="1-1-63-14-05-2019" class="anchor" href="#1-1-63-14-05-2019">1.1.63 - 14.05.2019</a></h3>
+<ul>
+<li>Fix for multiple outer joins #614</li>
+</ul>
+<h3><a name="1-1-62-23-04-2019" class="anchor" href="#1-1-62-23-04-2019">1.1.62 - 23.04.2019</a></h3>
+<ul>
+<li>.NET Core editor fix, PR #611</li>
+</ul>
+<h3><a name="1-1-61-09-04-2019" class="anchor" href="#1-1-61-09-04-2019">1.1.61 - 09.04.2019</a></h3>
+<ul>
+<li>Reverted .NET Standard library to fix stackoverflow issue</li>
+</ul>
+<h3><a name="1-1-60-20-03-2019" class="anchor" href="#1-1-60-20-03-2019">1.1.60 - 20.03.2019</a></h3>
+<ul>
+<li>Experimental ProvidedTypes.fs to fix .NET Standard stackoverflow issue</li>
+</ul>
+<h3><a name="1-1-59-02-03-2019" class="anchor" href="#1-1-59-02-03-2019">1.1.59 - 02.03.2019</a></h3>
+<ul>
+<li>Provided types update</li>
+<li>.NET Standard ODBC support</li>
+</ul>
 <h3><a name="1-1-58-19-01-2019" class="anchor" href="#1-1-58-19-01-2019">1.1.58 - 19.01.2019</a></h3>
 <ul>
 <li>SQL Server scalar function return parameter fix, #598</li>

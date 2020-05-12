@@ -32,8 +32,7 @@
       <hr />
       <div class="row">
         <div class="span9" id="main">
-          
-<h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
+          <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
 <p>This is very initial / experimental, from version 1.1.18.</p>
 <p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.18</code></p>
 <p>You will need some configuration to your project files, see the examples.
@@ -52,18 +51,18 @@
 <span class="l">11: </span>
 <span class="l">12: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">Core</span> <span class="o">/</span> <span class="i">NetStandard</span><span class="o">:</span>
-                     | <span class="i">Win10</span> | <span class="i">Mac</span>  | <span class="i">Ubuntu</span> (<span class="i">needs</span> <span class="i">sudo</span>) | <span class="i">Comments</span>   | 
-<span class="i">Microsoft</span> <span class="i">SQL</span> <span class="i">Server</span> | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">prebuild</span> <span class="i">task</span><span class="o">.</span> |
-<span class="i">Postgres</span>             | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> |
-<span class="i">MySQL</span> <span class="o">/</span> <span class="i">MariaDB</span>      | [<span class="i">x</span>]   | [<span class="i">x</span>]  | [<span class="i">x</span>]        | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> |
-<span class="i">SQLite</span>               | [<span class="i">x</span>]   |      |            | <span class="i">See</span> <span class="i">post</span><span class="o">-</span><span class="i">build</span> <span class="i">task</span><span class="o">.</span> <span class="i">Builds</span> <span class="i">on</span> <span class="i">Win</span>, <span class="i">runs</span> <span class="i">on</span> <span class="i">all</span> |
-<span class="i">FireBird</span>             |  <span class="o">?</span>    |  <span class="o">?</span>   |  <span class="o">?</span>         | <span class="i">Not</span> <span class="i">tested</span><span class="o">.</span> |
-<span class="i">Oracle</span>               |       |      |            | <span class="i">No</span> <span class="i">ODP</span><span class="o">.</span><span class="i">NET</span><span class="o">-</span><span class="i">driver</span> <span class="i">yet</span><span class="o">.</span> |
-<span class="i">Odbc</span>                 |       |      |            | <span class="i">Not</span> <span class="i">supported</span><span class="o">.</span> |
-<span class="i">Access</span>               |       |      |            | <span class="i">Not</span> <span class="i">supported</span><span class="o">.</span> |
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Core</span> <span class="o">/</span> <span class="id">NetStandard</span><span class="pn">:</span>
+                     <span class="pn">|</span> <span class="id">Win10</span> <span class="pn">|</span> <span class="id">Mac</span>  <span class="pn">|</span> <span class="id">Ubuntu</span> <span class="pn">(</span><span class="id">needs</span> <span class="id">sudo</span><span class="pn">)</span> <span class="pn">|</span> <span class="id">Comments</span>   <span class="pn">|</span> 
+<span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">Microsoft</span> <span class="id">SQL</span> <span class="id">Server</span> <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>   <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>  <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>        <span class="pn">|</span> <span class="id">See</span> <span class="id">prebuild</span> <span class="id">task</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">Postgres</span>             <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>   <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>  <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>        <span class="pn">|</span> <span class="id">See</span> <span class="id">post</span><span class="o">-</span><span class="id">build</span> <span class="id">task</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">MySQL</span> <span class="o">/</span> <span class="id">MariaDB</span>      <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>   <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>  <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>        <span class="pn">|</span> <span class="id">See</span> <span class="id">post</span><span class="o">-</span><span class="id">build</span> <span class="id">task</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">SQLite</span>               <span class="pn">|</span> <span class="pn">[</span><span class="id">x</span><span class="pn">]</span>   <span class="pn">|</span>      <span class="pn">|</span>            <span class="pn">|</span> <span class="id">See</span> <span class="id">post</span><span class="o">-</span><span class="id">build</span> <span class="id">task</span><span class="pn">.</span> <span class="id">Builds</span> <span class="id">on</span> <span class="id">Win</span><span class="pn">,</span> <span class="id">runs</span> <span class="id">on</span> <span class="id">all</span> <span class="pn">|</span>
+<span class="id">FireBird</span>             <span class="pn">|</span>  <span class="o">?</span>    <span class="pn">|</span>  <span class="o">?</span>   <span class="pn">|</span>  <span class="o">?</span>         <span class="pn">|</span> <span class="id">Not</span> <span class="id">tested</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">Oracle</span>               <span class="pn">|</span>       <span class="pn">|</span>      <span class="pn">|</span>            <span class="pn">|</span> <span class="id">No</span> <span class="id">ODP</span><span class="pn">.</span><span class="id">NET</span><span class="o">-</span><span class="id">driver</span> <span class="id">yet</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">Odbc</span>                 <span class="pn">|</span>       <span class="pn">|</span>      <span class="pn">|</span>            <span class="pn">|</span> <span class="id">Not</span> <span class="id">supported</span><span class="pn">.</span> <span class="pn">|</span>
+<span class="id">Access</span>               <span class="pn">|</span>       <span class="pn">|</span>      <span class="pn">|</span>            <span class="pn">|</span> <span class="id">Not</span> <span class="id">supported</span><span class="pn">.</span> <span class="pn">|</span>
 
-<span class="o">.</span><span class="i">NET</span> <span class="n">4.5</span><span class="o">.</span><span class="n">1</span> <span class="o">/</span> <span class="i">Mono</span><span class="o">:</span> <span class="i">All</span> <span class="i">should</span> <span class="i">work</span><span class="o">.</span>
+<span class="pn">.</span><span class="id">NET</span> <span class="n">4.5</span><span class="pn">.</span><span class="n">1</span> <span class="o">/</span> <span class="id">Mono</span><span class="pn">:</span> <span class="id">All</span> <span class="id">should</span> <span class="id">work</span><span class="pn">.</span>
 </code></pre></td>
 </tr>
 </table>
@@ -74,9 +73,9 @@
 <span class="l">2: </span>
 <span class="l">3: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="i">dotnet</span> <span class="i">restore</span>
-<span class="i">dotnet</span> <span class="i">build</span>
-<span class="i">dotnet</span> <span class="i">run</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">dotnet</span> <span class="id">restore</span>
+<span class="id">dotnet</span> <span class="id">build</span>
+<span class="id">dotnet</span> <span class="id">run</span>
 </code></pre></td>
 </tr>
 </table>
@@ -120,6 +119,8 @@ Others: <code>/usr/local/share/dotnet/sdk/2.0.0/Microsoft/Microsoft.NET.Build.Ex
 Win: <code>C:\Users\(your-user-name)\.nuget\packages\SQLProvider\</code>
 Others: <code>~/.nuget/packages/SQLProvider/</code></p>
 
+<div class="tip" id="fs1">namespace Microsoft.FSharp.Core</div>
+<div class="tip" id="fs2">namespace Microsoft</div>
 
         </div>
         <div class="span3">
