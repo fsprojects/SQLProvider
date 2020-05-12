@@ -1,3 +1,50 @@
+### 1.1.86 - 05.05.2020
+* Design Time Command methods to properties for easier usability.
+* Fix for insert and update of SQLServer spatial data types #157
+
+### 1.1.85 - 01.05.2020
+* Moved SaveContextSchema under Design Time Commands -property
+* Added ClearDatabaseSchemaCache under Design Time Commands -property
+* Initial support to query SQLServer spatial types: geometry, geography, hierarchyid
+
+### 1.1.84 - 26.02.2020
+* Non-async query aggregates: Seq.sumQuery, Seq.maxQuery, ...
+* Supported Group-by key-column count increased
+
+### 1.1.83 - 11.02.2020
+* MS Access in .NET Core dll deployment
+
+### 1.1.82 - 10.02.2020
+* Fix for MS Access in .NET Core
+
+### 1.1.81 - 05.02.2020
+* Fix for regression of fixing the async stored procedure exception handling, #667
+
+### 1.1.79 - 04.02.2020
+* Fix for async stored procedure exception handling, #667
+* MS Access provider included in .NET Core
+* .NET Core package references updated, e.g. System.Data.SqlClient
+
+### 1.1.76 - 10.12.2019
+* TypeProvider SDK-update: Perf by caching improvements
+
+### 1.1.75 - 18.11.2019
+* More alias query generation fixes
+
+### 1.1.74 - 12.11.2019
+* Fix for #652, alias generation
+
+### 1.1.73 - 11.11.2019
+* Better filter support to group-by join over 2 or 3 tables
+
+### 1.1.72 - 01.11.2019
+* Possibility to join 2 or 3 tables to group-by PR #650
+* Better let and into -keyword handling PR #648
+
+### 1.1.71 - 01.11.2019
+* Fixed where-before-join -query
+* Param naming fix, part 2
+
 ### 1.1.68 - 10.09.2019
 * Query-translation fixes #634
 * Initial exist-sub-query support, PR #603

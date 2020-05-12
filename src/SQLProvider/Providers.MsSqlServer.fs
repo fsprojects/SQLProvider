@@ -66,6 +66,11 @@ module MSSqlServer =
             |> List.map (fun m -> m.ProviderTypeName.Value, m)
             |> Map.ofList
 
+        let dbMappings =
+            dbMappings.Add("geometry", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+                      .Add("geography", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+                      .Add("hierarchyid", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
@@ -109,6 +114,11 @@ module MSSqlServer =
         Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
         Option.iter (fun l -> p.Size <- l) param.Length
+        match param.TypeMapping.ProviderTypeName with
+        | Some "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+        | Some "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+        | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+        | _ -> ()
         p :> IDbDataParameter
 
     let getSprocReturnCols (con: IDbConnection) (sname: SprocName) (sparams: QueryParameter list) =
@@ -298,7 +308,7 @@ module MSSqlServer =
             allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
             match returnCols with
-            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
@@ -310,7 +320,7 @@ module MSSqlServer =
                     let! _ = reader.NextResultAsync() |> Async.AwaitTask
                     return result
                 | _ ->
-                    do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
                     | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
@@ -352,6 +362,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
                 let p = SqlParameter(name,v)
+                match v.GetType().FullName with
+                | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                | _ -> ()
                 (sprintf "[%s]" k,p)::out,i+1)
             |> fst
             |> List.rev
@@ -406,7 +421,14 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 let name = sprintf "@param%i" i
                 let p =
                     match entity.GetColumnOption<obj> col with
-                    | Some v -> SqlParameter(name,v)
+                    | Some v ->
+                        let p = SqlParameter(name,v)
+                        match v.GetType().FullName with
+                        | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                        | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                        | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                        | _ -> ()
+                        p
                     | None -> SqlParameter(name,DBNull.Value)
                 (col,p)::out,i+1)
             |> fst
@@ -581,7 +603,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
-                               TypeInfo = if maxlen<>0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
+                               TypeInfo = if maxlen > 0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
                            if col.IsPrimaryKey then
                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 
@@ -661,7 +683,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
             let createParam (value:obj) =
                 let paramName = nextParam()
-                SqlParameter(paramName,value):> IDbDataParameter
+                let p = SqlParameter(paramName,value)
+                match value.GetType().FullName with
+                | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+                | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+                | "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+                | _ -> ()
+                p :> IDbDataParameter
 
             let fieldParam (value:obj) =
                 let paramName = nextParam()
@@ -894,7 +922,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                            if sqlQuery.Aliases.Count < 2 then fieldNotation a c
+                            else sprintf "%s as '%s'" (fieldNotation a c) (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 

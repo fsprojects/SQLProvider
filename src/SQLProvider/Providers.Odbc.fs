@@ -9,16 +9,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-
 #if NETSTANDARD
-module StandardExtensions =
-    type DataTable with
-        member x.AsEnumerable() = 
-            seq {
-                for r in x.Rows do
-                yield r
-            }
-
 open StandardExtensions
 #endif
 
@@ -259,7 +250,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
                 odbcCommand.CommandType <- CommandType.StoredProcedure;
                 inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
-                do! odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                let! r = odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitTask
                 return ReturnValueType.Unit
             }
 
@@ -552,7 +543,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> (fieldNotation a c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                            if sqlQuery.Aliases.Count < 2 then fieldNotation a c
+                            else sprintf "%s as '%s'" (fieldNotation a c) (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 

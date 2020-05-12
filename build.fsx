@@ -15,7 +15,7 @@ open System.IO
 #load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
-#r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"
+#r @"packages/scripts/Npgsql/lib/net461/Npgsql.dll"
 
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
@@ -121,7 +121,7 @@ Target "BuildCore" (fun _ ->
 
 Target "SetupPostgreSQL" (fun _ ->
       let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
-  
+
       connBuilder.Host <- "localhost"
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
@@ -144,14 +144,14 @@ Target "SetupPostgreSQL" (fun _ ->
             printfn "Connection attempt %i: %A" attempt e
             Threading.Thread.Sleep 1000
             if attempt < 30 then runCmd' (attempt + 1)
-  
+
         runCmd' 0
-                
+              
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
       runCmd (sprintf "CREATE DATABASE %s" testDbName)
       connBuilder.Database <- testDbName
-  
+
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
       |> Seq.map IO.File.ReadAllText      
@@ -238,11 +238,12 @@ Target "CopyFiles" (fun _ ->
 #if MONO
 #else
     let copyDotnetLibraries dotnetSdk =
-        CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
-        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
-        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
-        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
-        CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
+       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
+       CopyFile "bin/netstandard2.0" ("packages/standard/System.Data.OleDb/ref/net461/System.Data.OleDb.dll")
     // See https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/292
     // let netDir version = 
     //     @"C:\Program Files\dotnet\sdk\" + version + @"\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"

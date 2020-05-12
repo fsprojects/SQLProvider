@@ -97,6 +97,8 @@ The functions to work with asynchrony are:
 * Seq.minAsync : IQueryable<'a when 'a : comparison> -> Async<'a>
 * Seq.maxAsync : IQueryable<'a when 'a : comparison> -> Async<'a>
 * Seq.averageAsync : IQueryable<'a when 'a : comparison> -> Async<'a>
+* Seq.stdDevAsync : IQueryable<'a when 'a : comparison> -> Async<'a>
+* Seq.varianceAsync : IQueryable<'a when 'a : comparison> -> Async<'a>
  
 Seq is .NET IEnumerable, which is lazy. So be careful if using Seq.executeQueryAsync 
 to not execute your queries several times.

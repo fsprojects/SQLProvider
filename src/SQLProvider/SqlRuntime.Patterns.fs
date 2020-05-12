@@ -491,6 +491,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> 
             -> Some(alias, col, e.Type)
         | _ -> None
+
     | _ -> None
 
 //Simpler version of where Condition-pattern, used on case-when-clause

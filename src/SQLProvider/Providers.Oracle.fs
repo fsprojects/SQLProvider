@@ -487,7 +487,7 @@ module internal Oracle =
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             match retCols with
-            | [||] -> do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                       return Unit
             | [|col|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
@@ -502,7 +502,7 @@ module internal Oracle =
                         return Scalar(p.ParameterName, r)
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
             | cols ->
-                do! com.ExecuteNonQueryAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
                 let! returnValues =
                     cols |> Array.toList
                     |> Sql.evaluateOneByOne (fun col ->
@@ -924,7 +924,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> fieldNotation a c)
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                            if sqlQuery.Aliases.Count < 2 then fieldNotation a c
+                            else sprintf "%s as \"%s\"" (fieldNotation a c) (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 

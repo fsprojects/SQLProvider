@@ -6,6 +6,7 @@
 
 let [<Literal>] connStr2008R2 = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
 let [<Literal>] connStr2017 = connStr2008R2
+let runtimeConnStr = connStr2008R2
 
 #else
 module SqlServerTests

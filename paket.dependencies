@@ -1,5 +1,6 @@
 source https://nuget.org/api/v2
 
+nuget FSharp.Compiler.Tools
 nuget FSharp.Core >= 3.1.2.5 lowest_matching:true, redirects:force
 nuget RazorEngine
 nuget NUnit = 2.6.4
@@ -19,6 +20,7 @@ group Standard
     source https://nuget.org/api/v2
 
     nuget FSharp.Core
+    nuget System.Data.OleDb
     nuget System.Runtime
     nuget System.Runtime.Loader
     nuget System.Runtime.Serialization.Primitives

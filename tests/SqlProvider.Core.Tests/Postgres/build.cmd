@@ -2,6 +2,6 @@
 ..\..\..\.paket\paket.exe restore
 rd /s /q obj
 rd /s /q bin
-dotnet restore
+dotnet restore -f
 dotnet build
 dotnet run

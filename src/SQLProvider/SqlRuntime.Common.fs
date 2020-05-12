@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Common
+namespace FSharp.Data.Sql.Common
 
 open System
 open System.Collections.Generic
@@ -185,7 +185,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 unbox arr
            // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
            | data when typeof<'T> <> data.GetType() && 
-                       typeof<'T> <> typeof<obj>
+                       typeof<'T> <> typeof<obj> &&
+                       (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
         else defaultValue()
@@ -663,30 +664,82 @@ and internal SchemaCache =
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
 /// is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
 /// SQL result instead of actually counting anything
-type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntity) as this =
-    inherit ResizeArray<SqlEntity> ([|distinctItem|]) 
-    new(keyname, keyval, distinctItem:SqlEntity) = GroupResultItems((keyname,""), keyval, distinctItem)
+type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*String*String*String, keyval, distinctItem:'SqlEntity) as this =
+    inherit ResizeArray<'SqlEntity> ([|distinctItem|]) 
+    new(keyname, keyval, distinctItem:'SqlEntity) = GroupResultItems((keyname,"","","","","",""), keyval, distinctItem)
+    new((k1,k2):String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,"","","","",""), keyval, distinctItem)
+    new((k1,k2,k3):String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,"","","",""), keyval, distinctItem)
+    new((k1,k2,k3,k4):String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,"","",""), keyval, distinctItem)
+    new((k1,k2,k3,k4,k5):String*String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,"","",""), keyval, distinctItem)
+    new((k1,k2,k3,k4,k5,k6):String*String*String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,k5,k6,""), keyval, distinctItem)
     member private __.fetchItem<'ret> itemType (columnName:Option<string>) =
         let fetchCol =
             match columnName with
-            | None -> fst(keyname).ToUpperInvariant()
+            | None -> (keyname |> fun (x,_,_,_,_,_,_) -> x).ToUpperInvariant()
             | Some c -> c.ToUpperInvariant()
         let itms =
-            distinctItem.ColumnValues 
-            |> Seq.filter(fun (s,k) -> 
-                let sUp = s.ToUpperInvariant()
-                (sUp.Contains("_"+fetchCol)) && 
-                    (sUp.Contains(itemType+"_")))
+            match box distinctItem with
+            | :? SqlEntity ->
+                let ent = unbox<SqlEntity> distinctItem
+                ent.ColumnValues 
+                    |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Tuple<SqlEntity,SqlEntity> ->
+                let ent1, ent2 = unbox<SqlEntity*SqlEntity> distinctItem
+                Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; |]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Tuple<SqlEntity,SqlEntity,SqlEntity> ->
+                let ent1, ent2, ent3 = unbox<SqlEntity*SqlEntity*SqlEntity> distinctItem
+                Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;|]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
+                let ent1, ent2, ent3, ent4 = unbox<SqlEntity*SqlEntity*SqlEntity*SqlEntity> distinctItem
+                Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;ent4.ColumnValues;|]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity> ->
+                let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> distinctItem
+                Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; |]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity> ->
+                let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> distinctItem
+                Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; |]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
+                let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> distinctItem
+                Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; ent.Item4.ColumnValues; |]
+                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
+                        let sUp = s.ToUpperInvariant()
+                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
+                            (sUp.Contains(itemType+"_")))
+            | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
         let itm = 
-            if Seq.isEmpty itms then 
-                failwithf "Unsupported aggregate: %s %s %s" (fst keyname) (snd keyname) (if columnName.IsSome then columnName.Value else "")
+            if Seq.isEmpty itms then
+                let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> x1 + " " + x2+ " " + x3 + " " + x4 + " " + x5 + " " + x6 + " " + x7).Trim()
+                failwithf "Unsupported aggregate: %s %s" cols (if columnName.IsSome then columnName.Value else "")
             else itms |> Seq.head |> snd
         if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
         else 
             let returnType = typeof<'ret>
             Utilities.convertTypes itm returnType :?> 'ret
     member __.Values = [|distinctItem|]
-    interface System.Linq.IGrouping<'key, SqlEntity> with
+    interface System.Linq.IGrouping<'key, 'SqlEntity> with
         member __.Key = keyval
     member __.AggregateCount<'T>(columnName) = this.fetchItem<'T> "COUNT" columnName
     member __.AggregateSum<'T>(columnName) = 
@@ -700,6 +753,13 @@ type GroupResultItems<'key>(keyname:String*String, keyval, distinctItem:SqlEntit
     member __.AggregateStDev<'T>(columnName) = this.fetchItem<'T> "STDDEV" columnName
     member __.AggregateStdDev<'T>(columnName) = this.fetchItem<'T> "STDDEV" columnName
     member __.AggregateVariance<'T>(columnName) = this.fetchItem<'T> "VAR" columnName
+    static member op_Implicit(x:GroupResultItems<'key, 'SqlEntity>) : Microsoft.FSharp.Linq.RuntimeHelpers.Grouping<'key, 'SqlEntity> =
+        Microsoft.FSharp.Linq.RuntimeHelpers.Grouping((x :> System.Linq.IGrouping<_,_>).Key, x.Values)
+    static member op_Implicit(x:Microsoft.FSharp.Linq.RuntimeHelpers.Grouping<'key, 'SqlEntity>) : GroupResultItems<'key, 'SqlEntity> =
+        let key = x.GetType().GetField("key", BindingFlags.NonPublic ||| BindingFlags.Instance)
+        let v = key.GetValue(x) |> unbox<'key>
+        let i = x |> Seq.head
+        GroupResultItems<'key, 'SqlEntity>("", v, i)
 
 module internal CommonTasks =
 

@@ -3,6 +3,16 @@ namespace FSharp.Data.Sql.Common
 open System
 open System.Collections.Generic
 
+#if NETSTANDARD
+module StandardExtensions =
+    type System.Data.DataTable with
+        member x.AsEnumerable() = 
+            seq {
+                for r in x.Rows do
+                yield r
+            }
+#endif
+
 module internal Utilities = 
     
     open System.IO
@@ -30,11 +40,11 @@ module internal Utilities =
         let itemid = 
             if name.Length > 4 then
                 match Int32.TryParse (name.Remove(0, 4)) with
-                | (true, n) -> n
-                | (false, _) -> Int32.MaxValue
+                | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
+                | _ -> Int32.MaxValue
             else Int32.MaxValue
-        if itemid = Int32.MaxValue && tupleIndex.Contains(name) then name //already resolved
-        elif tupleIndex.Count < itemid then ""
+        if itemid = Int32.MaxValue && tupleIndex.Contains(name) && name <> "" then name //already resolved
+        elif tupleIndex.Count < itemid then name
         else tupleIndex.[itemid - 1]
 
 
@@ -489,8 +499,9 @@ module Sql =
 
     let private collectfunc(reader:IDataReader) = 
         [|
-            for i = 0 to reader.FieldCount - 1 do 
-                match reader.GetValue(i) with
+            for i = 0 to reader.FieldCount - 1 do
+                let v = reader.GetValue i // if we would like to swallow unknown types errors: try reader.GetValue(i) with | :? System.IO.FileNotFoundException as ex -> box ex
+                match v with
                 | null | :? DBNull ->  yield (reader.GetName(i),null)
                 | value -> yield (reader.GetName(i),value)
         |]

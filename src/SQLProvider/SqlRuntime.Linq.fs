@@ -15,11 +15,19 @@ open FSharp.Data.Sql.Schema
 type IWithDataContext =
     abstract DataContext : ISqlDataContext
 
-type CastTupleMaker<'T1,'T2,'T3> = 
+type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box
     static member makeTuple3(t1:obj, t2:obj, t3:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3) |> box
+    static member makeTuple4(t1:obj, t2:obj, t3:obj, t4:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4) |> box
+    static member makeTuple5(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5) |> box
+    static member makeTuple6(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj, t6:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5, t6 :?> 'T6) |> box
+    static member makeTuple7(t1:obj, t2:obj, t3:obj, t4:obj, t5:obj, t6:obj, t7:obj) = 
+        (t1 :?> 'T1, t2 :?> 'T2, t3 :?> 'T3, t4 :?> 'T4, t5 :?> 'T5, t6 :?> 'T6, t7 :?> 'T7) |> box
 
 module internal QueryImplementation =
     open System.Linq
@@ -50,32 +58,47 @@ module internal QueryImplementation =
     let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
         let args = projector.GetType().GenericTypeArguments
         seq { 
-            if args.Length > 0 && args.[0].Name.StartsWith("IGrouping") then
-                let keyType = 
-                    if args.[0].GenericTypeArguments.Length = 0 then None
-                    else 
-                        let kt = args.[0].GenericTypeArguments.[0]
-                        if kt = typeof<obj> then None else Some kt
-                let keyConstructor = 
-                    keyType |> Option.map(fun kt ->
-                        let tyo = typedefof<GroupResultItems<_>>.MakeGenericType(kt)
-                        tyo.GetConstructors())
+            if args.Length > 0 && (args.[0].Name.StartsWith("IGrouping") ||
+                                      (args.[0].Name.StartsWith("AnonymousObject") && args.[0].GenericTypeArguments.Length > 0 && args.[0].GenericTypeArguments |> Array.exists(fun a -> a.Name.StartsWith("IGrouping")))
+                        ) then
+                let keyType, keyConstructor, itemEntityType = 
+                    if args.[0].Name.StartsWith("IGrouping") then
+                        if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
+                        else 
+                            let kt = args.[0].GenericTypeArguments.[0]
+                            let itmType = if args.[0].GenericTypeArguments.Length > 1 then args.[0].GenericTypeArguments.[1] else typeof<SqlEntity>
+                            if kt = typeof<obj> then None, None, itmType
+                            else
+                                let tyo = typedefof<GroupResultItems<_,SqlEntity>>.MakeGenericType(kt, itmType)
+                                Some kt, Some (tyo.GetConstructors()), itmType
+                    else
+                        let baseItmType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
+                        let gen = args.[0].GenericTypeArguments |> Array.find(fun a -> a.Name.StartsWith("IGrouping"))
+                        if gen.GenericTypeArguments.Length = 0 then None, None, baseItmType
+                        else
+                            let kt = gen.GenericTypeArguments.[0]
+                            let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
+                            if kt = typeof<obj> then None, None, itmType
+                            else
+                                let tyo = typedefof<GroupResultItems<_,_>>.MakeGenericType(kt, itmType)
+                                Some kt, Some (tyo.GetConstructors()), itmType
 
                 let getval (key:obj) idx = 
                     if keyType.Value.IsGenericType then
                         Utilities.convertTypes key keyType.Value.GenericTypeArguments.[idx]
                     else key
                 
-                let tup2, tup3 = 
+                let tup2, tup3, tup4, tup5, tup6, tup7 = 
                     let genArg idx = 
                         if keyType.IsSome && keyType.Value.GenericTypeArguments.Length > idx then
                             keyType.Value.GenericTypeArguments.[idx]
                         else typeof<Object>
                     let tup =
-                        typedefof<CastTupleMaker<_,_,_>>.MakeGenericType(
-                            genArg 0, genArg 1, genArg 2
+                        typedefof<CastTupleMaker<_,_,_,_,_,_,_>>.MakeGenericType(
+                            genArg 0, genArg 1, genArg 2, genArg 3, genArg 4, genArg 5, genArg 6
                         )
-                    tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3")
+                    tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3"), tup.GetMethod("makeTuple4"),
+                    tup.GetMethod("makeTuple5"), tup.GetMethod("makeTuple6"), tup.GetMethod("makeTuple7")
 
                 // do group-read
                 let collected = 
@@ -84,26 +107,54 @@ module internal QueryImplementation =
                         let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                        let entity =
+                            if itemEntityType = typeof<SqlEntity> then box e
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_>(e, e))
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_,_>(e, e, e))
+                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Tuple<_,_,_,_>(e, e, e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
+                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> then
+                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
+                            else failwith ("Not supported grouping: " + itemEntityType.Name)
+                            
                         match data with
                         | [||] -> 
-                            let ty = typedefof<GroupResultItems<_>>.MakeGenericType(typeof<int>)
-                            ty.GetConstructors().[1].Invoke [|"";1;e|]
+                            let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(typeof<int>, itemEntityType)
+                            ty.GetConstructors().[1].Invoke [|"";1;entity|]
                         | [|keyname, keyvalue|] -> 
                             match keyType with
                             | Some keyTypev ->
                                 let x = 
                                     let b = Utilities.convertTypes keyvalue keyTypev |> unbox
                                     if b.GetType() = typeof<obj> then unbox b else b
-                                keyConstructor.Value.[1].Invoke [|keyname; x; e;|]
+                                keyConstructor.Value.[1].Invoke [|keyname; x; entity;|]
                             | None ->
-                                let ty = typedefof<GroupResultItems<_>>.MakeGenericType(keyvalue.GetType())
-                                ty.GetConstructors().[1].Invoke [|keyname; keyvalue; e;|]
+                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(keyvalue.GetType(), itemEntityType)
+                                ty.GetConstructors().[1].Invoke [|keyname; keyvalue; entity;|]
                         | [|kn1, kv1; kn2, kv2|] when keyType.IsSome ->
                             let v1, v2 = getval kv1 0, getval kv2 1
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); e;|]
-                        | [|kn1, kv1; kn2, kv2; kn3; kv3|] when keyType.IsSome ->
+                            keyConstructor.Value.[2].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3|] when keyType.IsSome ->
                             let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
-                            keyConstructor.Value.[0].Invoke [|(kn1,kn2); tup3.Invoke(null, [|v1;v2;v3|]); e;|]
+                            keyConstructor.Value.[3].Invoke [|(kn1,kn2,kn3); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4|] when keyType.IsSome ->
+                            let v1, v2, v3, v4 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3
+                            keyConstructor.Value.[4].Invoke [|(kn1,kn2,kn3,kn4); tup4.Invoke(null, [|v1;v2;v3;v4|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4
+                            keyConstructor.Value.[5].Invoke [|(kn1,kn2,kn3,kn4,kn5); tup5.Invoke(null, [|v1;v2;v3;v4;v5|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5; kn6, kv6|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5, v6 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4, getval kv6 5
+                            keyConstructor.Value.[6].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6); tup6.Invoke(null, [|v1;v2;v3;v4;v5;v6|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5; kn6, kv6; kn7, kv7|] when keyType.IsSome ->
+                            let v1, v2, v3, v4, v5, v6, v7 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4, getval kv6 5, getval kv7 6
+                            keyConstructor.Value.[0].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6,kn7); tup7.Invoke(null, [|v1;v2;v3;v4;v5;v6;v7|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
 
@@ -314,8 +365,8 @@ module internal QueryImplementation =
                 match asyncModePreEvaluated.TryPop() with
                 | false, _ -> 
                     executeQuery dc provider sqlQuery tupleIndex
-                    |> Seq.cast<IGrouping<'TKey, 'TEntity>>
-                    |> fun res -> res.GetEnumerator()
+                        |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                        |> fun res -> res.GetEnumerator()
                 | true, res -> (Seq.cast<IGrouping<'TKey, 'TEntity>> res).GetEnumerator()
         interface IEnumerable with
              member x.GetEnumerator() = 
@@ -351,6 +402,38 @@ module internal QueryImplementation =
                 let isHaving = source.SqlExpression.hasGroupBy().IsSome
                 // if same query contains multiple subqueries, the parameter names in those should be different.
                 let mutable nestCount = 0
+
+                let (|KnownTemporaryVariable|_|) (exp:Expression) =
+                    if exp.Type.Name <> "Boolean" then None
+                    else
+                    let rec composeLambdas (traversable:Expression) sqlExprProj =
+
+                        // Detect a LINQ-"helper" and unwrap it
+                        // There are two types of nesting-generation: into-keyword and let-keyword.
+                        // Let creates anonymous tuple of Item1 Item2 where into hides the previous tree.
+                        // We have to merge exp + qual expressions
+                        match traversable, sqlExprProj with
+                        | :? LambdaExpression as le,
+                                Projection(MethodCall(None, MethodWithName("Select"), [a ; OptionalQuote(Lambda([pe], nexp) as lambda1)]),innerProj)
+                                when le.Parameters.Count = 1 && nexp.Type = le.Parameters.[0].Type ->
+
+                            let visitor =
+                                { new ExpressionVisitor() with
+                                    member __.VisitParameter _ = nexp
+                                    member __.VisitLambda x =
+                                        let visitedBody = base.Visit x.Body
+                                        Expression.Lambda(visitedBody, pe) :> Expression
+                                    }
+                            let visited = visitor.Visit traversable
+                            let opt = ExpressionOptimizer.visit visited
+
+                            if pe.Type = typeof<SqlEntity> then
+
+                                Some opt
+                            else
+                                composeLambdas opt innerProj
+                        | _ -> None
+                    composeLambdas qual source.SqlExpression
 
                 let (|Condition|_|) exp =
                     // IMPORTANT : for now it is always assumed that the table column being checked on the server side is on the left hand side of the condition expression.
@@ -449,6 +532,8 @@ module internal QueryImplementation =
                     | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
+                    | KnownTemporaryVariable(Lambda(_,Condition(cond))) ->
+                        Condition.And([cond],None)
                     | _ -> 
                         failwith ("Unsupported expression. Ensure all server-side objects won't have any .NET-operators/methods that can't be converted to SQL. The In and Not In operators only support the inline array syntax. " + exp.ToString())
 
@@ -473,21 +558,41 @@ module internal QueryImplementation =
                 | _ -> failwith "only support lambdas in a where"
 
              let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
-                let sourceEntity =
+                let sAlias, sourceEntity =
+
                     match source.SqlExpression with
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
-                        sourceEntity
+                        sourceAlias, sourceEntity
+                    | FilterClause(_, SelectMany(a1, a2,CrossJoin(_,_),sqlExp))
+                    | FilterClause(_, SelectMany(a1, a2,LinkQuery(_),sqlExp))
+                    | SelectMany(a1, a2,CrossJoin(_,_),sqlExp)
+                    | SelectMany(a1, a2,LinkQuery(_),sqlExp)  ->
+                        //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                        //if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
 
-                    | SelectMany(a1, a2,selectdata,sqlExp)  ->
-                        let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
-                        failwithf "Grouping over multiple tables is not supported yet"
+                        match sqlExp with
+                        | BaseTable(alias,sourceEntity)
+                        | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
+                        | BaseTable(alias,sourceEntity)
+                        | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
+                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_,_),sqlExp2))
+                        | FilterClause(_, SelectMany(a3, a4,LinkQuery(_),sqlExp2))
+                        | SelectMany(a3, a4,CrossJoin(_,_),sqlExp2)
+                        | SelectMany(a3, a4,LinkQuery(_),sqlExp2)  ->
+                            match sqlExp2 with
+                            | BaseTable(alias,sourceEntity)
+                            | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a3 -> alias, sourceEntity
+                            | BaseTable(alias,sourceEntity)
+                            | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a4 -> alias, sourceEntity
+                            | _ -> failwithf "Grouping over multiple tables is not supported yet (%A)." source.SqlExpression
+                        | _ -> failwithf "Grouping over multiple tables is not supported yet (%A)." source.SqlExpression
                     | _ -> failwithf "Unexpected groupby entity expression (%A)." source.SqlExpression
 
                 let getAlias ti =
                         match ti, source.SqlExpression with
-                        | "", _ when source.SqlExpression.HasAutoTupled() -> sourceAlias
-                        | "", FilterClause(alias,sourceEntity) -> sourceAlias
+                        | "", _ when source.SqlExpression.HasAutoTupled() -> sAlias
+                        | "", FilterClause(alias,sourceEntity) -> sAlias
                         | "", _ -> ""
                         | _ -> resolveTuplePropertyName ti source.TupleIndex
 
@@ -503,8 +608,14 @@ module internal QueryImplementation =
                     AggregateColumns = [] // Aggregates will be populated later: [CountOp,alias,"City"]
                     Projection = None //lambda2 ?
                 }
-                let ty = typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, meth.GetGenericArguments().[0])
-                ty, data, sourceAlias
+
+                let ty =
+                    match lambdas with
+                    | [x] -> typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType,  meth.GetGenericArguments().[0])
+                    | [x1;x2] -> typedefof<SqlGroupingQueryable<_,_>>.MakeGenericType(lambdas.[0].ReturnType, lambdas.[1].ReturnType)
+                    | _ -> failwith "Unknown grouping lambdas"
+
+                ty, data, sAlias
 
 
              // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
@@ -548,6 +659,11 @@ module internal QueryImplementation =
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                          OptionalQuote (Lambda(projectionParams,_))]) ->
+                    let sourceTi,sourceKey =
+                        match sourceKey, source.SqlExpression with
+                        | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
+                            g.KeyColumns.[0]
+                        | _ -> sourceTi, sourceKey
                     // this case happens when the select many also includes one or more joins in the same tree.
                     // in this situation, the first agrument will either be an additional nested join method call,
                     // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
@@ -703,7 +819,19 @@ module internal QueryImplementation =
 //                    | MethodCall(None, (MethodWithName "GroupBy" | MethodWithName "GroupJoin" as meth),
 //                                    [ SourceWithQueryData source;
 //                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
-//                                      OptionalQuote (Lambda([ParamName _], _))]) 
+//                                      OptionalQuote (Lambda([ParamName _], _))])
+                    | MethodCall(None, (MethodWithName "GroupBy" as meth),
+                                    [ SourceWithQueryData source;
+                                      OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1);
+                                      OptionalQuote (Lambda([ParamName lambdaparam2], exp2) as lambda2) ]) ->
+                        let lambda = lambda1 :?> LambdaExpression
+                        let lambdae2 = lambda2 :?> LambdaExpression
+                        let ty, data, sourceEntityName = parseGroupBy meth source lambdaparam "" [lambda; lambdae2] exp ""
+                        let vals = { data with Projection = Some lambda2 }
+                        let expr = SelectMany(sourceEntityName,"grp",GroupQuery(vals), source.SqlExpression)
+
+                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; expr; source.TupleIndex;|] :?> IQueryable<'T>
+
                     | MethodCall(None, (MethodWithName "GroupBy" as meth),
                                     [ SourceWithQueryData source;
                                       OptionalQuote (Lambda([ParamName lambdaparam], exp) as lambda1)]) ->
@@ -719,6 +847,11 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                       OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                       OptionalQuote projection ]) ->
+                        let sourceTi,sourceKey =
+                            match sourceKey, source.SqlExpression with
+                            | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
+                                g.KeyColumns.[0]
+                            | _ -> sourceTi, sourceKey
                         let destEntity, isOuter =
                             match dest.SqlExpression with
                             | BaseTable(_,destEntity) -> destEntity, false
@@ -966,3 +1099,52 @@ module internal QueryImplementation =
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
 
+    let getAgg<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : 'T =
+        match s with
+        | :? IWithSqlService as svc ->
+            match svc.SqlExpression with
+            | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
+                    
+                let key = Utilities.getBaseColumnName op
+
+                let alias =
+                        match entity with
+                        | "" when source.SqlExpression.HasAutoTupled() -> param
+                        | "" -> ""
+                        | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                let sqlExpression =
+
+                    let opName = 
+                        match agg with
+                        | "Sum" -> SumOp(key)
+                        | "Max" -> MaxOp(key)
+                        | "Count" -> CountOp(key)
+                        | "Min" -> MinOp(key)
+                        | "Average" | "Avg" -> AvgOp(key)
+                        | "StdDev" | "StDev" | "StandardDeviation" -> StdDevOp(key)
+                        | "Variance" -> VarianceOp(key)
+                        | _ -> failwithf "Unsupported aggregation `%s` in execution expression `%s`" agg (source.SqlExpression.ToString())
+
+                    match source.SqlExpression with
+                    | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
+                    | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
+
+                let res = executeQueryScalar source.DataContext source.Provider sqlExpression source.TupleIndex 
+                if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
+                (Utilities.convertTypes res typeof<'T>) |> unbox
+            | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+        | c -> failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
+
+module Seq =
+    /// Execute SQLProvider query to get the sum of elements.
+    let sumQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Sum"
+    /// Execute SQLProvider query to get the max of elements.
+    let maxQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Max"
+    /// Execute SQLProvider query to get the min of elements.
+    let minQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Min"
+    /// Execute SQLProvider query to get the avg of elements.
+    let averageQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Average"
+    /// Execute SQLProvider query to get the standard deviation of elements.
+    let stdDevQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "StdDev"
+    /// Execute SQLProvider query to get the variance of elements.
+    let varianceQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Variance"
