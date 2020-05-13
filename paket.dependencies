@@ -50,7 +50,7 @@ group Scripts
     nuget MySql.Data < 7.0.0
     nuget MySqlConnector
     nuget Newtonsoft.Json
-    nuget Npgsql
+    nuget Npgsql 3.2.7
     nuget Oracle.ManagedDataAccess
     nuget FirebirdSql.Data.FirebirdClient
     nuget System.Data.SQLite.Core

@@ -75,18 +75,12 @@ let buildReference () =
   let binaries =
     referenceBinaries
     |> List.map (fun lib-> bin @@ lib)
-  try
-      RazorMetadataFormat.Generate
+  RazorMetadataFormat.Generate
         ( binaries, output @@ "reference", layoutRootsAll.["en"],
             parameters = ("root", "../")::info,
             sourceRepo = githubLink @@ "tree/master",
             sourceFolder = __SOURCE_DIRECTORY__ @@ ".." @@ "..",
             publicOnly = true, libDirs = [bin] )
-  with :? System.TypeLoadException as e when e.Message.Contains("FSharp.Core") ->
-    // Too bad. Paket failed to load correct FSharp.Core.dll. See: https://github.com/dotnet/fsharp/issues/5207
-    printfn "Internal API doc generation failed."
-    printfn "%O" e
-    ()
 
 // Build documentation from `fsx` and `md` files in `docs/content`
 let buildDocumentation () =
@@ -110,7 +104,7 @@ let buildDocumentation () =
         match key with
         | Some lang -> layoutRootsAll.[lang]
         | None -> layoutRootsAll.["en"] // "en" is the default language
-    printfn "Generating helps, wait for a year..."
+    printfn "Generating helps..."
     RazorLiterate.ProcessDirectory
       ( dir, docTemplate, output @@ sub,
         processRecursive = false,

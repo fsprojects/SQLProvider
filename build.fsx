@@ -16,7 +16,7 @@ open System.IO
 #load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
-#r @"packages/scripts/Npgsql/lib/net461/Npgsql.dll"
+#r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"
 
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
