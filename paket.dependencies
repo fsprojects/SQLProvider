@@ -33,7 +33,6 @@ group Standard
     nuget System.Data.Common
     nuget System.Data.Odbc
 	nuget Microsoft.Data.SQLite 2.0
-	nuget FSharp.Compiler.Service
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
