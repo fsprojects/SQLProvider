@@ -50,11 +50,11 @@ group Scripts
     nuget MySql.Data < 7.0.0
     nuget MySqlConnector
     nuget Newtonsoft.Json
-    nuget Npgsql 3.2.7
+    nuget Npgsql < 4.0
     nuget Oracle.ManagedDataAccess
     nuget FirebirdSql.Data.FirebirdClient
-    nuget System.Data.SQLite.Core
-    nuget System.Data.SQLite.Linq
+    nuget System.Data.SQLite.Core 1.0.105.2
+    nuget System.Data.SQLite.Linq 1.0.105.2
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 
