@@ -910,16 +910,24 @@ let ``simple select query with groupBy sum``() =
         query {
             for od in dc.Main.OrderDetails do
             groupBy od.ProductId into p
-            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount), p.Sum(fun f -> f.UnitPrice+1m))
+            select (
+                p.Key,
+                p.Sum(fun f -> f.UnitPrice),
+                p.Sum(fun f -> f.Discount),
+                p.Sum(fun f -> f.UnitPrice+1m),
+                p.Sum(fun f -> f.UnitPrice+2m)
+                )
         } |> Seq.toList
 
-    let _,fstUnitPrice, fstDiscount, plusones = qry.[0]
+    let mapped = qry |> List.map(fun (k,v1,v2,v3,v4) -> k, (v1,v2,v3,v4)) |> Map.ofList
+    let fstUnitPrice, fstDiscount, plusones, plustwos = mapped.[1L]
     Assert.Greater(652m, fstUnitPrice)
     Assert.Less(651m, fstUnitPrice)
     Assert.Greater(2.96m, fstDiscount)
     Assert.Less(2.95m, fstDiscount)
     Assert.Greater(699m, plusones)
     Assert.Less(689m, plusones)
+    Assert.Greater(plustwos, plusones)
         
 [<Test>]
 let ``simple select query with groupBy having count``() = 
