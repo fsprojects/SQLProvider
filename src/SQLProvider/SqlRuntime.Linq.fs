@@ -137,15 +137,36 @@ module internal QueryImplementation =
                             | None ->
                                 let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(keyvalue.GetType(), itemEntityType)
                                 ty.GetConstructors().[1].Invoke [|keyname; keyvalue; entity;|]
-                        | [|kn1, kv1; kn2, kv2|] when keyType.IsSome ->
-                            let v1, v2 = getval kv1 0, getval kv2 1
-                            keyConstructor.Value.[2].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
-                        | [|kn1, kv1; kn2, kv2; kn3, kv3|] when keyType.IsSome ->
-                            let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
-                            keyConstructor.Value.[3].Invoke [|(kn1,kn2,kn3); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
-                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4|] when keyType.IsSome ->
-                            let v1, v2, v3, v4 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3
-                            keyConstructor.Value.[4].Invoke [|(kn1,kn2,kn3,kn4); tup4.Invoke(null, [|v1;v2;v3;v4|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2|] ->
+                            match keyType with
+                            | Some v ->
+                                let v1, v2 = getval kv1 0, getval kv2 1
+                                keyConstructor.Value.[2].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
+                            | None ->
+                                let kv1Type, kv2Type = kv1.GetType(),kv2.GetType()
+                                let tRes = typedefof<Tuple<_,_>>.MakeGenericType(kv1Type,kv2Type)
+                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
+                                ty.GetConstructors().[2].Invoke [|(kn1,kn2); Activator.CreateInstance(tRes, [|kv1; kv2|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3|] ->
+                            match keyType with
+                            | Some _ ->
+                                let v1, v2, v3 = getval kv1 0, getval kv2 1, getval kv3 2
+                                keyConstructor.Value.[3].Invoke [|(kn1,kn2,kn3); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
+                            | None ->
+                                let kv1Type, kv2Type, kv3Type = kv1.GetType(),kv2.GetType(),kv3.GetType()
+                                let tRes = typedefof<Tuple<_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type)
+                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
+                                ty.GetConstructors().[3].Invoke [|(kn1,kn2,kn3); Activator.CreateInstance(tRes, [|kv1; kv2; kv3|]); entity;|]
+                        | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4|] ->
+                            match keyType with
+                            | Some _ ->
+                                let v1, v2, v3, v4 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3
+                                keyConstructor.Value.[4].Invoke [|(kn1,kn2,kn3,kn4); tup4.Invoke(null, [|v1;v2;v3;v4|]); entity;|]
+                            | None ->
+                                let kv1Type, kv2Type, kv3Type, kv4Type = kv1.GetType(),kv2.GetType(),kv3.GetType(),kv4.GetType()
+                                let tRes = typedefof<Tuple<_,_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type,kv4Type)
+                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
+                                ty.GetConstructors().[4].Invoke [|(kn1,kn2,kn3,kn4); Activator.CreateInstance(tRes, [|kv1; kv2; kv3; kv4|]); entity;|]
                         | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5|] when keyType.IsSome ->
                             let v1, v2, v3, v4, v5 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4
                             keyConstructor.Value.[5].Invoke [|(kn1,kn2,kn3,kn4,kn5); tup5.Invoke(null, [|v1;v2;v3;v4;v5|]); entity;|]

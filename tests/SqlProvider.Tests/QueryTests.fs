@@ -791,6 +791,17 @@ let ``simplest select query with groupBy``() =
     Assert.IsNotEmpty(qry)
 
 [<Test>]
+let ``simplest select query with groupBy 2 columns``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy (cust.City, cust.Address)
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
+[<Test>]
 let ``simplest select query with groupBy aggregate``() = 
     let dc = sql.GetDataContext()
     let qry = 
