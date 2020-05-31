@@ -224,6 +224,25 @@ let ``outer join with inner join test``() =
 
     Assert.AreNotEqual(None,qry)
 
+let ``simple select two queries test``() =
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    // Works also with: let dc = sql.GetDataContext(SelectOperations.DotNetSide)
+    let itm1 = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust)
+            head
+        } 
+    let itm2, isOk = 
+        query {
+            for o in dc.Main.Orders do
+            where(o.CustomerId = itm1.CustomerId)
+            select (o, (o.CustomerId = itm1.CustomerId))
+            head
+        } 
+    Assert.AreEqual(itm1.CustomerId, itm2.CustomerId)
+    Assert.IsTrue isOk
+
 [<Test >]
 let ``option from simple select with exactly one``() =
     let dc = sql.GetDataContext()
@@ -987,6 +1006,25 @@ let ``simple select query with groupBy having key``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+let ``simple select query with groupBy having nested``() = 
+    let dc = sql.GetDataContext()
+    let subQry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Key = "London") 
+            select (c.Key) 
+        }
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (subQry.Contains(cust.City))
+            select (cust.CustomerId) 
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+    Assert.Contains("AROUT", qry)
+
 [<Test>]
 let ``simple select query with groupBy date``() = 
     let dc = sql.GetDataContext()
@@ -1044,6 +1082,16 @@ let ``simple select query with groupBy join complex operations``() =
                 c.Sum(fun (ord,od) -> if ord.ShipCity = "London" then ord.Freight+1m else ord.Freight))
         } |> Seq.toArray
     Assert.IsNotNull(qry)
+
+[<Test; Ignore("Not Supported")>]
+let ``simple groupValBy item``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupValBy cust.ContactTitle cust.City 
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with groupValBy``() = 
@@ -2243,6 +2291,22 @@ let ``simple select query with groupBy over groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+[<Test; Ignore("Not supported. Basically works, but creates 1+N selects, instead of one.")>]
+let ``simple select navigation properties``() =
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            take 2
+            select (cust.CustomerId,
+                        query {
+                            for x in cust.``main.Orders by CustomerID`` do
+                            where (x.OrderId>10L)
+                            select x.OrderId
+                        })
+        } |> Map.ofSeq
+    let oid = qry.["ALFKI"] |> Seq.toList
+    Assert.Less(10L,oid)
 
 let ``where join order shouldn't matter``() = 
     let dc = sql.GetDataContext()

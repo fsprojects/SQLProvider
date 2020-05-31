@@ -55,12 +55,10 @@ module internal QueryImplementation =
         | MethodCall(None,MethodWithName("op_BangBang"), [inner]) -> (true,inner)
         | _ -> (false,e)
 
-    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) =
+    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) (hasGroupBy:Option<_>) =
         let args = projector.GetType().GenericTypeArguments
         seq { 
-            if args.Length > 0 && (args.[0].Name.StartsWith("IGrouping") ||
-                                      (args.[0].Name.StartsWith("AnonymousObject") && args.[0].GenericTypeArguments.Length > 0 && args.[0].GenericTypeArguments |> Array.exists(fun a -> a.Name.StartsWith("IGrouping")))
-                        ) then
+            if args.Length > 0 && hasGroupBy.IsSome then
                 let keyType, keyConstructor, itemEntityType = 
                     if args.[0].Name.StartsWith("IGrouping") then
                         if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
@@ -73,9 +71,13 @@ module internal QueryImplementation =
                                 Some kt, Some (tyo.GetConstructors()), itmType
                     else
                         let baseItmType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
-                        let gen = args.[0].GenericTypeArguments |> Array.find(fun a -> a.Name.StartsWith("IGrouping"))
-                        if gen.GenericTypeArguments.Length = 0 then None, None, baseItmType
-                        else
+                        let genOpt = args.[0].GenericTypeArguments |> Array.tryFind(fun a -> a.Name.StartsWith("IGrouping"))
+                        match genOpt with
+                        | None ->
+                            // GroupValBy
+                            failwith "Not yet supported grouping operation"
+                        | Some gen when gen.GenericTypeArguments.Length = 0 -> None, None, baseItmType
+                        | Some gen ->
                             let kt = gen.GenericTypeArguments.[0]
                             let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
                             if kt = typeof<obj> then None, None, itmType
@@ -197,7 +199,7 @@ module internal QueryImplementation =
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        let results = parseQueryResults projector results
+        let results = parseQueryResults projector results (sqlExp.hasGroupBy())
         if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
         results
 
@@ -219,7 +221,7 @@ module internal QueryImplementation =
                 con.Open()
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results = parseQueryResults projector results
+           let results = parseQueryResults projector results (sqlExp.hasGroupBy())
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return results
        }
