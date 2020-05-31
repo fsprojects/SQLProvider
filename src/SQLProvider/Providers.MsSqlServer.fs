@@ -554,7 +554,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     if con.State <> ConnectionState.Open then con.Open()
                     let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
                     if success then version else Version("12.0")
-            ) |> ignore 
+            ).Value |> ignore 
                 
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> 
