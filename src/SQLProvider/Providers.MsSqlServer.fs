@@ -341,7 +341,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let myLock = new Object()
     
     // Remembers the version of each instance it connects to
-    let mssqlVersionCache = ConcurrentDictionary<string, Version>()
+    let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 
         let aliasSprint =
@@ -550,9 +550,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             // If we don't know this server's version already, open the connection ahead-of-time and read it 
             
             mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
-                if con.State <> ConnectionState.Open then con.Open()
-                let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-                if success then version else Version("12.0")
+                lazy
+                    if con.State <> ConnectionState.Open then con.Open()
+                    let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
+                    if success then version else Version("12.0")
             ) |> ignore 
                 
             match schemaCache.Columns.TryGetValue table.FullName with
@@ -699,7 +700,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             let mssqlPaging =               
               match mssqlVersionCache.TryGetValue(con.ConnectionString) with
               // SQL 2008 and earlier do not support OFFSET
-              | true, mssqlVersion when mssqlVersion.Major < 11 -> MSSQLPagingCompatibility.RowNumber
+              | true, mssqlVersion when mssqlVersion.Value.Major < 11 -> MSSQLPagingCompatibility.RowNumber
               | _ -> MSSQLPagingCompatibility.Offset
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) = 

@@ -2316,15 +2316,16 @@ type Employee = {
 [<Test>]
 let ``simple mapTo test``() =
     let dc = sql.GetDataContext()
-    
-    query {
-        for emp in dc.Main.Employees do
-        select emp
-        skip 2
-        take 5
-    } 
-    |> Seq.map (fun e -> e.MapTo<Employee>())
-    // Optional type-mapping can be done as parameter function, e.g.:
-    //|> Seq.map (fun e -> e.MapTo<Employee>(function | "EmployeeId", (:? int64 as id) -> Convert.ToInt32(id) |> box | k,v -> v))
-    |> Seq.toList 
-    |> Assert.IsNotEmpty
+    let qry =
+        query {
+            for emp in dc.Main.Employees do
+            select emp
+            skip 2
+            take 5
+        } 
+        |> Seq.map (fun e -> e.MapTo<Employee>())
+        // Optional type-mapping can be done as parameter function, e.g.:
+        //|> Seq.map (fun e -> e.MapTo<Employee>(function | "EmployeeId", (:? int64 as id) -> Convert.ToInt32(id) |> box | k,v -> v))
+        |> Seq.toList
+    qry |> Assert.IsNotEmpty
+    qry |> List.exists(fun i -> i.FirstName = "Laura") |> Assert.IsTrue
