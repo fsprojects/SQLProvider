@@ -1,0 +1,13 @@
+<Project>
+    <PropertyGroup>
+        <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
+        <PackageTags>f#, fsharp</PackageTags>
+        <PackageProjectUrl>https://github.com/Thorium/SQLProvider</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/Thorium/SQLProvider/blob/master/LICENSE.md</PackageLicenseUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <RepositoryType>git</RepositoryType>
+        <Authors>Thorium</Authors>
+        <RepositoryUrl>https://github.com/Thorium/SQLProvider</RepositoryUrl>
+        <!-- owners is not supported in MSBuild -->
+    </PropertyGroup>
+</Project>

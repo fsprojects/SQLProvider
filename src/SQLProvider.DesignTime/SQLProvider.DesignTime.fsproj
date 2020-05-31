@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\netfx.props" />
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net461</TargetFrameworks>
+    <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AssemblyName>FSharp.Data.SqlProvider.DesignTime</AssemblyName>
+    <Name>FSharp.Data.SqlProvider</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fs</Link>
+    </Compile>
+    <Compile Include="..\Common\AssemblyInfo.fs">
+      <Link>AssemblyInfo.fs</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ExpressionOptimizer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Operators.fs">
+      <Link>Operators.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Utils.fs">
+      <Link>Utils.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlSchema.fs">
+      <Link>SqlSchema.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\DataTable.fs">
+      <Link>DataTable.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Patterns.fs">
+      <Link>SqlRuntime.Patterns.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\QuotationHelpers.fs">
+      <Link>QuotationHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Transactions.fs">
+      <Link>SqlRuntime.Transactions.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Common.fs">
+      <Link>SqlRuntime.Common.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
+      <Link>Providers.MsSqlServer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
+      <Link>Providers.MSAccess.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
+      <Link>Providers.MySql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
+      <Link>Providers.Odbc.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
+      <Link>Providers.Oracle.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
+      <Link>Providers.Postgresql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
+      <Link>Providers.SQLite.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
+      <Link>Providers.Firebird.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.QueryExpression.fs">
+      <Link>SqlRuntime.QueryExpression.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Linq.fs">
+      <Link>SqlRuntime.Linq.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Async.fs">
+      <Link>SqlRuntime.Async.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
+      <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
+      <Link>SqlRuntime.DataContext.fs</Link>
+    </Compile>
+    <Compile Include="SqlDesignTime.fs" />
+    <None Include="paket.references" />
+    <None Include="..\..\packages\NETStandard.Library.NETFramework\build\net461\lib\netstandard.dll" Condition="'$(TargetFramework)' == 'net461'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

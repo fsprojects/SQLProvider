@@ -373,7 +373,7 @@ module internal Reflection =
 
         let referencedPaths = 
             referencedAssemblies 
-            |> Array.filter (fun ra -> assemblyNames |> List.exists(fun a -> ra.Contains(a)))
+            |> Array.filter (fun ra -> assemblyNames |> List.exists(fun (a:String) -> ra.Contains(a)))
             |> Array.toList
         
         let resolutionPaths =

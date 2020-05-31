@@ -29,8 +29,14 @@ type internal ParameterValue =
   | Default of Expr
 
 [<TypeProvider>]
-type SqlTypeProvider(config: TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces(config)
+type public SqlTypeProvider(config: TypeProviderConfig) as this =
+    inherit TypeProviderForNamespaces(config, assemblyReplacementMap=[("SQLProvider.DesignTime", "SQLProvider.Runtime")], addDefaultProbingLocation=true)
+    let ns = "SQLProvider"
+    let asm = Assembly.GetExecutingAssembly()
+
+    // check we contain a copy of runtime files, and are not referencing the runtime DLL
+    do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  
+
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
     let mutable saveInProcess = false
@@ -49,7 +55,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             match caseSensitivity with
             | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
             | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
-            | _ -> (fun x -> x)
+            | _ -> id
 
         let conString =
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString with
@@ -1040,5 +1046,5 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     // add them to the namespace
     do this.AddNamespace(FSHARP_DATA_SQL, [paramSqlType])
 
-[<assembly:TypeProviderAssembly>]
+[<TypeProviderAssembly>]
 do()

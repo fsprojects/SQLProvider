@@ -1,4 +1,4 @@
-group Scripts
+group Tests
 
       nuget Npgsql
       nuget MySql.Data

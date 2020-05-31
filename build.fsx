@@ -1,26 +1,73 @@
-// --------------------------------------------------------------------------------------
-// FAKE build script
-// --------------------------------------------------------------------------------------
+#r @"paket:
+source https://nuget.org/api/v2
+framework netstandard2.0
+nuget Fake.Core.Target
+nuget Fake.Core.Process
+nuget Fake.Core.ReleaseNotes 
+nuget FAKE.Core.Environment
+nuget Fake.IO.FileSystem
+nuget Fake.DotNet.Cli
+nuget Fake.DotNet.MSBuild
+nuget Fake.DotNet.AssemblyInfoFile
+nuget Fake.DotNet.Paket
+nuget Fake.BuildServer.AppVeyor
+nuget Fake.BuildServer.Travis
+nuget Fake.DotNet.Testing.Expecto 
+nuget Fake.DotNet.FSFormatting 
+nuget Fake.Tools.Git
+nuget Fake.Api.GitHub //"
 
-#r @"packages/Build/FAKE/tools/FakeLib.dll"
+//#load "docs/CLI.fs"
+
+#if !FAKE
+#load "./.fake/build.fsx/intellisense.fsx"
+#r "Facades/netstandard"
+#r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
+#endif
 
 open Fake
-open Fake.Git
-open Fake.AssemblyInfoFile
-open Fake.ReleaseNotesHelper
+open Fake.SystemHelper
+open Fake.Core.TargetOperators
+open Fake.Core
+open Fake.IO
+open Fake.IO.FileSystemOperators
+open Fake.IO.Globbing.Operators
+open Fake.DotNet
+open Fake.DotNet.Testing
+open Fake.Api
+open Fake.BuildServer
+open Fake.Tools
+open Fake.Tools.Git
 open System
 open System.IO
 
+Target.initEnvironment()
+BuildServer.install [
+    AppVeyor.Installer
+    Travis.Installer
+]
+
 #if MONO
 #else
-#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
+//#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
-#r @"packages/scripts/Npgsql/lib/net451/Npgsql.dll"
+#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
+let environVarAsBoolOrDefault varName defaultValue =
+    let truthyConsts = [
+        "1"
+        "Y"
+        "YES"
+        "T"
+        "TRUE"
+    ]
+    try
+        let envvar = (Environment.environVar varName).ToUpper()
+        truthyConsts |> List.exists((=)envvar)
+    with
+    | _ ->  defaultValue
 
-// --------------------------------------------------------------------------------------
-// START TODO: Provide project-specific details below
-// --------------------------------------------------------------------------------------
+
 
 // Information about the project are used
 //  - for version and project name in generated AssemblyInfo file
@@ -66,61 +113,48 @@ let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/fsprojects"
 // --------------------------------------------------------------------------------------
 // Read additional information from the release notes document
 Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
-let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
+let release = ReleaseNotes.load "docs/RELEASE_NOTES.md"
 
 // Generate assembly info files with the right version & up-to-date information
-Target "AssemblyInfo" (fun _ ->
-  let fileName = "src/" + project + "/AssemblyInfo.fs"
-  CreateFSharpAssemblyInfo fileName
-      [ Attribute.Title project
-        Attribute.Product project
-        Attribute.Description summary
-        Attribute.Version release.AssemblyVersion
-        Attribute.FileVersion release.AssemblyVersion ] 
+Target.create "AssemblyInfo" (fun _ ->
+  let fileName = "src/Common/AssemblyInfo.fs"
+  AssemblyInfoFile.createFSharp fileName
+      [ AssemblyInfo.Title project
+        AssemblyInfo.Product project
+        AssemblyInfo.Description summary
+        AssemblyInfo.Version release.AssemblyVersion
+        AssemblyInfo.FileVersion release.AssemblyVersion ] 
 )
 
 // --------------------------------------------------------------------------------------
-// Clean build results & restore NuGet packages
+// Clean build results
 
-Target "RestorePackages" RestorePackages
-
-Target "Clean" (fun _ ->
-    DeleteDirs ["bin"; "temp"]
+Target.create "Clean" (fun _ ->
+    !! "**/**/bin/" |> Shell.cleanDirs
+    !! "**/**/temp/" |> Shell.cleanDirs
+    !! "**/**/test*/**/obj/" |> Shell.cleanDirs
+    
+    Shell.cleanDirs ["bin"; "temp"]
 )
 
-Target "CleanDocs" (fun _ ->
-    DeleteDirs ["docs/output"]
+Target.create "CleanDocs" (fun _ ->
+    Shell.cleanDirs ["docs/output"]
 )
 
 // --------------------------------------------------------------------------------------
 // Build library & test project
 
-Target "Build" (fun _ ->
-
-    // Build .NET Framework solution
-    !!"SQLProvider.sln" ++ "SQLProvider.Tests.sln"
-    |> MSBuildReleaseExt "" [ "DefineConstants", buildServer.ToString().ToUpper()] "Rebuild"
-    |> ignore
+Target.create "Build" (fun _ ->
+    DotNet.exec id "build" "SQLProvider.sln -c Release" |> ignore
+    DotNet.exec id "build" "SQLProvider.Tests.sln -c Release" |> ignore
 )
 
-Target "BuildCore" (fun _ ->
-
-    // Build .NET Core solution
-    DotNetCli.Restore(fun p -> 
-        { p with 
-            Project = "src/SQLProvider.Standard/SQLProvider.Standard.fsproj"
-            NoCache = true})
-
-    DotNetCli.Build(fun p -> 
-        { p with 
-            Project = "src/SQLProvider.Standard/SQLProvider.Standard.fsproj"
-            Configuration = "Release"})
-)
 
 // --------------------------------------------------------------------------------------
 // Set up a PostgreSQL database in the CI pipeline to run tests
 
-Target "SetupPostgreSQL" (fun _ ->
+Target.create "SetupPostgreSQL" (fun _ ->
+    (*
       let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
 
       connBuilder.Host <- "localhost"
@@ -157,12 +191,15 @@ Target "SetupPostgreSQL" (fun _ ->
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
       |> Seq.map IO.File.ReadAllText      
       |> Seq.iter runCmd
+      *)
+      ignore()
 )
 
 // --------------------------------------------------------------------------------------
 // Set up a MS SQL Server database to run tests
 
 let setupMssql url saPassword = 
+  (*
     let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
@@ -209,20 +246,21 @@ let setupMssql url saPassword =
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
     |> Seq.map IO.File.ReadAllLines
     |> Seq.iter runScript
+    *) ignore()
     
-Target "SetupMSSQL2008R2" (fun _ ->
-    setupMssql "(local)\SQL2008R2SP2" "Password12!"
+Target.create "SetupMSSQL2008R2" (fun _ ->
+    setupMssql "(local)\\SQL2008R2SP2" "Password12!"
 )
 
-Target "SetupMSSQL2017" (fun _ ->
-    setupMssql "(local)\SQL2017" "Password12!"
+Target.create "SetupMSSQL2017" (fun _ ->
+    setupMssql "(local)\\SQL2017" "Password12!"
 )
 
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
-Target "RunTests" (fun _ ->
+Target.create "RunTests" (fun _ ->
     !! testAssemblies 
     |> NUnit (fun p ->
         { p with
@@ -234,40 +272,7 @@ Target "RunTests" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 
-Target "CopyFiles" (fun _ ->
-
-#if MONO
-#else
-    let copyDotnetLibraries dotnetSdk =
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"netstandard.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Console.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.IO.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Reflection.dll")
-       CopyFile "bin/netstandard2.0" (dotnetSdk + @"System.Runtime.dll")
-       CopyFile "bin/netstandard2.0" ("packages/standard/System.Data.OleDb/ref/net461/System.Data.OleDb.dll")
-    // See https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/292
-    // let netDir version = 
-    //     @"C:\Program Files\dotnet\sdk\" + version + @"\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\"
-    // let dotnetSdk211 = netDir "2.1.100"
-    // let dotnetSdk212 = netDir "2.1.202"
-    // if directoryExists dotnetSdk211 then 
-    //     copyDotnetLibraries dotnetSdk211
-    // elif directoryExists dotnetSdk212 then 
-    //     copyDotnetLibraries dotnetSdk212
-    copyDotnetLibraries "packages/standard/NETStandard.Library/build/netstandard2.0/ref/"
-
-    CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
-
-#endif
-
-    CreateDir "bin/typeproviders/fsharp41"
-    CopyDir "bin/typeproviders/fsharp41/net472" "bin/net472" allFiles
-    CopyDir "bin/typeproviders/fsharp41/netcoreapp2.0" "bin/netcoreapp2.0" allFiles
-    DeleteDir "bin/net472"
-    DeleteDir "bin/netcoreapp2.0"
-)
-
-Target "NuGet" (fun _ ->
+Target.create "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
 
     CopyDir @"temp/lib" "bin" allFiles
@@ -295,7 +300,7 @@ Target "NuGet" (fun _ ->
     //Branches.pushTag "" "upstream" release.NugetVersion
 )
 
-Target "PackNuGet" (fun _ -> 
+Target.create "PackNuGet" (fun _ -> 
     Paket.Pack(fun p -> 
         { p with 
             Version = release.NugetVersion
@@ -307,7 +312,7 @@ Target "PackNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
-Target "GenerateReferenceDocs" (fun _ ->
+Target.create "GenerateReferenceDocs" (fun _ ->
 
     //let result =
         Fake.DotNetCli.RunCommand
@@ -338,7 +343,7 @@ let generateHelp' fail debug =
 let generateHelp fail =
     generateHelp' fail false
 
-Target "GenerateHelp" (fun _ ->
+Target.create "GenerateHelp" (fun _ ->
     DeleteFile "docs/content/release-notes.md"
     CopyFile "docs/content/" "RELEASE_NOTES.md"
     Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
@@ -353,7 +358,7 @@ Target "GenerateHelp" (fun _ ->
     generateHelp true
 )
 
-Target "GenerateHelpDebug" (fun _ ->
+Target.create "GenerateHelpDebug" (fun _ ->
     DeleteFile "docs/content/release-notes.md"
     CopyFile "docs/content/" "RELEASE_NOTES.md"
     Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
@@ -365,7 +370,7 @@ Target "GenerateHelpDebug" (fun _ ->
     generateHelp' true true
 )
 
-Target "KeepRunning" (fun _ ->    
+Target.create "KeepRunning" (fun _ ->    
     use watcher = new FileSystemWatcher(DirectoryInfo("docs/content").FullName,"*.*")
     watcher.EnableRaisingEvents <- true
     watcher.Changed.Add(fun e -> generateHelp false)
@@ -381,7 +386,7 @@ Target "KeepRunning" (fun _ ->
     watcher.Dispose()
 )
 
-Target "GenerateDocs" DoNothing
+Target.create "GenerateDocs" DoNothing
 
 #if MONO
 Target "SourceLink" <| fun () -> ()
@@ -399,7 +404,7 @@ Target "SourceLink" <| fun () ->
 // --------------------------------------------------------------------------------------
 // Release Scripts
 
-Target "ReleaseDocs" (fun _ ->
+Target.create "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
     CleanDir tempDocsDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
@@ -411,15 +416,15 @@ Target "ReleaseDocs" (fun _ ->
     Branches.push tempDocsDir
 )
 
-Target "Release" DoNothing
+Target.create "Release" DoNothing
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
-Target "All" DoNothing
+Target.create "All" DoNothing
 
 
-Target "BuildDocs" DoNothing
+Target.create "BuildDocs" DoNothing
 
 "Clean"
   ==> "AssemblyInfo"  
@@ -457,4 +462,4 @@ Target "BuildDocs" DoNothing
 "All" 
   ==> "PackNuGet"
 
-RunTargetOrDefault "All"
+Target.runOrDefaultWithArguments "All"

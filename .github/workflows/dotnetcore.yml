@@ -1,0 +1,32 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        dotnet: [3.1.300]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet }}
+    - name: Install local tools
+      run: dotnet tool restore
+    - name: Paket Restore
+      run: dotnet paket restore
+    - name: Build and Test
+      run: dotnet fake run build.fsx

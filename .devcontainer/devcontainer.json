@@ -1,0 +1,12 @@
+{
+	"name": "MiniScaffold",
+	"dockerFile": "Dockerfile",
+	"appPort": [8080],
+	"extensions": [
+		"ionide.ionide-fsharp",
+        "ms-dotnettools.csharp",
+        "editorconfig.editorconfig",        
+        "ionide.ionide-paket",
+        "ionide.ionide-fake"
+	]
+} 

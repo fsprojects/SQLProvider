@@ -55,26 +55,26 @@
   </ItemGroup>
   <Target Name="MySqlConnectorCopyLibrariesWin">
     <Exec Command="xcopy ..\..\..\packages\scripts\MySqlConnector\lib\netstandard2.0\MySqlConnector.dll connectorTemp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Buffers\lib\netstandard2.0\System.Buffers.dll connectorTemp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll connectorTemp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Runtime.InteropServices.RuntimeInformation\lib\netstandard1.1\System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Data.Common\lib\netstandard1.2\System.Data.Common.dll connectorTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Buffers\lib\netstandard2.0\System.Buffers.dll connectorTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll connectorTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Runtime.InteropServices.RuntimeInformation\lib\netstandard1.1\System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Data.Common\lib\netstandard1.2\System.Data.Common.dll connectorTemp\ /y" />
   </Target>
   <Target Name="MySqlConnectorCopyLibrariesNonWin">
     <Exec Command="mkdir -p connectorTemp" />
     <Exec Command="cp ../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll connectorTemp/ " />
-    <Exec Command="cp ../../../packages/standard/System.Buffers/lib/netstandard1.1/System.Buffers.dll connectorTemp/ " />
-    <Exec Command="cp ../../../packages/standard/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll connectorTemp/ " />
-    <Exec Command="cp ../../../packages/standard/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp/ " />
-    <Exec Command="cp ../../../packages/standard/System.Data.Common/lib/netstandard1.2/System.Data.Common.dll connectorTemp/ " />
+    <Exec Command="cp ../../../packages/System.Buffers/lib/netstandard1.1/System.Buffers.dll connectorTemp/ " />
+    <Exec Command="cp ../../../packages/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll connectorTemp/ " />
+    <Exec Command="cp ../../../packages/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp/ " />
+    <Exec Command="cp ../../../packages/System.Data.Common/lib/netstandard1.2/System.Data.Common.dll connectorTemp/ " />
   </Target>
   <!-- MySql.Data.dll is currently not CoreApp 2.0 compatible in Nuget. But you can use the local if you want.
        Just uncomment these commented lines.
 	   -->
   <!-- 
   <Target Name="MySqlDataCopyLibrariesWin">
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Security.Principal.Windows\lib\netstandard2.0\System.Security.Principal.Windows.dll dataTemp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\System.Text.Encoding.CodePages\lib\netstandard2.0\System.Text.Encoding.CodePages.dll dataTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Security.Principal.Windows\lib\netstandard2.0\System.Security.Principal.Windows.dll dataTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\System.Text.Encoding.CodePages\lib\netstandard2.0\System.Text.Encoding.CodePages.dll dataTemp\ /y" />
     <Exec Command="xcopy core\MySql.Data.dll dataTemp\ /y" />
   </Target>
   <Target Name="MySqlDataCopyLibrariesNonWin">

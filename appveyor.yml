@@ -1,18 +1,14 @@
 init:
   - git config --global core.autocrlf input
-  # Set dynamic ports for SQL2008 and SQL2017 so they don't conflict
-  - ps: set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql10_50.SQL2008R2SP2\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpDynamicPorts -value '0'
-  - ps: set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql10_50.SQL2008R2SP2\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpPort -value ''    
-  - ps: set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql14.SQL2017\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpDynamicPorts -value '0'
-  - ps: set-itemproperty -path 'HKLM:\software\microsoft\microsoft sql server\mssql14.SQL2017\mssqlserver\supersocketnetlib\tcp\ipall' -name TcpPort -value ''
 build_script:
-  - cmd: build.cmd All
-services:
-  - postgresql
-  - mssql2008r2sp2
-  - mssql2017
+  - cmd: build.cmd
 test: off
 version: 0.0.1.{build}
+image: Visual Studio 2019
+install:
+  - cmd: choco install dotnetcore-sdk -y
 artifacts:
   - path: bin
     name: bin
+  - path: dist
+    name: dist

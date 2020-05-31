@@ -1,9 +1,11 @@
-NUnit
 FSharp.Core
 
-group Scripts
+group Tests
 
       Oracle.ManagedDataAccess
       Newtonsoft.Json
       Npgsql
       System.Threading.Tasks.Extensions
+      Microsoft.NET.Test.Sdk
+      NUnit3TestAdapter
+      NUnit

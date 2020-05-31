@@ -53,19 +53,19 @@
   </ItemGroup>
   <Target Name="CopyLibrariesWin">
     <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Win: -->
-    <Exec Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.provider.e_sqlite3.netstandard11\lib\netstandard1.1\SQLitePCLRaw.provider.e_sqlite3.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.core\lib\netstandard1.1\SQLitePCLRaw.core.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.lib.e_sqlite3.v110_xp\runtimes\win7-x86\native\e_sqlite3.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_green.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\standard\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.provider.e_sqlite3.netstandard11\lib\netstandard1.1\SQLitePCLRaw.provider.e_sqlite3.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.core\lib\netstandard1.1\SQLitePCLRaw.core.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.v110_xp\runtimes\win7-x86\native\e_sqlite3.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_green.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
   </Target>
   <Target Name="CopyLibrariesNonWin">
     <Exec Command="mkdir -p temp" />
-    <Exec Condition="'$(IsOSX)' == 'true'" Command="cp ../../../packages/standard/SQLitePCLRaw.lib.e_sqlite3.osx/runtimes/osx-x64/native/libe_sqlite3.dylib temp/ " />
+    <Exec Condition="'$(IsOSX)' == 'true'" Command="cp ../../../packages/SQLitePCLRaw.lib.e_sqlite3.osx/runtimes/osx-x64/native/libe_sqlite3.dylib temp/ " />
     <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Linux: -->
-    <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../../packages/standard/SQLitePCLRaw.lib.e_sqlite3.linux/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
-    <Exec Command="cp ../../../packages/standard/SQLitePCLRaw.bundle_green/lib/netstandard1.1/SQLitePCLRaw.batteries_green.dll temp/ " />
+    <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../../packages/SQLitePCLRaw.lib.e_sqlite3.linux/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
+    <Exec Command="cp ../../../packages/SQLitePCLRaw.bundle_green/lib/netstandard1.1/SQLitePCLRaw.batteries_green.dll temp/ " />
     <Exec Command="cp ../../../packages/scripts/SQLitePCLRaw.core/lib/net45/SQLitePCLRaw.core.dll temp/ " />
     
     <Exec Command="cp ../../../packages/scripts/Microsoft.Data.Sqlite.Core.Backport/lib/net45/Microsoft.Data.Sqlite.dll temp/ " />

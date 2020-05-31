@@ -293,9 +293,9 @@ query {
 
 // NOTE: Needs also System.Threading.Tasks.Extensions.dll, System.Buffers.dll and System.Runtime.InteropServices.RuntimeInformation.dll to ResolutionPath
 
-//"../../../packages/standard/System.Buffers/lib/netstandard1.1/System.Buffers.dll"
-//"../../../packages/standard/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll"
-//"../../../packages/standard/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
+//"../../../packages/System.Buffers/lib/netstandard1.1/System.Buffers.dll"
+//"../../../packages/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll"
+//"../../../packages/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 
 [<Literal>]
 let connectorPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySqlConnector/lib/net46/"

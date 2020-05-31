@@ -1,55 +1,92 @@
-source https://nuget.org/api/v2
+version 5.198.0
+source https://api.nuget.org/v3/index.json
+frameworks: net461, netcoreapp3.1, netstandard2.0
+storage: none
+clitool dotnet-mono 0.5.2
 
-nuget FSharp.Compiler.Tools
-nuget FSharp.Core >= 3.1.2.5 lowest_matching:true, redirects:force
-nuget RazorEngine
-nuget NUnit = 2.6.4
-nuget NUnit.Runners = 2.6.4
+nuget FSharp.Core 4.3.4
 nuget System.Data.SqlClient
+nuget NETStandard.Library.NETFramework storage: packages 
+nuget System.Data.OleDb
+nuget System.Runtime
+nuget System.Runtime.Loader
+nuget System.Runtime.Serialization.Primitives
+nuget System.Runtime.Serialization.Formatters
+nuget System.IO
+nuget System.Console
+nuget System.Reflection
+nuget System.Reflection.TypeExtensions
+nuget System.Data.Common
+nuget System.Data.Odbc
+nuget Microsoft.Data.SQLite 2.0
 
 group Build
-    source https://nuget.org/api/v2
 
+    source https://api.nuget.org/v3/index.json
+    storage: none
+
+    nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
     nuget FSharp.Core
     nuget FSharp.Formatting >= 4.0.0
-    nuget FAKE < 5.0.0
-    nuget SourceLink.Fake
     nuget Nuget.CommandLine
-
-group Standard
-    source https://nuget.org/api/v2
-
-    nuget FSharp.Core
-    nuget System.Data.OleDb
-    nuget System.Runtime
-    nuget System.Runtime.Loader
-    nuget System.Runtime.Serialization.Primitives
-    nuget System.Runtime.Serialization.Formatters
-    nuget System.IO
-    nuget System.Console
-    nuget System.Reflection
-    nuget System.Reflection.TypeExtensions
-    nuget System.Data.SqlClient
-    nuget System.Data.Common
-    nuget System.Data.Odbc
-	nuget Microsoft.Data.SQLite 2.0
-
-github fsharp/FAKE modules/Octokit/Octokit.fsx
+    nuget RazorEngine
+    github fsharp/FAKE modules/Octokit/Octokit.fsx
+    nuget Fake.IO.FileSystem
+    nuget Fake.Core.Target
+    nuget Fake.Core.ReleaseNotes
+    nuget FAKE.Core.Environment
+    nuget Fake.DotNet.Cli
+    nuget Fake.Core.Process
+    nuget Fake.DotNet.AssemblyInfoFile
+    nuget Fake.Tools.Git
+    nuget Fake.DotNet.Paket
+    nuget Fake.Api.GitHub
+    nuget Fake.BuildServer.AppVeyor
+    nuget Fake.BuildServer.Travis
+    nuget Fake.DotNet.MSBuild
+    nuget Fake.DotNet.FSFormatting 
+    nuget Fantomas
 
 group SourceFiles
-    source https://nuget.org/api/v2
+    source https://api.nuget.org/v3/index.json
+    storage: none
 
     github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
     github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs
 
-group Scripts
-    source https://nuget.org/api/v2
+group Analyzers
+  source https://www.nuget.org/api/v2
+  source https://api.nuget.org/v3/index.json
+  nuget BinaryDefense.FSharp.Analyzers.Hashing 0.1.0
+
+group Docs
+    storage: none
+    source https://www.nuget.org/api/v2
+    source https://api.nuget.org/v3/index.json
+    nuget Argu
+    nuget FSharp.Core
+    nuget Fake.IO.FileSystem
+    nuget FAKE.Core.Environment
+    nuget Fake.DotNet.Cli
+    nuget FSharp.Formatting 4.0.0-rc1
+    nuget FSharp.Literate 4.0.0-rc1
+    nuget Fable.React
+    nuget Dotnet.ProjInfo.Workspace.FCS
+    nuget FSharp.Compiler.Service 34.1.1
+
+group Tests
+    source https://api.nuget.org/v3/index.json
+    frameworks: netcoreapp3.1
+    storage: none
 
     nuget MySql.Data < 7.0.0
     nuget MySqlConnector 0.36.1
+    nuget Microsoft.NET.Test.Sdk
+    nuget NUnit3TestAdapter
     nuget Newtonsoft.Json
     nuget Npgsql < 4.0
+    nuget NUnit
     nuget Oracle.ManagedDataAccess 12.2.1100
     nuget FirebirdSql.Data.FirebirdClient 5.12.1
     nuget System.Data.SQLite.Core 1.0.105.2
