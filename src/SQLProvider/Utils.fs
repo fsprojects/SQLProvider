@@ -201,8 +201,8 @@ module internal Utilities =
     let rec getBaseColumnName x =
         match x with
         | KeyColumn k -> k
-        | CanonicalOperation(_, c) -> "c" + getBaseColumnName c
-        | GroupColumn(_, c) -> "g" + getBaseColumnName c
+        | CanonicalOperation(op, c) -> "c" + abs(op.GetHashCode()).ToString() + "c" + getBaseColumnName c
+        | GroupColumn(op, c) -> "g" + abs(op.GetHashCode()).ToString() + "g" + getBaseColumnName c
 
     let fieldConstant (value:obj) =
         //Can we create named parameters in ODBC, and how?

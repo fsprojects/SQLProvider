@@ -1,15 +1,20 @@
 source https://nuget.org/api/v2
 
 nuget FSharp.Compiler.Tools
-nuget Nuget.CommandLine
-nuget FAKE
-nuget FSharp.Formatting >= 3.0.0-beta01
 nuget FSharp.Core >= 3.1.2.5 lowest_matching:true, redirects:force
 nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
-nuget SourceLink.Fake
 nuget System.Data.SqlClient
+
+group Build
+    source https://nuget.org/api/v2
+
+    nuget FSharp.Core
+    nuget FSharp.Formatting >= 4.0.0
+    nuget FAKE < 5.0.0
+    nuget SourceLink.Fake
+    nuget Nuget.CommandLine
 
 group Standard
     source https://nuget.org/api/v2
@@ -27,8 +32,7 @@ group Standard
     nuget System.Data.SqlClient
     nuget System.Data.Common
     nuget System.Data.Odbc
-	nuget Microsoft.Data.SQLite
-	nuget FSharp.Compiler.Service
+	nuget Microsoft.Data.SQLite 2.0
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
@@ -43,13 +47,13 @@ group Scripts
     source https://nuget.org/api/v2
 
     nuget MySql.Data < 7.0.0
-    nuget MySqlConnector
+    nuget MySqlConnector 0.36.1
     nuget Newtonsoft.Json
-    nuget Npgsql
-    nuget Oracle.ManagedDataAccess
-    nuget FirebirdSql.Data.FirebirdClient
-    nuget System.Data.SQLite.Core
-    nuget System.Data.SQLite.Linq
+    nuget Npgsql < 4.0
+    nuget Oracle.ManagedDataAccess 12.2.1100
+    nuget FirebirdSql.Data.FirebirdClient 5.12.1
+    nuget System.Data.SQLite.Core 1.0.105.2
+    nuget System.Data.SQLite.Linq 1.0.105.2
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 

@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
 // Builds the documentation from `.fsx` and `.md` files in the 'docs/content' directory
 // (the generated documentation is stored in the 'docs/output' directory)
 // --------------------------------------------------------------------------------------
@@ -22,14 +22,15 @@ let info =
 // For typical project, no changes are needed below
 // --------------------------------------------------------------------------------------
 
-#load "../../packages/FSharp.Formatting/FSharp.Formatting.fsx"
-#r "../../packages/FAKE/tools/NuGet.Core.dll"
-#r "../../packages/FAKE/tools/FakeLib.dll"
+#load "../../packages/Build/FSharp.Formatting/FSharp.Formatting.fsx"
+#r "../../packages/Build/FAKE/tools/NuGet.Core.dll"
+#r "../../packages/Build/FAKE/tools/FakeLib.dll"
 open Fake
 open System.IO
 open Fake.FileHelper
 open FSharp.Literate
 open FSharp.MetadataFormat
+open FSharp.Formatting.Razor
 
 // Paths with template/source/output locations
 let bin        = __SOURCE_DIRECTORY__ @@ "../../bin/net451"
@@ -37,7 +38,7 @@ let content    = __SOURCE_DIRECTORY__ @@ "../content"
 let output     = __SOURCE_DIRECTORY__ @@ "../output"
 let files      = __SOURCE_DIRECTORY__ @@ "../files"
 let templates  = __SOURCE_DIRECTORY__ @@ "templates"
-let formatting = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
+let formatting = __SOURCE_DIRECTORY__ @@ "../../packages/build/FSharp.Formatting/"
 let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
@@ -53,12 +54,20 @@ subDirectories (directoryInfo templates)
                                    formatting @@ "templates"
                                    formatting @@ "templates/reference" ]))
 
+let rec copyFilesRecursively (source: DirectoryInfo) (target: DirectoryInfo) (overwrite:bool) =
+    source.GetDirectories()
+    |> Seq.iter (fun dir -> copyFilesRecursively dir (target.CreateSubdirectory dir.Name) overwrite)
+    source.GetFiles()
+    |> Seq.map (fun file -> 
+        file.CopyTo(target.FullName @@ file.Name, overwrite) |> ignore
+        file.Name)
+    |> Log "Copying file: "
+
 // Copy static files and CSS + JS from F# Formatting
 let copyFiles () =
-  CopyRecursive files output true |> Log "Copying file: "
+  copyFilesRecursively (DirectoryInfo files) (DirectoryInfo output) true
   ensureDirectory (output @@ "content")
-  CopyRecursive (formatting @@ "styles") (output @@ "content") true 
-    |> Log "Copying styles and scripts: "
+  copyFilesRecursively (DirectoryInfo (formatting @@ "styles")) (DirectoryInfo(output @@ "content")) true
 
 // Build API reference from XML comments
 let buildReference () =
@@ -66,12 +75,12 @@ let buildReference () =
   let binaries =
     referenceBinaries
     |> List.map (fun lib-> bin @@ lib)
-  MetadataFormat.Generate
-    ( binaries, output @@ "reference", layoutRootsAll.["en"],
-      parameters = ("root", "../")::info,
-      sourceRepo = githubLink @@ "tree/master",
-      sourceFolder = __SOURCE_DIRECTORY__ @@ ".." @@ "..",
-      publicOnly = true, libDirs = [bin] )
+  RazorMetadataFormat.Generate
+        ( binaries, output @@ "reference", layoutRootsAll.["en"],
+            parameters = ("root", "../")::info,
+            sourceRepo = githubLink @@ "tree/master",
+            sourceFolder = __SOURCE_DIRECTORY__ @@ ".." @@ "..",
+            publicOnly = true, libDirs = [bin] )
 
 // Build documentation from `fsx` and `md` files in `docs/content`
 let buildDocumentation () =
@@ -95,7 +104,8 @@ let buildDocumentation () =
         match key with
         | Some lang -> layoutRootsAll.[lang]
         | None -> layoutRootsAll.["en"] // "en" is the default language
-    Literate.ProcessDirectory
+    printfn "Generating helps..."
+    RazorLiterate.ProcessDirectory
       ( dir, docTemplate, output @@ sub,
         processRecursive = false,
         replacements = ("root", getRelativePath content dir dir)::info,

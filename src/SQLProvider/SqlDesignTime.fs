@@ -33,11 +33,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config)
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
+    let mutable saveInProcess = false
+    let lockObj3 = new Object();
 
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) =
+    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -55,6 +57,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | cs -> cs
 
         let rootType, prov, con =
+          lock lockObj3 (fun _ ->
             let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
             let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
             match prov.GetSchemaCache().IsOffline with
@@ -67,7 +70,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 prov.CreateTypeMappings con
                 rootType, prov, Some con
             | true ->
-            rootType, prov, None
+            rootType, prov, None)
 
         let tables =
             lazy
@@ -363,10 +366,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             | true, x -> x
                             | false, _ -> []
                         | Some con ->
-                            Sql.ensureOpen con
-                            let ps = sproc.Params con
-                            cache.SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
-                            ps
+                            (lazy 
+                                Sql.ensureOpen con
+                                let ps = sproc.Params con
+                                cache.SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
+                                ps).Value
 
                     let parameters =
                         sprocParameters
@@ -445,10 +449,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match con with
                     | Some co ->
                         typ.AddMembersDelayed(fun () ->
-                            Sql.ensureOpen co
-                            let p = (packageDefn.Sprocs co)
-                            prov.GetSchemaCache().Packages.AddRange p
-                            p |> List.map (generateSprocMethod typ con))
+                            (lazy
+                                Sql.ensureOpen co
+                                let p = (packageDefn.Sprocs co)
+                                prov.GetSchemaCache().Packages.AddRange p
+                                p |> List.map (generateSprocMethod typ con)).Value)
                     | None ->
                         typ.AddMembersDelayed(fun () ->
                         prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con))
@@ -459,7 +464,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     | Some(parent) ->
                         match con with
                         | Some co ->
-                            parent.AddMemberDelayed(fun () -> Sql.ensureOpen co;  generateSprocMethod parent con sproc); createdTypes
+                            parent.AddMemberDelayed(fun () ->
+                                (lazy
+                                    Sql.ensureOpen co
+                                    generateSprocMethod parent con sproc
+                                ).Value)
+                            createdTypes
                         | None ->
                             parent.AddMemberDelayed(fun () -> generateSprocMethod parent con sproc); createdTypes
                     | _ -> failwithf "Could not generate sproc undefined root or previous type"
@@ -738,18 +748,22 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let saveResponse = ProvidedTypeDefinition("SaveContextResponse", Some typeof<obj>, isErased=true)
               saveResponse.AddMember(ProvidedConstructor([], empty))
-              saveResponse.AddMemberDelayed(fun () ->
-                  let result =
-                      if not(String.IsNullOrEmpty contextSchemaPath) then
-                          try
-                              lock mySaveLock (fun() ->
-                                  prov.GetSchemaCache().Save contextSchemaPath
-                                  "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
-                              )
-                          with
-                          | e -> "Save failed: " + e.Message
-                      else "ContextSchemaPath is not defined"
-                  ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo
+              saveResponse.AddMembersDelayed(fun () ->
+                  if not saveInProcess then
+                      let result =
+                          if not(String.IsNullOrEmpty contextSchemaPath) then
+                              try
+                                  lock mySaveLock (fun() ->
+                                      saveInProcess <- true
+                                      prov.GetSchemaCache().Save contextSchemaPath
+                                      saveInProcess <- false
+                                      "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
+                                  )
+                              with
+                              | e -> "Save failed: " + e.Message
+                          else "ContextSchemaPath is not defined"
+                      [ ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo ]
+                  else []
               )
 
               let m = ProvidedProperty("SaveContextSchema", (saveResponse :> Type), getterCode = empty)
@@ -766,17 +780,32 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
               if String.IsNullOrEmpty contextSchemaPath then
                   let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
                   invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
-                  invalidateActionResponse.AddMemberDelayed(fun () ->
-                      let result =
-                          DesignTimeCache.cache.Clear()
-                          this.Invalidate()
-                          "Database schema cache cleared."
-                      ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo
+                  invalidateActionResponse.AddMembersDelayed(fun () ->
+                      if not saveInProcess then
+                          let result =
+                            lock mySaveLock (fun() ->
+                              saveInProcess <- true
+                              let schemacache = prov.GetSchemaCache()
+                              schemacache.PrimaryKeys.Clear()
+                              schemacache.Tables.Clear()
+                              schemacache.Columns.Clear()
+                              schemacache.Relationships.Clear()
+                              schemacache.Sprocs.Clear()
+                              schemacache.SprocsParams.Clear()
+                              schemacache.Packages.Clear()
+                              schemacache.Individuals.Clear()
+                              DesignTimeCache.cache.Clear()
+                              this.Invalidate()
+                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName)
+                              saveInProcess <- false
+                              "Database schema cache cleared.")
+                          [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]
+                      else []
                   )
                   let m2 = ProvidedProperty("ClearDatabaseSchemaCache", (invalidateActionResponse :> Type), getterCode = empty)
                   m2.AddXmlDocComputed(fun () ->
                       "This method can be used to refresh and detect recent database schema changes. " +
-                      "Write dot after ClearDatabaseSchemaCache to invalidate and clear the schema cache."
+                      "Write dot after ClearDatabaseSchemaCache to invalidate and clear the schema cache. May take a while."
                       )
                   serviceType.AddMember invalidateActionResponse
                   designTimeCommandsContainer.AddMember m2
