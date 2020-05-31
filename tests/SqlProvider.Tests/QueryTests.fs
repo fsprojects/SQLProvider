@@ -224,6 +224,25 @@ let ``outer join with inner join test``() =
 
     Assert.AreNotEqual(None,qry)
 
+let ``simple select two queries test``() =
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    // Works also with: let dc = sql.GetDataContext(SelectOperations.DotNetSide)
+    let itm1 = 
+        query {
+            for cust in dc.Main.Customers do
+            select (cust)
+            head
+        } 
+    let itm2, isOk = 
+        query {
+            for o in dc.Main.Orders do
+            where(o.CustomerId = itm1.CustomerId)
+            select (o, (o.CustomerId = itm1.CustomerId))
+            head
+        } 
+    Assert.AreEqual(itm1.CustomerId, itm2.CustomerId)
+    Assert.IsTrue isOk
+
 [<Test >]
 let ``option from simple select with exactly one``() =
     let dc = sql.GetDataContext()
@@ -791,6 +810,17 @@ let ``simplest select query with groupBy``() =
     Assert.IsNotEmpty(qry)
 
 [<Test>]
+let ``simplest select query with groupBy 2 columns``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy (cust.City, cust.Address)
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
+[<Test>]
 let ``simplest select query with groupBy aggregate``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -910,16 +940,24 @@ let ``simple select query with groupBy sum``() =
         query {
             for od in dc.Main.OrderDetails do
             groupBy od.ProductId into p
-            select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount), p.Sum(fun f -> f.UnitPrice+1m))
+            select (
+                p.Key,
+                p.Sum(fun f -> f.UnitPrice),
+                p.Sum(fun f -> f.Discount),
+                p.Sum(fun f -> f.UnitPrice+1m),
+                p.Sum(fun f -> f.UnitPrice+2m)
+                )
         } |> Seq.toList
 
-    let _,fstUnitPrice, fstDiscount, plusones = qry.[0]
+    let mapped = qry |> List.map(fun (k,v1,v2,v3,v4) -> k, (v1,v2,v3,v4)) |> Map.ofList
+    let fstUnitPrice, fstDiscount, plusones, plustwos = mapped.[1L]
     Assert.Greater(652m, fstUnitPrice)
     Assert.Less(651m, fstUnitPrice)
     Assert.Greater(2.96m, fstDiscount)
     Assert.Less(2.95m, fstDiscount)
     Assert.Greater(699m, plusones)
     Assert.Less(689m, plusones)
+    Assert.Greater(plustwos, plusones)
         
 [<Test>]
 let ``simple select query with groupBy having count``() = 
@@ -967,6 +1005,25 @@ let ``simple select query with groupBy having key``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
+
+let ``simple select query with groupBy having nested``() = 
+    let dc = sql.GetDataContext()
+    let subQry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy cust.City into c
+            where (c.Key = "London") 
+            select (c.Key) 
+        }
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (subQry.Contains(cust.City))
+            select (cust.CustomerId) 
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+    Assert.Contains("AROUT", qry)
 
 [<Test>]
 let ``simple select query with groupBy date``() = 
@@ -1025,6 +1082,16 @@ let ``simple select query with groupBy join complex operations``() =
                 c.Sum(fun (ord,od) -> if ord.ShipCity = "London" then ord.Freight+1m else ord.Freight))
         } |> Seq.toArray
     Assert.IsNotNull(qry)
+
+[<Test; Ignore("Not Supported")>]
+let ``simple groupValBy item``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupValBy cust.ContactTitle cust.City 
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select query with groupValBy``() = 
@@ -2224,6 +2291,22 @@ let ``simple select query with groupBy over groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+[<Test; Ignore("Not supported. Basically works, but creates 1+N selects, instead of one.")>]
+let ``simple select navigation properties``() =
+    let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            take 2
+            select (cust.CustomerId,
+                        query {
+                            for x in cust.``main.Orders by CustomerID`` do
+                            where (x.OrderId>10L)
+                            select x.OrderId
+                        })
+        } |> Map.ofSeq
+    let oid = qry.["ALFKI"] |> Seq.toList
+    Assert.Less(10L,oid)
 
 let ``where join order shouldn't matter``() = 
     let dc = sql.GetDataContext()
@@ -2297,15 +2380,16 @@ type Employee = {
 [<Test>]
 let ``simple mapTo test``() =
     let dc = sql.GetDataContext()
-    
-    query {
-        for emp in dc.Main.Employees do
-        select emp
-        skip 2
-        take 5
-    } 
-    |> Seq.map (fun e -> e.MapTo<Employee>())
-    // Optional type-mapping can be done as parameter function, e.g.:
-    //|> Seq.map (fun e -> e.MapTo<Employee>(function | "EmployeeId", (:? int64 as id) -> Convert.ToInt32(id) |> box | k,v -> v))
-    |> Seq.toList 
-    |> Assert.IsNotEmpty
+    let qry =
+        query {
+            for emp in dc.Main.Employees do
+            select emp
+            skip 2
+            take 5
+        } 
+        |> Seq.map (fun e -> e.MapTo<Employee>())
+        // Optional type-mapping can be done as parameter function, e.g.:
+        //|> Seq.map (fun e -> e.MapTo<Employee>(function | "EmployeeId", (:? int64 as id) -> Convert.ToInt32(id) |> box | k,v -> v))
+        |> Seq.toList
+    qry |> Assert.IsNotEmpty
+    qry |> List.exists(fun i -> i.FirstName = "Laura") |> Assert.IsTrue

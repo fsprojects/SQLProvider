@@ -1,3 +1,10 @@
+### 1.1.88 - 31.05.2020
+* Caching improvements
+* Possibility to group full entities over multiple keys
+
+### 1.1.87 - 20.05.2020
+* Fixed issue on multiple different same column group-by calculations
+
 ### 1.1.86 - 05.05.2020
 * Design Time Command methods to properties for easier usability.
 * Fix for insert and update of SQLServer spatial data types #157
