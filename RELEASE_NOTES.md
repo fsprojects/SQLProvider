@@ -1,3 +1,7 @@
+### 1.1.88 - 31.05.2020
+* Caching improvements
+* Possibility to group full entities over multiple keys
+
 ### 1.1.87 - 20.05.2020
 * Fixed issue on multiple different same column group-by calculations
 
