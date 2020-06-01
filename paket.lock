@@ -505,10 +505,21 @@ NUGET
       Fake.DotNet.Cli (>= 5.20) - restriction: >= netstandard2.0
       Fake.IO.FileSystem (>= 5.20) - restriction: >= netstandard2.0
       FSharp.Core (>= 4.7.1) - restriction: >= netstandard2.0
+    Fake.DotNet.Testing.NUnit (5.20)
+      Fake.Core.Environment (>= 5.20) - restriction: >= netstandard2.0
+      Fake.Core.Process (>= 5.20) - restriction: >= netstandard2.0
+      Fake.Core.String (>= 5.20) - restriction: >= netstandard2.0
+      Fake.Core.Trace (>= 5.20) - restriction: >= netstandard2.0
+      Fake.IO.FileSystem (>= 5.20) - restriction: >= netstandard2.0
+      Fake.Testing.Common (>= 5.20) - restriction: >= netstandard2.0
+      FSharp.Core (>= 4.7.1) - restriction: >= netstandard2.0
     Fake.IO.FileSystem (5.20)
       Fake.Core.String (>= 5.20) - restriction: >= netstandard2.0
       FSharp.Core (>= 4.7.1) - restriction: >= netstandard2.0
     Fake.Net.Http (5.20) - restriction: >= netstandard2.0
+      Fake.Core.Trace (>= 5.20) - restriction: >= netstandard2.0
+      FSharp.Core (>= 4.7.1) - restriction: >= netstandard2.0
+    Fake.Testing.Common (5.20) - restriction: >= netstandard2.0
       Fake.Core.Trace (>= 5.20) - restriction: >= netstandard2.0
       FSharp.Core (>= 4.7.1) - restriction: >= netstandard2.0
     Fake.Tools.Git (5.20)
@@ -1800,6 +1811,8 @@ NUGET
       Microsoft.Extensions.PlatformAbstractions (>= 1.1)
       System.Reflection.Emit (>= 4.3)
     Microsoft.CodeCoverage (16.6.1)
+    Microsoft.Data.Sqlite.Core (3.1.4)
+      SQLitePCLRaw.core (>= 2.0.2)
     Microsoft.DotNet.InternalAbstractions (1.0)
       System.AppContext (>= 4.1)
       System.Collections (>= 4.0.11)
@@ -1905,6 +1918,15 @@ NUGET
     runtime.ubuntu.16.04-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
     runtime.ubuntu.16.10-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
     runtime.ubuntu.18.04-x64.runtime.native.System.Security.Cryptography.OpenSsl (4.3.3)
+    SQLitePCLRaw.bundle_green (2.0.3)
+      SQLitePCLRaw.core (>= 2.0.3)
+      SQLitePCLRaw.lib.e_sqlite3 (>= 2.0.3)
+      SQLitePCLRaw.provider.dynamic_cdecl (>= 2.0.3)
+    SQLitePCLRaw.core (2.0.3)
+      System.Memory (>= 4.5.3)
+    SQLitePCLRaw.lib.e_sqlite3 (2.0.3)
+    SQLitePCLRaw.provider.dynamic_cdecl (2.0.3)
+      SQLitePCLRaw.core (>= 2.0.3)
     System.AppContext (4.3)
       System.Runtime (>= 4.3)
     System.Buffers (4.5.1)
@@ -2051,6 +2073,7 @@ NUGET
       System.Resources.ResourceManager (>= 4.3)
       System.Runtime (>= 4.3)
       System.Runtime.Extensions (>= 4.3)
+    System.Memory (4.5.4)
     System.Net.NameResolution (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       runtime.native.System (>= 4.3)

@@ -11,7 +11,8 @@
     <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE</DefineConstants>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
-    <DocumentationFile>..\..\bin\net472\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <DocumentationFile>..\..\bin\net461\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <OutputPath>..\..\bin\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -67,18 +68,6 @@
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net461" />
   </Target>
   <Target Name="AfterBuild">
-    <CreateItem Include="..\SQLProvider.DesignTime\bin\$(Configuration)\netcoreapp3.1\*.dll;..\SQLProvider.DesignTime\bin\$(Configuration)\netcoreapp3.1\*.pdb">
-      <Output TaskParameter="Include" ItemName="DesignTimeBinaries1" />
-    </CreateItem>
-    <Copy SourceFiles="@(DesignTimeBinaries1)" DestinationFolder="$(OutputPath)/../typeproviders/fsharp41/netcoreapp3.1" />
-    <CreateItem Include="..\SQLProvider.DesignTime\bin\$(Configuration)\net461\*.dll;..\SQLProvider.DesignTime\bin\$(Configuration)\net461\*.pdb">
-      <Output TaskParameter="Include" ItemName="DesignTimeBinaries2" />
-    </CreateItem>
-    <Copy SourceFiles="@(DesignTimeBinaries2)" DestinationFolder="$(OutputPath)/../typeproviders/fsharp41/net461" />
-    <CreateItem Include="..\SQLProvider.DesignTime\bin\$(Configuration)\netstandard2.0\*.dll;..\SQLProvider.DesignTime\bin\$(Configuration)\netstandard2.0\*.pdb">
-      <Output TaskParameter="Include" ItemName="DesignTimeBinaries3" />
-    </CreateItem>
-    <Copy SourceFiles="@(DesignTimeBinaries3)" DestinationFolder="$(OutputPath)/../typeproviders/fsharp41/netstandard2.0" />
   </Target>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
 

@@ -15,13 +15,13 @@ nuget Fake.BuildServer.Travis
 nuget Fake.DotNet.Testing.Expecto 
 nuget Fake.DotNet.FSFormatting 
 nuget Fake.Tools.Git
+nuget Fake.DotNet.Testing.NUnit
 nuget Fake.Api.GitHub //"
 
 //#load "docs/CLI.fs"
 
 #if !FAKE
 #load "./.fake/build.fsx/intellisense.fsx"
-#r "Facades/netstandard"
 #r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
 #endif
 
@@ -35,17 +35,16 @@ open Fake.IO.Globbing.Operators
 open Fake.DotNet
 open Fake.DotNet.Testing
 open Fake.Api
-open Fake.BuildServer
 open Fake.Tools
 open Fake.Tools.Git
 open System
 open System.IO
 
 Target.initEnvironment()
-BuildServer.install [
-    AppVeyor.Installer
-    Travis.Installer
-]
+//BuildServer.install [
+//    AppVeyor.Installer
+//    Travis.Installer
+//]
 
 #if MONO
 #else
@@ -53,17 +52,11 @@ BuildServer.install [
 #endif
 
 #r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
-let environVarAsBoolOrDefault varName defaultValue =
-    let truthyConsts = [
-        "1"
-        "Y"
-        "YES"
-        "T"
-        "TRUE"
-    ]
+let environVarOrDefault varName defaultValue =
+
     try
         let envvar = (Environment.environVar varName).ToUpper()
-        truthyConsts |> List.exists((=)envvar)
+        if String.IsNullOrEmpty envvar then defaultValue else envvar
     with
     | _ ->  defaultValue
 
@@ -118,12 +111,12 @@ let release = ReleaseNotes.load "docs/RELEASE_NOTES.md"
 // Generate assembly info files with the right version & up-to-date information
 Target.create "AssemblyInfo" (fun _ ->
   let fileName = "src/Common/AssemblyInfo.fs"
-  AssemblyInfoFile.createFSharp fileName
-      [ AssemblyInfo.Title project
-        AssemblyInfo.Product project
-        AssemblyInfo.Description summary
-        AssemblyInfo.Version release.AssemblyVersion
-        AssemblyInfo.FileVersion release.AssemblyVersion ] 
+  Fake.DotNet.AssemblyInfoFile.createFSharp fileName
+      [ Fake.DotNet.AssemblyInfo.Title project
+        Fake.DotNet.AssemblyInfo.Product project
+        Fake.DotNet.AssemblyInfo.Description summary
+        Fake.DotNet.AssemblyInfo.Version release.AssemblyVersion
+        Fake.DotNet.AssemblyInfo.FileVersion release.AssemblyVersion ] 
 )
 
 // --------------------------------------------------------------------------------------
@@ -145,8 +138,11 @@ Target.create "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target.create "Build" (fun _ ->
-    DotNet.exec id "build" "SQLProvider.sln -c Release" |> ignore
-    DotNet.exec id "build" "SQLProvider.Tests.sln -c Release" |> ignore
+    Fake.DotNet.DotNet.exec id "build" "SQLProvider.sln -c Release" |> ignore
+)
+
+Target.create "BuildTests" (fun _ ->
+    Fake.DotNet.DotNet.exec id "build" "SQLProvider.Tests.sln -c Release" |> ignore
 )
 
 
@@ -246,7 +242,8 @@ let setupMssql url saPassword =
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
     |> Seq.map IO.File.ReadAllLines
     |> Seq.iter runScript
-    *) ignore()
+    *) 
+    (url,saPassword) |> ignore
     
 Target.create "SetupMSSQL2008R2" (fun _ ->
     setupMssql "(local)\\SQL2008R2SP2" "Password12!"
@@ -260,13 +257,24 @@ Target.create "SetupMSSQL2017" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
-Target.create "RunTests" (fun _ ->
+Target.create "RunTests" (fun _ -> 
+
+    Fake.DotNet.DotNet.test (fun p ->
+        { p with
+            Configuration = Fake.DotNet.DotNet.BuildConfiguration.Debug
+            Common =
+                p.Common
+                |> Fake.DotNet.DotNet.Options.withAdditionalArgs [||]
+            }) "SQLProvider.Tests.sln"
+
+(*
     !! testAssemblies 
-    |> NUnit (fun p ->
+    |> Fake.DotNet.Testing.NUnit3.run (fun p ->
         { p with
             DisableShadowCopy = true
             TimeOut = TimeSpan.FromMinutes 20.
             OutputFile = "TestResults.xml" })
+*)
 )
 
 // --------------------------------------------------------------------------------------
@@ -275,8 +283,8 @@ Target.create "RunTests" (fun _ ->
 Target.create "NuGet" (fun _ ->
     // Before release, set your API-key as instructed in the bottom of page https://www.nuget.org/account
 
-    CopyDir @"temp/lib" "bin" allFiles
-
+    Fake.IO.Shell.copyDir @"temp/lib" "bin" Fake.IO.FileFilter.allFiles
+    (*
     NuGet (fun p ->
         { p with
             Authors = authors
@@ -293,20 +301,24 @@ Target.create "NuGet" (fun _ ->
             Dependencies = [] })
         (project + ".nuspec")
 
-    CleanDir "Temp"
+    Fake.IO.Shell.cleanDir "Temp"
     Branches.tag "" release.NugetVersion
-
+    *)
     // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
     //Branches.pushTag "" "upstream" release.NugetVersion
 )
 
-Target.create "PackNuGet" (fun _ -> 
-    Paket.Pack(fun p -> 
-        { p with 
-            Version = release.NugetVersion
-            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
-            Symbols = true
-            OutputPath = "bin" })
+Target.create "PackNuGet" (fun _ ->
+    let _ = 
+        Fake.DotNet.Paket.pack(fun p -> 
+            { p with
+                ToolType = Fake.DotNet.ToolType.CreateLocalTool()
+                OutputPath = "bin"
+                Version = release.NugetVersion
+                ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
+                Symbols = true
+                })
+    ()
 ) 
 
 // --------------------------------------------------------------------------------------
@@ -314,11 +326,11 @@ Target.create "PackNuGet" (fun _ ->
 
 Target.create "GenerateReferenceDocs" (fun _ ->
 
-    //let result =
-        Fake.DotNetCli.RunCommand
-            (fun p -> { p with WorkingDir = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
-            "fsi --define:RELEASE --define:REFERENCE --exec generate.fsx"
-    //if not result.OK then failwith "generating reference documentation failed"
+    let result =
+        Fake.DotNet.DotNet.exec
+            (fun p -> { p with WorkingDirectory = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
+            "fsi" "--define:RELEASE --define:REFERENCE --exec generate.fsx"
+    if not result.OK then failwith "generating reference documentation failed"
 
     //if not <| executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"; "--define:REFERENCE"] [] then
     //  failwith "generating reference documentation failed"
@@ -328,44 +340,44 @@ let generateHelp' fail debug =
     let args =
         if debug then "--define:HELP"
         else "--define:RELEASE --define:HELP"
-    //let result =
-    Fake.DotNetCli.RunCommand
-        (fun p -> { p with WorkingDir = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
-        ("fsi " + args + "  --exec generate.fsx")
-    //if result.OK then
-    //    traceImportant "Help generated"
-    //else
-    //    if fail then
-    //        failwith "generating help documentation failed"
-    //    else
-    //        traceImportant "generating help documentation failed"
+    let result =
+        Fake.DotNet.DotNet.exec
+            (fun p -> { p with WorkingDirectory = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
+            "fsi"  (args + "  --exec generate.fsx")
+    if result.OK then
+        Fake.Core.Trace.traceImportant "Help generated"
+    else
+        if fail then
+            failwith "generating help documentation failed"
+        else
+            Fake.Core.Trace.traceImportant "generating help documentation failed"
 
 let generateHelp fail =
     generateHelp' fail false
 
 Target.create "GenerateHelp" (fun _ ->
-    DeleteFile "docs/content/release-notes.md"
-    CopyFile "docs/content/" "RELEASE_NOTES.md"
-    Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
+    System.IO.File.Delete "docs/content/release-notes.md"
+    Fake.IO.Shell.copyFile "docs/content/" "RELEASE_NOTES.md"
+    Fake.IO.Shell.rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
 
-    DeleteFile "docs/content/license.md"
-    CopyFile "docs/content/" "LICENSE.txt"
-    Rename "docs/content/license.md" "docs/content/LICENSE.txt"
+    System.IO.File.Delete "docs/content/license.md"
+    Fake.IO.Shell.copyFile "docs/content/" "LICENSE.txt"
+    Fake.IO.Shell.rename "docs/content/license.md" "docs/content/LICENSE.txt"
 
-    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
-    CopyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
+    Fake.IO.Shell.copyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
+    Fake.IO.Shell.copyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
 
     generateHelp true
 )
 
 Target.create "GenerateHelpDebug" (fun _ ->
-    DeleteFile "docs/content/release-notes.md"
-    CopyFile "docs/content/" "RELEASE_NOTES.md"
-    Rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
+    System.IO.File.Delete "docs/content/release-notes.md"
+    Fake.IO.Shell.copyFile "docs/content/" "RELEASE_NOTES.md"
+    Fake.IO.Shell.rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
 
-    DeleteFile "docs/content/license.md"
-    CopyFile "docs/content/" "LICENSE.txt"
-    Rename "docs/content/license.md" "docs/content/LICENSE.txt"
+    System.IO.File.Delete "docs/content/license.md"
+    Fake.IO.Shell.copyFile "docs/content/" "LICENSE.txt"
+    Fake.IO.Shell.rename "docs/content/license.md" "docs/content/LICENSE.txt"
 
     generateHelp' true true
 )
@@ -373,12 +385,12 @@ Target.create "GenerateHelpDebug" (fun _ ->
 Target.create "KeepRunning" (fun _ ->    
     use watcher = new FileSystemWatcher(DirectoryInfo("docs/content").FullName,"*.*")
     watcher.EnableRaisingEvents <- true
-    watcher.Changed.Add(fun e -> generateHelp false)
-    watcher.Created.Add(fun e -> generateHelp false)
-    watcher.Renamed.Add(fun e -> generateHelp false)
-    watcher.Deleted.Add(fun e -> generateHelp false)
+    watcher.Changed.Add(fun _ -> generateHelp false)
+    watcher.Created.Add(fun _ -> generateHelp false)
+    watcher.Renamed.Add(fun _ -> generateHelp false)
+    watcher.Deleted.Add(fun _ -> generateHelp false)
 
-    traceImportant "Waiting for help edits. Press any key to stop."
+    Fake.Core.Trace.traceImportant "Waiting for help edits. Press any key to stop."
 
     System.Console.ReadKey() |> ignore
 
@@ -386,19 +398,19 @@ Target.create "KeepRunning" (fun _ ->
     watcher.Dispose()
 )
 
-Target.create "GenerateDocs" DoNothing
+Target.create "GenerateDocs" ignore
 
 #if MONO
-Target "SourceLink" <| fun () -> ()
+Target.create "SourceLink" <| fun _ -> ()
 #else
-open SourceLink
-Target "SourceLink" <| fun () ->
+//open SourceLink
+Target.create "SourceLink" <| fun _ -> () (*
     let baseUrl = sprintf "%s/%s/{0}/%%var2%%" gitRaw project
     !! "src/*.fsproj"
     |> Seq.iter (fun file ->
         let proj = VsProj.LoadRelease file
         SourceLink.Index proj.CompilesNotLinked proj.OutputFilePdb __SOURCE_DIRECTORY__ baseUrl
-       )
+       *)
 #endif
 
 // --------------------------------------------------------------------------------------
@@ -406,45 +418,43 @@ Target "SourceLink" <| fun () ->
 
 Target.create "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
-    CleanDir tempDocsDir
+    Fake.IO.Shell.cleanDir tempDocsDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
 
-    fullclean tempDocsDir
-    CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
-    StageAll tempDocsDir
-    Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    Fake.IO.Shell.deleteDir tempDocsDir
+    Fake.IO.Shell.copyRecursive "docs/output" tempDocsDir true |> Fake.Core.Trace.tracefn "%A"
+    Git.Staging.stageAll tempDocsDir
+    Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
     Branches.push tempDocsDir
 )
 
-Target.create "Release" DoNothing
+Target.create "Release" ignore
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
-Target.create "All" DoNothing
+Target.create "All" ignore
 
 
-Target.create "BuildDocs" DoNothing
+Target.create "BuildDocs" ignore
 
 "Clean"
   ==> "AssemblyInfo"  
   // In CI mode, we setup a Postgres database before building
-  =?> ("SetupPostgreSQL", not isLocalBuild)
+  =?> ("SetupPostgreSQL", not Fake.Core.BuildServer.isLocalBuild)
   // On AppVeyor, we also add a SQL Server 2008R2 one and a SQL Server 2017 for compatibility
-  =?> ("SetupMSSQL2008R2", buildServer = AppVeyor)
-  =?> ("SetupMSSQL2017", buildServer = AppVeyor)
+  =?> ("SetupMSSQL2008R2", Fake.Core.BuildServer.buildServer = AppVeyor)
+  =?> ("SetupMSSQL2017", Fake.Core.BuildServer.buildServer = AppVeyor)
   ==> "Build"
-  =?> ("BuildCore", isLocalBuild || not isMono)
+  ==> "BuildTests"
   ==> "RunTests"
   ==> "CleanDocs"
   // Travis doesn't support mono+dotnet:
-  =?> ("GenerateReferenceDocs", isLocalBuild && not isMono)
-  =?> ("GenerateHelp", isLocalBuild && not isMono)
+  =?> ("GenerateReferenceDocs", Fake.Core.BuildServer.isLocalBuild && not Fake.Core.Environment.isMono)
+  =?> ("GenerateHelp", Fake.Core.BuildServer.isLocalBuild && not Fake.Core.Environment.isMono)
   ==> "All"
 
 "Build"
-  =?> ("BuildCore", isLocalBuild || not isMono)
-  ==> "CopyFiles"
   ==> "NuGet"
   
 "All"
@@ -453,13 +463,13 @@ Target.create "BuildDocs" DoNothing
 "All" 
 #if MONO
 #else
-  =?> ("SourceLink", Pdbstr.tryFind().IsSome )
+  //=?> ("SourceLink", Pdbstr.tryFind().IsSome )
 #endif
-  =?> ("NuGet", not(hasBuildParam "onlydocs"))
+  =?> ("NuGet", not(Fake.Core.Environment.hasBuildParam "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
 
 "All" 
   ==> "PackNuGet"
 
-Target.runOrDefaultWithArguments "All"
+Target.runOrDefaultWithArguments "Build"

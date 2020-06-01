@@ -45,6 +45,7 @@ group Build
     nuget Fake.BuildServer.Travis
     nuget Fake.DotNet.MSBuild
     nuget Fake.DotNet.FSFormatting 
+    nuget Fake.DotNet.Testing.NUnit
     nuget Fantomas
 
 group SourceFiles
@@ -89,6 +90,8 @@ group Tests
     nuget FirebirdSql.Data.FirebirdClient 5.12.1
     nuget System.Data.SQLite.Core 1.0.105.2
     nuget System.Data.SQLite.Linq 1.0.105.2
+    nuget SQLitePCLRaw.bundle_green
+    nuget Microsoft.Data.Sqlite.Core
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 

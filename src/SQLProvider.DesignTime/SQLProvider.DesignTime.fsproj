@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AssemblyName>FSharp.Data.SqlProvider.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
+    <OutputPath>..\..\bin\typeproviders\fsharp41\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>

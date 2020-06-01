@@ -1,5 +1,7 @@
-﻿#if INTERACTIVE
-#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
+#if INTERACTIVE
+#I @"../../src/SQLProvider.Runtime/bin/Release/net461/"
+#I @"../../src/SQLProvider.Runtime/bin/Debug/net461/"
+#r "FSharp.Data.SqlProvider.dll"
 #r @"System.Transactions.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
@@ -15,10 +17,13 @@ open System
 open System.Transactions
 
 [<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
+
+[<Literal>]
 let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
  

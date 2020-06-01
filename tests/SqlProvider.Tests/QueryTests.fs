@@ -1,5 +1,7 @@
 #if INTERACTIVE
-#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
+#I @"../../src/SQLProvider.Runtime/bin/Release/net461/"
+#I @"../../src/SQLProvider.Runtime/bin/Debug/net461/"
+#r "FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
 module QueryTests
@@ -14,11 +16,14 @@ open System.Linq
 [<Literal>]
 let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
+
 // If you want to run these in Visual Studio Test Explorer, please install:
 // Tools -> Extensions and Updates... -> Online -> NUnit Test Adapter for Visual Studio
 // http://nunit.org/index.php?p=vsTestAdapter&r=2.6.4
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 let inline isNull (x:^T when ^T : not struct) = obj.ReferenceEquals (x, null)   
 

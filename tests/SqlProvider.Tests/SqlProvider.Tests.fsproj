@@ -7,6 +7,13 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyName>SqlProvider.Tests</AssemblyName>
   </PropertyGroup>
+  <PropertyGroup>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsWindows)' != 'true'">
+    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
@@ -33,6 +40,29 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj" />
   </ItemGroup>
+  <Target Name="CopyLibrariesWin">
+    <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Win: -->
+    <Exec Command="xcopy ..\..\packages\tests\SQLitePCLRaw.provider.dynamic_cdecl\lib\netstandard2.0\SQLitePCLRaw.provider.dynamic_cdecl.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\packages\tests\SQLitePCLRaw.core\lib\netstandard2.0\SQLitePCLRaw.core.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\packages\tests\SQLitePCLRaw.lib.e_sqlite3\runtimes\win10-x86\nativeassets\uap10.0\e_sqlite3.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\packages\tests\SQLitePCLRaw.bundle_green\lib\netcoreapp3.0\SQLitePCLRaw.nativelibrary.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\packages\tests\SQLitePCLRaw.bundle_green\lib\netcoreapp3.0\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\packages\tests\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
+  </Target>
+  <Target Name="CopyLibrariesNonWin">
+    <Exec Command="mkdir -p temp" />
+    <Exec Condition="'$(IsOSX)' == 'true'" Command="cp ../../packages/tests/SQLitePCLRaw.lib.e_sqlite3/runtimes/osx-x64/native/libe_sqlite3.dylib temp/ " />
+    <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Linux: -->
+    <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../packages/tests/SQLitePCLRaw.lib.e_sqlite3/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
+    <Exec Command="cp ../../packages/tests/SQLitePCLRaw.bundle_green/lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll temp/ " />
+    <Exec Command="cp ../../packages/tests/SQLitePCLRaw.core/lib/netstandard2.0/SQLitePCLRaw.core.dll temp/ " />
+    
+    <Exec Command="cp ../../packages/tests/Microsoft.Data.Sqlite.Core.Backport/lib/net45/Microsoft.Data.Sqlite.dll temp/ " />
+  </Target>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <CallTarget Targets="CopyLibrariesWin" Condition="'$(IsWindows)' == 'true'"/>
+    <CallTarget Targets="CopyLibrariesNonWin" Condition="'$(IsWindows)' != 'true'"/>
+  </Target>  
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
