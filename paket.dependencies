@@ -69,16 +69,14 @@ group Docs
     nuget Fake.IO.FileSystem
     nuget FAKE.Core.Environment
     nuget Fake.DotNet.Cli
-    nuget FSharp.Formatting 4.0.0-rc1
-    nuget FSharp.Literate 4.0.0-rc1
-    nuget Fable.React
+    nuget FSharp.Formatting >= 4.0.0
+    nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
-    nuget FSharp.Compiler.Service 34.1.1
 
 group Tests
     source https://api.nuget.org/v3/index.json
     frameworks: netcoreapp3.1
-    storage: none
+    storage: packages 
 
     nuget MySql.Data < 7.0.0
     nuget MySqlConnector 0.36.1
