@@ -49,7 +49,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             match caseSensitivity with
             | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
             | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
-            | _ -> (fun x -> x)
+            | _ -> id
 
         let conString =
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString with
