@@ -1,5 +1,5 @@
 #if INTERACTIVE
-#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
+#r @"../../bin/net461/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
 module PostgreSQLTests
@@ -9,7 +9,7 @@ module PostgreSQLTests
 #else
 
 // Postgres Npgsql v.3.2.x has internal reference to System.Threading.Tasks.Extensions.dll:
-// #r "../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
+// #r "../../packages/tests/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 open System
 open FSharp.Data.Sql
 open System.Data
@@ -26,7 +26,7 @@ let [<Literal>] connStr = "User ID=postgres;Password=postgres;Host=localhost;Por
 #endif
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../packages/scripts/Npgsql/lib/net451"
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../packages/tests/Npgsql/lib/net451"
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Expression: %A")

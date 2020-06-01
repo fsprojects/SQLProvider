@@ -37,8 +37,8 @@
       assembly will ve .NET Core compatible. -->
   <ItemGroup><!-- Mono fix -->
     <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
-      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
+      <HintPath>../../../bin/net461/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net461/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -54,14 +54,14 @@
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.4.0" />
   </ItemGroup>
   <Target Name="CopyLibrariesWin">
-    <Exec Command="xcopy ..\..\..\packages\scripts\Npgsql\lib\netstandard2.0\Npgsql.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\scripts\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\Npgsql\lib\netstandard2.0\Npgsql.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll temp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\System.Data.Common\lib\netstandard1.2\System.Data.Common.dll temp\ /y" />
   </Target>
   <Target Name="CopyLibrariesNonWin">
     <Exec Command="mkdir -p temp" />
-    <Exec Command="cp ../../../packages/scripts/Npgsql/lib/net451/Npgsql.dll temp/ " />
-    <Exec Command="cp ../../../packages/scripts/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll temp/ " />
+    <Exec Command="cp ../../../packages/tests/Npgsql/lib/net451/Npgsql.dll temp/ " />
+    <Exec Command="cp ../../../packages/tests/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll temp/ " />
   </Target>
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <CallTarget Targets="CopyLibrariesWin" Condition="'$(IsWindows)' == 'true'"/>

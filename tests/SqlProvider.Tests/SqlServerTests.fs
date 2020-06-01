@@ -1,8 +1,8 @@
 ﻿#if INTERACTIVE
 #I @"../../bin/net451"
-#r @"../../bin/net451/FSharp.Data.SqlProvider.dll"
-#I @"../../packages/scripts/Newtonsoft.Json/lib/net45"
-#r @"../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+#r @"../../bin/net461/FSharp.Data.SqlProvider.dll"
+#I @"../../packages/tests/Newtonsoft.Json/lib/net45"
+#r @"../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 let [<Literal>] connStr2008R2 = "Data Source=localhost; Initial Catalog=sqlprovider; Integrated Security=True"
 let [<Literal>] connStr2017 = connStr2008R2

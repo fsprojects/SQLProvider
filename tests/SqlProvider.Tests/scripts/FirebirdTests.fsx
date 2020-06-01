@@ -1,5 +1,5 @@
-﻿#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
-#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+﻿#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
+#r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
 open FSharp.Data.Sql
@@ -14,7 +14,7 @@ let connectionString1 = @" Data Source=localhost;port=" + port + ";initial catal
 let connectionString3 = @" Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/scripts/FirebirdSql.Data.FirebirdClient/lib/net452"
+let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/tests/FirebirdSql.Data.FirebirdClient/lib/net452"
 
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1, ResolutionPath = resolutionPath>
 let ctx = HR.GetDataContext()

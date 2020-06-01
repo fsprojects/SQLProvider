@@ -1,5 +1,5 @@
 ﻿#I @"../../../bin/net451"
-#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
 #r @"../libs/Oracle.ManagedDataAccess.dll"
 
 open System
@@ -102,7 +102,7 @@ let topSales5ByCommission =
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
-#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+#r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open Newtonsoft.Json
 

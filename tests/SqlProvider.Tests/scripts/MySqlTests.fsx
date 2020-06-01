@@ -1,7 +1,8 @@
-﻿#I @"../../../bin/net451"
-#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
-#r @"../../../packages/scripts/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
-
+#I @"../../../bin/net461"
+#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/typeproviders/fsharp41/net461/FSharp.Data.SqlProvider.DesignTime.dll"
+#r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+#r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net461/System.Threading.Tasks.Extensions.dll"
 
 open System
 open FSharp.Data.Sql
@@ -12,7 +13,7 @@ open Newtonsoft.Json
 let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
 
 [<Literal>]
-let dataPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45/"
+let dataPath = __SOURCE_DIRECTORY__ + @"/../../../packages/tests/MySqlConnector/lib/net46"
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
@@ -298,7 +299,7 @@ query {
 //"../../../packages/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll"
 
 [<Literal>]
-let connectorPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySqlConnector/lib/net46/"
+let connectorPath = __SOURCE_DIRECTORY__ + @"/../../../packages/tests/MySqlConnector/lib/net46/"
 type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = connectorPath, Owner = "HR">
 let ctx2 = HRFast.GetDataContext()
 

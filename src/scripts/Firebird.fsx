@@ -4,7 +4,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Providers
 
 
-let [<Literal>] resolutionPath = "D:/Gibran/Projetos/GitRep/SQLProvider/packages/scripts/FirebirdSql.Data.FirebirdClient/lib/net452" //"D:/Gibran/Projetos/FirebirdNetProvider141216/src/FirebirdSql.Data.FirebirdClient/bin/Debug/NET40" 
+let [<Literal>] resolutionPath = "D:/Gibran/Projetos/GitRep/SQLProvider/packages/tests/FirebirdSql.Data.FirebirdClient/lib/net452" //"D:/Gibran/Projetos/FirebirdNetProvider141216/src/FirebirdSql.Data.FirebirdClient/bin/Debug/NET40" 
 let [<Literal>] connectionString = @"character set=NONE;data source=localhost;port=3051;initial catalog=d:\Tisul\Gestao\Dados\ROMENA.FDB;user id=SYSDBA;password=masterkey;dialect=1"
 // create a type alias with the connection string and database vendor settings
 

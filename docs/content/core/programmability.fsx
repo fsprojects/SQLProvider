@@ -1,7 +1,7 @@
 (*** hide ***)
 #I @"../../../bin/net451"
 (*** hide ***)
-#r @"../../../bin/net451/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
 open System
 (*** hide ***)

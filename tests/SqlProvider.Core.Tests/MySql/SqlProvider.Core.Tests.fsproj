@@ -37,8 +37,8 @@
       assembly will ve .NET Core compatible. -->
   <ItemGroup><!-- Mono fix, and .NET Standard fix -->
     <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
-      <!--HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath-->
+      <HintPath>../../../bin/net461/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net461/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -54,7 +54,7 @@
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
   <Target Name="MySqlConnectorCopyLibrariesWin">
-    <Exec Command="xcopy ..\..\..\packages\scripts\MySqlConnector\lib\netstandard2.0\MySqlConnector.dll connectorTemp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\MySqlConnector\lib\netstandard2.0\MySqlConnector.dll connectorTemp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\System.Buffers\lib\netstandard2.0\System.Buffers.dll connectorTemp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\System.Threading.Tasks.Extensions\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll connectorTemp\ /y" />
     <Exec Command="xcopy ..\..\..\packages\System.Runtime.InteropServices.RuntimeInformation\lib\netstandard1.1\System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp\ /y" />
@@ -62,7 +62,7 @@
   </Target>
   <Target Name="MySqlConnectorCopyLibrariesNonWin">
     <Exec Command="mkdir -p connectorTemp" />
-    <Exec Command="cp ../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll connectorTemp/ " />
+    <Exec Command="cp ../../../packages/tests/MySqlConnector/lib/net45/MySqlConnector.dll connectorTemp/ " />
     <Exec Command="cp ../../../packages/System.Buffers/lib/netstandard1.1/System.Buffers.dll connectorTemp/ " />
     <Exec Command="cp ../../../packages/System.Threading.Tasks.Extensions/lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll connectorTemp/ " />
     <Exec Command="cp ../../../packages/System.Runtime.InteropServices.RuntimeInformation/lib/net45/System.Runtime.InteropServices.RuntimeInformation.dll connectorTemp/ " />
@@ -79,7 +79,7 @@
   </Target>
   <Target Name="MySqlDataCopyLibrariesNonWin">
     <Exec Command="mkdir -p dataTemp" />
-    <Exec Command="cp ../../../packages/scripts/MySql.Data/lib/net45/MySql.Data.dll dataTemp/ " />
+    <Exec Command="cp ../../../packages/tests/MySql.Data/lib/net45/MySql.Data.dll dataTemp/ " />
   </Target>
   <ItemGroup>
     <Reference Include="MySql.Data.dll">

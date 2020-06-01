@@ -57,7 +57,7 @@ Path to search for assemblies containing database vendor specific connections an
 
 *)
 [<Literal>]
-let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/scripts/MySql.Data/lib/net45"
+let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/tests/MySql.Data/lib/net45"
 
 (**
 ### Individuals Amount

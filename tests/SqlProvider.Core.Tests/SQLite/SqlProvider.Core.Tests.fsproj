@@ -37,7 +37,7 @@
       assembly will ve .NET Core compatible. -->
   <ItemGroup><!-- Mono fix -->
     <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net451/FSharp.Data.SqlProvider.dll</HintPath>
+      <HintPath>../../../bin/net461/FSharp.Data.SqlProvider.dll</HintPath>
     </Reference>
   </ItemGroup>  
   <ItemGroup>
@@ -66,9 +66,9 @@
     <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Linux: -->
     <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../../packages/SQLitePCLRaw.lib.e_sqlite3.linux/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
     <Exec Command="cp ../../../packages/SQLitePCLRaw.bundle_green/lib/netstandard1.1/SQLitePCLRaw.batteries_green.dll temp/ " />
-    <Exec Command="cp ../../../packages/scripts/SQLitePCLRaw.core/lib/net45/SQLitePCLRaw.core.dll temp/ " />
+    <Exec Command="cp ../../../packages/tests/SQLitePCLRaw.core/lib/net45/SQLitePCLRaw.core.dll temp/ " />
     
-    <Exec Command="cp ../../../packages/scripts/Microsoft.Data.Sqlite.Core.Backport/lib/net45/Microsoft.Data.Sqlite.dll temp/ " />
+    <Exec Command="cp ../../../packages/tests/Microsoft.Data.Sqlite.Core.Backport/lib/net45/Microsoft.Data.Sqlite.dll temp/ " />
   </Target>
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <CallTarget Targets="CopyLibrariesWin" Condition="'$(IsWindows)' == 'true'"/>
