@@ -1,6 +1,5 @@
 #I @"../../../bin/net461"
 #r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
-#r @"../../../bin/typeproviders/fsharp41/net461/FSharp.Data.SqlProvider.DesignTime.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 #r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net461/System.Threading.Tasks.Extensions.dll"
 

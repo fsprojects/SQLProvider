@@ -30,7 +30,8 @@ type internal ParameterValue =
 
 [<TypeProvider>]
 type public SqlTypeProvider(config: TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces(config, assemblyReplacementMap=[("SQLProvider.DesignTime", "SQLProvider.Runtime")], addDefaultProbingLocation=true)
+    inherit TypeProviderForNamespaces(config, assemblyReplacementMap=["FSharp.Data.SqlProvider.DesignTime", "FSharp.Data.SqlProvider";
+                                                                      "SQLProvider.DesignTime", "SQLProvider.Runtime"], addDefaultProbingLocation=true)
     let ns = "SQLProvider"
     let asm = Assembly.GetExecutingAssembly()
 
