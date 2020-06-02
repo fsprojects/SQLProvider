@@ -450,7 +450,23 @@ module internal Reflection =
                 match loaded with
                 | Some x -> 
                     x
-                | None -> null
+                | None when Environment.GetEnvironmentVariable("USERPROFILE") <> null ->
+                    // Final try: nuget cache
+                    try 
+                        let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
+                        if System.IO.Directory.Exists c then
+                            let picked = 
+                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories) |> Array.tryPick(fun assemblyPath ->
+                                    let tryLoad = loadFunc assemblyPath true
+                                    if tryLoad <> null && tryLoad.FullName = args.Name then 
+                                        Some(tryLoad) else None
+                                )
+                            match picked with Some x -> x | None -> null
+                        else null
+                    with
+                    | _ -> null
+                | None ->
+                    null
         let mutable handler = Unchecked.defaultof<ResolveEventHandler>
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
             System.ResolveEventHandler (fun _ args ->
