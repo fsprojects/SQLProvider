@@ -864,7 +864,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                 | cs -> cs
             @@>
-        let defaultResPath = <@@ resolutionFolder @@>
+        let defaultResPath = <@@ resolutionPath @@>
         let defaultCmdTimeout = <@@ NO_COMMAND_TIMEOUT @@>
         let defaultTransOpts = <@@ TransactionOptions.Default @@>
         let defaultSelectOps = <@@ SelectOperations.DotNetSide @@>
