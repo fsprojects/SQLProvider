@@ -1,3 +1,7 @@
+### 1.1.89 - 02.06.2020
+* Reference assembly loading improvements
+* Caching relaxed for easier development
+
 ### 1.1.88 - 31.05.2020
 * Caching improvements
 * Possibility to group full entities over multiple keys
