@@ -29,12 +29,12 @@ module internal ProviderBuilder =
 
 type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
-    static let providerCache = ConcurrentDictionary<string,ISqlProvider>()
+    static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
 
     let provider =
-        providerCache.GetOrAdd(typeName,
-            fun typeName ->
+        let addCache() =
+            lazy
                 let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
                 if not (prov.GetSchemaCache().IsOffline) then
                     use con = prov.CreateConnection(connectionString)
@@ -45,7 +45,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     prov.GetTables(con,caseSensitivity) |> ignore
                     if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov
-            )
+        try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
+        with | _ -> providerCache.AddOrUpdate(typeName, addCache(), fun _ _ -> addCache()).Value
+
 
     let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
         
@@ -257,4 +259,4 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
         member __.SaveContextSchema(filePath) =
             providerCache
-            |> Seq.iter (fun prov -> prov.Value.GetSchemaCache().Save(filePath))
+            |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save(filePath))
