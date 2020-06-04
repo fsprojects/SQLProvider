@@ -100,6 +100,9 @@ if it is null in the database.</p>
 </tr>
 </table>
 <p>Because MSSQL databases can be huge, there is an optional constructor parameter <code>TableNames</code> that can be used as a filter.</p>
+<h2><a name="Using-Microsoft-Data-SqlClient-dll-instead-of-build-in-System-Data-SqlClient-dll" class="anchor" href="#Using-Microsoft-Data-SqlClient-dll-instead-of-build-in-System-Data-SqlClient-dll">Using Microsoft.Data.SqlClient.dll instead of build-in System.Data.SqlClient.dll</a></h2>
+<p>To use another driver, Microsoft.Data.SqlClient.dll, you have to set your provider to <code>Common.DatabaseProviderTypes.MSSQLSERVER_DYNAMIC</code> and copy the reference files
+from the NuGet package to local resolutionPath (e.g. Microsoft.Data.SqlClient.dll, Microsoft.Data.SqlClient.SNI.dll and Microsoft.Data.SqlClient.SNI.x86.dll).</p>
 
 <div class="tip" id="fs1">Multiple items<br />type LiteralAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; LiteralAttribute<br /><br />--------------------<br />new : unit -&gt; LiteralAttribute</div>
 <div class="tip" id="fs2">val connectionString : string</div>
@@ -109,7 +112,7 @@ if it is null in the database.</p>
 <div class="tip" id="fs6">namespace FSharp.Data.Sql</div>
 <div class="tip" id="fs7">val dbVendor : Common.DatabaseProviderTypes</div>
 <div class="tip" id="fs8">namespace FSharp.Data.Sql.Common</div>
-<div class="tip" id="fs9">type DatabaseProviderTypes =<br />&#160;&#160;| MSSQLSERVER = 0<br />&#160;&#160;| SQLITE = 1<br />&#160;&#160;| POSTGRESQL = 2<br />&#160;&#160;| MYSQL = 3<br />&#160;&#160;| ORACLE = 4<br />&#160;&#160;| MSACCESS = 5<br />&#160;&#160;| ODBC = 6<br />&#160;&#160;| FIREBIRD = 7</div>
+<div class="tip" id="fs9">type DatabaseProviderTypes =<br />&#160;&#160;| MSSQLSERVER = 0<br />&#160;&#160;| SQLITE = 1<br />&#160;&#160;| POSTGRESQL = 2<br />&#160;&#160;| MYSQL = 3<br />&#160;&#160;| ORACLE = 4<br />&#160;&#160;| MSACCESS = 5<br />&#160;&#160;| ODBC = 6<br />&#160;&#160;| FIREBIRD = 7<br />&#160;&#160;| MSSQLSERVER_DYNAMIC = 8</div>
 <div class="tip" id="fs10">Common.DatabaseProviderTypes.MSSQLSERVER: Common.DatabaseProviderTypes = 0</div>
 <div class="tip" id="fs11">val connString : string</div>
 <div class="tip" id="fs12">val connexStringName : string</div>
