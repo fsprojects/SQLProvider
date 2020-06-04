@@ -244,7 +244,7 @@ module MySql =
         let dbName = (if Array.isEmpty schemas then [|con.Database|] else schemas) |> Array.map(fun s -> "'" + s + "'")
 
         //This could filter the query using the Sproc name passed in
-        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA in %s" (String.Join(", ", dbName))))
+        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA in (%s)" (String.Join(", ", dbName))))
         |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
         |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
         |> Seq.collect (snd >> Seq.choose id)
