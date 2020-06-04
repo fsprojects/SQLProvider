@@ -30,7 +30,11 @@ module MySql =
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     failwith (e.Message + Environment.NewLine + details)
-            types |> Array.find(fun t -> t.Name = name)
+            match types |> Array.tryFind(fun t -> t.Name = name) with
+            | Some t -> t
+            | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
+                                 Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
+
         | Choice2Of2(paths, errors) ->
            let details = 
                 match errors with 

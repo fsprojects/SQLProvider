@@ -50,6 +50,9 @@
     <Compile Include="..\SQLProvider\Providers.MsSqlServer.fs">
       <Link>Providers.MsSqlServer.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider\Providers.MsSqlServer.Dynamic.fs">
+      <Link>Providers.MsSqlServer.Dynamic.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider\Providers.MSAccess.fs">
       <Link>Providers.MSAccess.fs</Link>
     </Compile>

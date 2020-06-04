@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
 #I "../../../bin/net451"
@@ -79,5 +79,12 @@ type sql =
 (**
 
 Because MSSQL databases can be huge, there is an optional constructor parameter `TableNames` that can be used as a filter.
+
+
+## Using Microsoft.Data.SqlClient.dll instead of build-in System.Data.SqlClient.dll
+To use another driver, Microsoft.Data.SqlClient.dll, you have to set your provider to `Common.DatabaseProviderTypes.MSSQLSERVER_DYNAMIC` and copy the reference files
+from the NuGet package to local resolutionPath (e.g. Microsoft.Data.SqlClient.dll, Microsoft.Data.SqlClient.SNI.dll and Microsoft.Data.SqlClient.SNI.x86.dll).
+
+
 
 *)

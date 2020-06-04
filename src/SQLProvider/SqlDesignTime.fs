@@ -22,7 +22,7 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     member __.RuntimeAssembly = runtimeAssembly
 
 module internal DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,ProvidedTypeDefinition>()
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,Lazy<ProvidedTypeDefinition>>()
 
 type internal ParameterValue =
   | UserProvided of string * string * Type
@@ -49,7 +49,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             match caseSensitivity with
             | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
             | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
-            | _ -> (fun x -> x)
+            | _ -> id
 
         let conString =
             match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString with
@@ -864,7 +864,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
                 | cs -> cs
             @@>
-        let defaultResPath = <@@ resolutionFolder @@>
+        let defaultResPath = <@@ resolutionPath @@>
         let defaultCmdTimeout = <@@ NO_COMMAND_TIMEOUT @@>
         let defaultTransOpts = <@@ TransactionOptions.Default @@>
         let defaultSelectOps = <@@ SelectOperations.DotNetSide @@>
@@ -1021,19 +1021,21 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[11] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
             typeName
 
-        DesignTimeCache.cache.GetOrAdd(arguments, fun args ->
-            let types = createTypes args
+        let addCache args =
+            lazy
+                let types = createTypes args
 
-            // This is not a perfect cache-invalidation solution, it can remove a valid item from
-            // cache after the time-out, causing one extra hit, but this is only a design-time cache
-            // and it will work well enough to deal with Visual Studio's multi-threading problems
-            async {
-                do! Async.Sleep 30000
-                DesignTimeCache.cache.TryRemove args |> ignore
-            } |> Async.Start
-            types
-            )
-        )
+                // This is not a perfect cache-invalidation solution, it can remove a valid item from
+                // cache after the time-out, causing one extra hit, but this is only a design-time cache
+                // and it will work well enough to deal with Visual Studio's multi-threading problems
+                async {
+                    do! Async.Sleep 30000
+                    DesignTimeCache.cache.TryRemove args |> ignore
+                } |> Async.Start
+                types
+        try DesignTimeCache.cache.GetOrAdd(arguments, fun args -> addCache args).Value
+        with | _ -> DesignTimeCache.cache.AddOrUpdate(arguments, (fun args -> addCache args), (fun args _ -> addCache args)).Value
+    )
 
     do paramSqlType.AddXmlDoc helpText
 

@@ -4,16 +4,24 @@
 # User-specific files
 *.suo
 *.user
+*.userosscache
 *.sln.docstates
 *.vs/
+*.userprefs
 
 # Build results
 
 [Dd]ebug/
+[Dd]ebugPublic/
 [Rr]elease/
+[Rr]eleases/
+x64/
+x86/
 build/
+bld/
 [Bb]in/
 [Oo]bj/
+[Ll]og/
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
 !packages/*/build/
@@ -22,8 +30,20 @@ build/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
+# NUNIT
+*.VisualState.xml
+TestResult.xml
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# DNX
+project.lock.json
+artifacts/
 *_i.c
 *_p.c
+*_i.h
 *.ilk
 *.meta
 *.obj
@@ -43,21 +63,30 @@ build/
 *.vssscc
 .builds
 *.pidb
+*.svclog
 *.log
 *.scc
 
+# Chutzpah Test files
+_Chutzpah*
 # Visual C++ cache files
 ipch/
 *.aps
 *.ncb
+*.opendb
 *.opensdf
 *.sdf
 *.cachefile
+*.VC.db
+*.VC.VC.opendb
 
 # Visual Studio profiler
 *.psess
 *.vsp
 *.vspx
+*.sap
+# TFS 2012 Local Workspace
+$tf/
 
 # Guidance Automation Toolkit
 *.gpState
@@ -65,6 +94,9 @@ ipch/
 # ReSharper is a .NET coding add-in
 _ReSharper*/
 *.[Rr]e[Ss]harper
+*.DotSettings.user
+# JustCode is a .NET coding add-in
+.JustCode
 
 # TeamCity is a build add-in
 _TeamCity*
@@ -73,8 +105,14 @@ _TeamCity*
 *.dotCover
 
 # NCrunch
+_NCrunch_*
 *.ncrunch*
 .*crunch*.local.xml
+# MightyMoose
+*.mm.*
+AutoTest.Net/
+# Web workbench (sass)
+.sass-cache/
 
 # Installshield output folder
 [Ee]xpress/
@@ -93,7 +131,9 @@ DocProject/Help/html
 publish/
 
 # Publish Web Output
-*.Publish.xml
+*.[Pp]ublish.xml
+*.azurePubxml
+
 
 # Enable nuget.exe in the .nuget folder (though normally executables are not tracked)
 !.nuget/NuGet.exe
@@ -167,22 +207,28 @@ docs/output/
 # Temp folder used for publishing docs
 temp/
 
+# Test coverage files
+coverage.xml
+coverage.*.xml
+
 # Test results produced by build
-TestResults.xml
 release.cmd
+release.sh
 nuget/
 
 # Nuget outputs
 nuget/*.nupkg
 docs/files/msaccess/Northwind.ldb
+localpackages/
 *.orig
-.paket/paket.exe
+.paket/
 *.bak
 paket-files/
+
 docs/content/license.md
 docs/content/release-notes.md
 .fake/
-
+.idea/
 !tests/SqlProvider.Tests/libs
 *.userprefs
 .fake
@@ -196,3 +242,5 @@ docs/content/core/northwindEF.db
 /tests/**/dataTemp/
 /tests/**/connectorTemp/
 .ionide/
+*.svclog
+TestResult.xml
