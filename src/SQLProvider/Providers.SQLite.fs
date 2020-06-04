@@ -133,7 +133,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
 
     let assembly =
-        lazy Reflection.tryLoadAssemblyFrom resolutionPath (Array.append [|runtimeAssembly|] referencedAssemblies) assemblyNames
+        lazy Reflection.tryLoadAssemblyFrom resolutionPath (referencedAssemblies) assemblyNames
 
     let findType f =
 #if NETSTANDARD
