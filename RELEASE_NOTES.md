@@ -1,3 +1,9 @@
+### 1.1.90 - 04.06.2020
+* DatabaseProviderTypes.MSSQLSERVER_DYNAMIC to support Microsoft.Data.SqlClient.dll
+* Improved SQLServer Udt parameters
+* Caching relaxed for easier development
+* Caching and reference assembly loading improvements
+
 ### 1.1.89 - 02.06.2020
 * Reference assembly loading improvements
 * Caching relaxed for easier development
