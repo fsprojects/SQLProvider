@@ -45,7 +45,8 @@ module PostgreSQL =
             with | :? System.Reflection.ReflectionTypeLoadException as e ->
                 let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                 let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                failwith (e.Message + Environment.NewLine + details)
+                let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
         types |> Array.tryFind (fun t -> t.Name = name)
     let getType = findType >> Option.get
 
@@ -226,14 +227,19 @@ module PostgreSQL =
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+            let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as e when (e.InnerException <> null) ->
             failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         try
