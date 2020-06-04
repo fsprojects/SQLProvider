@@ -11,16 +11,17 @@ open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = @"Data Source=localhost; Initial Catalog=HR; Integrated Security=True"
+let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True"
 //let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
 
 [<Literal>]
-let resolutionFolder = __SOURCE_DIRECTORY__
+let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs"
+
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_DYNAMIC, connStr, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
 type Employee = {

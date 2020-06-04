@@ -40,6 +40,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{DB81
 		tests\SqlProvider.Tests\scripts\OdbcTests.fsx = tests\SqlProvider.Tests\scripts\OdbcTests.fsx
 		tests\SqlProvider.Tests\scripts\OracleTests.fsx = tests\SqlProvider.Tests\scripts\OracleTests.fsx
 		tests\SqlProvider.Tests\scripts\SQLLiteTests.fsx = tests\SqlProvider.Tests\scripts\SQLLiteTests.fsx
+		tests\SqlProvider.Tests\scripts\SqlServerTests.fsx = tests\SqlProvider.Tests\scripts\SqlServerTests.fsx
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7BB500F4-9F6A-4AE2-848B-72204AFC706C}"

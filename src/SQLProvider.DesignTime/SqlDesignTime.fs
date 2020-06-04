@@ -22,7 +22,7 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     member __.RuntimeAssembly = runtimeAssembly
 
 module internal DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,ProvidedTypeDefinition>()
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,Lazy<ProvidedTypeDefinition>>()
 
 type internal ParameterValue =
   | UserProvided of string * string * Type
@@ -1028,19 +1028,21 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[11] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
             typeName
 
-        DesignTimeCache.cache.GetOrAdd(arguments, fun args ->
-            let types = createTypes args
+        let addCache args =
+            lazy
+                let types = createTypes args
 
-            // This is not a perfect cache-invalidation solution, it can remove a valid item from
-            // cache after the time-out, causing one extra hit, but this is only a design-time cache
-            // and it will work well enough to deal with Visual Studio's multi-threading problems
-            async {
-                do! Async.Sleep 30000
-                DesignTimeCache.cache.TryRemove args |> ignore
-            } |> Async.Start
-            types
-            )
-        )
+                // This is not a perfect cache-invalidation solution, it can remove a valid item from
+                // cache after the time-out, causing one extra hit, but this is only a design-time cache
+                // and it will work well enough to deal with Visual Studio's multi-threading problems
+                async {
+                    do! Async.Sleep 30000
+                    DesignTimeCache.cache.TryRemove args |> ignore
+                } |> Async.Start
+                types
+        try DesignTimeCache.cache.GetOrAdd(arguments, fun args -> addCache args).Value
+        with | _ -> DesignTimeCache.cache.AddOrUpdate(arguments, (fun args -> addCache args), (fun args _ -> addCache args)).Value
+    )
 
     do paramSqlType.AddXmlDoc helpText
 
