@@ -151,7 +151,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    failwith (e.Message + Environment.NewLine + details)
+                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
             types |> Array.find f
         | Choice2Of2(paths, errors) ->
            let details =

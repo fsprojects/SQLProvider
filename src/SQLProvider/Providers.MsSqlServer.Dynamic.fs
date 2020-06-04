@@ -28,7 +28,8 @@ module MSSqlServerDynamic =
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    failwith (e.Message + Environment.NewLine + details)
+                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
             match types |> Array.tryFind(fun t -> t.Name = name) with
             | Some t -> t
             | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
@@ -48,7 +49,9 @@ module MSSqlServerDynamic =
     let connectionType =  lazy (findType "SqlConnection")
     let commandType =     lazy (findType "SqlCommand")
     let parameterType =   lazy (findType "SqlParameter")
-    let enumType =        lazy (findType "SqlDbType")
+    let enumType =        lazy (
+                            try findType "SqlDbType"
+                            with | _ -> typeof<System.Data.SqlDbType>)
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let getSchema name (args:string[]) (con:IDbConnection) =
@@ -133,12 +136,17 @@ module MSSqlServerDynamic =
             let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)+
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
-            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+                      (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+            raise (System.Reflection.TargetInvocationException(msg+platform, ex.GetBaseException()))
+        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
 
     let createCommand commandText (connection:IDbConnection) =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand

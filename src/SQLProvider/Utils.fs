@@ -357,6 +357,15 @@ module internal Reflection =
     open System.Reflection
     open System.IO
 
+    let getPlatform (a:Assembly) =
+        match a with
+        | null -> ""
+        | x ->
+            match x.GetCustomAttributes(typeof<System.Runtime.Versioning.TargetFrameworkAttribute>, false) with
+            | null -> ""
+            | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
+            | _ -> ""
+
     let tryLoadAssembly path = 
          try 
              let loadedAsm = Assembly.LoadFrom(path) 
@@ -453,13 +462,22 @@ module internal Reflection =
                 | None when Environment.GetEnvironmentVariable("USERPROFILE") <> null ->
                     // Final try: nuget cache
                     try 
+                        let currentPlatform = getPlatform(Assembly.GetExecutingAssembly())
                         let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
                         if System.IO.Directory.Exists c then
                             let picked = 
                                 System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories) |> Array.tryPick(fun assemblyPath ->
-                                    let tryLoad = loadFunc assemblyPath true
-                                    if tryLoad <> null && tryLoad.FullName = args.Name then 
-                                        Some(tryLoad) else None
+                                    let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
+                                    if tmpAssembly.FullName = args.Name then
+                                        let loadedPlatform = getPlatform(tmpAssembly)
+                                        match currentPlatform, loadedPlatform with
+                                        | x, y when (x = "" || y = "" || x.Split(',').[0] = y.Split(',').[0]) ->
+                                            // Ok...good to go. (Although, we could match better the target frameworks.)
+                                            //let tryLoad = loadFunc assemblyPath true
+                                            Some(tmpAssembly)
+                                        | _ -> None
+                                    else
+                                        None
                                 )
                             match picked with Some x -> x | None -> null
                         else null
