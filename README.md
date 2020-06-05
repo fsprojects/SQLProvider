@@ -1,5 +1,5 @@
-[![Issue Stats](http://issuestats.com/github/fsprojects/SQLProvider/badge/issue)](http://issuestats.com/github/fsprojects/SQLProvider)
-[![Issue Stats](http://issuestats.com/github/fsprojects/SQLProvider/badge/pr)](http://issuestats.com/github/fsprojects/SQLProvider)
+[![Issue Status](https://img.shields.io/github/issues/fsprojects/SQLProvider.svg?style=flat)](https://github.com/fsprojects/SQLProvider/issues)
+[![PR Status](https://img.shields.io/github/issues-pr/fsprojects/SQLProvider.svg?style=flat)](https://github.com/fsprojects/SQLProvider/pulls)
 
 # SQLProvider [![NuGet Status](http://img.shields.io/nuget/v/SQLProvider.svg?style=flat)](https://www.nuget.org/packages/SQLProvider/)
 
