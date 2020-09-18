@@ -1,3 +1,6 @@
+### 1.1.92 - 18.09.2020
+* MsSQL and MySQL: Removed computed column from Create parameters list (insert clause)
+
 ### 1.1.91 - 04.06.2020
 * MySQL procedure calls fixed
 * Error handling and dll loading improvements
