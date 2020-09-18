@@ -543,7 +543,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 // we are interested in on demand
                 let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
 				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.COLUMN_TYPE, EXTRA,
-                                                     COLUMN_DEFAULT
+                                                     COLUMN_DEFAULT, length(c.generation_expression) > 0
 				                  FROM INFORMATION_SCHEMA.COLUMNS c
                                   left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
                                    on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
@@ -574,6 +574,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
                                   IsAutonumber = if reader.GetString(7).Contains("auto_increment") then true else false 
                                   HasDefault = not(reader.IsDBNull 8)
+                                  IsComputed = not(reader.IsDBNull 9)
                                   TypeInfo = if String.IsNullOrEmpty maxlen then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

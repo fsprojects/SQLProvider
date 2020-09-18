@@ -761,6 +761,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                           IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
                                           IsPrimaryKey = isPk
                                           IsAutonumber = isPk
+                                          IsComputed = false
                                           HasDefault = Sql.dbUnbox<bool> reader.["has_default"]
                                           TypeInfo = Some fullTypeName
                                         }

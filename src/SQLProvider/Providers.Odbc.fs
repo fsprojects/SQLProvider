@@ -300,6 +300,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
                                   HasDefault = false
+                                  IsComputed = false
                                   TypeInfo = 
                                     if maxlen < 1 then Some dt
                                     else Some (dt + "(" + maxlen.ToString() + ")")

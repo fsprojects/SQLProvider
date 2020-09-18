@@ -290,6 +290,7 @@ module internal Oracle =
                       IsNullable = nullable
                       IsAutonumber = pkColumn
                       HasDefault = row.[4] <> null
+                      IsComputed = false
                       TypeInfo = Some typeinfo }
                 ))
         |> Seq.choose id
