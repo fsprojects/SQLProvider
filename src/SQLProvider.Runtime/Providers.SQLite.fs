@@ -465,6 +465,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
+                                  IsComputed = false
                                   HasDefault = not (reader.IsDBNull 4)
                                   TypeInfo = Some dtv }
                             if col.IsPrimaryKey then

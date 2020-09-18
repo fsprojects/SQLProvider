@@ -645,6 +645,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
                                   HasDefault = not(reader.IsDBNull 6)
+                                  IsComputed = false
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.Name, [col.Name], fun key old -> 
