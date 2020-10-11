@@ -428,7 +428,24 @@ module internal Reflection =
         let allPaths =
             (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
             |> Seq.distinct |> Seq.toList
-        
+
+        let tryLoadFromMemory () =
+            let assemblies =
+                let loadedAssemblies =
+                    AppDomain.CurrentDomain.GetAssemblies()
+                
+                dict [
+                    for assembly in loadedAssemblies ->
+                        assembly.ManifestModule.ScopeName, assembly
+                ]
+
+            assemblyNames
+            |> List.tryPick (fun name ->
+                if assemblies.ContainsKey(name)
+                then Some assemblies.[name]
+                else None
+            )
+
         let result = 
             allPaths
             |> List.tryPick (fun p -> 
@@ -436,6 +453,10 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
+            |> function
+                | Some assembly -> Some assembly
+                | None -> tryLoadFromMemory ()
+
         // Some providers have additional references to other libraries.
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
         // and runtime binding-redirect: http://blog.slaks.net/2013-12-25/redirecting-assembly-loads-at-runtime/
