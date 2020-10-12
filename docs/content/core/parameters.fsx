@@ -3,8 +3,27 @@
 (*** hide ***)
 #I "../../../bin/net451"
 (*** hide ***)
+#r "../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll"
+(*** hide ***)
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
+
+(*** hide ***)
+[<Literal>]
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+
+(*** hide ***)
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+
+(*** hide ***)
+type sqlType =
+    SqlDataProvider<
+        Common.DatabaseProviderTypes.SQLITE,
+        connectionString,
+        ResolutionPath = resolutionPath
+    >
+
 (**
 
 
@@ -70,6 +89,24 @@ relevant assemblies are located. See the database vendor specific page for more 
 [<Literal>]
 let resolutionPath =
     __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+
+(**
+#### Note on .NET 5 PublishSingleFile and ResolutionPath
+
+If you are publishing your app using .NET 5's PublishSingleFile mode, the driver will
+be loaded from the bundle itself rather than from a separate file on the drive. As such,
+the ResolutionPath parameter will not work for the published app, nor will the automatic
+assembly resolution implemented within SQLProvider.
+
+SQLProvider attempts to load the assembly from the AppDomain in such case. This means
+that your driver's assembly must be loaded by your application for SQLProvider to find
+it. To do so, simply use the types of your driver before calling the `.GetDataContext(...)`
+method, such as in this example, using MySqlConnector. The specific type you refer
+to does not matter.
+*)
+
+typeof<MySqlConnector.Logging.MySqlConnectorLogLevel>.Assembly |> ignore
+let ctx = sqlType.GetDataContext()
 
 (**
 ### IndividualsAmount
