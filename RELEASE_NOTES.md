@@ -1,3 +1,6 @@
+### 1.1.93 - 13.10.2020
+* Added capability to load drivers from AppDomain, PR #694
+
 ### 1.1.92 - 18.09.2020
 * MsSQL and MySQL: Removed computed column from Create parameters list (insert clause)
 
