@@ -357,6 +357,15 @@ module internal Reflection =
     open System.Reflection
     open System.IO
 
+    let getPlatform (a:Assembly) =
+        match a with
+        | null -> ""
+        | x ->
+            match x.GetCustomAttributes(typeof<System.Runtime.Versioning.TargetFrameworkAttribute>, false) with
+            | null -> ""
+            | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
+            | _ -> ""
+
     let tryLoadAssembly path = 
          try 
              let loadedAsm = Assembly.LoadFrom(path) 
@@ -419,7 +428,24 @@ module internal Reflection =
         let allPaths =
             (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
             |> Seq.distinct |> Seq.toList
-        
+
+        let tryLoadFromMemory () =
+            let assemblies =
+                let loadedAssemblies =
+                    AppDomain.CurrentDomain.GetAssemblies()
+                
+                dict [
+                    for assembly in loadedAssemblies ->
+                        assembly.ManifestModule.ScopeName, assembly
+                ]
+
+            assemblyNames
+            |> List.tryPick (fun name ->
+                if assemblies.ContainsKey(name)
+                then Some assemblies.[name]
+                else None
+            )
+
         let result = 
             allPaths
             |> List.tryPick (fun p -> 
@@ -427,6 +453,10 @@ module internal Reflection =
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
             )
+            |> function
+                | Some assembly -> Some assembly
+                | None -> tryLoadFromMemory ()
+
         // Some providers have additional references to other libraries.
         // https://stackoverflow.com/questions/18942832/how-can-i-dynamically-reference-an-assembly-that-looks-for-another-assembly
         // and runtime binding-redirect: http://blog.slaks.net/2013-12-25/redirecting-assembly-loads-at-runtime/
@@ -453,13 +483,22 @@ module internal Reflection =
                 | None when Environment.GetEnvironmentVariable("USERPROFILE") <> null ->
                     // Final try: nuget cache
                     try 
+                        let currentPlatform = getPlatform(Assembly.GetExecutingAssembly())
                         let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
                         if System.IO.Directory.Exists c then
                             let picked = 
                                 System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories) |> Array.tryPick(fun assemblyPath ->
-                                    let tryLoad = loadFunc assemblyPath true
-                                    if tryLoad <> null && tryLoad.FullName = args.Name then 
-                                        Some(tryLoad) else None
+                                    let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
+                                    if tmpAssembly.FullName = args.Name then
+                                        let loadedPlatform = getPlatform(tmpAssembly)
+                                        match currentPlatform, loadedPlatform with
+                                        | x, y when (x = "" || y = "" || x.Split(',').[0] = y.Split(',').[0]) ->
+                                            // Ok...good to go. (Although, we could match better the target frameworks.)
+                                            //let tryLoad = loadFunc assemblyPath true
+                                            Some(tmpAssembly)
+                                        | _ -> None
+                                    else
+                                        None
                                 )
                             match picked with Some x -> x | None -> null
                         else null

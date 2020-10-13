@@ -254,6 +254,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                   IsNullable = bool.Parse(row.["IS_NULLABLE"].ToString())
                                   IsAutonumber = row.["DATA_TYPE"].ToString() = "AutoNumber"
                                   HasDefault = not (row.IsNull "COLUMN_DEFAULT");
+                                  IsComputed = false
                                   TypeInfo = 
                                     try 
                                         let ti = 

@@ -29,7 +29,8 @@ module MySql =
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    failwith (e.Message + Environment.NewLine + details)
+                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
             match types |> Array.tryFind(fun t -> t.Name = name) with
             | Some t -> t
             | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
@@ -181,12 +182,17 @@ module MySql =
             let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(new System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)
+            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -238,7 +244,7 @@ module MySql =
         let dbName = (if Array.isEmpty schemas then [|con.Database|] else schemas) |> Array.map(fun s -> "'" + s + "'")
 
         //This could filter the query using the Sproc name passed in
-        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA in %s" (String.Join(", ", dbName))))
+        Sql.connect con (Sql.executeSqlAsDataTable createCommand (sprintf "SELECT * FROM information_schema.PARAMETERS where SPECIFIC_SCHEMA in (%s)" (String.Join(", ", dbName))))
         |> DataTable.groupBy (fun row -> getSprocName row, createSprocParameters row)
         |> Seq.filter (fun (n, _) -> n.ProcName = name.ProcName)
         |> Seq.collect (snd >> Seq.choose id)
@@ -537,7 +543,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 // we are interested in on demand
                 let baseQuery = @"SELECT DISTINCTROW c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
 				                                    ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.COLUMN_TYPE, EXTRA,
-                                                     COLUMN_DEFAULT
+                                                     COLUMN_DEFAULT, length(c.generation_expression) > 0
 				                  FROM INFORMATION_SCHEMA.COLUMNS c
                                   left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
                                    on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
@@ -568,6 +574,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                   IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false 
                                   IsAutonumber = if reader.GetString(7).Contains("auto_increment") then true else false 
                                   HasDefault = not(reader.IsDBNull 8)
+                                  IsComputed = not(reader.IsDBNull 9)
                                   TypeInfo = if String.IsNullOrEmpty maxlen then Some dt else Some (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 

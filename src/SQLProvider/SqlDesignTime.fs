@@ -519,7 +519,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                         columns
                         |> Seq.toArray
                         |> Array.map (fun kvp -> kvp.Value)
-                        |> Array.filter (fun c-> (not c.IsNullable) && (not c.IsAutonumber))
+                        |> Array.filter (fun c-> (not c.IsNullable) && (not c.IsAutonumber) && (not c.IsComputed))
 
                     let backwardCompatibilityOnly =
                         requiredColumns

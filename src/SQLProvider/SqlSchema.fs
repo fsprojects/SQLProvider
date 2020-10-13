@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Schema
+namespace FSharp.Data.Sql.Schema
 
 open System
 open System.Data
@@ -45,6 +45,7 @@ type Column =
       IsNullable: bool
       IsAutonumber: bool
       HasDefault: bool
+      IsComputed: bool
       TypeInfo: string option }
     with
         static member FromQueryParameter(q: QueryParameter) =
@@ -54,6 +55,7 @@ type Column =
               IsNullable = true
               IsAutonumber = false
               HasDefault = false
+              IsComputed = false
               TypeInfo = None }
 
 type ColumnLookup = Map<string,Column>
