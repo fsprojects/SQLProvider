@@ -494,6 +494,15 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
 
     | _ -> None
 
+and (|SqlNegativeBooleanColumn|_|) (e:Expression) = 
+    match e.NodeType, e with
+    | ExpressionType.Not, (:? UnaryExpression as ue) ->
+        match ue.Operand with
+        | SqlColumnGet(ti,key,ret) when ue.Operand.Type.FullName = "System.Boolean" || ret = typeof<bool> -> 
+            Some(ti,key,ConditionOperator.Equal, Some(false |> box))
+        | _ -> None
+    | _ -> None
+
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
     let extractProperty op meth ti key =
@@ -562,6 +571,8 @@ and (|SimpleCondition|_|) exp =
         extractProperty (swapOp op) meth ti key
     | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" || ret = typeof<bool> -> 
         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
+    | SqlNegativeBooleanColumn(ti,key,e,v) -> 
+        Some(ti,key,e, v)
     | _ -> None
 
 and (|TupleSqlColumnsGet|_|) = function 
