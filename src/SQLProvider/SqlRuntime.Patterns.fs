@@ -97,7 +97,13 @@ let (|NullConstant|_|) (e:Expression) =
 
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some(Some(ce.Value))
+    | ExpressionType.Constant, (:? ConstantExpression as ce) ->
+        if ce.Type.IsGenericType && ce.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") then
+            match ce.Type.GetProperty("Value").GetValue(ce.Value,[||]) with
+            | null -> Some(Some(ce.Value))
+            | optVal -> Some(Some(optVal))
+        else
+            Some(Some(ce.Value))
     | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
         match ue.Operand with
         | :? ConstantExpression as ce -> if ce.Value = null then Some(None) else Some(Some(ce.Value))
