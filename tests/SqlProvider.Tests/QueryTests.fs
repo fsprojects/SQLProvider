@@ -1856,7 +1856,23 @@ let ``simple select with contains query with where boolean option type``() =
             select cust.CustomerId
             contains "ALFKI"
         }
-    Assert.IsTrue(qry)    
+    Assert.IsTrue(qry)
+
+[<Test>]
+let ``simple select with where boolean option types``() =
+    let dc = sqlOption.GetDataContext()
+    let getOptionFilter (city : string option) = 
+        query {
+            for c in dc.Main.Customers do
+            where (c.City = city)
+            select (c.CustomerId)
+        } |> Seq.toList
+
+    let nullCase = getOptionFilter None //[City] IS NULL
+    let someCase = getOptionFilter (Some "London") //[City] = @param1
+
+    Assert.IsEmpty nullCase
+    Assert.IsNotEmpty someCase
 
 type MyOpt = {MyItem: string option}
 

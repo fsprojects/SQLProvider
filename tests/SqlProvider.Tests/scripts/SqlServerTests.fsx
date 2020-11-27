@@ -296,3 +296,19 @@ query {
     where (c.FirstName = "Tuomas")
 } |> Seq.``delete all items from single table`` 
 |> Async.RunSynchronously
+
+//************** Option types test ******************//
+
+type HR2 = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder, UseOptionTypes = true>
+let ctxOpt = HR2.GetDataContext()
+
+let getOptionFilter (postcode : string option) = 
+    query {
+        for loc in ctxOpt.Dbo.Locations do
+        where (loc.PostalCode = postcode)
+        select (loc.LocationId)
+        headOrDefault
+    } 
+
+getOptionFilter None
+getOptionFilter (Some "E145AB")
