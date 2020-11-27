@@ -1,3 +1,6 @@
+### 1.1.94 - 27.11.2020
+* More query support: where (table.NullableColumn = optionValue && not boolean_column)
+
 ### 1.1.93 - 13.10.2020
 * Added capability to load drivers from AppDomain, PR #694
 
