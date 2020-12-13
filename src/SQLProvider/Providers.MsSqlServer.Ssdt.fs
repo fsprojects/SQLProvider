@@ -58,6 +58,9 @@ module MSSqlServerSsdt =
 
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
+    let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
+    let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
     let myLock = new Object()
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
@@ -635,7 +638,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = MSSqlServer.createInsertCommand con schemaCache sb e
+                        let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -643,14 +646,14 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = MSSqlServer.createUpdateCommand con schemaCache sb e fields
+                        let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = MSSqlServer.createDeleteCommand con schemaCache sb e
+                        let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -685,7 +688,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                         match e._State with
                         | Created ->
                             async {
-                                let cmd = MSSqlServer.createInsertCommand con schemaCache sb e
+                                let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -695,7 +698,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                             }
                         | Modified fields ->
                             async {
-                                let cmd = MSSqlServer.createUpdateCommand con schemaCache sb e fields
+                                let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -704,7 +707,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                             }
                         | Delete ->
                             async {
-                                let cmd = MSSqlServer.createDeleteCommand con schemaCache sb e
+                                let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value

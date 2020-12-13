@@ -345,7 +345,7 @@ module MSSqlServer =
             | false -> sprintf "'[%s].[%s]'" al
         Utilities.genericAliasNotation aliasSprint col
 
-    let internal createInsertCommand (con:IDbConnection) schemaCache (sb:Text.StringBuilder) (entity:SqlEntity) =
+    let internal createInsertCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -387,7 +387,7 @@ module MSSqlServer =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let internal createUpdateCommand (con:IDbConnection) schemaCache (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns:string list) =
+    let internal createUpdateCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns:string list) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -435,7 +435,7 @@ module MSSqlServer =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let internal createDeleteCommand (con:IDbConnection) schemaCache (sb:Text.StringBuilder) (entity:SqlEntity) =
+    let internal createDeleteCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -469,6 +469,9 @@ type internal MSSQLPagingCompatibility =
 
 type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
+    let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
+    let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
     let myLock = new Object()
     
     // Remembers the version of each instance it connects to
@@ -1077,7 +1080,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = MSSqlServer.createInsertCommand con schemaCache sb e
+                        let cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1085,14 +1088,14 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = MSSqlServer.createUpdateCommand con schemaCache sb e fields
+                        let cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = MSSqlServer.createDeleteCommand con schemaCache sb e
+                        let cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1127,7 +1130,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                         match e._State with
                         | Created ->
                             async {
-                                let cmd = MSSqlServer.createInsertCommand con schemaCache sb e
+                                let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1137,7 +1140,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                             }
                         | Modified fields ->
                             async {
-                                let cmd = MSSqlServer.createUpdateCommand con schemaCache sb e fields
+                                let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1146,7 +1149,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                             }
                         | Delete ->
                             async {
-                                let cmd = MSSqlServer.createDeleteCommand con schemaCache sb e
+                                let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
