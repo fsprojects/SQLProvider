@@ -77,19 +77,21 @@ module MSSqlServerSsdt =
         Columns: string list
     }
 
-    // Dynamic load for Microsoft.SqlServer.Management.SqlParser.Parser.Parser
-    let parserType =  lazy(findType (fun t -> t.Name = "Parser"))
-    let parseResultType =  lazy(findType (fun t -> t.Name = "ParseResult"))
-    let sqlScriptType =  lazy(findType (fun t -> t.Name = "SqlScript"))
-    let parseMethod = lazy(parserType.Value.GetMethod("Parse", [| typeof<string> |]))
-    let scriptProperty = lazy(parseResultType.Value.GetProperty("Script"))
-    let xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml"))
+    module DynamicSqlParser =
 
-    /// Parses a script - returns an xml string with a table schema.
-    let parseSqlScript (tableScript: string) =
-        let oResult = parseMethod.Value.Invoke(null, [| box tableScript |])
-        let oSqlScript = scriptProperty.Value.GetValue(oResult)
-        xmlProperty.Value.GetValue(oSqlScript) :?> string
+        // Dynamically load Microsoft.SqlServer.Management.SqlParser.Parser.Parser
+        let private parserType =  lazy(findType (fun t -> t.Name = "Parser"))
+        let private parseResultType =  lazy(findType (fun t -> t.Name = "ParseResult"))
+        let private sqlScriptType =  lazy(findType (fun t -> t.Name = "SqlScript"))
+        let private parseMethod = lazy(parserType.Value.GetMethod("Parse", [| typeof<string> |]))
+        let private scriptProperty = lazy(parseResultType.Value.GetProperty("Script"))
+        let private xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml"))
+
+        /// Parses a script - returns an xml string with a table schema.
+        let parseTableScript (tableScript: string) =
+            let oResult = parseMethod.Value.Invoke(null, [| box tableScript |])
+            let oSqlScript = scriptProperty.Value.GetValue(oResult)
+            xmlProperty.Value.GetValue(oSqlScript) :?> string
 
     /// Gets an XmlNode attribute value or empty string if node is null.
     let att (nm: string) (node: XmlNode) = 
@@ -198,7 +200,7 @@ module MSSqlServerSsdt =
         ssdtPath
         |> findTableScripts
         |> Seq.map readTableScript
-        |> Seq.map parseSqlScript
+        |> Seq.map DynamicSqlParser.parseTableScript
         |> Seq.map parseTableSchemaXml
         |> Seq.map (fun table -> table.Name, table)
         |> Map.ofSeq
