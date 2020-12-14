@@ -639,6 +639,21 @@ module Sql =
                 }
         executeOneByOne' asyncFunc entityList []
 
+
+#if !NETSTANDARD
+module Option =
+
+    let defaultValue<'T> (value: 'T) (option: 'T option) =
+        match option with
+        | Some optValue -> optValue
+        | None -> value
+
+    let ofObj<'T when 'T : null> (value: 'T) =
+        match value with
+        | null -> None
+        | _ -> Some value
+#endif
+
 // Taken from https://github.com/haf/yolo
 module Bytes =
 
@@ -655,3 +670,4 @@ module Bytes =
   let sha1 = hash (fun () -> new SHA1CryptoServiceProvider())
 
   let sha256 = hash (fun () -> new SHA256CryptoServiceProvider())
+

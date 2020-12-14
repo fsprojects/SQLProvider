@@ -2,20 +2,20 @@ namespace FSharp.Data.Sql.Providers
 
 open System
 open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Data
 open System.Data.SqlClient
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+open System.Xml
+open FSharp.Data.Sql.Common
 
 module MSSqlServerSsdt =
     let mutable resolutionPath = String.Empty
     let mutable referencedAssemblies = [||]
     let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser" ]
-    let assembly =
-        lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+    let assembly = lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
     let findType f =
         match assembly.Value with
@@ -41,7 +41,39 @@ module MSSqlServerSsdt =
                 details
                 (if Environment.Is64BitProcess then "(You are running on x64.)" else "(You are NOT running on x64.)")
 
-    // Microsoft.SqlServer.Management.SqlParser.Parser.Parser
+    type Table = {
+        Schema: string
+        Name: string
+        Columns: Column list
+        PrimaryKeys: PrimaryKeyConstraint list
+        ForeignKeys: ForeignKeyConstraint list
+    }
+    and Column = {
+        Name: string
+        DataType: string
+        AllowNulls: bool
+        Identity: IdentitySpec option
+    }
+    and IdentitySpec = {
+        Seed: int
+        Increment: int
+    }
+    and ForeignKeyConstraint = {
+        Name: string
+        Columns: string list
+        References: RefTable
+    }
+    and RefTable = {
+        Schema: string
+        Table: string
+        Columns: string list
+    }
+    and PrimaryKeyConstraint = {
+        Name: string
+        Columns: string list
+    }
+
+    // Dynamic load for Microsoft.SqlServer.Management.SqlParser.Parser.Parser
     let parserType =  lazy(findType (fun t -> t.Name = "Parser"))
     let parseResultType =  lazy(findType (fun t -> t.Name = "ParseResult"))
     let sqlScriptType =  lazy(findType (fun t -> t.Name = "SqlScript"))
@@ -49,11 +81,105 @@ module MSSqlServerSsdt =
     let scriptProperty = lazy(parseResultType.Value.GetProperty("Script", Reflection.BindingFlags.Instance))
     let xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml", Reflection.BindingFlags.Instance))
 
-    /// Parses a script - returns an xml string
-    let parseSqlScript (script: string) =
-        let oResult = parseMethod.Value.Invoke(null, [| box script |])
+    /// Parses a script - returns an xml string with a table schema.
+    let parseSqlScript (tableScript: string) =
+        let oResult = parseMethod.Value.Invoke(null, [| box tableScript |])
         let oSqlScript = scriptProperty.Value.GetValue(oResult)
         xmlProperty.Value.GetValue(oSqlScript) :?> string
+
+    /// Gets an XmlNode attribute value or empty string if node is null.
+    let att (nm: string) (node: XmlNode) = 
+        node.Attributes 
+        |> Seq.cast<XmlAttribute> 
+        |> Seq.tryFind (fun a -> a.Name = nm) 
+        |> Option.map (fun a -> a.Value)
+        |> Option.defaultValue ""
+
+    /// Analyzes Microsoft SQL Parser XML results and returns a Table model.
+    let parseTableSchemaXml (tableSchemaXml: string) = 
+        let doc = new XmlDocument()
+        use rdr = new System.IO.StringReader(tableSchemaXml)
+        doc.Load(rdr)
+    
+        let tblStatement = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateTableStatement")
+        let tblSchemaName, tblObjectName = 
+            let objId = tblStatement.SelectSingleNode("SqlObjectIdentifier")
+            objId |> att "SchemaName", objId |> att "ObjectName"
+    
+        let columns = 
+            tblStatement.SelectSingleNode("SqlTableDefinition").SelectNodes("SqlColumnDefinition")
+            |> Seq.cast<XmlNode>
+            |> Seq.map (fun cd -> 
+                let colName = cd |> att "Name"
+                let dataType = cd.SelectSingleNode("SqlDataTypeSpecification/SqlDataType") |> att "ObjectIdentifier"
+                let constraints = cd.SelectNodes("SqlDataTypeSpecification/SqlConstraint") |> Seq.cast<XmlNode> |> Seq.map (att "Type")
+                let allowNulls = not (constraints |> Seq.exists (fun c -> c = "NotNull")) // default is allow nulls
+                let identity = 
+                    cd.SelectSingleNode("SqlColumnIdentity") 
+                    |> Option.ofObj 
+                    |> Option.map (fun n -> { Increment = n |> att "Increment" |> int; Seed = n |> att "Seed" |> int })
+    
+                { Column.Name= colName
+                  Column.DataType = dataType
+                  Column.AllowNulls = allowNulls
+                  Column.Identity = identity }
+            )
+            |> Seq.toList
+    
+        let primaryKeyConstraints = 
+            tblStatement.SelectSingleNode("SqlTableDefinition").SelectNodes("SqlPrimaryKeyConstraint")
+            |> Seq.cast<XmlNode>
+            |> Seq.map (fun pkc -> 
+                let name = pkc |> att "Name"
+                let cols = 
+                    pkc.SelectNodes("SqlIndexedColumn")
+                    |> Seq.cast<XmlNode>
+                    |> Seq.map (att "Name")
+                    |> Seq.toList
+                { PrimaryKeyConstraint.Name = name
+                  PrimaryKeyConstraint.Columns = cols }
+            )
+            |> Seq.toList
+    
+        let foreignKeyConstraints = 
+            tblStatement.SelectSingleNode("SqlTableDefinition").SelectNodes("SqlForeignKeyConstraint")
+            |> Seq.cast<XmlNode> 
+            |> Seq.map (fun fkc -> 
+                let name = fkc |> att "Name"
+    
+                let children = fkc.ChildNodes |> Seq.cast<XmlNode> |> Seq.toList |> List.filter (fun c -> c.Name = "SqlIdentifier" || c.Name = "SqlObjectIdentifier")
+                let idx = children |> List.findIndex (fun c -> c.Name = "SqlObjectIdentifier")
+    
+                let localColumnNodes = children |> Seq.take idx |> Seq.toList
+                let refTableNode = children.[idx]
+                let refColumnNodes = children |> Seq.skip (idx + 1) |> Seq.toList
+    
+                let fkCols = 
+                    match localColumnNodes with
+                    | _ :: fkCols -> fkCols |> List.map (att "Value")
+                    | _ -> []
+    
+                let refCols = 
+                    refColumnNodes
+                    |> List.map (att "Value")
+    
+                
+                let refTable =
+                    { RefTable.Schema = refTableNode |> att "SchemaName"
+                      RefTable.Table = refTableNode |> att "ObjectName"
+                      RefTable.Columns = refCols }
+    
+                { ForeignKeyConstraint.Name = name
+                  ForeignKeyConstraint.Columns = fkCols
+                  ForeignKeyConstraint.References = refTable }
+            )
+            |> Seq.toList
+        
+        { Table.Schema = tblSchemaName 
+          Table.Name = tblObjectName
+          Table.Columns = columns
+          Table.PrimaryKeys = primaryKeyConstraints
+          Table.ForeignKeys = foreignKeyConstraints }
 
 
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
