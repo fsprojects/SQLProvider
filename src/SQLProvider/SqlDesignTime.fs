@@ -39,7 +39,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName) =
+    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName, ssdtPath) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -59,7 +59,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let rootType, prov, con =
           lock lockObj3 (fun _ ->
             let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
-            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary
+            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
             match prov.GetSchemaCache().IsOffline with
             | false ->
                 let con = prov.CreateConnection conString
@@ -121,7 +121,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
         let transactionOptions = TransactionOptions.Default
-        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide)
+        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -796,7 +796,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               schemacache.Individuals.Clear()
                               DesignTimeCache.cache.Clear()
                               this.Invalidate()
-                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName)
+                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName, ssdtPath)
                               saveInProcess <- false
                               "Database schema cache cleared.")
                           [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]
@@ -937,7 +937,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                                     runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
                                     tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote,
                                     sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2],
-                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4])
+                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath)
                     :> ISqlDataContext
                   @@>
 
@@ -989,6 +989,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let contextSchemaPath = ProvidedStaticParameter("ContextSchemaPath", typeof<string>, "")
     let odbcquote = ProvidedStaticParameter("OdbcQuote", typeof<OdbcQuoteCharacter>, OdbcQuoteCharacter.DEFAULT_QUOTE)
     let sqliteLibrary = ProvidedStaticParameter("SQLiteLibrary",typeof<SQLiteLibrary>,SQLiteLibrary.AutoSelect)
+    let ssdtPath = ProvidedStaticParameter("SsdtPath", typeof<string>, "")
     let helpText = "<summary>Typed representation of a database</summary>
                     <param name='ConnectionString'>The connection string for the SQL database</param>
                     <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
@@ -1002,23 +1003,25 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ContextSchemaPath'>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</param>
                     <param name='OdbcQuote'>Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]</param>
                     <param name='SQLiteLibrary'>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</param>
+                    <param name='SsdtPath'>The root SSDT folder that contains the 'Table' subfolder (does not require setting a ConnectionString or ConnectionStringName).</param>
                     "
 
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary], fun typeName args ->
 
         let arguments =
-            args.[1] :?> string,                  // ConnectionString URL
-            args.[2] :?> string,                  // ConnectionString Name
-            args.[0] :?> DatabaseProviderTypes,   // db vendor
-            args.[3] :?> string,                  // Assembly resolution path for db connectors and custom types
-            args.[4] :?> int,                     // Individuals Amount
-            args.[5] :?> bool,                    // Use option types?
-            args.[6] :?> string,                  // Schema owner currently only used for oracle
-            args.[7] :?> CaseSensitivityChange,   // Should we do ToUpper or ToLower when generating table names?
-            args.[8] :?> string,                  // Table names list (Oracle and MSSQL Only)
-            args.[9] :?> string,                  // Context schema path
-            args.[10] :?> OdbcQuoteCharacter,      // Quote characters (Odbc only)
-            args.[11] :?> SQLiteLibrary,          // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+            args.[1] :?> string,                    // ConnectionString URL
+            args.[2] :?> string,                    // ConnectionString Name
+            args.[0] :?> DatabaseProviderTypes,     // db vendor
+            args.[3] :?> string,                    // Assembly resolution path for db connectors and custom types
+            args.[4] :?> int,                       // Individuals Amount
+            args.[5] :?> bool,                      // Use option types?
+            args.[6] :?> string,                    // Schema owner currently only used for oracle
+            args.[7] :?> CaseSensitivityChange,     // Should we do ToUpper or ToLower when generating table names?
+            args.[8] :?> string,                    // Table names list (Oracle and MSSQL Only)
+            args.[9] :?> string,                    // Context schema path
+            args.[10] :?> OdbcQuoteCharacter,       // Quote characters (Odbc only)
+            args.[11] :?> SQLiteLibrary,            // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+            args.[12] :?> string,                   // SSDT Path
             typeName
 
         let addCache args =

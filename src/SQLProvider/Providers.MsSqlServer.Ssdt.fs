@@ -17,6 +17,10 @@ module MSSqlServerSsdt =
     let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser" ]
     let assembly = lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
+    let mutable typeMappings : TypeMapping list = []
+    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
+
     let findType f =
         match assembly.Value with
         | Choice1Of2(assembly) ->
@@ -41,14 +45,14 @@ module MSSqlServerSsdt =
                 details
                 (if Environment.Is64BitProcess then "(You are running on x64.)" else "(You are NOT running on x64.)")
 
-    type Table = {
+    type SsdtTable = {
         Schema: string
         Name: string
-        Columns: Column list
+        Columns: SsdtColumn list
         PrimaryKeys: PrimaryKeyConstraint list
         ForeignKeys: ForeignKeyConstraint list
     }
-    and Column = {
+    and SsdtColumn = {
         Name: string
         DataType: string
         AllowNulls: bool
@@ -119,10 +123,10 @@ module MSSqlServerSsdt =
                     |> Option.ofObj 
                     |> Option.map (fun n -> { Increment = n |> att "Increment" |> int; Seed = n |> att "Seed" |> int })
     
-                { Column.Name= colName
-                  Column.DataType = dataType
-                  Column.AllowNulls = allowNulls
-                  Column.Identity = identity }
+                { SsdtColumn.Name= colName
+                  SsdtColumn.DataType = dataType
+                  SsdtColumn.AllowNulls = allowNulls
+                  SsdtColumn.Identity = identity }
             )
             |> Seq.toList
     
@@ -175,12 +179,54 @@ module MSSqlServerSsdt =
             )
             |> Seq.toList
         
-        { Table.Schema = tblSchemaName 
-          Table.Name = tblObjectName
-          Table.Columns = columns
-          Table.PrimaryKeys = primaryKeyConstraints
-          Table.ForeignKeys = foreignKeyConstraints }
+        { SsdtTable.Schema = tblSchemaName 
+          SsdtTable.Name = tblObjectName
+          SsdtTable.Columns = columns
+          SsdtTable.PrimaryKeys = primaryKeyConstraints
+          SsdtTable.ForeignKeys = foreignKeyConstraints }
 
+    let findTableScripts (ssdtPath: string) =
+        let root = System.IO.DirectoryInfo(ssdtPath)
+        match root.EnumerateDirectories() |> Seq.tryFind (fun d -> d.Name = "Tables") with
+        | Some tablesDir -> tablesDir.EnumerateFiles("*.sql")
+        | None -> Seq.empty
+            
+    let readTableScript (file: System.IO.FileInfo) =
+        System.IO.File.ReadAllText(file.FullName)
+
+    let parseTableCreateScripts ssdtPath =
+        ssdtPath
+        |> findTableScripts
+        |> Seq.map readTableScript
+        |> Seq.map parseSqlScript
+        |> Seq.map parseTableSchemaXml
+        |> Seq.map (fun table -> table.Name, table)
+        |> Map.ofSeq
+
+    let ssdtTableToTable (tbl: SsdtTable) =
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type = "" } // Type = reader.GetSqlString(2).Value.ToLower()
+
+    let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
+        match MSSqlServer.findDbType col.DataType with
+        | Some typeMapping ->
+            Some
+                { Column.Name = col.Name
+                  Column.TypeMapping = typeMapping
+                  Column.IsNullable = col.AllowNulls
+                  Column.IsPrimaryKey = tbl.PrimaryKeys |> List.collect (fun pk -> pk.Columns) |> List.exists (fun colName -> colName = col.Name)
+                  Column.IsAutonumber = col.Identity <> None
+                  Column.HasDefault = false // TODO: Add UniqueConstraint to SsdtTable
+                  Column.IsComputed = false // TODO: Investigate
+                  Column.TypeInfo = None }  // TODO: Investigate
+        | None ->
+            None
+
+    let fkConstraintToRelationship (tbl: SsdtTable) (fk: ForeignKeyConstraint) =
+        { Name = fk.Name
+          PrimaryTable = fk.References.Table        // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
+          PrimaryKey = fk.References.Columns.Head   // Apparently compound keys are not supported
+          ForeignTable = tbl.Name                   // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
+          ForeignKey = tbl.Columns.Head.Name }      // Apparently compound keys are not supported
 
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
@@ -190,6 +236,8 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     let myLock = new Object()
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
+
+    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts ssdtPath
 
     do
         MSSqlServerSsdt.resolutionPath <- resolutionPath
@@ -214,148 +262,67 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.GetSchemaCache() = schemaCache
     
         member __.GetTables(con,_) =
-            let tableNamesFilter =
-                match tableNames with 
-                | "" -> ""
-                | x -> " where 1=1 " + (SchemaProjections.buildTableNameWhereFilter "TABLE_NAME" tableNames)
-            MSSqlServer.connect con (fun con ->
-            use reader = MSSqlServer.executeSql ("select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" + tableNamesFilter) con
-            [ while reader.Read() do
-                let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
-                yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ])
+            // Will add this later if needed
+            //let tableNamesFilter =
+            //    match tableNames with 
+            //    | "" -> ""
+            //    | x -> " where 1=1 " + (SchemaProjections.buildTableNameWhereFilter "TABLE_NAME" tableNames)
+
+            ssdtTables.Value
+            |> Seq.map (fun kvp -> kvp.Value)
+            |> Seq.map MSSqlServerSsdt.ssdtTableToTable
+            |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
+            |> Seq.toList
 
         member __.GetPrimaryKey(table) =
-            match schemaCache.PrimaryKeys.TryGetValue table.FullName with
-            | true, [v] -> Some v
+            match ssdtTables.Value.TryFind(table.Name) with
+            | Some ssdtTbl ->
+                match ssdtTbl.PrimaryKeys with
+                | [pk] ->
+                    match pk.Columns with
+                    | [c] -> Some c
+                    | _ -> None
+                | _ -> None
             | _ -> None
 
-        member __.GetColumns(con,table) =
-        
-            // If we don't know this server's version already, open the connection ahead-of-time and read it 
-        
+        member __.GetColumns(con,table) =        
+            // If we don't know this server's version already, open the connection ahead-of-time and read it         
             mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
                 lazy
                     if con.State <> ConnectionState.Open then con.Open()
                     let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
                     if success then version else Version("12.0")
             ).Value |> ignore 
-            
+
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> 
                // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
                if con.State = ConnectionState.Open then con.Close()
                data
             | _ ->
-               // note this data can be obtained using con.GetSchema, and i didn't know at the time about the restrictions you can
-               // pass in to filter by table name etc - we should probably swap this code to use that instead at some point
-               // but hey, this works
-               let baseQuery = @"SELECT c.COLUMN_NAME,c.DATA_TYPE, c.character_maximum_length, c.numeric_precision, c.is_nullable
-                                              ,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType
-                                              ,COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IsIdentity, 
-                                              case when COLUMN_DEFAULT is not null then 1 else 0 end as HasDefault,
-                                              COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA+'.'+c.TABLE_NAME), c.COLUMN_NAME, 'IsComputed') AS IsComputed
-                                 FROM INFORMATION_SCHEMA.COLUMNS c
-                                 LEFT JOIN (
-                                             SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
-                                             FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-                                             INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
-                                                 ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                                                 AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
-                                          )   pk
-                                 ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
-                                             AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
-                                             AND c.TABLE_NAME = pk.TABLE_NAME
-                                             AND c.COLUMN_NAME = pk.COLUMN_NAME
-                                 WHERE c.TABLE_SCHEMA = @schema AND c.TABLE_NAME = @table
-                                 ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION"
-               use com = new SqlCommand(baseQuery,con:?>SqlConnection)
-               com.Parameters.AddWithValue("@schema",table.Schema) |> ignore
-               com.Parameters.AddWithValue("@table",table.Name) |> ignore
-               if con.State <> ConnectionState.Open then con.Open()
-
-               use reader = com.ExecuteReader()
-               let columns =
-                   [ while reader.Read() do
-                       let dt = reader.GetSqlString(1).Value
-                       let maxlen = 
-                            let x = reader.GetSqlInt32(2)
-                            if x.IsNull then 0 else (x.Value)
-                       match MSSqlServer.findDbType dt with
-                       | Some(m) ->
-                           let col =
-                             { Column.Name = reader.GetSqlString(0).Value;
-                               TypeMapping = m
-                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                               IsPrimaryKey = if reader.GetSqlString(5).Value = "PRIMARY KEY" then true else false
-                               IsAutonumber = reader.GetInt32(6) = 1
-                               HasDefault = reader.GetInt32(7) = 1
-                               IsComputed = reader.GetInt32(8) = 1
-                               TypeInfo = if maxlen > 0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
-                           if col.IsPrimaryKey then
-                               schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
-                                    match col.Name with 
-                                    | "" -> old 
-                                    | x -> match old with
-                                           | [] -> [x]
-                                           | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
-                               ) |> ignore
-                           yield (col.Name,col)
-                       | _ -> ()]
-                   |> Map.ofList
-               con.Close()
-               schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                let columns =
+                    match ssdtTables.Value.TryFind(table.Name) with
+                    | Some ssdtTbl ->
+                        ssdtTbl.Columns
+                        |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
+                        |> List.choose id
+                        |> List.map (fun col -> col.Name, col)
+                    | None -> []
+                    |> Map.ofList
+                
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
-          schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-            // mostly stolen from
-            // http://msdn.microsoft.com/en-us/library/aa175805(SQL.80).aspx
-            let baseQuery = @"SELECT
-                                 KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
-                                ,KCU1.TABLE_NAME AS FK_TABLE_NAME
-                                ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME
-                                ,KCU1.ORDINAL_POSITION AS FK_ORDINAL_POSITION
-                                ,KCU2.CONSTRAINT_NAME AS REFERENCED_CONSTRAINT_NAME
-                                ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME
-                                ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME
-                                ,KCU2.ORDINAL_POSITION AS REFERENCED_ORDINAL_POSITION
-                                ,KCU1.CONSTRAINT_SCHEMA AS FK_CONSTRAINT_SCHEMA
-                                ,KCU2.CONSTRAINT_SCHEMA AS PK_CONSTRAINT_SCHEMA
-                            FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC
+            schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
+                let parents = 
+                    match ssdtTables.Value.TryFind(table.Name) with
+                    | Some ssdtTbl ->
+                        ssdtTbl.ForeignKeys
+                        |> List.map (MSSqlServerSsdt.fkConstraintToRelationship ssdtTbl)
+                    | None -> []
 
-                            INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1
-                                ON KCU1.CONSTRAINT_CATALOG = RC.CONSTRAINT_CATALOG
-                                AND KCU1.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA
-                                AND KCU1.CONSTRAINT_NAME = RC.CONSTRAINT_NAME
-
-                            INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2
-                                ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG
-                                AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA
-                                AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
-                                AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
-
-            let res = MSSqlServer.connect con (fun con ->
-                let baseq1 = sprintf "%s WHERE KCU2.TABLE_NAME = @tblName" baseQuery 
-                use com1 = new SqlCommand(baseq1,con:?>SqlConnection)
-                com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore
-                if con.State <> ConnectionState.Open then con.Open()
-                use reader = com1.ExecuteReader()
-                let children =
-                    [ while reader.Read() do
-                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                                ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
-                reader.Dispose()
-                let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
-                use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
-                com2.Parameters.AddWithValue("@tblName",table.Name) |> ignore
-                if con.State <> ConnectionState.Open then con.Open()
-                use reader = com2.ExecuteReader()
-                let parents =
-                    [ while reader.Read() do
-                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                                ForeignTable=Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
-                (children,parents))
-            res)
+                ([], parents) // TODO: Add children relationships if necessary
+            )
 
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
