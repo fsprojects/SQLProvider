@@ -253,12 +253,15 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             // TODO: GetColumnDescription
             columnName
 
-        member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
+        member __.CreateConnection(connectionString) = Stubs.connection
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
         member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
-        member __.CreateTypeMappings(con) = MSSqlServer.createTypeMappings con
+        member __.CreateTypeMappings(con) =
+            //MSSqlServer.createTypeMappings con
+            // TODO: Map columns to data types
+            ()
         member __.GetSchemaCache() = schemaCache
     
         member __.GetTables(con,_) =
@@ -287,30 +290,30 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetColumns(con,table) =        
             // If we don't know this server's version already, open the connection ahead-of-time and read it         
-            mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
-                lazy
-                    if con.State <> ConnectionState.Open then con.Open()
-                    let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-                    if success then version else Version("12.0")
-            ).Value |> ignore 
+            //mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
+            //    lazy
+            //        if con.State <> ConnectionState.Open then con.Open()
+            //        let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
+            //        if success then version else Version("12.0")
+            //).Value |> ignore 
 
-            match schemaCache.Columns.TryGetValue table.FullName with
-            | (true,data) when data.Count > 0 -> 
-               // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
-               if con.State = ConnectionState.Open then con.Close()
-               data
-            | _ ->
-                let columns =
-                    match ssdtTables.Value.TryFind(table.Name) with
-                    | Some ssdtTbl ->
-                        ssdtTbl.Columns
-                        |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
-                        |> List.choose id
-                        |> List.map (fun col -> col.Name, col)
-                    | None -> []
-                    |> Map.ofList
+            //match schemaCache.Columns.TryGetValue table.FullName with
+            //| (true,data) when data.Count > 0 -> 
+            //   // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
+            //   if con.State = ConnectionState.Open then con.Close()
+            //   data
+            //| _ ->
+            let columns =
+                match ssdtTables.Value.TryFind(table.Name) with
+                | Some ssdtTbl ->
+                    ssdtTbl.Columns
+                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
+                    |> List.choose id
+                    |> List.map (fun col -> col.Name, col)
+                | None -> []
+                |> Map.ofList
                 
-                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+            schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->

@@ -654,6 +654,24 @@ module Option =
         | _ -> Some value
 #endif
 
+module Stubs =
+    open System.Data
+
+    let connection =
+        { new IDbConnection with
+            member __.BeginTransaction() = null
+            member __.BeginTransaction(il) = null
+            member __.ChangeDatabase(str) = ()
+            member __.Close() = ()
+            member __.ConnectionString with get() = "" and set value = ()
+            member __.ConnectionTimeout = 0
+            member __.CreateCommand () = null
+            member __.Database = ""
+            member __.Open() = ()
+            member __.State = ConnectionState.Closed
+            member __.Dispose() = () }
+
+
 // Taken from https://github.com/haf/yolo
 module Bytes =
 

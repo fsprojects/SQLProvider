@@ -39,6 +39,12 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
+    let (|ConnectionString|SsdtPath|MissingConnectionString|) (connStr,ssdtPath) =
+        match connStr, ssdtPath with
+        | c, "" when c <> "" -> ConnectionString
+        | "", s when s <> "" -> SsdtPath
+        | _ -> MissingConnectionString
+
     let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName, ssdtPath) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
@@ -51,26 +57,34 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
             | _ -> id
 
-        let conString =
-            match ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString with
-            | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-            | cs -> cs
+        let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString
 
         let rootType, prov, con =
-          lock lockObj3 (fun _ ->
-            let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
-            let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
-            match prov.GetSchemaCache().IsOffline with
-            | false ->
-                let con = prov.CreateConnection conString
-                this.Disposing.Add(fun _ ->
-                    if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
-                        con.Dispose())
-                con.Open()
-                prov.CreateTypeMappings con
-                rootType, prov, Some con
-            | true ->
-            rootType, prov, None)
+            lock lockObj3 (fun _ ->
+                let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
+                let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let con =
+                    match conString, ssdtPath with
+                    | ConnectionString -> 
+                        match prov.GetSchemaCache().IsOffline with
+                        | false ->
+                            let con = prov.CreateConnection conString
+                            this.Disposing.Add(fun _ ->
+                                if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
+                                    con.Dispose())
+                            con.Open()
+                            prov.CreateTypeMappings con
+                            Some con
+                        | true ->
+                            None
+                    | SsdtPath ->
+                        prov.CreateTypeMappings Stubs.connection
+                        Some (Stubs.connection)
+                    | MissingConnectionString ->
+                        failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+
+                rootType, prov, con
+            )
 
         let tables =
             lazy
@@ -102,17 +116,19 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let sprocData =
             lazy
-                match con with
-                | Some con -> prov.GetSprocs con
-                | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
+                match (conString, ssdtPath), con with
+                | SsdtPath, _ -> []
+                | _, Some con -> prov.GetSprocs con
+                | _, None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
         let getSprocReturnColumns sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
-            match con with
-            | Some con ->
+            match (conString, ssdtPath), con with
+            | SsdtPath, _ -> []
+            | _, Some con ->
                 let returnParams = sprocDefinition.ReturnColumns con param
                 prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
                 returnParams
-            | None ->
+            | _, None ->
                 let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
                 if ok then
                     pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
@@ -428,52 +444,55 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
 
         let rec walkSproc con (path:string list) (parent:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
-            match sproc with
-            | Root(typeName, next) ->
-                let path = (path @ [typeName])
-                match createdTypes.TryFind path with
-                | Some(typ) ->
-                    walkSproc con path (Some typ) createdTypes next
-                | None ->
-                    let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
-                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-                    walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next
-            | Package(typeName, packageDefn) ->
-                match parent with
-                | Some(parent) ->
+            if dbVendor = DatabaseProviderTypes.MSSQLSERVER_SSDT then
+                Map.empty
+            else
+                match sproc with
+                | Root(typeName, next) ->
                     let path = (path @ [typeName])
-                    let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
-                    parent.AddMember(typ)
-                    parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
-                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-                    match con with
-                    | Some co ->
-                        typ.AddMembersDelayed(fun () ->
-                            (lazy
-                                Sql.ensureOpen co
-                                let p = (packageDefn.Sprocs co)
-                                prov.GetSchemaCache().Packages.AddRange p
-                                p |> List.map (generateSprocMethod typ con)).Value)
+                    match createdTypes.TryFind path with
+                    | Some(typ) ->
+                        walkSproc con path (Some typ) createdTypes next
                     | None ->
-                        typ.AddMembersDelayed(fun () ->
-                        prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con))
-                    createdTypes.Add(path, typ)
-                | _ -> failwithf "Could not generate package path type undefined root or previous type"
-            | Sproc(sproc) ->
+                        let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
+                        typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
+                        walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next
+                | Package(typeName, packageDefn) ->
                     match parent with
                     | Some(parent) ->
+                        let path = (path @ [typeName])
+                        let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
+                        parent.AddMember(typ)
+                        parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext) @@>))
+                        typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
                         match con with
                         | Some co ->
-                            parent.AddMemberDelayed(fun () ->
+                            typ.AddMembersDelayed(fun () ->
                                 (lazy
                                     Sql.ensureOpen co
-                                    generateSprocMethod parent con sproc
-                                ).Value)
-                            createdTypes
+                                    let p = (packageDefn.Sprocs co)
+                                    prov.GetSchemaCache().Packages.AddRange p
+                                    p |> List.map (generateSprocMethod typ con)).Value)
                         | None ->
-                            parent.AddMemberDelayed(fun () -> generateSprocMethod parent con sproc); createdTypes
-                    | _ -> failwithf "Could not generate sproc undefined root or previous type"
-            | Empty -> createdTypes
+                            typ.AddMembersDelayed(fun () ->
+                            prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con))
+                        createdTypes.Add(path, typ)
+                    | _ -> failwithf "Could not generate package path type undefined root or previous type"
+                | Sproc(sproc) ->
+                        match parent with
+                        | Some(parent) ->
+                            match con with
+                            | Some co ->
+                                parent.AddMemberDelayed(fun () ->
+                                    (lazy
+                                        Sql.ensureOpen co
+                                        generateSprocMethod parent con sproc
+                                    ).Value)
+                                createdTypes
+                            | None ->
+                                parent.AddMemberDelayed(fun () -> generateSprocMethod parent con sproc); createdTypes
+                        | _ -> failwithf "Could not generate sproc undefined root or previous type"
+                | Empty -> createdTypes
 
         let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) =
             match sprocs with
@@ -1006,7 +1025,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='SsdtPath'>The root SSDT folder that contains the 'Table' subfolder (does not require setting a ConnectionString or ConnectionStringName).</param>
                     "
 
-    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary], fun typeName args ->
+    do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary; ssdtPath], fun typeName args ->
 
         let arguments =
             args.[1] :?> string,                    // ConnectionString URL
