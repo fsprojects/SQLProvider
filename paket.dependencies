@@ -10,6 +10,7 @@ nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
 nuget System.Data.SqlClient
+nuget Microsoft.SqlServer.Management.SqlParser
 
 group Standard
     source https://nuget.org/api/v2
@@ -49,8 +50,7 @@ group Scripts
     nuget Oracle.ManagedDataAccess
     nuget FirebirdSql.Data.FirebirdClient
     nuget System.Data.SQLite.Core
-    nuget System.Data.SQLite.Linq
-    nuget Microsoft.SqlServer.Management.SqlParser
+    nuget System.Data.SQLite.Linq    
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 

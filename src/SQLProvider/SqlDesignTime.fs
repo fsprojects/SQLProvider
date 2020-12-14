@@ -45,7 +45,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
         | "", s when s <> "" -> SsdtPath
         | _ -> MissingConnectionString
 
-    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName, ssdtPath) =
+    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -116,23 +116,27 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let sprocData =
             lazy
-                match (conString, ssdtPath), con with
-                | SsdtPath, _ -> []
-                | _, Some con -> prov.GetSprocs con
-                | _, None -> prov.GetSchemaCache().Sprocs |> Seq.toList
+                if dbVendor = DatabaseProviderTypes.MSSQLSERVER_SSDT then
+                    []
+                else
+                    match con with
+                    | Some con -> prov.GetSprocs con
+                    | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
         let getSprocReturnColumns sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
-            match (conString, ssdtPath), con with
-            | SsdtPath, _ -> []
-            | _, Some con ->
-                let returnParams = sprocDefinition.ReturnColumns con param
-                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
-                returnParams
-            | _, None ->
-                let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
-                if ok then
-                    pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
-                else []
+            if dbVendor = DatabaseProviderTypes.MSSQLSERVER_SSDT then
+                []
+            else 
+                match con with
+                | Some con ->
+                    let returnParams = sprocDefinition.ReturnColumns con param
+                    prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
+                    returnParams
+                | None ->
+                    let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
+                    if ok then
+                        pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
+                    else []
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
@@ -815,7 +819,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                               schemacache.Individuals.Clear()
                               DesignTimeCache.cache.Clear()
                               this.Invalidate()
-                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, rootTypeName, ssdtPath)
+                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
                               saveInProcess <- false
                               "Database schema cache cleared.")
                           [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]

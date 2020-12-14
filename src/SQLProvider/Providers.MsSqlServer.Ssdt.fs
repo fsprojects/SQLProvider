@@ -14,7 +14,7 @@ open FSharp.Data.Sql.Common
 module MSSqlServerSsdt =
     let mutable resolutionPath = String.Empty
     let mutable referencedAssemblies = [||]
-    let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser" ]
+    let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser.dll" ]
     let assembly = lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
     let mutable typeMappings : TypeMapping list = []
@@ -37,13 +37,13 @@ module MSSqlServerSsdt =
                 match errors with
                 | [] -> ""
                 | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s %s"
+           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s.\nResolution path: %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
-                "Microsoft.SqlServer.Management.SqlParser.Parser.Parser"
+                "Microsoft.SqlServer.Management.SqlParser"
                 Environment.NewLine
                 (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
                 details
-                (if Environment.Is64BitProcess then "(You are running on x64.)" else "(You are NOT running on x64.)")
+                resolutionPath
 
     type SsdtTable = {
         Schema: string
@@ -81,9 +81,9 @@ module MSSqlServerSsdt =
     let parserType =  lazy(findType (fun t -> t.Name = "Parser"))
     let parseResultType =  lazy(findType (fun t -> t.Name = "ParseResult"))
     let sqlScriptType =  lazy(findType (fun t -> t.Name = "SqlScript"))
-    let parseMethod = lazy(parserType.Value.GetMethod("Parse", Reflection.BindingFlags.Static))
-    let scriptProperty = lazy(parseResultType.Value.GetProperty("Script", Reflection.BindingFlags.Instance))
-    let xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml", Reflection.BindingFlags.Instance))
+    let parseMethod = lazy(parserType.Value.GetMethod("Parse", [| typeof<string> |]))
+    let scriptProperty = lazy(parseResultType.Value.GetProperty("Script"))
+    let xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml"))
 
     /// Parses a script - returns an xml string with a table schema.
     let parseSqlScript (tableScript: string) =
