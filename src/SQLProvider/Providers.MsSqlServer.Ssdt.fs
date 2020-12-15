@@ -231,45 +231,47 @@ module MSSqlServerSsdt =
           ForeignKey = tbl.Columns.Head.Name }      // Apparently compound keys are not supported
 
     let mappings =
+        //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
+        let toInt = int >> Some
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
-        [ "UNIQUEIDENTIFIER" , ("System.Guid" , DbType.Guid)
-          "BIT" , ("System.Boolean" , DbType.Boolean)
-          "INT" , ("System.Int32" , DbType.Int32)
-          "BIGINT" , ("System.Int64" , DbType.Int64)
-          "SMALLINT" , ("System.Int16" , DbType.Int16)
-          "TINYINT" , ("System.Byte" , DbType.Byte)
-          "FLOAT" , ("System.Double" , DbType.Double)
-          "REAL" , ("System.Single" , DbType.Single)
-          "DECIMAL" , ("System.Decimal" , DbType.Decimal)
-          "NUMERIC" , ("System.Decimal" , DbType.Decimal)
-          "MONEY" , ("System.Decimal" , DbType.Decimal)
-          "SMALLMONEY" , ("System.Decimal" , DbType.Decimal)
-          "VARCHAR" , ("System.String" , DbType.String)
-          "NVARCHAR" , ("System.String" , DbType.String)
-          "CHAR" , ("System.String" , DbType.String)
-          "NCHAR" , ("System.String" , DbType.StringFixedLength)
-          "TEXT" , ("System.String" , DbType.String)
-          "NTEXT" , ("System.String" , DbType.String)
-          "DATETIMEOFFSET" , ("System.DateTimeOffset" , DbType.DateTimeOffset)
-          "DATE" , ("System.DateTime" , DbType.Date)
-          "DATETIME" , ("System.DateTime" , DbType.DateTime)
-          "DATETIME2" , ("System.DateTime" , DbType.DateTime2)
-          "SMALLDATETIME" , ("System.DateTime" , DbType.DateTime)
-          "TIME" , ("System.TimeSpan" , DbType.Time)
-          "VARBINARY" , ("System.Byte[]" , DbType.Binary)
-          "BINARY" , ("System.Byte[]" , DbType.Binary)
-          "IMAGE" , ("System.Byte[]" , DbType.Binary)
-          "ROWVERSION" , ("System.Byte[]" , DbType.Binary)
-          "XML" , ("System.Xml.Linq.XElement" , DbType.Xml)
-          "CURSOR" , ((typeof<SqlEntity[]>).ToString() , DbType.Object)
-          "GEOGRAPHY" , ("Microsoft.SqlServer.Types.SqlGeography" , DbType.Object)
-          "GEOMETRY" , ("Microsoft.SqlServer.Types.SqlGeometry" , DbType.Object)
-          "HIERARCHYID" , ("Microsoft.SqlServer.Types.SqlHierarchyId" , DbType.Object) ]
-          |> List.map (fun (sqlType, (clrType, dbType)) ->
-            { TypeMapping.ProviderTypeName = Some sqlType
+        [ "UNIQUEIDENTIFIER", "System.Guid", DbType.Guid, toInt SqlDbType.UniqueIdentifier
+          "BIT", "System.Boolean", DbType.Boolean, toInt SqlDbType.Bit
+          "INT", "System.Int32", DbType.Int32, toInt SqlDbType.Int
+          "BIGINT", "System.Int64", DbType.Int64, toInt SqlDbType.BigInt
+          "SMALLINT", "System.Int16", DbType.Int16, toInt SqlDbType.SmallInt
+          "TINYINT", "System.Byte", DbType.Byte, toInt SqlDbType.TinyInt
+          "FLOAT", "System.Double", DbType.Double, toInt SqlDbType.Float
+          "REAL", "System.Single", DbType.Single, toInt SqlDbType.Real
+          "DECIMAL", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
+          "NUMERIC", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
+          "MONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.Money
+          "SMALLMONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.SmallMoney
+          "VARCHAR", "System.String", DbType.String, toInt SqlDbType.VarChar
+          "NVARCHAR", "System.String", DbType.String, toInt SqlDbType.NVarChar
+          "CHAR", "System.String", DbType.String, toInt SqlDbType.Char
+          "NCHAR", "System.String", DbType.StringFixedLength, toInt SqlDbType.NChar
+          "TEXT", "System.String", DbType.String, toInt SqlDbType.Text
+          "NTEXT", "System.String", DbType.String, toInt SqlDbType.NText
+          "DATETIMEOFFSET", "System.DateTimeOffset", DbType.DateTimeOffset, toInt SqlDbType.DateTimeOffset
+          "DATE", "System.DateTime", DbType.Date, toInt SqlDbType.Date
+          "DATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.DateTime
+          "DATETIME2", "System.DateTime", DbType.DateTime2, toInt SqlDbType.DateTime2
+          "SMALLDATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.SmallDateTime
+          "TIME", "System.TimeSpan", DbType.Time, toInt SqlDbType.Time
+          "VARBINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.VarBinary
+          "BINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.Binary
+          "IMAGE", "System.Byte[]", DbType.Binary, toInt SqlDbType.Image
+          "ROWVERSION", "System.Byte[]", DbType.Binary, None
+          "XML", "System.Xml.Linq.XElement", DbType.Xml, toInt SqlDbType.Xml
+          "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, None
+          "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
+          "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
+          "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
+          |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
+            { TypeMapping.ProviderTypeName = Some providerTypeName
               TypeMapping.ClrType = clrType
               TypeMapping.DbType = dbType
-              TypeMapping.ProviderType = None }
+              TypeMapping.ProviderType = providerType }
           )
 
     let clrMappings =
