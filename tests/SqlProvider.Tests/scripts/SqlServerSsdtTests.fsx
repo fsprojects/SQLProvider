@@ -7,22 +7,24 @@
 //#r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 
 open FSharp.Data.Sql
-open FSharp.Data.Sql.Common
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + @"/../../../packages/Microsoft.SqlServer.Management.SqlParser/lib/netstandard2.0"
 
 [<Literal>]
-let path = @"C:\_github\SQLProvider\tests\SqlProvider.Tests\scripts\SSDT Project\dbo"
+let ssdtPath = __SOURCE_DIRECTORY__ +  @"/SSDT Project/dbo"
+
 
 type DB = SqlDataProvider<
             Common.DatabaseProviderTypes.MSSQLSERVER_SSDT,
             ResolutionPath = resolutionFolder,
-            SsdtPath = path>
+            SsdtPath = ssdtPath>
 
 let getProjects(ctx: DB.dataContext) =
     query {
         for p in ctx.Dbo.Projects do
+        for c in ctx.Dbo.ProjectTaskCategories do
+        for t in ctx.Dbo.ProjectTasks do
         where (p.IsActive && not p.IsDeleted)
         select p
     }

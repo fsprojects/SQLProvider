@@ -3,13 +3,11 @@ namespace FSharp.Data.Sql.Providers
 open System
 open System.Collections.Concurrent
 open System.Data
-open System.Data.SqlClient
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
-open FSharp.Data.Sql.Common
 
 module MSSqlServerSsdt =
     let mutable resolutionPath = String.Empty
@@ -20,30 +18,6 @@ module MSSqlServerSsdt =
     let mutable typeMappings : TypeMapping list = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
-
-    let findType f =
-        match assembly.Value with
-        | Choice1Of2(assembly) ->
-            let types =
-                try assembly.GetTypes()
-                with | :? System.Reflection.ReflectionTypeLoadException as e ->
-                    let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
-                    let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            types |> Array.find f
-        | Choice2Of2(paths, errors) ->
-           let details =
-                match errors with
-                | [] -> ""
-                | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-           failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s.\nResolution path: %s"
-                (String.Join(", ", assemblyNames |> List.toArray))
-                "Microsoft.SqlServer.Management.SqlParser"
-                Environment.NewLine
-                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
-                details
-                resolutionPath
 
     type SsdtTable = {
         Schema: string
@@ -78,6 +52,29 @@ module MSSqlServerSsdt =
     }
 
     module DynamicSqlParser =
+        let findType f =
+            match assembly.Value with
+            | Choice1Of2(assembly) ->
+                let types =
+                    try assembly.GetTypes()
+                    with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                        let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                        let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                        let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                        failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                types |> Array.find f
+            | Choice2Of2(paths, errors) ->
+               let details =
+                    match errors with
+                    | [] -> ""
+                    | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
+               failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s.\nResolution path: %s"
+                    (String.Join(", ", assemblyNames |> List.toArray))
+                    "Microsoft.SqlServer.Management.SqlParser"
+                    Environment.NewLine
+                    (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                    details
+                    resolutionPath
 
         // Dynamically load Microsoft.SqlServer.Management.SqlParser.Parser.Parser
         let private parserType =  lazy(findType (fun t -> t.Name = "Parser"))
@@ -93,19 +90,20 @@ module MSSqlServerSsdt =
             let oSqlScript = scriptProperty.Value.GetValue(oResult)
             xmlProperty.Value.GetValue(oSqlScript) :?> string
 
-    /// Gets an XmlNode attribute value or empty string if node is null.
-    let att (nm: string) (node: XmlNode) = 
-        node.Attributes 
-        |> Seq.cast<XmlAttribute> 
-        |> Seq.tryFind (fun a -> a.Name = nm) 
-        |> Option.map (fun a -> a.Value)
-        |> Option.defaultValue ""
 
     /// Analyzes Microsoft SQL Parser XML results and returns a Table model.
     let parseTableSchemaXml (tableSchemaXml: string) = 
         let doc = new XmlDocument()
         use rdr = new System.IO.StringReader(tableSchemaXml)
         doc.Load(rdr)
+
+        /// Gets an XmlNode attribute value or empty string if node is null.
+        let att (nm: string) (node: XmlNode) = 
+            node.Attributes 
+            |> Seq.cast<XmlAttribute> 
+            |> Seq.tryFind (fun a -> a.Name = nm) 
+            |> Option.map (fun a -> a.Value)
+            |> Option.defaultValue ""
     
         let tblStatement = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateTableStatement")
         let tblSchemaName, tblObjectName = 
@@ -225,10 +223,10 @@ module MSSqlServerSsdt =
 
     let fkConstraintToRelationship (tbl: SsdtTable) (fk: ForeignKeyConstraint) =
         { Name = fk.Name
-          PrimaryTable = fk.References.Table        // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
-          PrimaryKey = fk.References.Columns.Head   // Apparently compound keys are not supported
-          ForeignTable = tbl.Name                   // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
-          ForeignKey = tbl.Columns.Head.Name }      // Apparently compound keys are not supported
+          ForeignTable = Table.CreateFullName(fk.References.Schema, fk.References.Table)    // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
+          ForeignKey = fk.References.Columns.Head                                           // Apparently compound keys are not supported
+          PrimaryTable = Table.CreateFullName(tbl.Schema, tbl.Name)                         // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
+          PrimaryKey = tbl.Columns.Head.Name }                                              // Apparently compound keys are not supported
 
     let mappings =
         //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
@@ -370,14 +368,15 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetRelationships(con,table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-                let parents = 
+                // The table containing the foreign key is called the child table
+                let children = 
                     match ssdtTables.Value.TryFind(table.Name) with
                     | Some ssdtTbl ->
                         ssdtTbl.ForeignKeys
                         |> List.map (MSSqlServerSsdt.fkConstraintToRelationship ssdtTbl)
                     | None -> []
 
-                ([], parents) // TODO: Add children relationships if necessary
+                (children, []) // TODO: Add children relationships if necessary
             )
 
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
