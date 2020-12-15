@@ -656,13 +656,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore 
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com1.ExecuteReader()
-                let children = // when table.Name "Project" = []; when table.Name = "ProjectTasks"
+                let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetSqlString(0).Value 
-                                PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value);    // Projects
-                                PrimaryKey = reader.GetSqlString(6).Value                                                           // Id
-                                ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value);    // ProjectTasks
-                                ForeignKey=reader.GetSqlString(2).Value } ]                                                         // ProjectTaskCateogryId
+                                PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value)
+                                PrimaryKey = reader.GetSqlString(6).Value
+                                ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value)
+                                ForeignKey=reader.GetSqlString(2).Value } ]
                 reader.Dispose()
                 let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
                 use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
