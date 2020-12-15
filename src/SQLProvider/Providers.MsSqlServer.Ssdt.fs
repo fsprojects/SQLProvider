@@ -209,7 +209,7 @@ module MSSqlServerSsdt =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type = "" } // Type = reader.GetSqlString(2).Value.ToLower()
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
-        match MSSqlServer.findDbType col.DataType with
+        match findDbType col.DataType with
         | Some typeMapping ->
             Some
                 { Column.Name = col.Name
@@ -338,13 +338,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetPrimaryKey(table) =
             match ssdtTables.Value.TryFind(table.Name) with
-            | Some ssdtTbl ->
-                match ssdtTbl.PrimaryKeys with
-                | [pk] ->
-                    match pk.Columns with
-                    | [c] -> Some c
-                    | _ -> None
-                | _ -> None
+            |  Some { PrimaryKeys = [ { Columns = [c] } ] } -> Some c
             | _ -> None
 
         member __.GetColumns(con,table) =        

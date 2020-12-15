@@ -23,5 +23,6 @@ type DB = SqlDataProvider<
 let getProjects(ctx: DB.dataContext) =
     query {
         for p in ctx.Dbo.Projects do
+        where (p.IsActive && not p.IsDeleted)
         select p
     }
