@@ -230,6 +230,64 @@ module MSSqlServerSsdt =
           ForeignTable = tbl.Name                   // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
           ForeignKey = tbl.Columns.Head.Name }      // Apparently compound keys are not supported
 
+    let mappings =
+        // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
+        [ "UNIQUEIDENTIFIER" , ("System.Guid" , DbType.Guid)
+          "BIT" , ("System.Boolean" , DbType.Boolean)
+          "INT" , ("System.Int32" , DbType.Int32)
+          "BIGINT" , ("System.Int64" , DbType.Int64)
+          "SMALLINT" , ("System.Int16" , DbType.Int16)
+          "TINYINT" , ("System.Byte" , DbType.Byte)
+          "FLOAT" , ("System.Double" , DbType.Double)
+          "REAL" , ("System.Single" , DbType.Single)
+          "DECIMAL" , ("System.Decimal" , DbType.Decimal)
+          "NUMERIC" , ("System.Decimal" , DbType.Decimal)
+          "MONEY" , ("System.Decimal" , DbType.Decimal)
+          "SMALLMONEY" , ("System.Decimal" , DbType.Decimal)
+          "VARCHAR" , ("System.String" , DbType.String)
+          "NVARCHAR" , ("System.String" , DbType.String)
+          "CHAR" , ("System.String" , DbType.String)
+          "NCHAR" , ("System.String" , DbType.StringFixedLength)
+          "TEXT" , ("System.String" , DbType.String)
+          "NTEXT" , ("System.String" , DbType.String)
+          "DATETIMEOFFSET" , ("System.DateTimeOffset" , DbType.DateTimeOffset)
+          "DATE" , ("System.DateTime" , DbType.Date)
+          "DATETIME" , ("System.DateTime" , DbType.DateTime)
+          "DATETIME2" , ("System.DateTime" , DbType.DateTime2)
+          "SMALLDATETIME" , ("System.DateTime" , DbType.DateTime)
+          "TIME" , ("System.TimeSpan" , DbType.Time)
+          "VARBINARY" , ("System.Byte[]" , DbType.Binary)
+          "BINARY" , ("System.Byte[]" , DbType.Binary)
+          "IMAGE" , ("System.Byte[]" , DbType.Binary)
+          "ROWVERSION" , ("System.Byte[]" , DbType.Binary)
+          "XML" , ("System.Xml.Linq.XElement" , DbType.Xml)
+          "CURSOR" , ((typeof<SqlEntity[]>).ToString() , DbType.Object)
+          "GEOGRAPHY" , ("Microsoft.SqlServer.Types.SqlGeography" , DbType.Object)
+          "GEOMETRY" , ("Microsoft.SqlServer.Types.SqlGeometry" , DbType.Object)
+          "HIERARCHYID" , ("Microsoft.SqlServer.Types.SqlHierarchyId" , DbType.Object) ]
+          |> List.map (fun (sqlType, (clrType, dbType)) ->
+            { TypeMapping.ProviderTypeName = Some sqlType
+              TypeMapping.ClrType = clrType
+              TypeMapping.DbType = dbType
+              TypeMapping.ProviderType = None }
+          )
+
+    let clrMappings =
+        mappings
+        |> List.map (fun m -> m.ClrType, m)
+        |> Map.ofList
+
+    let dbMappings =
+        mappings
+        |> List.map (fun m -> m.ProviderTypeName.Value, m)
+        |> Map.ofList
+
+    let createTypeMappings() =
+        typeMappings <- mappings
+        findClrType <- clrMappings.TryFind
+        findDbType <- dbMappings.TryFind
+        
+
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
     let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
@@ -260,10 +318,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
         member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
-        member __.CreateTypeMappings(con) =
-            //MSSqlServer.createTypeMappings con
-            // TODO: Map columns to data types
-            ()
+        member __.CreateTypeMappings(con) = MSSqlServerSsdt.createTypeMappings()
         member __.GetSchemaCache() = schemaCache
     
         member __.GetTables(con,_) =
