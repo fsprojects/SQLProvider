@@ -221,12 +221,12 @@ module MSSqlServerSsdt =
         | None ->
             None
 
-    let fkConstraintToRelationship (tbl: SsdtTable) (fk: ForeignKeyConstraint) =
+    let fkToRelationship (childTable: SsdtTable) (fk: ForeignKeyConstraint) =
         { Name = fk.Name
-          ForeignTable = Table.CreateFullName(fk.References.Schema, fk.References.Table)    // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
-          ForeignKey = fk.References.Columns.Head                                           // Apparently compound keys are not supported
-          PrimaryTable = Table.CreateFullName(tbl.Schema, tbl.Name)                         // TODO: Was using full name (schema.name) -- update SSDT parser to get fullname
-          PrimaryKey = tbl.Columns.Head.Name }                                              // Apparently compound keys are not supported
+          PrimaryTable = Table.CreateFullName(fk.References.Schema, fk.References.Table)
+          PrimaryKey = fk.References.Columns.Head
+          ForeignTable = Table.CreateFullName(childTable.Schema, childTable.Name)
+          ForeignKey = fk.Columns.Head }
 
     let mappings =
         //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
@@ -368,15 +368,25 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetRelationships(con,table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
+                let ssdtTables = ssdtTables.Value
                 // The table containing the foreign key is called the child table
-                let children = 
-                    match ssdtTables.Value.TryFind(table.Name) with
-                    | Some ssdtTbl ->
+                match ssdtTables.TryFind(table.Name) with
+                | Some ssdtTbl ->
+                    let parents =
                         ssdtTbl.ForeignKeys
-                        |> List.map (MSSqlServerSsdt.fkConstraintToRelationship ssdtTbl)
-                    | None -> []
+                        |> List.map (MSSqlServerSsdt.fkToRelationship ssdtTbl)
 
-                (children, []) // TODO: Add children relationships if necessary
+                    let children =
+                        ssdtTables
+                        |> Seq.choose (fun kvp -> // Get all fks that reference this table
+                            match kvp.Value.ForeignKeys |> List.filter (fun fk -> (fk.References.Schema, fk.References.Table) = (table.Schema, table.Name)) with
+                            | [] -> None
+                            | _ as fks -> Some (kvp.Value, fks)
+                        )
+                        |> Seq.collect (fun (childTable, fks) -> fks |> List.map (MSSqlServerSsdt.fkToRelationship childTable))
+                        |> Seq.toList
+                    children, parents
+                | None -> [], []
             )
 
         member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs

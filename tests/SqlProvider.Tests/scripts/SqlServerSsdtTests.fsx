@@ -23,8 +23,12 @@ type DB = SqlDataProvider<
 let getProjects(ctx: DB.dataContext) =
     query {
         for p in ctx.Dbo.Projects do
-        for c in ctx.Dbo.ProjectTaskCategories do
-        for t in ctx.Dbo.ProjectTasks do
+        for t in p.``dbo.ProjectTasks by Id`` do
+        for c in t.``dbo.ProjectTaskCategories by Id`` do
         where (p.IsActive && not p.IsDeleted)
-        select p
+        select
+            {| Id = p.Id
+               Name = p.Name
+               Number = p.ProjectNumber
+               Type = p.ProjectType |}
     }
