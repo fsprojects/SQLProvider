@@ -58,14 +58,13 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | _ -> id
 
         let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString
-
         let rootType, prov, con =
             lock lockObj3 (fun _ ->
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
                     match conString, ssdtPath with
-                    | ConnectionString -> 
+                    | ConnectionString ->
                         match prov.GetSchemaCache().IsOffline with
                         | false ->
                             let con = prov.CreateConnection conString
@@ -79,7 +78,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                             None
                     | SsdtPath ->
                         prov.CreateTypeMappings Stubs.connection
-                        Some (Stubs.connection)
+                        Some Stubs.connection
                     | MissingConnectionString ->
                         failwithf "No connection string specified or could not find a connection string with name %s" conStringName
 
@@ -116,27 +115,21 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let sprocData =
             lazy
-                if dbVendor = DatabaseProviderTypes.MSSQLSERVER_SSDT then
-                    []
-                else
-                    match con with
-                    | Some con -> prov.GetSprocs con
-                    | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
+                match con with
+                | Some con -> prov.GetSprocs con
+                | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
         let getSprocReturnColumns sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
-            if dbVendor = DatabaseProviderTypes.MSSQLSERVER_SSDT then
-                []
-            else 
-                match con with
-                | Some con ->
-                    let returnParams = sprocDefinition.ReturnColumns con param
-                    prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
-                    returnParams
-                | None ->
-                    let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
-                    if ok then
-                        pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
-                    else []
+            match con with
+            | Some con ->
+                let returnParams = sprocDefinition.ReturnColumns con param
+                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
+                returnParams
+            | None ->
+                let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
+                if ok then
+                    pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
+                else []
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)

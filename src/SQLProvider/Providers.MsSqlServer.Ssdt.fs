@@ -3,6 +3,7 @@ namespace FSharp.Data.Sql.Providers
 open System
 open System.Collections.Concurrent
 open System.Data
+open System.Data.SqlClient
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -286,7 +287,7 @@ module MSSqlServerSsdt =
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
-        
+
 
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
@@ -313,9 +314,20 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             // TODO: GetColumnDescription
             columnName
 
-        member __.CreateConnection(connectionString) = Stubs.connection
-        member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
-        member __.CreateCommandParameter(param, value) = MSSqlServer.createCommandParameter param value
+        member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
+        member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
+        member __.CreateCommandParameter(param, value) =
+            let p = SqlParameter(param.Name,value)
+            p.DbType <- param.TypeMapping.DbType
+            Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
+            p.Direction <- param.Direction
+            Option.iter (fun l -> p.Size <- l) param.Length
+            match param.TypeMapping.ProviderTypeName with
+            | Some "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+            | Some "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+            | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+            | _ -> ()
+            p :> IDbDataParameter
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
         member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
         member __.CreateTypeMappings(con) = MSSqlServerSsdt.createTypeMappings()
@@ -389,11 +401,13 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                 | None -> [], []
             )
 
-        member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+        member __.GetSprocs(con) = [] // Not implemented for SSDT
+        member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
+        member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared?
+
             let parameters = ResizeArray<_>()
             // make this nicer later..
             let param = ref 0
@@ -779,6 +793,8 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             (sql,parameters)
 
         member this.ProcessUpdates(con, entities, transactionOptions, timeout) =
+            // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared?
+
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
@@ -827,6 +843,8 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                 con.Close()
 
         member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
+            // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared?
+
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
