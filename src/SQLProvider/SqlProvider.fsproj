@@ -109,6 +109,14 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="Rebuild">
+	<Message Text="Ext = $(MSBuildExtensionsPath)" />
+	<Message Text="Tools = $(MSBuildToolsVersion)" />
+	<Message Text="msb32 = $(MSBuildExtensionsPath32)" />
+	<Message Text="targ = $(TargetFrameworkIdentifier)" />
+	<Message Text="fs = $(FSharpTargetsPath)" />
+	<Message Text="vs = $(VisualStudioVersion)" />
+  </Target>  
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')">
       <ItemGroup>
