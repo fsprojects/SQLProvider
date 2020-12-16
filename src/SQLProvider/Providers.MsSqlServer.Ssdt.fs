@@ -117,7 +117,7 @@ module MSSqlServerSsdt =
             |> Seq.map (fun cd -> 
                 let colName = cd |> att "Name"
                 let dataType = cd.SelectSingleNode("SqlDataTypeSpecification/SqlDataType") |> att "ObjectIdentifier"
-                let constraints = cd.SelectNodes("SqlDataTypeSpecification/SqlConstraint") |> Seq.cast<XmlNode> |> Seq.map (att "Type")
+                let constraints = cd.SelectNodes("SqlConstraint") |> Seq.cast<XmlNode> |> Seq.map (att "Type")
                 let allowNulls = not (constraints |> Seq.exists (fun c -> c = "NotNull")) // default is allow nulls
                 let identity = 
                     cd.SelectSingleNode("SqlColumnIdentity") 
