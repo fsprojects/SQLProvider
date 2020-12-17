@@ -28,6 +28,7 @@ module MSSqlServerSsdt =
         DataType: string
         AllowNulls: bool
         Identity: IdentitySpec option
+        HasDefault: bool
     }
     and IdentitySpec = {
         Seed: int
@@ -48,8 +49,7 @@ module MSSqlServerSsdt =
         Columns: string list
     }
 
-    let mappings =
-        //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
+    let typeMappingsByName =
         let toInt = int >> Some
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
         [ "UNIQUEIDENTIFIER", "System.Guid", DbType.Guid, toInt SqlDbType.UniqueIdentifier
@@ -85,16 +85,13 @@ module MSSqlServerSsdt =
           "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
           "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
           "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
-          |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
+        |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
+            providerTypeName,
             { TypeMapping.ProviderTypeName = Some providerTypeName
               TypeMapping.ClrType = clrType
               TypeMapping.DbType = dbType
               TypeMapping.ProviderType = providerType }
-          )
-
-    let typeMappingsByName =
-        mappings
-        |> List.map (fun m -> m.ProviderTypeName.Value, m)
+        )
         |> Map.ofList
 
     module DynamicSqlParser =
@@ -168,11 +165,13 @@ module MSSqlServerSsdt =
                     cd.SelectSingleNode("SqlColumnIdentity") 
                     |> Option.ofObj 
                     |> Option.map (fun n -> { Increment = n |> att "Increment" |> int; Seed = n |> att "Seed" |> int })
-    
+                let hasDefaultConstraint = cd.SelectSingleNode("SqlDefaultConstraint") <> null
+
                 { SsdtColumn.Name= colName
                   SsdtColumn.DataType = dataType
                   SsdtColumn.AllowNulls = allowNulls
-                  SsdtColumn.Identity = identity }
+                  SsdtColumn.Identity = identity
+                  SsdtColumn.HasDefault = hasDefaultConstraint }
             )
             |> Seq.toList
     
@@ -261,7 +260,7 @@ module MSSqlServerSsdt =
                   Column.IsNullable = col.AllowNulls
                   Column.IsPrimaryKey = tbl.PrimaryKeys |> List.collect (fun pk -> pk.Columns) |> List.exists (fun colName -> colName = col.Name)
                   Column.IsAutonumber = col.Identity <> None
-                  Column.HasDefault = false // TODO: Add UniqueConstraint to SsdtTable
+                  Column.HasDefault = col.HasDefault
                   Column.IsComputed = false // TODO: Investigate
                   Column.TypeInfo = None }  // TODO: Investigate
         | None ->
