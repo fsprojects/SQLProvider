@@ -16,10 +16,6 @@ module MSSqlServerSsdt =
     let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser.dll" ]
     let assembly = lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
-    let mutable typeMappings : TypeMapping list = []
-    let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
-    let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
-
     type SsdtTable = {
         Schema: string
         Name: string
@@ -51,6 +47,55 @@ module MSSqlServerSsdt =
         Name: string
         Columns: string list
     }
+
+    let mappings =
+        //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
+        let toInt = int >> Some
+        // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
+        [ "UNIQUEIDENTIFIER", "System.Guid", DbType.Guid, toInt SqlDbType.UniqueIdentifier
+          "BIT", "System.Boolean", DbType.Boolean, toInt SqlDbType.Bit
+          "INT", "System.Int32", DbType.Int32, toInt SqlDbType.Int
+          "BIGINT", "System.Int64", DbType.Int64, toInt SqlDbType.BigInt
+          "SMALLINT", "System.Int16", DbType.Int16, toInt SqlDbType.SmallInt
+          "TINYINT", "System.Byte", DbType.Byte, toInt SqlDbType.TinyInt
+          "FLOAT", "System.Double", DbType.Double, toInt SqlDbType.Float
+          "REAL", "System.Single", DbType.Single, toInt SqlDbType.Real
+          "DECIMAL", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
+          "NUMERIC", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
+          "MONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.Money
+          "SMALLMONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.SmallMoney
+          "VARCHAR", "System.String", DbType.String, toInt SqlDbType.VarChar
+          "NVARCHAR", "System.String", DbType.String, toInt SqlDbType.NVarChar
+          "CHAR", "System.String", DbType.String, toInt SqlDbType.Char
+          "NCHAR", "System.String", DbType.StringFixedLength, toInt SqlDbType.NChar
+          "TEXT", "System.String", DbType.String, toInt SqlDbType.Text
+          "NTEXT", "System.String", DbType.String, toInt SqlDbType.NText
+          "DATETIMEOFFSET", "System.DateTimeOffset", DbType.DateTimeOffset, toInt SqlDbType.DateTimeOffset
+          "DATE", "System.DateTime", DbType.Date, toInt SqlDbType.Date
+          "DATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.DateTime
+          "DATETIME2", "System.DateTime", DbType.DateTime2, toInt SqlDbType.DateTime2
+          "SMALLDATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.SmallDateTime
+          "TIME", "System.TimeSpan", DbType.Time, toInt SqlDbType.Time
+          "VARBINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.VarBinary
+          "BINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.Binary
+          "IMAGE", "System.Byte[]", DbType.Binary, toInt SqlDbType.Image
+          "ROWVERSION", "System.Byte[]", DbType.Binary, None
+          "XML", "System.Xml.Linq.XElement", DbType.Xml, toInt SqlDbType.Xml
+          "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, None
+          "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
+          "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
+          "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
+          |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
+            { TypeMapping.ProviderTypeName = Some providerTypeName
+              TypeMapping.ClrType = clrType
+              TypeMapping.DbType = dbType
+              TypeMapping.ProviderType = providerType }
+          )
+
+    let typeMappingsByName =
+        mappings
+        |> List.map (fun m -> m.ProviderTypeName.Value, m)
+        |> Map.ofList
 
     module DynamicSqlParser =
         let findType f =
@@ -208,7 +253,7 @@ module MSSqlServerSsdt =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type = "" } // Type = reader.GetSqlString(2).Value.ToLower()
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
-        match findDbType col.DataType with
+        match typeMappingsByName.TryFind col.DataType with
         | Some typeMapping ->
             Some
                 { Column.Name = col.Name
@@ -228,65 +273,6 @@ module MSSqlServerSsdt =
           PrimaryKey = fk.References.Columns.Head
           ForeignTable = Table.CreateFullName(childTable.Schema, childTable.Name)
           ForeignKey = fk.Columns.Head }
-
-    let mappings =
-        //let provNum (sqlDbType: SqlDbType) = sqlDbType |> int |> Some
-        let toInt = int >> Some
-        // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
-        [ "UNIQUEIDENTIFIER", "System.Guid", DbType.Guid, toInt SqlDbType.UniqueIdentifier
-          "BIT", "System.Boolean", DbType.Boolean, toInt SqlDbType.Bit
-          "INT", "System.Int32", DbType.Int32, toInt SqlDbType.Int
-          "BIGINT", "System.Int64", DbType.Int64, toInt SqlDbType.BigInt
-          "SMALLINT", "System.Int16", DbType.Int16, toInt SqlDbType.SmallInt
-          "TINYINT", "System.Byte", DbType.Byte, toInt SqlDbType.TinyInt
-          "FLOAT", "System.Double", DbType.Double, toInt SqlDbType.Float
-          "REAL", "System.Single", DbType.Single, toInt SqlDbType.Real
-          "DECIMAL", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
-          "NUMERIC", "System.Decimal", DbType.Decimal, toInt SqlDbType.Decimal
-          "MONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.Money
-          "SMALLMONEY", "System.Decimal", DbType.Decimal, toInt SqlDbType.SmallMoney
-          "VARCHAR", "System.String", DbType.String, toInt SqlDbType.VarChar
-          "NVARCHAR", "System.String", DbType.String, toInt SqlDbType.NVarChar
-          "CHAR", "System.String", DbType.String, toInt SqlDbType.Char
-          "NCHAR", "System.String", DbType.StringFixedLength, toInt SqlDbType.NChar
-          "TEXT", "System.String", DbType.String, toInt SqlDbType.Text
-          "NTEXT", "System.String", DbType.String, toInt SqlDbType.NText
-          "DATETIMEOFFSET", "System.DateTimeOffset", DbType.DateTimeOffset, toInt SqlDbType.DateTimeOffset
-          "DATE", "System.DateTime", DbType.Date, toInt SqlDbType.Date
-          "DATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.DateTime
-          "DATETIME2", "System.DateTime", DbType.DateTime2, toInt SqlDbType.DateTime2
-          "SMALLDATETIME", "System.DateTime", DbType.DateTime, toInt SqlDbType.SmallDateTime
-          "TIME", "System.TimeSpan", DbType.Time, toInt SqlDbType.Time
-          "VARBINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.VarBinary
-          "BINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.Binary
-          "IMAGE", "System.Byte[]", DbType.Binary, toInt SqlDbType.Image
-          "ROWVERSION", "System.Byte[]", DbType.Binary, None
-          "XML", "System.Xml.Linq.XElement", DbType.Xml, toInt SqlDbType.Xml
-          "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, None
-          "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
-          "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
-          "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
-          |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
-            { TypeMapping.ProviderTypeName = Some providerTypeName
-              TypeMapping.ClrType = clrType
-              TypeMapping.DbType = dbType
-              TypeMapping.ProviderType = providerType }
-          )
-
-    let clrMappings =
-        mappings
-        |> List.map (fun m -> m.ClrType, m)
-        |> Map.ofList
-
-    let dbMappings =
-        mappings
-        |> List.map (fun m -> m.ProviderTypeName.Value, m)
-        |> Map.ofList
-
-    let createTypeMappings() =
-        typeMappings <- mappings
-        findClrType <- clrMappings.TryFind
-        findDbType <- dbMappings.TryFind
 
 
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
@@ -330,7 +316,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             p :> IDbDataParameter
         member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
         member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
-        member __.CreateTypeMappings(con) = MSSqlServerSsdt.createTypeMappings()
+        member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
     
         member __.GetTables(con,_) =
