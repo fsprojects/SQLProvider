@@ -88,9 +88,6 @@
     <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
-      <Link>SqlRuntime.DataContext.fs</Link>
-    </Compile>
     <Compile Include="..\SQLProvider\SqlDesignTime.fs">
       <Link>SqlDesignTime.fs</Link>
     </Compile>
