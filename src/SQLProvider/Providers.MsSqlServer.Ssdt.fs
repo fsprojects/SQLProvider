@@ -261,8 +261,8 @@ module MSSqlServerSsdt =
                   Column.IsPrimaryKey = tbl.PrimaryKeys |> List.collect (fun pk -> pk.Columns) |> List.exists (fun colName -> colName = col.Name)
                   Column.IsAutonumber = col.Identity <> None
                   Column.HasDefault = col.HasDefault
-                  Column.IsComputed = false // TODO: Investigate
-                  Column.TypeInfo = None }  // TODO: Investigate
+                  Column.IsComputed = false // Not supported (unable to parse computed column type)
+                  Column.TypeInfo = None }  // Not supported (but could be)
         | None ->
             None
 
@@ -319,16 +319,17 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.GetSchemaCache() = schemaCache
     
         member __.GetTables(con,_) =
-            // Will add this later if needed
-            //let tableNamesFilter =
-            //    match tableNames with 
-            //    | "" -> ""
-            //    | x -> " where 1=1 " + (SchemaProjections.buildTableNameWhereFilter "TABLE_NAME" tableNames)
+            let allowed = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun s -> s.Trim())
 
+            let filterByTableNames tbl =
+                if allowed = [||] then true
+                else allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0)
+            
             ssdtTables.Value
             |> Seq.map (fun kvp -> kvp.Value)
             |> Seq.map MSSqlServerSsdt.ssdtTableToTable
             |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
+            |> Seq.filter filterByTableNames
             |> Seq.toList
 
         member __.GetPrimaryKey(table) =
@@ -337,20 +338,6 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             | _ -> None
 
         member __.GetColumns(con,table) =        
-            // If we don't know this server's version already, open the connection ahead-of-time and read it         
-            //mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
-            //    lazy
-            //        if con.State <> ConnectionState.Open then con.Open()
-            //        let success, version = (con :?> SqlConnection).ServerVersion |> Version.TryParse
-            //        if success then version else Version("12.0")
-            //).Value |> ignore 
-
-            //match schemaCache.Columns.TryGetValue table.FullName with
-            //| (true,data) when data.Count > 0 -> 
-            //   // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
-            //   if con.State = ConnectionState.Open then con.Close()
-            //   data
-            //| _ ->
             let columns =
                 match ssdtTables.Value.TryFind(table.Name) with
                 | Some ssdtTbl ->
@@ -391,7 +378,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
         member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
-            // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared?
+            // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared? (also exists in Providers.MsSqlServer.Dynamic)
 
             let parameters = ResizeArray<_>()
             // make this nicer later..
