@@ -39,12 +39,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let (|ConnectionString|SsdtPath|MissingConnectionString|) (connStr,ssdtPath) =
-        match connStr, ssdtPath with
-        | c, "" when c <> "" -> ConnectionString
-        | "", s when s <> "" -> SsdtPath
-        | _ -> MissingConnectionString
-
     let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
@@ -58,29 +52,34 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
             | _ -> id
 
         let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString
+
         let rootType, prov, con =
             lock lockObj3 (fun _ ->
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
-                    match conString, ssdtPath with
-                    | ConnectionString ->
-                        match prov.GetSchemaCache().IsOffline with
-                        | false ->
-                            let con = prov.CreateConnection conString
-                            this.Disposing.Add(fun _ ->
-                                if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
-                                    con.Dispose())
-                            con.Open()
-                            prov.CreateTypeMappings con
-                            Some con
-                        | true ->
-                            None
-                    | SsdtPath ->
-                        prov.CreateTypeMappings Stubs.connection
-                        Some Stubs.connection
-                    | MissingConnectionString ->
-                        failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                    match dbVendor with
+                    | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
+                        match ssdtPath with
+                        | "" -> failwith "No SsdtPath was specified."
+                        | path when not (System.IO.Directory.Exists path) -> failwith "The specified SsdtPath does not exist."
+                        | _ -> Some Stubs.connection
+                    | _ ->
+                        match conString, conStringName with
+                        | "", "" -> failwith "No connection string or connection string name was specified."
+                        | "", _ -> failwithf "Could not find a connection string with name '%s'." conStringName
+                        | _ -> 
+                            match prov.GetSchemaCache().IsOffline with
+                            | false ->
+                                let con = prov.CreateConnection conString
+                                this.Disposing.Add(fun _ ->
+                                    if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS
+                                    then con.Dispose())
+                                con.Open()
+                                prov.CreateTypeMappings con
+                                Some con
+                            | true ->
+                                None
 
                 rootType, prov, con
             )

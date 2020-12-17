@@ -38,11 +38,11 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             lazy
                 let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 if not (prov.GetSchemaCache().IsOffline) then
-                    let con =
+                    use con =
                         if providerType = DatabaseProviderTypes.MSSQLSERVER_SSDT then
                             Stubs.connection
                         else
-                            use con = prov.CreateConnection(connectionString)
+                            let con = prov.CreateConnection(connectionString)
                             con.Open()
                             con
                             
