@@ -1018,7 +1018,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ContextSchemaPath'>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</param>
                     <param name='OdbcQuote'>Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]</param>
                     <param name='SQLiteLibrary'>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</param>
-                    <param name='SsdtPath'>The root SSDT folder that contains the 'Table' subfolder (does not require setting a ConnectionString or ConnectionStringName).</param>
+                    <param name='SsdtPath'>The root SSDT folder that contains the SSDT project (.sqlproj). Table script search path: '{SsdtPath}\{schema}\Tables\*.sql'</param>
                     "
 
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary; ssdtPath], fun typeName args ->

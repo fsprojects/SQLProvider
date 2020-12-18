@@ -134,7 +134,7 @@ module MSSqlServerSsdt =
             xmlProperty.Value.GetValue(oSqlScript) :?> string
 
 
-    /// Analyzes Microsoft SQL Parser XML results and returns a Table model.
+    /// Analyzes Microsoft SQL Parser XML results and returns an  SsdtTable model.
     let parseTableSchemaXml (tableSchemaXml: string) = 
         let doc = new XmlDocument()
         use rdr = new System.IO.StringReader(tableSchemaXml)
@@ -229,11 +229,16 @@ module MSSqlServerSsdt =
           SsdtTable.PrimaryKey = primaryKeyConstraint
           SsdtTable.ForeignKeys = foreignKeyConstraints }
 
+    /// Searches the configured SsdtPath for one or more schema folders with "Table" subfolders.
     let findTableScripts (ssdtPath: string) =
-        let root = System.IO.DirectoryInfo(ssdtPath)
-        match root.EnumerateDirectories() |> Seq.tryFind (fun d -> d.Name = "Tables") with
-        | Some tablesDir -> tablesDir.EnumerateFiles("*.sql")
-        | None -> Seq.empty
+        let rootDir = System.IO.DirectoryInfo(ssdtPath)
+        rootDir.EnumerateDirectories()                      // Search for potential schema directories (containing a "Table" directory)
+        |> Seq.collect(fun maybeSchemaDir ->                // Search for "Tables" directories
+            maybeSchemaDir.EnumerateDirectories()
+            |> Seq.filter (fun d -> d.Name = "Tables") 
+        )
+        |> Seq.collect (fun d -> d.EnumerateFiles("*.sql")) // Return table scripts
+
             
     let readTableScript (file: System.IO.FileInfo) =
         System.IO.File.ReadAllText(file.FullName)
