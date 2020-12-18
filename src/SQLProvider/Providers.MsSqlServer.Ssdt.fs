@@ -20,7 +20,7 @@ module MSSqlServerSsdt =
         Schema: string
         Name: string
         Columns: SsdtColumn list
-        PrimaryKeys: PrimaryKeyConstraint list
+        PrimaryKey: PrimaryKeyConstraint option
         ForeignKeys: ForeignKeyConstraint list
     }
     and SsdtColumn = {
@@ -175,10 +175,10 @@ module MSSqlServerSsdt =
             )
             |> Seq.toList
     
-        let primaryKeyConstraints = 
-            tblStatement.SelectSingleNode("SqlTableDefinition").SelectNodes("SqlPrimaryKeyConstraint")
-            |> Seq.cast<XmlNode>
-            |> Seq.map (fun pkc -> 
+        let primaryKeyConstraint = 
+            tblStatement.SelectSingleNode("SqlTableDefinition").SelectSingleNode("SqlPrimaryKeyConstraint")
+            |> Option.ofObj
+            |> Option.map (fun pkc -> 
                 let name = pkc |> att "Name"
                 let cols = 
                     pkc.SelectNodes("SqlIndexedColumn")
@@ -188,7 +188,6 @@ module MSSqlServerSsdt =
                 { PrimaryKeyConstraint.Name = name
                   PrimaryKeyConstraint.Columns = cols }
             )
-            |> Seq.toList
     
         let foreignKeyConstraints = 
             tblStatement.SelectSingleNode("SqlTableDefinition").SelectNodes("SqlForeignKeyConstraint")
@@ -227,7 +226,7 @@ module MSSqlServerSsdt =
         { SsdtTable.Schema = tblSchemaName 
           SsdtTable.Name = tblObjectName
           SsdtTable.Columns = columns
-          SsdtTable.PrimaryKeys = primaryKeyConstraints
+          SsdtTable.PrimaryKey = primaryKeyConstraint
           SsdtTable.ForeignKeys = foreignKeyConstraints }
 
     let findTableScripts (ssdtPath: string) =
@@ -249,7 +248,7 @@ module MSSqlServerSsdt =
         |> Map.ofSeq
 
     let ssdtTableToTable (tbl: SsdtTable) =
-        { Schema = tbl.Schema ; Name = tbl.Name ; Type = "" } // Type = reader.GetSqlString(2).Value.ToLower()
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type = "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match typeMappingsByName.TryFind col.DataType with
@@ -258,7 +257,10 @@ module MSSqlServerSsdt =
                 { Column.Name = col.Name
                   Column.TypeMapping = typeMapping
                   Column.IsNullable = col.AllowNulls
-                  Column.IsPrimaryKey = tbl.PrimaryKeys |> List.collect (fun pk -> pk.Columns) |> List.exists (fun colName -> colName = col.Name)
+                  Column.IsPrimaryKey =
+                    tbl.PrimaryKey
+                    |> Option.map (fun pk -> pk.Columns |> List.exists (fun colName -> colName = col.Name))
+                    |> Option.defaultValue false
                   Column.IsAutonumber = col.Identity <> None
                   Column.HasDefault = col.HasDefault
                   Column.IsComputed = false // Not supported (unable to parse computed column type)
@@ -274,6 +276,7 @@ module MSSqlServerSsdt =
           ForeignKey = fk.Columns.Head }
 
 
+
 type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
     let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
@@ -283,7 +286,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts ssdtPath
+    let ssdtTables = MSSqlServerSsdt.parseTableCreateScripts ssdtPath
 
     do
         MSSqlServerSsdt.resolutionPath <- resolutionPath
@@ -324,8 +327,8 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             let filterByTableNames tbl =
                 if allowed = [||] then true
                 else allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0)
-            
-            ssdtTables.Value
+
+            ssdtTables
             |> Seq.map (fun kvp -> kvp.Value)
             |> Seq.map MSSqlServerSsdt.ssdtTableToTable
             |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
@@ -333,13 +336,13 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             |> Seq.toList
 
         member __.GetPrimaryKey(table) =
-            match ssdtTables.Value.TryFind(table.Name) with
-            |  Some { PrimaryKeys = [ { Columns = [c] } ] } -> Some c
+            match ssdtTables.TryFind(table.Name) with
+            |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c)
             | _ -> None
 
         member __.GetColumns(con,table) =        
             let columns =
-                match ssdtTables.Value.TryFind(table.Name) with
+                match ssdtTables.TryFind(table.Name) with
                 | Some ssdtTbl ->
                     ssdtTbl.Columns
                     |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
@@ -352,7 +355,6 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetRelationships(con,table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-                let ssdtTables = ssdtTables.Value
                 // The table containing the foreign key is called the child table
                 match ssdtTables.TryFind(table.Name) with
                 | Some ssdtTbl ->
