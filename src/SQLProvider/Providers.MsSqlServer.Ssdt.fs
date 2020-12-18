@@ -286,7 +286,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let ssdtTables = MSSqlServerSsdt.parseTableCreateScripts ssdtPath
+    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts ssdtPath
 
     do
         MSSqlServerSsdt.resolutionPath <- resolutionPath
@@ -328,7 +328,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                 if allowed = [||] then true
                 else allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0)
 
-            ssdtTables
+            ssdtTables.Value
             |> Seq.map (fun kvp -> kvp.Value)
             |> Seq.map MSSqlServerSsdt.ssdtTableToTable
             |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
@@ -336,13 +336,13 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
             |> Seq.toList
 
         member __.GetPrimaryKey(table) =
-            match ssdtTables.TryFind(table.Name) with
+            match ssdtTables.Value.TryFind(table.Name) with
             |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c)
             | _ -> None
 
         member __.GetColumns(con,table) =        
             let columns =
-                match ssdtTables.TryFind(table.Name) with
+                match ssdtTables.Value.TryFind(table.Name) with
                 | Some ssdtTbl ->
                     ssdtTbl.Columns
                     |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
@@ -350,10 +350,26 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                     |> List.map (fun col -> col.Name, col)
                 | None -> []
                 |> Map.ofList
-                
+
+            // Add PKs to cache
+            columns
+            |> Seq.map (fun kvp -> kvp.Value)
+            |> Seq.iter (fun col ->
+                if col.IsPrimaryKey then
+                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
+                         match col.Name with 
+                         | "" -> old 
+                         | x -> match old with
+                                | [] -> [x]
+                                | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                    ) |> ignore
+            )
+
+            // Add columns to cache
             schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
+            let ssdtTables = ssdtTables.Value
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
                 // The table containing the foreign key is called the child table
                 match ssdtTables.TryFind(table.Name) with
