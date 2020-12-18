@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30709.132
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14373A98-84EF-4EE2-A4E8-96DEE9FF5BEA}"
 	ProjectSection(SolutionItems) = preProject
@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 		docs\content\core\mappers.fsx = docs\content\core\mappers.fsx
 		docs\content\core\msaccess.fsx = docs\content\core\msaccess.fsx
 		docs\content\core\mssql.fsx = docs\content\core\mssql.fsx
+		docs\content\core\mssqlssdt.fsx = docs\content\core\mssqlssdt.fsx
 		docs\content\core\mysql.fsx = docs\content\core\mysql.fsx
 		docs\content\core\odbc.fsx = docs\content\core\odbc.fsx
 		docs\content\core\oracle.fsx = docs\content\core\oracle.fsx
@@ -43,12 +44,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-9
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{76C3C867-4E92-4A85-BE21-5839A66F47E5}"
 	ProjectSection(SolutionItems) = preProject
+		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 		src\scripts\GraphViz.fsx = src\scripts\GraphViz.fsx
 		src\scripts\MsSqlServerInspector.fsx = src\scripts\MsSqlServerInspector.fsx
 		src\scripts\MySqlInspector.fsx = src\scripts\MySqlInspector.fsx
 		src\scripts\OracleInspector.fsx = src\scripts\OracleInspector.fsx
 		src\scripts\PostgresInspector.fsx = src\scripts\PostgresInspector.fsx
-		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 	EndProjectSection
 EndProject
 Global
@@ -67,6 +68,9 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F57D1E88-2ED8-4260-9DD9-96FD8C94901D}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

@@ -11,10 +11,7 @@ open FSharp.Data.Sql.Common
 open System.Xml
 
 module MSSqlServerSsdt =
-    let mutable resolutionPath = String.Empty
-    let mutable referencedAssemblies = [||]
     let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser.dll" ]
-    let assembly = lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
 
     type SsdtTable = {
         Schema: string
@@ -94,44 +91,45 @@ module MSSqlServerSsdt =
         )
         |> Map.ofList
 
-    module DynamicSqlParser =
-        let findType f =
-            match assembly.Value with
-            | Choice1Of2(assembly) ->
-                let types =
-                    try assembly.GetTypes()
-                    with | :? System.Reflection.ReflectionTypeLoadException as e ->
-                        let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
-                        let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                        let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                        failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-                types |> Array.find f
-            | Choice2Of2(paths, errors) ->
-               let details =
-                    match errors with
-                    | [] -> ""
-                    | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-               failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s.\nResolution path: %s"
-                    (String.Join(", ", assemblyNames |> List.toArray))
-                    "Microsoft.SqlServer.Management.SqlParser"
-                    Environment.NewLine
-                    (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
-                    details
-                    resolutionPath
+    /// Dynamically loads the "Microsoft.SqlServer.Management.SqlParser" assembly and returns a table script parser functions.
+    let buildDynamicTableScriptParser =
+        lazy fun resolutionPath referencedAssemblies (tableScript: string) ->
+            let assembly = Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
+            let findType f =
+                match assembly with
+                | Choice1Of2(assembly) ->
+                    let types =
+                        try assembly.GetTypes()
+                        with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                            let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
+                            let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
+                            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                            failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    types |> Array.find f
+                | Choice2Of2(paths, errors) ->
+                    let details =
+                        match errors with
+                        | [] -> ""
+                        | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
+                    failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s."
+                        (String.Join(", ", assemblyNames |> List.toArray))
+                        "Microsoft.SqlServer.Management.SqlParser"
+                        Environment.NewLine
+                        (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                        details
 
-        // Dynamically load Microsoft.SqlServer.Management.SqlParser.Parser.Parser
-        let private parserType =  lazy(findType (fun t -> t.Name = "Parser"))
-        let private parseResultType =  lazy(findType (fun t -> t.Name = "ParseResult"))
-        let private sqlScriptType =  lazy(findType (fun t -> t.Name = "SqlScript"))
-        let private parseMethod = lazy(parserType.Value.GetMethod("Parse", [| typeof<string> |]))
-        let private scriptProperty = lazy(parseResultType.Value.GetProperty("Script"))
-        let private xmlProperty = lazy(sqlScriptType.Value.GetProperty("Xml"))
+            // Loads Microsoft.SqlServer.Management.SqlParser.Parser.Parser
+            let parserType =  findType (fun t -> t.Name = "Parser")
+            let parseResultType =  findType (fun t -> t.Name = "ParseResult")
+            let sqlScriptType =  findType (fun t -> t.Name = "SqlScript")
+            let parseMethod = parserType.GetMethod("Parse", [| typeof<string> |])
+            let scriptProperty = parseResultType.GetProperty("Script")
+            let xmlProperty = sqlScriptType.GetProperty("Xml")
 
-        /// Parses a script - returns an xml string with a table schema.
-        let parseTableScript (tableScript: string) =
-            let oResult = parseMethod.Value.Invoke(null, [| box tableScript |])
-            let oSqlScript = scriptProperty.Value.GetValue(oResult)
-            xmlProperty.Value.GetValue(oSqlScript) :?> string
+            /// Parses a table script and returns an Xml string with a table schema.            
+            let oResult = parseMethod.Invoke(null, [| box tableScript |])
+            let oSqlScript = scriptProperty.GetValue(oResult)
+            xmlProperty.GetValue(oSqlScript) :?> string
 
 
     /// Analyzes Microsoft SQL Parser XML results and returns an  SsdtTable model.
@@ -243,11 +241,11 @@ module MSSqlServerSsdt =
     let readTableScript (file: System.IO.FileInfo) =
         System.IO.File.ReadAllText(file.FullName)
 
-    let parseTableCreateScripts ssdtPath =
+    let parseTableCreateScripts dynamicSciptParser ssdtPath =
         ssdtPath
         |> findTableScripts
         |> Seq.map readTableScript
-        |> Seq.map DynamicSqlParser.parseTableScript
+        |> Seq.map dynamicSciptParser
         |> Seq.map parseTableSchemaXml
         |> Seq.map (fun table -> table.Name, table)
         |> Map.ofSeq
@@ -291,22 +289,13 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts ssdtPath
-
-    do
-        MSSqlServerSsdt.resolutionPath <- resolutionPath
-        MSSqlServerSsdt.referencedAssemblies <- referencedAssemblies
+    let dynamicScriptParser = MSSqlServerSsdt.buildDynamicTableScriptParser.Value resolutionPath referencedAssemblies
+    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts dynamicScriptParser ssdtPath
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
-        member __.GetTableDescription(con,tableName) =
-            // TODO: GetTableDescription
-            tableName
-
-        member __.GetColumnDescription(con,tableName,columnName) =
-            // TODO: GetColumnDescription
-            columnName
-
+        member __.GetTableDescription(con,tableName) = tableName
+        member __.GetColumnDescription(con,tableName,columnName) = columnName
         member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
         member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
         member __.CreateCommandParameter(param, value) =
@@ -325,7 +314,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
         member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
-    
+        
         member __.GetTables(con,_) =
             let allowed = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun s -> s.Trim())
 

@@ -60,10 +60,11 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                 let con =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
-                        match ssdtPath with
-                        | "" -> failwith "No SsdtPath was specified."
-                        | path when not (System.IO.Directory.Exists path) -> failwith "The specified SsdtPath does not exist."
-                        | _ -> Some Stubs.connection
+                        if ssdtPath = "" then failwith "No SsdtPath was specified."
+                        elif not (System.IO.Directory.Exists ssdtPath) then failwithf "The specified SsdtPath does not exist: '%s'" ssdtPath
+                        elif resolutionPath = "" then failwith "No ResolutionPath was specified."
+                        elif not (System.IO.Directory.Exists resolutionPath) then failwithf "The specified ResolutionPath does not exist: '%s'" resolutionPath
+                        else Some Stubs.connection
                     | _ ->
                         match conString, conStringName with
                         | "", "" -> failwith "No connection string or connection string name was specified."
