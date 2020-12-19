@@ -79,6 +79,7 @@ module MSSqlServerSsdt =
           "ROWVERSION", "System.Byte[]", DbType.Binary, None
           "XML", "System.Xml.Linq.XElement", DbType.Xml, toInt SqlDbType.Xml
           "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, None
+          "SQL_VARIANT", "System.Object", DbType.Object, toInt SqlDbType.Variant
           "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
           "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
           "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
