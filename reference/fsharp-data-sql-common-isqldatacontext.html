@@ -48,29 +48,11 @@
     <tbody>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '380', 380)" onmouseover="showTip(event, '380', 380)">
+          <code onmouseout="hideTip(event, '401', 401)" onmouseover="showTip(event, '401', 401)">
             x.CallSproc(arg1, arg2, arg3)
           </code>
-          <div class="tip" id="380">
+          <div class="tip" id="401">
             <strong>Signature:</strong> (RunTimeSprocDefinition * QueryParameter [] * obj []) -&gt; obj<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L407-407" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '381', 381)" onmouseover="showTip(event, '381', 381)">
-            x.CallSprocAsync(arg1, arg2, arg3)
-          </code>
-          <div class="tip" id="381">
-            <strong>Signature:</strong> (RunTimeSprocDefinition * QueryParameter [] * obj []) -&gt; Async&lt;SqlEntity&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -84,139 +66,11 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '382', 382)" onmouseover="showTip(event, '382', 382)">
-            x.ClearPendingChanges()
+          <code onmouseout="hideTip(event, '402', 402)" onmouseover="showTip(event, '402', 402)">
+            x.CallSprocAsync(arg1, arg2, arg3)
           </code>
-          <div class="tip" id="382">
-            <strong>Signature:</strong> unit -&gt; unit<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L413-413" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '383', 383)" onmouseover="showTip(event, '383', 383)">
-            x.CommandTimeout
-          </code>
-          <div class="tip" id="383">
-            <strong>Signature:</strong> Option&lt;int&gt;<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L404-404" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_CommandTimeout</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '384', 384)" onmouseover="showTip(event, '384', 384)">
-            x.ConnectionString
-          </code>
-          <div class="tip" id="384">
-            <strong>Signature:</strong> string<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L403-403" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_ConnectionString</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '385', 385)" onmouseover="showTip(event, '385', 385)">
-            x.CreateConnection()
-          </code>
-          <div class="tip" id="385">
-            <strong>Signature:</strong> unit -&gt; IDbConnection<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L416-416" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '386', 386)" onmouseover="showTip(event, '386', 386)">
-            x.CreateEntities(arg1)
-          </code>
-          <div class="tip" id="386">
-            <strong>Signature:</strong> string -&gt; IQueryable&lt;SqlEntity&gt;<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L406-406" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '387', 387)" onmouseover="showTip(event, '387', 387)">
-            x.CreateEntity(arg1)
-          </code>
-          <div class="tip" id="387">
-            <strong>Signature:</strong> string -&gt; SqlEntity<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L417-417" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '388', 388)" onmouseover="showTip(event, '388', 388)">
-            x.CreateRelated(...)
-          </code>
-          <div class="tip" id="388">
-            <strong>Signature:</strong> (SqlEntity * string * string * string * string * string * RelationshipDirection) -&gt; IQueryable&lt;SqlEntity&gt;<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L405-405" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '389', 389)" onmouseover="showTip(event, '389', 389)">
-            x.GetIndividual(arg1, arg2)
-          </code>
-          <div class="tip" id="389">
-            <strong>Signature:</strong> (string * obj) -&gt; SqlEntity<br />
+          <div class="tip" id="402">
+            <strong>Signature:</strong> (RunTimeSprocDefinition * QueryParameter [] * obj []) -&gt; Async&lt;SqlEntity&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -230,11 +84,11 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '390', 390)" onmouseover="showTip(event, '390', 390)">
-            x.GetPendingEntities()
+          <code onmouseout="hideTip(event, '403', 403)" onmouseover="showTip(event, '403', 403)">
+            x.ClearPendingChanges()
           </code>
-          <div class="tip" id="390">
-            <strong>Signature:</strong> unit -&gt; SqlEntity list<br />
+          <div class="tip" id="403">
+            <strong>Signature:</strong> unit -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -248,16 +102,54 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '391', 391)" onmouseover="showTip(event, '391', 391)">
-            x.GetPrimaryKeyDefinition(arg1)
+          <code onmouseout="hideTip(event, '404', 404)" onmouseover="showTip(event, '404', 404)">
+            x.CommandTimeout
           </code>
-          <div class="tip" id="391">
-            <strong>Signature:</strong> string -&gt; string<br />
+          <div class="tip" id="404">
+            <strong>Signature:</strong> Option&lt;int&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L415-415" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L405-405" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_CommandTimeout</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '405', 405)" onmouseover="showTip(event, '405', 405)">
+            x.ConnectionString
+          </code>
+          <div class="tip" id="405">
+            <strong>Signature:</strong> string<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L404-404" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_ConnectionString</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '406', 406)" onmouseover="showTip(event, '406', 406)">
+            x.CreateConnection()
+          </code>
+          <div class="tip" id="406">
+            <strong>Signature:</strong> unit -&gt; IDbConnection<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L417-417" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -266,11 +158,29 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '392', 392)" onmouseover="showTip(event, '392', 392)">
-            x.ReadEntities(arg1, arg2, arg3)
+          <code onmouseout="hideTip(event, '407', 407)" onmouseover="showTip(event, '407', 407)">
+            x.CreateEntities(arg1)
           </code>
-          <div class="tip" id="392">
-            <strong>Signature:</strong> (string * ColumnLookup * IDataReader) -&gt; SqlEntity []<br />
+          <div class="tip" id="407">
+            <strong>Signature:</strong> string -&gt; IQueryable&lt;SqlEntity&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L407-407" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '408', 408)" onmouseover="showTip(event, '408', 408)">
+            x.CreateEntity(arg1)
+          </code>
+          <div class="tip" id="408">
+            <strong>Signature:</strong> string -&gt; SqlEntity<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -284,16 +194,16 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '393', 393)" onmouseover="showTip(event, '393', 393)">
-            x.ReadEntitiesAsync(arg1, arg2, arg3)
+          <code onmouseout="hideTip(event, '409', 409)" onmouseover="showTip(event, '409', 409)">
+            x.CreateRelated(...)
           </code>
-          <div class="tip" id="393">
-            <strong>Signature:</strong> (string * ColumnLookup * DbDataReader) -&gt; Async&lt;SqlEntity []&gt;<br />
+          <div class="tip" id="409">
+            <strong>Signature:</strong> (SqlEntity * string * string * string * string * string * RelationshipDirection) -&gt; IQueryable&lt;SqlEntity&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L419-419" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L406-406" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -302,48 +212,11 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '394', 394)" onmouseover="showTip(event, '394', 394)">
-            x.SaveContextSchema(arg1)
+          <code onmouseout="hideTip(event, '410', 410)" onmouseover="showTip(event, '410', 410)">
+            x.GetIndividual(arg1, arg2)
           </code>
-          <div class="tip" id="394">
-            <strong>Signature:</strong> string -&gt; unit<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L421-421" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '395', 395)" onmouseover="showTip(event, '395', 395)">
-            x.SqlOperationsInSelect
-          </code>
-          <div class="tip" id="395">
-            <strong>Signature:</strong> SelectOperations<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L420-420" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_SqlOperationsInSelect</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '396', 396)" onmouseover="showTip(event, '396', 396)">
-            x.SubmitChangedEntity(arg1)
-          </code>
-          <div class="tip" id="396">
-            <strong>Signature:</strong> SqlEntity -&gt; unit<br />
+          <div class="tip" id="410">
+            <strong>Signature:</strong> (string * obj) -&gt; SqlEntity<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -357,11 +230,120 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '397', 397)" onmouseover="showTip(event, '397', 397)">
-            x.SubmitPendingChanges()
+          <code onmouseout="hideTip(event, '411', 411)" onmouseover="showTip(event, '411', 411)">
+            x.GetPendingEntities()
           </code>
-          <div class="tip" id="397">
-            <strong>Signature:</strong> unit -&gt; unit<br />
+          <div class="tip" id="411">
+            <strong>Signature:</strong> unit -&gt; SqlEntity list<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L415-415" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '412', 412)" onmouseover="showTip(event, '412', 412)">
+            x.GetPrimaryKeyDefinition(arg1)
+          </code>
+          <div class="tip" id="412">
+            <strong>Signature:</strong> string -&gt; string<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L416-416" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '413', 413)" onmouseover="showTip(event, '413', 413)">
+            x.ReadEntities(arg1, arg2, arg3)
+          </code>
+          <div class="tip" id="413">
+            <strong>Signature:</strong> (string * ColumnLookup * IDataReader) -&gt; SqlEntity []<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L419-419" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '414', 414)" onmouseover="showTip(event, '414', 414)">
+            x.ReadEntitiesAsync(arg1, arg2, arg3)
+          </code>
+          <div class="tip" id="414">
+            <strong>Signature:</strong> (string * ColumnLookup * DbDataReader) -&gt; Async&lt;SqlEntity []&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L420-420" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '415', 415)" onmouseover="showTip(event, '415', 415)">
+            x.SaveContextSchema(arg1)
+          </code>
+          <div class="tip" id="415">
+            <strong>Signature:</strong> string -&gt; unit<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L422-422" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '416', 416)" onmouseover="showTip(event, '416', 416)">
+            x.SqlOperationsInSelect
+          </code>
+          <div class="tip" id="416">
+            <strong>Signature:</strong> SelectOperations<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L421-421" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_SqlOperationsInSelect</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '417', 417)" onmouseover="showTip(event, '417', 417)">
+            x.SubmitChangedEntity(arg1)
+          </code>
+          <div class="tip" id="417">
+            <strong>Signature:</strong> SqlEntity -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
@@ -375,16 +357,34 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '398', 398)" onmouseover="showTip(event, '398', 398)">
-            x.SubmitPendingChangesAsync()
+          <code onmouseout="hideTip(event, '418', 418)" onmouseover="showTip(event, '418', 418)">
+            x.SubmitPendingChanges()
           </code>
-          <div class="tip" id="398">
-            <strong>Signature:</strong> unit -&gt; Async&lt;unit&gt;<br />
+          <div class="tip" id="418">
+            <strong>Signature:</strong> unit -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                                   </div>
         </td>
         <td class="xmldoc">
                       <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L412-412" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '419', 419)" onmouseover="showTip(event, '419', 419)">
+            x.SubmitPendingChangesAsync()
+          </code>
+          <div class="tip" id="419">
+            <strong>Signature:</strong> unit -&gt; Async&lt;unit&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/SqlRuntime.Common.fs#L413-413" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
