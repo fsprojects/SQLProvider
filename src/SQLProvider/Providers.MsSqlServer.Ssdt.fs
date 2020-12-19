@@ -99,7 +99,7 @@ module MSSqlServerSsdt =
 
     /// Dynamically loads the "Microsoft.SqlServer.Management.SqlParser" assembly and returns a table script parser functions.
     let buildDynamicTableScriptParser =
-        lazy fun resolutionPath referencedAssemblies (tableScript: string) ->
+        lazy fun resolutionPath referencedAssemblies ->
             let assembly = Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
             let findType f =
                 match assembly with
@@ -132,10 +132,11 @@ module MSSqlServerSsdt =
             let scriptProperty = parseResultType.GetProperty("Script")
             let xmlProperty = sqlScriptType.GetProperty("Xml")
 
-            /// Parses a table script and returns an Xml string with a table schema.            
-            let oResult = parseMethod.Invoke(null, [| box tableScript |])
-            let oSqlScript = scriptProperty.GetValue(oResult)
-            xmlProperty.GetValue(oSqlScript) :?> string
+            /// Parses a table script and returns an Xml string with a table schema.
+            fun  (tableScript: string) ->
+                let oResult = parseMethod.Invoke(null, [| box tableScript |])
+                let oSqlScript = scriptProperty.GetValue(oResult)
+                xmlProperty.GetValue(oSqlScript) :?> string
 
 
     let attMaybe (nm: string) (node: XmlNode) = 
@@ -321,7 +322,8 @@ module MSSqlServerSsdt =
         |> Seq.map parseTableSchemaXml
         |> Seq.toList
 
-    let parseViewCreateScripts dynamicScriptParser ssdtPath tablesByName =
+    let parseViewCreateScripts dynamicScriptParser ssdtPath (tables: SsdtTable list) =
+        let tablesByName = tables |> List.map (fun t -> (t.Schema, t.Name), t) |> Map.ofList
         ssdtPath
         |> findViewScripts
         |> Seq.map readScriptFile
@@ -372,8 +374,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     let ssdtTables =
         lazy
             let tables = MSSqlServerSsdt.parseTableCreateScripts dynamicScriptParser ssdtPath
-            let tablesBySchemaName = tables |> List.map (fun t -> (t.Schema, t.Name), t) |> Map.ofList
-            let views = MSSqlServerSsdt.parseViewCreateScripts dynamicScriptParser ssdtPath tablesBySchemaName
+            let views = MSSqlServerSsdt.parseViewCreateScripts dynamicScriptParser ssdtPath tables
             tables @ views |> List.map (fun t -> t.Name, t) |> Map.ofList
 
     interface ISqlProvider with

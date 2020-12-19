@@ -124,7 +124,7 @@ Another advantage is that since your SSDT scripts are checked into your source c
 
 SSDT Projects can be created in two ways:
 - Visual Studio [SSDT](https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15)
-- Azure Data Studio via the [SQL Datase Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
+- Azure Data Studio via the [SQL Database Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
 
 ## Known Issues
 ### Tables
