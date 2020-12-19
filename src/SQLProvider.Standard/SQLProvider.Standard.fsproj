@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.0;netstandard2.0</TargetFrameworks>
@@ -53,6 +53,9 @@
     <Compile Include="..\SQLProvider\Providers.MsSqlServer.Dynamic.fs">
       <Link>Providers.MsSqlServer.Dynamic.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider\Providers.MsSqlServer.Ssdt.fs">
+      <Link>Providers.MsSqlServer.Ssdt.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider\Providers.MSAccess.fs">
       <Link>Providers.MSAccess.fs</Link>
     </Compile>
@@ -82,9 +85,6 @@
     </Compile>
     <Compile Include="..\SQLProvider\SqlRuntime.Async.fs">
       <Link>SqlRuntime.Async.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
-      <Link>SqlRuntime.DataContext.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>

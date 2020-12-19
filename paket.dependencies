@@ -6,6 +6,7 @@ nuget RazorEngine
 nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget System.Data.SqlClient
+nuget Microsoft.SqlServer.Management.SqlParser
 
 group Build
     source https://nuget.org/api/v2
@@ -57,4 +58,3 @@ group Scripts
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 
-    

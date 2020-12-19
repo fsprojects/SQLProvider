@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
 #I "../../../bin/net451"
@@ -168,7 +168,7 @@ You should be fine even with canonical functions like `DateTime.Parse(a.MeetStar
 Check [General](general.html), [Static Parameters](parameters.html) and [Querying](querying.html) documentation.
 
 
-# Suppport for MySqlConnector
+# Support for MySqlConnector
 
 [MySqlConnector](https://github.com/mysql-net/MySqlConnector) is alternative driver to use instead of MySql.Data.dll.
 It has less features but a lot better performance than the official driver.
