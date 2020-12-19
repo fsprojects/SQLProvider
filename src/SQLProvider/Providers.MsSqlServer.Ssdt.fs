@@ -19,6 +19,7 @@ module MSSqlServerSsdt =
         Columns: SsdtColumn list
         PrimaryKey: PrimaryKeyConstraint option
         ForeignKeys: ForeignKeyConstraint list
+        IsView: bool
     }
     and SsdtColumn = {
         Name: string
@@ -44,6 +45,10 @@ module MSSqlServerSsdt =
     and PrimaryKeyConstraint = {
         Name: string
         Columns: string list
+    }
+    and SsdtViewColumn = {
+        Name: string
+        RefCol: SsdtColumn
     }
 
     let typeMappingsByName =
@@ -133,20 +138,21 @@ module MSSqlServerSsdt =
             xmlProperty.GetValue(oSqlScript) :?> string
 
 
+    let attMaybe (nm: string) (node: XmlNode) = 
+        node.Attributes 
+        |> Seq.cast<XmlAttribute> 
+        |> Seq.tryFind (fun a -> a.Name = nm) 
+        |> Option.map (fun a -> a.Value) 
+    
+    let att (nm: string) (node: XmlNode) = 
+        attMaybe nm node |> Option.defaultValue ""
+
     /// Analyzes Microsoft SQL Parser XML results and returns an  SsdtTable model.
     let parseTableSchemaXml (tableSchemaXml: string) = 
         let doc = new XmlDocument()
         use rdr = new System.IO.StringReader(tableSchemaXml)
         doc.Load(rdr)
-
-        /// Gets an XmlNode attribute value or empty string if node is null.
-        let att (nm: string) (node: XmlNode) = 
-            node.Attributes 
-            |> Seq.cast<XmlAttribute> 
-            |> Seq.tryFind (fun a -> a.Name = nm) 
-            |> Option.map (fun a -> a.Value)
-            |> Option.defaultValue ""
-    
+            
         let tblStatement = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateTableStatement")
         let tblSchemaName, tblObjectName = 
             let objId = tblStatement.SelectSingleNode("SqlObjectIdentifier")
@@ -226,33 +232,105 @@ module MSSqlServerSsdt =
           SsdtTable.Name = tblObjectName
           SsdtTable.Columns = columns
           SsdtTable.PrimaryKey = primaryKeyConstraint
-          SsdtTable.ForeignKeys = foreignKeyConstraints }
+          SsdtTable.ForeignKeys = foreignKeyConstraints
+          SsdtTable.IsView = false }
+
+    /// Analyzes Microsoft SQL Parser XML results and returns an SsdtView model.
+    let parseViewSchemaXml (tablesByFullName: Map<string * string, SsdtTable>) (viewSchemaXml: string) = 
+        let doc = new XmlDocument()
+        use rdr = new System.IO.StringReader(viewSchemaXml)
+        doc.Load(rdr)
+        
+        let viewDef = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateViewStatement/SqlViewDefinition")
+        let viewSchemaName, viewObjectName = 
+            let objId = viewDef.SelectSingleNode("SqlObjectIdentifier")
+            objId |> att "SchemaName", objId |> att "ObjectName"
+    
+        // Represents all the types of view columns that we have implemented for parsing
+        let (|SqlScalarRefExpression|SqlNullScalarExpression|Other|) (parentNode: XmlNode) =
+            let ssre = parentNode.SelectSingleNode("SqlScalarRefExpression")
+            if ssre <> null then SqlScalarRefExpression ssre
+            else
+                let snse = parentNode.SelectSingleNode("SqlNullScalarExpression")
+                if snse <> null then SqlNullScalarExpression snse
+                else Other
+    
+        let cols = 
+            viewDef.SelectSingleNode("SqlQuerySpecification").SelectSingleNode("SqlSelectClause").SelectNodes("SqlSelectScalarExpression")
+            |> Seq.cast<XmlNode>
+            |> Seq.choose (fun ssce ->
+                match ssce with
+                | SqlScalarRefExpression exp -> 
+                    let objId = exp.SelectSingleNode("SqlObjectIdentifier")
+                    let schema = objId |> att "DatabaseName" // Not sure why these are the way they are...
+                    let table = objId |> att "SchemaName"
+                    let tableColumn = objId |> att "ObjectName"
+                    let colName = ssce |> attMaybe "Alias" |> Option.defaultValue tableColumn
+    
+                    // Try to find related table/column, else ignore
+                    tablesByFullName.TryFind(schema, table)
+                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name = tableColumn))
+                    |> Option.map (fun refCol ->
+                        { SsdtViewColumn.Name = colName
+                          SsdtViewColumn.RefCol = refCol }
+                    )
+                | SqlNullScalarExpression exp -> 
+                    let sqlId = ssce.SelectSingleNode("SqlIdentifier")
+                    let colName = sqlId |> att "Value"
+                    Some
+                        { SsdtViewColumn.Name = colName
+                          SsdtViewColumn.RefCol = 
+                            { SsdtColumn.Name= colName
+                              SsdtColumn.DataType = "SQL_VARIANT" // TODO: Could possibly manually parse XML comment to determine ref table.column
+                              SsdtColumn.AllowNulls = false
+                              SsdtColumn.Identity = None
+                              SsdtColumn.HasDefault = false } }
+                | Other -> 
+                    None // Some view column type that is not yet handled...
+            )
+            |> Seq.toList
+                
+        { SsdtTable.Schema = viewSchemaName
+          SsdtTable.Name = viewObjectName
+          SsdtTable.Columns = cols |> List.map (fun c -> c.RefCol)
+          SsdtTable.PrimaryKey = None
+          SsdtTable.ForeignKeys = []
+          SsdtTable.IsView = true }
 
     /// Searches the configured SsdtPath for one or more schema folders with "Table" subfolders.
-    let findTableScripts (ssdtPath: string) =
+    let findScripts (subfolderName: string) (ssdtPath: string) =
         let rootDir = System.IO.DirectoryInfo(ssdtPath)
         rootDir.EnumerateDirectories()                      // Search for potential schema directories (containing a "Table" directory)
         |> Seq.collect(fun maybeSchemaDir ->                // Search for "Tables" directories
             maybeSchemaDir.EnumerateDirectories()
-            |> Seq.filter (fun d -> d.Name = "Tables") 
+            |> Seq.filter (fun d -> d.Name = subfolderName) 
         )
         |> Seq.collect (fun d -> d.EnumerateFiles("*.sql")) // Return table scripts
 
+    let findTableScripts = findScripts "Tables"
+    let findViewScripts = findScripts "Views"
             
-    let readTableScript (file: System.IO.FileInfo) =
+    let readScriptFile (file: System.IO.FileInfo) =
         System.IO.File.ReadAllText(file.FullName)
 
-    let parseTableCreateScripts dynamicSciptParser ssdtPath =
+    let parseTableCreateScripts dynamicScriptParser ssdtPath =
         ssdtPath
         |> findTableScripts
-        |> Seq.map readTableScript
-        |> Seq.map dynamicSciptParser
+        |> Seq.map readScriptFile
+        |> Seq.map dynamicScriptParser
         |> Seq.map parseTableSchemaXml
-        |> Seq.map (fun table -> table.Name, table)
-        |> Map.ofSeq
+        |> Seq.toList
+
+    let parseViewCreateScripts dynamicScriptParser ssdtPath tablesByName =
+        ssdtPath
+        |> findViewScripts
+        |> Seq.map readScriptFile
+        |> Seq.map dynamicScriptParser
+        |> Seq.map (parseViewSchemaXml tablesByName)
+        |> Seq.toList
 
     let ssdtTableToTable (tbl: SsdtTable) =
-        { Schema = tbl.Schema ; Name = tbl.Name ; Type = "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "VIEW" else "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match typeMappingsByName.TryFind col.DataType with
@@ -291,7 +369,12 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     let dynamicScriptParser = MSSqlServerSsdt.buildDynamicTableScriptParser.Value resolutionPath referencedAssemblies
-    let ssdtTables = lazy MSSqlServerSsdt.parseTableCreateScripts dynamicScriptParser ssdtPath
+    let ssdtTables =
+        lazy
+            let tables = MSSqlServerSsdt.parseTableCreateScripts dynamicScriptParser ssdtPath
+            let tablesBySchemaName = tables |> List.map (fun t -> (t.Schema, t.Name), t) |> Map.ofList
+            let views = MSSqlServerSsdt.parseViewCreateScripts dynamicScriptParser ssdtPath tablesBySchemaName
+            tables @ views |> List.map (fun t -> t.Name, t) |> Map.ofList
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock

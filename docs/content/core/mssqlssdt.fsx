@@ -125,5 +125,20 @@ Another advantage is that since your SSDT scripts are checked into your source c
 SSDT Projects can be created in two ways:
 - Visual Studio [SSDT](https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15)
 - Azure Data Studio via the [SQL Datase Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
+
+## Known Issues
+### Tables
+- Computed columns in tables are currently ignored
+### Views
+- Views are only partially implemented at this point:
+	- Some view columns may have a data type of System.Object if the type cannot be properly parsed.
+For example, a view column that is wrapped in a COALLESCE() function will show as a property of type System.Object.
+(This limitation can possibly be remedied with some more time spent in the parser).
+	- Some view columns may be ignored (missing) if they can not be properly parsed
+For example, more work needs to be done on the parser to handle WITH common table expressions.
+### Misc
+- Get "Individuals" feature is not implemented (because it requires a database connection)
+- Stored procs are not currently implemented
+
 *)
 
