@@ -53,6 +53,7 @@
 <p>The provider currently has explicit implementations for the following database vendors:</p>
 <ul>
 <li>SQL Server</li>
+<li>SQL Server SSDT</li>
 <li>SQLite</li>
 <li>PostgreSQL</li>
 <li>Oracle</li>
@@ -66,6 +67,7 @@
 <p>PostgreSQL is based on the Npgsql .NET drivers found <a href="http://www.npgsql.org/doc/">here</a>. The type provider will make frequent calls to the database. Npgsql provides a set of <a href="http://www.npgsql.org/doc/connection-string-parameters.html#performance">performance related connection strings parameters</a> for tweaking its performance</p>
 <p>MySQL is based on the .NET drivers found <a href="http://dev.mysql.com/downloads/connector/net/1.0.html">here</a>. You will need the correct version for your specific architecture and setup. You also need to specify ResolutionPath, which points to the folder containing the dll files for the MySQL driver.</p>
 <p>Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found <a href="http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html">here</a>. However, although the managed version is recommended, it should also work with previous versions of the native driver.</p>
+<p>SQL Server SSDT is based on the current release (160.20216.14) found <a href="https://www.nuget.org/packages/Microsoft.SqlServer.Management.SqlParser/">here</a>.</p>
 <div class="row">
   <div class="span1"></div>
   <div class="span6">

@@ -33,6 +33,7 @@
       <div class="row">
         <div class="span9" id="main">
           <h1><a name="MSSQL-SSDT-Provider" class="anchor" href="#MSSQL-SSDT-Provider">MSSQL SSDT Provider</a></h1>
+<p>The SSDT provider allows types to be provided via SQL Server schema scripts in an SSDT project. No live database connection is required!</p>
 <h2><a name="Parameters" class="anchor" href="#Parameters">Parameters</a></h2>
 <h3><a name="Database-Vendor-required" class="anchor" href="#Database-Vendor-required">Database Vendor (required)</a></h3>
 <p>Use <code>MSSQLSERVER_SSDT</code> from the <code>FSharp.Data.Sql.Common.DatabaseProviderTypes</code> enumeration.</p>
@@ -57,6 +58,17 @@ This is required for the SSDT provider to work. Both absolute and relative paths
 </table>
 <h3><a name="Resolution-Path-required" class="anchor" href="#Resolution-Path-required">Resolution Path (required)</a></h3>
 <p>Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.</p>
+<h4><a name="Setting-the-ResolutionPath" class="anchor" href="#Setting-the-ResolutionPath">Setting the ResolutionPath</a></h4>
+<p>If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.</p>
+<p><strong>Instructions for adding to a netstandard project in Visual Studio 2019:</strong>
+- Add <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> to the project via NuGet Package Manager.
+- After installing, expand Dependencies/Packages for your project, click on the <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> package and view the 'Path' property to find the location. (It should be stored in the <a href="https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders">NuGet global-packages folder</a>.)
+- Browse to the location, then open the '<strong>lib/netstandard2.0</strong>' folder and copy the <strong>'Microsoft.SqlServer.Management.SqlParser.dll'</strong> assembly.
+- Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
+- Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
+- Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
+[<Literal>]
+let resPath = <strong>SOURCE_DIRECTORY</strong> + "/SSDT"</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
@@ -164,7 +176,7 @@ Schemas can be synchronized bi-directionally (SSDT -&gt; SQL Server or SQL Serve
 <h3><a name="Advantages-of-using-the-SSDT-provider" class="anchor" href="#Advantages-of-using-the-SSDT-provider">Advantages of using the SSDT provider</a></h3>
 <p>The main advantage to using the SSDT provider is that it does not require a live connection to the database.
 This makes it easier to run on a build server without having to manually spin up a database instance.</p>
-<p>Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, and the project will still compile.</p>
+<p>Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, so each branch can compile according its local schema snapshot.</p>
 <h3><a name="How-to-create-an-SSDT-Project" class="anchor" href="#How-to-create-an-SSDT-Project">How to create an SSDT Project</a></h3>
 <p>SSDT Projects can be created in two ways:
 - Visual Studio <a href="https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15">SSDT</a>
@@ -172,10 +184,10 @@ This makes it easier to run on a build server without having to manually spin up
 <h2><a name="Known-Issues" class="anchor" href="#Known-Issues">Known Issues</a></h2>
 <h3><a name="Tables" class="anchor" href="#Tables">Tables</a></h3>
 <ul>
-<li>
-Computed columns in tables are currently ignored
-### Views
-</li>
+<li>Computed columns in tables are currently ignored</li>
+</ul>
+<h3><a name="Views" class="anchor" href="#Views">Views</a></h3>
+<ul>
 <li>
 Views are only partially implemented at this point:
 <ul>
@@ -187,10 +199,12 @@ For example, a view column that is wrapped in a COALLESCE() function will show a
 <li>
 Some view columns may be ignored (missing) if they can not be properly parsed
 For example, more work needs to be done on the parser to handle WITH common table expressions.
-### Misc
 </li>
 </ul>
 </li>
+</ul>
+<h3><a name="Misc" class="anchor" href="#Misc">Misc</a></h3>
+<ul>
 <li>Get "Individuals" feature is not implemented (because it requires a database connection)</li>
 <li>Stored procs are not currently implemented</li>
 </ul>
