@@ -25,6 +25,7 @@ A general .NET/Mono SQL database type provider. Current features:
 The provider currently has explicit implementations for the following database vendors:
  
 * SQL Server
+* SQL Server SSDT
 * SQLite
 * PostgreSQL
 * Oracle
@@ -43,6 +44,8 @@ PostgreSQL is based on the Npgsql .NET drivers found [here](http://www.npgsql.or
 MySQL is based on the .NET drivers found [here](http://dev.mysql.com/downloads/connector/net/1.0.html). You will need the correct version for your specific architecture and setup. You also need to specify ResolutionPath, which points to the folder containing the dll files for the MySQL driver.
 
 Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However, although the managed version is recommended, it should also work with previous versions of the native driver.
+
+SQL Server SSDT is based on the current release (160.20216.14) found [here](https://www.nuget.org/packages/Microsoft.SqlServer.Management.SqlParser/).
 
 <div class="row">
   <div class="span1"></div>
