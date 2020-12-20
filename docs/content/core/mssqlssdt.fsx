@@ -12,6 +12,8 @@ open System
 
 # MSSQL SSDT Provider
 
+The SSDT provider allows types to be provided via SQL Server schema scripts in an SSDT project. No live database connection is required!
+
 ## Parameters
 
 ### Database Vendor (required)
@@ -36,6 +38,20 @@ let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/"
 ### Resolution Path (required)
 
 Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.
+
+#### Setting the ResolutionPath
+If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.
+
+**Instructions for adding to a netstandard project in Visual Studio 2019:**
+- Add **'Microsoft.SqlServer.Management.SqlParser'** to the project via NuGet Package Manager.
+- After installing, expand Dependencies/Packages for your project, click on the **'Microsoft.SqlServer.Management.SqlParser'** package and view the 'Path' property to find the location. (It should be stored in the [NuGet global-packages folder](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders).)
+- Browse to the location, then open the '**lib/netstandard2.0**' folder and copy the **'Microsoft.SqlServer.Management.SqlParser.dll'** assembly.
+- Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
+- Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
+- Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
+    [<Literal>]
+    let resPath = __SOURCE_DIRECTORY__ + "/SSDT"
+
 
 *)
 [<Literal>]
@@ -118,7 +134,7 @@ Schemas can be synchronized bi-directionally (SSDT -> SQL Server or SQL Server -
 The main advantage to using the SSDT provider is that it does not require a live connection to the database.
 This makes it easier to run on a build server without having to manually spin up a database instance.
 
-Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, and the project will still compile.
+Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, so each branch can compile according its local schema snapshot.
 
 ### How to create an SSDT Project
 
@@ -127,8 +143,10 @@ SSDT Projects can be created in two ways:
 - Azure Data Studio via the [SQL Database Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
 
 ## Known Issues
+
 ### Tables
 - Computed columns in tables are currently ignored
+
 ### Views
 - Views are only partially implemented at this point:
 	- Some view columns may have a data type of System.Object if the type cannot be properly parsed.
@@ -136,9 +154,11 @@ For example, a view column that is wrapped in a COALLESCE() function will show a
 (This limitation can possibly be remedied with some more time spent in the parser).
 	- Some view columns may be ignored (missing) if they can not be properly parsed
 For example, more work needs to be done on the parser to handle WITH common table expressions.
+
 ### Misc
 - Get "Individuals" feature is not implemented (because it requires a database connection)
 - Stored procs are not currently implemented
+
 
 *)
 

@@ -1,3 +1,6 @@
+### 1.1.95 - 19.12.2020
+* Initial SSDT support PR #700
+
 ### 1.1.94 - 27.11.2020
 * More query support: where (table.NullableColumn = optionValue && not boolean_column)
 
