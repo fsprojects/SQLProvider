@@ -97,6 +97,9 @@ module MSSqlServerSsdt =
         )
         |> Map.ofList
 
+    let tryFindMapping (dataType: string) =
+        typeMappingsByName.TryFind (dataType.ToUpper())
+
     /// Dynamically loads the "Microsoft.SqlServer.Management.SqlParser" assembly and returns a table script parser functions.
     let buildDynamicTableScriptParser =
         lazy fun resolutionPath referencedAssemblies ->
@@ -237,7 +240,7 @@ module MSSqlServerSsdt =
           SsdtTable.IsView = false }
 
     /// Analyzes Microsoft SQL Parser XML results and returns an SsdtView model.
-    let parseViewSchemaXml (tablesByFullName: Map<string * string, SsdtTable>) (viewSchemaXml: string) = 
+    let parseViewSchemaXml (tables: SsdtTable list) (viewSchemaXml: string) = 
         let doc = new XmlDocument()
         use rdr = new System.IO.StringReader(viewSchemaXml)
         doc.Load(rdr)
@@ -248,35 +251,75 @@ module MSSqlServerSsdt =
             objId |> att "SchemaName", objId |> att "ObjectName"
     
         // Represents all the types of view columns that we have implemented for parsing
-        let (|SqlScalarRefExpression|SqlNullScalarExpression|Other|) (parentNode: XmlNode) =
+        let (|SqlScalarRefExpression|SqlColumnRefExpression|SqlNullScalarExpression|Other|) (parentNode: XmlNode) =
             let ssre = parentNode.SelectSingleNode("SqlScalarRefExpression")
+            let scre = parentNode.SelectSingleNode("SqlColumnRefExpression")
+            let snse = parentNode.SelectSingleNode("SqlNullScalarExpression")
             if ssre <> null then SqlScalarRefExpression ssre
-            else
-                let snse = parentNode.SelectSingleNode("SqlNullScalarExpression")
-                if snse <> null then SqlNullScalarExpression snse
-                else Other
-    
+            elif scre <> null then SqlColumnRefExpression scre
+            elif snse <> null then SqlNullScalarExpression snse
+            else Other
+
+        /// Case insensitive compare
+        let (^=) (t1: string) (t2: string) = String.Compare(t1, t2, true) = 0
+
         let cols = 
             viewDef.SelectSingleNode("SqlQuerySpecification").SelectSingleNode("SqlSelectClause").SelectNodes("SqlSelectScalarExpression")
             |> Seq.cast<XmlNode>
-            |> Seq.choose (fun ssce ->
-                match ssce with
+            |> Seq.choose (fun ssse ->
+                match ssse with
+                | SqlColumnRefExpression exp ->
+                    let objId = exp.SelectSingleNode("SqlObjectIdentifier")
+                    let parts =
+                        objId.SelectNodes("SqlIdentifier")
+                        |> Seq.cast<XmlNode>
+                        |> Seq.map (att "Value")
+                        |> Seq.toList
+                        |> List.rev
+
+                    let tableColumn = parts.Head         
+                    let colNameOrAlias = ssse |> attMaybe "Alias" |> Option.defaultValue tableColumn
+
+                    match parts with
+                    | [cNm] -> // Only one column found in a SqlColumnRefExpression
+                        let column_tbl = tables |> List.collect (fun t -> t.Columns |> List.map (fun c -> c.Name, t))
+                        column_tbl |> List.tryFind (fun (c,t) -> c ^= cNm) |> Option.map snd
+                    | _ ->
+                        None
+                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
+                    |> Option.map (fun refCol ->
+                        { SsdtViewColumn.Name = colNameOrAlias
+                          SsdtViewColumn.RefCol = refCol }
+                    )
                 | SqlScalarRefExpression exp -> 
                     let objId = exp.SelectSingleNode("SqlObjectIdentifier")
-                    let schema = objId |> att "DatabaseName" // Not sure why these are the way they are...
-                    let table = objId |> att "SchemaName"
-                    let tableColumn = objId |> att "ObjectName"
-                    let colName = ssce |> attMaybe "Alias" |> Option.defaultValue tableColumn
-    
+                    let parts =
+                        objId.SelectNodes("SqlIdentifier")
+                        |> Seq.cast<XmlNode>
+                        |> Seq.map (att "Value")
+                        |> Seq.toList
+                        |> List.rev
+
+                    let tableColumn = parts.Head         
+                    let colName = ssse |> attMaybe "Alias" |> Option.defaultValue tableColumn
+
                     // Try to find related table/column, else ignore
-                    tablesByFullName.TryFind(schema, table)
-                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name = tableColumn))
+                    match parts with
+                    | [cNm; schemaOrTblName] ->
+                        let t1 = tables |> List.tryFind (fun t -> t.Name ^= schemaOrTblName)
+                        let t2 = tables |> List.tryFind (fun t -> t.Schema ^= schemaOrTblName)
+                        if t1 <> None then t1 else t2
+                    | [cNm; tblNm; schNm] ->
+                        tables |> List.tryFind (fun t -> t.Schema ^= schNm && t.Name ^=  tblNm)
+                    | _ ->
+                        None // we can't reason about this column - ignore
+                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
                     |> Option.map (fun refCol ->
                         { SsdtViewColumn.Name = colName
                           SsdtViewColumn.RefCol = refCol }
                     )
                 | SqlNullScalarExpression exp -> 
-                    let sqlId = ssce.SelectSingleNode("SqlIdentifier")
+                    let sqlId = ssse.SelectSingleNode("SqlIdentifier")
                     let colName = sqlId |> att "Value"
                     Some
                         { SsdtViewColumn.Name = colName
@@ -322,20 +365,19 @@ module MSSqlServerSsdt =
         |> Seq.map parseTableSchemaXml
         |> Seq.toList
 
-    let parseViewCreateScripts dynamicScriptParser ssdtPath (tables: SsdtTable list) =
-        let tablesByName = tables |> List.map (fun t -> (t.Schema, t.Name), t) |> Map.ofList
+    let parseViewCreateScripts dynamicScriptParser ssdtPath tables =
         ssdtPath
         |> findViewScripts
         |> Seq.map readScriptFile
         |> Seq.map dynamicScriptParser
-        |> Seq.map (parseViewSchemaXml tablesByName)
+        |> Seq.map (parseViewSchemaXml tables)
         |> Seq.toList
 
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "VIEW" else "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
-        match typeMappingsByName.TryFind col.DataType with
+        match tryFindMapping col.DataType with
         | Some typeMapping ->
             Some
                 { Column.Name = col.Name

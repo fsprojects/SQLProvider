@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.Management.SqlParser" Version="160.20216.14" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Utils.fs" />
+    <Compile Include="ParseTableTests.fs" />
+    <Compile Include="ParseViewTests.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\SQLProvider\SqlProvider.fsproj" />
+  </ItemGroup>
+
+</Project>
