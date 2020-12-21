@@ -43,12 +43,12 @@ Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absol
 If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.
 
 **Instructions for adding to a netstandard project in Visual Studio 2019:**
-- Add **'Microsoft.SqlServer.Management.SqlParser'** to the project via NuGet Package Manager.
-- After installing, expand Dependencies/Packages for your project, click on the **'Microsoft.SqlServer.Management.SqlParser'** package and view the 'Path' property to find the location. (It should be stored in the [NuGet global-packages folder](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders).)
-- Browse to the location, then open the '**lib/netstandard2.0**' folder and copy the **'Microsoft.SqlServer.Management.SqlParser.dll'** assembly.
-- Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
-- Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
-- Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
+* Add **'Microsoft.SqlServer.Management.SqlParser'** to the project via NuGet Package Manager.
+* After installing, expand Dependencies/Packages for your project, click on the **'Microsoft.SqlServer.Management.SqlParser'** package and view the 'Path' property to find the location. (It should be stored in the [NuGet global-packages folder](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders).)
+* Browse to the location, then open the '**lib/netstandard2.0**' folder and copy the **'Microsoft.SqlServer.Management.SqlParser.dll'** assembly.
+* Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
+* Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
+* Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
     [<Literal>]
     let resPath = __SOURCE_DIRECTORY__ + "/SSDT"
 
@@ -139,25 +139,30 @@ Another advantage is that since your SSDT scripts are checked into your source c
 ### How to create an SSDT Project
 
 SSDT Projects can be created in two ways:
-- Visual Studio [SSDT](https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15)
-- Azure Data Studio via the [SQL Database Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
+* Visual Studio [SSDT](https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15)
+* Azure Data Studio via the [SQL Database Projects Extension](https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15)
 
 ## Known Issues
 
 ### Tables
-- Computed columns in tables are currently ignored
+* Computed columns in tables are currently ignored
 
 ### Views
-- Views are only partially implemented at this point:
-	- Some view columns may have a data type of System.Object if the type cannot be properly parsed.
+* Views are only partially implemented at this point:
+	* Some view columns may have a data type of System.Object if the type cannot be properly parsed.
 For example, a view column that is wrapped in a COALLESCE() function will show as a property of type System.Object.
 (This limitation can possibly be remedied with some more time spent in the parser).
-	- Some view columns may be ignored (missing) if they can not be properly parsed
-For example, more work needs to be done on the parser to handle WITH common table expressions.
+	* Some view columns may be ignored (missing) if they can not be properly parsed
+For example, more work needs to be done on the parser to handle WITH common table expressions, or anything other than a simple query.
 
-### Misc
-- Get "Individuals" feature is not implemented (because it requires a database connection)
-- Stored procs are not currently implemented
+### Procedures
+* Stored procs are not currently implemented
+
+### Functions
+* Functions are not currently implemented
+
+### Individuals
+* Get "Individuals" feature is not implemented (because it requires a database connection)
 
 
 *)
