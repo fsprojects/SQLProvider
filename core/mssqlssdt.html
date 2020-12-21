@@ -61,12 +61,12 @@ This is required for the SSDT provider to work. Both absolute and relative paths
 <h4><a name="Setting-the-ResolutionPath" class="anchor" href="#Setting-the-ResolutionPath">Setting the ResolutionPath</a></h4>
 <p>If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.</p>
 <p><strong>Instructions for adding to a netstandard project in Visual Studio 2019:</strong>
-- Add <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> to the project via NuGet Package Manager.
-- After installing, expand Dependencies/Packages for your project, click on the <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> package and view the 'Path' property to find the location. (It should be stored in the <a href="https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders">NuGet global-packages folder</a>.)
-- Browse to the location, then open the '<strong>lib/netstandard2.0</strong>' folder and copy the <strong>'Microsoft.SqlServer.Management.SqlParser.dll'</strong> assembly.
-- Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
-- Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
-- Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
+<em> Add </em><em>'Microsoft.SqlServer.Management.SqlParser'</em><em> to the project via NuGet Package Manager.
+</em> After installing, expand Dependencies/Packages for your project, click on the <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> package and view the 'Path' property to find the location. (It should be stored in the <a href="https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders">NuGet global-packages folder</a>.)
+<em> Browse to the location, then open the '</em><em>lib/netstandard2.0</em><em>' folder and copy the </em><em>'Microsoft.SqlServer.Management.SqlParser.dll'</em><em> assembly.
+</em> Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
+<em> Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
+</em> Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
 [<Literal>]
 let resPath = <strong>SOURCE_DIRECTORY</strong> + "/SSDT"</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
@@ -179,8 +179,8 @@ This makes it easier to run on a build server without having to manually spin up
 <p>Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, so each branch can compile according its local schema snapshot.</p>
 <h3><a name="How-to-create-an-SSDT-Project" class="anchor" href="#How-to-create-an-SSDT-Project">How to create an SSDT Project</a></h3>
 <p>SSDT Projects can be created in two ways:
-- Visual Studio <a href="https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15">SSDT</a>
-- Azure Data Studio via the <a href="https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15">SQL Database Projects Extension</a></p>
+<em> Visual Studio <a href="https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15">SSDT</a>
+</em> Azure Data Studio via the <a href="https://docs.microsoft.com/en-us/sql/azure-data-studio/extensions/sql-database-project-extension?view=sql-server-ver15">SQL Database Projects Extension</a></p>
 <h2><a name="Known-Issues" class="anchor" href="#Known-Issues">Known Issues</a></h2>
 <h3><a name="Tables" class="anchor" href="#Tables">Tables</a></h3>
 <ul>
@@ -198,15 +198,22 @@ For example, a view column that is wrapped in a COALLESCE() function will show a
 </li>
 <li>
 Some view columns may be ignored (missing) if they can not be properly parsed
-For example, more work needs to be done on the parser to handle WITH common table expressions.
+For example, more work needs to be done on the parser to handle WITH common table expressions, or anything other than a simple query.
 </li>
 </ul>
 </li>
 </ul>
-<h3><a name="Misc" class="anchor" href="#Misc">Misc</a></h3>
+<h3><a name="Procedures" class="anchor" href="#Procedures">Procedures</a></h3>
+<ul>
+<li>Stored procs are not currently implemented</li>
+</ul>
+<h3><a name="Functions" class="anchor" href="#Functions">Functions</a></h3>
+<ul>
+<li>Functions are not currently implemented</li>
+</ul>
+<h3><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h3>
 <ul>
 <li>Get "Individuals" feature is not implemented (because it requires a database connection)</li>
-<li>Stored procs are not currently implemented</li>
 </ul>
 
 <div class="tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
