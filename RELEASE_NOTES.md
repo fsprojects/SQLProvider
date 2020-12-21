@@ -1,3 +1,6 @@
+### 1.1.96 - 21.12.2020
+* SSDT improvements PR #702
+
 ### 1.1.95 - 19.12.2020
 * Initial SSDT support PR #700
 
