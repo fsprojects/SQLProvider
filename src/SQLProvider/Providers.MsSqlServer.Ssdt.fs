@@ -52,6 +52,7 @@ module MSSqlServerSsdt =
     }
     and SsdtViewColumn = {
         Name: string
+        Alias: string option
         RefCol: SsdtColumn
     }
 
@@ -277,6 +278,9 @@ module MSSqlServerSsdt =
             viewDef.SelectSingleNode("SqlQuerySpecification").SelectSingleNode("SqlSelectClause")
             |> nodes "SqlSelectScalarExpression"
             |> Seq.choose (fun ssse ->
+
+                let alias = ssse |> attMaybe "Alias"
+
                 match ssse with
                 | SqlColumnRefExpression exp ->
                     let objId = exp.SelectSingleNode("SqlObjectIdentifier")
@@ -288,7 +292,6 @@ module MSSqlServerSsdt =
                         |> List.rev
 
                     let tableColumn = parts.Head         
-                    let colNameOrAlias = ssse |> attMaybe "Alias" |> Option.defaultValue tableColumn
 
                     match parts with
                     | [cNm] -> // Only one column found in a SqlColumnRefExpression
@@ -298,7 +301,8 @@ module MSSqlServerSsdt =
                         None
                     |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
                     |> Option.map (fun refCol ->
-                        { SsdtViewColumn.Name = colNameOrAlias
+                        { SsdtViewColumn.Name = tableColumn
+                          SsdtViewColumn.Alias = alias
                           SsdtViewColumn.RefCol = refCol }
                     )
                 | SqlScalarRefExpression exp -> 
@@ -311,7 +315,6 @@ module MSSqlServerSsdt =
                         |> List.rev
 
                     let tableColumn = parts.Head         
-                    let colName = ssse |> attMaybe "Alias" |> Option.defaultValue tableColumn
 
                     // Try to find related table/column, else ignore
                     match parts with
@@ -325,7 +328,8 @@ module MSSqlServerSsdt =
                         None // we can't reason about this column - ignore
                     |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
                     |> Option.map (fun refCol ->
-                        { SsdtViewColumn.Name = colName
+                        { SsdtViewColumn.Name = tableColumn
+                          SsdtViewColumn.Alias = alias
                           SsdtViewColumn.RefCol = refCol }
                     )
                 | SqlNullScalarExpression exp -> 
@@ -333,6 +337,7 @@ module MSSqlServerSsdt =
                     let colName = sqlId |> att "Value"
                     Some
                         { SsdtViewColumn.Name = colName
+                          SsdtViewColumn.Alias = alias
                           SsdtViewColumn.RefCol = 
                             { SsdtColumn.Name= colName
                               SsdtColumn.DataType = "SQL_VARIANT" // TODO: Could possibly manually parse XML comment to determine ref table.column
@@ -346,7 +351,7 @@ module MSSqlServerSsdt =
                 
         { SsdtTable.Schema = viewSchemaName
           SsdtTable.Name = viewObjectName
-          SsdtTable.Columns = cols |> List.map (fun c -> c.RefCol)
+          SsdtTable.Columns = cols |> List.map (fun c -> { c.RefCol with Name = c.Alias |> Option.defaultValue c.Name })
           SsdtTable.PrimaryKey = None
           SsdtTable.ForeignKeys = []
           SsdtTable.IsView = true }
