@@ -272,7 +272,7 @@ module MSSqlServerSsdt =
             else Other
 
         /// Case insensitive compare
-        let (^=) s1 s2 = String.Compare(s1, s2, true) = 0
+        let (^=) s1 s2 = String.Equals(s1, s2, StringComparison.OrdinalIgnoreCase)
 
         let cols = 
             viewDef.SelectSingleNode("SqlQuerySpecification").SelectSingleNode("SqlSelectClause")
@@ -357,11 +357,8 @@ module MSSqlServerSsdt =
           SsdtTable.IsView = true }
 
     let rec findAllScriptsInDir (dir: IO.DirectoryInfo) =
-        let sqlFiles = dir.EnumerateFiles("*.sql")
-        match dir.EnumerateDirectories() |> Seq.toList with
-        | [] -> sqlFiles
-        | subDirs -> Seq.append sqlFiles (subDirs |> Seq.collect findAllScriptsInDir)
-        
+        dir.EnumerateFiles("*.sql", IO.SearchOption.AllDirectories)
+                
     let readFile (file: System.IO.FileInfo) =
         IO.File.ReadAllText(file.FullName)
 
