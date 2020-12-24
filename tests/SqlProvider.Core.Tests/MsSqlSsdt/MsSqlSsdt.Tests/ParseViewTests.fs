@@ -26,7 +26,7 @@ let employeeContactTableSql =
 let employeeViewSql =
     "CREATE VIEW [dbo].[v_Employee]
     AS  
-    SELECT Employee_Details.Emp_Id, Emp_Name, [DBO].employee_details.emp_salary, [dbo].Employee_Contact.MobileNo
+    SELECT Employee_Details.Emp_Id, Emp_Name, [DBO].employee_details.emp_salary, [dbo].Employee_Contact.MobileNo AS MobilePhone
     FROM [dbo].Employee_Details   
     LEFT OUTER JOIN [dbo].Employee_Contact ON
     dbo.Employee_Details.Emp_Id = dbo.Employee_Contact.Emp_Id  

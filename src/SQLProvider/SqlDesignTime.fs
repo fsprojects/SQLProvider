@@ -61,9 +61,9 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
                         if ssdtPath = "" then failwith "No SsdtPath was specified."
-                        elif not (System.IO.Directory.Exists ssdtPath) then failwithf "The specified SsdtPath does not exist: '%s'" ssdtPath
+                        elif not (IO.Directory.Exists ssdtPath || IO.File.Exists ssdtPath) then failwithf "The specified SsdtPath does not exist: '%s'" ssdtPath
                         elif resolutionPath = "" then failwith "No ResolutionPath was specified."
-                        elif not (System.IO.Directory.Exists resolutionPath) then failwithf "The specified ResolutionPath does not exist: '%s'" resolutionPath
+                        elif not (IO.Directory.Exists resolutionPath) then failwithf "The specified ResolutionPath does not exist: '%s'" resolutionPath
                         else Some Stubs.connection
                     | _ ->
                         match conString, conStringName with
