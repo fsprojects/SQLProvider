@@ -72,6 +72,9 @@
     <Build Include="dbo\Tables\Users.sql" />
     <Build Include="dbo\Tables\ProjectTaskCategories.sql" />
 	<Build Include="dbo\Views\v_Employee.sql" />
+	<Build Include="dbo\StoredProcedures\uspLogError.sql" />
+	<Build Include="dbo\StoredProcedures\uspPrintError.sql" />
+	<Build Include="dbo\StoredProcedures\uspSelectAllCustomers.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Scripts\Users\PopulateUsers.sql" />

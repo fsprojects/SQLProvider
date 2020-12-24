@@ -34,7 +34,7 @@ This is required for the SSDT provider to work. Both absolute and relative paths
 
 *)
 [<Literal>]
-let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/"
+let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/SampleProject.sqlproj"
 
 (**
 ### Resolution Path (required)
@@ -80,7 +80,7 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 
 *)
 [<Literal>]
-let allowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, Users"
+let exampleAllowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, Users"
 
 (**
 
@@ -98,7 +98,6 @@ type DB = SqlDataProvider<
 //DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache
 
 let ctx = DB.GetDataContext()
-
 
 (**
 ### Employee Contact / Details example
@@ -142,7 +141,6 @@ let employeeView =
         for v in ctx.Dbo.VEmployee do
         select (v.EmpId, v.MobilePhone, v.EmpName, v.EmpSalary)
     }
-
 
 (**
 ### An example of getting table column values
@@ -203,9 +201,6 @@ For example, a view column that is wrapped in a COALLESCE() function will show a
 (This limitation can possibly be remedied with some more time spent in the parser).
 	* Some view columns may be ignored (missing) if they can not be properly parsed
 For example, more work needs to be done on the parser to handle WITH common table expressions, or anything other than a simple query.
-
-### Procedures
-* Stored procs are not currently implemented
 
 ### Functions
 * Functions are not currently implemented

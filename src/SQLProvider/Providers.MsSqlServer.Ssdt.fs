@@ -16,6 +16,7 @@ module MSSqlServerSsdt =
     type SsdtSchema = {
         Tables: SsdtTable list
         TryGetTableByName: string -> SsdtTable option
+        StoredProcs: SsdtStoredProc list
     }
     and SsdtTable = {
         Schema: string
@@ -54,6 +55,17 @@ module MSSqlServerSsdt =
         Name: string
         Alias: string option
         RefCol: SsdtColumn
+    }
+    and SsdtStoredProc = {
+        Schema: string
+        Name: string
+        Parameters: SsdtStoredProcParam list
+    }
+    and SsdtStoredProcParam = {
+        Name: string
+        DataType: string
+        Length: int option
+        IsOutput: bool
     }
 
     let typeMappingsByName =
@@ -104,6 +116,11 @@ module MSSqlServerSsdt =
 
     let tryFindMapping (dataType: string) =
         typeMappingsByName.TryFind (dataType.ToUpper())
+
+    let tryFindMappingOrVariant (dataType: string) =
+        match typeMappingsByName.TryFind (dataType.ToUpper()) with
+        | Some tm -> tm
+        | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
 
     /// Dynamically loads the "Microsoft.SqlServer.Management.SqlParser" assembly and returns a table script parser functions.
     let buildDynamicTableScriptParser =
@@ -356,7 +373,28 @@ module MSSqlServerSsdt =
           SsdtTable.ForeignKeys = []
           SsdtTable.IsView = true }
 
-    let rec findAllScriptsInDir (dir: IO.DirectoryInfo) =
+    /// Analyzes Microsoft SQL Parser XML results and returns an SsdtView model.
+    let parseStoredProcSchemaXml (spSchemaXml: string) = 
+        let doc = spSchemaXml |> toXmlDoc
+        let spDef = doc |> node "/SqlScript/SqlBatch/SqlCreateProcedureStatement/SqlProcedureDefinitionForCreate"
+        let objId = spDef |> node "SqlObjectIdentifier"
+        let spSchema, spName = objId |> att "SchemaName", objId |> att "ObjectName"        
+        let parameters =
+            spDef
+            |> nodes "SqlParameterDeclaration"
+            |> Seq.map (fun paramDec ->
+                let dataSpec = paramDec |> node "SqlDataTypeSpecification"
+                { Name = paramDec |> att "Name"
+                  DataType = dataSpec |> node "SqlDataType" |> att "ObjectIdentifier"
+                  Length = dataSpec |> attMaybe "Argument1" |> Option.map int
+                  IsOutput = paramDec |> att "IsOutput" = "True" }
+            )
+        { Schema = spSchema
+          Name = spName
+          Parameters = parameters |> Seq.toList }
+        
+
+    let findAllScriptsInDir (dir: IO.DirectoryInfo) =
         dir.EnumerateFiles("*.sql", IO.SearchOption.AllDirectories)
                 
     let readFile (file: System.IO.FileInfo) =
@@ -385,22 +423,27 @@ module MSSqlServerSsdt =
     type AnalyzedXml =
         | TableXml of xml: string
         | ViewXml of xml: string
+        | StoredProcXml of xml: string
         | UnsupportedScript
 
     let analyzeXml (xml: string) =
         if xml.Contains("<SqlCreateTableStatement") then TableXml xml
         elif xml.Contains("<SqlCreateViewStatement") then ViewXml xml
+        elif xml.Contains("<SqlCreateProcedureStatement") then StoredProcXml xml
         else UnsupportedScript
 
     let parseScripts (scripts: AnalyzedXml list) =
         let tableXmls = scripts |> List.choose (function | TableXml s -> Some s | _ -> None)
         let viewXmls = scripts |> List.choose (function | ViewXml s -> Some s | _ -> None)
+        let spXmls = scripts |> List.choose (function | StoredProcXml s -> Some s | _ -> None)
         let tables = tableXmls |> List.map parseTableSchemaXml
         let views = viewXmls |> List.map (parseViewSchemaXml tables)
+        let storedProcs = spXmls |> List.map parseStoredProcSchemaXml
         let tablesAndViews = tables @ views
         let tablesByName = tablesAndViews |> List.map (fun t -> t.Name, t) |> Map.ofList
         { SsdtSchema.Tables = tablesAndViews
-          SsdtSchema.TryGetTableByName = tablesByName.TryFind }
+          SsdtSchema.TryGetTableByName = tablesByName.TryFind
+          SsdtSchema.StoredProcs = storedProcs }
 
     let findScripts ssdtPath =
         match ssdtPath with
@@ -489,8 +532,8 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
             ssdtSchema.Value.Tables
             |> Seq.map MSSqlServerSsdt.ssdtTableToTable
-            |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
             |> Seq.filter filterByTableNames
+            |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
             |> Seq.toList
 
         member __.GetPrimaryKey(table) =
@@ -549,7 +592,33 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                 | None -> [], []
             )
 
-        member __.GetSprocs(con) = [] // Not implemented for SSDT
+        member __.GetSprocs(con) =
+            ssdtSchema.Value.StoredProcs
+            |> List.mapi (fun idx sp ->
+                let inParams =
+                    sp.Parameters
+                    |> List.map (fun p ->
+                        { Name = p.Name
+                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
+                          Direction = ParameterDirection.Input
+                          Length = p.Length
+                          Ordinal = idx }
+                    )
+                let outParams =
+                    sp.Parameters
+                    |> List.filter (fun p -> p.IsOutput)
+                    |> List.mapi (fun idx p ->
+                        { Name = p.Name
+                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
+                          Direction = ParameterDirection.Output
+                          Length = p.Length
+                          Ordinal = idx }
+                    )
+
+                let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = String.Empty; }
+
+                Root("Procedures", Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
+            )
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
         member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
