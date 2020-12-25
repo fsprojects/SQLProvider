@@ -27,35 +27,39 @@ let dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER_SSDT
 (**
 ### SSDT Path (required)
 
-Path to the directory containing the SSDT project (.sqlproj). The provider will search for table scripts via '{SsdtPath}\{schemaDir}\Tables\*.sql'.
+The SsdtPath can either point directly to the SSDT Project File (.sqlproj), or it can point to a root folder that contains subdirectories and .sql files.
+If it points to a .sqlproj file, scripts that are set to Build will be parsed and analyzed.
+If it points to a folder, that folder will be recursively scanned for .sql files to be parsed and analyzed.
 This is required for the SSDT provider to work. Both absolute and relative paths are supported.
 
 *)
 [<Literal>]
-let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/"
+let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/SampleProject.sqlproj"
 
 (**
 ### Resolution Path (required)
 
 Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.
-
-#### Setting the ResolutionPath
 If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.
 
-**Instructions for adding to a netstandard project in Visual Studio 2019:**
+*)
+
+[<Literal>]
+let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/Microsoft.SqlServer.Management.SqlParser/lib/netstandard2.0"
+
+(**
+
+#### Instructions for resolve SqlParser dll in a netstandard project in Visual Studio 2019:
 * Add **'Microsoft.SqlServer.Management.SqlParser'** to the project via NuGet Package Manager.
 * After installing, expand Dependencies/Packages for your project, click on the **'Microsoft.SqlServer.Management.SqlParser'** package and view the 'Path' property to find the location. (It should be stored in the [NuGet global-packages folder](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders).)
 * Browse to the location, then open the '**lib/netstandard2.0**' folder and copy the **'Microsoft.SqlServer.Management.SqlParser.dll'** assembly.
 * Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
 * Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
 * Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
-    [<Literal>]
-    let resPath = __SOURCE_DIRECTORY__ + "/SSDT"
-
-
 *)
+
 [<Literal>]
-let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/Microsoft.SqlServer.Management.SqlParser/lib/netstandard2.0"
+let exampleResPath = __SOURCE_DIRECTORY__ + "/SSDT"
 
 (**
 ### Use Option Types
@@ -76,7 +80,7 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 
 *)
 [<Literal>]
-let allowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, Users"
+let exampleAllowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, Users"
 
 (**
 
@@ -84,16 +88,59 @@ let allowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, Users"
 
 *)
  
-type sql = SqlDataProvider<
+type DB = SqlDataProvider<
                 dbVendor
                 ,SsdtPath = ssdtPath
                 ,ResolutionPath = resPath
             >
 
 // To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.
-//sql.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache
+//DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache
 
-let ctx = sql.GetDataContext()
+let ctx = DB.GetDataContext()
+
+(**
+### Employee Contact / Details example
+
+#### TABLE: EmployeeContact.sql
+CREATE TABLE [dbo].[EmployeeContact](  
+  [EmpId] [int] NOT NULL,  
+  [MobileNo] [nvarchar](50) NOT NULL,
+  CONSTRAINT [PK_EmployeeContact] PRIMARY KEY CLUSTERED ([EmpId] ASC)
+)
+
+#### TABLE: EmployeeDetails.sql
+CREATE TABLE [dbo].[EmployeeDetails] (  
+  [EmpId] [int] IDENTITY(1,1) NOT NULL,  
+  [EmpName] [nvarchar](50) NOT NULL,  
+  [EmpCity] [nvarchar](50) NOT NULL,  
+  [EmpSalary] [int] NOT NULL,  
+  CONSTRAINT [PK_EmployeeDetails] PRIMARY KEY CLUSTERED ([EmpId] ASC),
+  CONSTRAINT [FK_EmployeeContact_EmployeeDetails] FOREIGN KEY ([EmpId]) REFERENCES [dbo].[EmployeeContact] ([Id])
+)
+
+#### VIEW: v_Employee.sql
+CREATE VIEW [dbo].[v_Employee]
+AS  
+  SELECT EmployeeDetails.EmpId, EmpName, EmployeeDetails.EmpSalary, EmployeeContact.MobileNo as MobilePhone
+  FROM [dbo].EmployeeDetails   
+  LEFT OUTER JOIN [dbo].EmployeeContact ON
+  dbo.EmployeeDetails.Emp_Id = dbo.EmployeeContact.EmpId
+  WHERE dbo.EmployeeDetails.EmpId > 2
+*)
+
+let employeeJoin =
+    query {
+        for c in ctx.Dbo.EmployeeContact do
+        for d in c.``dbo.EmployeeDetails by Id`` do
+        select (c.EmpId, c.MobileNo, d.EmpName, d.EmpSalary)
+    }
+
+let employeeView =
+    query {
+        for v in ctx.Dbo.VEmployee do
+        select (v.EmpId, v.MobilePhone, v.EmpName, v.EmpSalary)
+    }
 
 (**
 ### An example of getting table column values
@@ -154,9 +201,6 @@ For example, a view column that is wrapped in a COALLESCE() function will show a
 (This limitation can possibly be remedied with some more time spent in the parser).
 	* Some view columns may be ignored (missing) if they can not be properly parsed
 For example, more work needs to be done on the parser to handle WITH common table expressions, or anything other than a simple query.
-
-### Procedures
-* Stored procs are not currently implemented
 
 ### Functions
 * Functions are not currently implemented
