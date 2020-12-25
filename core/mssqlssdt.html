@@ -46,29 +46,21 @@
 </tr>
 </table>
 <h3><a name="SSDT-Path-required" class="anchor" href="#SSDT-Path-required">SSDT Path (required)</a></h3>
-<p>Path to the directory containing the SSDT project (.sqlproj). The provider will search for table scripts via '{SsdtPath}{schemaDir}\Tables*.sql'.
+<p>The SsdtPath can either point directly to the SSDT Project File (.sqlproj), or it can point to a root folder that contains subdirectories and .sql files.
+If it points to a .sqlproj file, scripts that are set to Build will be parsed and analyzed.
+If it points to a folder, that folder will be recursively scanned for .sql files to be parsed and analyzed.
 This is required for the SSDT provider to work. Both absolute and relative paths are supported.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 10)" onmouseover="showTip(event, 'fs5', 10)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">ssdtPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../files/mssqlssdt/SSDT Project/&quot;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">ssdtPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../files/mssqlssdt/SSDT Project/SampleProject.sqlproj&quot;</span>
 </code></pre></td>
 </tr>
 </table>
 <h3><a name="Resolution-Path-required" class="anchor" href="#Resolution-Path-required">Resolution Path (required)</a></h3>
-<p>Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.</p>
-<h4><a name="Setting-the-ResolutionPath" class="anchor" href="#Setting-the-ResolutionPath">Setting the ResolutionPath</a></h4>
-<p>If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.</p>
-<p><strong>Instructions for adding to a netstandard project in Visual Studio 2019:</strong>
-<em> Add </em><em>'Microsoft.SqlServer.Management.SqlParser'</em><em> to the project via NuGet Package Manager.
-</em> After installing, expand Dependencies/Packages for your project, click on the <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> package and view the 'Path' property to find the location. (It should be stored in the <a href="https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders">NuGet global-packages folder</a>.)
-<em> Browse to the location, then open the '</em><em>lib/netstandard2.0</em><em>' folder and copy the </em><em>'Microsoft.SqlServer.Management.SqlParser.dll'</em><em> assembly.
-</em> Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
-<em> Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
-</em> Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
-[<Literal>]
-let resPath = <strong>SOURCE_DIRECTORY</strong> + "/SSDT"</p>
+<p>Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.
+If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
@@ -77,13 +69,30 @@ let resPath = <strong>SOURCE_DIRECTORY</strong> + "/SSDT"</p>
 </code></pre></td>
 </tr>
 </table>
+<h4><a name="Instructions-for-resolve-SqlParser-dll-in-a-netstandard-project-in-Visual-Studio-2019" class="anchor" href="#Instructions-for-resolve-SqlParser-dll-in-a-netstandard-project-in-Visual-Studio-2019">Instructions for resolve SqlParser dll in a netstandard project in Visual Studio 2019:</a></h4>
+<ul>
+<li>Add <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> to the project via NuGet Package Manager.</li>
+<li>After installing, expand Dependencies/Packages for your project, click on the <strong>'Microsoft.SqlServer.Management.SqlParser'</strong> package and view the 'Path' property to find the location. (It should be stored in the <a href="https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders">NuGet global-packages folder</a>.)</li>
+<li>Browse to the location, then open the '<strong>lib/netstandard2.0</strong>' folder and copy the <strong>'Microsoft.SqlServer.Management.SqlParser.dll'</strong> assembly.</li>
+<li>Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).</li>
+<li>Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).</li>
+<li>Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:</li>
+</ul>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 14)" onmouseover="showTip(event, 'fs5', 14)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="id">exampleResPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">&quot;/SSDT&quot;</span>
+</code></pre></td>
+</tr>
+</table>
 <h3><a name="Use-Option-Types" class="anchor" href="#Use-Option-Types">Use Option Types</a></h3>
 <p>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 14)" onmouseover="showTip(event, 'fs5', 14)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="id">useOptTypes</span> <span class="o">=</span> <span class="k">true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 16)" onmouseover="showTip(event, 'fs5', 16)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="id">useOptTypes</span> <span class="o">=</span> <span class="k">true</span>
 </code></pre></td>
 </tr>
 </table>
@@ -94,8 +103,8 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 16)" onmouseover="showTip(event, 'fs5', 16)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="id">allowedTableNames</span> <span class="o">=</span> <span class="s">&quot;Projects, ProjectTasks, ProjectTaskCategories, Users&quot;</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 18)" onmouseover="showTip(event, 'fs5', 18)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="id">exampleAllowedTableNames</span> <span class="o">=</span> <span class="s">&quot;Projects, ProjectTasks, ProjectTaskCategories, Users&quot;</span>
 </code></pre></td>
 </tr>
 </table>
@@ -111,16 +120,66 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 <span class="l"> 9: </span>
 <span class="l">10: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs14', 18)" onmouseover="showTip(event, 'fs14', 18)" class="rt">sql</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="pn">&lt;</span>
-                <span onmouseout="hideTip(event, 'fs6', 19)" onmouseover="showTip(event, 'fs6', 19)" class="id">dbVendor</span>
-                <span class="pn">,</span><span class="id">SsdtPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 20)" onmouseover="showTip(event, 'fs10', 20)" class="id">ssdtPath</span>
-                <span class="pn">,</span><span class="id">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 21)" onmouseover="showTip(event, 'fs11', 21)" class="id">resPath</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="rt">DB</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="pn">&lt;</span>
+                <span onmouseout="hideTip(event, 'fs6', 21)" onmouseover="showTip(event, 'fs6', 21)" class="id">dbVendor</span>
+                <span class="pn">,</span><span class="id">SsdtPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 22)" onmouseover="showTip(event, 'fs10', 22)" class="id">ssdtPath</span>
+                <span class="pn">,</span><span class="id">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 23)" onmouseover="showTip(event, 'fs11', 23)" class="id">resPath</span>
             <span class="pn">&gt;</span>
 
 <span class="c">// To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.</span>
-<span class="c">//sql.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache</span>
+<span class="c">//DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 22)" onmouseover="showTip(event, 'fs15', 22)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 23)" onmouseover="showTip(event, 'fs14', 23)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="id">DB</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<h3><a name="Employee-Contact-Details-example" class="anchor" href="#Employee-Contact-Details-example">Employee Contact / Details example</a></h3>
+<h4><a name="TABLE-EmployeeContact-sql" class="anchor" href="#TABLE-EmployeeContact-sql">TABLE: EmployeeContact.sql</a></h4>
+<p>CREATE TABLE [dbo].<a href="[EmpId] [int] NOT NULL,  
+[MobileNo] [nvarchar](50) NOT NULL,
+CONSTRAINT [PK_EmployeeContact] PRIMARY KEY CLUSTERED ([EmpId] ASC)">EmployeeContact</a></p>
+<h4><a name="TABLE-EmployeeDetails-sql" class="anchor" href="#TABLE-EmployeeDetails-sql">TABLE: EmployeeDetails.sql</a></h4>
+<p>CREATE TABLE [dbo].[EmployeeDetails] (<br />
+[EmpId] [int] IDENTITY(1,1) NOT NULL,<br />
+[EmpName] [nvarchar](50) NOT NULL,<br />
+[EmpCity] [nvarchar](50) NOT NULL,<br />
+[EmpSalary] [int] NOT NULL,<br />
+CONSTRAINT [PK_EmployeeDetails] PRIMARY KEY CLUSTERED ([EmpId] ASC),
+CONSTRAINT [FK<em>EmployeeContact</em>EmployeeDetails] FOREIGN KEY ([EmpId]) REFERENCES [dbo].[EmployeeContact] ([Id])
+)</p>
+<h4><a name="VIEW-v_Employee-sql" class="anchor" href="#VIEW-v_Employee-sql">VIEW: v_Employee.sql</a></h4>
+<p>CREATE VIEW [dbo].[v_Employee]
+AS<br />
+SELECT EmployeeDetails.EmpId, EmpName, EmployeeDetails.EmpSalary, EmployeeContact.MobileNo as MobilePhone
+FROM [dbo].EmployeeDetails<br />
+LEFT OUTER JOIN [dbo].EmployeeContact ON
+dbo.EmployeeDetails.Emp_Id = dbo.EmployeeContact.EmpId
+WHERE dbo.EmployeeDetails.EmpId &gt; 2</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">employeeJoin</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs19', 28)" onmouseover="showTip(event, 'fs19', 28)" class="id">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 29)" onmouseover="showTip(event, 'fs16', 29)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 30)" onmouseover="showTip(event, 'fs20', 30)" class="id">Dbo</span><span class="pn">.</span><span class="id">EmployeeContact</span> <span class="k">do</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs21', 31)" onmouseover="showTip(event, 'fs21', 31)" class="id">d</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs19', 32)" onmouseover="showTip(event, 'fs19', 32)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 33)" onmouseover="showTip(event, 'fs20', 33)" class="id">``dbo.EmployeeDetails by Id``</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs19', 35)" onmouseover="showTip(event, 'fs19', 35)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 36)" onmouseover="showTip(event, 'fs20', 36)" class="id">EmpId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs19', 37)" onmouseover="showTip(event, 'fs19', 37)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="id">MobileNo</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs21', 39)" onmouseover="showTip(event, 'fs21', 39)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 40)" onmouseover="showTip(event, 'fs20', 40)" class="id">EmpName</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs21', 41)" onmouseover="showTip(event, 'fs21', 41)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 42)" onmouseover="showTip(event, 'fs20', 42)" class="id">EmpSalary</span><span class="pn">)</span>
+    <span class="pn">}</span>
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 43)" onmouseover="showTip(event, 'fs23', 43)" class="id">employeeView</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs18', 44)" onmouseover="showTip(event, 'fs18', 44)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs24', 45)" onmouseover="showTip(event, 'fs24', 45)" class="id">v</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 46)" onmouseover="showTip(event, 'fs16', 46)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 47)" onmouseover="showTip(event, 'fs20', 47)" class="id">Dbo</span><span class="pn">.</span><span class="id">VEmployee</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs22', 48)" onmouseover="showTip(event, 'fs22', 48)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs24', 49)" onmouseover="showTip(event, 'fs24', 49)" class="id">v</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 50)" onmouseover="showTip(event, 'fs20', 50)" class="id">EmpId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs24', 51)" onmouseover="showTip(event, 'fs24', 51)" class="id">v</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 52)" onmouseover="showTip(event, 'fs20', 52)" class="id">MobilePhone</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs24', 53)" onmouseover="showTip(event, 'fs24', 53)" class="id">v</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 54)" onmouseover="showTip(event, 'fs20', 54)" class="id">EmpName</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs24', 55)" onmouseover="showTip(event, 'fs24', 55)" class="id">v</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 56)" onmouseover="showTip(event, 'fs20', 56)" class="id">EmpSalary</span><span class="pn">)</span>
+    <span class="pn">}</span>
 </code></pre></td>
 </tr>
 </table>
@@ -130,10 +189,10 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 <span class="l">3: </span>
 <span class="l">4: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="id">users</span> <span class="o">=</span> 
-    <span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">Dbo</span><span class="pn">.</span><span class="id">Users</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 28)" onmouseover="showTip(event, 'fs19', 28)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs20', 29)" onmouseover="showTip(event, 'fs20', 29)" class="id">e</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs20', 30)" onmouseover="showTip(event, 'fs20', 30)" class="id">e</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 31)" onmouseover="showTip(event, 'fs17', 31)" class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs18', 32)" onmouseover="showTip(event, 'fs18', 32)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="id">toList</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs18', 34)" onmouseover="showTip(event, 'fs18', 34)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 35)" onmouseover="showTip(event, 'fs21', 35)" class="id">toList</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 57)" onmouseover="showTip(event, 'fs25', 57)" class="id">users</span> <span class="o">=</span> 
+    <span onmouseout="hideTip(event, 'fs16', 58)" onmouseover="showTip(event, 'fs16', 58)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 59)" onmouseover="showTip(event, 'fs20', 59)" class="id">Dbo</span><span class="pn">.</span><span class="id">Users</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs26', 60)" onmouseover="showTip(event, 'fs26', 60)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs27', 61)" onmouseover="showTip(event, 'fs27', 61)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs28', 62)" onmouseover="showTip(event, 'fs28', 62)" class="id">e</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs28', 63)" onmouseover="showTip(event, 'fs28', 63)" class="id">e</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 64)" onmouseover="showTip(event, 'fs20', 64)" class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs26', 65)" onmouseover="showTip(event, 'fs26', 65)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 66)" onmouseover="showTip(event, 'fs29', 66)" class="id">toList</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs26', 67)" onmouseover="showTip(event, 'fs26', 67)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 68)" onmouseover="showTip(event, 'fs29', 68)" class="id">toList</span>
 </code></pre></td>
 </tr>
 </table>
@@ -152,18 +211,18 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 <span class="l">12: </span>
 <span class="l">13: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 36)" onmouseover="showTip(event, 'fs22', 36)" class="id">tasksWithCategories</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs23', 37)" onmouseover="showTip(event, 'fs23', 37)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs24', 38)" onmouseover="showTip(event, 'fs24', 38)" class="id">p</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs15', 39)" onmouseover="showTip(event, 'fs15', 39)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 40)" onmouseover="showTip(event, 'fs17', 40)" class="id">Dbo</span><span class="pn">.</span><span class="id">Projects</span> <span class="k">do</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs25', 41)" onmouseover="showTip(event, 'fs25', 41)" class="id">t</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs24', 42)" onmouseover="showTip(event, 'fs24', 42)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 43)" onmouseover="showTip(event, 'fs17', 43)" class="id">``dbo.ProjectTasks by Id``</span> <span class="k">do</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs26', 44)" onmouseover="showTip(event, 'fs26', 44)" class="id">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs25', 45)" onmouseover="showTip(event, 'fs25', 45)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 46)" onmouseover="showTip(event, 'fs17', 46)" class="id">``dbo.ProjectTaskCategories by Id``</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs27', 47)" onmouseover="showTip(event, 'fs27', 47)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs24', 48)" onmouseover="showTip(event, 'fs24', 48)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 49)" onmouseover="showTip(event, 'fs17', 49)" class="id">IsActive</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs28', 50)" onmouseover="showTip(event, 'fs28', 50)" class="fn">not</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs24', 51)" onmouseover="showTip(event, 'fs24', 51)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 52)" onmouseover="showTip(event, 'fs17', 52)" class="id">IsDeleted</span><span class="pn">)</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs29', 53)" onmouseover="showTip(event, 'fs29', 53)" class="k">sortBy</span> <span onmouseout="hideTip(event, 'fs25', 54)" onmouseover="showTip(event, 'fs25', 54)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 55)" onmouseover="showTip(event, 'fs17', 55)" class="id">Sort</span>
-        <span onmouseout="hideTip(event, 'fs30', 56)" onmouseover="showTip(event, 'fs30', 56)" class="k">select</span>
-            <span class="pn">{|</span> <span class="id">Id</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 57)" onmouseover="showTip(event, 'fs25', 57)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 58)" onmouseover="showTip(event, 'fs17', 58)" class="id">Id</span>
-               <span class="id">Task</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 59)" onmouseover="showTip(event, 'fs25', 59)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 60)" onmouseover="showTip(event, 'fs17', 60)" class="id">Name</span>
-               <span class="id">Category</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 61)" onmouseover="showTip(event, 'fs26', 61)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 62)" onmouseover="showTip(event, 'fs17', 62)" class="id">Name</span>
-               <span class="id">Project</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 63)" onmouseover="showTip(event, 'fs24', 63)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 64)" onmouseover="showTip(event, 'fs17', 64)" class="id">Name</span> <span class="pn">|}</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 69)" onmouseover="showTip(event, 'fs30', 69)" class="id">tasksWithCategories</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs18', 70)" onmouseover="showTip(event, 'fs18', 70)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs31', 71)" onmouseover="showTip(event, 'fs31', 71)" class="id">p</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 72)" onmouseover="showTip(event, 'fs16', 72)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 73)" onmouseover="showTip(event, 'fs20', 73)" class="id">Dbo</span><span class="pn">.</span><span class="id">Projects</span> <span class="k">do</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs32', 74)" onmouseover="showTip(event, 'fs32', 74)" class="id">t</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs31', 75)" onmouseover="showTip(event, 'fs31', 75)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 76)" onmouseover="showTip(event, 'fs20', 76)" class="id">``dbo.ProjectTasks by Id``</span> <span class="k">do</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs19', 77)" onmouseover="showTip(event, 'fs19', 77)" class="id">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs32', 78)" onmouseover="showTip(event, 'fs32', 78)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 79)" onmouseover="showTip(event, 'fs20', 79)" class="id">``dbo.ProjectTaskCategories by Id``</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs33', 80)" onmouseover="showTip(event, 'fs33', 80)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs31', 81)" onmouseover="showTip(event, 'fs31', 81)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 82)" onmouseover="showTip(event, 'fs20', 82)" class="id">IsActive</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs34', 83)" onmouseover="showTip(event, 'fs34', 83)" class="fn">not</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs31', 84)" onmouseover="showTip(event, 'fs31', 84)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 85)" onmouseover="showTip(event, 'fs20', 85)" class="id">IsDeleted</span><span class="pn">)</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs35', 86)" onmouseover="showTip(event, 'fs35', 86)" class="k">sortBy</span> <span onmouseout="hideTip(event, 'fs32', 87)" onmouseover="showTip(event, 'fs32', 87)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 88)" onmouseover="showTip(event, 'fs20', 88)" class="id">Sort</span>
+        <span onmouseout="hideTip(event, 'fs22', 89)" onmouseover="showTip(event, 'fs22', 89)" class="k">select</span>
+            <span class="pn">{|</span> <span class="id">Id</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 90)" onmouseover="showTip(event, 'fs32', 90)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 91)" onmouseover="showTip(event, 'fs20', 91)" class="id">Id</span>
+               <span class="id">Task</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 92)" onmouseover="showTip(event, 'fs32', 92)" class="id">t</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 93)" onmouseover="showTip(event, 'fs20', 93)" class="id">Name</span>
+               <span class="id">Category</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs19', 94)" onmouseover="showTip(event, 'fs19', 94)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 95)" onmouseover="showTip(event, 'fs20', 95)" class="id">Name</span>
+               <span class="id">Project</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs31', 96)" onmouseover="showTip(event, 'fs31', 96)" class="id">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 97)" onmouseover="showTip(event, 'fs20', 97)" class="id">Name</span> <span class="pn">|}</span>
     <span class="pn">}</span>
 </code></pre></td>
 </tr>
@@ -203,10 +262,6 @@ For example, more work needs to be done on the parser to handle WITH common tabl
 </ul>
 </li>
 </ul>
-<h3><a name="Procedures" class="anchor" href="#Procedures">Procedures</a></h3>
-<ul>
-<li>Stored procs are not currently implemented</li>
-</ul>
 <h3><a name="Functions" class="anchor" href="#Functions">Functions</a></h3>
 <ul>
 <li>Functions are not currently implemented</li>
@@ -227,25 +282,30 @@ For example, more work needs to be done on the parser to handle WITH common tabl
 <div class="tip" id="fs9">Common.DatabaseProviderTypes.MSSQLSERVER_SSDT: Common.DatabaseProviderTypes = 9</div>
 <div class="tip" id="fs10">val ssdtPath : string</div>
 <div class="tip" id="fs11">val resPath : string</div>
-<div class="tip" id="fs12">val useOptTypes : bool</div>
-<div class="tip" id="fs13">val allowedTableNames : string</div>
-<div class="tip" id="fs14">type sql = obj</div>
-<div class="tip" id="fs15">val ctx : obj</div>
-<div class="tip" id="fs16">val users : obj list list</div>
-<div class="tip" id="fs17"></div>
-<div class="tip" id="fs18">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
-<div class="tip" id="fs19">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; source:seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;</div>
-<div class="tip" id="fs20">val e : obj</div>
-<div class="tip" id="fs21">val toList : source:seq&lt;&#39;T&gt; -&gt; &#39;T list</div>
-<div class="tip" id="fs22">val tasksWithCategories : Linq.IQueryable&lt;{| Category: obj; Id: obj; Project: obj; Task: obj |}&gt;</div>
-<div class="tip" id="fs23">val query : Linq.QueryBuilder</div>
-<div class="tip" id="fs24">val p : obj</div>
-<div class="tip" id="fs25">val t : obj</div>
-<div class="tip" id="fs26">val c : obj</div>
-<div class="tip" id="fs27">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where</div>
-<div class="tip" id="fs28">val not : value:bool -&gt; bool</div>
-<div class="tip" id="fs29">custom operation: sortBy (&#39;Key)<br /><br />Calls Linq.QueryBuilder.SortBy</div>
-<div class="tip" id="fs30">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
+<div class="tip" id="fs12">val exampleResPath : string</div>
+<div class="tip" id="fs13">val useOptTypes : bool</div>
+<div class="tip" id="fs14">val exampleAllowedTableNames : string</div>
+<div class="tip" id="fs15">type DB = obj</div>
+<div class="tip" id="fs16">val ctx : obj</div>
+<div class="tip" id="fs17">val employeeJoin : Linq.IQueryable&lt;obj * obj * obj * obj&gt;</div>
+<div class="tip" id="fs18">val query : Linq.QueryBuilder</div>
+<div class="tip" id="fs19">val c : obj</div>
+<div class="tip" id="fs20"></div>
+<div class="tip" id="fs21">val d : obj</div>
+<div class="tip" id="fs22">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
+<div class="tip" id="fs23">val employeeView : Linq.IQueryable&lt;obj * obj * obj * obj&gt;</div>
+<div class="tip" id="fs24">val v : obj</div>
+<div class="tip" id="fs25">val users : obj list list</div>
+<div class="tip" id="fs26">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs27">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; source:seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;</div>
+<div class="tip" id="fs28">val e : obj</div>
+<div class="tip" id="fs29">val toList : source:seq&lt;&#39;T&gt; -&gt; &#39;T list</div>
+<div class="tip" id="fs30">val tasksWithCategories : Linq.IQueryable&lt;{| Category: obj; Id: obj; Project: obj; Task: obj |}&gt;</div>
+<div class="tip" id="fs31">val p : obj</div>
+<div class="tip" id="fs32">val t : obj</div>
+<div class="tip" id="fs33">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where</div>
+<div class="tip" id="fs34">val not : value:bool -&gt; bool</div>
+<div class="tip" id="fs35">custom operation: sortBy (&#39;Key)<br /><br />Calls Linq.QueryBuilder.SortBy</div>
 
         </div>
         <div class="span3">
