@@ -432,7 +432,9 @@ module MSSqlServerSsdt =
     let analyzeXml (sql: IO.FileInfo) (xml: string) =
         if xml.Contains("<SqlCreateTableStatement") then TableXml (sql, xml)
         elif xml.Contains("<SqlCreateViewStatement") then ViewXml (sql, xml)
-        elif xml.Contains("<SqlCreateProcedureStatement") then StoredProcXml (sql, xml)
+        elif xml.Contains("<SqlCreateProcedureStatement") then
+            if xml.Contains("<SqlTableVariableRefExpression") then UnsupportedScript // Table Valued Parameters are not supported
+            else StoredProcXml (sql, xml)
         else UnsupportedScript
 
     let parseScripts (scripts: AnalyzedXml list) =
@@ -441,9 +443,9 @@ module MSSqlServerSsdt =
             try parse xml
             with ex -> failwithf "Unable to parse file '%s'.\n%s" file.Name ex.Message
 
-        let tableXmls = scripts |> List.choose (function | TableXml (f,xml) -> Some (f,xml) | _ -> None)
-        let viewXmls = scripts |> List.choose (function | ViewXml (f,xml) -> Some (f,xml) | _ -> None)
-        let spXmls = scripts |> List.choose (function | StoredProcXml (f,xml) -> Some (f,xml) | _ -> None)
+        let tableXmls = scripts |> List.choose (function | TableXml (sql,xml) -> Some (sql,xml) | _ -> None)
+        let viewXmls = scripts |> List.choose (function | ViewXml (sql,xml) -> Some (sql,xml) | _ -> None)
+        let spXmls = scripts |> List.choose (function | StoredProcXml (sql,xml) -> Some (sql,xml) | _ -> None)
         let tables = tableXmls |> List.map (tryParse parseTableSchemaXml)
         let views = viewXmls |> List.map (tryParse (parseViewSchemaXml tables))
         let storedProcs = spXmls |> List.map (tryParse parseStoredProcSchemaXml)
@@ -609,7 +611,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                     |> List.map (fun p ->
                         { Name = p.Name
                           TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
-                          Direction = ParameterDirection.Input
+                          Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
                           Length = p.Length
                           Ordinal = idx }
                     )
@@ -619,7 +621,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
                     |> List.mapi (fun idx p ->
                         { Name = p.Name
                           TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
-                          Direction = ParameterDirection.Output
+                          Direction = ParameterDirection.InputOutput
                           Length = p.Length
                           Ordinal = idx }
                     )
