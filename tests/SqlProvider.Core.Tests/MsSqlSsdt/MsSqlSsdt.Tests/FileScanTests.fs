@@ -15,7 +15,12 @@ let ``Should Recursively Find Scripts`` () =
 
 [<Test>]
 let ``Should Find Table Scripts`` () =
-    let scripts = ssdtDirectory |> IO.DirectoryInfo |> findAllScriptsInDir |> Seq.map (readFile >> Utils.sqlToSchemaXml >> analyzeXml) |> Seq.toList
+    let scripts =
+        ssdtDirectory
+        |> IO.DirectoryInfo
+        |> findAllScriptsInDir
+        |> Seq.map (fun sql -> sql |> readFile |> Utils.sqlToSchemaXml |> analyzeXml sql)
+        |> Seq.toList
     printfn "%A" scripts
     Assert.IsTrue(scripts.Length > 0)
 

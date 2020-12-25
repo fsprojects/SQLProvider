@@ -203,7 +203,10 @@ module MSSqlServerSsdt =
                 let identity = 
                     cd.SelectSingleNode("SqlColumnIdentity") 
                     |> Option.ofObj 
-                    |> Option.map (fun n -> { Increment = n |> att "Increment" |> int; Seed = n |> att "Seed" |> int })
+                    |> Option.map (fun n ->
+                        { Increment = n |> attMaybe "Increment" |> Option.map int |> Option.defaultValue 1
+                          Seed = n |> attMaybe "Seed" |> Option.map int |> Option.defaultValue 1 }
+                    )
                 let hasDefaultConstraint = cd.SelectSingleNode("SqlDefaultConstraint") <> null
 
                 { SsdtColumn.Name= colName
@@ -421,26 +424,32 @@ module MSSqlServerSsdt =
         else failwithf "SsdtPath must point to a .sqlproj file or a root folder."
 
     type AnalyzedXml =
-        | TableXml of xml: string
-        | ViewXml of xml: string
-        | StoredProcXml of xml: string
+        | TableXml of file: IO.FileInfo * xml: string
+        | ViewXml of file: IO.FileInfo * xml: string
+        | StoredProcXml of file: IO.FileInfo * xml: string
         | UnsupportedScript
 
-    let analyzeXml (xml: string) =
-        if xml.Contains("<SqlCreateTableStatement") then TableXml xml
-        elif xml.Contains("<SqlCreateViewStatement") then ViewXml xml
-        elif xml.Contains("<SqlCreateProcedureStatement") then StoredProcXml xml
+    let analyzeXml (sql: IO.FileInfo) (xml: string) =
+        if xml.Contains("<SqlCreateTableStatement") then TableXml (sql, xml)
+        elif xml.Contains("<SqlCreateViewStatement") then ViewXml (sql, xml)
+        elif xml.Contains("<SqlCreateProcedureStatement") then StoredProcXml (sql, xml)
         else UnsupportedScript
 
     let parseScripts (scripts: AnalyzedXml list) =
-        let tableXmls = scripts |> List.choose (function | TableXml s -> Some s | _ -> None)
-        let viewXmls = scripts |> List.choose (function | ViewXml s -> Some s | _ -> None)
-        let spXmls = scripts |> List.choose (function | StoredProcXml s -> Some s | _ -> None)
-        let tables = tableXmls |> List.map parseTableSchemaXml
-        let views = viewXmls |> List.map (parseViewSchemaXml tables)
-        let storedProcs = spXmls |> List.map parseStoredProcSchemaXml
+        /// Wrap each file parser in a try/catch with a friendly ex to tell user which .sql file failed
+        let tryParse parse (file: IO.FileInfo, xml: string) =
+            try parse xml
+            with ex -> failwithf "Unable to parse file '%s'.\n%s" file.Name ex.Message
+
+        let tableXmls = scripts |> List.choose (function | TableXml (f,xml) -> Some (f,xml) | _ -> None)
+        let viewXmls = scripts |> List.choose (function | ViewXml (f,xml) -> Some (f,xml) | _ -> None)
+        let spXmls = scripts |> List.choose (function | StoredProcXml (f,xml) -> Some (f,xml) | _ -> None)
+        let tables = tableXmls |> List.map (tryParse parseTableSchemaXml)
+        let views = viewXmls |> List.map (tryParse (parseViewSchemaXml tables))
+        let storedProcs = spXmls |> List.map (tryParse parseStoredProcSchemaXml)
         let tablesAndViews = tables @ views
         let tablesByName = tablesAndViews |> List.map (fun t -> t.Name, t) |> Map.ofList
+
         { SsdtSchema.Tables = tablesAndViews
           SsdtSchema.TryGetTableByName = tablesByName.TryFind
           SsdtSchema.StoredProcs = storedProcs }
@@ -453,7 +462,7 @@ module MSSqlServerSsdt =
     let buildSsdtSchema dynamicScriptParser ssdtPath =
         ssdtPath
         |> findScripts
-        |> Seq.map (readFile >> dynamicScriptParser >> analyzeXml)
+        |> Seq.map (fun sql -> sql |> readFile |> dynamicScriptParser |> analyzeXml sql)
         |> Seq.toList
         |> parseScripts
 

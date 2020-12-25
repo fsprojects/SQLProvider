@@ -16,13 +16,20 @@ let enrollmentTableScript =
         REFERENCES [dbo].[Student] ([StudentID]) ON DELETE CASCADE
     )"
 
-[<Test>]
-let ``Print Enrollment Table AST`` () =
-    enrollmentTableScript |> printSchemaXml
+let defaultIdentity =
+    "CREATE TABLE [dbo].[PropertyDamaged] (
+        [Id] INT NOT NULL PRIMARY KEY IDENTITY,
+        [RecordId]    BIGINT         NULL,
+        [Description] NVARCHAR (255) NULL
+    )"
 
 [<Test>]
-let ``Print Enrollment Table Model`` () =
-    enrollmentTableScript |> printTableModel
+let ``Print AST`` () =
+    defaultIdentity |> printSchemaXml
+
+[<Test>]
+let ``Print Model`` () =
+    defaultIdentity |> printTableModel
 
 [<Test>]
 let ``Verify Enrollment Table Columns``() =
