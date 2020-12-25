@@ -18,6 +18,8 @@
     <Compile Include="Utils.fs" />
     <Compile Include="ParseTableTests.fs" />
     <Compile Include="ParseViewTests.fs" />
+    <Compile Include="ParseStoredProcTests.fs" />
+    <Compile Include="FileScanTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

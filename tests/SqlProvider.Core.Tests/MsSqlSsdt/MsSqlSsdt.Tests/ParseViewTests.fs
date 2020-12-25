@@ -5,32 +5,30 @@ open FSharp.Data.Sql.Providers.MSSqlServerSsdt
 open Utils
 
 let employeeDetailsTableSql =
-    "CREATE TABLE [dbo].[Employee_Details]
-    (  
-        [Emp_Id] [int] IDENTITY(1,1) NOT NULL,  
-        [Emp_Name] [nvarchar](50) NOT NULL,  
-        [Emp_City] [nvarchar](50) NOT NULL,  
-        [Emp_Salary] [int] NOT NULL,  
-     CONSTRAINT [PK_Employee_Details] PRIMARY KEY CLUSTERED   
-       (  
-        [Emp_Id] ASC  
-       )"
+    "CREATE TABLE [dbo].[EmployeeDetails] (  
+        [EmpId] [int] IDENTITY(1,1) NOT NULL,  
+        [EmpName] [nvarchar](50) NOT NULL,  
+        [EmpCity] [nvarchar](50) NOT NULL,  
+        [EmpSalary] [int] NOT NULL,  
+        CONSTRAINT [PK_EmployeeDetails] PRIMARY KEY CLUSTERED ([EmpId] ASC),
+        CONSTRAINT [FK_EmployeeContact_EmployeeDetails] FOREIGN KEY ([EmpId]) REFERENCES [dbo].[EmployeeContact] ([Id])
+    )"
 
 let employeeContactTableSql =
-    "CREATE TABLE [dbo].[Employee_Contact]
-    (  
-        [Emp_Id] [int] NOT NULL,  
-        [MobileNo] [nvarchar](50) NOT NULL  
-    ) ON [PRIMARY]"
+    "CREATE TABLE [dbo].[EmployeeContact](  
+        [EmpId] [int] NOT NULL,  
+        [MobileNo] [nvarchar](50) NOT NULL,
+        CONSTRAINT [PK_EmployeeContact] PRIMARY KEY CLUSTERED ([EmpId] ASC)
+    )"
 
 let employeeViewSql =
     "CREATE VIEW [dbo].[v_Employee]
     AS  
-    SELECT Employee_Details.Emp_Id, Emp_Name, [DBO].employee_details.emp_salary, [dbo].Employee_Contact.MobileNo
-    FROM [dbo].Employee_Details   
-    LEFT OUTER JOIN [dbo].Employee_Contact ON
-    dbo.Employee_Details.Emp_Id = dbo.Employee_Contact.Emp_Id  
-    WHERE dbo.Employee_Details.Emp_Id > 2"
+    SELECT EmployeeDetails.EmpId, EmpName, EmployeeDetails.EmpSalary, EmployeeContact.MobileNo as MobilePhone
+    FROM [dbo].EmployeeDetails   
+    LEFT OUTER JOIN [dbo].EmployeeContact ON
+    dbo.EmployeeDetails.Emp_Id = dbo.EmployeeContact.EmpId
+    WHERE dbo.EmployeeDetails.EmpId > 2"
 
 [<Test>]
 let ``Print Employee View AST`` () =
@@ -58,7 +56,7 @@ let ``Print Employee View Model`` () =
 
 [<Test>]
 let ``Verify View Columns`` () =
-    let expected = ["Emp_Id"; "Emp_Name"; "Emp_Salary"; "MobileNo"]
+    let expected = ["EmpId"; "EmpName"; "EmpSalary"; "MobilePhone"]
     Assert.AreEqual(
         expected,
         viewModel.Columns |> List.map (fun c -> c.Name)
