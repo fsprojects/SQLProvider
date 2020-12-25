@@ -1,3 +1,6 @@
+### 1.1.97 - 25.12.2020
+* SSDT improvements, views, sprocs PR #703
+
 ### 1.1.96 - 21.12.2020
 * SSDT improvements PR #702
 
