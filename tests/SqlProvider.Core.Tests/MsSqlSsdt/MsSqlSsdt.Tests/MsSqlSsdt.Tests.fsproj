@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Remove="Sql\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.DacFx" Version="150.4897.1" />
     <PackageReference Include="Microsoft.SqlServer.Management.SqlParser" Version="160.20216.14" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
@@ -15,16 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utils.fs" />
-    <Compile Include="ParseTableTests.fs" />
-    <Compile Include="ParseViewTests.fs" />
-    <Compile Include="ParseStoredProcTests.fs" />
-    <Compile Include="FileScanTests.fs" />
+    <Compile Include="Dacpac\Utils.fs" />
+    <Compile Include="Dacpac\ParseTableTests.fs" />
     <Compile Include="Program.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\SQLProvider\SqlProvider.fsproj" />
   </ItemGroup>
 
 </Project>
