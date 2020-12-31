@@ -40,15 +40,12 @@ and SsdtTable = {
     IsView: bool
 }
 and SsdtColumn = {
+    FullName: string
     Name: string
     DataType: string
     AllowNulls: bool
-    Identity: IdentitySpec option
+    IsIdentity: bool
     HasDefault: bool
-}
-and IdentitySpec = {
-    Seed: int
-    Increment: int
 }
 and ForeignKeyConstraint = {
     Name: string
@@ -62,7 +59,11 @@ and RefTable = {
 }
 and PrimaryKeyConstraint = {
     Name: string
-    Columns: string list
+    Columns: PrimaryKeyColumnRef list
+}
+and PrimaryKeyColumnRef = {
+    Name: string
+    FullName: string
 }
 and SsdtViewColumn = {
     Name: string
