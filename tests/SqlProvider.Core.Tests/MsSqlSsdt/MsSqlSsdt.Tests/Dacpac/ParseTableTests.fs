@@ -17,19 +17,15 @@ let parse() =
     let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
 
     let parsePrimaryKeyConstraint (pkElement: XmlNode) =
-        let fullName = pkElement |> att "Name"
+        let name = pkElement |> att "Name"
         let relationship = pkElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "ColumnSpecifications")
         let columns =
             relationship
             |> nodes "x:Entry"
             |> Seq.map (node "x:Element/x:Relationship/x:Entry/x:References" >> att "Name")
-            |> Seq.map (fun full ->
-                { PrimaryKeyColumnRef.FullName = full
-                  PrimaryKeyColumnRef.Name = full.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
-                }
-            )
+            |> Seq.map (fun full -> { ConstraintColumn.FullName = full })
             |> Seq.toList
-        { PrimaryKeyConstraint.Name = fullName
+        { PrimaryKeyConstraint.Name = name
           PrimaryKeyConstraint.Columns = columns }
 
     let pkConstraintsByColumn =
@@ -39,6 +35,28 @@ let parse() =
         |> Seq.map parsePrimaryKeyConstraint
         |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
         |> Seq.toList
+
+    let parseForeignKeyConstraint (fkElement: XmlNode) =
+        let name = fkElement |> att "Name"
+        let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+        let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
+        let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+        let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
+        { ForeignKeyConstraint.Name = name
+          ForeignKeyConstraint.DefiningTable =
+            { RefTable.FullName = localTable
+              RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
+          ForeignKeyConstraint.ForeignTable =
+            { RefTable.FullName = foreignTable
+              RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
+
+    let fkConstraintsByTable =
+        model
+        |> nodes "x:Element"
+        |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
+        |> Seq.map parseForeignKeyConstraint
+        |> Seq.map (fun fk -> fk.DefiningTable.FullName, fk)
+        |> Seq.toList        
 
     let parseColumn (colEntry: XmlNode) =
         let el = colEntry |> node "x:Element"
@@ -59,7 +77,7 @@ let parse() =
             None // Unsupported column type
 
     let parseTable (tblElement: XmlNode) =
-        let fullName = tblElement |> att "Name" |> removeBrackets
+        let fullName = tblElement |> att "Name"
         let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
         let columns = relationship |> nodes "x:Entry" |> Seq.choose parseColumn |> Seq.toList
         let nameParts = fullName.Split([|'.'|], StringSplitOptions.RemoveEmptyEntries)
@@ -68,12 +86,13 @@ let parse() =
             |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
             |> List.tryHead
             |> Option.map snd
-        { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
-          SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> ""
+        { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema |> removeBrackets | _ -> failwithf "Unable to parse table '%s' schema." fullName
+          SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name |> removeBrackets | _ -> failwithf "Unable to parse table '%s' name." fullName
+          SsdtTable.FullName = fullName
           SsdtTable.Columns = columns
           SsdtTable.IsView = false
           SsdtTable.PrimaryKey = primaryKey
-          SsdtTable.ForeignKeys = []
+          SsdtTable.ForeignKeys = fkConstraintsByTable |> List.filter (fun (tblNm, fk) -> tblNm = fullName) |> List.map snd
         }
 
     let tables = 

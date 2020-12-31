@@ -32,6 +32,7 @@ type SsdtSchema = {
     StoredProcs: SsdtStoredProc list
 }
 and SsdtTable = {
+    FullName: string
     Schema: string
     Name: string
     Columns: SsdtColumn list
@@ -49,20 +50,18 @@ and SsdtColumn = {
 }
 and ForeignKeyConstraint = {
     Name: string
-    Columns: string list
-    References: RefTable
+    DefiningTable: RefTable
+    ForeignTable: RefTable
 }
 and RefTable = {
-    Schema: string
-    Table: string
-    Columns: string list
+    FullName: string
+    Columns: ConstraintColumn list
 }
 and PrimaryKeyConstraint = {
     Name: string
-    Columns: PrimaryKeyColumnRef list
+    Columns: ConstraintColumn list
 }
-and PrimaryKeyColumnRef = {
-    Name: string
+and ConstraintColumn = {
     FullName: string
 }
 and SsdtViewColumn = {
