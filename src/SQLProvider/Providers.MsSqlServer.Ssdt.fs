@@ -19,6 +19,7 @@ module MSSqlServerSsdt =
         Tables: SsdtTable list
         TryGetTableByName: string -> SsdtTable option
         StoredProcs: SsdtStoredProc list
+        Relationships: SsdtRelationship list
     }
     and SsdtTable = {
         FullName: string
@@ -26,7 +27,6 @@ module MSSqlServerSsdt =
         Name: string
         Columns: SsdtColumn list
         PrimaryKey: PrimaryKeyConstraint option
-        ForeignKeys: ForeignKeyConstraint list
         IsView: bool
     }
     and SsdtColumn = {
@@ -37,7 +37,7 @@ module MSSqlServerSsdt =
         IsIdentity: bool
         HasDefault: bool
     }
-    and ForeignKeyConstraint = {
+    and SsdtRelationship = {
         Name: string
         DefiningTable: RefTable
         ForeignTable: RefTable
@@ -189,28 +189,27 @@ module MSSqlServerSsdt =
             |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
             |> Seq.toList
     
-        let parseForeignKeyConstraint (fkElement: XmlNode) =
+        let parseFkRelationship (fkElement: XmlNode) =
             let name = fkElement |> att "Name"
             let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
             let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
             let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
             let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
-            { ForeignKeyConstraint.Name = name
-              ForeignKeyConstraint.DefiningTable =
+            { SsdtRelationship.Name = name
+              SsdtRelationship.DefiningTable =
                 { RefTable.FullName = localTable
                   RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
-              ForeignKeyConstraint.ForeignTable =
+              SsdtRelationship.ForeignTable =
                 { RefTable.FullName = foreignTable
                   RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
     
-        let fkConstraintsByTable =
+        let relationships =
             model
             |> nodes "x:Element"
             |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
-            |> Seq.map parseForeignKeyConstraint
-            |> Seq.map (fun fk -> fk.DefiningTable.FullName, fk)
-            |> Seq.toList        
-    
+            |> Seq.map parseFkRelationship
+            |> Seq.toList
+                
         let parseColumn (colEntry: XmlNode) =
             let el = colEntry |> node "x:Element"
             let colType, fullName = el |> att "Type", el |> att "Name"
@@ -244,9 +243,7 @@ module MSSqlServerSsdt =
               SsdtTable.FullName = fullName
               SsdtTable.Columns = columns
               SsdtTable.IsView = false
-              SsdtTable.PrimaryKey = primaryKey
-              SsdtTable.ForeignKeys = fkConstraintsByTable |> List.filter (fun (tblNm, fk) -> tblNm = fullName) |> List.map snd
-            }
+              SsdtTable.PrimaryKey = primaryKey }
     
         let tables = 
             model
@@ -257,7 +254,8 @@ module MSSqlServerSsdt =
     
         { SsdtSchema.Tables = tables // TODO: @ views
           SsdtSchema.StoredProcs = []
-          SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm) }
+          SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm)
+          SsdtSchema.Relationships = relationships }
 
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "VIEW" else "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
@@ -280,12 +278,12 @@ module MSSqlServerSsdt =
         | None ->
             None
 
-    let fkToRelationship (fk: ForeignKeyConstraint) =
+    let fkToRelationship (childTable: SsdtTable) (fk: SsdtRelationship) =
         { Name = fk.Name
-          PrimaryTable = fk.DefiningTable.FullName
-          PrimaryKey = fk.DefiningTable.Columns.Head.Name
-          ForeignTable = fk.ForeignTable.FullName
-          ForeignKey = fk.ForeignTable.Columns.Head.Name }
+          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
+          PrimaryKey = fk.ForeignTable.Columns.Head.Name
+          ForeignTable = Table.CreateFullName(childTable.Schema, childTable.Name)
+          ForeignKey = fk.DefiningTable.Columns.Head.Name }
 
 
 
@@ -373,24 +371,29 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetRelationships(con, table) =
             let ssdtSchema = ssdtSchema.Value
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-                // The table containing the foreign key is called the child table
-                match ssdtSchema.TryGetTableByName(table.Name) with
-                | Some ssdtTbl ->
-                    let parents =
-                        ssdtTbl.ForeignKeys
-                        |> List.map MSSqlServerSsdt.fkToRelationship
+                let parents =
+                    ssdtSchema.Relationships
+                    |> List.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
+                    |> List.map (fun fk ->
+                        { Name = fk.Name
+                          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
+                          PrimaryKey = fk.ForeignTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(fk.DefiningTable.Schema, fk.DefiningTable.Name)
+                          ForeignKey = fk.DefiningTable.Columns.Head.Name }
+                    )
 
-                    let children =
-                        ssdtSchema.Tables
-                        |> Seq.choose (fun tbl -> // Get all fks that reference this table
-                            match tbl.ForeignKeys |> List.filter (fun fk -> (fk.DefiningTable.Schema, fk.DefiningTable.Name) = (table.Schema, table.Name)) with
-                            | [] -> None
-                            | _ as fks -> Some (tbl, fks)
-                        )
-                        |> Seq.collect (fun (childTable, fks) -> fks |> List.map MSSqlServerSsdt.fkToRelationship)
-                        |> Seq.toList
-                    children, parents
-                | None -> [], []
+                let children =
+                    ssdtSchema.Relationships
+                    |> List.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
+                    |> List.map (fun fk ->
+                        { Name = fk.Name
+                          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
+                          PrimaryKey = fk.ForeignTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(fk.DefiningTable.Schema, fk.DefiningTable.Name)
+                          ForeignKey = fk.DefiningTable.Columns.Head.Name }
+                    )
+
+                children, parents
             )
 
         member __.GetSprocs(con) =
