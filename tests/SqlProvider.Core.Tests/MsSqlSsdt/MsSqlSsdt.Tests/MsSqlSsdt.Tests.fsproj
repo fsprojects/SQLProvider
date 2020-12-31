@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="Dacpac\Utils.fs" />
+    <Compile Include="Dacpac\UnzipTests.fs" />
     <Compile Include="Dacpac\ParseTableTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

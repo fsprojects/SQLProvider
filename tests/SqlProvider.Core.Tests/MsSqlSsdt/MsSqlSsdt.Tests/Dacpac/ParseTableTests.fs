@@ -4,16 +4,9 @@ open System.Xml
 open Utils
 open System
 
-[<Literal>]
-let projDir = __SOURCE_DIRECTORY__
-
-let modelPath =
-    let dir = IO.DirectoryInfo(projDir).Parent.FullName
-    IO.Path.Combine(dir, @"AdventureWorks_SSDT\bin\Debug\AdventureWorks_SSDT\model.xml")
-
-let parse() =
+let parse(xml: string) =
     let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
-    let doc, node, nodes = IO.File.ReadAllText(modelPath) |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
+    let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
     let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
 
     let parsePrimaryKeyConstraint (pkElement: XmlNode) =
@@ -104,8 +97,11 @@ let parse() =
 
     tables
 
+open UnzipTests
+
 [<Test>]
 let ``Parse Dacpac Model`` () =
-    let tables = parse()
+    let xml = extractModelXml dacPacPath
+    let tables = parse xml
 
     printfn "%A" tables
