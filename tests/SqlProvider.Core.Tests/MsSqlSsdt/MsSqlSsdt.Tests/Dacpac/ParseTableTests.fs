@@ -4,7 +4,7 @@ open System.Xml
 open Utils
 open System
 
-let parse(xml: string) =
+let parseXml(xml: string) =
     let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
     let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
     let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
@@ -29,28 +29,27 @@ let parse(xml: string) =
         |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
         |> Seq.toList
 
-    let parseForeignKeyConstraint (fkElement: XmlNode) =
+    let parseFkRelationship (fkElement: XmlNode) =
         let name = fkElement |> att "Name"
         let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
         let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
         let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
         let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
-        { ForeignKeyConstraint.Name = name
-          ForeignKeyConstraint.DefiningTable =
+        { SsdtRelationship.Name = name
+          SsdtRelationship.DefiningTable =
             { RefTable.FullName = localTable
               RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
-          ForeignKeyConstraint.ForeignTable =
+          SsdtRelationship.ForeignTable =
             { RefTable.FullName = foreignTable
               RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
 
-    let fkConstraintsByTable =
+    let relationships =
         model
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
-        |> Seq.map parseForeignKeyConstraint
-        |> Seq.map (fun fk -> fk.DefiningTable.FullName, fk)
-        |> Seq.toList        
-
+        |> Seq.map parseFkRelationship
+        |> Seq.toList
+            
     let parseColumn (colEntry: XmlNode) =
         let el = colEntry |> node "x:Element"
         let colType, fullName = el |> att "Type", el |> att "Name"
@@ -84,9 +83,7 @@ let parse(xml: string) =
           SsdtTable.FullName = fullName
           SsdtTable.Columns = columns
           SsdtTable.IsView = false
-          SsdtTable.PrimaryKey = primaryKey
-          SsdtTable.ForeignKeys = fkConstraintsByTable |> List.filter (fun (tblNm, fk) -> tblNm = fullName) |> List.map snd
-        }
+          SsdtTable.PrimaryKey = primaryKey }
 
     let tables = 
         model
@@ -97,13 +94,14 @@ let parse(xml: string) =
 
     { SsdtSchema.Tables = tables // TODO: @ views
       SsdtSchema.StoredProcs = []
-      SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm) }
+      SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm)
+      SsdtSchema.Relationships = relationships }
 
 open UnzipTests
 
 [<Test>]
 let ``Parse Dacpac Model`` () =
     let xml = extractModelXml dacPacPath
-    let tables = parse xml
+    let tables = parseXml xml
 
     printfn "%A" tables

@@ -27,10 +27,14 @@ let attMaybe (nm: string) (node: XmlNode) =
 let att (nm: string) (node: XmlNode) = 
     attMaybe nm node |> Option.defaultValue ""
 
+let splitAndRemoveBrackets (s: string) =
+    s.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries)
+
 type SsdtSchema = {
     Tables: SsdtTable list
     TryGetTableByName: string -> SsdtTable option
     StoredProcs: SsdtStoredProc list
+    Relationships: SsdtRelationship list
 }
 and SsdtTable = {
     FullName: string
@@ -38,7 +42,6 @@ and SsdtTable = {
     Name: string
     Columns: SsdtColumn list
     PrimaryKey: PrimaryKeyConstraint option
-    ForeignKeys: ForeignKeyConstraint list
     IsView: bool
 }
 and SsdtColumn = {
@@ -49,7 +52,7 @@ and SsdtColumn = {
     IsIdentity: bool
     HasDefault: bool
 }
-and ForeignKeyConstraint = {
+and SsdtRelationship = {
     Name: string
     DefiningTable: RefTable
     ForeignTable: RefTable
@@ -57,7 +60,10 @@ and ForeignKeyConstraint = {
 and RefTable = {
     FullName: string
     Columns: ConstraintColumn list
-}
+} with        
+    member this.Schema = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> schema | _ -> ""
+    member this.Name = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> name | _ -> ""
+
 and PrimaryKeyConstraint = {
     Name: string
     Columns: ConstraintColumn list
@@ -65,8 +71,7 @@ and PrimaryKeyConstraint = {
 and ConstraintColumn = {
     FullName: string
 } with
-    member this.Name = this.FullName.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
-
+   member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
 and SsdtViewColumn = {
     Name: string
     Alias: string option

@@ -39,8 +39,8 @@ module MSSqlServerSsdt =
     }
     and SsdtRelationship = {
         Name: string
-        DefiningTable: RefTable
-        ForeignTable: RefTable
+        ChildTable: RefTable
+        ParentTable: RefTable
     }
     and RefTable = {
         FullName: string
@@ -191,17 +191,17 @@ module MSSqlServerSsdt =
     
         let parseFkRelationship (fkElement: XmlNode) =
             let name = fkElement |> att "Name"
-            let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
-            let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
-            let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
-            let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
+            let childColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+            let childTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
+            let parentColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+            let parentTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
             { SsdtRelationship.Name = name
-              SsdtRelationship.DefiningTable =
-                { RefTable.FullName = localTable
-                  RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
-              SsdtRelationship.ForeignTable =
-                { RefTable.FullName = foreignTable
-                  RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
+              SsdtRelationship.ChildTable =
+                { RefTable.FullName = childTable
+                  RefTable.Columns = childColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
+              SsdtRelationship.ParentTable =
+                { RefTable.FullName = parentTable
+                  RefTable.Columns = parentColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
     
         let relationships =
             model
@@ -232,14 +232,14 @@ module MSSqlServerSsdt =
             let fullName = tblElement |> att "Name"
             let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
             let columns = relationship |> nodes "x:Entry" |> Seq.choose parseColumn |> Seq.toList
-            let nameParts = fullName.Split([|'.'|], StringSplitOptions.RemoveEmptyEntries)
+            let nameParts = fullName.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries)
             let primaryKey =
                 columns
                 |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
                 |> List.tryHead
                 |> Option.map snd
-            { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema |> removeBrackets | _ -> failwithf "Unable to parse table '%s' schema." fullName
-              SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name |> removeBrackets | _ -> failwithf "Unable to parse table '%s' name." fullName
+            { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
+              SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
               SsdtTable.FullName = fullName
               SsdtTable.Columns = columns
               SsdtTable.IsView = false
@@ -258,7 +258,7 @@ module MSSqlServerSsdt =
           SsdtSchema.Relationships = relationships }
 
     let ssdtTableToTable (tbl: SsdtTable) =
-        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "VIEW" else "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" } // Type options: "VIEW" or "BASE TABLE"
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match tryFindMapping col.DataType with
@@ -277,14 +277,6 @@ module MSSqlServerSsdt =
                   Column.TypeInfo = None }  // Not supported (but could be)
         | None ->
             None
-
-    let fkToRelationship (childTable: SsdtTable) (fk: SsdtRelationship) =
-        { Name = fk.Name
-          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
-          PrimaryKey = fk.ForeignTable.Columns.Head.Name
-          ForeignTable = Table.CreateFullName(childTable.Schema, childTable.Name)
-          ForeignKey = fk.DefiningTable.Columns.Head.Name }
-
 
 
 type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
@@ -335,10 +327,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             |> Seq.toList
 
         member __.GetPrimaryKey(table) =
-            None // Used for "Individuals" feature which is not supported by SSDT provider
-            //match ssdtSchema.Value.TryGetTableByName(table.Name) with
-            //|  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c)
-            //| _ -> None
+            match ssdtSchema.Value.TryGetTableByName(table.Name) with
+            |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c.Name)
+            | _ -> None
 
         member __.GetColumns(con,table) =        
             let columns =
@@ -371,26 +362,26 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetRelationships(con, table) =
             let ssdtSchema = ssdtSchema.Value
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-                let parents =
-                    ssdtSchema.Relationships
-                    |> List.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
-                    |> List.map (fun fk ->
-                        { Name = fk.Name
-                          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
-                          PrimaryKey = fk.ForeignTable.Columns.Head.Name
-                          ForeignTable = Table.CreateFullName(fk.DefiningTable.Schema, fk.DefiningTable.Name)
-                          ForeignKey = fk.DefiningTable.Columns.Head.Name }
-                    )
-
                 let children =
                     ssdtSchema.Relationships
-                    |> List.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
-                    |> List.map (fun fk ->
-                        { Name = fk.Name
-                          PrimaryTable = Table.CreateFullName(fk.ForeignTable.Schema, fk.ForeignTable.Name)
-                          PrimaryKey = fk.ForeignTable.Columns.Head.Name
-                          ForeignTable = Table.CreateFullName(fk.DefiningTable.Schema, fk.DefiningTable.Name)
-                          ForeignKey = fk.DefiningTable.Columns.Head.Name }
+                    |> List.filter (fun r -> Table.CreateFullName(r.ParentTable.Schema, r.ParentTable.Name) = table.FullName)
+                    |> List.map (fun r ->
+                        { Name = r.Name
+                          PrimaryTable = Table.CreateFullName(r.ParentTable.Schema, r.ParentTable.Name)
+                          PrimaryKey = r.ParentTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(r.ChildTable.Schema, r.ChildTable.Name)
+                          ForeignKey = r.ChildTable.Columns.Head.Name }
+                    )
+
+                let parents =
+                    ssdtSchema.Relationships
+                    |> List.filter (fun r -> Table.CreateFullName(r.ChildTable.Schema, r.ChildTable.Name) = table.FullName)
+                    |> List.map (fun r ->
+                        { Name = r.Name
+                          PrimaryTable = Table.CreateFullName(r.ParentTable.Schema, r.ParentTable.Name)
+                          PrimaryKey = r.ParentTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(r.ChildTable.Schema, r.ChildTable.Name)
+                          ForeignKey = r.ChildTable.Columns.Head.Name }
                     )
 
                 children, parents
