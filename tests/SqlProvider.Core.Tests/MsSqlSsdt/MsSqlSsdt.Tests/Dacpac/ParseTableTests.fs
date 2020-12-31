@@ -95,7 +95,9 @@ let parse(xml: string) =
         |> Seq.map parseTable
         |> Seq.toList
 
-    tables
+    { SsdtSchema.Tables = tables // TODO: @ views
+      SsdtSchema.StoredProcs = []
+      SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm) }
 
 open UnzipTests
 

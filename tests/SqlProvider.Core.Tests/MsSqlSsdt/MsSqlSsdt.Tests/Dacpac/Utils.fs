@@ -1,4 +1,5 @@
 module Dacpac.Utils
+open System
 open System.Xml
 
 /// Returns a doc and node/nodes ns helper fns
@@ -63,7 +64,9 @@ and PrimaryKeyConstraint = {
 }
 and ConstraintColumn = {
     FullName: string
-}
+} with
+    member this.Name = this.FullName.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
+
 and SsdtViewColumn = {
     Name: string
     Alias: string option
