@@ -10,7 +10,6 @@ nuget NUnit = 2.6.4
 nuget NUnit.Runners = 2.6.4
 nuget SourceLink.Fake
 nuget System.Data.SqlClient
-nuget Microsoft.SqlServer.Management.SqlParser
 
 group Standard
     source https://nuget.org/api/v2
@@ -28,8 +27,8 @@ group Standard
     nuget System.Data.SqlClient
     nuget System.Data.Common
     nuget System.Data.Odbc
-	nuget Microsoft.Data.SQLite
-	nuget FSharp.Compiler.Service    
+    nuget Microsoft.Data.SQLite
+    nuget FSharp.Compiler.Service
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
 
