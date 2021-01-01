@@ -331,7 +331,18 @@ module MSSqlServerSsdt =
               SsdtTable.PrimaryKey = None
               SsdtTable.Columns =
                 view.Columns
-                |> List.choose resolveColumnRefPath // Exclude view columns that cannot be resolved to a table
+                |> List.map (fun vc ->
+                    match resolveColumnRefPath vc with
+                    | Some tc -> tc
+                    | None ->
+                        // If we can't resolve a view column, default to an obj so the user can cast it themselves.
+                        { SsdtColumn.FullName = vc.FullName
+                          SsdtColumn.Name = vc.FullName |> splitFullName |> Array.last
+                          SsdtColumn.DataType = "SQL_VARIANT"
+                          SsdtColumn.AllowNulls = false
+                          SsdtColumn.HasDefault = false
+                          SsdtColumn.IsIdentity = false } 
+                )
             }
 
         let tablesAndViews = tables @ (views |> List.map viewToTable)
