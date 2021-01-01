@@ -37,6 +37,17 @@ module MSSqlServerSsdt =
         IsIdentity: bool
         HasDefault: bool
     }
+    and SsdtView = {
+        FullName: string
+        Schema: string
+        Name: string
+        Columns: SsdtViewColumn list
+        DynamicColumns: SsdtViewColumn list
+    }
+    and SsdtViewColumn = {
+        FullName: string
+        ColumnRefPath: string option
+    }
     and SsdtRelationship = {
         Name: string
         DefiningTable: RefTable
@@ -57,11 +68,6 @@ module MSSqlServerSsdt =
         FullName: string
     } with
        member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
-    and SsdtViewColumn = {
-        Name: string
-        Alias: string option
-        RefCol: SsdtColumn
-    }
     and SsdtStoredProc = {
         Schema: string
         Name: string
@@ -166,9 +172,10 @@ module MSSqlServerSsdt =
 
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
+        let splitFullName (fn: string) = fn.Split([|'.';']';'['|], StringSplitOptions.RemoveEmptyEntries)
         let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
         let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
-    
+
         let parsePrimaryKeyConstraint (pkElement: XmlNode) =
             let name = pkElement |> att "Name"
             let relationship = pkElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "ColumnSpecifications")
@@ -180,7 +187,7 @@ module MSSqlServerSsdt =
                 |> Seq.toList
             { PrimaryKeyConstraint.Name = name
               PrimaryKeyConstraint.Columns = columns }
-    
+
         let pkConstraintsByColumn =
             model
             |> nodes "x:Element"
@@ -188,29 +195,29 @@ module MSSqlServerSsdt =
             |> Seq.map parsePrimaryKeyConstraint
             |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
             |> Seq.toList
-    
+
         let parseFkRelationship (fkElement: XmlNode) =
             let name = fkElement |> att "Name"
-            let definingColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
-            let definingTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
+            let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+            let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
             let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
             let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
             { SsdtRelationship.Name = name
               SsdtRelationship.DefiningTable =
-                { RefTable.FullName = definingTable
-                  RefTable.Columns = definingColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
+                { RefTable.FullName = localTable
+                  RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
               SsdtRelationship.ForeignTable =
                 { RefTable.FullName = foreignTable
                   RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
-    
+
         let relationships =
             model
             |> nodes "x:Element"
             |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
             |> Seq.map parseFkRelationship
             |> Seq.toList
-                
-        let parseColumn (colEntry: XmlNode) =
+            
+        let parseTableColumn (colEntry: XmlNode) =
             let el = colEntry |> node "x:Element"
             let colType, fullName = el |> att "Type", el |> att "Name"
             match colType with
@@ -219,7 +226,7 @@ module MSSqlServerSsdt =
                 let isIdentity = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsIdentity") |> Option.map (fun p -> p |> att "Value")
                 let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
                 Some
-                    { SsdtColumn.Name = fullName.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
+                    { SsdtColumn.Name = fullName |> splitFullName |> Array.last
                       SsdtColumn.FullName = fullName
                       SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
                       SsdtColumn.DataType = dataType |> removeBrackets
@@ -231,8 +238,8 @@ module MSSqlServerSsdt =
         let parseTable (tblElement: XmlNode) =
             let fullName = tblElement |> att "Name"
             let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
-            let columns = relationship |> nodes "x:Entry" |> Seq.choose parseColumn |> Seq.toList
-            let nameParts = fullName.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries)
+            let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toList
+            let nameParts = fullName |> splitFullName
             let primaryKey =
                 columns
                 |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
@@ -244,21 +251,98 @@ module MSSqlServerSsdt =
               SsdtTable.Columns = columns
               SsdtTable.IsView = false
               SsdtTable.PrimaryKey = primaryKey }
-    
+
+        let parseViewColumn (colEntry:  XmlNode) =
+            let colFullNm = colEntry |> node "x:Element" |> att "Name"
+            let typeRelation = colEntry |> node "x:Element" |> node "x:Relationship" |> Option.ofObj
+            let colRefPath = typeRelation |> Option.map (fun rel -> rel |> node "x:Entry/x:References" |> att "Name")
+            { SsdtViewColumn.FullName = colFullNm
+              SsdtViewColumn.ColumnRefPath = colRefPath }
+
+        /// Recursively collections view column refs from any nested 'DynamicObjects' (ex: CTEs).
+        let collectDynamicColumnRefs (viewElement: XmlNode) =
+            let rec recurse (columns: SsdtViewColumn list) (el: XmlNode)  =
+                let relationshipColumns = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Columns")
+                let relationshipDynamicObjects = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "DynamicObjects")
+                let cols = relationshipColumns |> Option.map (nodes "x:Entry" >> Seq.map parseViewColumn) |> Option.defaultValue Seq.empty |> Seq.toList
+                let accumulatedColumns = columns @ cols
+                match relationshipDynamicObjects with
+                | Some rel -> rel |> nodes "x:Entry" |> Seq.map (node "x:Element") |> Seq.collect (recurse accumulatedColumns) |> Seq.toList
+                | None -> accumulatedColumns
+
+            recurse [] viewElement
+
+        let parseView (viewElement: XmlNode) =
+            let fullName = viewElement |> att "Name"
+            let relationshipColumns = viewElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
+            let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
+            let dynamicColumns = collectDynamicColumnRefs viewElement
+
+            let nameParts = fullName |> splitFullName
+            { SsdtView.FullName = fullName
+              SsdtView.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
+              SsdtView.Name = match nameParts with | [|schema;name|] -> name | _ -> ""
+              SsdtView.Columns = columns |> Seq.toList
+              SsdtView.DynamicColumns = dynamicColumns }
+
+        /// Recursively resolves column references.
+        let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
+            let rec resolve (path: string) =
+                match tableColumnsByPath.TryFind(path) with
+                | Some tblCol ->
+                    { tblCol with
+                        FullName = viewCol.FullName
+                        Name = viewCol.FullName |> splitFullName |> Array.last } |> Some
+                | None -> 
+                    match viewColumnsByPath.TryFind(path) with
+                    | Some viewCol when viewCol.ColumnRefPath <> Some path ->
+                        match viewCol.ColumnRefPath with
+                        | Some colRefPath -> resolve colRefPath
+                        | None -> None
+                    | _ -> None
+
+            match viewCol.ColumnRefPath with
+            | Some path -> resolve path
+            | None -> None
+
         let tables = 
             model
             |> nodes "x:Element"
             |> Seq.filter (fun e -> e |> att "Type" = "SqlTable")
             |> Seq.map parseTable
             |> Seq.toList
-    
-        { SsdtSchema.Tables = tables // TODO: @ views
+
+        let views =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlView")
+            |> Seq.map parseView
+            |> Seq.toList
+
+        let tableColumnsByPath = tables |> List.collect (fun t -> t.Columns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
+        let viewColumnsByPath = views |> List.collect (fun v -> v.Columns @ v.DynamicColumns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
+        let resolveColumnRefPath = resolveColumnRefPath tableColumnsByPath viewColumnsByPath
+
+        let viewToTable (view: SsdtView) =
+            { SsdtTable.FullName = view.FullName
+              SsdtTable.Name = view.Name
+              SsdtTable.Schema = view.Schema
+              SsdtTable.IsView = true
+              SsdtTable.PrimaryKey = None
+              SsdtTable.Columns =
+                view.Columns
+                |> List.choose resolveColumnRefPath // Exclude view columns that cannot be resolved to a table
+            }
+
+        let tablesAndViews = tables @ (views |> List.map viewToTable)
+
+        { SsdtSchema.Tables = tablesAndViews
           SsdtSchema.StoredProcs = []
-          SsdtSchema.TryGetTableByName = fun nm -> tables |> List.tryFind (fun t -> t.Name = nm)
+          SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
           SsdtSchema.Relationships = relationships }
 
     let ssdtTableToTable (tbl: SsdtTable) =
-        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" } // Type options: "VIEW" or "BASE TABLE"
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match tryFindMapping col.DataType with
@@ -331,7 +415,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c.Name)
             | _ -> None
 
-        member __.GetColumns(con,table) =        
+        member __.GetColumns(con,table) =
             let columns =
                 match ssdtSchema.Value.TryGetTableByName(table.Name) with
                 | Some ssdtTbl ->

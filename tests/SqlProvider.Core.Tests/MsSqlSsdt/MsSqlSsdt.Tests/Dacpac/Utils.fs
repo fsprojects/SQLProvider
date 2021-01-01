@@ -52,6 +52,17 @@ and SsdtColumn = {
     IsIdentity: bool
     HasDefault: bool
 }
+and SsdtView = {
+    FullName: string
+    Schema: string
+    Name: string
+    Columns: SsdtViewColumn list
+    DynamicColumns: SsdtViewColumn list
+}
+and SsdtViewColumn = {
+    FullName: string
+    ColumnRefPath: string option
+}
 and SsdtRelationship = {
     Name: string
     DefiningTable: RefTable
@@ -72,11 +83,6 @@ and ConstraintColumn = {
     FullName: string
 } with
    member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
-and SsdtViewColumn = {
-    Name: string
-    Alias: string option
-    RefCol: SsdtColumn
-}
 and SsdtStoredProc = {
     Schema: string
     Name: string
