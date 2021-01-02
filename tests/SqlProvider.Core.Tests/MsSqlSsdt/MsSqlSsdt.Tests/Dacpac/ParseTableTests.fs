@@ -50,7 +50,7 @@ let parseXml(xml: string) =
         |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
         |> Seq.map parseFkRelationship
         |> Seq.toList
-            
+        
     let parseTableColumn (colEntry: XmlNode) =
         let el = colEntry |> node "x:Element"
         let colType, fullName = el |> att "Type", el |> att "Name"
@@ -68,7 +68,7 @@ let parseXml(xml: string) =
                   SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
         | _ ->
             None // Unsupported column type
-    
+
     let parseTable (tblElement: XmlNode) =
         let fullName = tblElement |> att "Name"
         let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
@@ -106,7 +106,6 @@ let parseXml(xml: string) =
 
         recurse [] viewElement
 
-
     let parseView (viewElement: XmlNode) =
         let fullName = viewElement |> att "Name"
         let relationshipColumns = viewElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
@@ -120,6 +119,7 @@ let parseXml(xml: string) =
           SsdtView.Columns = columns |> Seq.toList
           SsdtView.DynamicColumns = dynamicColumns }
 
+    /// Recursively resolves column references.
     let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
         let rec resolve (path: string) =
             match tableColumnsByPath.TryFind(path) with
@@ -138,6 +138,43 @@ let parseXml(xml: string) =
         match viewCol.ColumnRefPath with
         | Some path -> resolve path
         | None -> None
+
+    let parseStoredProc (spElement: XmlNode) =
+        let fullName = spElement |> att "Name"        
+        let parameters =
+            match spElement |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Parameters") with
+            | Some relationshipParameters ->
+                relationshipParameters
+                |> nodes "x:Entry"
+                |> Seq.map (fun entry ->
+                    let el = entry |> node "x:Element"
+                    let pFullName = el |> att "Name"
+                    let isOutput =
+                        match el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsOutput") with
+                        | Some p when p |> att "Value" = "True" -> true
+                        | _ -> false
+
+                    let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
+                    { FullName = pFullName
+                      Name = pFullName |> splitFullName |> Array.last
+                      DataType = dataType |> removeBrackets
+                      Length = None // TODO: Implement
+                      IsOutput = isOutput }
+                )
+            | None -> Seq.empty
+
+        let parts = fullName |> splitFullName
+        { FullName = fullName
+          Schema = match parts with | [|schema;name|] -> schema | _ -> ""
+          Name = match parts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse sp name from '%s'" fullName
+          Parameters = parameters |> Seq.toList }
+
+    let storedProcs =
+        model
+        |> nodes "x:Element"
+        |> Seq.filter (fun e -> e |> att "Type" = "SqlProcedure")
+        |> Seq.map parseStoredProc
+        |> Seq.toList
 
     let tables = 
         model
@@ -180,9 +217,9 @@ let parseXml(xml: string) =
         }
 
     let tablesAndViews = tables @ (views |> List.map viewToTable)
-    
+
     { SsdtSchema.Tables = tablesAndViews
-      SsdtSchema.StoredProcs = []
+      SsdtSchema.StoredProcs = storedProcs
       SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
       SsdtSchema.Relationships = relationships }
 

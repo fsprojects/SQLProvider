@@ -69,11 +69,13 @@ module MSSqlServerSsdt =
     } with
        member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
     and SsdtStoredProc = {
+        FullName: string
         Schema: string
         Name: string
         Parameters: SsdtStoredProcParam list
     }
     and SsdtStoredProcParam = {
+        FullName: string
         Name: string
         DataType: string
         Length: int option
@@ -305,6 +307,43 @@ module MSSqlServerSsdt =
             | Some path -> resolve path
             | None -> None
 
+        let parseStoredProc (spElement: XmlNode) =
+            let fullName = spElement |> att "Name"        
+            let parameters =
+                match spElement |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Parameters") with
+                | Some relationshipParameters ->
+                    relationshipParameters
+                    |> nodes "x:Entry"
+                    |> Seq.map (fun entry ->
+                        let el = entry |> node "x:Element"
+                        let pFullName = el |> att "Name"
+                        let isOutput =
+                            match el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsOutput") with
+                            | Some p when p |> att "Value" = "True" -> true
+                            | _ -> false
+
+                        let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
+                        { FullName = pFullName
+                          Name = pFullName |> splitFullName |> Array.last
+                          DataType = dataType |> removeBrackets
+                          Length = None // TODO: Implement
+                          IsOutput = isOutput }
+                    )
+                | None -> Seq.empty
+
+            let parts = fullName |> splitFullName
+            { FullName = fullName
+              Schema = match parts with | [|schema;name|] -> schema | _ -> ""
+              Name = match parts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse sp name from '%s'" fullName
+              Parameters = parameters |> Seq.toList }
+
+        let storedProcs =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlProcedure")
+            |> Seq.map parseStoredProc
+            |> Seq.toList
+
         let tables = 
             model
             |> nodes "x:Element"
@@ -348,7 +387,7 @@ module MSSqlServerSsdt =
         let tablesAndViews = tables @ (views |> List.map viewToTable)
 
         { SsdtSchema.Tables = tablesAndViews
-          SsdtSchema.StoredProcs = []
+          SsdtSchema.StoredProcs = storedProcs
           SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
           SsdtSchema.Relationships = relationships }
 

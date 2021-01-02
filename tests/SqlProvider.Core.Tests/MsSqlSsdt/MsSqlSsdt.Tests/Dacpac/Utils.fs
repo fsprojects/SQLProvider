@@ -84,11 +84,13 @@ and ConstraintColumn = {
 } with
    member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
 and SsdtStoredProc = {
+    FullName: string
     Schema: string
     Name: string
     Parameters: SsdtStoredProcParam list
 }
 and SsdtStoredProcParam = {
+    FullName: string
     Name: string
     DataType: string
     Length: int option
