@@ -1,3 +1,6 @@
+### 1.1.98 - 02.01.2021
+* SSDT moved to use dacpac PR #704
+
 ### 1.1.97 - 25.12.2020
 * SSDT improvements, views, sprocs PR #703
 
