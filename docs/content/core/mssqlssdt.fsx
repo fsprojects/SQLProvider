@@ -27,39 +27,14 @@ let dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER_SSDT
 (**
 ### SSDT Path (required)
 
-The SsdtPath can either point directly to the SSDT Project File (.sqlproj), or it can point to a root folder that contains subdirectories and .sql files.
-If it points to a .sqlproj file, scripts that are set to Build will be parsed and analyzed.
-If it points to a folder, that folder will be recursively scanned for .sql files to be parsed and analyzed.
-This is required for the SSDT provider to work. Both absolute and relative paths are supported.
+The SsdtPath must point to a .dacpac file.
+Notes:
+* For development, you can set the SsdtPath to point to the .dacpac file in the SSDT project Debug folder.
+* For deployment, the SSDT provider will search for the .dacpac file in the executing assembly folder. (Set the .dacpac file to "Copy to Output Directory" to ensure it is available.)
 
 *)
 [<Literal>]
-let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/SSDT Project/SampleProject.sqlproj"
-
-(**
-### Resolution Path (required)
-
-Path to search for Microsoft.SqlServer.Management.SqlParser assembly. Both absolute and relative paths are supported.
-If the ResoluationPath does not properly identify the path containing the 'Microsoft.SqlServer.Management.SqlParser.dll' assembly, the SSDT provider will yield many error messages about not being able to resolve various libraries used by the SqlParser.
-
-*)
-
-[<Literal>]
-let resPath = __SOURCE_DIRECTORY__ + @"/../../../packages/Microsoft.SqlServer.Management.SqlParser/lib/netstandard2.0"
-
-(**
-
-#### Instructions for resolve SqlParser dll in a netstandard project in Visual Studio 2019:
-* Add **'Microsoft.SqlServer.Management.SqlParser'** to the project via NuGet Package Manager.
-* After installing, expand Dependencies/Packages for your project, click on the **'Microsoft.SqlServer.Management.SqlParser'** package and view the 'Path' property to find the location. (It should be stored in the [NuGet global-packages folder](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders).)
-* Browse to the location, then open the '**lib/netstandard2.0**' folder and copy the **'Microsoft.SqlServer.Management.SqlParser.dll'** assembly.
-* Paste the dependency into your project folder (you can optionally put it in a new 'SSDT' subfolder, or something similar).
-* Add the .dll to your .gitignore file (or the equivalent for your source control provider of choice).
-* Finally, create a literal for your ResolutionPath.  If you put it in an 'SSDT' subfolder like the example, it may look like this:
-*)
-
-[<Literal>]
-let exampleResPath = __SOURCE_DIRECTORY__ + "/SSDT"
+let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/AdventureWorks_SSDT.dacpac"
 
 (**
 ### Use Option Types
@@ -89,10 +64,8 @@ let exampleAllowedTableNames = "Projects, ProjectTasks, ProjectTaskCategories, U
 *)
  
 type DB = SqlDataProvider<
-                dbVendor
-                ,SsdtPath = ssdtPath
-                ,ResolutionPath = resPath
-            >
+                Common.DatabaseProviderTypes.MSSQLSERVER_SSDT,
+                SsdtPath = ssdtPath>
 
 // To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.
 //DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache
@@ -100,72 +73,16 @@ type DB = SqlDataProvider<
 let ctx = DB.GetDataContext()
 
 (**
-### Employee Contact / Details example
-
-#### TABLE: EmployeeContact.sql
-CREATE TABLE [dbo].[EmployeeContact](  
-  [EmpId] [int] NOT NULL,  
-  [MobileNo] [nvarchar](50) NOT NULL,
-  CONSTRAINT [PK_EmployeeContact] PRIMARY KEY CLUSTERED ([EmpId] ASC)
-)
-
-#### TABLE: EmployeeDetails.sql
-CREATE TABLE [dbo].[EmployeeDetails] (  
-  [EmpId] [int] IDENTITY(1,1) NOT NULL,  
-  [EmpName] [nvarchar](50) NOT NULL,  
-  [EmpCity] [nvarchar](50) NOT NULL,  
-  [EmpSalary] [int] NOT NULL,  
-  CONSTRAINT [PK_EmployeeDetails] PRIMARY KEY CLUSTERED ([EmpId] ASC),
-  CONSTRAINT [FK_EmployeeContact_EmployeeDetails] FOREIGN KEY ([EmpId]) REFERENCES [dbo].[EmployeeContact] ([Id])
-)
-
-#### VIEW: v_Employee.sql
-CREATE VIEW [dbo].[v_Employee]
-AS  
-  SELECT EmployeeDetails.EmpId, EmpName, EmployeeDetails.EmpSalary, EmployeeContact.MobileNo as MobilePhone
-  FROM [dbo].EmployeeDetails   
-  LEFT OUTER JOIN [dbo].EmployeeContact ON
-  dbo.EmployeeDetails.Emp_Id = dbo.EmployeeContact.EmpId
-  WHERE dbo.EmployeeDetails.EmpId > 2
+### AdventureWorks SSDT Example
 *)
 
-let employeeJoin =
+let orderDetails =
     query {
-        for c in ctx.Dbo.EmployeeContact do
-        for d in c.``dbo.EmployeeDetails by Id`` do
-        select (c.EmpId, c.MobileNo, d.EmpName, d.EmpSalary)
+        for o in ctx.SalesLt.SalesOrderHeader do
+        for d in o.``SalesLT.SalesOrderDetail by SalesOrderID`` do
+        select (o.SalesOrderId, o.OrderDate, o.SubTotal, d.OrderQty, d.ProductId, d.UnitPrice)
     }
 
-let employeeView =
-    query {
-        for v in ctx.Dbo.VEmployee do
-        select (v.EmpId, v.MobilePhone, v.EmpName, v.EmpSalary)
-    }
-
-(**
-### An example of getting table column values
-*)
-let users = 
-    ctx.Dbo.Users
-    |> Seq.map (fun e -> e.ColumnValues |> Seq.toList)
-    |> Seq.toList
-
-(**
-### An example query with joins
-*)
-let tasksWithCategories =
-    query {
-        for p in ctx.Dbo.Projects do
-        for t in p.``dbo.ProjectTasks by Id`` do
-        for c in t.``dbo.ProjectTaskCategories by Id`` do
-        where (p.IsActive && not (p.IsDeleted))
-        sortBy t.Sort
-        select
-            {| Id = t.Id
-               Task = t.Name
-               Category = c.Name
-               Project = p.Name |}
-    }
 
 (**
 
@@ -192,15 +109,10 @@ SSDT Projects can be created in two ways:
 ## Known Issues
 
 ### Tables
-* Computed columns in tables are currently ignored
+* User defined data types are not currently supported
 
 ### Views
-* Views are only partially implemented at this point:
-	* Some view columns may have a data type of System.Object if the type cannot be properly parsed.
-For example, a view column that is wrapped in a COALLESCE() function will show as a property of type System.Object.
-(This limitation can possibly be remedied with some more time spent in the parser).
-	* Some view columns may be ignored (missing) if they can not be properly parsed
-For example, more work needs to be done on the parser to handle WITH common table expressions, or anything other than a simple query.
+* Some view columns may have a data type of System.Object if the referenced column type cannot be fully traced by the parser.
 
 ### Functions
 * Functions are not currently implemented

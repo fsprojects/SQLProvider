@@ -9,59 +9,73 @@ open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
+open System.IO.Compression
 
 module MSSqlServerSsdt =
-    let assemblyNames = [ "Microsoft.SqlServer.Management.SqlParser.dll" ]
+    let splitAndRemoveBrackets (s: string) =
+        s.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries)
 
     type SsdtSchema = {
         Tables: SsdtTable list
         TryGetTableByName: string -> SsdtTable option
         StoredProcs: SsdtStoredProc list
+        Relationships: SsdtRelationship list
     }
     and SsdtTable = {
+        FullName: string
         Schema: string
         Name: string
         Columns: SsdtColumn list
         PrimaryKey: PrimaryKeyConstraint option
-        ForeignKeys: ForeignKeyConstraint list
         IsView: bool
     }
     and SsdtColumn = {
+        FullName: string
         Name: string
         DataType: string
         AllowNulls: bool
-        Identity: IdentitySpec option
+        IsIdentity: bool
         HasDefault: bool
     }
-    and IdentitySpec = {
-        Seed: int
-        Increment: int
-    }
-    and ForeignKeyConstraint = {
-        Name: string
-        Columns: string list
-        References: RefTable
-    }
-    and RefTable = {
+    and SsdtView = {
+        FullName: string
         Schema: string
-        Table: string
-        Columns: string list
-    }
-    and PrimaryKeyConstraint = {
         Name: string
-        Columns: string list
+        Columns: SsdtViewColumn list
+        DynamicColumns: SsdtViewColumn list
     }
     and SsdtViewColumn = {
-        Name: string
-        Alias: string option
-        RefCol: SsdtColumn
+        FullName: string
+        ColumnRefPath: string option
     }
+    and SsdtRelationship = {
+        Name: string
+        DefiningTable: RefTable
+        ForeignTable: RefTable
+    }
+    and RefTable = {
+        FullName: string
+        Columns: ConstraintColumn list
+    } with        
+        member this.Schema = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> schema | _ -> ""
+        member this.Name = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> name | _ -> ""
+
+    and PrimaryKeyConstraint = {
+        Name: string
+        Columns: ConstraintColumn list
+    }
+    and ConstraintColumn = {
+        FullName: string
+    } with
+       member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
     and SsdtStoredProc = {
+        FullName: string
         Schema: string
         Name: string
         Parameters: SsdtStoredProcParam list
     }
     and SsdtStoredProcParam = {
+        FullName: string
         Name: string
         DataType: string
         Length: int option
@@ -121,59 +135,44 @@ module MSSqlServerSsdt =
         match typeMappingsByName.TryFind (dataType.ToUpper()) with
         | Some tm -> tm
         | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
+        
+    let readFile (file: System.IO.FileInfo) =
+        IO.File.ReadAllText(file.FullName)
 
-    /// Dynamically loads the "Microsoft.SqlServer.Management.SqlParser" assembly and returns a table script parser functions.
-    let buildDynamicTableScriptParser =
-        lazy fun resolutionPath referencedAssemblies ->
-            let assembly = Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
-            let findType f =
-                match assembly with
-                | Choice1Of2(assembly) ->
-                    let types =
-                        try assembly.GetTypes()
-                        with | :? System.Reflection.ReflectionTypeLoadException as e ->
-                            let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
-                            let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                            failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-                    types |> Array.find f
-                | Choice2Of2(paths, errors) ->
-                    let details =
-                        match errors with
-                        | [] -> ""
-                        | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
-                    failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package %s) must exist in the paths: %s %s %s."
-                        (String.Join(", ", assemblyNames |> List.toArray))
-                        "Microsoft.SqlServer.Management.SqlParser"
-                        Environment.NewLine
-                        (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
-                        details
+    /// Tries to find .dacpac file using the given path or by searching assembly path.
+    let findDacPacFile (dacPacPath: string) =
+        let file = IO.FileInfo(dacPacPath)
+        if file.Exists then file.FullName
+        else
+            let assemblyFile = IO.FileInfo(Reflection.Assembly.GetExecutingAssembly().Location)
+            let newFile = IO.FileInfo(IO.Path.Combine(assemblyFile.Directory.FullName, file.Name))
+            if newFile.Exists then newFile.FullName
+            else failwithf "Unable to find .dacpac file at: '%s'" newFile.FullName
 
-            // Loads Microsoft.SqlServer.Management.SqlParser.Parser.Parser
-            let parserType =  findType (fun t -> t.Name = "Parser")
-            let parseResultType =  findType (fun t -> t.Name = "ParseResult")
-            let sqlScriptType =  findType (fun t -> t.Name = "SqlScript")
-            let parseMethod = parserType.GetMethod("Parse", [| typeof<string> |])
-            let scriptProperty = parseResultType.GetProperty("Script")
-            let xmlProperty = sqlScriptType.GetProperty("Xml")
+    /// Extracts model.xml from the given .dacpac file path.
+    let extractModelXml (dacPacPath: string) = 
+        use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open)
+        use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
+        let modelEntry = zip.GetEntry("model.xml")
+        use modelStream = modelEntry.Open()
+        use rdr = new IO.StreamReader(modelStream)
+        rdr.ReadToEnd()
 
-            /// Parses a table script and returns an Xml string with a table schema.
-            fun  (tableScript: string) ->
-                let oResult = parseMethod.Invoke(null, [| box tableScript |])
-                let oSqlScript = scriptProperty.GetValue(oResult)
-                xmlProperty.GetValue(oSqlScript) :?> string
-
-    let toXmlDoc xml =
+    /// Returns a doc and node/nodes ns helper fns
+    let toXmlNamespaceDoc ns xml =
         let doc = new XmlDocument()
+        let nsMgr = XmlNamespaceManager(doc.NameTable)
+        nsMgr.AddNamespace("x", ns)
         doc.LoadXml(xml)
-        doc
-
-    let node (path: string) (node: XmlNode) =
-        node.SelectSingleNode(path)
-
-    let nodes (path: string) (node: XmlNode) =
-        node.SelectNodes(path) |> Seq.cast<XmlNode>
-
+    
+        let node (path: string) (node: XmlNode) =
+            node.SelectSingleNode(path, nsMgr)
+    
+        let nodes (path: string) (node: XmlNode) =
+            node.SelectNodes(path, nsMgr) |> Seq.cast<XmlNode>
+                
+        doc, node, nodes    
+    
     let attMaybe (nm: string) (node: XmlNode) = 
         node.Attributes 
         |> Seq.cast<XmlAttribute> 
@@ -183,293 +182,229 @@ module MSSqlServerSsdt =
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
 
-    /// Analyzes Microsoft SQL Parser XML results and returns an  SsdtTable model.
-    let parseTableSchemaXml (tableSchemaXml: string) = 
-        let doc = tableSchemaXml |> toXmlDoc
+    let parseXml(xml: string) =
+        let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
+        let splitFullName (fn: string) = fn.Split([|'.';']';'['|], StringSplitOptions.RemoveEmptyEntries)
+        let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
+        let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
+
+        let parsePrimaryKeyConstraint (pkElement: XmlNode) =
+            let name = pkElement |> att "Name"
+            let relationship = pkElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "ColumnSpecifications")
+            let columns =
+                relationship
+                |> nodes "x:Entry"
+                |> Seq.map (node "x:Element/x:Relationship/x:Entry/x:References" >> att "Name")
+                |> Seq.map (fun full -> { ConstraintColumn.FullName = full })
+                |> Seq.toList
+            { PrimaryKeyConstraint.Name = name
+              PrimaryKeyConstraint.Columns = columns }
+
+        let pkConstraintsByColumn =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlPrimaryKeyConstraint")
+            |> Seq.map parsePrimaryKeyConstraint
+            |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
+            |> Seq.toList
+
+        let parseFkRelationship (fkElement: XmlNode) =
+            let name = fkElement |> att "Name"
+            let localColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "Columns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+            let localTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "DefiningTable") |> node "x:Entry/x:References" |> att "Name"
+            let foreignColumns = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignColumns") |> nodes "x:Entry/x:References" |> Seq.map (att "Name")
+            let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
+            { SsdtRelationship.Name = name
+              SsdtRelationship.DefiningTable =
+                { RefTable.FullName = localTable
+                  RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
+              SsdtRelationship.ForeignTable =
+                { RefTable.FullName = foreignTable
+                  RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
+
+        let relationships =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
+            |> Seq.map parseFkRelationship
+            |> Seq.toList
             
-        let tblStatement = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateTableStatement")
-        let tblSchemaName, tblObjectName = 
-            let objId = tblStatement.SelectSingleNode("SqlObjectIdentifier")
-            objId |> att "SchemaName", objId |> att "ObjectName"
+        let parseTableColumn (colEntry: XmlNode) =
+            let el = colEntry |> node "x:Element"
+            let colType, fullName = el |> att "Type", el |> att "Name"
+            match colType with
+            | "SqlSimpleColumn" -> 
+                let allowNulls = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsNullable") |> Option.map (fun p -> p |> att "Value")
+                let isIdentity = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsIdentity") |> Option.map (fun p -> p |> att "Value")
+                let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
+                Some
+                    { SsdtColumn.Name = fullName |> splitFullName |> Array.last
+                      SsdtColumn.FullName = fullName
+                      SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
+                      SsdtColumn.DataType = dataType |> removeBrackets
+                      SsdtColumn.HasDefault = false
+                      SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
+            | _ ->
+                None // Unsupported column type
     
-        let columns = 
-            tblStatement.SelectSingleNode("SqlTableDefinition")
-            |> nodes "SqlColumnDefinition"
-            |> Seq.map (fun cd -> 
-                let colName = cd |> att "Name"
-                let dataType = cd.SelectSingleNode("SqlDataTypeSpecification/SqlDataType") |> att "ObjectIdentifier"
-                let constraints = cd |> nodes "SqlConstraint" |> Seq.map (att "Type")
-                let allowNulls = not (constraints |> Seq.exists (fun c -> c = "NotNull")) // default is allow nulls
-                let identity = 
-                    cd.SelectSingleNode("SqlColumnIdentity") 
-                    |> Option.ofObj 
-                    |> Option.map (fun n ->
-                        { Increment = n |> attMaybe "Increment" |> Option.map int |> Option.defaultValue 1
-                          Seed = n |> attMaybe "Seed" |> Option.map int |> Option.defaultValue 1 }
+        let parseTable (tblElement: XmlNode) =
+            let fullName = tblElement |> att "Name"
+            let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
+            let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toList
+            let nameParts = fullName |> splitFullName
+            let primaryKey =
+                columns
+                |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
+                |> List.tryHead
+                |> Option.map snd
+            { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
+              SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
+              SsdtTable.FullName = fullName
+              SsdtTable.Columns = columns
+              SsdtTable.IsView = false
+              SsdtTable.PrimaryKey = primaryKey }
+
+        let parseViewColumn (colEntry:  XmlNode) =
+            let colFullNm = colEntry |> node "x:Element" |> att "Name"
+            let typeRelation = colEntry |> node "x:Element" |> node "x:Relationship" |> Option.ofObj
+            let colRefPath = typeRelation |> Option.map (fun rel -> rel |> node "x:Entry/x:References" |> att "Name")
+            { SsdtViewColumn.FullName = colFullNm
+              SsdtViewColumn.ColumnRefPath = colRefPath }
+
+        /// Recursively collections view column refs from any nested 'DynamicObjects' (ex: CTEs).
+        let collectDynamicColumnRefs (viewElement: XmlNode) =
+            let rec recurse (columns: SsdtViewColumn list) (el: XmlNode)  =
+                let relationshipColumns = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Columns")
+                let relationshipDynamicObjects = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "DynamicObjects")
+                let cols = relationshipColumns |> Option.map (nodes "x:Entry" >> Seq.map parseViewColumn) |> Option.defaultValue Seq.empty |> Seq.toList
+                let accumulatedColumns = columns @ cols
+                match relationshipDynamicObjects with
+                | Some rel -> rel |> nodes "x:Entry" |> Seq.map (node "x:Element") |> Seq.collect (recurse accumulatedColumns) |> Seq.toList
+                | None -> accumulatedColumns
+
+            recurse [] viewElement
+
+        let parseView (viewElement: XmlNode) =
+            let fullName = viewElement |> att "Name"
+            let relationshipColumns = viewElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
+            let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
+            let dynamicColumns = collectDynamicColumnRefs viewElement
+
+            let nameParts = fullName |> splitFullName
+            { SsdtView.FullName = fullName
+              SsdtView.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
+              SsdtView.Name = match nameParts with | [|schema;name|] -> name | _ -> ""
+              SsdtView.Columns = columns |> Seq.toList
+              SsdtView.DynamicColumns = dynamicColumns }
+
+        /// Recursively resolves column references.
+        let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
+            let rec resolve (path: string) =
+                match tableColumnsByPath.TryFind(path) with
+                | Some tblCol ->
+                    { tblCol with
+                        FullName = viewCol.FullName
+                        Name = viewCol.FullName |> splitFullName |> Array.last } |> Some
+                | None -> 
+                    match viewColumnsByPath.TryFind(path) with
+                    | Some viewCol when viewCol.ColumnRefPath <> Some path ->
+                        match viewCol.ColumnRefPath with
+                        | Some colRefPath -> resolve colRefPath
+                        | None -> None
+                    | _ -> None
+
+            match viewCol.ColumnRefPath with
+            | Some path -> resolve path
+            | None -> None
+
+        let parseStoredProc (spElement: XmlNode) =
+            let fullName = spElement |> att "Name"        
+            let parameters =
+                match spElement |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Parameters") with
+                | Some relationshipParameters ->
+                    relationshipParameters
+                    |> nodes "x:Entry"
+                    |> Seq.map (fun entry ->
+                        let el = entry |> node "x:Element"
+                        let pFullName = el |> att "Name"
+                        let isOutput =
+                            match el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsOutput") with
+                            | Some p when p |> att "Value" = "True" -> true
+                            | _ -> false
+
+                        let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
+                        { FullName = pFullName
+                          Name = pFullName |> splitFullName |> Array.last
+                          DataType = dataType |> removeBrackets
+                          Length = None // TODO: Implement
+                          IsOutput = isOutput }
                     )
-                let hasDefaultConstraint = cd.SelectSingleNode("SqlDefaultConstraint") <> null
+                | None -> Seq.empty
 
-                { SsdtColumn.Name= colName
-                  SsdtColumn.DataType = dataType
-                  SsdtColumn.AllowNulls = allowNulls
-                  SsdtColumn.Identity = identity
-                  SsdtColumn.HasDefault = hasDefaultConstraint }
-            )
+            let parts = fullName |> splitFullName
+            { FullName = fullName
+              Schema = match parts with | [|schema;name|] -> schema | _ -> ""
+              Name = match parts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse sp name from '%s'" fullName
+              Parameters = parameters |> Seq.toList }
+
+        let storedProcs =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlProcedure")
+            |> Seq.map parseStoredProc
             |> Seq.toList
-    
-        let primaryKeyConstraint = 
-            tblStatement.SelectSingleNode("SqlTableDefinition").SelectSingleNode("SqlPrimaryKeyConstraint")
-            |> Option.ofObj
-            |> Option.map (fun pkc -> 
-                let name = pkc |> att "Name"
-                let cols = 
-                    pkc
-                    |> nodes "SqlIndexedColumn"
-                    |> Seq.map (att "Name")
-                    |> Seq.toList
-                { PrimaryKeyConstraint.Name = name
-                  PrimaryKeyConstraint.Columns = cols }
-            )
-    
-        let foreignKeyConstraints = 
-            tblStatement.SelectSingleNode("SqlTableDefinition")
-            |> nodes "SqlForeignKeyConstraint"
-            |> Seq.map (fun fkc -> 
-                let name = fkc |> att "Name"
-    
-                let children = fkc.ChildNodes |> Seq.cast<XmlNode> |> Seq.toList |> List.filter (fun c -> c.Name = "SqlIdentifier" || c.Name = "SqlObjectIdentifier")
-                let idx = children |> List.findIndex (fun c -> c.Name = "SqlObjectIdentifier")
-    
-                let localColumnNodes = children |> Seq.take idx |> Seq.toList
-                let refTableNode = children.[idx]
-                let refColumnNodes = children |> Seq.skip (idx + 1) |> Seq.toList
-    
-                let fkCols = 
-                    match localColumnNodes with
-                    | _ :: fkCols -> fkCols |> List.map (att "Value")
-                    | _ -> []
-    
-                let refCols = 
-                    refColumnNodes
-                    |> List.map (att "Value")
-    
-                
-                let refTable =
-                    { RefTable.Schema = refTableNode |> att "SchemaName"
-                      RefTable.Table = refTableNode |> att "ObjectName"
-                      RefTable.Columns = refCols }
-    
-                { ForeignKeyConstraint.Name = name
-                  ForeignKeyConstraint.Columns = fkCols
-                  ForeignKeyConstraint.References = refTable }
-            )
+
+        let tables = 
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlTable")
+            |> Seq.map parseTable
             |> Seq.toList
-        
-        { SsdtTable.Schema = tblSchemaName 
-          SsdtTable.Name = tblObjectName
-          SsdtTable.Columns = columns
-          SsdtTable.PrimaryKey = primaryKeyConstraint
-          SsdtTable.ForeignKeys = foreignKeyConstraints
-          SsdtTable.IsView = false }
 
-    /// Analyzes Microsoft SQL Parser XML results and returns an SsdtView model.
-    let parseViewSchemaXml (tables: SsdtTable list) (viewSchemaXml: string) = 
-        let doc = viewSchemaXml |> toXmlDoc
-        
-        let viewDef = doc.SelectSingleNode("/SqlScript/SqlBatch/SqlCreateViewStatement/SqlViewDefinition")
-        let viewSchemaName, viewObjectName = 
-            let objId = viewDef.SelectSingleNode("SqlObjectIdentifier")
-            objId |> att "SchemaName", objId |> att "ObjectName"
-    
-        // Represents all the types of view columns that we have implemented for parsing
-        let (|SqlScalarRefExpression|SqlColumnRefExpression|SqlNullScalarExpression|Other|) (parentNode: XmlNode) =
-            let ssre = parentNode.SelectSingleNode("SqlScalarRefExpression")
-            let scre = parentNode.SelectSingleNode("SqlColumnRefExpression")
-            let snse = parentNode.SelectSingleNode("SqlNullScalarExpression")
-            if ssre <> null then SqlScalarRefExpression ssre
-            elif scre <> null then SqlColumnRefExpression scre
-            elif snse <> null then SqlNullScalarExpression snse
-            else Other
-
-        /// Case insensitive compare
-        let (^=) s1 s2 = String.Equals(s1, s2, StringComparison.OrdinalIgnoreCase)
-
-        let cols = 
-            viewDef.SelectSingleNode("SqlQuerySpecification").SelectSingleNode("SqlSelectClause")
-            |> nodes "SqlSelectScalarExpression"
-            |> Seq.choose (fun ssse ->
-
-                let alias = ssse |> attMaybe "Alias"
-
-                match ssse with
-                | SqlColumnRefExpression exp ->
-                    let objId = exp.SelectSingleNode("SqlObjectIdentifier")
-                    let parts =
-                        objId
-                        |> nodes "SqlIdentifier"
-                        |> Seq.map (att "Value")
-                        |> Seq.toList
-                        |> List.rev
-
-                    let tableColumn = parts.Head         
-
-                    match parts with
-                    | [cNm] -> // Only one column found in a SqlColumnRefExpression
-                        let column_tbl = tables |> List.collect (fun t -> t.Columns |> List.map (fun c -> c.Name, t))
-                        column_tbl |> List.tryFind (fun (c,t) -> c ^= cNm) |> Option.map snd
-                    | _ ->
-                        None
-                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
-                    |> Option.map (fun refCol ->
-                        { SsdtViewColumn.Name = tableColumn
-                          SsdtViewColumn.Alias = alias
-                          SsdtViewColumn.RefCol = refCol }
-                    )
-                | SqlScalarRefExpression exp -> 
-                    let objId = exp.SelectSingleNode("SqlObjectIdentifier")
-                    let parts =
-                        objId
-                        |> nodes "SqlIdentifier"
-                        |> Seq.map (att "Value")
-                        |> Seq.toList
-                        |> List.rev
-
-                    let tableColumn = parts.Head         
-
-                    // Try to find related table/column, else ignore
-                    match parts with
-                    | [cNm; schemaOrTblName] ->
-                        let t1 = tables |> List.tryFind (fun t -> t.Name ^= schemaOrTblName)
-                        let t2 = tables |> List.tryFind (fun t -> t.Schema ^= schemaOrTblName)
-                        if t1 <> None then t1 else t2
-                    | [cNm; tblNm; schNm] ->
-                        tables |> List.tryFind (fun t -> t.Schema ^= schNm && t.Name ^=  tblNm)
-                    | _ ->
-                        None // we can't reason about this column - ignore
-                    |> Option.bind (fun table -> table.Columns |> List.tryFind (fun c -> c.Name ^= tableColumn))
-                    |> Option.map (fun refCol ->
-                        { SsdtViewColumn.Name = tableColumn
-                          SsdtViewColumn.Alias = alias
-                          SsdtViewColumn.RefCol = refCol }
-                    )
-                | SqlNullScalarExpression exp -> 
-                    let sqlId = ssse.SelectSingleNode("SqlIdentifier")
-                    let colName = sqlId |> att "Value"
-                    Some
-                        { SsdtViewColumn.Name = colName
-                          SsdtViewColumn.Alias = alias
-                          SsdtViewColumn.RefCol = 
-                            { SsdtColumn.Name= colName
-                              SsdtColumn.DataType = "SQL_VARIANT" // TODO: Could possibly manually parse XML comment to determine ref table.column
-                              SsdtColumn.AllowNulls = false
-                              SsdtColumn.Identity = None
-                              SsdtColumn.HasDefault = false } }
-                | Other -> 
-                    None // Some view column type that is not yet handled...
-            )
+        let views =
+            model
+            |> nodes "x:Element"
+            |> Seq.filter (fun e -> e |> att "Type" = "SqlView")
+            |> Seq.map parseView
             |> Seq.toList
-                
-        { SsdtTable.Schema = viewSchemaName
-          SsdtTable.Name = viewObjectName
-          SsdtTable.Columns = cols |> List.map (fun c -> { c.RefCol with Name = c.Alias |> Option.defaultValue c.Name })
-          SsdtTable.PrimaryKey = None
-          SsdtTable.ForeignKeys = []
-          SsdtTable.IsView = true }
 
-    /// Analyzes Microsoft SQL Parser XML results and returns an SsdtView model.
-    let parseStoredProcSchemaXml (spSchemaXml: string) = 
-        let doc = spSchemaXml |> toXmlDoc
-        let spDef = doc |> node "/SqlScript/SqlBatch/SqlCreateProcedureStatement/SqlProcedureDefinitionForCreate"
-        let objId = spDef |> node "SqlObjectIdentifier"
-        let spSchema, spName = objId |> att "SchemaName", objId |> att "ObjectName"        
-        let parameters =
-            spDef
-            |> nodes "SqlParameterDeclaration"
-            |> Seq.map (fun paramDec ->
-                let dataSpec = paramDec |> node "SqlDataTypeSpecification"
-                { Name = paramDec |> att "Name"
-                  DataType = dataSpec |> node "SqlDataType" |> att "ObjectIdentifier"
-                  Length = dataSpec |> attMaybe "Argument1" |> Option.map int
-                  IsOutput = paramDec |> att "IsOutput" = "True" }
-            )
-        { Schema = spSchema
-          Name = spName
-          Parameters = parameters |> Seq.toList }
-        
+        let tableColumnsByPath = tables |> List.collect (fun t -> t.Columns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
+        let viewColumnsByPath = views |> List.collect (fun v -> v.Columns @ v.DynamicColumns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
+        let resolveColumnRefPath = resolveColumnRefPath tableColumnsByPath viewColumnsByPath
 
-    let findAllScriptsInDir (dir: IO.DirectoryInfo) =
-        dir.EnumerateFiles("*.sql", IO.SearchOption.AllDirectories)
-                
-    let readFile (file: System.IO.FileInfo) =
-        IO.File.ReadAllText(file.FullName)
+        let viewToTable (view: SsdtView) =
+            { SsdtTable.FullName = view.FullName
+              SsdtTable.Name = view.Name
+              SsdtTable.Schema = view.Schema
+              SsdtTable.IsView = true
+              SsdtTable.PrimaryKey = None
+              SsdtTable.Columns =
+                view.Columns
+                |> List.map (fun vc ->
+                    match resolveColumnRefPath vc with
+                    | Some tc -> tc
+                    | None ->
+                        // If we can't resolve a view column, default to an obj so the user can cast it themselves.
+                        { SsdtColumn.FullName = vc.FullName
+                          SsdtColumn.Name = vc.FullName |> splitFullName |> Array.last
+                          SsdtColumn.DataType = "SQL_VARIANT"
+                          SsdtColumn.AllowNulls = false
+                          SsdtColumn.HasDefault = false
+                          SsdtColumn.IsIdentity = false } 
+                )
+            }
 
-    let getScriptsFromSqlProj (projFile: IO.FileInfo) =
-        let xml = projFile |> readFile
-        let doc = new XmlDocument()
-        let nsMgr = XmlNamespaceManager(doc.NameTable)
-        nsMgr.AddNamespace("x", "http://schemas.microsoft.com/developer/msbuild/2003")
-        doc.LoadXml(xml)
-
-        let project = doc.SelectSingleNode("x:Project", nsMgr)
-        let itemGroups = project.SelectNodes("x:ItemGroup", nsMgr) |> Seq.cast<XmlNode>
-        let builds = itemGroups |> Seq.collect (fun ig -> ig.SelectNodes("x:Build", nsMgr) |> Seq.cast<XmlNode>)
-        builds
-        |> Seq.map (att "Include")
-        |> Seq.map (fun relPath -> IO.Path.Combine(projFile.DirectoryName, relPath))
-        |> Seq.map IO.FileInfo
-
-    let (|SsdtDirectoryPath|SsdtProjectPath|) ssdtPath =
-        if IO.Directory.Exists(ssdtPath) then SsdtDirectoryPath (IO.DirectoryInfo ssdtPath)
-        elif IO.File.Exists(ssdtPath) then SsdtProjectPath (IO.FileInfo ssdtPath)
-        else failwithf "SsdtPath must point to a .sqlproj file or a root folder."
-
-    type AnalyzedXml =
-        | TableXml of file: IO.FileInfo * xml: string
-        | ViewXml of file: IO.FileInfo * xml: string
-        | StoredProcXml of file: IO.FileInfo * xml: string
-        | UnsupportedScript
-
-    let analyzeXml (sql: IO.FileInfo) (xml: string) =
-        if xml.Contains("<SqlCreateTableStatement") then TableXml (sql, xml)
-        elif xml.Contains("<SqlCreateViewStatement") then ViewXml (sql, xml)
-        elif xml.Contains("<SqlCreateProcedureStatement") then
-            if xml.Contains("<SqlTableVariableRefExpression") then UnsupportedScript // Table Valued Parameters are not supported
-            else StoredProcXml (sql, xml)
-        else UnsupportedScript
-
-    let parseScripts (scripts: AnalyzedXml list) =
-        /// Wrap each file parser in a try/catch with a friendly ex to tell user which .sql file failed
-        let tryParse parse (file: IO.FileInfo, xml: string) =
-            try parse xml
-            with ex -> failwithf "Unable to parse file '%s'.\n%s" file.Name ex.Message
-
-        let tableXmls = scripts |> List.choose (function | TableXml (sql,xml) -> Some (sql,xml) | _ -> None)
-        let viewXmls = scripts |> List.choose (function | ViewXml (sql,xml) -> Some (sql,xml) | _ -> None)
-        let spXmls = scripts |> List.choose (function | StoredProcXml (sql,xml) -> Some (sql,xml) | _ -> None)
-        let tables = tableXmls |> List.map (tryParse parseTableSchemaXml)
-        let views = viewXmls |> List.map (tryParse (parseViewSchemaXml tables))
-        let storedProcs = spXmls |> List.map (tryParse parseStoredProcSchemaXml)
-        let tablesAndViews = tables @ views
-        let tablesByName = tablesAndViews |> List.map (fun t -> t.Name, t) |> Map.ofList
+        let tablesAndViews = tables @ (views |> List.map viewToTable)
 
         { SsdtSchema.Tables = tablesAndViews
-          SsdtSchema.TryGetTableByName = tablesByName.TryFind
-          SsdtSchema.StoredProcs = storedProcs }
+          SsdtSchema.StoredProcs = storedProcs
+          SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
+          SsdtSchema.Relationships = relationships }
 
-    let findScripts ssdtPath =
-        match ssdtPath with
-        | SsdtDirectoryPath dir -> findAllScriptsInDir dir
-        | SsdtProjectPath projFile -> getScriptsFromSqlProj projFile        
-
-    let buildSsdtSchema dynamicScriptParser ssdtPath =
-        ssdtPath
-        |> findScripts
-        |> Seq.map (fun sql -> sql |> readFile |> dynamicScriptParser |> analyzeXml sql)
-        |> Seq.toList
-        |> parseScripts
+    let findAndParseModel = findDacPacFile >> extractModelXml >> parseXml
 
     let ssdtTableToTable (tbl: SsdtTable) =
-        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "VIEW" else "BASE TABLE" } // Type options: "VIEW" or "BASE TABLE"
+        { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
 
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match tryFindMapping col.DataType with
@@ -480,26 +415,18 @@ module MSSqlServerSsdt =
                   Column.IsNullable = col.AllowNulls
                   Column.IsPrimaryKey =
                     tbl.PrimaryKey
-                    |> Option.map (fun pk -> pk.Columns |> List.exists (fun colName -> colName = col.Name))
+                    |> Option.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
                     |> Option.defaultValue false
-                  Column.IsAutonumber = col.Identity <> None
+                  Column.IsAutonumber = col.IsIdentity
                   Column.HasDefault = col.HasDefault
                   Column.IsComputed = false // Not supported (unable to parse computed column type)
                   Column.TypeInfo = None }  // Not supported (but could be)
         | None ->
             None
 
-    let fkToRelationship (childTable: SsdtTable) (fk: ForeignKeyConstraint) =
-        { Name = fk.Name
-          PrimaryTable = Table.CreateFullName(fk.References.Schema, fk.References.Table)
-          PrimaryKey = fk.References.Columns.Head
-          ForeignTable = Table.CreateFullName(childTable.Schema, childTable.Name)
-          ForeignKey = fk.Columns.Head }
 
-
-
-type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath: string, referencedAssemblies: string [], tableNames: string, ssdtPath: string) =
-    let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
+    let schemaCache = SchemaCache.Empty
     let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
     let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
     let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
@@ -507,9 +434,7 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let dynamicScriptParser = MSSqlServerSsdt.buildDynamicTableScriptParser.Value resolutionPath referencedAssemblies
-
-    let ssdtSchema = lazy MSSqlServerSsdt.buildSsdtSchema dynamicScriptParser ssdtPath
+    let ssdtSchema = lazy (MSSqlServerSsdt.findAndParseModel ssdtPath)
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
@@ -549,10 +474,10 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
 
         member __.GetPrimaryKey(table) =
             match ssdtSchema.Value.TryGetTableByName(table.Name) with
-            |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c)
+            |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c.Name)
             | _ -> None
 
-        member __.GetColumns(con,table) =        
+        member __.GetColumns(con,table) =
             let columns =
                 match ssdtSchema.Value.TryGetTableByName(table.Name) with
                 | Some ssdtTbl ->
@@ -583,24 +508,29 @@ type internal MSSqlServerProviderSsdt(resolutionPath: string, contextSchemaPath:
         member __.GetRelationships(con, table) =
             let ssdtSchema = ssdtSchema.Value
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
-                // The table containing the foreign key is called the child table
-                match ssdtSchema.TryGetTableByName(table.Name) with
-                | Some ssdtTbl ->
-                    let parents =
-                        ssdtTbl.ForeignKeys
-                        |> List.map (MSSqlServerSsdt.fkToRelationship ssdtTbl)
+                let children =
+                    ssdtSchema.Relationships
+                    |> List.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
+                    |> List.map (fun r ->
+                        { Name = r.Name
+                          PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
+                          PrimaryKey = r.ForeignTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name)
+                          ForeignKey = r.DefiningTable.Columns.Head.Name }
+                    )
 
-                    let children =
-                        ssdtSchema.Tables
-                        |> Seq.choose (fun tbl -> // Get all fks that reference this table
-                            match tbl.ForeignKeys |> List.filter (fun fk -> (fk.References.Schema, fk.References.Table) = (table.Schema, table.Name)) with
-                            | [] -> None
-                            | _ as fks -> Some (tbl, fks)
-                        )
-                        |> Seq.collect (fun (childTable, fks) -> fks |> List.map (MSSqlServerSsdt.fkToRelationship childTable))
-                        |> Seq.toList
-                    children, parents
-                | None -> [], []
+                let parents =
+                    ssdtSchema.Relationships
+                    |> List.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
+                    |> List.map (fun r ->
+                        { Name = r.Name
+                          PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
+                          PrimaryKey = r.ForeignTable.Columns.Head.Name
+                          ForeignTable = Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name)
+                          ForeignKey = r.DefiningTable.Columns.Head.Name }
+                    )
+
+                children, parents
             )
 
         member __.GetSprocs(con) =

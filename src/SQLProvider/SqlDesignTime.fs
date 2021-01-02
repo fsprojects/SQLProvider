@@ -61,9 +61,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
                         if ssdtPath = "" then failwith "No SsdtPath was specified."
-                        elif not (IO.Directory.Exists ssdtPath || IO.File.Exists ssdtPath) then failwithf "The specified SsdtPath does not exist: '%s'" ssdtPath
-                        elif resolutionPath = "" then failwith "No ResolutionPath was specified."
-                        elif not (IO.Directory.Exists resolutionPath) then failwithf "The specified ResolutionPath does not exist: '%s'" resolutionPath
+                        elif not (ssdtPath.EndsWith(".dacpac")) then failwith "SsdtPath must point to a .dacpac file."
                         else Some Stubs.connection
                     | _ ->
                         match conString, conStringName with
@@ -1016,7 +1014,7 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ContextSchemaPath'>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</param>
                     <param name='OdbcQuote'>Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]</param>
                     <param name='SQLiteLibrary'>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</param>
-                    <param name='SsdtPath'>A path to the SSDT project file (.sqlproj), or a folder hierarchy that contains .sql scripts.'</param>
+                    <param name='SsdtPath'>A path to an SSDT .dacpac file.'</param>
                     "
 
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary; ssdtPath], fun typeName args ->
