@@ -61,7 +61,6 @@ type SqlTypeProvider(config: TypeProviderConfig) as this =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
                         if ssdtPath = "" then failwith "No SsdtPath was specified."
-                        elif not (IO.File.Exists ssdtPath) then failwithf "The specified SsdtPath does not exist: '%s'" ssdtPath
                         elif not (ssdtPath.EndsWith(".dacpac")) then failwith "SsdtPath must point to a .dacpac file."
                         else Some Stubs.connection
                     | _ ->

@@ -139,6 +139,16 @@ module MSSqlServerSsdt =
     let readFile (file: System.IO.FileInfo) =
         IO.File.ReadAllText(file.FullName)
 
+    /// Tries to find .dacpac file using the given path or by searching assembly path.
+    let findDacPacFile (dacPacPath: string) =
+        let file = IO.FileInfo(dacPacPath)
+        if file.Exists then file.FullName
+        else
+            let assemblyFile = IO.FileInfo(Reflection.Assembly.GetExecutingAssembly().Location)
+            let newFile = IO.FileInfo(IO.Path.Combine(assemblyFile.Directory.FullName, file.Name))
+            if newFile.Exists then newFile.FullName
+            else failwithf "Unable to find .dacpac file at: '%s'" newFile.FullName
+
     /// Extracts model.xml from the given .dacpac file path.
     let extractModelXml (dacPacPath: string) = 
         use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open)
@@ -391,6 +401,8 @@ module MSSqlServerSsdt =
           SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
           SsdtSchema.Relationships = relationships }
 
+    let findAndParseModel = findDacPacFile >> extractModelXml >> parseXml
+
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
 
@@ -422,7 +434,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let ssdtSchema = lazy (ssdtPath |> MSSqlServerSsdt.extractModelXml |> MSSqlServerSsdt.parseXml)
+    let ssdtSchema = lazy (MSSqlServerSsdt.findAndParseModel ssdtPath)
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
