@@ -139,15 +139,23 @@ module MSSqlServerSsdt =
     let readFile (file: System.IO.FileInfo) =
         IO.File.ReadAllText(file.FullName)
 
-    /// Tries to find .dacpac file using the given path or by searching assembly path.
+    /// Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.
     let findDacPacFile (dacPacPath: string) =
-        let file = IO.FileInfo(dacPacPath)
-        if file.Exists then file.FullName
+        // Find at design time using SsdtPath
+        let ssdtFile = IO.FileInfo(dacPacPath)
+        if ssdtFile.Exists then ssdtFile.FullName
         else
-            let assemblyFile = IO.FileInfo(Reflection.Assembly.GetExecutingAssembly().Location)
-            let newFile = IO.FileInfo(IO.Path.Combine(assemblyFile.Directory.FullName, file.Name))
-            if newFile.Exists then newFile.FullName
-            else failwithf "Unable to find .dacpac file at: '%s'" newFile.FullName
+            // Is this design time or runtime?
+            match Reflection.Assembly.GetEntryAssembly() |> Option.ofObj with
+            | None ->
+                // Design time
+                failwithf "Unable to find .dacpac at '%s'." ssdtFile.FullName
+            | Some entryAssembly ->
+                // Runtime - try to find dll in executing app
+                let entryDll = IO.FileInfo(entryAssembly.Location)
+                let newFile = IO.FileInfo(IO.Path.Combine(entryDll.Directory.FullName, ssdtFile.Name))
+                if newFile.Exists then newFile.FullName
+                else failwithf "Unable to find .dacpac at '%s'." newFile.FullName
 
     /// Extracts model.xml from the given .dacpac file path.
     let extractModelXml (dacPacPath: string) = 
