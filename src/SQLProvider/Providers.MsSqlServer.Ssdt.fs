@@ -430,8 +430,8 @@ module MSSqlServerSsdt =
                             | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
                         let description =
                             if dataType = "SQL_VARIANT"
-                            then sprintf "Unable to determine type from .dacpac. Consider annotating type in view. Ex: %s /* varchar not null */ " colName
-                            else "The column type was annotated in the view."
+                            then sprintf "Unable to resolve this column's data type from the .dacpac file; consider adding a type annotation in the view. Ex: %s /* varchar not null */ " colName
+                            else "This column's data type was resolved from a comment annotation in the SSDT view definition."
 
                         { SsdtColumn.FullName = vc.FullName
                           SsdtColumn.Name = colName
