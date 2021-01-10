@@ -110,11 +110,10 @@ SSDT Projects can be created in two ways:
 
 ### Tables
 * User defined data types are not yet supported
-* Computed columns are not yet supported
+* Computed table columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file.
 
 ### Views
-* Some view columns may have a data type of System.Object if the referenced column type cannot be fully traced by the parser.
-This is because the .dacpac schema does not provide enough information to fully trace certain column expressions.
+* Computed view columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. However, the data type can be override using a Type Annotation.
 
 #### Type Annotations
 As a work-around for view columns with an unresolved data type, the SSDT provider allows you to add type annotations directly in the view via in-line comments.

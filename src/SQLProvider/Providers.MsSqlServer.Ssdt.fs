@@ -260,19 +260,29 @@ module MSSqlServerSsdt =
         let parseTableColumn (colEntry: XmlNode) =
             let el = colEntry |> node "x:Element"
             let colType, fullName = el |> att "Type", el |> att "Name"
+            let colName = fullName |> splitFullName |> Array.last
             match colType with
             | "SqlSimpleColumn" -> 
                 let allowNulls = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsNullable") |> Option.map (fun p -> p |> att "Value")
                 let isIdentity = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsIdentity") |> Option.map (fun p -> p |> att "Value")
                 let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
                 Some
-                    { SsdtColumn.Name = fullName |> splitFullName |> Array.last
+                    { SsdtColumn.Name = colName
                       SsdtColumn.FullName = fullName
                       SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
                       SsdtColumn.DataType = dataType |> removeBrackets
                       SsdtColumn.HasDefault = false
                       SsdtColumn.Description = "Simple Column"
                       SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
+            | "SqlComputedColumn" ->
+                Some
+                    { SsdtColumn.Name = colName
+                      SsdtColumn.FullName = fullName
+                      SsdtColumn.AllowNulls = false
+                      SsdtColumn.DataType = "SQL_VARIANT"
+                      SsdtColumn.HasDefault = false
+                      SsdtColumn.Description = "Computed Column"
+                      SsdtColumn.IsIdentity = false }
             | _ ->
                 None // Unsupported column type
     
