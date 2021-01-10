@@ -10,6 +10,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
 open System.IO.Compression
+open System.Text.RegularExpressions
 
 module MSSqlServerSsdt =
     let splitAndRemoveBrackets (s: string) =
@@ -43,10 +44,16 @@ module MSSqlServerSsdt =
         Name: string
         Columns: SsdtViewColumn list
         DynamicColumns: SsdtViewColumn list
+        Annotations: CommentAnnotation list
     }
     and SsdtViewColumn = {
         FullName: string
         ColumnRefPath: string option
+    }
+    and CommentAnnotation = {
+        Column: string
+        DataType: string
+        Nullability: string option
     }
     and SsdtRelationship = {
         Name: string
@@ -80,7 +87,8 @@ module MSSqlServerSsdt =
         DataType: string
         Length: int option
         IsOutput: bool
-    }
+    }    
+    
 
     let typeMappingsByName =
         let toInt = int >> Some
@@ -190,6 +198,17 @@ module MSSqlServerSsdt =
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
 
+    let parseCommentAnnotations sql =
+        let opt = RegexOptions.IgnoreCase
+        Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
+        |> Seq.cast<Match>
+        |> Seq.map (fun m ->
+            { Column = m.Groups.["Column"].Captures.[0].Value
+              DataType = m.Groups.["DataType"].Captures.[0].Value
+              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+        )
+        |> Seq.toList
+
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
         let splitFullName (fn: string) = fn.Split([|'.';']';'['|], StringSplitOptions.RemoveEmptyEntries)
@@ -297,13 +316,16 @@ module MSSqlServerSsdt =
             let relationshipColumns = viewElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
             let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
             let dynamicColumns = collectDynamicColumnRefs viewElement
+            let query = (viewElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "QueryScript") |> node "x:Value").InnerText
+            let annotations = parseCommentAnnotations query
 
             let nameParts = fullName |> splitFullName
             { SsdtView.FullName = fullName
               SsdtView.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
               SsdtView.Name = match nameParts with | [|schema;name|] -> name | _ -> ""
               SsdtView.Columns = columns |> Seq.toList
-              SsdtView.DynamicColumns = dynamicColumns }
+              SsdtView.DynamicColumns = dynamicColumns
+              SsdtView.Annotations = annotations }
 
         /// Recursively resolves column references.
         let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
@@ -392,11 +414,23 @@ module MSSqlServerSsdt =
                     match resolveColumnRefPath vc with
                     | Some tc -> tc
                     | None ->
-                        // If we can't resolve a view column, default to an obj so the user can cast it themselves.
+                        // Can't resolve column: try to find a commented type annotation
+                        let colName = vc.FullName |> splitFullName |> Array.last
+                        let annotation = view.Annotations |> List.tryFind (fun a -> a.Column = colName)
+                        let dataType =
+                            annotation
+                            |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                            |> Option.defaultValue "SQL_VARIANT"
+                        let allowNulls =
+                            match annotation with
+                            | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
+                            | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                            | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                        
                         { SsdtColumn.FullName = vc.FullName
-                          SsdtColumn.Name = vc.FullName |> splitFullName |> Array.last
-                          SsdtColumn.DataType = "SQL_VARIANT"
-                          SsdtColumn.AllowNulls = false
+                          SsdtColumn.Name = colName
+                          SsdtColumn.DataType = dataType
+                          SsdtColumn.AllowNulls = allowNulls
                           SsdtColumn.HasDefault = false
                           SsdtColumn.IsIdentity = false } 
                 )
