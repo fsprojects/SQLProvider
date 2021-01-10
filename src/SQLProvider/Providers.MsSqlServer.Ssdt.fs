@@ -33,6 +33,7 @@ module MSSqlServerSsdt =
     and SsdtColumn = {
         FullName: string
         Name: string
+        Description: string
         DataType: string
         AllowNulls: bool
         IsIdentity: bool
@@ -270,6 +271,7 @@ module MSSqlServerSsdt =
                       SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
                       SsdtColumn.DataType = dataType |> removeBrackets
                       SsdtColumn.HasDefault = false
+                      SsdtColumn.Description = "Simple Column"
                       SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
             | _ ->
                 None // Unsupported column type
@@ -426,9 +428,14 @@ module MSSqlServerSsdt =
                             | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
                             | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
                             | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
-                        
+                        let description =
+                            if dataType = "SQL_VARIANT"
+                            then sprintf "Unable to determine type from .dacpac. Consider annotating type in view. Ex: %s /* varchar not null */ " colName
+                            else "The column type was annotated in the view."
+
                         { SsdtColumn.FullName = vc.FullName
                           SsdtColumn.Name = colName
+                          SsdtColumn.Description = description
                           SsdtColumn.DataType = dataType
                           SsdtColumn.AllowNulls = allowNulls
                           SsdtColumn.HasDefault = false
@@ -481,7 +488,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = tableName
-        member __.GetColumnDescription(con,tableName,columnName) = columnName
+        member __.GetColumnDescription(con,tableName,columnName) =
+            let tableName = MSSqlServerSsdt.splitAndRemoveBrackets tableName |> Seq.last
+            ssdtSchema.Value.Tables
+            |> List.tryFind (fun t -> t.Name = tableName)
+            |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
+            |> Option.map (fun c -> c.Description)
+            |> Option.defaultValue columnName
         member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
         member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
         member __.CreateCommandParameter(param, value) =
