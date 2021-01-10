@@ -431,7 +431,7 @@ module MSSqlServerSsdt =
                         let description =
                             if dataType = "SQL_VARIANT"
                             then sprintf "Unable to determine type from .dacpac. Consider annotating type in view. Ex: %s /* varchar not null */ " colName
-                            else "The column type was annotated in the view."
+                            else "This column data type was annotated in the view."
 
                         { SsdtColumn.FullName = vc.FullName
                           SsdtColumn.Name = colName
