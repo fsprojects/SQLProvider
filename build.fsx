@@ -255,7 +255,7 @@ Target "CopyFiles" (fun _ ->
     //     copyDotnetLibraries dotnetSdk212
     copyDotnetLibraries "packages/standard/NETStandard.Library/build/netstandard2.0/ref/"
 
-    CopyFile "bin/netstandard2.0" "packages/System.Data.SqlClient/lib/net461/System.Data.SqlClient.dll" 
+    CopyFile "bin/netstandard2.0" "packages/standard/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll" 
 
 #endif
 
