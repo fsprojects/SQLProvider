@@ -1,3 +1,6 @@
+### 1.1.99 - 12.01.2021
+* SSDT type annotations PR #707
+
 ### 1.1.98 - 02.01.2021
 * SSDT moved to use dacpac PR #704
 
