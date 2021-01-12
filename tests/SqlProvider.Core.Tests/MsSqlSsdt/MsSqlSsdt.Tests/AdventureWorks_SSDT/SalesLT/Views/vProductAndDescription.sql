@@ -9,7 +9,8 @@ SELECT
     ,p.[Name] 
     ,pm.[Name] AS [ProductModel] 
     ,pmx.[Culture] 
-    ,pd.[Description] 
+    ,pd.[Description]
+    ,(1 + 2) AS [Three] /* int not null */
 FROM [SalesLT].[Product] p 
     INNER JOIN [SalesLT].[ProductModel] pm 
     ON p.[ProductModelID] = pm.[ProductModelID] 
