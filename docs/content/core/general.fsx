@@ -27,7 +27,8 @@ type-safe manner, without the inconvenience of a code-generation step.
 
 SQL Provider supports the following database types:
 
-* [MSSQL](mssql.html) 
+* [MSSQL](mssql.html)
+* [MSSQL SSDT](mssqlssdt.html)
 * [Oracle](oracle.html) 
 * [SQLite](sqlite.html) 
 * [PostgreSQL](postgresql.html)

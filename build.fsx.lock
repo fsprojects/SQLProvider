@@ -133,7 +133,7 @@ NUGET
     FSharp.Control.Reactive (4.3)
       FSharp.Core (>= 4.7)
       System.Reactive (>= 4.3.2)
-    FSharp.Core (4.7.2)
+    FSharp.Core (5.0)
     Microsoft.Build (16.5)
     Microsoft.Build.Framework (16.5)
       System.Runtime.Serialization.Primitives (>= 4.1.1)

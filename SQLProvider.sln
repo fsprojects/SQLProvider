@@ -1,10 +1,12 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.1145
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30709.132
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SQLProvider.Runtime", "src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj", "{869D1719-52F6-4161-891F-892E6700EEDA}"
+		docs\content\core\mssqlssdt.fsx = docs\content\core\mssqlssdt.fsx
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SQLProvider.DesignTime", "src\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj", "{9DFB1C30-D288-431B-A8EE-425EAD0E2549}"
+		src\scripts\Firebird.fsx = src\scripts\Firebird.fsx
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,6 +60,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C63075C-B7D8-46EE-B9BA-DE66FA612F2F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F57D1E88-2ED8-4260-9DD9-96FD8C94901D}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

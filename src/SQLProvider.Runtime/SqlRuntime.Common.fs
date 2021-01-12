@@ -25,6 +25,7 @@ type DatabaseProviderTypes =
     | ODBC = 6
     | FIREBIRD = 7
     | MSSQLSERVER_DYNAMIC = 8
+    | MSSQLSERVER_SSDT = 9
 type RelationshipDirection = Children = 0 | Parents = 1
 
 type CaseSensitivityChange =

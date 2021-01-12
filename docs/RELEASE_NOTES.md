@@ -1,3 +1,18 @@
+### 1.1.99 - 12.01.2021
+* SSDT type annotations PR #707
+
+### 1.1.98 - 02.01.2021
+* SSDT moved to use dacpac PR #704
+
+### 1.1.97 - 25.12.2020
+* SSDT improvements, views, sprocs PR #703
+
+### 1.1.96 - 21.12.2020
+* SSDT improvements PR #702
+
+### 1.1.95 - 19.12.2020
+* Initial SSDT support PR #700
+
 ### 1.1.94 - 27.11.2020
 * More query support: where (table.NullableColumn = optionValue && not boolean_column)
 

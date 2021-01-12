@@ -46,6 +46,7 @@
     <Compile Include="SqlRuntime.Common.fs"/>
     <Compile Include="Providers.MsSqlServer.fs"/>
     <Compile Include="Providers.MsSqlServer.Dynamic.fs"/>
+    <Compile Include="Providers.MsSqlServer.Ssdt.fs"/>
     <Compile Include="Providers.MSAccess.fs"/>
     <Compile Include="Providers.MySql.fs"/>
     <Compile Include="Providers.Odbc.fs"/>
@@ -79,6 +80,7 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

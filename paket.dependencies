@@ -95,4 +95,3 @@ group Tests
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
 
 
-    

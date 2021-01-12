@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"dataworkspace.projects": [
+			"AdventureWorks_SSDT.sqlproj"
+		]
+	}
+}

@@ -62,6 +62,9 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
       <Link>Providers.MsSqlServer.Dynamic.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
+      <Link>Providers.MsSqlServer.Ssdt.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
       <Link>Providers.MSAccess.fs</Link>
     </Compile>
@@ -95,9 +98,6 @@
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
-      <Link>SqlRuntime.DataContext.fs</Link>
-    </Compile>
     <Compile Include="SqlDesignTime.fs" />
     <None Include="paket.references" />
     <None Include="..\..\packages\NETStandard.Library.NETFramework\build\net461\lib\netstandard.dll" Condition="'$(TargetFramework)' == 'net461'">
@@ -113,6 +113,7 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

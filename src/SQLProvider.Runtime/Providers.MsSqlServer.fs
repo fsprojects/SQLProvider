@@ -337,19 +337,6 @@ module MSSqlServer =
                 let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync com reader)
                 return Set(r |> List.toArray)
         }
-        
-type internal MSSQLPagingCompatibility =
-  // SQL SERVER versions since 2012
-  | Offset = 0
-  // SQL SERVER versions prior to 2012
-  | RowNumber = 1
-
-type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
-    let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
-    
-    // Remembers the version of each instance it connects to
-    let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) = 
         let aliasSprint =
@@ -358,7 +345,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             | false -> sprintf "'[%s].[%s]'" al
         Utilities.genericAliasNotation aliasSprint col
 
-    let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+    let internal createInsertCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -369,7 +356,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
-                let p = MSSqlServer.createOpenParameter(name,v)
+                let p = createOpenParameter(name,v)
                 (sprintf "[%s]" k,p)::out,i+1)
             |> fst
             |> List.rev
@@ -400,7 +387,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns:string list) =
+    let internal createUpdateCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns:string list) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -425,9 +412,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 let p =
                     match entity.GetColumnOption<obj> col with
                     | Some v ->
-                        let p = MSSqlServer.createOpenParameter(name,v)
+                        let p = createOpenParameter(name,v)
                         p
-                    | None -> MSSqlServer.createOpenParameter(name,DBNull.Value)
+                    | None -> createOpenParameter(name,DBNull.Value)
                 (col,p)::out,i+1)
             |> fst
             |> List.rev
@@ -443,12 +430,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
         cmd.Parameters.AddRange(data |> Array.map snd)
         pkValues |> List.iteri(fun i pkValue ->
-            let pkParam = MSSqlServer.createOpenParameter(("@pk"+i.ToString()), pkValue)
+            let pkParam = createOpenParameter(("@pk"+i.ToString()), pkValue)
             cmd.Parameters.Add pkParam |> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
-    let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+    let internal createDeleteCommand schemaCache (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new SqlCommand()
@@ -473,6 +460,22 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
         cmd.CommandText <- sb.ToString()
         cmd
+        
+type internal MSSQLPagingCompatibility =
+  // SQL SERVER versions since 2012
+  | Offset = 0
+  // SQL SERVER versions prior to 2012
+  | RowNumber = 1
+
+type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
+    let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
+    let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
+    let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
+    let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
+    let myLock = new Object()
+    
+    // Remembers the version of each instance it connects to
+    let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
@@ -650,13 +653,16 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             let res = MSSqlServer.connect con (fun con ->
                 let baseq1 = sprintf "%s WHERE KCU2.TABLE_NAME = @tblName" baseQuery 
                 use com1 = new SqlCommand(baseq1,con:?>SqlConnection)
-                com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore
+                com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore 
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com1.ExecuteReader()
                 let children =
                     [ while reader.Read() do
-                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                                ForeignTable= Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
+                        yield { Name = reader.GetSqlString(0).Value 
+                                PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value)
+                                PrimaryKey = reader.GetSqlString(6).Value
+                                ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value)
+                                ForeignKey=reader.GetSqlString(2).Value } ]
                 reader.Dispose()
                 let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
                 use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
@@ -665,8 +671,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 use reader = com2.ExecuteReader()
                 let parents =
                     [ while reader.Read() do
-                        yield { Name = reader.GetSqlString(0).Value; PrimaryTable=Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value); PrimaryKey=reader.GetSqlString(6).Value
-                                ForeignTable=Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value); ForeignKey=reader.GetSqlString(2).Value } ]
+                        yield { Name = reader.GetSqlString(0).Value;
+                                PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value);
+                                PrimaryKey = reader.GetSqlString(6).Value
+                                ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value);
+                                ForeignKey=reader.GetSqlString(2).Value } ]
                 (children,parents))
             res)
 
@@ -916,13 +925,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
                         let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
                             if sqlQuery.Aliases.Count < 2 then fieldNotation a c
                             else sprintf "%s as '%s'" (fieldNotation a c) (fieldNotation a c))
                         let aggs = g |> List.map(snd) |> List.concat
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
+                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
