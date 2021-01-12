@@ -18,10 +18,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Dacpac\Utils.fs" />
     <Compile Include="Dacpac\UnzipTests.fs" />
-    <Compile Include="Dacpac\ParseTableTests.fs" />
+    <Compile Include="Dacpac\ParseSchemaTests.fs" />
+    <Compile Include="Dacpac\TypeAnnotationTests.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="FSharp.Data.SqlProvider">
+      <HintPath>..\..\..\..\bin\netstandard2.0\FSharp.Data.SqlProvider.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

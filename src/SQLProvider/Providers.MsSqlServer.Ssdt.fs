@@ -10,6 +10,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
 open System.IO.Compression
+open System.Text.RegularExpressions
 
 module MSSqlServerSsdt =
     let splitAndRemoveBrackets (s: string) =
@@ -32,6 +33,7 @@ module MSSqlServerSsdt =
     and SsdtColumn = {
         FullName: string
         Name: string
+        Description: string
         DataType: string
         AllowNulls: bool
         IsIdentity: bool
@@ -43,10 +45,16 @@ module MSSqlServerSsdt =
         Name: string
         Columns: SsdtViewColumn list
         DynamicColumns: SsdtViewColumn list
+        Annotations: CommentAnnotation list
     }
     and SsdtViewColumn = {
         FullName: string
         ColumnRefPath: string option
+    }
+    and CommentAnnotation = {
+        Column: string
+        DataType: string
+        Nullability: string option
     }
     and SsdtRelationship = {
         Name: string
@@ -80,7 +88,8 @@ module MSSqlServerSsdt =
         DataType: string
         Length: int option
         IsOutput: bool
-    }
+    }    
+    
 
     let typeMappingsByName =
         let toInt = int >> Some
@@ -139,15 +148,23 @@ module MSSqlServerSsdt =
     let readFile (file: System.IO.FileInfo) =
         IO.File.ReadAllText(file.FullName)
 
-    /// Tries to find .dacpac file using the given path or by searching assembly path.
+    /// Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.
     let findDacPacFile (dacPacPath: string) =
-        let file = IO.FileInfo(dacPacPath)
-        if file.Exists then file.FullName
+        // Find at design time using SsdtPath
+        let ssdtFile = IO.FileInfo(dacPacPath)
+        if ssdtFile.Exists then ssdtFile.FullName
         else
-            let assemblyFile = IO.FileInfo(Reflection.Assembly.GetExecutingAssembly().Location)
-            let newFile = IO.FileInfo(IO.Path.Combine(assemblyFile.Directory.FullName, file.Name))
-            if newFile.Exists then newFile.FullName
-            else failwithf "Unable to find .dacpac file at: '%s'" newFile.FullName
+            // Is this design time or runtime?
+            match Reflection.Assembly.GetEntryAssembly() |> Option.ofObj with
+            | None ->
+                // Design time
+                failwithf "Unable to find .dacpac at '%s'." ssdtFile.FullName
+            | Some entryAssembly ->
+                // Runtime - try to find dll in executing app
+                let entryDll = IO.FileInfo(entryAssembly.Location)
+                let newFile = IO.FileInfo(IO.Path.Combine(entryDll.Directory.FullName, ssdtFile.Name))
+                if newFile.Exists then newFile.FullName
+                else failwithf "Unable to find .dacpac at '%s'." newFile.FullName
 
     /// Extracts model.xml from the given .dacpac file path.
     let extractModelXml (dacPacPath: string) = 
@@ -181,6 +198,28 @@ module MSSqlServerSsdt =
     
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
+
+    /// Tries to find an in-line commented type annotation in a computed table column.
+    let parseTableColumnAnnotation colName colExpression =
+        let opt = RegexOptions.IgnoreCase
+        let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
+        if m.Success then
+            Some { Column = colName
+                   DataType = m.Groups.["DataType"].Captures.[0].Value
+                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+        else None
+
+    /// Tries to find in-line commented type annotations in a view declaration.
+    let parseViewAnnotations sql =
+        let opt = RegexOptions.IgnoreCase
+        Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
+        |> Seq.cast<Match>
+        |> Seq.map (fun m ->
+            { Column = m.Groups.["Column"].Captures.[0].Value
+              DataType = m.Groups.["DataType"].Captures.[0].Value
+              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+        )
+        |> Seq.toList
 
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
@@ -232,18 +271,42 @@ module MSSqlServerSsdt =
         let parseTableColumn (colEntry: XmlNode) =
             let el = colEntry |> node "x:Element"
             let colType, fullName = el |> att "Type", el |> att "Name"
+            let colName = fullName |> splitFullName |> Array.last
             match colType with
             | "SqlSimpleColumn" -> 
                 let allowNulls = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsNullable") |> Option.map (fun p -> p |> att "Value")
                 let isIdentity = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsIdentity") |> Option.map (fun p -> p |> att "Value")
                 let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
                 Some
-                    { SsdtColumn.Name = fullName |> splitFullName |> Array.last
+                    { SsdtColumn.Name = colName
                       SsdtColumn.FullName = fullName
                       SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
                       SsdtColumn.DataType = dataType |> removeBrackets
                       SsdtColumn.HasDefault = false
+                      SsdtColumn.Description = "Simple Column"
                       SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
+            | "SqlComputedColumn" ->
+                // Check for annotation
+                let colExpr = (el |> node "x:Property/x:Value").InnerText
+                let annotation = parseTableColumnAnnotation colName colExpr
+                let dataType =
+                    annotation
+                    |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                    |> Option.defaultValue "SQL_VARIANT"
+                let allowNulls =
+                    match annotation with
+                    | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
+                    | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                    | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                
+                Some
+                    { SsdtColumn.Name = colName
+                      SsdtColumn.FullName = fullName
+                      SsdtColumn.AllowNulls = allowNulls
+                      SsdtColumn.DataType = dataType
+                      SsdtColumn.HasDefault = false
+                      SsdtColumn.Description = "Computed Column"
+                      SsdtColumn.IsIdentity = false }
             | _ ->
                 None // Unsupported column type
     
@@ -289,13 +352,16 @@ module MSSqlServerSsdt =
             let relationshipColumns = viewElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
             let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
             let dynamicColumns = collectDynamicColumnRefs viewElement
+            let query = (viewElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "QueryScript") |> node "x:Value").InnerText
+            let annotations = parseViewAnnotations query
 
             let nameParts = fullName |> splitFullName
             { SsdtView.FullName = fullName
               SsdtView.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
               SsdtView.Name = match nameParts with | [|schema;name|] -> name | _ -> ""
               SsdtView.Columns = columns |> Seq.toList
-              SsdtView.DynamicColumns = dynamicColumns }
+              SsdtView.DynamicColumns = dynamicColumns
+              SsdtView.Annotations = annotations }
 
         /// Recursively resolves column references.
         let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
@@ -384,11 +450,28 @@ module MSSqlServerSsdt =
                     match resolveColumnRefPath vc with
                     | Some tc -> tc
                     | None ->
-                        // If we can't resolve a view column, default to an obj so the user can cast it themselves.
+                        // Can't resolve column: try to find a commented type annotation
+                        let colName = vc.FullName |> splitFullName |> Array.last
+                        let annotation = view.Annotations |> List.tryFind (fun a -> a.Column = colName)
+                        let dataType =
+                            annotation
+                            |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                            |> Option.defaultValue "SQL_VARIANT"
+                        let allowNulls =
+                            match annotation with
+                            | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
+                            | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                            | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                        let description =
+                            if dataType = "SQL_VARIANT"
+                            then sprintf "Unable to resolve this column's data type from the .dacpac file; consider adding a type annotation in the view. Ex: %s /* varchar not null */ " colName
+                            else "This column's data type was resolved from a comment annotation in the SSDT view definition."
+
                         { SsdtColumn.FullName = vc.FullName
-                          SsdtColumn.Name = vc.FullName |> splitFullName |> Array.last
-                          SsdtColumn.DataType = "SQL_VARIANT"
-                          SsdtColumn.AllowNulls = false
+                          SsdtColumn.Name = colName
+                          SsdtColumn.Description = description
+                          SsdtColumn.DataType = dataType
+                          SsdtColumn.AllowNulls = allowNulls
                           SsdtColumn.HasDefault = false
                           SsdtColumn.IsIdentity = false } 
                 )
@@ -439,7 +522,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = tableName
-        member __.GetColumnDescription(con,tableName,columnName) = columnName
+        member __.GetColumnDescription(con,tableName,columnName) =
+            let tableName = MSSqlServerSsdt.splitAndRemoveBrackets tableName |> Seq.last
+            ssdtSchema.Value.Tables
+            |> List.tryFind (fun t -> t.Name = tableName)
+            |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
+            |> Option.map (fun c -> c.Description)
+            |> Option.defaultValue columnName
         member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
         member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
         member __.CreateCommandParameter(param, value) =

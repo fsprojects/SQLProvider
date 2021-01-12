@@ -1,7 +1,6 @@
 module Dacpac.UnzipTests
 open NUnit.Framework
 open System.IO.Compression
-open Utils
 open System
 
 [<Literal>]
