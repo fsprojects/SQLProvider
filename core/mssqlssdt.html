@@ -35,7 +35,7 @@
           <h1><a name="MSSQL-SSDT-Provider" class="anchor" href="#MSSQL-SSDT-Provider">MSSQL SSDT Provider</a></h1>
 <p>The SSDT provider allows types to be provided via SQL Server schema scripts in an SSDT project. No live database connection is required!</p>
 <h2><a name="Parameters" class="anchor" href="#Parameters">Parameters</a></h2>
-<h3><a name="Database-Vendor-required" class="anchor" href="#Database-Vendor-required">Database Vendor (required)</a></h3>
+<h3><a name="DatabaseVendor-required" class="anchor" href="#DatabaseVendor-required">DatabaseVendor (required)</a></h3>
 <p>Use <code>MSSQLSERVER_SSDT</code> from the <code>FSharp.Data.Sql.Common.DatabaseProviderTypes</code> enumeration.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -45,11 +45,15 @@
 </code></pre></td>
 </tr>
 </table>
-<h3><a name="SSDT-Path-required" class="anchor" href="#SSDT-Path-required">SSDT Path (required)</a></h3>
-<p>The SsdtPath must point to a .dacpac file.
-Notes:
-<em> For development, you can set the SsdtPath to point to the .dacpac file in the SSDT project Debug folder.
-</em> For deployment, the SSDT provider will search for the .dacpac file in the executing assembly folder. (Set the .dacpac file to "Copy to Output Directory" to ensure it is available.)</p>
+<h3><a name="SsdtPath-required" class="anchor" href="#SsdtPath-required">SsdtPath (required)</a></h3>
+<p>The SsdtPath must point to a .dacpac file.</p>
+<h4><a name="Notes" class="anchor" href="#Notes">Notes:</a></h4>
+<ul>
+<li>A .dacpac file is generated when an SSDT project is built, and can be found in the bin/Debug folder.</li>
+<li>For development, you can set the SsdtPath to point to the generated .dacpac file in the SSDT project Debug folder. (Using a <code>[&lt;Literal&gt;]</code> ssdtPath allows relative pathing).</li>
+<li>For deployment, the SSDT provider will search for the .dacpac file in the entry assembly folder.</li>
+<li>Linking the generated .dacpac file to your project and setting it to <code>CopyToOutputDirectory</code> will ensure that it will exist in the assembly folder for deployment.</li>
+</ul>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
@@ -58,29 +62,27 @@ Notes:
 </code></pre></td>
 </tr>
 </table>
-<h3><a name="Use-Option-Types" class="anchor" href="#Use-Option-Types">Use Option Types</a></h3>
-<p>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</p>
+<h2><a name="Example-of-the-minimal-required-options-for-the-SSDT-provider" class="anchor" href="#Example-of-the-minimal-required-options-for-the-SSDT-provider">Example of the minimal required options for the SSDT provider:</a></h2>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 12)" onmouseover="showTip(event, 'fs5', 12)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 13)" onmouseover="showTip(event, 'fs11', 13)" class="id">useOptTypes</span> <span class="o">=</span> <span class="k">true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="rt">DB</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs7', 13)" onmouseover="showTip(event, 'fs7', 13)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 14)" onmouseover="showTip(event, 'fs8', 14)" class="id">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 15)" onmouseover="showTip(event, 'fs9', 15)" class="id">MSSQLSERVER_SSDT</span><span class="pn">,</span> <span class="id">SsdtPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 16)" onmouseover="showTip(event, 'fs10', 16)" class="id">ssdtPath</span><span class="pn">&gt;</span>
+
+<span class="c">// To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.</span>
+<span class="c">//DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache</span>
 </code></pre></td>
 </tr>
 </table>
-<h2><a name="Example" class="anchor" href="#Example">Example</a></h2>
+<h4><a name="Reloading-the-schema" class="anchor" href="#Reloading-the-schema">Reloading the schema</a></h4>
+<p>It is helpful to keep the above Design Time Command commented out just below your SqlDataProvider type for refreshing the generated types after a schema change.</p>
+<h2><a name="Optional-Parameters" class="anchor" href="#Optional-Parameters">Optional Parameters</a></h2>
+<h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
+<p>If true, F# option types will be used in place of nullable database columns. If false, you will always receive the default value of the column's type even if it is null in the database.</p>
 <h3><a name="Table-Names-Filter" class="anchor" href="#Table-Names-Filter">Table Names Filter</a></h3>
-<p>Because MSSQL databases can be huge, there is an optional constructor parameter <code>TableNames</code> that can be used as a filter.
-The SSDT provider currently supports a simple comma delimited list of allowed table names (wildcards are not yet supported).</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 14)" onmouseover="showTip(event, 'fs5', 14)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="id">exampleAllowedTableNames</span> <span class="o">=</span> <span class="s">&quot;Projects, ProjectTasks, ProjectTaskCategories, Users&quot;</span>
-</code></pre></td>
-</tr>
-</table>
-<h3><a name="Example-of-the-minimal-required-options-for-the-SSDT-provider" class="anchor" href="#Example-of-the-minimal-required-options-for-the-SSDT-provider">Example of the minimal required options for the SSDT provider:</a></h3>
+<p>The SSDT provider currently supports a simple comma delimited list of allowed table names (wildcards are not currently supported).</p>
+<h2><a name="AdventureWorks-Example" class="anchor" href="#AdventureWorks-Example">AdventureWorks Example</a></h2>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 <span class="l">3: </span>
@@ -90,30 +92,13 @@ The SSDT provider currently supports a simple comma delimited list of allowed ta
 <span class="l">7: </span>
 <span class="l">8: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs13', 16)" onmouseover="showTip(event, 'fs13', 16)" class="rt">DB</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="pn">&lt;</span>
-                <span onmouseout="hideTip(event, 'fs7', 17)" onmouseover="showTip(event, 'fs7', 17)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 18)" onmouseover="showTip(event, 'fs8', 18)" class="id">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 19)" onmouseover="showTip(event, 'fs9', 19)" class="id">MSSQLSERVER_SSDT</span><span class="pn">,</span>
-                <span class="id">SsdtPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 20)" onmouseover="showTip(event, 'fs10', 20)" class="id">ssdtPath</span><span class="pn">&gt;</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 17)" onmouseover="showTip(event, 'fs12', 17)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 18)" onmouseover="showTip(event, 'fs11', 18)" class="id">DB</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="c">// To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.</span>
-<span class="c">//DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache</span>
-
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 21)" onmouseover="showTip(event, 'fs14', 21)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="id">DB</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
-</code></pre></td>
-</tr>
-</table>
-<h3><a name="AdventureWorks-SSDT-Example" class="anchor" href="#AdventureWorks-SSDT-Example">AdventureWorks SSDT Example</a></h3>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 23)" onmouseover="showTip(event, 'fs15', 23)" class="id">orderDetails</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs17', 25)" onmouseover="showTip(event, 'fs17', 25)" class="id">o</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs14', 26)" onmouseover="showTip(event, 'fs14', 26)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="id">SalesLt</span><span class="pn">.</span><span class="id">SalesOrderHeader</span> <span class="k">do</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs19', 28)" onmouseover="showTip(event, 'fs19', 28)" class="id">d</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs17', 29)" onmouseover="showTip(event, 'fs17', 29)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 30)" onmouseover="showTip(event, 'fs18', 30)" class="id">``SalesLT.SalesOrderDetail by SalesOrderID``</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs17', 32)" onmouseover="showTip(event, 'fs17', 32)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 33)" onmouseover="showTip(event, 'fs18', 33)" class="id">SalesOrderId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs17', 34)" onmouseover="showTip(event, 'fs17', 34)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 35)" onmouseover="showTip(event, 'fs18', 35)" class="id">OrderDate</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs17', 36)" onmouseover="showTip(event, 'fs17', 36)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 37)" onmouseover="showTip(event, 'fs18', 37)" class="id">SubTotal</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs19', 38)" onmouseover="showTip(event, 'fs19', 38)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 39)" onmouseover="showTip(event, 'fs18', 39)" class="id">OrderQty</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs19', 40)" onmouseover="showTip(event, 'fs19', 40)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 41)" onmouseover="showTip(event, 'fs18', 41)" class="id">ProductId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs19', 42)" onmouseover="showTip(event, 'fs19', 42)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 43)" onmouseover="showTip(event, 'fs18', 43)" class="id">UnitPrice</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="id">orderDetails</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="id">o</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs12', 22)" onmouseover="showTip(event, 'fs12', 22)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 23)" onmouseover="showTip(event, 'fs16', 23)" class="id">SalesLt</span><span class="pn">.</span><span class="id">SalesOrderHeader</span> <span class="k">do</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs17', 24)" onmouseover="showTip(event, 'fs17', 24)" class="id">d</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 26)" onmouseover="showTip(event, 'fs16', 26)" class="id">``SalesLT.SalesOrderDetail by SalesOrderID``</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs15', 28)" onmouseover="showTip(event, 'fs15', 28)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 29)" onmouseover="showTip(event, 'fs16', 29)" class="id">SalesOrderId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs15', 30)" onmouseover="showTip(event, 'fs15', 30)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 31)" onmouseover="showTip(event, 'fs16', 31)" class="id">OrderDate</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs15', 32)" onmouseover="showTip(event, 'fs15', 32)" class="id">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 33)" onmouseover="showTip(event, 'fs16', 33)" class="id">SubTotal</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs17', 34)" onmouseover="showTip(event, 'fs17', 34)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 35)" onmouseover="showTip(event, 'fs16', 35)" class="id">OrderQty</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs17', 36)" onmouseover="showTip(event, 'fs17', 36)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 37)" onmouseover="showTip(event, 'fs16', 37)" class="id">ProductId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs17', 38)" onmouseover="showTip(event, 'fs17', 38)" class="id">d</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 39)" onmouseover="showTip(event, 'fs16', 39)" class="id">LineTotal</span><span class="pn">)</span>
     <span class="pn">}</span>
 </code></pre></td>
 </tr>
@@ -134,15 +119,68 @@ This makes it easier to run on a build server without having to manually spin up
 <h2><a name="Known-Issues" class="anchor" href="#Known-Issues">Known Issues</a></h2>
 <h3><a name="Tables" class="anchor" href="#Tables">Tables</a></h3>
 <ul>
-<li>User defined data types are not currently supported</li>
+<li>User defined data types are not yet supported</li>
+<li>Computed table columns will default to a data type of <code>System.Object</code> since the data type is not listed in the .dacpac file. (See Type Annotations below.)</li>
 </ul>
 <h3><a name="Views" class="anchor" href="#Views">Views</a></h3>
 <ul>
-<li>Some view columns may have a data type of System.Object if the referenced column type cannot be fully traced by the parser.</li>
+<li>Computed view columns will default to a data type of <code>System.Object</code> since the data type is not listed in the .dacpac file. (See Type Annotations below.)</li>
+</ul>
+<h4><a name="Type-Annotations" class="anchor" href="#Type-Annotations">Type Annotations</a></h4>
+<p>As a work-around for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.</p>
+<p>In the SalesOrderDetail.sql example table below, <code>[LineTotal]</code> is a computed column. Since the .dacpac file cannot determine the datatype for computed columns, the data type of the generated property will be defaulted to <code>obj</code>.
+As a workaround, an in-line type annotation <code>/* MONEY NOT NULL /*</code> can be added.
+NOTE: for computed table columns, the comment annotation must be contained within the parentheses.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">CREATE</span> <span class="k">TABLE</span> [SalesLT].[SalesOrderDetail] (
+[SalesOrderID]       <span class="k">INT</span>              <span class="k">NOT</span> <span class="k">NULL</span>,
+[SalesOrderDetailID] <span class="k">INT</span>              <span class="k">IDENTITY</span> (<span class="n">1</span>, <span class="n">1</span>) <span class="k">NOT</span> <span class="k">NULL</span>,
+[OrderQty]           <span class="k">SMALLINT</span>         <span class="k">NOT</span> <span class="k">NULL</span>,
+[ProductID]          <span class="k">INT</span>              <span class="k">NOT</span> <span class="k">NULL</span>,
+[UnitPrice]          MONEY            <span class="k">NOT</span> <span class="k">NULL</span>,
+[UnitPriceDiscount]  MONEY            <span class="k">CONSTRAINT</span> [DF_SalesOrderDetail_UnitPriceDiscount] <span class="k">DEFAULT</span> ((<span class="n">0.0</span>)) <span class="k">NOT</span> <span class="k">NULL</span>,
+[LineTotal]          <span class="k">AS</span>               (isnull(([UnitPrice]*((<span class="n">1.0</span>)-[UnitPriceDiscount]))*[OrderQty],(<span class="n">0.0</span>)) /* MONEY <span class="k">NOT</span> <span class="k">NULL</span> */ ),
+[rowguid]            UNIQUEIDENTIFIER <span class="k">CONSTRAINT</span> [DF_SalesOrderDetail_rowguid] <span class="k">DEFAULT</span> (newid()) <span class="k">ROWGUIDCOL</span> <span class="k">NOT</span> <span class="k">NULL</span>,
+[ModifiedDate]       DATETIME         <span class="k">CONSTRAINT</span> [DF_SalesOrderDetail_ModifiedDate] <span class="k">DEFAULT</span> (getdate()) <span class="k">NOT</span> <span class="k">NULL</span>,
+...
+</code></pre></td></tr></table>
+<p>In the example <code>dbo.v_Hours</code> view below, the <code>Hours</code> column is not linked back to the <code>dbo.TimeEntries.Hours</code> column in the .dacpac metadata because it is a calculated field, so the data type of the generated property will be defaulted to <code>obj</code>.
+Adding a type annotation within an in-line comment will inform the SSDT provider of the data type to use in the generated <code>Hours</code> property:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">CREATE</span> <span class="k">VIEW</span> dbo.v_Hours
+<span class="k">AS</span>
+<span class="k">SELECT</span> dbo.Projects.Name <span class="k">AS</span> ProjectName, <span class="k">COALESCE</span> (dbo.TimeEntries.Hours, <span class="n">0</span>) <span class="k">AS</span> Hours /* <span class="k">decimal</span> <span class="k">not</span> <span class="k">null</span> */, dbo.Users.Username
+<span class="k">FROM</span> dbo.Projects
+<span class="k">INNER</span> <span class="k">JOIN</span> dbo.TimeEntries <span class="k">on</span> dbo.Projects.Id = dbo.TimeEntries.ProjectId
+<span class="k">INNER</span> <span class="k">JOIN</span> dbo.Users <span class="k">on</span> dboUsers.Id = dbo.TimeEntries.UserId
+</code></pre></td></tr></table>
+<h5><a name="Notes-1" class="anchor" href="#Notes-1">Notes:</a></h5>
+<ul>
+<li>If no null constraint is added after the column type, it will allow nulls by default.</li>
+<li>The annotations are case-insensitive.</li>
+<li>Hovering over a generated view property will designate if the data type was derived from a type annotations (or if it needs one).</li>
+<li>Do not include length information in the type annotation. For example, use <code>varchar</code>, not <code>varchar(20)</code>.</li>
 </ul>
 <h3><a name="Functions" class="anchor" href="#Functions">Functions</a></h3>
 <ul>
-<li>Functions are not currently implemented</li>
+<li>Functions are not yet implemented</li>
 </ul>
 <h3><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h3>
 <ul>
@@ -159,16 +197,14 @@ This makes it easier to run on a build server without having to manually spin up
 <div class="tip" id="fs8">type DatabaseProviderTypes =<br />&#160;&#160;| MSSQLSERVER = 0<br />&#160;&#160;| SQLITE = 1<br />&#160;&#160;| POSTGRESQL = 2<br />&#160;&#160;| MYSQL = 3<br />&#160;&#160;| ORACLE = 4<br />&#160;&#160;| MSACCESS = 5<br />&#160;&#160;| ODBC = 6<br />&#160;&#160;| FIREBIRD = 7<br />&#160;&#160;| MSSQLSERVER_DYNAMIC = 8<br />&#160;&#160;| MSSQLSERVER_SSDT = 9</div>
 <div class="tip" id="fs9">Common.DatabaseProviderTypes.MSSQLSERVER_SSDT: Common.DatabaseProviderTypes = 9</div>
 <div class="tip" id="fs10">val ssdtPath : string</div>
-<div class="tip" id="fs11">val useOptTypes : bool</div>
-<div class="tip" id="fs12">val exampleAllowedTableNames : string</div>
-<div class="tip" id="fs13">type DB = obj</div>
-<div class="tip" id="fs14">val ctx : obj</div>
-<div class="tip" id="fs15">val orderDetails : Linq.IQueryable&lt;obj * obj * obj * obj * obj * obj&gt;</div>
-<div class="tip" id="fs16">val query : Linq.QueryBuilder</div>
-<div class="tip" id="fs17">val o : obj</div>
-<div class="tip" id="fs18"></div>
-<div class="tip" id="fs19">val d : obj</div>
-<div class="tip" id="fs20">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
+<div class="tip" id="fs11">type DB = obj</div>
+<div class="tip" id="fs12">val ctx : obj</div>
+<div class="tip" id="fs13">val orderDetails : Linq.IQueryable&lt;obj * obj * obj * obj * obj * obj&gt;</div>
+<div class="tip" id="fs14">val query : Linq.QueryBuilder</div>
+<div class="tip" id="fs15">val o : obj</div>
+<div class="tip" id="fs16"></div>
+<div class="tip" id="fs17">val d : obj</div>
+<div class="tip" id="fs18">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
 
         </div>
         <div class="span3">

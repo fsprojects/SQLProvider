@@ -50,6 +50,14 @@
     <tbody>
         <tr>
           <td class="type-name">
+            <a href="fsharp-data-sql-providers-mssqlserverssdt-commentannotation.html">CommentAnnotation</a>
+          </td>
+          <td class="xmldoc">
+          
+          </td>
+        </tr>
+        <tr>
+          <td class="type-name">
             <a href="fsharp-data-sql-providers-mssqlserverssdt-constraintcolumn.html">ConstraintColumn</a>
           </td>
           <td class="xmldoc">
@@ -157,7 +165,7 @@
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L182-182" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L199-199" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -174,7 +182,7 @@
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L176-176" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L193-193" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -191,7 +199,7 @@
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L153-153" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L170-170" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -210,7 +218,7 @@
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L404-404" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L487-487" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -227,11 +235,11 @@
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L143-143" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L152-152" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Tries to find .dacpac file using the given path or by searching assembly path.</p>
+          <p>Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.</p>
 
 
         </td>
@@ -239,48 +247,52 @@
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '151', 151)" onmouseover="showTip(event, '151', 151)">
-            parseXml(xml)
+            parseTableColumnAnnotation(...)
           </code>
           <div class="tip" id="151">
-            <strong>Signature:</strong> xml:string -&gt; SsdtSchema<br />
+            <strong>Signature:</strong> colName:string -&gt; colExpression:string -&gt; CommentAnnotation option<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L185-185" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L203-203" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Tries to find an in-line commented type annotation in a computed table column.</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '152', 152)" onmouseover="showTip(event, '152', 152)">
-            readFile(file)
+            parseViewAnnotations(sql)
           </code>
           <div class="tip" id="152">
-            <strong>Signature:</strong> file:FileInfo -&gt; string<br />
+            <strong>Signature:</strong> sql:string -&gt; CommentAnnotation list<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L139-139" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L213-213" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Tries to find in-line commented type annotations in a view declaration.</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '153', 153)" onmouseover="showTip(event, '153', 153)">
-            splitAndRemoveBrackets(s)
+            parseXml(xml)
           </code>
           <div class="tip" id="153">
-            <strong>Signature:</strong> s:string -&gt; string []<br />
+            <strong>Signature:</strong> xml:string -&gt; SsdtSchema<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L15-15" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L224-224" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -290,14 +302,14 @@
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '154', 154)" onmouseover="showTip(event, '154', 154)">
-            ssdtColumnToColumn tbl col
+            readFile(file)
           </code>
           <div class="tip" id="154">
-            <strong>Signature:</strong> tbl:SsdtTable -&gt; col:SsdtColumn -&gt; Column option<br />
+            <strong>Signature:</strong> file:FileInfo -&gt; string<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L409-409" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L148-148" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -307,14 +319,14 @@
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '155', 155)" onmouseover="showTip(event, '155', 155)">
-            ssdtTableToTable(tbl)
+            splitAndRemoveBrackets(s)
           </code>
           <div class="tip" id="155">
-            <strong>Signature:</strong> tbl:SsdtTable -&gt; Table<br />
+            <strong>Signature:</strong> s:string -&gt; string []<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L406-406" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L16-16" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -324,14 +336,48 @@
       <tr>
         <td class="member-name">
           <code onmouseout="hideTip(event, '156', 156)" onmouseover="showTip(event, '156', 156)">
-            toXmlNamespaceDoc ns xml
+            ssdtColumnToColumn tbl col
           </code>
           <div class="tip" id="156">
-            <strong>Signature:</strong> ns:string -&gt; xml:string -&gt; XmlDocument * (string -&gt; &#39;?9097 -&gt; XmlNode) * (string -&gt; &#39;?9098 -&gt; seq&lt;XmlNode&gt;)<br />
-                          <strong>Type parameters:</strong> '?9097, '?9098                      </div>
+            <strong>Signature:</strong> tbl:SsdtTable -&gt; col:SsdtColumn -&gt; Column option<br />
+                                  </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L162-162" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L492-492" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '157', 157)" onmouseover="showTip(event, '157', 157)">
+            ssdtTableToTable(tbl)
+          </code>
+          <div class="tip" id="157">
+            <strong>Signature:</strong> tbl:SsdtTable -&gt; Table<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L489-489" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '158', 158)" onmouseover="showTip(event, '158', 158)">
+            toXmlNamespaceDoc ns xml
+          </code>
+          <div class="tip" id="158">
+            <strong>Signature:</strong> ns:string -&gt; xml:string -&gt; XmlDocument * (string -&gt; &#39;?9107 -&gt; XmlNode) * (string -&gt; &#39;?9108 -&gt; seq&lt;XmlNode&gt;)<br />
+                          <strong>Type parameters:</strong> '?9107, '?9108                      </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L179-179" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -342,15 +388,15 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '157', 157)" onmouseover="showTip(event, '157', 157)">
+          <code onmouseout="hideTip(event, '159', 159)" onmouseover="showTip(event, '159', 159)">
             tryFindMapping(dataType)
           </code>
-          <div class="tip" id="157">
+          <div class="tip" id="159">
             <strong>Signature:</strong> dataType:string -&gt; TypeMapping option<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L131-131" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L140-140" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -359,15 +405,15 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '158', 158)" onmouseover="showTip(event, '158', 158)">
+          <code onmouseout="hideTip(event, '160', 160)" onmouseover="showTip(event, '160', 160)">
             tryFindMappingOrVariant(dataType)
           </code>
-          <div class="tip" id="158">
+          <div class="tip" id="160">
             <strong>Signature:</strong> dataType:string -&gt; TypeMapping<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L134-134" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L143-143" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -376,15 +422,15 @@
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '159', 159)" onmouseover="showTip(event, '159', 159)">
+          <code onmouseout="hideTip(event, '161', 161)" onmouseover="showTip(event, '161', 161)">
             typeMappingsByName
           </code>
-          <div class="tip" id="159">
+          <div class="tip" id="161">
             <strong>Signature:</strong> Map&lt;string,TypeMapping&gt;<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L85-85" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L94-94" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
