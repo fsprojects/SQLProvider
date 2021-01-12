@@ -10,8 +10,8 @@ COALESCE (dbo.TimeEntries.Hours, 0) AS Hours /*FLOAT NOT NULL*/,
 dbo.TimeEntries.Created/* DatetimeOffset Not Null*/, dbo.TimeEntries.Updated, dbo.Users.EmployeeId"""
 
 [<Test>]
-let ``Should find annotation``() =    
-    let results = MSSqlServerSsdt.parseCommentAnnotations sql
+let ``Should find view annotation``() =    
+    let results = MSSqlServerSsdt.parseViewAnnotations sql
     printfn "Results: %A" results
 
     Assert.AreEqual(3, results.Length, "Annotation result count.")
@@ -28,12 +28,20 @@ let ``Should find annotation``() =
     Assert.AreEqual(expected, results)
 
 [<Test>]
-let ``Verify float annotation in local dacpac``() =
+let ``Should find table column annotation``() =
+    let colExpr = "[LineTotal] AS (isnull(([UnitPrice]*((1.0)-[UnitPriceDiscount]))*[OrderQty],(0.0)) /* MONEY NOT NULL */ ),"
+    let result = MSSqlServerSsdt.parseTableColumnAnnotation "LineTotal" colExpr
+    let expected = { Column = "LineTotal"; DataType = "MONEY"; Nullability = Some "NOT NULL" }
+    Assert.AreEqual(expected, result.Value)
+
+[<Test>]
+let ``Verify int annotation in vProductAndDescription Three``() =
     let schema = 
-        @"C:\_mdsk\CEI.BimHub\Product\Source\CEI.BimHub.DB\bin\Debug\CEI.BimHub.DB.dacpac"
+        UnzipTests.dacPacPath
         |> UnzipTests.extractModelXml
         |> MSSqlServerSsdt.parseXml
 
-    let view = schema.Tables |> List.find (fun t -> t.Name = "v_AllTasksLog")
-    let c = view.Columns |> List.find (fun c -> c.Name = "Hours")
-    Assert.AreEqual("FLOAT", c.DataType)
+    let view = schema.Tables |> List.find (fun t -> t.Name = "vProductAndDescription")
+    let c = view.Columns |> List.find (fun c -> c.Name = "Three")
+    Assert.AreEqual("INT", c.DataType)
+

@@ -199,7 +199,18 @@ module MSSqlServerSsdt =
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
 
-    let parseCommentAnnotations sql =
+    /// Tries to find an in-line commented type annotation in a computed table column.
+    let parseTableColumnAnnotation colName colExpression =
+        let opt = RegexOptions.IgnoreCase
+        let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
+        if m.Success then
+            Some { Column = colName
+                   DataType = m.Groups.["DataType"].Captures.[0].Value
+                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+        else None
+
+    /// Tries to find in-line commented type annotations in a view declaration.
+    let parseViewAnnotations sql =
         let opt = RegexOptions.IgnoreCase
         Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
         |> Seq.cast<Match>
@@ -275,11 +286,24 @@ module MSSqlServerSsdt =
                       SsdtColumn.Description = "Simple Column"
                       SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
             | "SqlComputedColumn" ->
+                // Check for annotation
+                let colExpr = (el |> node "x:Property/x:Value").InnerText
+                let annotation = parseTableColumnAnnotation colName colExpr
+                let dataType =
+                    annotation
+                    |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                    |> Option.defaultValue "SQL_VARIANT"
+                let allowNulls =
+                    match annotation with
+                    | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
+                    | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                    | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                
                 Some
                     { SsdtColumn.Name = colName
                       SsdtColumn.FullName = fullName
-                      SsdtColumn.AllowNulls = false
-                      SsdtColumn.DataType = "SQL_VARIANT"
+                      SsdtColumn.AllowNulls = allowNulls
+                      SsdtColumn.DataType = dataType
                       SsdtColumn.HasDefault = false
                       SsdtColumn.Description = "Computed Column"
                       SsdtColumn.IsIdentity = false }
@@ -329,7 +353,7 @@ module MSSqlServerSsdt =
             let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
             let dynamicColumns = collectDynamicColumnRefs viewElement
             let query = (viewElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "QueryScript") |> node "x:Value").InnerText
-            let annotations = parseCommentAnnotations query
+            let annotations = parseViewAnnotations query
 
             let nameParts = fullName |> splitFullName
             { SsdtView.FullName = fullName

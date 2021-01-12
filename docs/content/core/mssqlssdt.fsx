@@ -80,7 +80,7 @@ let orderDetails =
     query {
         for o in ctx.SalesLt.SalesOrderHeader do
         for d in o.``SalesLT.SalesOrderDetail by SalesOrderID`` do
-        select (o.SalesOrderId, o.OrderDate, o.SubTotal, d.OrderQty, d.ProductId, d.UnitPrice)
+        select (o.SalesOrderId, o.OrderDate, o.SubTotal, d.OrderQty, d.ProductId, d.LineTotal)
     }
 
 
@@ -110,14 +110,33 @@ SSDT Projects can be created in two ways:
 
 ### Tables
 * User defined data types are not yet supported
-* Computed table columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file.
+* Computed table columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. (See Type Annotations below.)
 
 ### Views
-* Computed view columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. However, the data type can be override using a Type Annotation.
+* Computed view columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. (See Type Annotations below.)
 
 #### Type Annotations
-As a work-around for view columns with an unresolved data type, the SSDT provider allows you to add type annotations directly in the view via in-line comments.
-In the example `dbo.v_Hours` view below, the `Hours` column is not be linked back to the `dbo.TimeEntries.Hours` column in the .dacpac metadata because it is a calculated field, so the data type of the generated property will be defaulted to `obj`.
+As a work-around for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.
+
+In the SalesOrderDetail.sql example table below, `[LineTotal]` is a computed column. Since the .dacpac file cannot determine the datatype for computed columns, the data type of the generated property will be defaulted to `obj`.
+As a workaround, an in-line type annotation `/* MONEY NOT NULL /*` can be added.
+NOTE: for computed table columns, the comment annotation must be contained within the parentheses.
+
+```sql
+CREATE TABLE [SalesLT].[SalesOrderDetail] (
+[SalesOrderID]       INT              NOT NULL,
+[SalesOrderDetailID] INT              IDENTITY (1, 1) NOT NULL,
+[OrderQty]           SMALLINT         NOT NULL,
+[ProductID]          INT              NOT NULL,
+[UnitPrice]          MONEY            NOT NULL,
+[UnitPriceDiscount]  MONEY            CONSTRAINT [DF_SalesOrderDetail_UnitPriceDiscount] DEFAULT ((0.0)) NOT NULL,
+[LineTotal]          AS               (isnull(([UnitPrice]*((1.0)-[UnitPriceDiscount]))*[OrderQty],(0.0)) /* MONEY NOT NULL */ ),
+[rowguid]            UNIQUEIDENTIFIER CONSTRAINT [DF_SalesOrderDetail_rowguid] DEFAULT (newid()) ROWGUIDCOL NOT NULL,
+[ModifiedDate]       DATETIME         CONSTRAINT [DF_SalesOrderDetail_ModifiedDate] DEFAULT (getdate()) NOT NULL,
+...
+```
+
+In the example `dbo.v_Hours` view below, the `Hours` column is not linked back to the `dbo.TimeEntries.Hours` column in the .dacpac metadata because it is a calculated field, so the data type of the generated property will be defaulted to `obj`.
 Adding a type annotation within an in-line comment will inform the SSDT provider of the data type to use in the generated `Hours` property:
 
 ```sql
