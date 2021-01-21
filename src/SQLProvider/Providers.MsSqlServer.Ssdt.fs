@@ -224,6 +224,8 @@ module MSSqlServerSsdt =
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
         let splitFullName (fn: string) = fn.Split([|'.';']';'['|], StringSplitOptions.RemoveEmptyEntries)
+        let splitDottedFullName (fn: string) = fn.Split([|"].[";"]";"["|], StringSplitOptions.RemoveEmptyEntries)
+
         let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
         let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
 
@@ -315,13 +317,31 @@ module MSSqlServerSsdt =
             let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
             let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toList
             let nameParts = fullName |> splitFullName
+            let namePartsWithDot = fullName |> splitDottedFullName
             let primaryKey =
                 columns
                 |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
                 |> List.tryHead
                 |> Option.map snd
-            { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
-              SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
+            { SsdtTable.Schema =
+                    match nameParts with
+                    | [|schema;name|] -> schema
+                    | _ ->
+                        match namePartsWithDot with
+                        | [|schema;name|] -> schema
+                        | _ ->
+                            // table name may have a dot.
+                            failwithf "Unable to parse table '%s' schema." fullName
+              SsdtTable.Name =
+                    match nameParts with
+                    | [|schema;name|] -> name
+                    | [|name|] -> name
+                    | _ ->
+                        match namePartsWithDot with
+                        | [|schema;name|] -> name
+                        | [|name|] -> name
+                        | _ ->
+                            failwithf "Unable to parse table '%s' name." fullName
               SsdtTable.FullName = fullName
               SsdtTable.Columns = columns
               SsdtTable.IsView = false
@@ -408,9 +428,20 @@ module MSSqlServerSsdt =
                 | None -> Seq.empty
 
             let parts = fullName |> splitFullName
+            let partsDotted = fullName |> splitDottedFullName
             { FullName = fullName
-              Schema = match parts with | [|schema;name|] -> schema | _ -> ""
-              Name = match parts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse sp name from '%s'" fullName
+              Schema = match parts with
+                       | [|schema;name|] -> schema
+                       | _ ->
+                           match partsDotted with
+                           | [|schema;name|] -> schema
+                           | _ -> ""
+              Name = match parts with
+                     | [|schema;name|] -> name
+                     | _ ->
+                        match partsDotted with
+                        | [|schema;name|] -> name
+                        | _ -> failwithf "Unable to parse sp name from '%s'" fullName
               Parameters = parameters |> Seq.toList }
 
         let storedProcs =
