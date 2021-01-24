@@ -28,3 +28,8 @@ let ``Split table containing dot and mixed brackets``() =
 let ``Split table with no brackets``() =
     let parts = "dbo.Products" |> RegexParsers.splitFullName
     Assert.AreEqual([|"dbo"; "Products"|], parts)
+
+[<Test>]
+let ``Split table with pound sign and space``() =
+    let parts = "[dbo].[#Products Table]" |> RegexParsers.splitFullName
+    Assert.AreEqual([|"dbo"; "#Products Table"|], parts)

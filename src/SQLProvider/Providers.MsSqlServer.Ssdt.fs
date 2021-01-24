@@ -91,9 +91,10 @@ module MSSqlServerSsdt =
     module RegexParsers =
         open System.Text.RegularExpressions
 
-        /// Splits a fully qualified name into parts. Name parts must start with a letter, and can have special characters [.-_\s] only if within brackets.
+        /// Splits a fully qualified name into parts. 
+        /// Name can start with a letter, _, @ or #. Names in square brackets can contain any char except for square brackets.
         let splitFullName (fn: string) =
-            Regex.Matches(fn, @"(\[(?<Brackets>[A-Za-z]+[A-Za-z0-9\s._-]*)\]|(?<NoBrackets>[A-Za-z]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
+            Regex.Matches(fn, @"(\[(?<Brackets>[A-Za-z_@#]+[^\[\]]*)\]|(?<NoBrackets>[A-Za-z_@#]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
             |> Seq.cast<Match>
             |> Seq.collect(fun m ->
                 seq { yield! m.Groups.["Brackets"].Captures |> Seq.cast<Capture>
