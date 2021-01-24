@@ -647,10 +647,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
         member __.GetSprocs(con) =
             ssdtSchema.Value.StoredProcs
-            |> List.mapi (fun idx sp ->
+            |> List.map (fun sp ->
                 let inParams =
                     sp.Parameters
-                    |> List.map (fun p ->
+                    |> List.mapi (fun idx p ->
                         { Name = p.Name
                           TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
                           Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
@@ -667,6 +667,21 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                           Length = p.Length
                           Ordinal = idx }
                     )
+
+                // If no outParams, add a "ResultSet" property (see issue #706)
+                let outParams =
+                    match outParams with
+                    | [] ->
+                        [ { Name = "ResultSet"
+                            TypeMapping =
+                                { TypeMapping.ProviderTypeName = None
+                                  TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
+                                  TypeMapping.DbType = DbType.Object
+                                  TypeMapping.ProviderType = None }
+                            Direction = ParameterDirection.Output
+                            Length = None
+                            Ordinal = outParams.Length } ]
+                    | _ -> outParams
 
                 let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = String.Empty; }
 
