@@ -11,7 +11,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
 open System.IO.Compression
-open System.Text.RegularExpressions
 
 module MSSqlServerSsdt =
 
@@ -90,14 +89,11 @@ module MSSqlServerSsdt =
     }
 
     module RegexParsers =
-        let private opt = RegexOptions.IgnoreCase
-    
-        // Name parts must start with a letter, and can have special characters [.-_\s] only if within brackets
-        let private splitNameRegex = Regex(@"(\[(?<Brackets>[A-Za-z]+[A-Za-z0-9\s._-]*)\]|(?<NoBrackets>[A-Za-z]+[A-Za-z09_]*)(\.)?)", opt)
-    
-        /// Splits a fully qualified name into parts.
+        open System.Text.RegularExpressions
+
+        /// Splits a fully qualified name into parts. Name parts must start with a letter, and can have special characters [.-_\s] only if within brackets.
         let splitFullName (fn: string) =
-            splitNameRegex.Matches(fn)
+            Regex.Matches(fn, @"(\[(?<Brackets>[A-Za-z]+[A-Za-z0-9\s._-]*)\]|(?<NoBrackets>[A-Za-z]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
             |> Seq.cast<Match>
             |> Seq.collect(fun m ->
                 seq { yield! m.Groups.["Brackets"].Captures |> Seq.cast<Capture>
@@ -105,6 +101,26 @@ module MSSqlServerSsdt =
             )
             |> Seq.map (fun c -> c.Value)
             |> Seq.toArray
+
+        /// Tries to find an in-line commented type annotation in a computed table column.
+        let parseTableColumnAnnotation colName colExpression =
+            let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+            if m.Success then
+                Some { Column = colName
+                       DataType = m.Groups.["DataType"].Captures.[0].Value
+                       Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+            else None
+
+        /// Tries to find in-line commented type annotations in a view declaration.
+        let parseViewAnnotations sql =
+            Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+            |> Seq.cast<Match>
+            |> Seq.map (fun m ->
+                { Column = m.Groups.["Column"].Captures.[0].Value
+                  DataType = m.Groups.["DataType"].Captures.[0].Value
+                  Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+            )
+            |> Seq.toList
 
     let typeMappingsByName =
         let toInt = int >> Some
@@ -214,28 +230,6 @@ module MSSqlServerSsdt =
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
 
-    /// Tries to find an in-line commented type annotation in a computed table column.
-    let parseTableColumnAnnotation colName colExpression =
-        let opt = RegexOptions.IgnoreCase
-        let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
-        if m.Success then
-            Some { Column = colName
-                   DataType = m.Groups.["DataType"].Captures.[0].Value
-                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
-        else None
-
-    /// Tries to find in-line commented type annotations in a view declaration.
-    let parseViewAnnotations sql =
-        let opt = RegexOptions.IgnoreCase
-        Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
-        |> Seq.cast<Match>
-        |> Seq.map (fun m ->
-            { Column = m.Groups.["Column"].Captures.[0].Value
-              DataType = m.Groups.["DataType"].Captures.[0].Value
-              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
-        )
-        |> Seq.toList
-
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
 
@@ -316,7 +310,7 @@ module MSSqlServerSsdt =
             | "SqlComputedColumn" ->
                 // Check for annotation
                 let colExpr = (el |> node "x:Property/x:Value").InnerText
-                let annotation = parseTableColumnAnnotation colName colExpr
+                let annotation = RegexParsers.parseTableColumnAnnotation colName colExpr
                 let dataType =
                     annotation
                     |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
@@ -381,7 +375,7 @@ module MSSqlServerSsdt =
             let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
             let dynamicColumns = collectDynamicColumnRefs viewElement
             let query = (viewElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "QueryScript") |> node "x:Value").InnerText
-            let annotations = parseViewAnnotations query
+            let annotations = RegexParsers.parseViewAnnotations query
 
             let nameParts = fullName |> RegexParsers.splitFullName
             { SsdtView.FullName = fullName
