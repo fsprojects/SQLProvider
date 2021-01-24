@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="TestQueries.fs" />
     <Compile Include="Dacpac\UnzipTests.fs" />
     <Compile Include="Dacpac\ParseSchemaTests.fs" />
     <Compile Include="Dacpac\TypeAnnotationTests.fs" />

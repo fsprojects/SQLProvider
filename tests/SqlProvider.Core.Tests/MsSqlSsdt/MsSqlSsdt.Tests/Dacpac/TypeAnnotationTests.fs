@@ -11,7 +11,7 @@ dbo.TimeEntries.Created/* DatetimeOffset Not Null*/, dbo.TimeEntries.Updated, db
 
 [<Test>]
 let ``Should find view annotation``() =    
-    let results = MSSqlServerSsdt.parseViewAnnotations sql
+    let results = RegexParsers.parseViewAnnotations sql
     printfn "Results: %A" results
 
     Assert.AreEqual(3, results.Length, "Annotation result count.")
@@ -30,7 +30,7 @@ let ``Should find view annotation``() =
 [<Test>]
 let ``Should find table column annotation``() =
     let colExpr = "[LineTotal] AS (isnull(([UnitPrice]*((1.0)-[UnitPriceDiscount]))*[OrderQty],(0.0)) /* MONEY NOT NULL */ ),"
-    let result = MSSqlServerSsdt.parseTableColumnAnnotation "LineTotal" colExpr
+    let result = RegexParsers.parseTableColumnAnnotation "LineTotal" colExpr
     let expected = { Column = "LineTotal"; DataType = "MONEY"; Nullability = Some "NOT NULL" }
     Assert.AreEqual(expected, result.Value)
 
