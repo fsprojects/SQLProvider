@@ -104,6 +104,7 @@
     <Build Include="dbo\Functions\ufnGetSalesOrderStatusText.sql" />
     <Build Include="dbo\Functions\ufnGetCustomerInformation.sql" />
     <Build Include="dbo\Functions\ufnGetAllCategories.sql" />
+    <Build Include="SalesLT\Tables\Test.Table.sql" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>
