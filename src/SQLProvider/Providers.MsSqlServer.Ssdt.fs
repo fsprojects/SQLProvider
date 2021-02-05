@@ -36,6 +36,7 @@ module MSSqlServerSsdt =
         AllowNulls: bool
         IsIdentity: bool
         HasDefault: bool
+        ComputedColumn: bool
     }
     and SsdtView = {
         FullName: string
@@ -307,7 +308,8 @@ module MSSqlServerSsdt =
                       SsdtColumn.DataType = dataType |> removeBrackets
                       SsdtColumn.HasDefault = false
                       SsdtColumn.Description = "Simple Column"
-                      SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
+                      SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false
+                      SsdtColumn.ComputedColumn = false}
             | "SqlComputedColumn" ->
                 // Check for annotation
                 let colExpr = (el |> node "x:Property/x:Value").InnerText
@@ -329,7 +331,8 @@ module MSSqlServerSsdt =
                       SsdtColumn.DataType = dataType
                       SsdtColumn.HasDefault = false
                       SsdtColumn.Description = "Computed Column"
-                      SsdtColumn.IsIdentity = false }
+                      SsdtColumn.IsIdentity = false
+                      SsdtColumn.ComputedColumn = true}
             | _ ->
                 None // Unsupported column type
     
@@ -496,7 +499,8 @@ module MSSqlServerSsdt =
                           SsdtColumn.DataType = dataType
                           SsdtColumn.AllowNulls = allowNulls
                           SsdtColumn.HasDefault = false
-                          SsdtColumn.IsIdentity = false } 
+                          SsdtColumn.IsIdentity = false
+                          SsdtColumn.ComputedColumn = true } 
                 )
             }
 
@@ -525,8 +529,8 @@ module MSSqlServerSsdt =
                     |> Option.defaultValue false
                   Column.IsAutonumber = col.IsIdentity
                   Column.HasDefault = col.HasDefault
-                  Column.IsComputed = false // Not supported (unable to parse computed column type)
-                  Column.TypeInfo = None }  // Not supported (but could be)
+                  Column.IsComputed = col.ComputedColumn
+                  Column.TypeInfo = if col.DataType = "" then None else Some col.DataType }
         | None ->
             None
 
