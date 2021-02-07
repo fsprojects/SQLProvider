@@ -1,3 +1,6 @@
+### 1.1.101 - 07.02.2021
+* Minor SSDT improvements
+
 ### 1.1.100 - 24.01.2021
 * SSDT fixes, stored procedures return type fix PR #711
 
