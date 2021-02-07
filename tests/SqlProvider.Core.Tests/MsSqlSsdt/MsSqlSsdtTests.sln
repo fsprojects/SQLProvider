@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30709.132
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsSqlSsdt.Tests", "MsSqlSsdt.Tests\MsSqlSsdt.Tests.fsproj", "{A49DF082-8FAE-4A58-AEC5-3055BF017D62}"
 EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "MsSqlSsdt.Tests\AdventureWorks_SSDT\AdventureWorks_SSDT.sqlproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,12 @@ Global
 		{A49DF082-8FAE-4A58-AEC5-3055BF017D62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A49DF082-8FAE-4A58-AEC5-3055BF017D62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A49DF082-8FAE-4A58-AEC5-3055BF017D62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,3 +1,4 @@
+// fsharplint:disable Hints CanBeReplacedWithComposition
 namespace FSharp.Data.Sql.Providers
 
 open System
@@ -10,11 +11,8 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open System.Xml
 open System.IO.Compression
-open System.Text.RegularExpressions
 
 module MSSqlServerSsdt =
-    let splitAndRemoveBrackets (s: string) =
-        s.Split([|'.';'[';']'|], StringSplitOptions.RemoveEmptyEntries)
 
     type SsdtSchema = {
         Tables: SsdtTable list
@@ -38,6 +36,7 @@ module MSSqlServerSsdt =
         AllowNulls: bool
         IsIdentity: bool
         HasDefault: bool
+        ComputedColumn: bool
     }
     and SsdtView = {
         FullName: string
@@ -63,10 +62,10 @@ module MSSqlServerSsdt =
     }
     and RefTable = {
         FullName: string
+        Schema: string
+        Name: string
         Columns: ConstraintColumn list
-    } with        
-        member this.Schema = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> schema | _ -> ""
-        member this.Name = match this.FullName |> splitAndRemoveBrackets with | [|schema;name|] -> name | _ -> ""
+    }
 
     and PrimaryKeyConstraint = {
         Name: string
@@ -74,8 +73,8 @@ module MSSqlServerSsdt =
     }
     and ConstraintColumn = {
         FullName: string
-    } with
-       member this.Name = this.FullName |> splitAndRemoveBrackets |> Array.last
+        Name: string
+    }
     and SsdtStoredProc = {
         FullName: string
         Schema: string
@@ -88,8 +87,42 @@ module MSSqlServerSsdt =
         DataType: string
         Length: int option
         IsOutput: bool
-    }    
-    
+    }
+
+    module RegexParsers =
+        open System.Text.RegularExpressions
+
+        /// Splits a fully qualified name into parts. 
+        /// Name can start with a letter, _, @ or #. Names in square brackets can contain any char except for square brackets.
+        let splitFullName (fn: string) =
+            Regex.Matches(fn, @"(\[(?<Brackets>[A-Za-z_@#]+[^\[\]]*)\]|(?<NoBrackets>[A-Za-z_@#]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
+            |> Seq.cast<Match>
+            |> Seq.collect(fun m ->
+                seq { yield! m.Groups.["Brackets"].Captures |> Seq.cast<Capture>
+                      yield! m.Groups.["NoBrackets"].Captures |> Seq.cast<Capture> }
+            )
+            |> Seq.map (fun c -> c.Value)
+            |> Seq.toArray
+
+        /// Tries to find an in-line commented type annotation in a computed table column.
+        let parseTableColumnAnnotation colName colExpression =
+            let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+            if m.Success then
+                Some { Column = colName
+                       DataType = m.Groups.["DataType"].Captures.[0].Value
+                       Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+            else None
+
+        /// Tries to find in-line commented type annotations in a view declaration.
+        let parseViewAnnotations sql =
+            Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+            |> Seq.cast<Match>
+            |> Seq.map (fun m ->
+                { Column = m.Groups.["Column"].Captures.[0].Value
+                  DataType = m.Groups.["DataType"].Captures.[0].Value
+                  Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+            )
+            |> Seq.toList
 
     let typeMappingsByName =
         let toInt = int >> Some
@@ -199,31 +232,9 @@ module MSSqlServerSsdt =
     let att (nm: string) (node: XmlNode) = 
         attMaybe nm node |> Option.defaultValue ""
 
-    /// Tries to find an in-line commented type annotation in a computed table column.
-    let parseTableColumnAnnotation colName colExpression =
-        let opt = RegexOptions.IgnoreCase
-        let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
-        if m.Success then
-            Some { Column = colName
-                   DataType = m.Groups.["DataType"].Captures.[0].Value
-                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
-        else None
-
-    /// Tries to find in-line commented type annotations in a view declaration.
-    let parseViewAnnotations sql =
-        let opt = RegexOptions.IgnoreCase
-        Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", opt)
-        |> Seq.cast<Match>
-        |> Seq.map (fun m ->
-            { Column = m.Groups.["Column"].Captures.[0].Value
-              DataType = m.Groups.["DataType"].Captures.[0].Value
-              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
-        )
-        |> Seq.toList
-
     let parseXml(xml: string) =
         let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
-        let splitFullName (fn: string) = fn.Split([|'.';']';'['|], StringSplitOptions.RemoveEmptyEntries)
+
         let doc, node, nodes = xml |> toXmlNamespaceDoc "http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02"
         let model = doc :> XmlNode |> node "/x:DataSchemaModel/x:Model"
 
@@ -234,7 +245,7 @@ module MSSqlServerSsdt =
                 relationship
                 |> nodes "x:Entry"
                 |> Seq.map (node "x:Element/x:Relationship/x:Entry/x:References" >> att "Name")
-                |> Seq.map (fun full -> { ConstraintColumn.FullName = full })
+                |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
                 |> Seq.toList
             { PrimaryKeyConstraint.Name = name
               PrimaryKeyConstraint.Columns = columns }
@@ -255,11 +266,24 @@ module MSSqlServerSsdt =
             let foreignTable = fkElement |> nodes "x:Relationship" |> Seq.find(fun r -> r |> att "Name" = "ForeignTable") |> node "x:Entry/x:References" |> att "Name"
             { SsdtRelationship.Name = name
               SsdtRelationship.DefiningTable =
+                let parts = localTable |> RegexParsers.splitFullName
                 { RefTable.FullName = localTable
-                  RefTable.Columns = localColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList }
+                  RefTable.Schema = match parts with | [|schema;name|] -> schema | _ -> ""
+                  RefTable.Name = match parts with | [|schema;name|] -> name | _ -> "" 
+                  RefTable.Columns = 
+                    localColumns
+                    |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
+                    |> Seq.toList }
               SsdtRelationship.ForeignTable =
+                let parts = foreignTable |> RegexParsers.splitFullName
                 { RefTable.FullName = foreignTable
-                  RefTable.Columns = foreignColumns |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm } ) |> Seq.toList } }
+                  RefTable.Schema = match parts with | [|schema;name|] -> schema | _ -> ""
+                  RefTable.Name = match parts with | [|schema;name|] -> name | _ -> "" 
+                  RefTable.Columns =
+                    foreignColumns
+                    |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
+                    |> Seq.toList }
+            }
 
         let relationships =
             model
@@ -271,7 +295,7 @@ module MSSqlServerSsdt =
         let parseTableColumn (colEntry: XmlNode) =
             let el = colEntry |> node "x:Element"
             let colType, fullName = el |> att "Type", el |> att "Name"
-            let colName = fullName |> splitFullName |> Array.last
+            let colName = fullName |> RegexParsers.splitFullName |> Array.last
             match colType with
             | "SqlSimpleColumn" -> 
                 let allowNulls = el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsNullable") |> Option.map (fun p -> p |> att "Value")
@@ -284,11 +308,12 @@ module MSSqlServerSsdt =
                       SsdtColumn.DataType = dataType |> removeBrackets
                       SsdtColumn.HasDefault = false
                       SsdtColumn.Description = "Simple Column"
-                      SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false }
+                      SsdtColumn.IsIdentity = isIdentity |> Option.map (fun isId -> isId = "True") |> Option.defaultValue false
+                      SsdtColumn.ComputedColumn = false}
             | "SqlComputedColumn" ->
                 // Check for annotation
                 let colExpr = (el |> node "x:Property/x:Value").InnerText
-                let annotation = parseTableColumnAnnotation colName colExpr
+                let annotation = RegexParsers.parseTableColumnAnnotation colName colExpr
                 let dataType =
                     annotation
                     |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
@@ -305,8 +330,10 @@ module MSSqlServerSsdt =
                       SsdtColumn.AllowNulls = allowNulls
                       SsdtColumn.DataType = dataType
                       SsdtColumn.HasDefault = false
-                      SsdtColumn.Description = "Computed Column"
-                      SsdtColumn.IsIdentity = false }
+                      SsdtColumn.Description = "Computed Column" +
+                        (if annotation.IsNone && dataType = "SQL_VARIANT" then ". You can add type annotation to definition SQL to get type. E.g. " + colName + " AS ('c' /* varchar not null */)" else "")
+                      SsdtColumn.IsIdentity = false
+                      SsdtColumn.ComputedColumn = true}
             | _ ->
                 None // Unsupported column type
     
@@ -314,23 +341,23 @@ module MSSqlServerSsdt =
             let fullName = tblElement |> att "Name"
             let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
             let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toList
-            let nameParts = fullName |> splitFullName
+            let nameParts = fullName |> RegexParsers.splitFullName
             let primaryKey =
                 columns
                 |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
                 |> List.tryHead
                 |> Option.map snd
-            { SsdtTable.Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
-              SsdtTable.Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
-              SsdtTable.FullName = fullName
-              SsdtTable.Columns = columns
-              SsdtTable.IsView = false
-              SsdtTable.PrimaryKey = primaryKey }
+            { Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
+              Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
+              FullName = fullName
+              Columns = columns
+              IsView = false
+              PrimaryKey = primaryKey } : SsdtTable
 
         let parseViewColumn (colEntry:  XmlNode) =
             let colFullNm = colEntry |> node "x:Element" |> att "Name"
             let typeRelation = colEntry |> node "x:Element" |> node "x:Relationship" |> Option.ofObj
-            let colRefPath = typeRelation |> Option.map (fun rel -> rel |> node "x:Entry/x:References" |> att "Name")
+            let colRefPath = typeRelation |> Option.map (node "x:Entry/x:References" >> att "Name")
             { SsdtViewColumn.FullName = colFullNm
               SsdtViewColumn.ColumnRefPath = colRefPath }
 
@@ -353,15 +380,15 @@ module MSSqlServerSsdt =
             let columns = relationshipColumns |> nodes "x:Entry" |> Seq.map parseViewColumn
             let dynamicColumns = collectDynamicColumnRefs viewElement
             let query = (viewElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "QueryScript") |> node "x:Value").InnerText
-            let annotations = parseViewAnnotations query
+            let annotations = RegexParsers.parseViewAnnotations query
 
-            let nameParts = fullName |> splitFullName
-            { SsdtView.FullName = fullName
-              SsdtView.Schema = match nameParts with | [|schema;name|] -> schema | _ -> ""
-              SsdtView.Name = match nameParts with | [|schema;name|] -> name | _ -> ""
-              SsdtView.Columns = columns |> Seq.toList
-              SsdtView.DynamicColumns = dynamicColumns
-              SsdtView.Annotations = annotations }
+            let nameParts = fullName |> RegexParsers.splitFullName
+            { FullName = fullName
+              Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse view '%s' schema." fullName
+              Name = match nameParts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse view '%s' name." fullName
+              Columns = columns |> Seq.toList
+              DynamicColumns = dynamicColumns
+              Annotations = annotations } : SsdtView
 
         /// Recursively resolves column references.
         let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
@@ -370,7 +397,7 @@ module MSSqlServerSsdt =
                 | Some tblCol ->
                     { tblCol with
                         FullName = viewCol.FullName
-                        Name = viewCol.FullName |> splitFullName |> Array.last } |> Some
+                        Name = viewCol.FullName |> RegexParsers.splitFullName |> Array.last } |> Some
                 | None -> 
                     match viewColumnsByPath.TryFind(path) with
                     | Some viewCol when viewCol.ColumnRefPath <> Some path ->
@@ -400,17 +427,17 @@ module MSSqlServerSsdt =
 
                         let dataType = el |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
                         { FullName = pFullName
-                          Name = pFullName |> splitFullName |> Array.last
+                          Name = pFullName |> RegexParsers.splitFullName |> Array.last
                           DataType = dataType |> removeBrackets
                           Length = None // TODO: Implement
                           IsOutput = isOutput }
                     )
                 | None -> Seq.empty
 
-            let parts = fullName |> splitFullName
+            let parts = fullName |> RegexParsers.splitFullName
             { FullName = fullName
-              Schema = match parts with | [|schema;name|] -> schema | _ -> ""
-              Name = match parts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse sp name from '%s'" fullName
+              Schema = parts.[0]
+              Name = parts.[1]
               Parameters = parameters |> Seq.toList }
 
         let storedProcs =
@@ -439,20 +466,20 @@ module MSSqlServerSsdt =
         let resolveColumnRefPath = resolveColumnRefPath tableColumnsByPath viewColumnsByPath
 
         let viewToTable (view: SsdtView) =
-            { SsdtTable.FullName = view.FullName
-              SsdtTable.Name = view.Name
-              SsdtTable.Schema = view.Schema
-              SsdtTable.IsView = true
-              SsdtTable.PrimaryKey = None
-              SsdtTable.Columns =
+            { FullName = view.FullName
+              Name = view.Name
+              Schema = view.Schema
+              IsView = true
+              PrimaryKey = None
+              Columns =
                 view.Columns
                 |> List.map (fun vc ->
+                    let colName = vc.FullName |> RegexParsers.splitFullName |> Array.last
+                    let annotation = view.Annotations |> List.tryFind (fun a -> a.Column = colName)
                     match resolveColumnRefPath vc with
-                    | Some tc -> tc
-                    | None ->
-                        // Can't resolve column: try to find a commented type annotation
-                        let colName = vc.FullName |> splitFullName |> Array.last
-                        let annotation = view.Annotations |> List.tryFind (fun a -> a.Column = colName)
+                    | Some tc when annotation.IsNone -> tc
+                    | tcOpt ->
+                        // Can't resolve column, or annotation override: try to find a commented type annotation
                         let dataType =
                             annotation
                             |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
@@ -467,22 +494,24 @@ module MSSqlServerSsdt =
                             then sprintf "Unable to resolve this column's data type from the .dacpac file; consider adding a type annotation in the view. Ex: %s /* varchar not null */ " colName
                             else "This column's data type was resolved from a comment annotation in the SSDT view definition."
 
-                        { SsdtColumn.FullName = vc.FullName
-                          SsdtColumn.Name = colName
-                          SsdtColumn.Description = description
-                          SsdtColumn.DataType = dataType
-                          SsdtColumn.AllowNulls = allowNulls
-                          SsdtColumn.HasDefault = false
-                          SsdtColumn.IsIdentity = false } 
+                        if dataType = "SQL_VARIANT" && tcOpt.IsSome then tcOpt.Value else
+                        { FullName = vc.FullName
+                          Name = colName
+                          Description = description
+                          DataType = dataType
+                          AllowNulls = allowNulls
+                          HasDefault = false
+                          IsIdentity = false
+                          ComputedColumn = true } : SsdtColumn
                 )
-            }
+            } : SsdtTable
 
         let tablesAndViews = tables @ (views |> List.map viewToTable)
 
-        { SsdtSchema.Tables = tablesAndViews
-          SsdtSchema.StoredProcs = storedProcs
-          SsdtSchema.TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
-          SsdtSchema.Relationships = relationships }
+        { Tables = tablesAndViews
+          StoredProcs = storedProcs
+          TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
+          Relationships = relationships } : SsdtSchema
 
     let findAndParseModel = findDacPacFile >> extractModelXml >> parseXml
 
@@ -502,8 +531,8 @@ module MSSqlServerSsdt =
                     |> Option.defaultValue false
                   Column.IsAutonumber = col.IsIdentity
                   Column.HasDefault = col.HasDefault
-                  Column.IsComputed = false // Not supported (unable to parse computed column type)
-                  Column.TypeInfo = None }  // Not supported (but could be)
+                  Column.IsComputed = col.ComputedColumn
+                  Column.TypeInfo = if col.DataType = "" then None else Some col.DataType }
         | None ->
             None
 
@@ -523,7 +552,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = tableName
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tableName = MSSqlServerSsdt.splitAndRemoveBrackets tableName |> Seq.last
+            let tableName = MSSqlServerSsdt.RegexParsers.splitFullName tableName |> Seq.last
             ssdtSchema.Value.Tables
             |> List.tryFind (fun t -> t.Name = tableName)
             |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
@@ -624,10 +653,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
         member __.GetSprocs(con) =
             ssdtSchema.Value.StoredProcs
-            |> List.mapi (fun idx sp ->
+            |> List.map (fun sp ->
                 let inParams =
                     sp.Parameters
-                    |> List.map (fun p ->
+                    |> List.mapi (fun idx p ->
                         { Name = p.Name
                           TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
                           Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
@@ -644,6 +673,21 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                           Length = p.Length
                           Ordinal = idx }
                     )
+
+                // If no outParams, add a "ResultSet" property (see issue #706)
+                let outParams =
+                    match outParams with
+                    | [] ->
+                        [ { Name = "ResultSet"
+                            TypeMapping =
+                                { TypeMapping.ProviderTypeName = None
+                                  TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
+                                  TypeMapping.DbType = DbType.Object
+                                  TypeMapping.ProviderType = None }
+                            Direction = ParameterDirection.Output
+                            Length = None
+                            Ordinal = outParams.Length } ]
+                    | _ -> outParams
 
                 let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = String.Empty; }
 
@@ -1148,6 +1192,3 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     con.Close()
             }
 
-
-
-    
