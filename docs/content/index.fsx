@@ -21,7 +21,8 @@ A general .NET/Mono SQL database type provider. Current features:
 * Custom Operators
 * Supports [Asynchronous Operations](core/async.html)
 * Supports [.NET Standard / .NET Core](core/netstandard.html)
-  
+* Supports [saving DB schema offline](core/parameters.html#ContextSchemaPath), and [SQL-Server *.dacpac files](core/mssqlssdt.html)
+
 The provider currently has explicit implementations for the following database vendors:
  
 * SQL Server
