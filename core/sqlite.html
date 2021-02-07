@@ -114,9 +114,9 @@ namespace, which has the following members:</p>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 23)" onmouseover="showTip(event, 'fs8', 23)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">customers</span> <span class="o">=</span> 
-    <span onmouseout="hideTip(event, 'fs17', 25)" onmouseover="showTip(event, 'fs17', 25)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 26)" onmouseover="showTip(event, 'fs19', 26)" class="id">Main</span><span class="pn">.</span><span class="id">Customers</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="id">c</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="id">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 31)" onmouseover="showTip(event, 'fs19', 31)" class="id">ContactName</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 33)" onmouseover="showTip(event, 'fs23', 33)" class="id">toList</span>
+    <span onmouseout="hideTip(event, 'fs17', 25)" onmouseover="showTip(event, 'fs17', 25)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs19', 26)" onmouseover="showTip(event, 'fs19', 26)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">c</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs21', 29)" onmouseover="showTip(event, 'fs21', 29)" class="id">c</span><span class="pn">.</span><span class="id">ContactName</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 31)" onmouseover="showTip(event, 'fs22', 31)" class="id">toList</span>
 </code></pre></td>
 </tr>
 </table>
@@ -126,9 +126,9 @@ namespace, which has the following members:</p>
 <span class="l">2: </span>
 <span class="l">3: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 34)" onmouseover="showTip(event, 'fs24', 34)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 35)" onmouseover="showTip(event, 'fs17', 35)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 36)" onmouseover="showTip(event, 'fs19', 36)" class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
-<span onmouseout="hideTip(event, 'fs17', 37)" onmouseover="showTip(event, 'fs17', 37)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 38)" onmouseover="showTip(event, 'fs19', 38)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 39)" onmouseover="showTip(event, 'fs25', 39)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 40)" onmouseover="showTip(event, 'fs24', 40)" class="id">myCustomer</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 41)" onmouseover="showTip(event, 'fs19', 41)" class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs26', 42)" onmouseover="showTip(event, 'fs26', 42)" class="vt">int</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 32)" onmouseover="showTip(event, 'fs23', 32)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 33)" onmouseover="showTip(event, 'fs17', 33)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
+<span onmouseout="hideTip(event, 'fs17', 34)" onmouseover="showTip(event, 'fs17', 34)" class="id">ctx</span><span class="pn">.</span><span class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 35)" onmouseover="showTip(event, 'fs24', 35)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs25', 37)" onmouseover="showTip(event, 'fs25', 37)" class="vt">int</span>
 </code></pre></td>
 </tr>
 </table>
@@ -151,14 +151,13 @@ namespace, which has the following members:</p>
 <div class="tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
 <div class="tip" id="fs17">val ctx : obj</div>
 <div class="tip" id="fs18">val customers : obj list</div>
-<div class="tip" id="fs19"></div>
-<div class="tip" id="fs20">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
-<div class="tip" id="fs21">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; source:seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;</div>
-<div class="tip" id="fs22">val c : obj</div>
-<div class="tip" id="fs23">val toList : source:seq&lt;&#39;T&gt; -&gt; &#39;T list</div>
-<div class="tip" id="fs24">val myCustomer : obj</div>
-<div class="tip" id="fs25">val rowid : int</div>
-<div class="tip" id="fs26">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int</div>
+<div class="tip" id="fs19">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs20">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; source:seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;</div>
+<div class="tip" id="fs21">val c : obj</div>
+<div class="tip" id="fs22">val toList : source:seq&lt;&#39;T&gt; -&gt; &#39;T list</div>
+<div class="tip" id="fs23">val myCustomer : obj</div>
+<div class="tip" id="fs24">val rowid : int</div>
+<div class="tip" id="fs25">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int</div>
 
         </div>
         <div class="span3">

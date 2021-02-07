@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>PrimaryKeyConstraint - SQLProvider</title>
+    <title>RegexParsers - SQLProvider</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
@@ -33,52 +33,78 @@
         <div class="span9" id="main">
           
 
-<h1>PrimaryKeyConstraint</h1>
+<h1>RegexParsers</h1>
 <p>
-
-    <span>Namespace: FSharp.Data.Sql.Providers</span><br />
-        <span>Parent Module: <a href="fsharp-data-sql-providers-mssqlserverssdt.html">MSSqlServerSsdt</a></span><br />
-    </p>
+  <span>Namespace: FSharp.Data.Sql.Providers</span><br />
+  <span>Parent Module: <a href="fsharp-data-sql-providers-mssqlserverssdt.html">MSSqlServerSsdt</a></span>
+  </p>
 <div class="xmldoc">
 </div>
-  <h3>Record Fields</h3>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Record Field</td><td>Description</td></tr>
+      <tr><td>Function or value</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '494', 494)" onmouseover="showTip(event, '494', 494)">
-            Columns
+          <code onmouseout="hideTip(event, '159', 159)" onmouseover="showTip(event, '159', 159)">
+            parseTableColumnAnnotation(...)
           </code>
-          <div class="tip" id="494">
-            <strong>Signature:</strong> ConstraintColumn list<br />
+          <div class="tip" id="159">
+            <strong>Signature:</strong> colName:string -&gt; colExpression:string -&gt; CommentAnnotation option<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L72-72" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L108-108" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Tries to find an in-line commented type annotation in a computed table column.</p>
+
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
-          <code onmouseout="hideTip(event, '495', 495)" onmouseover="showTip(event, '495', 495)">
-            Name
+          <code onmouseout="hideTip(event, '160', 160)" onmouseover="showTip(event, '160', 160)">
+            parseViewAnnotations(sql)
           </code>
-          <div class="tip" id="495">
-            <strong>Signature:</strong> string<br />
+          <div class="tip" id="160">
+            <strong>Signature:</strong> sql:string -&gt; CommentAnnotation list<br />
                                   </div>
         </td>
         <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L71-71" class="github-link">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L117-117" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Tries to find in-line commented type annotations in a view declaration.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+          <code onmouseout="hideTip(event, '161', 161)" onmouseover="showTip(event, '161', 161)">
+            splitFullName(fn)
+          </code>
+          <div class="tip" id="161">
+            <strong>Signature:</strong> fn:string -&gt; string []<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Providers.MsSqlServer.Ssdt.fs#L97-97" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Splits a fully qualified name into parts.
+Name can start with a letter, _, @ or #. Names in square brackets can contain any char except for square brackets.</p>
+
+
         </td>
       </tr>
     </tbody>
