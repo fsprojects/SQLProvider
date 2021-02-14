@@ -44,6 +44,8 @@
     <Compile Include="QuotationHelpers.fs"/>
     <Compile Include="SqlRuntime.Transactions.fs"/>
     <Compile Include="SqlRuntime.Common.fs"/>
+    <Compile Include="Ssdt.Polyfills.fs" />
+    <Compile Include="Ssdt.DacpacParser.fs" />    
     <Compile Include="Providers.MsSqlServer.fs"/>
     <Compile Include="Providers.MsSqlServer.Dynamic.fs"/>
     <Compile Include="Providers.MsSqlServer.Ssdt.fs"/>

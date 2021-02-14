@@ -1,7 +1,8 @@
 module Dacpac.TypeAnnotationTests
 open NUnit.Framework
-open FSharp.Data.Sql.Providers
-open FSharp.Data.Sql.Providers.MSSqlServerSsdt
+open FSharp.Data.Sql
+open FSharp.Data.Sql.Ssdt
+open FSharp.Data.Sql.Ssdt.DacpacParser
 
 let sql = """SELECT dbo.Projects.Name AS ProjectName, dbo.Projects.[ProjectNumber] /* int null */, dbo.Projects.ProjectType,
 dbo.Projects.LOD, dbo.Projects.[Division], dbo.Projects.IsActive, dbo.ProjectTaskCategories.Name AS Category, 
@@ -39,7 +40,7 @@ let ``Verify int annotation in vProductAndDescription Three``() =
     let schema = 
         UnzipTests.dacPacPath
         |> UnzipTests.extractModelXml
-        |> MSSqlServerSsdt.parseXml
+        |> DacpacParser.parseXml
 
     let view = schema.Tables |> List.find (fun t -> t.Name = "vProductAndDescription")
     let c = view.Columns |> List.find (fun c -> c.Name = "Three")
