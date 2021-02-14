@@ -46,6 +46,12 @@
     <Compile Include="..\SQLProvider\SqlRuntime.Common.fs">
       <Link>SqlRuntime.Common.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider\Ssdt.Polyfills.fs">
+      <Link>Ssdt.Polyfills.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider\Ssdt.DacpacParser.fs">
+      <Link>Ssdt.DacpacParser.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider\Providers.MsSqlServer.fs">
       <Link>Providers.MsSqlServer.fs</Link>
     </Compile>
