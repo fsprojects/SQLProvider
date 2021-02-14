@@ -1,14 +1,14 @@
 module Dacpac.ParseSchemaTests
 open NUnit.Framework
 open FSharp.Data.Sql.Providers
-open System
-open System.Text.RegularExpressions
+open FSharp.Data.Sql.Ssdt
+open FSharp.Data.Sql.Ssdt.DacpacParser
 
 [<Test>]
 let ``Parse AdventureWorks dacpac`` () =
     UnzipTests.dacPacPath
     |> UnzipTests.extractModelXml 
-    |> MSSqlServerSsdt.parseXml
+    |> DacpacParser.parseXml
     |> printfn "%A"
 
 
