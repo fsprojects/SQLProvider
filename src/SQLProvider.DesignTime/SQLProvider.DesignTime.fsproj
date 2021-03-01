@@ -56,10 +56,10 @@
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Common.fs">
       <Link>SqlRuntime.Common.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider\Ssdt.Polyfills.fs">
+    <Compile Include="..\SQLProvider.Runtime\Ssdt.Polyfills.fs">
       <Link>Ssdt.Polyfills.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider\Ssdt.DacpacParser.fs">
+    <Compile Include="..\SQLProvider.Runtime\Ssdt.DacpacParser.fs">
       <Link>Ssdt.DacpacParser.fs</Link>
     </Compile>    
     <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
