@@ -37,8 +37,8 @@
   </ItemGroup>
   <ItemGroup><!-- Mono fix -->
     <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net461/FSharp.Data.SqlProvider.dll</HintPath>
-      <!--HintPath>../../packages/SQLProvider/lib/net461/FSharp.Data.SqlProvider.dll</HintPath-->
+      <HintPath>../../../bin/net472/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net472/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
   </ItemGroup>  
   <ItemGroup>

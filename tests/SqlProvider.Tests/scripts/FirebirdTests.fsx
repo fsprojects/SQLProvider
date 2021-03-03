@@ -1,4 +1,4 @@
-﻿#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
+﻿#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System

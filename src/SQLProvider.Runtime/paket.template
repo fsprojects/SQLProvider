@@ -24,13 +24,13 @@ summary
 description
     Type providers for SQL database access.
 files
-    bin/Release/net461/SQLProvider.Runtime.* ==> lib/net46
-    bin/Release/netstandard2.0/FSharp.Data.SQLProvider.* ==> lib/netstandard2.0
-    bin/Release/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
-    bin/Release/typeproviders/fsharp41/netcoreapp3.1/*.dll ==> typeproviders/fsharp41/netcoreapp3.1
-    bin/Release/typeproviders/fsharp41/net472/*.dll ==> typeproviders/fsharp41/net472
+    ../../bin/net472/FSharp.Data.SqlProvider.* ==> lib/net472
+    ../../bin/netstandard2.0/FSharp.Data.SQLProvider.* ==> lib/netstandard2.0
+    ../../bin/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/typeproviders/fsharp41/netcoreapp3.1/*.dll ==> typeproviders/fsharp41/netcoreapp3.1
+    ../../bin/typeproviders/fsharp41/net472/*.dll ==> typeproviders/fsharp41/net472
 references
-    SQLProvider.Runtime.dll
+    FSharp.Data.SqlProvider.dll
 dependencies
     FSharp.Core >= 4.7.2
     Newtonsoft.Json >= 12.0.3

@@ -1,7 +1,7 @@
 
 // This is with classic FSI:
 #I @"../../../bin/net461"
-#r @"../../../bin/net461/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
 #I @"../../../bin/netstandard2.0"
 #r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"

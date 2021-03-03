@@ -2,7 +2,7 @@
 #r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll"
 #r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 // On Non-Windows-machine, fsharpi is not running on Core:
-// #r "../../../bin/net461/FSharp.Data.SqlProvider.dll"
+// #r "../../../bin/net472/FSharp.Data.SqlProvider.dll"
 
 //[<Literal>]
 //let msyqlDataPath = __SOURCE_DIRECTORY__ + "/dataTemp"
