@@ -15,13 +15,13 @@
       ]
     },
     "paket": {
-      "version": "5.245.2",
+      "version": "5.257.0",
       "commands": [
         "paket"
       ]
     },
     "fake-cli": {
-      "version": "5.20.0",
+      "version": "5.20.3",
       "commands": [
         "fake"
       ]
@@ -39,7 +39,7 @@
       ]
     },
     "dotnet-serve": {
-      "version": "1.7.125",
+      "version": "1.8.15",
       "commands": [
         "dotnet-serve"
       ]
