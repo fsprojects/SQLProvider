@@ -1,3 +1,6 @@
+### 1.2.0-alpha - 03.03.2021
+* Packaged from the .NET Standard branch.
+
 ### 1.1.101 - 07.02.2021
 * Minor SSDT improvements
 
