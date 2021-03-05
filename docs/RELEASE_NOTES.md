@@ -1,5 +1,6 @@
-### 1.2.0-alpha - 03.03.2021
+### 1.2.0 - 05.03.2021
 * Packaged from the .NET Standard branch.
+* Removed support from .NET 3.5 and .NET 4.6.1: The least is .NET 4.7.2.
 
 ### 1.1.101 - 07.02.2021
 * Minor SSDT improvements

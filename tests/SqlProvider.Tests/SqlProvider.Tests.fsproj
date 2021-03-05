@@ -20,7 +20,7 @@
   <ItemGroup>
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
-    <Compile Include="PostgreSQLTests.fs" />
+	<!--<Compile Include="PostgreSQLTests.fs" />-->
     <Compile Include="SqlServerTests.fs" />
     <Content Include="app.config" />
     <None Include="x86\SQLite.Interop.dll">
@@ -32,8 +32,9 @@
     <None Include="System.Threading.Tasks.Extensions.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="OracleTests.fsx" />
-    <None Include="SQLLiteTests.fsx" />
+    <None Include="scripts\OracleTests.fsx" />
+    <None Include="scripts\PostgreSQLTests.fsx" />
+    <None Include="scripts\SQLLiteTests.fsx" />
     <None Include="Northwind.accdb" />
     <None Include="Mono.Data.Sqlite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

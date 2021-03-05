@@ -1,23 +1,4 @@
-#r @"paket:
-source https://nuget.org/api/v2
-framework netstandard2.0
-nuget Fake.Core.Target
-nuget Fake.Core.Process
-nuget Fake.Core.ReleaseNotes 
-nuget FAKE.Core.Environment
-nuget Fake.IO.FileSystem
-nuget Fake.DotNet.Cli
-nuget Fake.DotNet.MSBuild
-nuget Fake.DotNet.AssemblyInfoFile
-nuget Fake.DotNet.Paket
-nuget Fake.BuildServer.AppVeyor
-nuget Fake.BuildServer.Travis
-nuget Fake.DotNet.Testing.Expecto 
-nuget Fake.DotNet.FSFormatting 
-nuget Fake.Tools.Git
-nuget Fake.DotNet.Testing.NUnit
-nuget Fake.Api.GitHub //"
-
+#r "paket: groupref build //"
 //#load "docs/CLI.fs"
 
 #if !FAKE
@@ -196,7 +177,7 @@ Target.create "SetupPostgreSQL" (fun _ ->
 
 let setupMssql url saPassword = 
   (*
-    let connBuilder = Data.SqlClient.SqlConnectionStringBuilder()    
+    let connBuilder = System.Data.SqlClient.SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
@@ -318,6 +299,9 @@ Target.create "PackNuGet" (fun _ ->
                 ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
                 Symbols = true
                 })
+
+    Branches.tag "" release.NugetVersion
+
     ()
 ) 
 
@@ -428,7 +412,11 @@ Target.create "ReleaseDocs" (fun _ ->
     Branches.push tempDocsDir
 )
 
-Target.create "Release" ignore
+Target.create "Release" (fun _ ->
+    // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
+    //Branches.pushTag "" "upstream" release.NugetVersion
+    ()
+) 
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
@@ -448,6 +436,7 @@ Target.create "BuildDocs" ignore
   ==> "Build"
   ==> "BuildTests"
   ==> "RunTests"
+  ==> "PackNuGet"
   ==> "CleanDocs"
   // Travis doesn't support mono+dotnet:
   =?> ("GenerateReferenceDocs", Fake.Core.BuildServer.isLocalBuild && not Fake.Core.Environment.isMono)
@@ -470,6 +459,6 @@ Target.create "BuildDocs" ignore
   ==> "Release"
 
 "All" 
-  ==> "PackNuGet"
+  ==> "Release"
 
-Target.runOrDefaultWithArguments "Build"
+Target.runOrDefaultWithArguments "PackNuGet"
