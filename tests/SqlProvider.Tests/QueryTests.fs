@@ -14,7 +14,7 @@ open NUnit.Framework
 open System.Linq
 
 [<Literal>]
-let connectionString = @"Data Source=./db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
@@ -23,7 +23,7 @@ let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
 // Tools -> Extensions and Updates... -> Online -> NUnit Test Adapter for Visual Studio
 // http://nunit.org/index.php?p=vsTestAdapter&r=2.6.4
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 let inline isNull (x:^T when ^T : not struct) = obj.ReferenceEquals (x, null)   
 
@@ -1845,7 +1845,8 @@ let ``simple select query async2``() =
     CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
 
 
-type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true>
+type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=true, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+
 [<Test>]
 let ``simple select with contains query with where boolean option type``() =
     let dc = sqlOption.GetDataContext()
