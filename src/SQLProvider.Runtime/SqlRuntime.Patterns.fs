@@ -214,6 +214,25 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
         | _ -> None
     | _ -> None
 
+// Unwrap Microsoft.FSharp.Core.Operators.Abs$W(ToFSharpFunc(arg0_0 => Abs(arg0_0)), x) to Abs(x)
+let (|MethodCallOrFSharpWrap|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, (:? MethodCallExpression as e) ->
+        if e.Object = null && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+            match e.Arguments.[0].NodeType, e.Arguments.[0] with
+            | ExpressionType.Call, (:? MethodCallExpression as ec) when ec.Method.Name = "ToFSharpFunc" && ec.Arguments.Count = 1 ->
+                match ec.Arguments.[0] with
+                | Lambda(arg, body) ->
+                    match body.NodeType, body with
+                    | ExpressionType.Call, (:? MethodCallExpression as eop) ->
+                        Some (None, eop.Method, [e.Arguments.[1]])
+                    | _ -> Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
+                | _ -> Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
+            | _ -> Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
+        else
+            Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
+    | _ -> None
+
 let (|SqlPlainColumnGet|_|) = function
     | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
         match o with
@@ -355,7 +374,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | _ -> None
 
     // Numerical functions
-    | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as pe)] as par)))
+    | _, OptionalFSharpOptionValue(MethodCallOrFSharpWrap(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as pe)] as par)))
         when ((meth.Name = "Abs" || meth.Name = "Ceil" || meth.Name = "Floor" || meth.Name = "Round" || meth.Name = "Truncate" ||
                meth.Name = "Sqrt" || meth.Name = "Sin" || meth.Name = "Cos" || meth.Name = "Tan" || meth.Name = "ASin" || meth.Name = "ACos" || meth.Name = "ATan"
               ) && (decimalTypes |> Array.exists((=) pe.Type))
