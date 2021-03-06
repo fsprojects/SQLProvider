@@ -36,34 +36,38 @@
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
     </Compile>
-    <Compile Include="Operators.fs"/>
-    <Compile Include="Utils.fs"/>
-    <Compile Include="SqlSchema.fs"/>
-    <Compile Include="DataTable.fs"/>
-    <Compile Include="SqlRuntime.Patterns.fs"/>
-    <Compile Include="QuotationHelpers.fs"/>
-    <Compile Include="SqlRuntime.Transactions.fs"/>
-    <Compile Include="SqlRuntime.Common.fs"/>
+    <Compile Include="Operators.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="SqlSchema.fs" />
+    <Compile Include="DataTable.fs" />
+    <Compile Include="SqlRuntime.Patterns.fs" />
+    <Compile Include="QuotationHelpers.fs" />
+    <Compile Include="SqlRuntime.Transactions.fs" />
+    <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Ssdt.Polyfills.fs" />
     <Compile Include="Ssdt.DacpacParser.fs" />    
-    <Compile Include="Providers.MsSqlServer.fs"/>
-    <Compile Include="Providers.MsSqlServer.Dynamic.fs"/>
-    <Compile Include="Providers.MsSqlServer.Ssdt.fs"/>
-    <Compile Include="Providers.MSAccess.fs"/>
-    <Compile Include="Providers.MySql.fs"/>
-    <Compile Include="Providers.Odbc.fs"/>
-    <Compile Include="Providers.Oracle.fs"/>
-    <Compile Include="Providers.Postgresql.fs"/>
-    <Compile Include="Providers.SQLite.fs"/>
-    <Compile Include="Providers.Firebird.fs"/>
-    <Compile Include="SqlRuntime.QueryExpression.fs"/>
-    <Compile Include="SqlRuntime.Linq.fs"/>
-    <Compile Include="SqlRuntime.Async.fs"/>
-    <Compile Include="SqlRuntime.DataContext.fs"/>
+    <Compile Include="Providers.MsSqlServer.fs" />
+    <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
+    <Compile Include="Providers.MsSqlServer.Ssdt.fs" />
+    <Compile Include="Providers.MSAccess.fs" />
+    <Compile Include="Providers.MySql.fs" />
+    <Compile Include="Providers.Odbc.fs" />
+    <Compile Include="Providers.Oracle.fs" />
+    <Compile Include="Providers.Postgresql.fs" />
+    <Compile Include="Providers.SQLite.fs" />
+    <Compile Include="Providers.Firebird.fs" />
+    <Compile Include="SqlRuntime.QueryExpression.fs" />
+    <Compile Include="SqlRuntime.Linq.fs" />
+    <Compile Include="SqlRuntime.Async.fs" />
+    <Compile Include="SqlRuntime.DataContext.fs" />
   </ItemGroup>
   <ItemGroup>
     <!-- Be explicit about the version of FSharp.Core since we mention it in the manual nuget package spec -->
     <PackageReference Include="FSharp.Core" Version="4.7.2" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <Target Name="BeforeBuild">
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Restore" />
