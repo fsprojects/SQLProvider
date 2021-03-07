@@ -135,7 +135,7 @@ Target.create "BuildTests" (fun _ ->
 // Set up a PostgreSQL database in the CI pipeline to run tests
 
 Target.create "SetupPostgreSQL" (fun _ ->
-    
+    (*
       let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
 
       connBuilder.Host <- "localhost"
@@ -172,6 +172,8 @@ Target.create "SetupPostgreSQL" (fun _ ->
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
       |> Seq.map IO.File.ReadAllText      
       |> Seq.iter runCmd
+	  *)
+    ()
 )
 
 // --------------------------------------------------------------------------------------
