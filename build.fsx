@@ -34,7 +34,9 @@ Target.initEnvironment()
 //#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
-#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
+//#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
+#I @"packages/build/System.Threading.Tasks.Extensions/lib/netstandard2.0/"
+#r @"packages/tests/Npgsql/lib/netstandard2.0/Npgsql.dll"
 let environVarOrDefault varName defaultValue =
 
     try
