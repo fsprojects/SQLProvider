@@ -461,4 +461,4 @@ Target.create "BuildDocs" ignore
 "All" 
   ==> "Release"
 
-Target.runOrDefaultWithArguments "PackNuGet"
+Target.runOrDefaultWithArguments "RunTests"
