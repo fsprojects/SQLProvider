@@ -47,6 +47,7 @@ group Build
     nuget Fake.DotNet.FSFormatting 
     nuget Fake.DotNet.Testing.NUnit
     nuget Fantomas
+    nuget System.Data.SqlClients
 
 group SourceFiles
     source https://api.nuget.org/v3/index.json

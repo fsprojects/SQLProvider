@@ -1,6 +1,8 @@
 #r "paket: groupref build //"
 //#load "docs/CLI.fs"
 
+#r "./packages/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+
 #if !FAKE
 #load "./.fake/build.fsx/intellisense.fsx"
 #r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
@@ -131,7 +133,7 @@ Target.create "BuildTests" (fun _ ->
 // Set up a PostgreSQL database in the CI pipeline to run tests
 
 Target.create "SetupPostgreSQL" (fun _ ->
-    (*
+    
       let connBuilder = Npgsql.NpgsqlConnectionStringBuilder()
 
       connBuilder.Host <- "localhost"
@@ -139,7 +141,7 @@ Target.create "SetupPostgreSQL" (fun _ ->
       connBuilder.Database <- "postgres"
       connBuilder.Username <- "postgres"
       connBuilder.Password <- 
-        match buildServer with
+        match Fake.Core.BuildServer.buildServer with
         | Travis -> ""
         | AppVeyor -> "Password12!"
         | _ -> "postgres"      
@@ -168,15 +170,13 @@ Target.create "SetupPostgreSQL" (fun _ ->
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
       |> Seq.map IO.File.ReadAllText      
       |> Seq.iter runCmd
-      *)
-      ignore()
 )
 
 // --------------------------------------------------------------------------------------
 // Set up a MS SQL Server database to run tests
 
 let setupMssql url saPassword = 
-  (*
+  
     let connBuilder = System.Data.SqlClient.SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
@@ -223,7 +223,7 @@ let setupMssql url saPassword =
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
     |> Seq.map IO.File.ReadAllLines
     |> Seq.iter runScript
-    *) 
+   
     (url,saPassword) |> ignore
     
 Target.create "SetupMSSQL2008R2" (fun _ ->
