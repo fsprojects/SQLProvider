@@ -1,7 +1,7 @@
 #r "paket: groupref build //"
 //#load "docs/CLI.fs"
 
-#r "./packages/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 
 #if !FAKE
 #load "./.fake/build.fsx/intellisense.fsx"
