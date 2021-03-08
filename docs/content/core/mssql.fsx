@@ -62,8 +62,8 @@ let [<Literal>] indivAmount = 1000
 ### UseOptionTypes
 
 If true, F# option types will be used in place of nullable database columns.
-If false, you will always receive the default value of the column's type, even
-if it is null in the database.
+If false, you will receive the default value of the column's type
+if the value is null in the database. The default is true.
 
 *)
 
