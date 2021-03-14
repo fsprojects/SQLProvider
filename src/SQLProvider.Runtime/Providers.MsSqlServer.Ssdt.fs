@@ -9,7 +9,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-open FSharp.Data.Sql.Ssdt
 open FSharp.Data.Sql.Ssdt.DacpacParser
 
 module MSSqlServerSsdt =
@@ -20,17 +19,16 @@ module MSSqlServerSsdt =
         let ssdtFile = IO.FileInfo(dacPacPath)
         if ssdtFile.Exists then ssdtFile.FullName
         else
-            // Is this design time or runtime?
+            // Try to find it in the Entry Assembly folder
             match Reflection.Assembly.GetEntryAssembly() |> Option.ofObj with
-            | None ->
-                // Design time
-                failwithf "Unable to find .dacpac at '%s'." ssdtFile.FullName
             | Some entryAssembly ->
-                // Runtime - try to find dll in executing app
                 let entryDll = IO.FileInfo(entryAssembly.Location)
                 let newFile = IO.FileInfo(IO.Path.Combine(entryDll.Directory.FullName, ssdtFile.Name))
                 if newFile.Exists then newFile.FullName
-                else failwithf "Unable to find .dacpac at '%s'." newFile.FullName
+                else failwithf "Unable to find .dacpac file at the following locations: \n- Configured SsdtPath: '%s'\n- Entry Assembly Path: '%s'" ssdtFile.FullName newFile.FullName
+            | None ->
+                failwithf "Unable to find .dacpac at '%s'." ssdtFile.FullName
+            
 
     /// Tries to parse a schema model from the given .dacpac file path.
     let parseDacpac = findDacPacFile >> extractModelXml >> parseXml
