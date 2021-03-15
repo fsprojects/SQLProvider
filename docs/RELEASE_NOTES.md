@@ -1,5 +1,8 @@
+### 1.2.1 - 15.03.2021
+*  .dacpac file Ionide fix, PR #718
+
 ### 1.2.0 - 05.03.2021
-* Packaged from the .NET Standard branch.
+* Packaged from the .NET Standard branch (merged to master).
 * Removed support from .NET 3.5 and .NET 4.6.1: The least is .NET 4.7.2.
 
 ### 1.1.101 - 07.02.2021
