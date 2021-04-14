@@ -183,12 +183,20 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
-let (|OptionIsSome|_|) = function    
+let (|OptionIsSome|_|) : Expression -> _ = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
+    | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
+        match ue.Operand with
+        | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
+        | _ -> None
     | _ -> None
 
-let (|OptionIsNone|_|) = function    
+let (|OptionIsNone|_|) : Expression -> _ = function    
     | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
+    | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
+        match ue.Operand with
+        | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
+        | _ -> None
     | _ -> None
 
 let (|SqlCondOp|_|) (e:Expression) = 
