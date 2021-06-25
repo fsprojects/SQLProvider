@@ -119,6 +119,24 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     let ssdtSchema = lazy (MSSqlServerSsdt.parseDacpac ssdtPath)
+    let sprocReturnParam i =
+        { Name = "ResultSet"
+          TypeMapping =
+                { TypeMapping.ProviderTypeName = Some "cursor"
+                  TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
+                  TypeMapping.DbType = DbType.Object
+                  TypeMapping.ProviderType = None }
+          Direction = ParameterDirection.Output
+          Length = None
+          Ordinal = i }
+    let setSprocTypeMappings (spParams:QueryParameter[]) =
+        spParams |> Array.mapi(fun idx -> function
+            | x when
+                x.Name.StartsWith("ResultSet") &&
+                x.Direction = ParameterDirection.Output &&
+                x.TypeMapping.ProviderTypeName = None -> sprocReturnParam idx
+            | y -> y
+        )
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
@@ -144,8 +162,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
             | _ -> ()
             p :> IDbDataParameter
-        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
-        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
+        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters (setSprocTypeMappings returnCols) values
+        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters (setSprocTypeMappings returnCols) values
         member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
         
@@ -249,16 +267,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 // If no outParams, add a "ResultSet" property (see issue #706)
                 let outParams =
                     match outParams with
-                    | [] ->
-                        [ { Name = "ResultSet"
-                            TypeMapping =
-                                { TypeMapping.ProviderTypeName = None
-                                  TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
-                                  TypeMapping.DbType = DbType.Object
-                                  TypeMapping.ProviderType = None }
-                            Direction = ParameterDirection.Output
-                            Length = None
-                            Ordinal = outParams.Length } ]
+                    | [] -> [ sprocReturnParam 0 ]
                     | _ -> outParams
 
                 let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = String.Empty; }
