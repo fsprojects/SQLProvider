@@ -1,3 +1,6 @@
+### 1.2.2 - 25.06.2021
+*  .dacpac fix stored procedure return parameters execution getting the results
+
 ### 1.2.1 - 15.03.2021
 *  .dacpac file Ionide fix, PR #718
 
