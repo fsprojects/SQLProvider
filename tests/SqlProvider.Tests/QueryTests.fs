@@ -1860,6 +1860,18 @@ let ``simple select with contains query with where boolean option type``() =
     Assert.IsTrue(qry)
 
 [<Test>]
+let ``simple select with contains query with where not boolean option type``() =
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (not(cust.City.IsNone))
+            select cust.CustomerId
+            contains "ALFKI"
+        }
+    Assert.IsTrue(qry)
+
+[<Test>]
 let ``simple select with where boolean option types``() =
     let dc = sqlOption.GetDataContext()
     let getOptionFilter (city : string option) = 
@@ -2240,6 +2252,24 @@ let ``simple select with subquery exists subquery``() =
                     exists(cust2.CustomerId = "ALFKI")
                 })
             select cust.CustomerId
+        } |> Seq.toList
+    Assert.IsNotEmpty(qry)
+    Assert.AreEqual(91, qry.Count())
+    CollectionAssert.Contains(qry, "QUEEN")
+
+[<Test; Ignore("Not supported")>]
+let ``simple select with join subqry``() =
+    let dc = sql.GetDataContext()
+    let subqry =
+        query {
+            for cust2 in dc.Main.Customers do
+            select cust2
+        }
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            join cust2 in subqry on (cust.CustomerId = cust2.CustomerId)
+            select (cust, cust2)
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(91, qry.Count())
