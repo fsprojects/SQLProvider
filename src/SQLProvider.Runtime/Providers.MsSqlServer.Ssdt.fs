@@ -129,14 +129,6 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
           Direction = ParameterDirection.Output
           Length = None
           Ordinal = i }
-    let setSprocTypeMappings (spParams:QueryParameter[]) =
-        spParams |> Array.mapi(fun idx -> function
-            | x when
-                x.Name.StartsWith("ResultSet") &&
-                x.Direction = ParameterDirection.Output &&
-                x.TypeMapping.ProviderTypeName = None -> sprocReturnParam idx
-            | y -> y
-        )
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
@@ -162,8 +154,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
             | _ -> ()
             p :> IDbDataParameter
-        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters (setSprocTypeMappings returnCols) values
-        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters (setSprocTypeMappings returnCols) values
+        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
+        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
         member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
         
@@ -270,7 +262,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | [] -> [ sprocReturnParam 0 ]
                     | _ -> outParams
 
-                let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = String.Empty; }
+                let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
 
                 Root("Procedures", Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
             )
