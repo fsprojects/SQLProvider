@@ -132,14 +132,37 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
-        member __.GetTableDescription(con,tableName) = tableName
+        member __.GetTableDescription(con,tableName) =
+            tableName + 
+            (ssdtSchema.Value.Descriptions
+             |> List.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
+             |> List.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
+             |> Option.map(fun d -> d.Description)
+             |> Option.defaultValue ""
+             )
         member __.GetColumnDescription(con,tableName,columnName) =
             let tableName = RegexParsers.splitFullName tableName |> Seq.last
-            ssdtSchema.Value.Tables
-            |> List.tryFind (fun t -> t.Name = tableName)
-            |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
-            |> Option.map (fun c -> c.Description)
-            |> Option.defaultValue columnName
+            (ssdtSchema.Value.Tables
+             |> List.tryFind (fun t -> if tableName.Contains "." then t.Schema + "." + t.Name = tableName else t.Name = tableName)
+             |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
+             |> Option.map (fun c ->
+                if String.IsNullOrEmpty c.Description then ""
+                elif c.Description.StartsWith("N'") then
+                    " / " + c.Description.Substring(0, c.Description.Length-1).Replace("N'", "")
+                else " / " + c.Description)
+             |> Option.defaultValue columnName)
+            +
+            (ssdtSchema.Value.Descriptions
+             |> List.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
+             |> List.tryFind(fun d ->
+                    if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
+             |> Option.map(fun d -> 
+                    if String.IsNullOrEmpty d.Description then ""
+                    elif d.Description.StartsWith("N'") then
+                        " / " + d.Description.Substring(0, d.Description.Length-1).Replace("N'", "")
+                    else " / " + d.Description)
+             |> Option.defaultValue ""
+             )
         member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
         member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
         member __.CreateCommandParameter(param, value) =

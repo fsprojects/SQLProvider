@@ -9,6 +9,7 @@ type SsdtSchema = {
     TryGetTableByName: string -> SsdtTable option
     StoredProcs: SsdtStoredProc list
     Relationships: SsdtRelationship list
+    Descriptions: SsdtDescriptionItem list
 }
 and SsdtTable = {
     FullName: string
@@ -77,6 +78,13 @@ and SsdtStoredProcParam = {
     DataType: string
     Length: int option
     IsOutput: bool
+}
+and SsdtDescriptionItem = {
+    DecriptionType: string
+    Schema: string
+    TableName: string
+    ColumnName: string option
+    Description: string
 }
 
 module RegexParsers =
@@ -359,6 +367,19 @@ let parseXml(xml: string) =
           Name = parts.[1]
           Parameters = parameters |> Seq.toList }
 
+    let parseDescription (extElement: XmlNode) =
+        let fullName = extElement |> att "Name"
+        let parts = fullName |> RegexParsers.splitFullName
+        let description = (extElement |> nodes "x:Property" |> Seq.find (fun n -> n |> att "Name" = "Value") |> node "x:Value").InnerText
+        {   // Mostly interesting decription types table/view/column: SqlTableBase / SqlView / SqlColumn
+            // But there can be many others too: SqlSchema / SqlDmlTrigger / SqlConstraint / SqlDatabaseOptions / SqlFilegroup / SqlSubroutineParameter / SqlXmlSchemaCollection / ...
+            DecriptionType = parts.[0]
+            Schema = parts.[1]
+            TableName = if parts.Length > 2 then parts.[2] else ""
+            ColumnName = if parts.Length > 3 then Some parts.[3] else None
+            Description = description
+        }
+
     let storedProcs =
         model
         |> nodes "x:Element"
@@ -378,6 +399,13 @@ let parseXml(xml: string) =
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlView")
         |> Seq.map parseView
+        |> Seq.toList
+
+    let descriptions =
+        model
+        |> nodes "x:Element"
+        |> Seq.filter (fun e -> e |> att "Type" = "SqlExtendedProperty" && (e |> att "Name").EndsWith(".[MS_Description]"))
+        |> Seq.map parseDescription
         |> Seq.toList
 
     let tableColumnsByPath = tables |> List.collect (fun t -> t.Columns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
@@ -430,4 +458,5 @@ let parseXml(xml: string) =
     { Tables = tablesAndViews
       StoredProcs = storedProcs
       TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
-      Relationships = relationships } : SsdtSchema
+      Relationships = relationships
+      Descriptions = descriptions } : SsdtSchema
