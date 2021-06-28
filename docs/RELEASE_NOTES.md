@@ -1,3 +1,6 @@
+### 1.2.4 - 28.06.2021
+*  .dacpac fix stored procedure returning multiple results
+
 ### 1.2.3 - 25.06.2021
 *  .dacpac fix stored procedure call from different schema
 
