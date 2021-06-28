@@ -241,7 +241,7 @@ module MSSqlServer =
 
     let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
         match retCol.TypeMapping.ProviderTypeName with
-        | Some "cursor" ->
+        | Some "cursor" | Some "CURSOR" ->
             let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
             reader.NextResult() |> ignore
             result
@@ -250,7 +250,7 @@ module MSSqlServer =
     let processReturnColumnAsync (com:IDbCommand) reader (retCol:QueryParameter) =
         async {
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | Some "cursor" | Some "CURSOR" ->
                 let! r = Sql.dataReaderToArrayAsync reader
                 let result = ResultSet(retCol.Name, r)
                 let! _ = reader.NextResultAsync() |> Async.AwaitTask
@@ -295,7 +295,7 @@ module MSSqlServer =
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
         | [|retCol|] ->
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | Some "cursor" | Some "CURSOR" ->
                 use reader = com.ExecuteReader() :?> SqlDataReader
                 let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
@@ -320,7 +320,7 @@ module MSSqlServer =
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
-                | Some "cursor" ->
+                | Some "cursor" | Some "CURSOR" ->
                     use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
                     let reader = readera :?> SqlDataReader
                     let! r = Sql.dataReaderToArrayAsync reader

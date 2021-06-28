@@ -120,7 +120,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
     let ssdtSchema = lazy (MSSqlServerSsdt.parseDacpac ssdtPath)
     let sprocReturnParam i =
-        { Name = "ResultSet"
+        { Name = "ResultSet" + (match i with | 0 -> "" | x -> "_" + x.ToString())
           TypeMapping =
                 { TypeMapping.ProviderTypeName = Some "cursor"
                   TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
@@ -129,6 +129,16 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
           Direction = ParameterDirection.Output
           Length = None
           Ordinal = i }
+
+
+    let sprocReturnCache = ConcurrentDictionary<string, QueryParameter[]>()
+    /// SSDT dacpac doesn't contain info about return parameters. A little hacky, but also SQL Server efficiently caches the query
+    let getSprocReturnParams con sprocDbName inputParameters =
+        sprocReturnCache.GetOrAdd(sprocDbName,
+            fun _ ->
+                MSSqlServer.findDbType <- MSSqlServerSsdt.tryFindMapping
+                let r = MSSqlServer.getSprocReturnCols con {ProcName = sprocDbName; PackageName = ""; Owner = ""} inputParameters
+                r |> List.toArray)
 
     interface ISqlProvider with
         member __.GetLockObject() = myLock
@@ -177,8 +187,23 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
             | _ -> ()
             p :> IDbDataParameter
-        member __.ExecuteSprocCommand(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommand con inputParameters returnCols values
-        member __.ExecuteSprocCommandAsync(con, inputParameters, returnCols, values:obj array) = MSSqlServer.executeSprocCommandAsync con inputParameters returnCols values
+        member __.ExecuteSprocCommand(com, inputParameters, returnCols, values:obj array) =
+                let returnCols2 = 
+                    try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
+                    with _ -> returnCols
+
+                if com.Connection.State <> ConnectionState.Open then com.Connection.Open()
+                MSSqlServer.executeSprocCommand com inputParameters returnCols2 values
+        member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
+            async {
+                let returnCols2 = 
+                    try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
+                    with _ -> returnCols
+                if com.Connection.State <> ConnectionState.Open then
+                    do! com.Connection.OpenAsync() |> Async.AwaitTask
+
+                return! MSSqlServer.executeSprocCommandAsync com inputParameters returnCols2 values
+            }
         member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
         
