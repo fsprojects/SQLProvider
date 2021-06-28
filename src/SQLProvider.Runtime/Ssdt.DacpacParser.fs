@@ -376,7 +376,7 @@ let parseXml(xml: string) =
             DecriptionType = parts.[0]
             Schema = parts.[1]
             TableName = if parts.Length > 2 then parts.[2] else ""
-            ColumnName = if parts.Length > 3 then Some parts.[3] else None
+            ColumnName = if parts.Length > 3 && parts.[0] <> "SqlTableBase" && parts.[3] <> "MS_Description" then Some parts.[3] else None
             Description = description
         }
 
