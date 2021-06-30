@@ -147,7 +147,11 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             (ssdtSchema.Value.Descriptions
              |> List.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
              |> List.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
-             |> Option.map(fun d -> d.Description)
+             |> Option.map (fun d ->
+                if String.IsNullOrEmpty d.Description then ""
+                elif d.Description.StartsWith("N'") then
+                    " / " + d.Description.Substring(0, d.Description.Length-1).Replace("N'", "")
+                else " / " + d.Description)
              |> Option.defaultValue ""
              )
         member __.GetColumnDescription(con,tableName,columnName) =

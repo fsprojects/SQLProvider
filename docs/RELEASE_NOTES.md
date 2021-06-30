@@ -1,3 +1,6 @@
+### 1.2.5 - 28.06.2021
+*  .dacpac table descriptions fixed
+
 ### 1.2.4 - 28.06.2021
 *  .dacpac fix stored procedure returning multiple results
 
