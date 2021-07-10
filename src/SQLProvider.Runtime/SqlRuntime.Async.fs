@@ -32,18 +32,21 @@ module AsyncOperations =
                         do! coll.EvaluateQuery()
                         return yieldseq en
                     | c -> return yieldseq en
-                else 
+                else
                     return yieldseq en
         }
 
-    let private fetchTakeOne (s:Linq.IQueryable<'T>) =
+    let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
         async {
             match s with
             | :? IWithSqlService as svc ->
-                return! executeQueryAsync svc.DataContext svc.Provider (Take(1, svc.SqlExpression)) svc.TupleIndex
+                return! executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
             | c ->
                 return c :> Collections.IEnumerable
         }
+
+    let private fetchTakeOne (s:Linq.IQueryable<'T>) =
+        fetchTakeN 1 s
 
     let getHeadAsync (s:Linq.IQueryable<'T>) =
         async {
@@ -56,6 +59,42 @@ module AsyncOperations =
             let! res = fetchTakeOne s
             return res |> Seq.cast<'T> |> Seq.tryPick Some
         }
+
+    let private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
+        async {
+            let! res = fetchTakeN 2 s
+            let converted = res |> Seq.cast<'TSource>
+            match converted |> Seq.length with
+            | 0 ->
+                return onNone()
+            | 1 ->
+                return converted |> Seq.head |> onSuccess
+            | 2 ->
+                return converted |> onTooMany
+            | _ ->
+                return invalidOp "The function encountered an internal error. It tried to take two elements but got more elements."
+        }
+
+    let getExactlyOneAsync (s:Linq.IQueryable<'T>)=
+        getExactlyOneAnd
+            id
+            (fun _ -> raise (ArgumentException("The seq contains more than one element.")))
+            (fun _ -> raise (ArgumentNullException("The seq is empty.")))
+            s
+
+    let getExactlyOneOrDefaultAsync (s:Linq.IQueryable<'T>) =
+        getExactlyOneAnd
+            id
+            (fun _ -> Unchecked.defaultof<'T>)
+            (fun _ -> Unchecked.defaultof<'T>)
+            s
+
+    let getExactlyOneOrNoneAsync (s:Linq.IQueryable<'T>) =
+        getExactlyOneAnd
+            Some
+            (fun _ -> None)
+            (fun _ -> None)
+            s
 
     let getCountAsync (s:Linq.IQueryable<'T>) =
         async {
@@ -99,7 +138,7 @@ module AsyncOperations =
                         | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
                         | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
 
-                    let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex 
+                    let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex
                     if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
                     return (Utilities.convertTypes res typeof<'T>) |> unbox
                 | _ -> return failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
@@ -132,14 +171,23 @@ module Seq =
     /// Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
     let varianceAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Variance"
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
-    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> Async<int> = function 
+    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> Async<int> = function
         | :? IWithSqlService as source ->
-            async { 
-                let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex 
+            async {
+                let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex
                 if res = box(DBNull.Value) then return Unchecked.defaultof<int> else
                 return (Utilities.convertTypes res typeof<int>) |> unbox
             }
         | x -> failwithf "Only SQLProvider queryables accepted. Only simple single-table deletion where-clauses supported. Unsupported type %O" x
+    /// Execute SQLProvider query to get the only element of the sequence or a default value (usually null for reference types).
+    let exactlyOneOrDefaultAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T> = getExactlyOneOrDefaultAsync
+    /// Execute SQLProvider query to get the only element of the sequence.
+    /// Throws `ArgumentNullException` if the seq is empty.
+    /// Throws `ArgumentException` if the seq contains more than one element.
+    let exactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T> = getExactlyOneAsync
+    /// Execute SQLProvider query to get the only element of the sequence.
+    /// Returns `None` if there are zero or more than one element in the seq.
+    let exactlyOneOrNoneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T option> = getExactlyOneOrNoneAsync
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.
@@ -148,6 +196,6 @@ module Array =
 module List =
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
-    let evaluateOneByOne = Sql.evaluateOneByOne 
+    let evaluateOneByOne = Sql.evaluateOneByOne
     /// Execute SQLProvider query and release the OS thread while query is being executed.
     let executeQueryAsync query = async { let! x = executeAsync query in return x |> Seq.toList }
