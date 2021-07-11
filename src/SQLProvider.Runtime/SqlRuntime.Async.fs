@@ -22,7 +22,7 @@ module AsyncOperations =
                 return yieldseq en
             | c ->
                 let en = c.GetEnumerator()
-                let source = 
+                let source =
                     match en.GetType() with
                     | null -> null
                     | x -> x.GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
@@ -82,14 +82,7 @@ module AsyncOperations =
             (fun _ -> raise (ArgumentNullException("The seq is empty.")))
             s
 
-    let getExactlyOneOrDefaultAsync (s:Linq.IQueryable<'T>) =
-        getExactlyOneAnd
-            id
-            (fun _ -> Unchecked.defaultof<'T>)
-            (fun _ -> Unchecked.defaultof<'T>)
-            s
-
-    let getExactlyOneOrNoneAsync (s:Linq.IQueryable<'T>) =
+    let getTryExactlyOneAsync (s:Linq.IQueryable<'T>) =
         getExactlyOneAnd
             Some
             (fun _ -> None)
@@ -113,7 +106,7 @@ module AsyncOperations =
             | :? IWithSqlService as svc ->
                 match svc.SqlExpression with
                 | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
-                    
+
                     let key = Utilities.getBaseColumnName op
 
                     let alias =
@@ -123,7 +116,7 @@ module AsyncOperations =
                             | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
                     let sqlExpression =
 
-                        let opName = 
+                        let opName =
                             match agg with
                             | "Sum" -> SumOp(key)
                             | "Max" -> MaxOp(key)
@@ -179,15 +172,13 @@ module Seq =
                 return (Utilities.convertTypes res typeof<int>) |> unbox
             }
         | x -> failwithf "Only SQLProvider queryables accepted. Only simple single-table deletion where-clauses supported. Unsupported type %O" x
-    /// Execute SQLProvider query to get the only element of the sequence or a default value (usually null for reference types).
-    let exactlyOneOrDefaultAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T> = getExactlyOneOrDefaultAsync
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Throws `ArgumentNullException` if the seq is empty.
     /// Throws `ArgumentException` if the seq contains more than one element.
     let exactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T> = getExactlyOneAsync
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Returns `None` if there are zero or more than one element in the seq.
-    let exactlyOneOrNoneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T option> = getExactlyOneOrNoneAsync
+    let tryExactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T option> = getTryExactlyOneAsync
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.
