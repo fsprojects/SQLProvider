@@ -1,3 +1,6 @@
+### 1.2.6 - 12.07.2021
+* Seq.exactlyOneAsync and Seq.tryExactlyOneAsync added PR #735
+
 ### 1.2.5 - 28.06.2021
 *  .dacpac table descriptions fixed
 
