@@ -1,6 +1,6 @@
 
 // This is with classic FSI:
-#I @"../../../bin/net461"
+#I @"../../../bin/net472"
 #r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
 #I @"../../../bin/netstandard2.0"
@@ -184,6 +184,16 @@ let ``simple math operationsquery``() =
         } |> Seq.toList
     itemOf90, ``should be empty``
 
+
+let ``simplest select query with groupBy key aggregate``() = 
+    let qry = 
+        query {
+            for cust in ctx.Dbo.Employees do
+            groupBy (cust.LastName+"1") into g
+            select g.Key
+        } |> Seq.toArray
+
+    qry
 
 let canoncicalOpTest = 
     query {

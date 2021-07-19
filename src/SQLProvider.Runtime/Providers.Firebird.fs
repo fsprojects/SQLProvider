@@ -936,15 +936,21 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as [%s]" (fieldNotation k op) n|])
 
+            // Cache select-params to match group-by params
+            let tmpGrpParams = Dictionary<(alias*SqlColumnType), string>()
+
             // Create sumBy, minBy, maxBy, ... field columns
             let columns = 
                 let extracolumns =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) -> 
-                            if sqlQuery.Aliases.Count < 2 then fieldNotation a c
-                            else sprintf "%s as [%s]" (fieldNotation a c) (fieldNotation a c))
+                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                            let fn = fieldNotation a c
+                            if not (tmpGrpParams.ContainsKey (a,c)) then
+                                tmpGrpParams.Add((a,c), fn)
+                            if sqlQuery.Aliases.Count < 2 then fn
+                            else sprintf "%s as [%s]" fn fn)
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
@@ -969,8 +975,11 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             let groupByBuilder groupkeys =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
+                    let cname =
+                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
+                        else fieldNotation alias column
                     if i > 0 then ~~ ", "
-                    ~~ (fieldNotation alias column))
+                    ~~ cname)
 
             let orderByBuilder() =
                 sqlQuery.Ordering

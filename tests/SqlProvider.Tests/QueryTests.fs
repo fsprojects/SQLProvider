@@ -1,8 +1,7 @@
 #if INTERACTIVE
-#I @"../../src/SQLProvider.Runtime/bin/Release/net461/"
-#I @"../../src/SQLProvider.Runtime/bin/Debug/net461/"
+#I @"../../bin/net472/"
 #r "FSharp.Data.SqlProvider.dll"
-#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#r @"../../packages/tests/NUnit/lib/netstandard2.0/nunit.framework.dll"
 #else
 module QueryTests
 #endif
@@ -824,6 +823,19 @@ let ``simplest select query with groupBy 2 columns``() =
         } |> Seq.toArray
 
     Assert.IsNotEmpty(qry)
+
+[<Test>]
+let ``simplest select query with groupBy key aggregate``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            groupBy (cust.City+"1") into g
+            select g.Key
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
 
 [<Test>]
 let ``simplest select query with groupBy aggregate``() = 
