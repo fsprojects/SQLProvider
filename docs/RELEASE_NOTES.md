@@ -1,3 +1,6 @@
+### 1.2.7 - 19.07.2021
+* GroupBy parameter column name improvements
+
 ### 1.2.6 - 12.07.2021
 * Seq.exactlyOneAsync and Seq.tryExactlyOneAsync added PR #735
 
