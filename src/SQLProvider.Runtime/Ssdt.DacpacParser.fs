@@ -124,7 +124,7 @@ module RegexParsers =
     
 /// Extracts model.xml from the given .dacpac file path.
 let extractModelXml (dacPacPath: string) = 
-    use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open)
+    use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open, IO.FileAccess.Read)
     use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
     let modelEntry = zip.GetEntry("model.xml")
     use modelStream = modelEntry.Open()
