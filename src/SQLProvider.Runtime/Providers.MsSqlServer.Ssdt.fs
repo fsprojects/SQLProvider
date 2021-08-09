@@ -21,8 +21,11 @@ module MSSqlServerSsdt =
     let findDacPacFile (dacPacPath: string) =
         // Find at design time using SsdtPath
         let ssdtFile = IO.FileInfo(dacPacPath)
-        let dacPacFileName = Path.Combine(ssdtFile.Name)
-        let origPath = ssdtFile.Directory.FullName
+        let dacPacFileName = ssdtFile.Name
+        let origPath =
+            (Option.ofObj ssdtFile.Directory)
+            |> Option.map (fun d -> d.FullName)
+            |> Option.defaultValue "."
 
         let asmToPath (asm:Assembly) =
             match asm with
@@ -33,35 +36,43 @@ module MSSqlServerSsdt =
                 Some dllDir
 
         /// generate many combinations to try.
-        let paths = [|
-            yield origPath
-            // working dir
-            yield Environment.CurrentDirectory
-            yield Path.Combine(Environment.CurrentDirectory, origPath)
-            // entry asm dir
-            match asmToPath (Assembly.GetEntryAssembly()) with
-            | Some p ->
-                let rootDirectory = Path.GetFullPath(Path.Combine(p, ".."))
-                yield p
-                yield rootDirectory
-                yield Path.Combine(p, origPath)
-            | _ -> ()
-            // executing assembly dir
-            match asmToPath (Assembly.GetExecutingAssembly()) with
-            | Some p ->
-                // on Azure Functions, there is some very weird type mapping. We also recurse up from the executing dir.
-                let rootDirectory = Path.GetFullPath(Path.Combine(p, ".."))
-                yield p
-                yield rootDirectory
-                yield Path.Combine(p, origPath)
-            | _ -> ()
-        |]
+        let paths =
+            [
+                yield origPath
+                // working dir
+                yield Environment.CurrentDirectory
+                yield Path.Combine(Environment.CurrentDirectory, origPath)
+                // entry asm dir
+                match asmToPath (Assembly.GetEntryAssembly()) with
+                | Some p ->
+                    yield p
+                    yield Path.Combine(p, origPath)
+                | _ -> ()
+                // executing assembly dir
+                match asmToPath (Assembly.GetExecutingAssembly()) with
+                | Some p ->
+                    yield p
+                    yield Path.Combine(p, origPath)
+                | _ -> ()
+            ]
+            |> List.map Path.GetFullPath // sort out the trailing slashes situation
+            |> List.distinct
+
+        let chooseDacpac dirPath =
+            try
+                Path.Combine(dirPath, dacPacFileName)
+                |> IO.FileInfo
+                |> Some
+            with
+            | :? UnauthorizedAccessException -> None
+
 
         let allPossiblePaths =
             paths
-            |> Array.map (fun p -> Path.Combine(p, dacPacFileName) |> IO.FileInfo)
+            |> List.choose chooseDacpac
+            |> List.distinct
 
-        let bestOption = allPossiblePaths |> Array.tryFind (fun fi -> fi.Exists)
+        let bestOption = allPossiblePaths |> List.tryFind (fun fi -> fi.Exists)
 
         match bestOption with
         | Some b -> b.FullName
