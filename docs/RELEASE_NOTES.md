@@ -1,3 +1,6 @@
+### 1.2.8 - 09.08.2021
+* Dacpac search locations extended, Azure Functions .dacpac Resolution Fix, PR #742
+
 ### 1.2.7 - 19.07.2021
 * GroupBy parameter column name improvements
 
