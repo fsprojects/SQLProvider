@@ -21,7 +21,7 @@ module MSSqlServerSsdt =
     let findDacPacFile (dacPacPath: string) =
         // Find at design time using SsdtPath
         let ssdtFile = IO.FileInfo(dacPacPath)
-        let dacPacFileName = ssdtFile.Name
+        let dacPacFileName = Path.Combine(ssdtFile.Name)
         let origPath = ssdtFile.Directory.FullName
 
         let asmToPath (asm:Assembly) =
@@ -33,7 +33,7 @@ module MSSqlServerSsdt =
                 Some dllDir
 
         /// generate many combinations to try.
-        let paths = [
+        let paths = [|
             yield origPath
             // working dir
             yield Environment.CurrentDirectory
@@ -41,22 +41,27 @@ module MSSqlServerSsdt =
             // entry asm dir
             match asmToPath (Assembly.GetEntryAssembly()) with
             | Some p ->
+                let rootDirectory = Path.GetFullPath(Path.Combine(p, ".."))
                 yield p
+                yield rootDirectory
                 yield Path.Combine(p, origPath)
             | _ -> ()
             // executing assembly dir
             match asmToPath (Assembly.GetExecutingAssembly()) with
             | Some p ->
+                // on Azure Functions, there is some very weird type mapping. We also recurse up from the executing dir.
+                let rootDirectory = Path.GetFullPath(Path.Combine(p, ".."))
                 yield p
+                yield rootDirectory
                 yield Path.Combine(p, origPath)
             | _ -> ()
-        ]
+        |]
 
         let allPossiblePaths =
             paths
-            |> List.map (fun p -> Path.Combine(p, dacPacFileName) |> IO.FileInfo)
+            |> Array.map (fun p -> Path.Combine(p, dacPacFileName) |> IO.FileInfo)
 
-        let bestOption = allPossiblePaths |> List.tryFind (fun fi -> fi.Exists)
+        let bestOption = allPossiblePaths |> Array.tryFind (fun fi -> fi.Exists)
 
         match bestOption with
         | Some b -> b.FullName
