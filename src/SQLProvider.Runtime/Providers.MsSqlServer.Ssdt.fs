@@ -5,6 +5,9 @@ open System
 open System.Collections.Concurrent
 open System.Data
 open System.Data.SqlClient
+open System.IO
+open System.Reflection
+open System.Text
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -13,22 +16,98 @@ open FSharp.Data.Sql.Ssdt.DacpacParser
 
 module MSSqlServerSsdt =
 
+    [<Literal>]
+    let DACPAC_SEARCH_PATH_ENV_VAR_NAME = "SQLPROVIDER_SSDT_DACPAC_FILE_LOOKUP_PATH"
+
     /// Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.
     let findDacPacFile (dacPacPath: string) =
+
+        let fileInfoOpt path =
+            try
+                FileInfo path |> Some
+            with e -> None
+
         // Find at design time using SsdtPath
         let ssdtFile = IO.FileInfo(dacPacPath)
-        if ssdtFile.Exists then ssdtFile.FullName
-        else
-            // Try to find it in the Entry Assembly folder
-            match Reflection.Assembly.GetEntryAssembly() |> Option.ofObj with
-            | Some entryAssembly ->
-                let entryDll = IO.FileInfo(entryAssembly.Location)
-                let newFile = IO.FileInfo(IO.Path.Combine(entryDll.Directory.FullName, ssdtFile.Name))
-                if newFile.Exists then newFile.FullName
-                else failwithf "Unable to find .dacpac file at the following locations: \n- Configured SsdtPath: '%s'\n- Entry Assembly Path: '%s'" ssdtFile.FullName newFile.FullName
-            | None ->
-                failwithf "Unable to find .dacpac at '%s'." ssdtFile.FullName
-            
+        let dacPacFileName = ssdtFile.Name
+        let origPath =
+            (Option.ofObj ssdtFile.Directory)
+            |> Option.map (fun d -> d.FullName)
+            |> Option.defaultValue "."
+
+        let asmToPath (asm:Assembly) =
+            Option.ofObj asm
+            |> Option.bind (fun a -> fileInfoOpt a.Location)
+            |> Option.map (fun d -> d.Directory.FullName)
+
+        /// generate many combinations to try.
+        let paths =
+            [
+                // working dir
+                yield Environment.CurrentDirectory
+                yield Path.Combine(Environment.CurrentDirectory, origPath)
+                // entry asm dir
+                match asmToPath (Assembly.GetEntryAssembly()) with
+                | Some p ->
+                    yield p
+                    yield Path.Combine(p, origPath)
+                | _ -> ()
+                // executing assembly dir
+                match asmToPath (Assembly.GetExecutingAssembly()) with
+                | Some p ->
+                    yield p
+                    yield Path.Combine(p, origPath)
+                | _ -> ()
+            ]
+            |> List.map Path.GetFullPath // sort out the trailing slashes situation
+            |> List.distinct
+
+        let chooseDacpac dirPath =
+            if String.IsNullOrWhiteSpace dirPath then
+                None
+            else
+                try
+                    Path.Combine(dirPath, dacPacFileName)
+                    |> fileInfoOpt
+                with
+                | :? UnauthorizedAccessException -> None
+
+
+        // also read the special environment variable
+        let envVarPath = Environment.GetEnvironmentVariable(DACPAC_SEARCH_PATH_ENV_VAR_NAME)
+        let fromEnvVar =
+            if String.IsNullOrWhiteSpace envVarPath then
+                []
+            else
+                let envFilePath = fileInfoOpt envVarPath
+                let relativeEnvFilePath =
+                    envFilePath |> Option.bind (fun d -> chooseDacpac d.Directory.FullName)
+                [
+                    envFilePath
+                    relativeEnvFilePath
+                ] |> List.choose id
+
+
+
+        let allPossiblePaths =
+            paths
+            |> List.choose chooseDacpac
+            |> List.distinct
+            |> List.append fromEnvVar
+
+        let bestOption = allPossiblePaths |> List.tryFind (fun fi -> fi.Exists)
+
+        match bestOption with
+        | Some b -> b.FullName
+        | None ->
+            let sb = new StringBuilder()
+            sb.AppendLine(sprintf "Unable to find .dacpac file. Search path includes executing assembly, configured ssd path, entry assembly, and the environment variable '%s'." DACPAC_SEARCH_PATH_ENV_VAR_NAME) |> ignore
+            sb.AppendLine("Looked in:") |> ignore
+            for s in allPossiblePaths do
+                sb.Append("\t") |> ignore
+                sb.AppendLine(s.FullName) |> ignore
+            failwith (sb.ToString())
+
 
     /// Tries to parse a schema model from the given .dacpac file path.
     let parseDacpac = findDacPacFile >> extractModelXml >> parseXml
@@ -78,18 +157,18 @@ module MSSqlServerSsdt =
               TypeMapping.ProviderType = providerType }
         )
         |> Map.ofList
-    
+
     let tryFindMapping (dataType: string) =
         typeMappingsByName.TryFind (dataType.ToUpper())
-    
+
     let tryFindMappingOrVariant (dataType: string) =
         match typeMappingsByName.TryFind (dataType.ToUpper()) with
         | Some tm -> tm
         | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
-            
+
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
-    
+
     let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
         match tryFindMapping col.DataType with
         | Some typeMapping ->
@@ -107,7 +186,7 @@ module MSSqlServerSsdt =
                   Column.TypeInfo = if col.DataType = "" then None else Some col.DataType }
         | None ->
             None
-    
+
 
 type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.Empty
@@ -143,7 +222,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
-            tableName + 
+            tableName +
             (ssdtSchema.Value.Descriptions
              |> List.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
              |> List.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
@@ -170,7 +249,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
              |> List.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
              |> List.tryFind(fun d ->
                     if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
-             |> Option.map(fun d -> 
+             |> Option.map(fun d ->
                     if String.IsNullOrEmpty d.Description then ""
                     elif d.Description.StartsWith("N'") then
                         " / " + d.Description.Substring(0, d.Description.Length-1).Replace("N'", "")
@@ -192,7 +271,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | _ -> ()
             p :> IDbDataParameter
         member __.ExecuteSprocCommand(com, inputParameters, returnCols, values:obj array) =
-                let returnCols2 = 
+                let returnCols2 =
                     try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
                     with _ -> returnCols
 
@@ -200,7 +279,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 MSSqlServer.executeSprocCommand com inputParameters returnCols2 values
         member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
             async {
-                let returnCols2 = 
+                let returnCols2 =
                     try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
                     with _ -> returnCols
                 if com.Connection.State <> ConnectionState.Open then
@@ -210,7 +289,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             }
         member __.CreateTypeMappings(con) = ()
         member __.GetSchemaCache() = schemaCache
-        
+
         member __.GetTables(con,_) =
             let allowed = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun s -> s.Trim())
 
@@ -245,9 +324,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             |> Seq.map (fun kvp -> kvp.Value)
             |> Seq.iter (fun col ->
                 if col.IsPrimaryKey then
-                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
-                         match col.Name with 
-                         | "" -> old 
+                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                         match col.Name with
+                         | "" -> old
                          | x -> match old with
                                 | [] -> [x]
                                 | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
@@ -340,15 +419,15 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 let paramName = nextParam()
                 parameters.Add(MSSqlServer.createOpenParameter(paramName,value):> IDbDataParameter)
                 paramName
-                        
-            let mssqlPaging =               
+
+            let mssqlPaging =
               match mssqlVersionCache.TryGetValue(con.ConnectionString) with
               // SQL 2008 and earlier do not support OFFSET
               | true, mssqlVersion when mssqlVersion.Value.Major < 11 -> MSSQLPagingCompatibility.RowNumber
               | _ -> MSSQLPagingCompatibility.Offset
 
-            let rec fieldNotation (al:alias) (c:SqlColumnType) = 
-                let buildf (c:Condition)= 
+            let rec fieldNotation (al:alias) (c:SqlColumnType) =
+                let buildf (c:Condition)=
                     let sb = System.Text.StringBuilder()
                     let (~~) (t:string) = sb.Append t |> ignore
                     filterBuilder (~~) [c]
@@ -356,8 +435,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 let x = fieldNotation
                 let colSprint =
                     match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "[%s]" 
-                    | false -> sprintf "[%s].[%s]" al 
+                    | true -> sprintf "[%s]"
+                    | false -> sprintf "[%s].[%s]" al
                 match c with
                 // Custom database spesific overrides for canonical functions:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -480,15 +559,15 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                         match operator with
                                         | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
                                         | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
-                                        | FSharp.Data.Sql.In 
+                                        | FSharp.Data.Sql.In
                                         | FSharp.Data.Sql.NotIn -> operatorIn operator paras
-                                        | FSharp.Data.Sql.NestedExists 
-                                        | FSharp.Data.Sql.NestedNotExists 
-                                        | FSharp.Data.Sql.NestedIn 
+                                        | FSharp.Data.Sql.NestedExists
+                                        | FSharp.Data.Sql.NestedNotExists
+                                        | FSharp.Data.Sql.NestedIn
                                         | FSharp.Data.Sql.NestedNotIn -> operatorInQuery operator paras
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
-                                            match data with 
+                                            match data with
                                             | Some d when (box d :? alias * SqlColumnType) ->
                                                 let alias2, col2 = box d :?> (alias * SqlColumnType)
                                                 let alias2f = fieldNotation alias2 col2
@@ -569,7 +648,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 let extracolumns =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
-                    | g  -> 
+                    | g  ->
                         let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
@@ -578,7 +657,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             else sprintf "%s as '%s'" fn fn)
                         let aggs = g |> List.map(snd) |> List.concat
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
-                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
+                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
@@ -614,7 +693,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
-            else 
+            else
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
@@ -625,7 +704,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ -> 
+                | MSSQLPagingCompatibility.RowNumber, Some _, _ ->
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -667,7 +746,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
-            | _ -> 
+            | _ ->
               //when RowNumber compatibility with SKIP, ommit order by clause as it's already in CTE
               ()
 
@@ -675,18 +754,18 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | Some(UnionType.UnionAll, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " UNION ALL %s " suquery)
-            | Some(UnionType.NormalUnion, suquery, pars) -> 
+            | Some(UnionType.NormalUnion, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " UNION %s " suquery)
-            | Some(UnionType.Intersect, suquery, pars) -> 
+            | Some(UnionType.Intersect, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " INTERSECT %s " suquery)
-            | Some(UnionType.Except, suquery, pars) -> 
+            | Some(UnionType.Except, suquery, pars) ->
                 parameters.AddRange pars
                 ~~(sprintf " EXCEPT %s " suquery)
             | None -> ()
-        
-            let sql = 
+
+            let sql =
                 match mssqlPaging with
                 | MSSQLPagingCompatibility.RowNumber ->
                     let outerSb = System.Text.StringBuilder()
@@ -702,7 +781,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
                         outerSb.ToString()
-                    | _ -> 
+                    | _ ->
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
@@ -724,7 +803,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then 
+            if entities.Count = 0 then
                 ()
             else
             use scope = TransactionUtils.ensureTransaction transactionOptions
@@ -774,7 +853,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then 
+            if entities.Count = 0 then
                 async { () }
             else
 
