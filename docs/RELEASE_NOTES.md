@@ -1,3 +1,6 @@
+### 1.2.9 - 09.08.2021
+* Read .dacpac file from SSDT on Read-only File System, PR #745
+
 ### 1.2.8 - 09.08.2021
 * Dacpac search locations extended, Azure Functions .dacpac Resolution Fix, PR #742
 
