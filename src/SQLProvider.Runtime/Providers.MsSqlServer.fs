@@ -109,6 +109,8 @@ module MSSqlServer =
             
     let createOpenParameter(name,v:obj)= 
         let p = SqlParameter(name,v)
+        if v = null then p
+        else
         match v.GetType().FullName with
         | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
         | "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"

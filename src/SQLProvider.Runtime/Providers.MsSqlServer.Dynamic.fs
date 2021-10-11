@@ -184,6 +184,8 @@ module MSSqlServerDynamic =
             parameterType.GetProperty("UdtTypeName").GetSetMethod()
 
         let p = Activator.CreateInstance(parameterType,[|box name;v|]) :?> IDbDataParameter
+        if v = null then p
+        else
         match v.GetType().FullName with
         | "Microsoft.SqlServer.Types.SqlGeometry" -> udtTypeSetter.Invoke(p, [| "Geometry" |]) |> ignore
         | "Microsoft.SqlServer.Types.SqlGeography" -> udtTypeSetter.Invoke(p, [| "Geography" |]) |> ignore
