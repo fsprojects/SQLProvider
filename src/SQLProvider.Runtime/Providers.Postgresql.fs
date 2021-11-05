@@ -651,8 +651,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
         member __.CreateCommand(connection,commandText) =  PostgreSQL.createCommand commandText connection
         member __.CreateCommandParameter(param, value) = PostgreSQL.createCommandParameter param value
-        member __.ExecuteSprocCommand(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand con param retCols values
-        member __.ExecuteSprocCommandAsync(con, param, retCols, values:obj array) = PostgreSQL.executeSprocCommandAsync con param retCols values
+        member __.ExecuteSprocCommand(com, param, retCols, values:obj array) = PostgreSQL.executeSprocCommand com param retCols values
+        member __.ExecuteSprocCommandAsync(com, param, retCols, values:obj array) = PostgreSQL.executeSprocCommandAsync com param retCols values
         member __.CreateTypeMappings(_) = PostgreSQL.createTypeMappings()
         member __.GetSchemaCache() = schemaCache
 
