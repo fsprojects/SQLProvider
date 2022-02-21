@@ -235,27 +235,25 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             |]
 
         member this.ReadEntitiesAsync(name: string, columns: ColumnLookup, reader: DbDataReader) =
-            let collectItemfunc() : SqlEntity =
-                    let e = SqlEntity(this, name, columns)
-                    for i = 0 to reader.FieldCount - 1 do
-                        match reader.GetValue(i) with
-                        | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
-                        | value -> e.SetColumnSilent(reader.GetName(i),value)
-                    e
 
             let rec readitems acc =
                 async {
-                    let! moreitems = reader.ReadAsync() |> Async.AwaitTask
-                    match moreitems with
+                    let work = reader.ReadAsync()
+                    let! working = work |> Async.AwaitIAsyncResult
+                    if work.IsFaulted then return raise work.Exception
+                    else
+                    match work.Result with
                     | true ->
-                        return! readitems (collectItemfunc()::acc)
-                    | false -> return acc
+                        let e = SqlEntity(this, name, columns)
+                        for i = 0 to reader.FieldCount - 1 do
+                            match reader.GetValue(i) with
+                            | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+                            | value -> e.SetColumnSilent(reader.GetName(i),value)
+                        return! readitems (e::acc)
+                    | false -> return acc |> List.rev |> List.toArray
                 }
 
-            async {
-                let! items = readitems []
-                return items |> List.rev |> List.toArray
-            }
+            readitems []
 
         member this.CreateEntity(tableName) =
             use con = provider.CreateConnection(connectionString)

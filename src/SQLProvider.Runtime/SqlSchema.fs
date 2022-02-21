@@ -8,8 +8,9 @@ open FSharp.Data.Sql.Common.Utilities
 open System.Reflection
 
 module internal Patterns =
-    let (|Match|_|) (pat:string) (inp:string) =
-        let m = Regex.Match(inp, pat) in
+    let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$")
+    let (|MatchTable|_|) (inp:string) =
+        let m = tablePattern.Match inp in
         if m.Success then Some (List.tail [ for g in m.Groups -> g.Value ]) else None
 
 type TypeMapping =
@@ -120,7 +121,7 @@ type Table =
             else x.Schema + "." + (quoteWhiteSpace x.Name)
         static member FromFullName(fullName:string) =
             match fullName with
-            | Patterns.Match @"(.*)\.(.*)" [schema;name] -> { Schema = schema; Name = name; Type="" }
+            | Patterns.MatchTable [schema;name] -> { Schema = schema; Name = name; Type="" }
             | _ -> { Schema = ""; Name = fullName; Type="" }
         static member CreateFullName(schema, name) =
             if (String.IsNullOrWhiteSpace(schema)) then (quoteWhiteSpace name)

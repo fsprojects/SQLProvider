@@ -1,3 +1,10 @@
+### 1.2.11 - 21.02.2022
+* More efficient regex parsing table name
+* Async readentities stackoverflow on AwaitTask fixed when over 2700
+
+### 1.2.10 - 21.10.2021
+* SQL server null parameter fix
+
 ### 1.2.9 - 09.08.2021
 * Read .dacpac file from SSDT on Read-only File System, PR #745
 
