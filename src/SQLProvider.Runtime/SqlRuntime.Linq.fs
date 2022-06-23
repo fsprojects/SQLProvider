@@ -55,10 +55,8 @@ module internal QueryImplementation =
         | MethodCall(None,MethodWithName("op_BangBang"), [inner]) -> (true,inner)
         | _ -> (false,e)
 
-    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) (hasGroupBy:Option<_>) =
-        let args = projector.GetType().GenericTypeArguments
-        seq { 
-            if args.Length > 0 && hasGroupBy.IsSome then
+    let parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+                let args = projector.GetType().GenericTypeArguments
                 let keyType, keyConstructor, itemEntityType = 
                     if args.[0].Name.StartsWith("IGrouping") then
                         if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
@@ -180,11 +178,7 @@ module internal QueryImplementation =
                             keyConstructor.Value.[0].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6,kn7); tup7.Invoke(null, [|v1;v2;v3;v4;v5;v6;v7|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
-
-                for e in collected -> projector.DynamicInvoke(e) 
-            else
-                for e in results -> projector.DynamicInvoke(e) 
-        } |> Seq.cache :> System.Collections.IEnumerable
+                seq { for e in collected -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
 
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
@@ -195,11 +189,15 @@ module internal QueryImplementation =
         if dc.CommandTimeout.IsSome then
             cmd.CommandTimeout <- dc.CommandTimeout.Value
         for p in parameters do cmd.Parameters.Add p |> ignore
+        let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
         let columns = provider.GetColumns(con, baseTable)
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        let results = parseQueryResults projector results (sqlExp.hasGroupBy())
+        let results =
+            if not isGroypBy then
+                seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            else parseGroupByQueryResults projector results
         if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
         results
 
@@ -213,6 +211,7 @@ module internal QueryImplementation =
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
+           let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
@@ -221,7 +220,10 @@ module internal QueryImplementation =
                 con.Open()
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results = parseQueryResults projector results (sqlExp.hasGroupBy())
+           let results =
+               if not isGroypBy then
+                   seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+               else parseGroupByQueryResults projector results
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return results
        }
