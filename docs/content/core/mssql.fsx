@@ -63,11 +63,11 @@ let [<Literal>] indivAmount = 1000
 
 If true, F# option types will be used in place of nullable database columns.
 If false, you will receive the default value of the column's type
-if the value is null in the database. The default is true.
+if the value is null in the database. The default is FSharp.Data.Sql.Common.NO_OPTION.
 
 *)
 
-let [<Literal>] useOptTypes  = true
+let [<Literal>] useOptTypes  = FSharp.Data.Sql.Common.OPTION
 
 type sql =
     SqlDataProvider<

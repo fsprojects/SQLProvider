@@ -79,7 +79,7 @@ type sql = SqlDataProvider<
               DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
               ResolutionPath = resolutionPath,
               IndividualsAmount = 1000,
-              UseOptionTypes = true >
+              UseOptionTypes = FSharp.Data.Sql.Common.OPTION >
 let ctx = sql.GetDataContext()
 
 // To use dynamic runtime connectionString, you could use:

@@ -18,7 +18,7 @@ type sql = SqlDataProvider<
               DatabaseVendor = Common.DatabaseProviderTypes.FIREBIRD,
               ResolutionPath = resolutionPath,
               IndividualsAmount = 1000,
-              UseOptionTypes = true >
+              UseOptionTypes = FSharp.Data.Sql.Common.OPTION >
 
 let ctx = sql.GetDataContext()
 

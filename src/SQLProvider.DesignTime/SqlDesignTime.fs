@@ -296,23 +296,32 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 let (columns,(children,parents)) = getTableData key
                 let attProps =
                     let createColumnProperty (c:Column) =
-                        let nullable = useOptionTypes && c.IsNullable
+                        let nullable = if c.IsNullable then useOptionTypes else NullableColumnType.NO_OPTION
                         let ty = Type.GetType c.TypeMapping.ClrType
-                        let propTy = if nullable then typedefof<option<_>>.MakeGenericType(ty) else ty
+                        let propTy = match nullable with
+                                     | NullableColumnType.OPTION -> typedefof<option<_>>.MakeGenericType(ty)
+                                     | NullableColumnType.VALUE_OPTION -> typedefof<ValueOption<_>>.MakeGenericType(ty)
+                                     | _ -> ty
                         let name = c.Name
                         let prop =
                             ProvidedProperty(
                                 SchemaProjections.buildFieldName(name),propTy,
                                 getterCode = (fun (args:Expr list) ->
-                                    let meth = if nullable then typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
-                                               else  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                    let meth = match nullable with
+                                               | NullableColumnType.OPTION -> typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
+                                               | NullableColumnType.VALUE_OPTION -> typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
+                                               | _ ->  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                     Expr.Call(args.[0],meth,[Expr.Value name])
                                 ),
                                 setterCode = (fun (args:Expr list) ->
-                                    if nullable then
+                                    match nullable with
+                                    | NullableColumnType.OPTION -> 
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
-                                    else
+                                    | NullableColumnType.VALUE_OPTION -> 
+                                        let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
+                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
+                                    | _ ->
                                         let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
@@ -997,7 +1006,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     let conString = ProvidedStaticParameter("ConnectionString",typeof<string>, "")
     let connStringName = ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")
-    let optionTypes = ProvidedStaticParameter("UseOptionTypes",typeof<bool>,false)
+    let optionTypes = ProvidedStaticParameter("UseOptionTypes",typeof<NullableColumnType>,NullableColumnType.NO_OPTION)
     let dbVendor = ProvidedStaticParameter("DatabaseVendor",typeof<DatabaseProviderTypes>,DatabaseProviderTypes.MSSQLSERVER)
     let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
     let owner = ProvidedStaticParameter("Owner", typeof<string>, "")
@@ -1013,7 +1022,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
                     <param name='DatabaseVendor'> The target database vendor</param>
                     <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 1000.</param>
-                    <param name='UseOptionTypes'>If true, F# option types will be used in place of nullable database columns.  If false, you will always receive the default value of the column's type even if it is null in the database.</param>
+                    <param name='UseOptionTypes'>If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column's type even if it is null in the database.</param>
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>
@@ -1032,7 +1041,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[0] :?> DatabaseProviderTypes,     // db vendor
             args.[3] :?> string,                    // Assembly resolution path for db connectors and custom types
             args.[4] :?> int,                       // Individuals Amount
-            args.[5] :?> bool,                      // Use option types?
+            args.[5] :?> NullableColumnType,                      // Use option types?
             args.[6] :?> string,                    // Schema owner currently only used for oracle
             args.[7] :?> CaseSensitivityChange,     // Should we do ToUpper or ToLower when generating table names?
             args.[8] :?> string,                    // Table names list (Oracle and MSSQL Only)

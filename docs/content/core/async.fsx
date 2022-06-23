@@ -17,7 +17,7 @@ type TypeProviderConnection =
         ConnectionString = "Server=localhost;Database=test;User=test;Password=test",
         DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER,
         IndividualsAmount=1000,
-        UseOptionTypes=true, 
+        UseOptionTypes=FSharp.Data.Sql.Common.OPTION, 
         CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 (**

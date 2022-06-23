@@ -121,12 +121,12 @@ let indivAmt = 500
 (**
 ### UseOptionTypes
 
-If set to true, all nullable fields will be represented by F# option types.  If false, nullable
+If set to FSharp.Data.Sql.Common.OPTION, all nullable fields will be represented by F# option types.  If NO_OPTION, nullable
 fields will be represented by the default value of the column type - this is important because
 the provider will return 0 instead of null, which might cause problems in some scenarios.
 *)
 [<Literal>]
-let useOptionTypes = true
+let useOptionTypes = FSharp.Data.Sql.Common.OPTION
 
 (**
 ### ContextSchemaPath

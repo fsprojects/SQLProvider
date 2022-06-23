@@ -75,7 +75,7 @@ If true, F# option types will be used in place of nullable database columns.  If
 
 *)
 [<Literal>]
-let useOptTypes = true
+let useOptTypes = FSharp.Data.Sql.Common.OPTION
 
 (**
 ### Example

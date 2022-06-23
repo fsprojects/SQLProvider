@@ -60,7 +60,7 @@ module internal QueryExpressionTransformer =
                     Some (alias, fst(ultimateChild.Value), None)
                 else None
             | MethodCall(Some(PropertyGet(Some(ParamWithName "tupledArg"),info) as getter),
-                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi) ,
+                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
                          [String key]) when info.PropertyType = typeof<SqlEntity> ->
                 let alias = Utilities.resolveTuplePropertyName (getter :?> MemberExpression).Member.Name tupleIndex
                 if aliasEntityDict.ContainsKey(alias) then
@@ -89,7 +89,7 @@ module internal QueryExpressionTransformer =
                     Some (alias,aliasEntityDict.[alias].FullName, None)
                 else None
             | MethodCall(Some(PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) as getter),
-                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi) ,
+                         (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
                          [String key]) when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
                 let foundMember, name = Int32.TryParse((getter :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
@@ -150,12 +150,13 @@ module internal QueryExpressionTransformer =
                                 | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
                                 | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
                                     match me2.Member with 
-                                    | :? PropertyInfo as p when p.Name = "Value" && me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") -> directAggregate (me2.Expression)
+                                    | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
+                                                                                     me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression)
                                     | _ -> None
                                 // This lamda could be parsed more if we would want to support
                                 // more complex aggregate scenarios.
                                 // Subtables
-                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
                                     match o.NodeType, o with
                                     | ExpressionType.Call, (:? MethodCallExpression as ce)
                                             when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression ) ->
@@ -216,6 +217,8 @@ module internal QueryExpressionTransformer =
                 let meth = 
                     if exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<Option<_>> then
                         typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
+                    elif exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then
+                        typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
                     else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|exp.Type|])
 
                 let projection = Expression.Call(databaseParam,meth,Expression.Constant(name)) 
@@ -259,7 +262,7 @@ module internal QueryExpressionTransformer =
                             Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
                                 mi,Expression.Constant(key))))
 
-            | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" as mi),[String key]) 
+            | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi),[String key]) 
                     when p.Type = typeof<SqlEntity> ->
 
                 let foundAlias = 
@@ -391,6 +394,8 @@ module internal QueryExpressionTransformer =
                         let meth = 
                             if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
                                 typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
+                            elif opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then
+                                typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
                             else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
                         Some meth
                     | _ -> None

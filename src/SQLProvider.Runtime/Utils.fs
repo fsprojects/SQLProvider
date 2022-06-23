@@ -103,6 +103,28 @@ module internal Utilities =
             | :? DateTimeOffset as t -> Option.Some t |> box
             | :? TimeSpan as t -> Option.Some t |> box
             | t -> Option.Some t |> box
+        elif (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1 then
+            if itm = null then ValueNone |> box
+            else
+            match convertTypes itm (returnType.GenericTypeArguments.[0]) with
+            | :? String as t -> ValueOption.Some t |> box
+            | :? Int32 as t -> ValueOption.Some t |> box
+            | :? Decimal as t -> ValueOption.Some t |> box
+            | :? Int64 as t -> ValueOption.Some t |> box
+            | :? Single as t -> ValueOption.Some t |> box
+            | :? UInt32 as t -> ValueOption.Some t |> box
+            | :? Double as t -> ValueOption.Some t |> box
+            | :? UInt64 as t -> ValueOption.Some t |> box
+            | :? Int16 as t -> ValueOption.Some t |> box
+            | :? UInt16 as t -> ValueOption.Some t |> box
+            | :? DateTime as t -> ValueOption.Some t |> box
+            | :? Boolean as t -> ValueOption.Some t |> box
+            | :? Byte as t -> ValueOption.Some t |> box
+            | :? SByte as t -> ValueOption.Some t |> box
+            | :? Char as t -> ValueOption.Some t |> box
+            | :? DateTimeOffset as t -> ValueOption.Some t |> box
+            | :? TimeSpan as t -> ValueOption.Some t |> box
+            | t -> ValueOption.Some t |> box
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then
             if itm = null then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])

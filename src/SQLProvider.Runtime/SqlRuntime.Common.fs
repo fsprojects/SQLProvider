@@ -33,6 +33,14 @@ type CaseSensitivityChange =
     | TOUPPER = 1
     | TOLOWER = 2
 
+type NullableColumnType =
+    /// Nullable types are just Unchecked default. (Old false.)
+    | NO_OPTION = 0
+    /// Option types are Option<_>. (Old true.)
+    | OPTION = 1
+    /// ValueOption is more performant.
+    | VALUE_OPTION = 2
+
 type OdbcQuoteCharacter =
     | DEFAULT_QUOTE = 0
     /// MySQL/Postgre style: `alias` 
@@ -202,6 +210,15 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            | data -> Some(unbox data)
        else None
 
+    member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
+       if data.ContainsKey key then
+           match data.[key] with
+           | null -> ValueNone
+           | :? System.DBNull -> ValueNone
+           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+           | data -> ValueSome(unbox data)
+       else ValueNone
+
     member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
         keys |> List.choose(fun key -> 
             __.GetColumnOption<'T>(key)) 
@@ -255,6 +272,15 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
           else data.[key] <- value
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
+      e.UpdateField key
+
+    member e.SetColumnValueOption(key,value) =
+      match value with
+      | ValueSome value ->
+          if not (data.ContainsKey key) then data.Add(key,value)
+          else data.[key] <- value
+          e.TriggerPropertyChange key
+      | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
 
     member __.HasValue(key) = data.ContainsKey key
