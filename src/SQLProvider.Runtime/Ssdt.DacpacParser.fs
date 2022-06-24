@@ -90,10 +90,15 @@ and SsdtDescriptionItem = {
 module RegexParsers =
     open System.Text.RegularExpressions
 
+    let tablePattern = System.Text.RegularExpressions.Regex(@"(\[(?<Brackets>[A-Za-z_@#]+[^\[\]]*)\]|(?<NoBrackets>[A-Za-z_@#]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
+    let colPattern = System.Text.RegularExpressions.Regex(@"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+    let viewPattern = System.Text.RegularExpressions.Regex(@"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+
+
     /// Splits a fully qualified name into parts. 
     /// Name can start with a letter, _, @ or #. Names in square brackets can contain any char except for square brackets.
     let splitFullName (fn: string) =
-        Regex.Matches(fn, @"(\[(?<Brackets>[A-Za-z_@#]+[^\[\]]*)\]|(?<NoBrackets>[A-Za-z_@#]+[A-Za-z09_]*)(\.)?)", RegexOptions.IgnoreCase)
+        tablePattern.Matches fn
         |> Seq.cast<Match>
         |> Seq.collect(fun m ->
             seq { yield! m.Groups.["Brackets"].Captures |> Seq.cast<Capture>
@@ -104,7 +109,7 @@ module RegexParsers =
 
     /// Tries to find an in-line commented type annotation in a computed table column.
     let parseTableColumnAnnotation colName colExpression =
-        let m = Regex.Match(colExpression, @"\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+        let m = colPattern.Match colExpression
         if m.Success then
             Some { Column = colName
                    DataType = m.Groups.["DataType"].Captures.[0].Value
@@ -113,7 +118,7 @@ module RegexParsers =
 
     /// Tries to find in-line commented type annotations in a view declaration.
     let parseViewAnnotations sql =
-        Regex.Matches(sql, @"\[?(?<Column>\w+)\]?\s*\/\*\s*(?<DataType>\w*)\s*(?<Nullability>(null|not null))?\s*\*\/", RegexOptions.IgnoreCase)
+        viewPattern.Matches sql
         |> Seq.cast<Match>
         |> Seq.map (fun m ->
             { Column = m.Groups.["Column"].Captures.[0].Value
