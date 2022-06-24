@@ -2466,7 +2466,7 @@ let ``simple select with ValueOption type query``() =
     let qry = 
         query {
             for cust in dcv.Main.Customers do
-            where (cust.City.IsSome && cust.City.StartsWith "Lo")
+            where (cust.City.IsSome && (cust.City.Value.StartsWith "Lo" || cust.City.Value="Berlin"))
             select cust.City
         } |> Seq.toList
 
