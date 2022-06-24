@@ -290,7 +290,7 @@ module internal QueryExpressionTransformer =
 
 
         // this is not tail recursive but it shouldn't matter in practice ....
-        let rec transform  (en:String option) (e:Expression): Expression =
+        let rec transform  (en:String voption) (e:Expression): Expression =
             let e = ExpressionOptimizer.doReduction e
             if e = null then null else
             match e.NodeType, e with
@@ -347,7 +347,7 @@ module internal QueryExpressionTransformer =
                                                                                     upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with //Todo:ValueOption upcast here too
-                                                                                    | Some(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
+                                                                                    | ValueSome(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
                                                                                          match projectionMap.TryGetValue en with
                                                                                          | true, values -> values.Clear()
                                                                                          | false, _ -> projectionMap.Add(en,new ResizeArray<_>())
@@ -411,9 +411,9 @@ module internal QueryExpressionTransformer =
                     projectionMap.Add(x,ResizeArray<_>())
                     Expression.Lambda(databaseParam,[databaseParam]) :> Expression
                 | SingleTable(OptionalQuote(Lambda([ParamName x], (NewExpr(ci, args ) )))) ->
-                    Expression.Lambda(Expression.New(ci, (List.map (transform (Some x)) args)),[databaseParam]) :> Expression
+                    Expression.Lambda(Expression.New(ci, (List.map (transform (ValueSome x)) args)),[databaseParam]) :> Expression
                 | SingleTable(OptionalQuote(lambda))
-                | MultipleTables(OptionalQuote(lambda)) -> transform None lambda
+                | MultipleTables(OptionalQuote(lambda)) -> transform ValueNone lambda
 
         newProjection, projectionMap, groupProjectionMap
 
