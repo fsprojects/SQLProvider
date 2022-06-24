@@ -342,6 +342,9 @@ module internal QueryExpressionTransformer =
                                                                                     | :? ConstantExpression as c when c.Value = box(true) -> transform en e.IfTrue
                                                                                     | :? ConstantExpression as c when c.Value = box(false) -> transform en e.IfFalse
                                                                                     | _ -> upcast Expression.Condition(testExp, transform en e.IfTrue, transform en e.IfFalse)
+            | ExpressionType.Constant,           (:? ConstantExpression as e)  when e.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1") ->
+                                                                                    // https://github.com/dotnet/fsharp/issues/13370
+                                                                                    upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with
                                                                                     | Some(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->

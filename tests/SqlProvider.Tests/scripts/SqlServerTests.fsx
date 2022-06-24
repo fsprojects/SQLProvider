@@ -309,7 +309,7 @@ query {
 
 //************** Option types test ******************//
 
-type HR2 = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder, UseOptionTypes = FSharp.Data.Sql.Common.OPTION>
+type HR2 = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder, UseOptionTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION>
 let ctxOpt = HR2.GetDataContext()
 
 let getOptionFilter (postcode : string option) = 

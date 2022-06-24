@@ -1857,7 +1857,7 @@ let ``simple select query async2``() =
     CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
 
 
-type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
 [<Test>]
 let ``simple select with contains query with where boolean option type``() =
@@ -2457,3 +2457,17 @@ let ``simple mapTo test``() =
         |> Seq.toList
     qry |> Assert.IsNotEmpty
     qry |> List.exists(fun i -> i.FirstName = "Laura") |> Assert.IsTrue
+
+type sqlValueOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+
+[<Test>]
+let ``simple select with ValueOption type query``() =
+    let dcv = sqlValueOption.GetDataContext()
+    let qry = 
+        query {
+            for cust in dcv.Main.Customers do
+            where (cust.City.IsSome && cust.City.StartsWith "Lo")
+            select cust.City
+        } |> Seq.toList
+
+    qry |> Assert.IsNotEmpty

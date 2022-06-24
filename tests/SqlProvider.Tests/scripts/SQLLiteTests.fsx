@@ -120,7 +120,7 @@ let query2 =
     |> Seq.toArray
 
 
-type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.OPTION>
+type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION>
 let ctxOpt = sqlOpt.GetDataContext()
 let ``none option in left join`` =
         query { 

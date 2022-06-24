@@ -38,7 +38,7 @@ type HR =
       DatabaseVendor = Common.DatabaseProviderTypes.POSTGRESQL,
       ConnectionString = connStr,
       ResolutionPath=resolutionPath,
-      UseOptionTypes=FSharp.Data.Sql.Common.OPTION,
+      UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION,
       Owner = "public, other_schema"
   >
 

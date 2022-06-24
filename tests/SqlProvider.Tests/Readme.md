@@ -191,7 +191,7 @@ query {
 ```
 
 If you don't like null-values in your F#-code,
-you can use `UseOptionTypes=FSharp.Data.Sql.Common.OPTION`
+you can use `UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION`
 parameter and handle nullable columns as FSharp Option-types,
 converting .IsNone and .IsSome to the proper SQL null-checking.
 

@@ -27,7 +27,7 @@ let contributors =
 [<Literal>]
 let connectionStringAccess = @"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + __SOURCE_DIRECTORY__ + @"\..\..\..\docs\files\msaccess\Northwind.mdb"
 
-type dbOdbcAccess = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, connectionStringAccess, Owner="", UseOptionTypes = FSharp.Data.Sql.Common.OPTION, OdbcQuote=Common.OdbcQuoteCharacter.DOUBLE_QUOTES>
+type dbOdbcAccess = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, connectionStringAccess, Owner="", UseOptionTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION, OdbcQuote=Common.OdbcQuoteCharacter.DOUBLE_QUOTES>
 
 // Sadly MS-Access ODBC driver doesn't support DTC at all.
 let odbcaContext = 
