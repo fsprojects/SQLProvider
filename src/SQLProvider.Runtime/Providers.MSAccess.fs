@@ -709,50 +709,50 @@ type internal MSAccessProvider(contextSchemaPath) =
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
-                async { () }
+                task { () }
             else
 
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 // ...but if access connection is ever closed, it will start to give unknown errors!
                 // if con.State = ConnectionState.Open then con.Close()
-                async {
+                task {
                     if con.State <> ConnectionState.Open then
-                        do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                        do! con.OpenAsync()
                     use trnsx = con.BeginTransaction()
                     try
                         // initially supporting update/create/delete of single entities, no hierarchies yet
                         let handleEntity (e: SqlEntity) =
                             match e._State with
                             | Created ->
-                                async {
+                                task {
                                     let cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
-                                    let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                    let! id = cmd.ExecuteScalarAsync()
                                     CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                     e._State <- Unchanged
                                 }
                             | Modified fields ->
-                                async {
+                                task {
                                     let cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
-                                    do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                    let! c = cmd.ExecuteNonQueryAsync()
                                     e._State <- Unchanged
                                 }
                             | Delete ->
-                                async {
+                                task {
                                     let cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
-                                    do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                    let! c = cmd.ExecuteNonQueryAsync()
                                     // remove the pk to prevent this attempting to be used again
                                     e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                     e._State <- Deleted

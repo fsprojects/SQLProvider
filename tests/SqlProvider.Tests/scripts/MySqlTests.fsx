@@ -47,7 +47,7 @@ let employeesFirstNameAsync =
     query {
         for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
-    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+    } |> Seq.executeQueryAsync |> Async.AwaitTask |> Async.RunSynchronously
 
 // Note that Employees-table and PhoneNumber should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
@@ -153,7 +153,7 @@ let stdDevTest =
     query {
         for emp in ctx.Hr.Employees do
         select (float emp.Salary)
-    } |> Seq.stdDevAsync |> Async.RunSynchronously
+    } |> Seq.stdDevAsync |> Async.AwaitTask |> Async.RunSynchronously
 
 
 //************************ CRUD *************************//
@@ -179,7 +179,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
+ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 
@@ -194,10 +194,10 @@ let employees =
     ]
 
 let employeesAsync =
-    async {
+    task {
         let! res = ctx.Procedures.GetEmployees.InvokeAsync()
         return res.ResultSet |> Array.map(fun e -> e.MapTo<Employee>())
-    } |> Async.RunSynchronously
+    } |> Async.AwaitTask |> Async.RunSynchronously
 
 type Region = {
     RegionId : decimal
@@ -275,6 +275,7 @@ query {
     for count in ctx.Hr.Countries do
     where (count.CountryName = "Andorra" || count.RegionId = 99934)
 } |> Seq.``delete all items from single table`` 
+|> Async.AwaitTask
 |> Async.RunSynchronously
 
 //******************** Unsigned mapping test **********************//
@@ -306,4 +307,4 @@ let firstNameAsync =
     query {
         for emp in ctx2.Hr.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
-    } |> Seq.executeQueryAsync |> Async.StartAsTask
+    } |> Seq.executeQueryAsync 

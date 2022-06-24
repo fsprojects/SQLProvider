@@ -1476,7 +1476,7 @@ let ``simple async sum``() =
         query {
             for od in dc.Main.OrderDetails do
             select od.UnitPrice
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
 
 [<Test>]
@@ -1486,7 +1486,7 @@ let ``simple async sum with operations``() =
         query {
             for od in dc.Main.OrderDetails do
             select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
 
 [<Test>]
@@ -1497,7 +1497,7 @@ let ``simple async sum with join and operations``() =
             for od in dc.Main.OrderDetails do
             join o in dc.Main.Orders on (od.OrderId = o.OrderId)
             select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
 
     Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
 
@@ -1506,7 +1506,7 @@ let ``simple async sum with join and operations``() =
             for o in dc.Main.Orders do
             join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
             select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
 
     Assert.That(qry2, Is.EqualTo(3454230.7769M).Within(0.1M))
 
@@ -1523,7 +1523,7 @@ let ``simple async sum with operations 2``() =
                                     decimal(emp.HireDate.Subtract(emp.BirthDate).Days)/decimal(emp.HireDate.Subtract(emp.BirthDate.AddYears(1)).Days))
                             else 1m
                     ))
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
 
 [<Test>]
@@ -1828,14 +1828,14 @@ let ``simple select join twice to same table``() =
 let ``simple select query async``() = 
     let dc = sql.GetDataContext() 
     let task = 
-        async {
+        task {
             let! asyncquery =
                 query {
                     for cust in dc.Main.Customers do
                     select cust
                 } |> Seq.executeQueryAsync 
             return asyncquery |> Seq.toList
-        } |> Async.StartAsTask
+        }
     task.Wait()
     CollectionAssert.IsNotEmpty task.Result
 
@@ -1843,7 +1843,7 @@ let ``simple select query async``() =
 let ``simple select query async2``() = 
     let dc = sql.GetDataContext() 
     let res = 
-        async {
+        task {
             let! asyncquery =
                 query {
                     for cust in dc.Main.Customers do
@@ -1851,7 +1851,7 @@ let ``simple select query async2``() =
                     select (cust.Address, cust.City, cust.ContactName)
                 } |> Seq.executeQueryAsync 
             return asyncquery
-        } |> Async.RunSynchronously
+        } |> Async.AwaitTask |> Async.RunSynchronously
     CollectionAssert.IsNotEmpty res
     let r = res |> Seq.toArray
     CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
@@ -1924,7 +1924,7 @@ let ``simple async sum with option operations``() =
             for od in dc.Main.OrderDetails do
             where (od.UnitPrice>0m)
             select ((od.UnitPrice)*(decimal)od.OrderId)
-        } |> Seq.sumAsync |> Async.RunSynchronously
+        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
 
 [<Test >]
@@ -2219,7 +2219,7 @@ let ``simple delete where query``() =
         for cust in dc.Main.Customers do
         where (cust.City = "Atlantis" || cust.CompanyName = "Home")
     } |> Seq.``delete all items from single table`` 
-    |> Async.RunSynchronously |> ignore
+    |> Async.AwaitTask |> Async.RunSynchronously |> ignore
     ()
 
 [<Test>]
@@ -2250,7 +2250,7 @@ let ``simple query sproc result``() =
 
     let pragmaSchemaAsync = 
         dc.Pragma.Get.InvokeAsync("schema_version")
-        |> Async.RunSynchronously
+        |> Async.AwaitTask |> Async.RunSynchronously
     Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
 
 [<Test>]

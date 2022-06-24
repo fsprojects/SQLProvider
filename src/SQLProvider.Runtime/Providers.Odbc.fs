@@ -245,12 +245,12 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
         /// Not implemented yet
         member __.ExecuteSprocCommandAsync(com,inputParams,_,_) =
-            async {
+            task {
                 let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
                 let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
                 odbcCommand.CommandType <- CommandType.StoredProcedure;
                 inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
-                let! r = odbcCommand.ExecuteNonQueryAsync() |> Async.AwaitTask
+                let! r = odbcCommand.ExecuteNonQueryAsync()
                 return ReturnValueType.Unit
             }
 
@@ -712,46 +712,46 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
-                async { () }
+                task { () }
             else
 
-            async {
+            task {
                 use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
 
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    do! con.OpenAsync() 
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
                         | Created ->
-                            async {
+                            task {
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 let id = (lastInsertId con).ExecuteScalar()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
-                            async {
+                            task {
                                 let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
-                            async {
+                            task {
                                 let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted

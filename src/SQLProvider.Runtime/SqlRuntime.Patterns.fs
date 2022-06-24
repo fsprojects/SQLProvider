@@ -6,8 +6,10 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 
-let (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then Some () else None
-let (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then Some () else None
+[<return: Struct>]
+let (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
+[<return: Struct>]
+let (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
 
 let (|MethodCall|_|) (e:Expression) = 
     match e.NodeType, e with 
@@ -113,11 +115,15 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
-let (|BoolStrict|_|)   = function Constant((:? bool   as b),_) -> Some b | _ -> None
-let (|String|_|) = function Constant((:? string as s),_) -> Some s | _ -> None
-let (|Int|_|)    = function Constant((:? int    as i),_) -> Some i | _ -> None
-let (|Float|_|)    = function Constant((:? float    as i),_) -> Some i | _ -> None
-    
+[<return: Struct>]
+let (|BoolStrict|_|)   = function Constant((:? bool   as b),_) -> ValueSome b | _ -> ValueNone
+[<return: Struct>]
+let (|String|_|) = function Constant((:? string as s),_) -> ValueSome s | _ -> ValueNone
+[<return: Struct>]
+let (|Int|_|)    = function Constant((:? int    as i),_) -> ValueSome i | _ -> ValueNone
+[<return: Struct>]
+let (|Float|_|)    = function Constant((:? float    as i),_) -> ValueSome i | _ -> ValueNone
+
 let rec (|Bool|_|) (e:Expression) = 
     match e.NodeType, e with
     | _, BoolStrict(b) -> Some b
@@ -125,15 +131,17 @@ let rec (|Bool|_|) (e:Expression) =
         match ue.Operand with Bool x -> Some(not x) | _ -> None
     | _ -> None
 
+[<return: Struct>]
 let (|ParamName|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  Some pe.Name
-    | _ -> None    
+    | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  ValueSome pe.Name
+    | _ -> ValueNone    
 
+[<return: Struct>]
 let (|ParamWithName|_|) (s:String) (e:Expression) = 
     match e with 
-    | ParamName(n) when s = n -> Some ()
-    | _ -> None    
+    | ParamName(n) when s = n -> ValueSome ()
+    | _ -> ValueNone    
     
 let (|Lambda|_|) (e:Expression) = 
     match e.NodeType, e with 

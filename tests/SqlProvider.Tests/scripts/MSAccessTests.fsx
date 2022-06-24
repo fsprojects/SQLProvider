@@ -73,7 +73,7 @@ let crudops =
 let asyncContainsQuery =
     let contacts = ["Matti Karttunen"; "Maria Anders"]
     let r =
-        async {
+        task {
             let! res =
                 query { 
                     for c in ctx.Northwind.Customers do
@@ -81,7 +81,7 @@ let asyncContainsQuery =
                     select (c.CustomerId.Value, c.ContactName.Value)
                 }|> Seq.executeQueryAsync
             return res |> Seq.toArray
-        } |> Async.StartAsTask
+        }
     r.Wait()
     r.Result
 
@@ -106,4 +106,5 @@ query {
     for c in ctx.Northwind.Customers do
     where (c.ContactName.Value = "Tuomas")
 } |> Seq.``delete all items from single table`` 
+|> Async.AwaitTask
 |> Async.RunSynchronously

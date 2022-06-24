@@ -1,4 +1,4 @@
-﻿#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
@@ -76,7 +76,7 @@ let employeesFirstNameAsync =
     query {
         for emp in ctx.Dbo.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
-    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+    } |> Seq.executeQueryAsync |> Async.AwaitTask |> Async.RunSynchronously
 
 // Note that Employees-table and PhoneNumber should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
@@ -198,7 +198,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
+ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 //make sure to delete any conflicting record before trying to insert
@@ -297,4 +297,5 @@ query {
     for count in ctx.Dbo.Countries do
     where (count.CountryName = "Andorra" || count.RegionId = 99934)
 } |> Seq.``delete all items from single table`` 
+|> Async.AwaitTask
 |> Async.RunSynchronously

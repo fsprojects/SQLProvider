@@ -397,20 +397,20 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 Set(cols |> Array.map (processReturnColumn))
 
         member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
-            async {
+            task {
                 let pars = pragmacheck values
                 use pcom = (this:>ISqlProvider).CreateCommand(com.Connection, ("PRAGMA " + pars)) :?> Common.DbCommand
                 match returnCols with
                 | [||] ->
-                    do! pcom.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                    let! c = pcom.ExecuteNonQueryAsync()
                     return Unit
                 | cols ->
-                    use! reader = pcom.ExecuteReaderAsync() |> Async.AwaitTask
+                    use! reader = pcom.ExecuteReaderAsync()
                     let processReturnColumnAsync (col:QueryParameter) =
-                        async {
+                        task {
                             let! r = Sql.dataReaderToArrayAsync reader
                             let result = ResultSet(col.Name, r)
-                            let! _ = reader.NextResultAsync() |> Async.AwaitTask
+                            let! _ = reader.NextResultAsync()
                             return result
                         }
                     let! r = cols |> Seq.toList |> Sql.evaluateOneByOne (processReturnColumnAsync)
@@ -922,44 +922,44 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then
-                async { () }
+                task { () }
             else
 
-            async {
+            task {
                 use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    do! con.OpenAsync()
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
                         | Created ->
-                            async {
+                            task {
                                 use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! id = cmd.ExecuteScalarAsync()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
-                            async {
+                            task {
                                 use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
-                            async {
+                            task {
                                 use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted

@@ -103,7 +103,8 @@ let employeesFirstNameAsync  (runtimeConnStr) =
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
     }
-    |> Seq.executeQueryAsync 
+    |> Seq.executeQueryAsync
+    |> Async.AwaitTask
     |> Async.RunSynchronously 
     |> Assert.IsNotEmpty
 
@@ -358,7 +359,7 @@ let ``can successfully update records`` (runtimeConnStr) =
   Assert.True(nameWasUpdated) |> ignore
 
   antarctica.Delete()
-  ctx.SubmitUpdatesAsync() |> Async.RunSynchronously  
+  ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously  
 
   let newRecords = 
     query {
@@ -395,10 +396,10 @@ let ``support for sprocs that return ref cursors`` (runtimeConnStr) =
 let employeesAsync  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
-    async {
+    task {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
         return ia.ResultSet
-    } |> Async.RunSynchronously |> Assert.IsNotNull
+    } |> Async.AwaitTask |> Async.RunSynchronously |> Assert.IsNotNull
 
 type Region = {
     RegionId : int
@@ -458,7 +459,7 @@ let ``Standard deviation test`` (runtimeConnStr) =
       query {
           for emp in ctx.Dbo.Employees do
           select (float emp.Salary)
-      } |> Seq.stdDevAsync |> Async.RunSynchronously
+      } |> Seq.stdDevAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.Greater(salaryStdDev, 0.0)
 
 
@@ -469,7 +470,7 @@ let ``Delte all tests``(runtimeConnStr) =
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
   } |> Seq.``delete all items from single table`` 
-  |> Async.RunSynchronously
+  |> Async.AwaitTask |> Async.RunSynchronously
 
 #else
 #endif

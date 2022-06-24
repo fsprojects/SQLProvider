@@ -64,11 +64,11 @@ module internal Utilities =
     let rec executeOneByOne asyncFunc entityList =
         match entityList with
         | h::t -> 
-            async {
+            task {
                 do! asyncFunc h
                 return! executeOneByOne asyncFunc t
             }
-        | [] -> async { () }
+        | [] -> task { () }
 
     let parseAggregates fieldNotat fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
@@ -592,13 +592,13 @@ module Sql =
     let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) = 
 
         let rec readitems acc =
-            async {
-                let! moreitems = reader.ReadAsync() |> Async.AwaitTask
+            task {
+                let! moreitems = reader.ReadAsync()
                 match moreitems with
                 | true -> return! readitems (collectfunc(reader)::acc)
                 | false -> return acc
             }
-        async {
+        task {
             let! items = readitems []
             return items |> List.toArray |> Array.rev
         }
@@ -615,9 +615,9 @@ module Sql =
         con.Close(); result
 
     let connectAsync (con:System.Data.Common.DbConnection) f =
-        async {
+        task {
             if con.State <> ConnectionState.Open then 
-                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                do! con.OpenAsync()
             let result = f con
             con.Close(); result
         }
@@ -628,7 +628,7 @@ module Sql =
 
     let executeSqlAsync createCommand sql (con:IDbConnection) =
         use com : System.Data.Common.DbCommand = createCommand sql con   
-        com.ExecuteReaderAsync() |> Async.AwaitTask  
+        com.ExecuteReaderAsync()
 
     let executeSqlAsDataTable createCommand sql con = 
         use r = executeSql createCommand sql con
@@ -637,7 +637,7 @@ module Sql =
         dt
 
     let executeSqlAsDataTableAsync createCommand sql con = 
-        async{
+        task{
             use! r = executeSqlAsync createCommand sql con
             let dt = new DataTable()
             dt.Load(r)
@@ -653,9 +653,9 @@ module Sql =
     let evaluateOneByOne asyncFunc entityList =
         let rec executeOneByOne' asyncFunc entityList acc =
             match entityList with
-            | [] -> async { return acc }
+            | [] -> task { return acc }
             | h::t -> 
-                async {
+                task {
                     let! res = asyncFunc h
                     return! executeOneByOne' asyncFunc t (res::acc)
                 }

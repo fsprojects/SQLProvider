@@ -199,7 +199,7 @@ module internal Oracle =
             | _ -> parameter.Value |> box
 
     let readParameterAsync (parameter:IDbDataParameter) =
-        async {
+        task {
             let parameterType = parameterType.Value
             let oracleDbTypeGetter =
                 parameterType.GetProperty("OracleDbType").GetGetMethod()
@@ -492,16 +492,16 @@ module internal Oracle =
         entities
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
-        async {
+        task {
 
             let allParams, outps = executeSprocCommandCommon inputParameters retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             match retCols with
-            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
+            | [||] -> let! r = com.ExecuteNonQueryAsync()
                       return Unit
             | [|col|] ->
-                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                use! reader = com.ExecuteReaderAsync()
                 match col.TypeMapping.ProviderTypeName with
                 | ValueSome "REF CURSOR" -> 
                     let! r = Sql.dataReaderToArrayAsync reader
@@ -513,11 +513,11 @@ module internal Oracle =
                         return Scalar(p.ParameterName, r)
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
             | cols ->
-                let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
+                let! r = com.ExecuteNonQueryAsync()
                 let! returnValues =
                     cols |> Array.toList
                     |> Sql.evaluateOneByOne (fun col ->
-                        async {
+                        task {
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->
                                 let! r = readParameterAsync p
@@ -1108,27 +1108,27 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
-                async { () }
+                task { () }
             else
 
-            async {
+            task {
                 use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
 
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    do! con.OpenAsync()
 
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
                         | Created ->
-                            async {
+                            task {
                                 let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! id = cmd.ExecuteScalarAsync()
                                 if schemaCache.PrimaryKeys.ContainsKey e.Table.Name then
                                     match e.GetPkColumnOption schemaCache.PrimaryKeys.[e.Table.Name] with
                                     | [] ->  e.SetPkColumnSilent(schemaCache.PrimaryKeys.[e.Table.Name], id)
@@ -1138,21 +1138,21 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
-                            async {
+                            task {
                                 let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
-                            async {
+                            task {
                                 let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                                 e._State <- Deleted

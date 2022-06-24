@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql
+namespace FSharp.Data.Sql
 
 open FSharp.Data.Sql.Runtime
 open System
@@ -15,7 +15,7 @@ module AsyncOperations =
                 while en.MoveNext() do
                 yield en.Current
             }
-        async {
+        task {
             match s with
             | :? IAsyncEnumerable<'T> as coll ->
                 let! en = coll.GetAsyncEnumerator()
@@ -37,7 +37,7 @@ module AsyncOperations =
         }
 
     let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
-        async {
+        task {
             match s with
             | :? IWithSqlService as svc ->
                 return! executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
@@ -49,19 +49,19 @@ module AsyncOperations =
         fetchTakeN 1 s
 
     let getHeadAsync (s:Linq.IQueryable<'T>) =
-        async {
+        task {
             let! res = fetchTakeOne s
             return res |> Seq.cast<'T> |> Seq.head
         }
 
     let getTryHeadAsync (s:Linq.IQueryable<'T>) =
-        async {
+        task {
             let! res = fetchTakeOne s
             return res |> Seq.cast<'T> |> Seq.tryPick Some
         }
 
     let private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
-        async {
+        task {
             let! res = fetchTakeN 2 s
             let converted = res |> Seq.cast<'TSource>
             match converted |> Seq.length with
@@ -90,7 +90,7 @@ module AsyncOperations =
             s
 
     let getCountAsync (s:Linq.IQueryable<'T>) =
-        async {
+        task {
             match s with
             | :? IWithSqlService as svc ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
@@ -100,8 +100,8 @@ module AsyncOperations =
                 return c |> Seq.length
         }
 
-    let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : Async<'T> =
-        async {
+    let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
+        task {
             match s with
             | :? IWithSqlService as svc ->
                 match svc.SqlExpression with
@@ -152,21 +152,21 @@ module Seq =
     /// Returns None if no elements exists.
     let tryHeadAsync = getTryHeadAsync
     /// Execute SQLProvider query to get the sum of elements, and release the OS thread while query is being executed.
-    let sumAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Sum"
+    let sumAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Sum"
     /// Execute SQLProvider query to get the max of elements, and release the OS thread while query is being executed.
-    let maxAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Max"
+    let maxAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Max"
     /// Execute SQLProvider query to get the min of elements, and release the OS thread while query is being executed.
-    let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Min"
+    let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Min"
     /// Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
-    let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Average"
+    let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Average"
     /// Execute SQLProvider query to get the standard deviation of elements, and release the OS thread while query is being executed.
-    let stdDevAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "StdDev"
+    let stdDevAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "StdDev"
     /// Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
-    let varianceAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> Async<'T>  = getAggAsync "Variance"
+    let varianceAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Variance"
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
-    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> Async<int> = function
+    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<int> = function
         | :? IWithSqlService as source ->
-            async {
+            task {
                 let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex
                 if res = box(DBNull.Value) then return Unchecked.defaultof<int> else
                 return (Utilities.convertTypes res typeof<int>) |> unbox
@@ -175,18 +175,18 @@ module Seq =
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Throws `ArgumentNullException` if the seq is empty.
     /// Throws `ArgumentException` if the seq contains more than one element.
-    let exactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T> = getExactlyOneAsync
+    let exactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T> = getExactlyOneAsync
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Returns `None` if there are zero or more than one element in the seq.
-    let tryExactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> Async<'T option> = getTryExactlyOneAsync
+    let tryExactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T option> = getTryExactlyOneAsync
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.
-    let executeQueryAsync query = async { let! x = executeAsync query in return x |> Seq.toArray }
+    let executeQueryAsync query = task { let! x = executeAsync query in return x |> Seq.toArray }
 
 module List =
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
     let evaluateOneByOne = Sql.evaluateOneByOne
     /// Execute SQLProvider query and release the OS thread while query is being executed.
-    let executeQueryAsync query = async { let! x = executeAsync query in return x |> Seq.toList }
+    let executeQueryAsync query = task { let! x = executeAsync query in return x |> Seq.toList }

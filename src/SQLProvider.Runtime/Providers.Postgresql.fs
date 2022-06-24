@@ -332,40 +332,40 @@ module PostgreSQL =
         entities
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
-        async {
+        task {
             let allParams, outps = executeSprocCommandCommon inputParams retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             let tran = com.Connection.BeginTransaction()
                 //try
             let entities = 
-                async {
+                task {
                     match retCols with
-                    | [||] -> do! com.ExecuteNonQueryAsync()|> Async.AwaitTask |> Async.Ignore
+                    | [||] -> let! c = com.ExecuteNonQueryAsync()
                               return Unit
                     | [|col|] ->
                         match col.TypeMapping.ProviderTypeName with
                         | ValueSome "record" ->
-                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
                         | ValueSome "refcursor" ->
                             if not isLegacyVersion.Value then
-                                let! cur = com.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! cur = com.ExecuteScalarAsync()
                                 let cursorName = cur |> unbox
                                 com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
                                 com.CommandType <- CommandType.Text
-                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
                         | ValueSome "SETOF refcursor" ->
-                            use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                            use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             let results = ref [ResultSet("ReturnValue", r)]
                             let i = ref 1
                             let mutable hasNext = true
                             while hasNext do // This could be done more simply with Sql.evaluateOneByOne like other providers do!
-                                let! h = reader.NextResultAsync() |> Async.AwaitTask
+                                let! h = reader.NextResultAsync()
                                 hasNext <- h
                                 if hasNext then
                                     let! r = Sql.dataReaderToArrayAsync reader
@@ -375,11 +375,11 @@ module PostgreSQL =
                         | _ ->
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) -> 
-                                let! co = com.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! co = com.ExecuteScalarAsync()
                                 return Scalar(p.ParameterName, co)
                             | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                     | cols ->
-                        com.ExecuteNonQuery() |> ignore
+                        let! c = com.ExecuteNonQueryAsync()
                         let returnValues =
                             cols
                             |> Array.map (fun col ->
@@ -1240,46 +1240,46 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
-                async { () }
+                task { () }
             else
 
-            async {
+            task {
                 use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
 
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    do! con.OpenAsync()
 
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
                         | Created ->
-                            async {
+                            task {
                                 let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! id = cmd.ExecuteScalarAsync()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
-                            async {
+                            task {
                                 let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
-                            async {
+                            task {
                                 let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted

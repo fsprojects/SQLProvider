@@ -42,9 +42,9 @@ module internal QueryImplementation =
     
     /// Interface for async enumerations as .NET doesn't have it out-of-the-box
     type IAsyncEnumerable<'T> =
-        abstract GetAsyncEnumerator : unit -> Async<IEnumerator<'T>>
+        abstract GetAsyncEnumerator : unit -> System.Threading.Tasks.Task<IEnumerator<'T>>
     type IAsyncEnumerable =
-        abstract EvaluateQuery : unit -> Async<unit>
+        abstract EvaluateQuery : unit -> System.Threading.Tasks.Task<unit>
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
@@ -202,7 +202,7 @@ module internal QueryImplementation =
         results
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
-       async {
+       task {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
            let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false (dc.SqlOperationsInSelect=SelectOperations.DatabaseSide)
            Common.QueryEvents.PublishSqlQuery con.ConnectionString  query parameters
@@ -214,11 +214,11 @@ module internal QueryImplementation =
            let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
-                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
                 if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 con.Open()
-           use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
+           use! reader = cmd.ExecuteReaderAsync() 
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
            let results =
                if not isGroypBy then
@@ -244,9 +244,9 @@ module internal QueryImplementation =
        result
 
     let executeQueryScalarAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
-       async {
+       task {
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
-           do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           do! con.OpenAsync()
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider false true
            Common.QueryEvents.PublishSqlQuery con.ConnectionString query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
@@ -255,30 +255,32 @@ module internal QueryImplementation =
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
            if con.State <> ConnectionState.Open then
-                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
                 if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 con.Open()
-           let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+           let! executed = cmd.ExecuteScalarAsync()
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
 
     let executeDeleteQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
-       async {
-            // Not too complex clauses please...
-            // No "AS" command allowed for basetable. Little visitor-pattern to modify base-alias name.
-           let rec modifyAlias (sqlx:SqlExp) =
+       // Not too complex clauses please...
+       // No "AS" command allowed for basetable. Little visitor-pattern to modify base-alias name.
+       let modifyAlias (sqlxp:SqlExp) =
+           let rec modifyAlias' (sqlx:SqlExp) =
                match sqlx with
                | BaseTable (alias,table) when (alias = "" || alias = table.Name || alias = table.FullName ) -> sqlx //ok
                | BaseTable (_,table) -> BaseTable (table.Name,table)
-               | FilterClause(a,rest) -> FilterClause(a,modifyAlias rest)
-               | AggregateOp(a,c,rest) -> AggregateOp(a,c,modifyAlias rest)
+               | FilterClause(a,rest) -> FilterClause(a,modifyAlias' rest)
+               | AggregateOp(a,c,rest) -> AggregateOp(a,c,modifyAlias' rest)
                | _ -> failwithf "Unsupported delete-clause. Only simple single-table deletion where-clauses supported. You had parameters: %O" sqlx
+           modifyAlias' sqlxp
+       task {
 
            let sqlExp = modifyAlias sqlExp
            use con = provider.CreateConnection(dc.ConnectionString) :?> System.Data.Common.DbConnection
-           do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+           do! con.OpenAsync()
            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpression sqlExp ti con provider true true
            Common.QueryEvents.PublishSqlQuery con.ConnectionString query parameters
            use cmd = provider.CreateCommand(con,query) :?> System.Data.Common.DbCommand
@@ -287,11 +289,11 @@ module internal QueryImplementation =
            for p in parameters do cmd.Parameters.Add p |> ignore
            // ignore any generated projection and just expect a single integer back
            if con.State <> ConnectionState.Open then
-                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                do! con.OpenAsync()
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
                 if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 con.Open()
-           let! executed = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+           let! executed = cmd.ExecuteScalarAsync()
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
@@ -321,14 +323,14 @@ module internal QueryImplementation =
              member __.Provider = provider
         interface IAsyncEnumerable with
              member __.EvaluateQuery() = 
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     asyncModePreEvaluated.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
              member __.GetAsyncEnumerator() =
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     return (Seq.cast<'T> (executeSql)).GetEnumerator()
                 }
@@ -359,14 +361,14 @@ module internal QueryImplementation =
              member __.Provider = provider
         interface IAsyncEnumerable with
              member __.EvaluateQuery() = 
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     asyncModePreEvaluated.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
              member __.GetAsyncEnumerator() =
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     return (Seq.cast<'T> (executeSql)).GetEnumerator()
                 }
@@ -406,14 +408,14 @@ module internal QueryImplementation =
              member __.Provider = provider
         interface IAsyncEnumerable with
              member __.EvaluateQuery() = 
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     asyncModePreEvaluated.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<IGrouping<'TKey, 'TEntity>> with
              member __.GetAsyncEnumerator() =
-                async {
+                task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
                     let toseq = executeSql |> Seq.cast<IGrouping<'TKey, 'TEntity>>
                     return toseq.GetEnumerator()

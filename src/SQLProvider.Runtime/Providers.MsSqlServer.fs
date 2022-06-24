@@ -250,12 +250,12 @@ module MSSqlServer =
         | _ -> readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
 
     let processReturnColumnAsync (com:IDbCommand) reader (retCol:QueryParameter) =
-        async {
+        task {
             match retCol.TypeMapping.ProviderTypeName with
             | ValueSome "cursor" | ValueSome "CURSOR" ->
                 let! r = Sql.dataReaderToArrayAsync reader
                 let result = ResultSet(retCol.Name, r)
-                let! _ = reader.NextResultAsync() |> Async.AwaitTask
+                let! _ = reader.NextResultAsync()
                 return result
             | _ -> return readInOutParameterFromCommand retCol.Name com |> ScalarResultSet
         }
@@ -313,29 +313,29 @@ module MSSqlServer =
 
 
     let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter []) (returnCols:QueryParameter[]) (values:obj[]) =
-        async {
+        task {
             let allParams, outps = executeSprocCommandCommon inputParameters returnCols values
             allParams |> Array.iter (fun (_,_,p) -> com.Parameters.Add(p) |> ignore)
 
             match returnCols with
-            | [||] -> let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
+            | [||] -> let! r = com.ExecuteNonQueryAsync()
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
                 | ValueSome "cursor" | ValueSome "CURSOR" ->
-                    use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
+                    use! readera = com.ExecuteReaderAsync()
                     let reader = readera :?> SqlDataReader
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
-                    let! _ = reader.NextResultAsync() |> Async.AwaitTask
+                    let! _ = reader.NextResultAsync()
                     return result
                 | _ ->
-                    let! r = com.ExecuteNonQueryAsync() |> Async.AwaitTask
+                    let! r = com.ExecuteNonQueryAsync()
                     match outps |> Array.tryFind (fun (_,_,p) -> p.Direction = ParameterDirection.ReturnValue) with
                     | Some(_,name,p) -> return Scalar(name, readParameter p)
                     | None -> return (readInOutParameterFromCommand retCol.Name com |> Scalar) 
             | cols ->
-                use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
+                use! reader = com.ExecuteReaderAsync()
                 let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync com reader)
                 return Set(r |> List.toArray)
         }
@@ -1133,44 +1133,44 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
             if entities.Count = 0 then 
-                async { () }
+                task { () }
             else
 
-            async {
+            task {
                 use scope = TransactionUtils.ensureTransaction transactionOptions
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
-                    do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                    do! con.OpenAsync() 
                     // initially supporting update/create/delete of single entities, no hierarchies yet
                     let handleEntity (e: SqlEntity) =
                         match e._State with
                         | Created ->
-                            async {
+                            task {
                                 let cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync() |> Async.AwaitTask
+                                let! id = cmd.ExecuteScalarAsync()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
-                            async {
+                            task {
                                 let cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
-                            async {
+                            task {
                                 let cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                do! cmd.ExecuteNonQueryAsync() |> Async.AwaitTask |> Async.Ignore
+                                let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted

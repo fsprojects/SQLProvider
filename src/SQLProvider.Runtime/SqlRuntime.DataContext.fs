@@ -113,11 +113,11 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             )
 
         member __.SubmitPendingChangesAsync() =
-            async {
+            task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 let maxWait = DateTime.Now.AddSeconds(3.)
                 while (pendingChanges |> Seq.exists(fun e -> match e.Key._State with Unchanged | Deleted -> true | _ -> false)) && DateTime.Now < maxWait do
-                    do! Async.Sleep 150 // we can't let async lock but this helps.
+                    do! System.Threading.Tasks.Task.Delay 150 // we can't let async lock but this helps.
                 do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions, commandTimeout)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
             }
@@ -164,9 +164,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             entities
 
         member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
-            async {
+            task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
-                do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
+                do! con.OpenAsync()
 
                 use com = provider.CreateCommand(con, def.Name.DbName)
                 if commandTimeout.IsSome then
@@ -175,7 +175,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
                 let! resOrErr =
                     provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
+                     |> Async.AwaitTask
                      |> Async.Catch
+                     |> Async.StartAsTask
                 let entities =
                     match resOrErr with
                     | Choice1Of2 res ->
@@ -237,9 +239,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member this.ReadEntitiesAsync(name: string, columns: ColumnLookup, reader: DbDataReader) =
 
             let rec readitems acc =
-                async {
+                task {
                     let work = reader.ReadAsync()
-                    let! working = work |> Async.AwaitIAsyncResult
+                    let! working = work
                     if work.IsFaulted then return raise work.Exception
                     else
                     match work.Result with

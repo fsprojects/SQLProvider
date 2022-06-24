@@ -49,7 +49,7 @@ let employeesFirstNameAsync =
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
-    } |> Seq.executeQueryAsync |> Async.RunSynchronously
+    } |> Seq.executeQueryAsync |> Async.AwaitTask |> Async.RunSynchronously
 
 // Note that Employees-table should have a Description-field in database, visible as XML-tooltip in your IDE.
 // Column-level descriptions work also, but they are not included to exported SQL-scripts by SQL-server.
@@ -233,7 +233,7 @@ antartica.RegionName <- "ant"
 ctx.SubmitUpdates()
 
 antartica.Delete()
-ctx.SubmitUpdatesAsync() |> Async.RunSynchronously
+ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 
@@ -248,10 +248,10 @@ let employees =
     ]
 
 let employeesAsync =
-    async {
+    task {
         let! ia = ctx.Procedures.GetEmployees.InvokeAsync()
         return ia.ResultSet
-    } |> Async.RunSynchronously
+    } |> Async.AwaitTask |> Async.RunSynchronously
 
 type Region = {
     RegionId : int
@@ -296,7 +296,7 @@ let stdDevTest =
     query {
         for emp in ctx.Dbo.Employees do
         select (float emp.Salary)
-    } |> Seq.stdDevAsync |> Async.RunSynchronously
+    } |> Seq.stdDevAsync |> Async.AwaitTask |> Async.RunSynchronously
 
 
 //******************** Delete all test **********************//
@@ -305,6 +305,7 @@ query {
     for c in ctx.Dbo.Employees do
     where (c.FirstName = "Tuomas")
 } |> Seq.``delete all items from single table`` 
+|> Async.AwaitTask
 |> Async.RunSynchronously
 
 //************** Option types test ******************//

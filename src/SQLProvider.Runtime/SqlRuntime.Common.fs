@@ -432,18 +432,18 @@ and ISqlDataContext =
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
     abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
-    abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> Async<SqlEntity>
+    abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> System.Threading.Tasks.Task<SqlEntity>
     abstract GetIndividual              : string * obj -> SqlEntity
     abstract SubmitChangedEntity        : SqlEntity -> unit
     abstract SubmitPendingChanges       : unit -> unit
-    abstract SubmitPendingChangesAsync  : unit -> Async<unit>
+    abstract SubmitPendingChangesAsync  : unit -> System.Threading.Tasks.Task<unit>
     abstract ClearPendingChanges        : unit -> unit
     abstract GetPendingEntities         : unit -> SqlEntity list
     abstract GetPrimaryKeyDefinition    : string -> string
     abstract CreateConnection           : unit -> IDbConnection
     abstract CreateEntity               : string -> SqlEntity
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
-    abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> Async<SqlEntity[]>
+    abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> System.Threading.Tasks.Task<SqlEntity[]>
     abstract SqlOperationsInSelect      : SelectOperations
     abstract SaveContextSchema          : string -> unit
 
@@ -639,7 +639,7 @@ and internal ISqlProvider =
     /// Writes all pending database changes to database
     abstract ProcessUpdates : IDbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> unit
     /// Asynchronously writes all pending database changes to database
-    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> Async<unit>
+    abstract ProcessUpdatesAsync : System.Data.Common.DbConnection * System.Collections.Concurrent.ConcurrentDictionary<SqlEntity,DateTime> * TransactionOptions * Option<int> -> System.Threading.Tasks.Task<unit>
     /// Accepts a SqlQuery object and produces the SQL to execute on the server.
     /// the other parameters are the base table alias, the base table, and a dictionary containing
     /// the columns from the various table aliases that are in the SELECT projection
@@ -647,7 +647,7 @@ and internal ISqlProvider =
     ///Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
     ///Builds a command representing a call to a stored procedure, executing async
-    abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> Async<ReturnValueType>
+    abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> System.Threading.Tasks.Task<ReturnValueType>
     ///Provider specific lock to do provider specific locking
     abstract GetLockObject : unit -> obj
 

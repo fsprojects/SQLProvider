@@ -1,4 +1,4 @@
-﻿#I @"../../../bin/net451"
+#I @"../../../bin/net451"
 #r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 
 open System
@@ -87,7 +87,7 @@ open System.Linq
 let asyncContainsQuery =
     let contacts = ["Matti Karttunen"; "Maria Anders"]
     let r =
-        async {
+        task {
             let! res =
                 query { 
                     for c in odbcaContext.Dbo.Customers do
@@ -95,7 +95,7 @@ let asyncContainsQuery =
                     select (c.CustomerId.Value, c.ContactName.Value)
                 }|> Seq.executeQueryAsync
             return res |> Seq.toArray
-        } |> Async.StartAsTask
+        } 
     r.Wait()
     r.Result
 
