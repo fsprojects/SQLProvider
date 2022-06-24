@@ -6,7 +6,7 @@ open System.IO.Compression
 
 type SsdtSchema = {
     Tables: SsdtTable list
-    TryGetTableByName: string -> SsdtTable option
+    TryGetTableByName: string -> SsdtTable voption
     StoredProcs: SsdtStoredProc list
     Relationships: SsdtRelationship list
     Descriptions: SsdtDescriptionItem list
@@ -16,7 +16,7 @@ and SsdtTable = {
     Schema: string
     Name: string
     Columns: SsdtColumn list
-    PrimaryKey: PrimaryKeyConstraint option
+    PrimaryKey: PrimaryKeyConstraint voption
     IsView: bool
 }
 and SsdtColumn = {
@@ -39,12 +39,12 @@ and SsdtView = {
 }
 and SsdtViewColumn = {
     FullName: string
-    ColumnRefPath: string option
+    ColumnRefPath: string voption
 }
 and CommentAnnotation = {
     Column: string
     DataType: string
-    Nullability: string option
+    Nullability: string voption
 }
 and SsdtRelationship = {
     Name: string
@@ -76,14 +76,14 @@ and SsdtStoredProcParam = {
     FullName: string
     Name: string
     DataType: string
-    Length: int option
+    Length: int voption
     IsOutput: bool
 }
 and SsdtDescriptionItem = {
     DecriptionType: string
     Schema: string
     TableName: string
-    ColumnName: string option
+    ColumnName: string voption
     Description: string
 }
 
@@ -108,7 +108,7 @@ module RegexParsers =
         if m.Success then
             Some { Column = colName
                    DataType = m.Groups.["DataType"].Captures.[0].Value
-                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
         else None
 
     /// Tries to find in-line commented type annotations in a view declaration.
@@ -118,7 +118,7 @@ module RegexParsers =
         |> Seq.map (fun m ->
             { Column = m.Groups.["Column"].Captures.[0].Value
               DataType = m.Groups.["DataType"].Captures.[0].Value
-              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> Option.map (fun c -> c.Value) }
+              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
         )
         |> Seq.toList
     
@@ -244,8 +244,8 @@ let parseXml(xml: string) =
                 |> Option.defaultValue "SQL_VARIANT"
             let allowNulls =
                 match annotation with
-                | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
-                | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                | Some { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                 | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
             
             Some
@@ -273,7 +273,8 @@ let parseXml(xml: string) =
             columns
             |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
             |> List.tryHead
-            |> Option.map snd
+            |> (function Some x -> ValueSome x | None -> ValueNone)
+            |> ValueOption.map snd
         { Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
           Name = match nameParts with | [|schema;name|] -> name | [|name|] -> name | _ -> failwithf "Unable to parse table '%s' name." fullName
           FullName = fullName
@@ -283,8 +284,8 @@ let parseXml(xml: string) =
 
     let parseViewColumn (colEntry:  XmlNode) =
         let colFullNm = colEntry |> node "x:Element" |> att "Name"
-        let typeRelation = colEntry |> node "x:Element" |> node "x:Relationship" |> Option.ofObj
-        let colRefPath = typeRelation |> Option.map (node "x:Entry/x:References" >> att "Name")
+        let typeRelation = colEntry |> node "x:Element" |> node "x:Relationship" |> ValueOption.ofObj
+        let colRefPath = typeRelation |> ValueOption.map (node "x:Entry/x:References" >> att "Name")
         { SsdtViewColumn.FullName = colFullNm
           SsdtViewColumn.ColumnRefPath = colRefPath }
 
@@ -327,15 +328,15 @@ let parseXml(xml: string) =
                     Name = viewCol.FullName |> RegexParsers.splitFullName |> Array.last } |> Some
             | None -> 
                 match viewColumnsByPath.TryFind(path) with
-                | Some viewCol when viewCol.ColumnRefPath <> Some path ->
+                | Some viewCol when viewCol.ColumnRefPath <> ValueSome path ->
                     match viewCol.ColumnRefPath with
-                    | Some colRefPath -> resolve colRefPath
-                    | None -> None
+                    | ValueSome colRefPath -> resolve colRefPath
+                    | ValueNone -> None
                 | _ -> None
 
         match viewCol.ColumnRefPath with
-        | Some path -> resolve path
-        | None -> None
+        | ValueSome path -> resolve path
+        | ValueNone -> None
 
     let parseStoredProc (spElement: XmlNode) =
         let fullName = spElement |> att "Name"        
@@ -356,7 +357,7 @@ let parseXml(xml: string) =
                     { FullName = pFullName
                       Name = pFullName |> RegexParsers.splitFullName |> Array.last
                       DataType = dataType |> removeBrackets
-                      Length = None // TODO: Implement
+                      Length = ValueNone // TODO: Implement
                       IsOutput = isOutput }
                 )
             | None -> Seq.empty
@@ -376,7 +377,7 @@ let parseXml(xml: string) =
             DecriptionType = parts.[0]
             Schema = parts.[1]
             TableName = if parts.Length > 2 then parts.[2] else ""
-            ColumnName = if parts.Length > 3 && parts.[0] <> "SqlTableBase" && parts.[3] <> "MS_Description" then Some parts.[3] else None
+            ColumnName = if parts.Length > 3 && parts.[0] <> "SqlTableBase" && parts.[3] <> "MS_Description" then ValueSome parts.[3] else ValueNone
             Description = description
         }
 
@@ -417,7 +418,7 @@ let parseXml(xml: string) =
           Name = view.Name
           Schema = view.Schema
           IsView = true
-          PrimaryKey = None
+          PrimaryKey = ValueNone
           Columns =
             view.Columns
             |> List.map (fun vc ->
@@ -433,8 +434,8 @@ let parseXml(xml: string) =
                         |> Option.defaultValue "SQL_VARIANT"
                     let allowNulls =
                         match annotation with
-                        | Some { Nullability = Some nlb } -> nlb.ToUpper() = "NULL"
-                        | Some { Nullability = None } -> true // Sql Server column declarations allow nulls by default
+                        | Some { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                        | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                         | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
                     let description =
                         if dataType = "SQL_VARIANT"
@@ -457,6 +458,6 @@ let parseXml(xml: string) =
 
     { Tables = tablesAndViews
       StoredProcs = storedProcs
-      TryGetTableByName = fun nm -> tablesAndViews |> List.tryFind (fun t -> t.Name = nm)
+      TryGetTableByName = fun nm -> tablesAndViews |> (List.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
       Relationships = relationships
       Descriptions = descriptions } : SsdtSchema

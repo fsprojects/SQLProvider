@@ -326,7 +326,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                         Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                                  )
                         let nfo = c.TypeInfo
-                        let typeInfo = match nfo with None -> "" | Some x -> x.ToString()
+                        let typeInfo = match nfo with ValueNone -> "" | ValueSome x -> x.ToString()
                         match con with
                         | Some con ->
                             prop.AddXmlDocDelayed(fun () ->

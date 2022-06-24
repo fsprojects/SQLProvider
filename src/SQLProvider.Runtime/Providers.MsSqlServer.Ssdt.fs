@@ -113,7 +113,7 @@ module MSSqlServerSsdt =
     let parseDacpac = findDacPacFile >> extractModelXml >> parseXml
 
     let typeMappingsByName =
-        let toInt = int >> Some
+        let toInt = int >> ValueSome
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-data-type-mappings
         [ "UNIQUEIDENTIFIER", "System.Guid", DbType.Guid, toInt SqlDbType.UniqueIdentifier
           "BIT", "System.Boolean", DbType.Boolean, toInt SqlDbType.Bit
@@ -142,16 +142,16 @@ module MSSqlServerSsdt =
           "VARBINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.VarBinary
           "BINARY", "System.Byte[]", DbType.Binary, toInt SqlDbType.Binary
           "IMAGE", "System.Byte[]", DbType.Binary, toInt SqlDbType.Image
-          "ROWVERSION", "System.Byte[]", DbType.Binary, None
+          "ROWVERSION", "System.Byte[]", DbType.Binary, ValueNone
           "XML", "System.Xml.Linq.XElement", DbType.Xml, toInt SqlDbType.Xml
-          "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, None
+          "CURSOR", ((typeof<SqlEntity[]>).ToString()), DbType.Object, ValueNone
           "SQL_VARIANT", "System.Object", DbType.Object, toInt SqlDbType.Variant
-          "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, Some 29
-          "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, Some 29
-          "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, Some 29 ]
+          "GEOGRAPHY", "Microsoft.SqlServer.Types.SqlGeography", DbType.Object, ValueSome 29
+          "GEOMETRY", "Microsoft.SqlServer.Types.SqlGeometry", DbType.Object, ValueSome 29
+          "HIERARCHYID", "Microsoft.SqlServer.Types.SqlHierarchyId", DbType.Object, ValueSome 29 ]
         |> List.map (fun (providerTypeName, clrType, dbType, providerType) ->
             providerTypeName,
-            { TypeMapping.ProviderTypeName = Some providerTypeName
+            { TypeMapping.ProviderTypeName = ValueSome providerTypeName
               TypeMapping.ClrType = clrType
               TypeMapping.DbType = dbType
               TypeMapping.ProviderType = providerType }
@@ -178,12 +178,12 @@ module MSSqlServerSsdt =
                   Column.IsNullable = col.AllowNulls
                   Column.IsPrimaryKey =
                     tbl.PrimaryKey
-                    |> Option.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
-                    |> Option.defaultValue false
+                    |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
+                    |> ValueOption.defaultValue false
                   Column.IsAutonumber = col.IsIdentity
                   Column.HasDefault = col.HasDefault
                   Column.IsComputed = col.ComputedColumn
-                  Column.TypeInfo = if col.DataType = "" then None else Some col.DataType }
+                  Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
         | None ->
             None
 
@@ -201,12 +201,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let sprocReturnParam i =
         { Name = "ResultSet" + (match i with | 0 -> "" | x -> "_" + x.ToString())
           TypeMapping =
-                { TypeMapping.ProviderTypeName = Some "cursor"
+                { TypeMapping.ProviderTypeName = ValueSome "cursor"
                   TypeMapping.ClrType = typeof<SqlEntity[]>.ToString()
                   TypeMapping.DbType = DbType.Object
-                  TypeMapping.ProviderType = None }
+                  TypeMapping.ProviderType = ValueNone }
           Direction = ParameterDirection.Output
-          Length = None
+          Length = ValueNone
           Ordinal = i }
 
 
@@ -261,13 +261,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.CreateCommandParameter(param, value) =
             let p = SqlParameter(param.Name,value)
             p.DbType <- param.TypeMapping.DbType
-            Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
+            ValueOption.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
             p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
+            ValueOption.iter (fun l -> p.Size <- l) param.Length
             match param.TypeMapping.ProviderTypeName with
-            | Some "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
-            | Some "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
-            | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+            | ValueSome "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+            | ValueSome "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+            | ValueSome "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
             | _ -> ()
             p :> IDbDataParameter
         member __.ExecuteSprocCommand(com, inputParameters, returnCols, values:obj array) =
@@ -305,18 +305,18 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
         member __.GetPrimaryKey(table) =
             match ssdtSchema.Value.TryGetTableByName(table.Name) with
-            |  Some { PrimaryKey = Some { Columns = [c] } } -> Some (c.Name)
+            |  ValueSome { PrimaryKey = ValueSome { Columns = [c] } } -> Some (c.Name)
             | _ -> None
 
         member __.GetColumns(con,table) =
             let columns =
                 match ssdtSchema.Value.TryGetTableByName(table.Name) with
-                | Some ssdtTbl ->
+                | ValueSome ssdtTbl ->
                     ssdtTbl.Columns
                     |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
                     |> List.choose id
                     |> List.map (fun col -> col.Name, col)
-                | None -> []
+                | ValueNone -> []
                 |> Map.ofList
 
             // Add PKs to cache

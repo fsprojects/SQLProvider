@@ -81,13 +81,13 @@ module internal Oracle =
         p.Direction <- param.Direction
 
         match param.TypeMapping.ProviderTypeName with
-        | Some _ ->
+        | ValueSome _ ->
             p.DbType <- param.TypeMapping.DbType
-            param.TypeMapping.ProviderType |> Option.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
-        | None -> ()
+            param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        | ValueNone -> ()
 
         match param.Length with
-        | Some(length) when length >= 0 -> p.Size <- length
+        | ValueSome(length) when length >= 0 -> p.Size <- length
         | _ ->
                match param.TypeMapping.DbType with
                | DbType.String -> p.Size <- 32767
@@ -122,8 +122,8 @@ module internal Oracle =
                     let oracleType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oracleType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = Some 121; }
+                    yield { ProviderTypeName = ValueSome oracleType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "REF CURSOR"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueSome 121; }
             ]
 
         let clrMappings =
@@ -291,7 +291,7 @@ module internal Oracle =
                       IsAutonumber = pkColumn
                       HasDefault = row.[4] <> null
                       IsComputed = false
-                      TypeInfo = Some typeinfo }
+                      TypeInfo = ValueSome typeinfo }
                 ))
         |> Seq.choose id
         |> Seq.map (fun c -> c.Name, c)
@@ -366,7 +366,7 @@ module internal Oracle =
         let createSprocParameters (row:DataRow) =
            let dataType = Sql.dbUnbox row.["DATA_TYPE"]
            let argumentName = Sql.dbUnbox row.["ARGUMENT_NAME"]
-           let maxLength = Some(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
+           let maxLength = ValueSome(int(Sql.dbUnboxWithDefault<decimal> -1M row.["DATA_LENGTH"]))
 
            findDbType dataType
            |> Option.map (fun m ->
@@ -471,7 +471,7 @@ module internal Oracle =
             | [|col|] ->
                 use reader = com.ExecuteReader()
                 match col.TypeMapping.ProviderTypeName with
-                | Some "REF CURSOR" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
+                | ValueSome "REF CURSOR" -> SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                     | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
@@ -484,7 +484,7 @@ module internal Oracle =
                         match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                         | Some(_,p) ->
                             match col.TypeMapping.ProviderTypeName with
-                            | Some "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                            | ValueSome "REF CURSOR" -> ResultSet(col.Name, readParameter p :?> ResultSet)
                             | _ -> ScalarResultSet(col.Name, readParameter p)
                         | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                     )
@@ -503,7 +503,7 @@ module internal Oracle =
             | [|col|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 match col.TypeMapping.ProviderTypeName with
-                | Some "REF CURSOR" -> 
+                | ValueSome "REF CURSOR" -> 
                     let! r = Sql.dataReaderToArrayAsync reader
                     return SingleResultSet(col.Name, r)
                 | _ ->
@@ -522,7 +522,7 @@ module internal Oracle =
                             | Some(_,p) ->
                                 let! r = readParameterAsync p
                                 match col.TypeMapping.ProviderTypeName with
-                                | Some "REF CURSOR" -> return ResultSet(col.Name, r :?> ResultSet)
+                                | ValueSome "REF CURSOR" -> return ResultSet(col.Name, r :?> ResultSet)
                                 | _ -> return ScalarResultSet(col.Name, r)
                             | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                         }

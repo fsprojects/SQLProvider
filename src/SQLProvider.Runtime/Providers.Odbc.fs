@@ -56,15 +56,15 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         let oleDbType = string r.["TypeName"]
                         let providerType = unbox<int> r.["ProviderDbType"]
                         let dbType = getDbType providerType
-                        yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
+                        yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
                     
                     if r.Table <> null && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
                         let clrType = getClrType (r.Table.Columns.["DataType"].DataType.ToString())
                         let oleDbType = r.Table.Columns.["TypeName"].DataType.ToString()
                         let providerType = unbox<int> r.Table.Columns.["ProviderDbType"].Ordinal
                         let dbType = getDbType providerType
-                        yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                        yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -231,7 +231,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             p.ParameterName <- param.Name
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
+            ValueOption.iter (fun l -> p.Size <- l) param.Length
             upcast p
 
         /// Not implemented yet
@@ -302,8 +302,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                   HasDefault = false
                                   IsComputed = false
                                   TypeInfo = 
-                                    if maxlen < 1 then Some dt
-                                    else Some (dt + "(" + maxlen.ToString() + ")")
+                                    if maxlen < 1 then ValueSome dt
+                                    else ValueSome (dt + "(" + maxlen.ToString() + ")")
                                   }
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->

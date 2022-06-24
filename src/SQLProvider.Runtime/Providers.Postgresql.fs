@@ -93,10 +93,10 @@ module PostgreSQL =
             Int32.TryParse(param.Name.Substring (ANONYMOUS_PARAMETER_NAME.Length), ref 0)
           if isAnonymousParam then "" else param.Name
 
-        Option.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
+        ValueOption.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
         p.Value <- normalizedValue
         p.Direction <- param.Direction
-        Option.iter (fun l -> p.Size <- l) param.Length
+        ValueOption.iter (fun l -> p.Size <- l) param.Length
         p
         
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
@@ -193,10 +193,10 @@ module PostgreSQL =
             |> List.choose (
                 function
                 | name, Some(clrType, providerType) -> 
-                    Some (name, { ProviderTypeName = Some(name)
+                    Some (name, { ProviderTypeName = ValueSome(name)
                                   ClrType = clrType.AssemblyQualifiedName
                                   DbType = getDbType providerType
-                                  ProviderType = Some(providerType) })    
+                                  ProviderType = ValueSome(providerType) })    
                 | _ -> None
             )
             |> Map.ofList
@@ -292,17 +292,17 @@ module PostgreSQL =
                 | [||] -> com.ExecuteNonQuery() |> ignore; Unit
                 | [|col|] ->
                     match col.TypeMapping.ProviderTypeName with
-                    | Some "record" ->
+                    | ValueSome "record" ->
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
-                    | Some "refcursor" ->
+                    | ValueSome "refcursor" ->
                         if not isLegacyVersion.Value then
                             let cursorName = com.ExecuteScalar() |> unbox
                             com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
                             com.CommandType <- CommandType.Text
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
-                    | Some "SETOF refcursor" ->
+                    | ValueSome "SETOF refcursor" ->
                         use reader = com.ExecuteReader()
                         let results = ref [ResultSet("ReturnValue", Sql.dataReaderToArray reader)]
                         let i = ref 1
@@ -322,7 +322,7 @@ module PostgreSQL =
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->
                                 match col.TypeMapping.ProviderTypeName with
-                                | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                                | ValueSome "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
                                 | _ -> ScalarResultSet(col.Name, readParameter p)
                             | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                         )
@@ -345,11 +345,11 @@ module PostgreSQL =
                               return Unit
                     | [|col|] ->
                         match col.TypeMapping.ProviderTypeName with
-                        | Some "record" ->
+                        | ValueSome "record" ->
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
-                        | Some "refcursor" ->
+                        | ValueSome "refcursor" ->
                             if not isLegacyVersion.Value then
                                 let! cur = com.ExecuteScalarAsync() |> Async.AwaitTask
                                 let cursorName = cur |> unbox
@@ -358,7 +358,7 @@ module PostgreSQL =
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
-                        | Some "SETOF refcursor" ->
+                        | ValueSome "SETOF refcursor" ->
                             use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                             let! r = Sql.dataReaderToArrayAsync reader
                             let results = ref [ResultSet("ReturnValue", r)]
@@ -386,7 +386,7 @@ module PostgreSQL =
                                 match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                                 | Some(_,p) ->
                                     match col.TypeMapping.ProviderTypeName with
-                                    | Some "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
+                                    | ValueSome "refcursor" -> ResultSet(col.Name, readParameter p :?> ResultSet)
                                     | _ -> ScalarResultSet(col.Name, readParameter p)
                                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                             )
@@ -468,7 +468,7 @@ module PostgreSQL =
                         | Some(m) ->
                             // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
                             let sparams = sp |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
-                            sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = Some("record") }, ParameterDirection.ReturnValue) ]
+                            sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = ValueSome("record") }, ParameterDirection.ReturnValue) ]
                         | None -> sp, rcolumns
                     | rtype ->
                         findDbType rtype
@@ -734,8 +734,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                             let pt = m.ProviderType
                                             // binary-add the array type to the bitflag
                                             match pt with
-                                            | None -> None
-                                            | Some t ->                                            
+                                            | ValueNone -> None
+                                            | ValueSome t ->                                            
                                                 let providerType = (t ||| PostgreSQL.arrayProviderDbType.Value)                  
                                                 
                                                 // .MakeArrayType() would be more elegant, but on Mono it causes
@@ -743,9 +743,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                                 // instead of Foo[]
                                                 let sampleArrayOfCorrectRank = Array.CreateInstance(Type.GetType(m.ClrType), lengths = Array.zeroCreate<int> dimensions)
 
-                                                Some { ProviderTypeName = Some "array"
+                                                Some { ProviderTypeName = ValueSome "array"
                                                        ClrType = sampleArrayOfCorrectRank.GetType().AssemblyQualifiedName
-                                                       ProviderType = Some providerType
+                                                       ProviderType = ValueSome providerType
                                                        DbType = PostgreSQL.getDbType providerType
                                                      }
                                         )
@@ -763,7 +763,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                           IsAutonumber = isPk
                                           IsComputed = false
                                           HasDefault = Sql.dbUnbox<bool> reader.["has_default"]
-                                          TypeInfo = Some fullTypeName
+                                          TypeInfo = ValueSome fullTypeName
                                         }
 
                                     if col.IsPrimaryKey then

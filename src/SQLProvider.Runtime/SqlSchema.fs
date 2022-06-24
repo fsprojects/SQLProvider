@@ -14,22 +14,22 @@ module internal Patterns =
         if m.Success then Some (List.tail [ for g in m.Groups -> g.Value ]) else None
 
 type TypeMapping =
-    { ProviderTypeName: string option
+    { ProviderTypeName: string voption
       ClrType: string
-      ProviderType: int option
+      ProviderType: int voption
       DbType: DbType }
     with
         static member Create(?clrType, ?dbType, ?providerTypeName, ?providerType) =
             { ClrType = defaultArg clrType ((typeof<string>).ToString())
               DbType = defaultArg dbType (DbType.String)
-              ProviderTypeName = providerTypeName
-              ProviderType = providerType }
+              ProviderTypeName = match providerTypeName with Some x -> ValueSome x | None -> ValueNone
+              ProviderType = match providerType with Some x -> ValueSome x | None -> ValueNone }
 
 type QueryParameter =
     { Name: string
       TypeMapping: TypeMapping
       Direction: ParameterDirection
-      Length: int option
+      Length: int voption
       Ordinal: int }
     with
         static member Create(name, ordinal, ?typeMapping, ?direction, ?length) =
@@ -37,7 +37,7 @@ type QueryParameter =
               Ordinal = ordinal
               TypeMapping = defaultArg typeMapping (TypeMapping.Create())
               Direction = defaultArg direction ParameterDirection.Input
-              Length = length }
+              Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
 type Column =
     { Name: string
@@ -47,7 +47,7 @@ type Column =
       IsAutonumber: bool
       HasDefault: bool
       IsComputed: bool
-      TypeInfo: string option }
+      TypeInfo: string voption }
     with
         static member FromQueryParameter(q: QueryParameter) =
             { Name = q.Name
@@ -57,7 +57,7 @@ type Column =
               IsAutonumber = false
               HasDefault = false
               IsComputed = false
-              TypeInfo = None }
+              TypeInfo = ValueNone }
 
 type ColumnLookup = Map<string,Column>
 

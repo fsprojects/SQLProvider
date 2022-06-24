@@ -52,8 +52,8 @@ module MSSqlServer =
                         else getClrType (string r.["DataType"])
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                    yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -67,9 +67,9 @@ module MSSqlServer =
             |> Map.ofList
 
         let dbMappings =
-            dbMappings.Add("geometry", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
-                      .Add("geography", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
-                      .Add("hierarchyid", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+            dbMappings.Add("geometry", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
+                      .Add("geography", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
+                      .Add("hierarchyid", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
 
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
@@ -121,13 +121,13 @@ module MSSqlServer =
     let createCommandParameter (param:QueryParameter) (value:obj) =
         let p = SqlParameter(param.Name,value)
         p.DbType <- param.TypeMapping.DbType
-        Option.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
+        ValueOption.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
-        Option.iter (fun l -> p.Size <- l) param.Length
+        ValueOption.iter (fun l -> p.Size <- l) param.Length
         match param.TypeMapping.ProviderTypeName with
-        | Some "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
-        | Some "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
-        | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
+        | ValueSome "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
+        | ValueSome "Microsoft.SqlServer.Types.SqlGeography" -> p.UdtTypeName <- "Geography"
+        | ValueSome "Microsoft.SqlServer.Types.SqlHierarchyId" -> p.UdtTypeName <- "HierarchyId"
         | _ -> ()
         p :> IDbDataParameter
 
@@ -179,7 +179,7 @@ module MSSqlServer =
         let createSprocParameters (row:DataRow) =
             let dataType = dbUnbox row.["data_type"]
             let argumentName = dbUnbox row.["parameter_name"]
-            let maxLength = Some(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
+            let maxLength = ValueSome(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
 
             findDbType dataType
             |> Option.map (fun m ->
@@ -243,7 +243,7 @@ module MSSqlServer =
 
     let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
         match retCol.TypeMapping.ProviderTypeName with
-        | Some "cursor" | Some "CURSOR" ->
+        | ValueSome "cursor" | ValueSome "CURSOR" ->
             let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
             reader.NextResult() |> ignore
             result
@@ -252,7 +252,7 @@ module MSSqlServer =
     let processReturnColumnAsync (com:IDbCommand) reader (retCol:QueryParameter) =
         async {
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" | Some "CURSOR" ->
+            | ValueSome "cursor" | ValueSome "CURSOR" ->
                 let! r = Sql.dataReaderToArrayAsync reader
                 let result = ResultSet(retCol.Name, r)
                 let! _ = reader.NextResultAsync() |> Async.AwaitTask
@@ -297,7 +297,7 @@ module MSSqlServer =
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
         | [|retCol|] ->
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" | Some "CURSOR" ->
+            | ValueSome "cursor" | ValueSome "CURSOR" ->
                 use reader = com.ExecuteReader() :?> SqlDataReader
                 let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
@@ -322,7 +322,7 @@ module MSSqlServer =
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
-                | Some "cursor" | Some "CURSOR" ->
+                | ValueSome "cursor" | ValueSome "CURSOR" ->
                     use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
                     let reader = readera :?> SqlDataReader
                     let! r = Sql.dataReaderToArrayAsync reader
@@ -609,7 +609,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
                                IsComputed = reader.GetInt32(8) = 1
-                               TypeInfo = if maxlen > 0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
+                               TypeInfo = if maxlen > 0 then ValueSome (dt + "(" + maxlen.ToString() + ")") else ValueSome dt }
                            if col.IsPrimaryKey then
                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 

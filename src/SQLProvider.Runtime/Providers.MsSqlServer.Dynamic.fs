@@ -104,8 +104,8 @@ module MSSqlServerDynamic =
                         else getClrType (string r.["DataType"])
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                    yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -119,9 +119,9 @@ module MSSqlServerDynamic =
             |> Map.ofList
 
         let dbMappings =
-            dbMappings.Add("geometry", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
-                      .Add("geography", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
-                      .Add("hierarchyid", { ProviderTypeName = Some "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = Some 29; })
+            dbMappings.Add("geometry", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlGeometry"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
+                      .Add("geography", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlGeography"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
+                      .Add("hierarchyid", { ProviderTypeName = ValueSome "Microsoft.SqlServer.Types.SqlHierarchyId"; ClrType = typeof<obj>.ToString(); DbType = DbType.Object; ProviderType = ValueSome 29; })
 
         typeMappings <- mappings
         findClrType <- clrMappings.TryFind
@@ -202,14 +202,14 @@ module MSSqlServerDynamic =
 
         let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
         p.DbType <- param.TypeMapping.DbType
-        Option.iter (fun (t:int) ->
+        ValueOption.iter (fun (t:int) ->
             sqlDbTypeSetter.Invoke(p, [| t |]) |> ignore) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
-        Option.iter (fun l -> p.Size <- l) param.Length
+        ValueOption.iter (fun l -> p.Size <- l) param.Length
         match param.TypeMapping.ProviderTypeName with
-        | Some "Microsoft.SqlServer.Types.SqlGeometry" -> udtTypeSetter.Invoke(p, [| "Geometry" |]) |> ignore
-        | Some "Microsoft.SqlServer.Types.SqlGeography" -> udtTypeSetter.Invoke(p, [| "Geography" |]) |> ignore
-        | Some "Microsoft.SqlServer.Types.SqlHierarchyId" -> udtTypeSetter.Invoke(p, [| "HierarchyId" |]) |> ignore
+        | ValueSome "Microsoft.SqlServer.Types.SqlGeometry" -> udtTypeSetter.Invoke(p, [| "Geometry" |]) |> ignore
+        | ValueSome "Microsoft.SqlServer.Types.SqlGeography" -> udtTypeSetter.Invoke(p, [| "Geography" |]) |> ignore
+        | ValueSome "Microsoft.SqlServer.Types.SqlHierarchyId" -> udtTypeSetter.Invoke(p, [| "HierarchyId" |]) |> ignore
         | _ -> ()
         p
 
@@ -261,7 +261,7 @@ module MSSqlServerDynamic =
         let createSprocParameters (row:DataRow) =
             let dataType = dbUnbox row.["data_type"]
             let argumentName = dbUnbox row.["parameter_name"]
-            let maxLength = Some(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
+            let maxLength = ValueSome(dbUnboxWithDefault<int> -1 row.["character_maximum_length"])
 
             findDbType dataType
             |> Option.map (fun m ->
@@ -324,7 +324,7 @@ module MSSqlServerDynamic =
 
     let processReturnColumn (com:IDbCommand) reader (retCol:QueryParameter) =
         match retCol.TypeMapping.ProviderTypeName with
-        | Some "cursor" ->
+        | ValueSome "cursor" ->
             let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
             reader.NextResult() |> ignore
             result
@@ -333,7 +333,7 @@ module MSSqlServerDynamic =
     let processReturnColumnAsync (com:IDbCommand) reader (retCol:QueryParameter) =
         async {
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | ValueSome "cursor" ->
                 let! r = Sql.dataReaderToArrayAsync reader
                 let result = ResultSet(retCol.Name, r)
                 let! _ = reader.NextResultAsync() |> Async.AwaitTask
@@ -378,7 +378,7 @@ module MSSqlServerDynamic =
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
         | [|retCol|] ->
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | ValueSome "cursor" ->
                 use reader = com.ExecuteReader()
                 let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
@@ -403,7 +403,7 @@ module MSSqlServerDynamic =
                       return Unit
             | [|retCol|] ->
                 match retCol.TypeMapping.ProviderTypeName with
-                | Some "cursor" ->
+                | ValueSome "cursor" ->
                     use! readera = com.ExecuteReaderAsync() |> Async.AwaitTask
                     let reader = readera
                     let! r = Sql.dataReaderToArrayAsync reader
@@ -693,7 +693,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
                                IsComputed = reader.GetInt32(8) = 1
-                               TypeInfo = if maxlen > 0 then Some (dt + "(" + maxlen.ToString() + ")") else Some dt }
+                               TypeInfo = if maxlen > 0 then ValueSome (dt + "(" + maxlen.ToString() + ")") else ValueSome dt }
                            if col.IsPrimaryKey then
                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old -> 
                                     match col.Name with 

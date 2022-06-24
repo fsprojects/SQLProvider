@@ -47,8 +47,8 @@ type internal MSAccessProvider(contextSchemaPath) =
                     let oleDbType = string r.["NativeDataType"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                    yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -205,7 +205,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             let p = OleDbParameter(param.Name,value)
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
+            ValueOption.iter (fun l -> p.Size <- l) param.Length
             upcast p
 
         member __.ExecuteSprocCommand(_,_,_,_) =  raise(NotImplementedException())
@@ -260,9 +260,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                                         let ti = 
                                             if row.IsNull("CHARACTER_MAXIMUM_LENGTH") then ""
                                             else row.["CHARACTER_MAXIMUM_LENGTH"].ToString()
-                                        if String.IsNullOrEmpty ti then None
-                                        else Some ("Max length: " + ti)
-                                    with :? KeyNotFoundException -> None
+                                        if String.IsNullOrEmpty ti then ValueNone
+                                        else ValueSome ("Max length: " + ti)
+                                    with :? KeyNotFoundException -> ValueNone
                                 }
                             (col.Name,col)
                         |_ -> failwith "failed to map datatypes")

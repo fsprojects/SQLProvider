@@ -143,9 +143,9 @@ module Firebird =
         p.Direction <-  param.Direction
 
         p.DbType <- (defaultArg mapping param.TypeMapping).DbType
-        param.TypeMapping.ProviderType |> Option.iter (fun pt -> firebirdDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+        param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> firebirdDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
 
-        Option.iter (fun l -> p.Size <- l) param.Length
+        ValueOption.iter (fun l -> p.Size <- l) param.Length
         p
 
     let createParam name i v = 
@@ -186,8 +186,8 @@ module Firebird =
                     let oleDbType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = getDbType providerType
-                    yield { ProviderTypeName = Some oleDbType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                    yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -273,7 +273,7 @@ module Firebird =
             let argumentName = Sql.dbUnbox row.["parameter_name"]
             let maxLength =
                 let r = Sql.dbUnboxWithDefault<int16> -1s row.["character_maximum_length"] |> Convert.ToInt32
-                if r = -1 then None else Some r
+                if r = -1 then ValueNone else ValueSome r
 
             findDbType dataType
             |> Option.map (fun m ->
@@ -332,7 +332,7 @@ module Firebird =
 
     let processReturnColumn reader (outps:(int*IDbDataParameter)[]) (retCol:QueryParameter) =
         match retCol.TypeMapping.ProviderTypeName with
-        | Some "cursor" ->
+        | ValueSome "cursor" ->
             let result = ResultSet(retCol.Name, Sql.dataReaderToArray reader)
             reader.NextResult() |> ignore
             result
@@ -344,7 +344,7 @@ module Firebird =
     let processReturnColumnAsync reader (outps:(int*IDbDataParameter)[]) (retCol:QueryParameter) =
         async {
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | ValueSome "cursor" ->
                 let! r = Sql.dataReaderToArrayAsync reader
                 let result = ResultSet(retCol.Name, r)
                 let! _ = reader.NextResultAsync() |> Async.AwaitTask
@@ -387,7 +387,7 @@ module Firebird =
         | [|retCol|] ->
             use reader = com.ExecuteReader()
             match retCol.TypeMapping.ProviderTypeName with
-            | Some "cursor" ->
+            | ValueSome "cursor" ->
                 let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
@@ -410,7 +410,7 @@ module Firebird =
             | [|retCol|] ->
                 use! reader = com.ExecuteReaderAsync() |> Async.AwaitTask
                 match retCol.TypeMapping.ProviderTypeName with
-                | Some "cursor" ->
+                | ValueSome "cursor" ->
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
                     let! _ = reader.NextResultAsync() |> Async.AwaitTask
@@ -646,7 +646,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                   IsAutonumber = pkColumn
                                   HasDefault = not(reader.IsDBNull 6)
                                   IsComputed = false
-                                  TypeInfo = if String.IsNullOrEmpty(maxlen) then Some dt else Some (dt + "(" + maxlen + ")")}
+                                  TypeInfo = if String.IsNullOrEmpty(maxlen) then ValueSome dt else ValueSome (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.Name, [col.Name], fun key old -> 
                                     match col.Name with 

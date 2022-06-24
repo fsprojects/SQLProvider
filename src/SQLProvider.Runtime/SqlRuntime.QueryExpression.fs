@@ -346,7 +346,7 @@ module internal QueryExpressionTransformer =
                                                                                     // https://github.com/dotnet/fsharp/issues/13370
                                                                                     upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
-            | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with
+            | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with //Todo:ValueOption upcast here too
                                                                                     | Some(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
                                                                                          match projectionMap.TryGetValue en with
                                                                                          | true, values -> values.Clear()

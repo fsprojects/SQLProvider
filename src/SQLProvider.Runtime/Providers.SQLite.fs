@@ -210,8 +210,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     let sqlliteType = string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
                     let dbType = Enum.ToObject(typeof<DbType>, providerType) :?> DbType
-                    yield { ProviderTypeName = Some sqlliteType; ClrType = clrType; DbType = dbType; ProviderType = Some providerType; }
-                yield { ProviderTypeName = Some "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = None; }
+                    yield { ProviderTypeName = ValueSome sqlliteType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
+                yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]
 
         let clrMappings =
@@ -378,7 +378,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             let p = Activator.CreateInstance(paramterType.Value,[|box param.Name;box value|]) :?> IDbDataParameter
             p.DbType <- param.TypeMapping.DbType
             p.Direction <- param.Direction
-            Option.iter (fun l -> p.Size <- l) param.Length
+            ValueOption.iter (fun l -> p.Size <- l) param.Length
             p
 
         member __.ExecuteSprocCommand(com, _, returnCols, values:obj array) =
@@ -467,7 +467,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                   IsAutonumber = pkColumn
                                   IsComputed = false
                                   HasDefault = not (reader.IsDBNull 4)
-                                  TypeInfo = Some dtv }
+                                  TypeInfo = ValueSome dtv }
                             if col.IsPrimaryKey then
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
                                     match col.Name with
