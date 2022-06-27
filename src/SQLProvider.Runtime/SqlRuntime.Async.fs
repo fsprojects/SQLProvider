@@ -101,7 +101,6 @@ module AsyncOperations =
         }
 
     let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
-        task {
             match s with
             | :? IWithSqlService as svc ->
                 match svc.SqlExpression with
@@ -130,13 +129,13 @@ module AsyncOperations =
                         match source.SqlExpression with
                         | BaseTable("",entity)  -> AggregateOp("",GroupColumn(opName, op),BaseTable(alias,entity))
                         | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
-
-                    let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex
-                    if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
-                    return (Utilities.convertTypes res typeof<'T>) |> unbox
-                | _ -> return failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-            | c -> return failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
-        }
+                    task {
+                        let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex
+                        if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
+                        return (Utilities.convertTypes res typeof<'T>) |> unbox
+                    }
+                | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+            | c -> failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
 
 open AsyncOperations
 

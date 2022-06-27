@@ -339,17 +339,22 @@ module PostgreSQL =
             let tran = com.Connection.BeginTransaction()
                 //try
             let entities = 
-                task {
-                    match retCols with
-                    | [||] -> let! c = com.ExecuteNonQueryAsync()
-                              return Unit
-                    | [|col|] ->
-                        match col.TypeMapping.ProviderTypeName with
-                        | ValueSome "record" ->
+                match retCols with
+                | [||] ->
+                    task {
+                        let! c = com.ExecuteNonQueryAsync()
+                        return Unit
+                    }
+                | [|col|] ->
+                    match col.TypeMapping.ProviderTypeName with
+                    | ValueSome "record" ->
+                        task {
                             use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
-                        | ValueSome "refcursor" ->
+                        }
+                    | ValueSome "refcursor" ->
+                        task {
                             if not isLegacyVersion.Value then
                                 let! cur = com.ExecuteScalarAsync()
                                 let cursorName = cur |> unbox
@@ -358,7 +363,9 @@ module PostgreSQL =
                             use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             return SingleResultSet(col.Name, r)
-                        | ValueSome "SETOF refcursor" ->
+                        }
+                    | ValueSome "SETOF refcursor" ->
+                        task {
                             use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
                             let results = ref [ResultSet("ReturnValue", r)]
@@ -372,13 +379,17 @@ module PostgreSQL =
                                     results := ResultSet("ReturnValue" + (string !i), r) :: !results
                                     incr(i)
                             return Set(!results)
-                        | _ ->
-                            match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
-                            | Some(_,p) -> 
+                        }
+                    | _ ->
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
+                        | Some(_,p) ->
+                            task {
                                 let! co = com.ExecuteScalarAsync()
                                 return Scalar(p.ParameterName, co)
-                            | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
-                    | cols ->
+                            }
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
+                | cols ->
+                    task {
                         let! c = com.ExecuteNonQueryAsync()
                         let returnValues =
                             cols
@@ -391,7 +402,7 @@ module PostgreSQL =
                                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                             )
                         return Set(returnValues)
-                }
+                    }
             // For some reasont there was commit also on failure?
             // Should it be on Async.Catch ok result only?
             let! res = entities

@@ -15,13 +15,13 @@
       ]
     },
     "paket": {
-      "version": "6.0.0-beta8",
+      "version": "7.1.5",
       "commands": [
         "paket"
       ]
     },
     "fake-cli": {
-      "version": "5.20.3",
+      "version": "5.22.0",
       "commands": [
         "fake"
       ]
