@@ -589,18 +589,17 @@ module Sql =
                yield collectfunc reader
         |]
 
-    let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) = 
-
-        let rec readitems acc =
-            task {
-                let! moreitems = reader.ReadAsync()
-                match moreitems with
-                | true -> return! readitems (collectfunc(reader)::acc)
-                | false -> return acc
-            }
+    let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) =
         task {
-            let! items = readitems []
-            return items |> List.toArray |> Array.rev
+            let res = ResizeArray<_>()
+            let mutable hasNext = true
+            while hasNext do
+                let! h = reader.ReadAsync()
+                hasNext <- h
+                if hasNext then
+                    let e = collectfunc reader
+                    res.Add e
+            return res |> Seq.toArray
         }
 
     let dbUnbox<'a> (v:obj) : 'a = 

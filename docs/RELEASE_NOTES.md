@@ -1,4 +1,4 @@
-### 1.3.0-alpha - 27.06.2022
+### 1.3.1-alpha - 27.06.2022
 * Breaking change: UseOptionTypes: bool changed to FSharp.Data.Sql.Common.NullableColumnType
 * FSharp.Core dependency: Minimum 4.7.x -> 6.0.5
 * Breaking change: Async<_> changed to Task<_>

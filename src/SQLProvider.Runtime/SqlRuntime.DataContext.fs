@@ -237,25 +237,23 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             |]
 
         member this.ReadEntitiesAsync(name: string, columns: ColumnLookup, reader: DbDataReader) =
-
-            let rec readitems acc =
-                task {
-                    let work = reader.ReadAsync()
-                    let! working = work
-                    if work.IsFaulted then return raise work.Exception
-                    else
-                    match work.Result with
-                    | true ->
+            task {
+                let res = ResizeArray<_>()
+                let mutable hasNext = true
+                while hasNext do
+                    let! h = reader.ReadAsync()
+                    hasNext <- h
+                    if hasNext then
                         let e = SqlEntity(this, name, columns)
                         for i = 0 to reader.FieldCount - 1 do
-                            match reader.GetValue(i) with
-                            | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
+                            let! valu = reader.GetFieldValueAsync(i)
+                            match valu with
+                            | null ->  e.SetColumnSilent(reader.GetName(i),null)
+                            | nullItm when System.Convert.IsDBNull nullItm -> e.SetColumnSilent(reader.GetName(i),null)
                             | value -> e.SetColumnSilent(reader.GetName(i),value)
-                        return! readitems (e::acc)
-                    | false -> return acc |> List.rev |> List.toArray
-                }
-
-            readitems []
+                        res.Add e
+                return res |> Seq.toArray
+            }
 
         member this.CreateEntity(tableName) =
             use con = provider.CreateConnection(connectionString)
