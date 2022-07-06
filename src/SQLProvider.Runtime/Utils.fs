@@ -650,15 +650,27 @@ module Sql =
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
     let evaluateOneByOne asyncFunc entityList =
-        let rec executeOneByOne' asyncFunc entityList acc =
+        let rec executeOneByOneTask' asyncFunc entityList acc =
             match entityList with
             | [] -> task { return acc }
             | h::t -> 
                 task {
                     let! res = asyncFunc h
-                    return! executeOneByOne' asyncFunc t (res::acc)
+                    return! executeOneByOneTask' asyncFunc t (res::acc)
                 }
-        executeOneByOne' asyncFunc entityList []
+        let rec executeOneByOneAsync' asyncFunc entityList acc =
+            match entityList with
+            | [] -> async { return acc }
+            | h::t -> 
+                async {
+                    let! res = asyncFunc h
+                    return! executeOneByOneAsync' asyncFunc t (res::acc)
+                }
+
+        if List.length entityList <= 1000 then
+            executeOneByOneTask' asyncFunc entityList []
+        else // Slower but avoid StackOverflowException
+            executeOneByOneAsync' (asyncFunc >> Async.AwaitTask) entityList [] |> Async.StartAsTask
 
 
 module Stubs =
