@@ -1,3 +1,6 @@
+### 1.3.1-alpha2 - 06.07.2022
+* List.evaluateOneByOne - workaround for 6.0.5 FSharp.Core task stack-overflow with over 1200 items
+
 ### 1.3.1-alpha - 27.06.2022
 * Breaking change: UseOptionTypes: bool changed to FSharp.Data.Sql.Common.NullableColumnType
 * FSharp.Core dependency: Minimum 4.7.x -> 6.0.5
