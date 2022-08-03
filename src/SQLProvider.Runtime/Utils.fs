@@ -394,7 +394,7 @@ module internal Reflection =
 
         let ifNotNull (x:Assembly) =
             if x = null then ""
-            elif x.Location = null then ""
+            elif String.IsNullOrWhiteSpace x.Location then ""
             else x.Location |> Path.GetDirectoryName
 
 //#if NETSTANDARD
