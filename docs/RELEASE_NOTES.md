@@ -1,3 +1,9 @@
+### 1.3.1-alpha3 - 04.08.2022
+* Fix for .NET 6 project with PublishSingleFile, PR #769
+
+### 1.2.12 - 04.08.2022
+* Fix for .NET 6 project with PublishSingleFile, PR #769
+
 ### 1.3.1-alpha2 - 06.07.2022
 * List.evaluateOneByOne - workaround for 6.0.5 FSharp.Core task stack-overflow with over 1200 items
 
