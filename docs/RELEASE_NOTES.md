@@ -1,3 +1,6 @@
+### 1.2.12 - 04.08.2022
+* Fix for .NET 6 project with PublishSingleFile, PR #769
+
 ### 1.2.11 - 21.02.2022
 * More efficient regex parsing table name
 * Async readentities stackoverflow on AwaitTask fixed when over 2700
