@@ -1,16 +1,11 @@
-### 1.3.1-alpha3 - 04.08.2022
-* Fix for .NET 6 project with PublishSingleFile, PR #769
+### 1.3.1 - 10.08.2022
+* Breaking change: Async<_> changed to Task<_>
+* FSharp.Core dependency: Minimum 4.7.x -> 6.0.5
+* Breaking change: UseOptionTypes: bool changed to FSharp.Data.Sql.Common.NullableColumnType
+* List.evaluateOneByOne - workaround for 6.0.5 FSharp.Core task stack-overflow with over 1200 items
 
 ### 1.2.12 - 04.08.2022
 * Fix for .NET 6 project with PublishSingleFile, PR #769
-
-### 1.3.1-alpha2 - 06.07.2022
-* List.evaluateOneByOne - workaround for 6.0.5 FSharp.Core task stack-overflow with over 1200 items
-
-### 1.3.1-alpha - 27.06.2022
-* Breaking change: UseOptionTypes: bool changed to FSharp.Data.Sql.Common.NullableColumnType
-* FSharp.Core dependency: Minimum 4.7.x -> 6.0.5
-* Breaking change: Async<_> changed to Task<_>
 
 ### 1.2.11 - 21.02.2022
 * More efficient regex parsing table name
