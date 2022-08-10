@@ -33,13 +33,13 @@
       ]
     },
     "fsharp-analyzers": {
-      "version": "0.4.0",
+      "version": "0.11.0",
       "commands": [
         "fsharp-analyzers"
       ]
     },
     "dotnet-serve": {
-      "version": "1.8.15",
+      "version": "1.10.128",
       "commands": [
         "dotnet-serve"
       ]

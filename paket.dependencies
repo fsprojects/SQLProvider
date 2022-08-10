@@ -4,7 +4,7 @@ frameworks: net472, netcoreapp3.1, netstandard2.0
 storage: none
 clitool dotnet-mono 0.5.2
 
-nuget FSharp.Core
+nuget FSharp.Core == 6.0.5
 nuget System.Data.SqlClient
 nuget NETStandard.Library.NETFramework storage: packages 
 nuget System.Data.OleDb
@@ -26,7 +26,7 @@ group Build
     storage: packages
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
-    nuget FSharp.Core
+    nuget FSharp.Core == 6.0.5
     nuget FSharp.Formatting >= 4.0.0
     nuget Nuget.CommandLine
     nuget RazorEngine
@@ -46,7 +46,6 @@ group Build
     nuget Fake.DotNet.MSBuild
     nuget Fake.DotNet.FSFormatting 
     nuget Fake.DotNet.Testing.NUnit
-    nuget Fantomas
     nuget System.Data.SqlClient
 
 group SourceFiles
@@ -94,5 +93,3 @@ group Tests
     nuget SQLitePCLRaw.bundle_green
     nuget Microsoft.Data.Sqlite.Core
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.
-
-

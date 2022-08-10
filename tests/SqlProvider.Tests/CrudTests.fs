@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#I @"../../src/SQLProvider.Runtime/bin/Release/net461/"
-#I @"../../src/SQLProvider.Runtime/bin/Debug/net461/"
+#I @"../../bin/net472/"
+#I @"../../bin/net472/"
 #r "FSharp.Data.SqlProvider.dll"
 #r @"System.Transactions.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
@@ -17,7 +17,7 @@ open System
 open System.Transactions
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
+let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
 
 [<Literal>]
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"

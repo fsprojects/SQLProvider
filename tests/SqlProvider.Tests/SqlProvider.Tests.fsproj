@@ -5,8 +5,8 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <OutputType>Library</OutputType>
-    <!--<TargetFrameworks>netcoreapp3.1</TargetFrameworks>-->
     <TargetFramework>net472</TargetFramework>
+    <!--<TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>-->
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyName>SqlProvider.Tests</AssemblyName>
 	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
@@ -48,15 +48,18 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fsharp.Core" Version="6.0.5" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="nunit" Version="3.13.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.0.4" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.113.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Transactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </ItemGroup>
   <Target Name="CopyLibrariesWin">
   </Target>

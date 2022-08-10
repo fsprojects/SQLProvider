@@ -16,7 +16,7 @@ open System.Linq
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
+let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
 
 // If you want to run these in Visual Studio Test Explorer, please install:
 // Tools -> Extensions and Updates... -> Online -> NUnit Test Adapter for Visual Studio
