@@ -79,7 +79,7 @@
 <p>It is helpful to keep the above Design Time Command commented out just below your SqlDataProvider type for refreshing the generated types after a schema change.</p>
 <h2><a name="Optional-Parameters" class="anchor" href="#Optional-Parameters">Optional Parameters</a></h2>
 <h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
-<p>If true, F# option types will be used in place of nullable database columns. If false, you will always receive the default value of the column's type even if it is null in the database.</p>
+<p>If FSharp.Data.Sql.Common.NullableColumnType.OPTION, F# option types will be used in place of nullable database columns. If NO_OPTION, you will always receive the default value of the column's type even if it is null in the database.</p>
 <h3><a name="Table-Names-Filter" class="anchor" href="#Table-Names-Filter">Table Names Filter</a></h3>
 <p>The SSDT provider currently supports a simple comma delimited list of allowed table names (wildcards are not currently supported).</p>
 <h2><a name="AdventureWorks-Example" class="anchor" href="#AdventureWorks-Example">AdventureWorks Example</a></h2>
