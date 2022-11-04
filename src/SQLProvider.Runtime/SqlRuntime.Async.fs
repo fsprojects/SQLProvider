@@ -101,8 +101,11 @@ module AsyncOperations =
         }
 
     let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
-            match s with
-            | :? IWithSqlService as svc ->
+
+            match QueryImplementation.findSqlService s with
+            | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+            | Some svc ->
+
                 match svc.SqlExpression with
                 | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
 
@@ -135,7 +138,6 @@ module AsyncOperations =
                         return (Utilities.convertTypes res typeof<'T>) |> unbox
                     }
                 | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-            | c -> failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
 
 open AsyncOperations
 

@@ -992,7 +992,19 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 ~~(sprintf "DELETE FROM %s " basetable)
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns =
+                        if colsAggrs.Length <= 2 then colsAggrs.[0]
+                        else
+                            let rec concats h1 tails =
+                                match tails with
+                                | [] -> h1
+                                | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
+
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            concats colsAggrs.[0] rest
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)

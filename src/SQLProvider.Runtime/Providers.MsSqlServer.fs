@@ -978,7 +978,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
