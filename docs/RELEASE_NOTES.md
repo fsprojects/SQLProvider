@@ -1,3 +1,6 @@
+### 1.3.2 - 08.11.2022
+* Improvement for value tuple handling
+
 ### 1.3.1 - 10.08.2022
 * Breaking change: Async<_> changed to Task<_>
 * FSharp.Core dependency: Minimum 4.7.x -> 6.0.5
