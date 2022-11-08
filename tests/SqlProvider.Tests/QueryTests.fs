@@ -1856,6 +1856,23 @@ let ``simple select query async2``() =
     let r = res |> Seq.toArray
     CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
 
+[<Test >]
+let ``simple select query async3``() =
+    let dc = sql.GetDataContext() 
+    let res = 
+        task {
+            let asyncquery =
+                query {
+                    for cust in dc.Main.Customers do
+                    where (cust.City <> "")
+                }
+            // Let's mix some good old LINQ. (Not recommended!) Note: the query above didn't have Select, it's returning cust.
+            let res = asyncquery.Where(fun cust -> cust.City = "London").Select(fun cust -> (cust.Address, cust.City, cust.ContactName)).Distinct()
+            let! d = res |> Seq.lengthAsync
+            return d
+        } |> Async.AwaitTask |> Async.RunSynchronously
+    Assert.IsTrue(res > 0)
+    ()
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
@@ -2471,3 +2488,18 @@ let ``simple select with ValueOption type query``() =
         } |> Seq.toList
 
     qry |> Assert.IsNotEmpty
+
+[<Test>]
+let ``valueoption copyOfStruct test``() =
+    let dcv = sqlValueOption.GetDataContext()
+    let qry = 
+        query {
+            for cust in dcv.Main.Customers do
+            where (cust.City.IsSome)
+        } 
+
+    let qtest = qry.Where(fun cust -> cust.PostalCode.IsSome && cust.PostalCode.Value <> "ABC").Select(fun cust -> cust.PostalCode.Value)
+
+    let c = qtest |> Seq.length
+
+    Assert.IsNotNull c

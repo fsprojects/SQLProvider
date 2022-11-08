@@ -46,6 +46,46 @@ module internal QueryImplementation =
     type IAsyncEnumerable =
         abstract EvaluateQuery : unit -> System.Threading.Tasks.Task<unit>
 
+    let findSqlService (iq:Linq.IQueryable<'T>) = 
+        match iq with
+        | :? IWithSqlService as svc -> Some svc
+        | :? System.Linq.EnumerableQuery as eq ->
+            let enuProp = eq.GetType().GetProperty("Enumerable", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+            if enuProp = null then
+                let expProp = eq.GetType().GetProperty("Expression", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+                if expProp = null then None
+                else
+                let exp = expProp.GetValue(eq, null)
+                if exp = null then None
+                else
+                match exp with
+                | :? Expression as e ->
+                    match e with
+                    | MethodCall(None, _, [Constant( :? IWithSqlService as svc, _)]) -> Some svc
+                    | _ -> None
+                | _ -> None
+            else
+            let enu = enuProp.GetValue(eq, null)
+            if enu = null then None
+            else
+            let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+            if srcProp = null then None
+            else
+            let sval = srcProp.GetValue(enu)
+            match sval with
+            | null -> None
+            //| :? IQueryable<_> as qs ->
+            //    match findSqlService qs with
+            //    | None -> None
+            //    | Some innerSvc -> Some innerSvc
+            | _ -> None
+        | _ -> None
+
+    let (|FoundSqlService|_|) (s:obj) = 
+        match s with
+        | :? Linq.IQueryable<obj> as iq -> findSqlService iq
+        | _ -> None
+
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
 
@@ -448,8 +488,16 @@ module internal QueryImplementation =
                                 { new ExpressionVisitor() with
                                     member __.VisitParameter _ = nexp
                                     member __.VisitLambda x =
-                                        let visitedBody = base.Visit x.Body
-                                        Expression.Lambda(visitedBody, pe) :> Expression
+
+                                        let exType = x.GetType()
+                                        if  exType.IsGenericType
+                                            && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition()
+                                            && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
+                                            let visitedBody = base.Visit x.Body
+                                            Expression.Lambda(x.GetType().GenericTypeArguments.[0],visitedBody, pe)
+                                        else
+                                            let visitedBody = base.Visit x.Body
+                                            Expression.Lambda(visitedBody, pe) :> Expression
                                     }
                             let visited = visitor.Visit traversable
                             let opt = ExpressionOptimizer.visit visited
@@ -1125,32 +1173,9 @@ module internal QueryImplementation =
                         |> Seq.head
                     | e -> failwithf "Unsupported execution expression `%s`" (e.ToString())  }
 
-    let rec findSqlService (x:Linq.IQueryable<'T>) =
-        match x with
-        | :? IWithSqlService as svc -> Some svc
-        | :? System.Linq.EnumerableQuery as eq ->
-                    
-            let enuProp = eq.GetType().GetProperty("Enumerable", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if enuProp = null then None
-            else
-            let enu = enuProp.GetValue(eq, null)
-            if enu = null then None
-            else
-            let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if srcProp = null then None
-            else
-            let sval = srcProp.GetValue(eq, null)
-            match sval with
-            | null -> None
-            | :? IQueryable<_> as qs -> findSqlService qs
-            | _ -> None
-        | _ -> None
-
-
     let getAgg<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : 'T =
 
         match findSqlService s with
-        | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
         | Some svc ->
 
             match svc.SqlExpression with
@@ -1184,6 +1209,7 @@ module internal QueryImplementation =
                 if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                 (Utilities.convertTypes res typeof<'T>) |> unbox
             | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+        | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
 
 module Seq =
     /// Execute SQLProvider query to get the sum of elements.

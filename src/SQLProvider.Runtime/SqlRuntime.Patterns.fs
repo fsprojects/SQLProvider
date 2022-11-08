@@ -165,18 +165,26 @@ let rec (|OptionalConvertOrTypeAs|) (e:Expression) =
         e.Arguments.[0]
     | _ -> e
 
-let (|OptionalFSharpOptionValue|) (e:Expression) = 
+let (|OptionalCopyOfStruct|) (e:Expression) = 
     match e.NodeType, e with 
+    | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = "Value" -> inner
+    | _ -> e
+
+let (|CopyOfStruct|_|) (membername:String) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = membername -> Some inner
+    | _ -> None
+
+let (|OptionalFSharpOptionValue|) (e:Expression) = 
+    match e.NodeType, e with
     | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
         match e.Member with 
         | :? PropertyInfo as p when p.Name = "Value" && (e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                                         || e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> e.Expression
+                                                          || e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> e.Expression
         | _ -> upcast e
-    | ExpressionType.Call, ( :? MethodCallExpression as e) ->
-        if e.Method.Name = "Some" && (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1"))
-        then e.Arguments.[0]
-        else upcast e
-    | _ -> e
+    | ExpressionType.Call, OptionalCopyOfStruct ( :? MethodCallExpression as e)
+        when e.Method.Name = "Some" && (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> e.Arguments.[0]
+    | _, OptionalCopyOfStruct n -> n
 
 let (|AndAlso|_|) (e:Expression) =
     match e.NodeType, e with
@@ -200,8 +208,11 @@ let (|OptionIsSome|_|) : Expression -> _ = function
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
         | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+        | MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[e]) when para = "copyOfStruct" && me.Member.Name = "IsNone" -> Some e
+        | CopyOfStruct "IsNone" exp -> Some exp
         | _ -> None
     | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+    | CopyOfStruct "IsSome" exp -> Some exp
     | _ -> None
 
 let (|OptionIsNone|_|) : Expression -> _ = function    
@@ -210,8 +221,10 @@ let (|OptionIsNone|_|) : Expression -> _ = function
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
         | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+        | CopyOfStruct "IsSome" exp -> Some exp
         | _ -> None
     | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+    | CopyOfStruct "IsNone" exp -> Some exp
     | _ -> None
 
 let (|SqlCondOp|_|) (e:Expression) = 

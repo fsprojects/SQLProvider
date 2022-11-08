@@ -38,11 +38,11 @@ module AsyncOperations =
 
     let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
         task {
-            match s with
-            | :? IWithSqlService as svc ->
+            match findSqlService s with
+            | Some svc ->
                 return! executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
-            | c ->
-                return c :> Collections.IEnumerable
+            | None ->
+                return s :> Collections.IEnumerable
         }
 
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =
@@ -91,19 +91,21 @@ module AsyncOperations =
 
     let getCountAsync (s:Linq.IQueryable<'T>) =
         task {
-            match s with
-            | :? IWithSqlService as svc ->
+            match findSqlService s with
+            | Some svc ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
                 if res = box(DBNull.Value) then return 0 else
-                return (Utilities.convertTypes res typeof<int>) |> unbox
-            | c ->
-                return c |> Seq.length
+
+                let t = (Utilities.convertTypes res typeof<int>)
+
+                return t |> unbox
+            | None ->
+                return s |> Seq.length
         }
 
     let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
 
-            match QueryImplementation.findSqlService s with
-            | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+            match findSqlService s with
             | Some svc ->
 
                 match svc.SqlExpression with
@@ -138,6 +140,7 @@ module AsyncOperations =
                         return (Utilities.convertTypes res typeof<'T>) |> unbox
                     }
                 | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
+            | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
 
 open AsyncOperations
 
