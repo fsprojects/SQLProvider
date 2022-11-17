@@ -124,13 +124,12 @@ Target.create "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target.create "Build" (fun _ ->
-    Fake.DotNet.DotNet.exec id "build" "SQLProvider.sln -c Release" |> ignore
+    Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Release}) "SQLProvider.sln"
 )
 
 Target.create "BuildTests" (fun _ ->
-    Fake.DotNet.DotNet.exec id "build" "SQLProvider.Tests.sln -c Release" |> ignore
+    Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Release}) "SQLProvider.Tests.sln"
 )
-
 
 // --------------------------------------------------------------------------------------
 // Set up a PostgreSQL database in the CI pipeline to run tests
@@ -305,8 +304,11 @@ Target.create "PackNuGet" (fun _ ->
                 Symbols = true
                 })
 
-    Branches.tag "" release.NugetVersion
-
+    try 
+        Branches.tag "" release.NugetVersion
+    with
+    | e -> 
+         printfn "Git tag fail: %s" e.Message
     ()
 ) 
 
@@ -412,9 +414,12 @@ Target.create "ReleaseDocs" (fun _ ->
 
     Fake.IO.Shell.deleteDir tempDocsDir
     Fake.IO.Shell.copyRecursive "docs/output" tempDocsDir true |> Fake.Core.Trace.tracefn "%A"
-    Git.Staging.stageAll tempDocsDir
-    Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
-    Branches.push tempDocsDir
+    if not (System.IO.Directory.Exists tempDocsDir) then
+       printfn "GH Pages not found, couldn't release."
+    else
+       Git.Staging.stageAll tempDocsDir
+       Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+       Branches.push tempDocsDir
 )
 
 Target.create "Release" (fun _ ->
@@ -466,4 +471,5 @@ Target.create "BuildDocs" ignore
 "All" 
   ==> "Release"
 
+// Change target via command-line: build -t PackNuGet
 Target.runOrDefaultWithArguments "RunTests"

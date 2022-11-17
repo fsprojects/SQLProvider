@@ -47,7 +47,6 @@
     <ProjectReference Include="..\..\src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fsharp.Core" Version="6.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

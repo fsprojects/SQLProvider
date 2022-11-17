@@ -32,6 +32,6 @@ files
 references
     FSharp.Data.SqlProvider.dll
 dependencies
-    FSharp.Core >= 6.0.5
+    FSharp.Core >= 6.0.7
     Newtonsoft.Json >= 13.0.1
     System.Net.Http >= 4.3.4

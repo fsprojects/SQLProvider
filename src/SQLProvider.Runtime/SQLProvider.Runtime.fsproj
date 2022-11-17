@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <!-- See https://stackoverflow.com/questions/43921992/how-can-i-use-beforebuild-and-afterbuild-targets-with-visual-studio-2017 -->
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
@@ -70,7 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Be explicit about the version of FSharp.Core since we mention it in the manual nuget package spec -->
-    <PackageReference Include="FSharp.Core" Version="6.0.5" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -78,10 +77,12 @@
 	<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
   <Target Name="BeforeBuild">
+  <!--
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Restore" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netcoreapp3.1" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" />
+	-->
   </Target>
   <Target Name="AfterBuild">
   </Target>

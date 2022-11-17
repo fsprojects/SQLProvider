@@ -1,10 +1,10 @@
-version 5.198.0
+version 6.2.1
 source https://api.nuget.org/v3/index.json
 frameworks: net472, netcoreapp3.1, netstandard2.0
 storage: none
 clitool dotnet-mono 0.5.2
 
-nuget FSharp.Core == 6.0.5
+nuget FSharp.Core == 6.0.7
 nuget System.Data.SqlClient
 nuget NETStandard.Library.NETFramework storage: packages 
 nuget System.Data.OleDb
@@ -26,7 +26,7 @@ group Build
     storage: packages
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
-    nuget FSharp.Core == 6.0.5
+    nuget FSharp.Core == 6.0.7
     nuget FSharp.Formatting >= 4.0.0
     nuget Nuget.CommandLine
     nuget RazorEngine
