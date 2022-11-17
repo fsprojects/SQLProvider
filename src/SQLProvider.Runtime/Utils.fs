@@ -379,6 +379,8 @@ module internal Reflection =
     open System.Reflection
     open System.IO
 
+    //let mutable resourceLinkedFiles = Set.empty
+
     let getPlatform (a:Assembly) =
         match a with
         | null -> ""
@@ -390,6 +392,8 @@ module internal Reflection =
 
     let tryLoadAssembly path = 
          try 
+             if not (File.Exists path) then None
+             else
              let loadedAsm = Assembly.LoadFrom(path) 
              if loadedAsm <> null
              then Some(Choice1Of2 loadedAsm)
@@ -470,7 +474,7 @@ module internal Reflection =
 
         let result = 
             allPaths
-            |> List.tryPick (fun p -> 
+            |> List.tryPick (fun p ->
                 match tryLoadAssembly p with
                 | Some(Choice1Of2 ass) -> Some ass
                 | _ -> None
@@ -540,8 +544,13 @@ module internal Reflection =
                             //if r <> null then 
                             //    File.AppendAllText(@"c:\Temp\build.txt", "Binding success " + args.Name + " to " + r.FullName + "\r\n")
                             r
-                        with e when shouldCatch -> 
-                            null
+                        with e ->
+                            if shouldCatch then
+                                null
+                            else
+                                //if x.EndsWith ".dll" && not (resourceLinkedFiles.Contains x) then
+                                //    resourceLinkedFiles <- resourceLinkedFiles.Add(x)
+                                reraise()
                     if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
                     res
                 loadHandler args loadfunc)

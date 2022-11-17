@@ -1,6 +1,5 @@
 (*** hide ***)
-#I "../../bin/net451"
-
+#I "../../bin/net472"
 (**
 SQLProvider
 ===========

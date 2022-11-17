@@ -371,12 +371,17 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                let resp = Path.GetFullPath resolutionPath
+                let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(new System.Reflection.TargetInvocationException(msg, ex))
             | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
                 let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-                let msg = ex.GetBaseException().Message + ", Path: " + (Path.GetFullPath resolutionPath) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                let resp = Path.GetFullPath resolutionPath
+                let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException))
+            | :? System.Reflection.TargetInvocationException as ex when ex.InnerException <> null ->
+                let msg = ex.GetBaseException().Message
+                raise(new System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 

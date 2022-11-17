@@ -1064,7 +1064,8 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 } |> Async.Start
                 types
         try DesignTimeCache.cache.GetOrAdd(arguments, fun args -> addCache args).Value
-        with | _ -> DesignTimeCache.cache.AddOrUpdate(arguments, (fun args -> addCache args), (fun args _ -> addCache args)).Value
+        with
+        | e -> DesignTimeCache.cache.AddOrUpdate(arguments, (fun args -> addCache args), (fun args _ -> addCache args)).Value
     )
 
     do paramSqlType.AddXmlDoc helpText

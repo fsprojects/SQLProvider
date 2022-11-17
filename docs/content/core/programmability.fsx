@@ -1,5 +1,5 @@
 (*** hide ***)
-#I @"../../../bin/net451"
+#I @"../../../bin/netstandard2.0"
 (*** hide ***)
 #r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 (*** hide ***)

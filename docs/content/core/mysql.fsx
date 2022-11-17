@@ -1,7 +1,7 @@
 (*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/net451"
+#I "../../../bin/netstandard2.0"
 (*** hide ***)
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql

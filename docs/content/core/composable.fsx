@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../bin/net451"
+#I "../../../bin/netstandard2.0"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
