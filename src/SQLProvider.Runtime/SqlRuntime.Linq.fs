@@ -488,14 +488,13 @@ module internal QueryImplementation =
                                 { new ExpressionVisitor() with
                                     member __.VisitParameter _ = nexp
                                     member __.VisitLambda x =
-
-                                        let exType = x.GetType()
-                                        if  exType.IsGenericType
-                                            && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition()
-                                            && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
-                                            let visitedBody = base.Visit x.Body
-                                            Expression.Lambda(x.GetType().GenericTypeArguments.[0],visitedBody, pe)
-                                        else
+                                        //let exType = x.GetType()
+                                        //if  exType.IsGenericType
+                                        //    && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition()
+                                        //    && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
+                                        //    let visitedBody = base.Visit x.Body
+                                        //    Expression.Lambda(x.GetType().GenericTypeArguments.[0],visitedBody, pe)
+                                        //else
                                             let visitedBody = base.Visit x.Body
                                             Expression.Lambda(visitedBody, pe) :> Expression
                                     }

@@ -76,7 +76,7 @@ group Docs
 
 group Tests
     source https://api.nuget.org/v3/index.json
-    frameworks: netcoreapp3.1
+    frameworks: netcoreapp3.1, net472
     storage: packages 
 
     nuget MySql.Data < 7.0.0

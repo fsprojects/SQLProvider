@@ -15,7 +15,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(IsWindows)' == 'true'">
     <!-- Your path of full .NET Framework FSC compiler. -->
-    <FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
+    <!--FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath-->
+	<FscToolPath>C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools</FscToolPath>
     <!-- <FscToolPath>C:\Program Files (x86)\Microsoft SDKs\F#\4.1\Framework\v4.0</FscToolPath> -->
     <FscToolExe>fsc.exe</FscToolExe>
   </PropertyGroup>
@@ -41,8 +42,8 @@
     </Reference>
   </ItemGroup>  
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.2" />
-    <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.1.91" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.2" />
+    <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.3.1" />
     <PackageReference Include="System.Console" Version="4.3.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.0" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
@@ -53,20 +54,20 @@
   </ItemGroup>
   <Target Name="CopyLibrariesWin">
     <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Win: -->
-    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.provider.e_sqlite3.netstandard11\lib\netstandard1.1\SQLitePCLRaw.provider.e_sqlite3.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.core\lib\netstandard1.1\SQLitePCLRaw.core.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.v110_xp\runtimes\win7-x86\native\e_sqlite3.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_green.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\SQLitePCLRaw.bundle_green\lib\netcoreapp\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
-    <Exec Command="xcopy ..\..\..\packages\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\SQLitePCLRaw.provider.e_sqlite3\lib\netstandard2.0\SQLitePCLRaw.provider.e_sqlite3.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\SQLitePCLRaw.core\lib\netstandard2.0\SQLitePCLRaw.core.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\SQLitePCLRaw.lib.e_sqlite3\runtimes\win-x86\native\e_sqlite3.dll temp\ /y" />
+    <!--Exec Command="xcopy ..\..\..\packages\tests\SQLitePCLRaw.bundle_green\lib\netstandard2.0\SQLitePCLRaw.batteries_green.dll temp\ /y" /-->
+    <Exec Command="xcopy ..\..\..\packages\tests\SQLitePCLRaw.bundle_green\lib\netstandard2.0\SQLitePCLRaw.batteries_v2.dll temp\ /y" />
+    <Exec Command="xcopy ..\..\..\packages\tests\Microsoft.Data.Sqlite.Core\lib\netstandard2.0\Microsoft.Data.Sqlite.dll temp\ /y" />
   </Target>
   <Target Name="CopyLibrariesNonWin">
     <Exec Command="mkdir -p temp" />
-    <Exec Condition="'$(IsOSX)' == 'true'" Command="cp ../../../packages/SQLitePCLRaw.lib.e_sqlite3.osx/runtimes/osx-x64/native/libe_sqlite3.dylib temp/ " />
+    <Exec Condition="'$(IsOSX)' == 'true'" Command="cp ../../../packages/tests/SQLitePCLRaw.lib.e_sqlite3.osx/runtimes/osx-x64/native/libe_sqlite3.dylib temp/ " />
     <!-- Note also the physical architecture (x86/x64/arm) of SQLitePCLRaw.lib.e_sqlite3 Linux: -->
-    <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../../packages/SQLitePCLRaw.lib.e_sqlite3.linux/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
-    <Exec Command="cp ../../../packages/SQLitePCLRaw.bundle_green/lib/netstandard1.1/SQLitePCLRaw.batteries_green.dll temp/ " />
-    <Exec Command="cp ../../../packages/tests/SQLitePCLRaw.core/lib/net45/SQLitePCLRaw.core.dll temp/ " />
+    <Exec Condition="'$(IsLinux)' == 'true'" Command="cp ../../../tests/packages/SQLitePCLRaw.lib.e_sqlite3/runtimes/linux-x86/native/libe_sqlite3.so temp/ " />
+    <Exec Command="cp ../../../packages/tests/SQLitePCLRaw.bundle_green/lib/netstandard1.1/SQLitePCLRaw.batteries_green.dll temp/ " />
+    <Exec Command="cp ../../../packages/tests/SQLitePCLRaw.core/lib/netstandard2.0/SQLitePCLRaw.core.dll temp/ " />
     
     <Exec Command="cp ../../../packages/tests/Microsoft.Data.Sqlite.Core.Backport/lib/net45/Microsoft.Data.Sqlite.dll temp/ " />
   </Target>

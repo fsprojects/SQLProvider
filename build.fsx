@@ -128,7 +128,9 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "BuildTests" (fun _ ->
-    Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Release}) "SQLProvider.Tests.sln"
+    // Todo: Change when command-line NuGet works (6.4.0 hopefully)
+    Fake.DotNet.DotNet.exec id "build" "SQLProvider.Tests.sln -c Debug  --no-dependencies" |> ignore
+    //Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Debug}) "SQLProvider.Tests.sln"
 )
 
 // --------------------------------------------------------------------------------------
@@ -247,6 +249,8 @@ Target.create "RunTests" (fun _ ->
     Fake.DotNet.DotNet.test (fun p ->
         { p with
             Configuration = Fake.DotNet.DotNet.BuildConfiguration.Debug
+            NoBuild = true
+            NoRestore = true
             Common =
                 p.Common
                 |> Fake.DotNet.DotNet.Options.withAdditionalArgs [||]

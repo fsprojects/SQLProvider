@@ -195,10 +195,16 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         Utilities.genericAliasNotation aliasSprint col
 
     let getSchema name conn =
-        if sqliteLibrary <> SQLiteLibrary.MicrosoftDataSqlite then
+        match sqliteLibrary with
+        | SQLiteLibrary.MicrosoftDataSqlite -> customGetSchema name conn
+        | SQLiteLibrary.AutoSelect ->
+#if NETSTANDARD
+            customGetSchema name conn
+#else
             getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
-        else
-            customGetSchema name conn // GetSchema Not supported by Microsoft.Data.SQLite
+#endif
+        | _ ->
+            getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
 
     let createTypeMappings con =
         let dt = getSchema "DataTypes" con

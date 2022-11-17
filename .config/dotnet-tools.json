@@ -43,6 +43,12 @@
       "commands": [
         "dotnet-serve"
       ]
+    },
+    "fsdocs-tool": {
+      "version": "16.1.1",
+      "commands": [
+        "fsdocs"
+      ]
     }
   }
 }

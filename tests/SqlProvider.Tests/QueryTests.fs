@@ -354,8 +354,8 @@ let ``simplest select into where``() =
         query {
             for cust in dc.Main.Customers do
             select (cust.City + "te") into y
-            select (y+"st") into y
-            where (y <> "Helsinktest")
+            select (y+"st") into y2
+            where (y2 <> "Helsinktest")
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
