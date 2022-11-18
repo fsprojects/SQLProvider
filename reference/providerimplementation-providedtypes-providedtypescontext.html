@@ -1,326 +1,1035 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>ProvidedTypesContext - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>ProvidedTypesContext (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>ProvidedTypesContext</h1>
-<p>
-
-    <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
-            <span>
-            Attributes: <br />
-[&lt;Class&gt;]<br />
-            
-        </span>
-</p>
-<div class="xmldoc">
-<p>Represents the context for which code is to be generated. Normally you should not need to use this directly.</p>
-
-</div>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '711', 711)" onmouseover="showTip(event, '711', 711)">
-            x.AddSourceAssembly(arg1)
-          </code>
-          <div class="tip" id="711">
-            <strong>Signature:</strong> Assembly -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9480-9480" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add an assembly to the set of design-time assemblies available to use as a basis for authoring provided types</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '712', 712)" onmouseover="showTip(event, '712', 712)">
-            x.ConvertSourceExprToTarget(arg1)
-          </code>
-          <div class="tip" id="712">
-            <strong>Signature:</strong> Expr -&gt; Expr<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9443-9443" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Returns a quotation rebuilt with resepct to the types from the target referenced assemblies.  Normally
-this method should not be used directly when authoring a type provider.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '713', 713)" onmouseover="showTip(event, '713', 713)">
-            x.ConvertSourceTypeToTarget(arg1)
-          </code>
-          <div class="tip" id="713">
-            <strong>Signature:</strong> Type -&gt; Type<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9439-9439" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Returns a type from the referenced assemblies that corresponds to the given design-time type.  Normally
-this method should not be used directly when authoring a type provider.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '714', 714)" onmouseover="showTip(event, '714', 714)">
-            x.ConvertTargetTypeToSource(arg1)
-          </code>
-          <div class="tip" id="714">
-            <strong>Signature:</strong> Type -&gt; Type<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9441-9441" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Returns the design-time type that corresponds to the given type from the target referenced assemblies.  Normally
-this method should not be used directly when authoring a type provider.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '715', 715)" onmouseover="showTip(event, '715', 715)">
-            x.FSharpCoreAssemblyVersion
-          </code>
-          <div class="tip" id="715">
-            <strong>Signature:</strong> Version<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9463-9463" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Try to get the version of FSharp.Core referenced. May raise an exception if FSharp.Core has not been correctly resolved</p>
-
-
-              <p>CompiledName: <code>get_FSharpCoreAssemblyVersion</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '716', 716)" onmouseover="showTip(event, '716', 716)">
-            x.GetSourceAssemblies()
-          </code>
-          <div class="tip" id="716">
-            <strong>Signature:</strong> unit -&gt; Assembly []<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9461-9461" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Get the set of design-time assemblies available to use as a basis for authoring provided types.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '717', 717)" onmouseover="showTip(event, '717', 717)">
-            x.GetTargetAssemblies()
-          </code>
-          <div class="tip" id="717">
-            <strong>Signature:</strong> unit -&gt; Assembly []<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9459-9459" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Get the resolved referenced assemblies determined by the type provider configuration</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '718', 718)" onmouseover="showTip(event, '718', 718)">
-            x.ReadRelatedAssembly(bytes)
-          </code>
-          <div class="tip" id="718">
-            <strong>Signature:</strong> (bytes:byte []) -&gt; Assembly<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9470-9470" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Read the assembly related to this context</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '719', 719)" onmouseover="showTip(event, '719', 719)">
-            x.ReadRelatedAssembly(fileName)
-          </code>
-          <div class="tip" id="719">
-            <strong>Signature:</strong> fileName:string -&gt; Assembly<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9465-9465" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Read the assembly related to this context</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '720', 720)" onmouseover="showTip(event, '720', 720)">
-            x.ReferencedAssemblyPaths
-          </code>
-          <div class="tip" id="720">
-            <strong>Signature:</strong> string list<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9457-9457" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Get the list of referenced assemblies determined by the type provider configuration</p>
-
-
-              <p>CompiledName: <code>get_ReferencedAssemblyPaths</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '721', 721)" onmouseover="showTip(event, '721', 721)">
-            x.TryBindAssemblyNameToTarget(aref)
-          </code>
-          <div class="tip" id="721">
-            <strong>Signature:</strong> aref:AssemblyName -&gt; Choice&lt;Assembly,exn&gt;<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9451-9451" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Try to find the given target assembly in the context</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '722', 722)" onmouseover="showTip(event, '722', 722)">
-            x.TryBindSimpleAssemblyNameToTarget(...)
-          </code>
-          <div class="tip" id="722">
-            <strong>Signature:</strong> assemblyName:string -&gt; Choice&lt;Assembly,exn&gt;<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9453-9453" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Try to find the given target assembly in the context</p>
-
-
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    ProvidedTypesContext Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes.html">
+        ProviderImplementation.ProvidedTypes
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '740', 740)" onmouseover="showTip(event, '740', 740)">
+                <p>
+                  <a id="AddSourceAssembly">
+                    <a href="#AddSourceAssembly">
+                      <code><span>this.AddSourceAssembly</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="740">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddSourceAssembly</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.AddSourceAssembly`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.AddSourceAssembly\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9492-9492" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add an assembly to the set of design-time assemblies available to use as a basis for authoring provided types
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '741', 741)" onmouseover="showTip(event, '741', 741)">
+                <p>
+                  <a id="ConvertSourceExprToTarget">
+                    <a href="#ConvertSourceExprToTarget">
+                      <code><span>this.ConvertSourceExprToTarget</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="741">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ConvertSourceExprToTarget</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertSourceExprToTarget`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertSourceExprToTarget\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9455-9455" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Returns a quotation rebuilt with resepct to the types from the target referenced assemblies.  Normally
+ this method should not be used directly when authoring a type provider.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '742', 742)" onmouseover="showTip(event, '742', 742)">
+                <p>
+                  <a id="ConvertSourceTypeToTarget">
+                    <a href="#ConvertSourceTypeToTarget">
+                      <code><span>this.ConvertSourceTypeToTarget</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="742">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ConvertSourceTypeToTarget</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertSourceTypeToTarget`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertSourceTypeToTarget\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9451-9451" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Returns a type from the referenced assemblies that corresponds to the given design-time type.  Normally
+ this method should not be used directly when authoring a type provider.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '743', 743)" onmouseover="showTip(event, '743', 743)">
+                <p>
+                  <a id="ConvertTargetTypeToSource">
+                    <a href="#ConvertTargetTypeToSource">
+                      <code><span>this.ConvertTargetTypeToSource</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="743">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ConvertTargetTypeToSource</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertTargetTypeToSource`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ConvertTargetTypeToSource\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9453-9453" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Returns the design-time type that corresponds to the given type from the target referenced assemblies.  Normally
+ this method should not be used directly when authoring a type provider.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '744', 744)" onmouseover="showTip(event, '744', 744)">
+                <p>
+                  <a id="FSharpCoreAssemblyVersion">
+                    <a href="#FSharpCoreAssemblyVersion">
+                      <code><span>this.FSharpCoreAssemblyVersion</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="744">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.FSharpCoreAssemblyVersion</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.version">Version</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.FSharpCoreAssemblyVersion`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.FSharpCoreAssemblyVersion\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9475-9475" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Try to get the version of FSharp.Core referenced. May raise an exception if FSharp.Core has not been correctly resolved
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.version">Version</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '745', 745)" onmouseover="showTip(event, '745', 745)">
+                <p>
+                  <a id="GetSourceAssemblies">
+                    <a href="#GetSourceAssemblies">
+                      <code><span>this.GetSourceAssemblies</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="745">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetSourceAssemblies</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.GetSourceAssemblies`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.GetSourceAssemblies\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9473-9473" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Get the set of design-time assemblies available to use as a basis for authoring provided types.
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '746', 746)" onmouseover="showTip(event, '746', 746)">
+                <p>
+                  <a id="GetTargetAssemblies">
+                    <a href="#GetTargetAssemblies">
+                      <code><span>this.GetTargetAssemblies</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="746">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetTargetAssemblies</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.GetTargetAssemblies`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.GetTargetAssemblies\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9471-9471" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Get the resolved referenced assemblies determined by the type provider configuration
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '747', 747)" onmouseover="showTip(event, '747', 747)">
+                <p>
+                  <a id="ReadRelatedAssembly">
+                    <a href="#ReadRelatedAssembly">
+                      <code><span>this.ReadRelatedAssembly</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="747">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadRelatedAssembly</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        bytes
+                      </b>
+                      :
+                      <code><span>byte[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReadRelatedAssembly`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReadRelatedAssembly\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9482-9482" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Read the assembly related to this context
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  bytes
+                </span>
+                :
+                <code><span>byte[]</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '748', 748)" onmouseover="showTip(event, '748', 748)">
+                <p>
+                  <a id="ReadRelatedAssembly">
+                    <a href="#ReadRelatedAssembly">
+                      <code><span>this.ReadRelatedAssembly</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="748">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadRelatedAssembly</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        fileName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReadRelatedAssembly`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReadRelatedAssembly\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9477-9477" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Read the assembly related to this context
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fileName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '749', 749)" onmouseover="showTip(event, '749', 749)">
+                <p>
+                  <a id="ReferencedAssemblyPaths">
+                    <a href="#ReferencedAssemblyPaths">
+                      <code><span>this.ReferencedAssemblyPaths</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="749">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReferencedAssemblyPaths</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReferencedAssemblyPaths`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.ReferencedAssemblyPaths\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9469-9469" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Get the list of referenced assemblies determined by the type provider configuration
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>string&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '750', 750)" onmouseover="showTip(event, '750', 750)">
+                <p>
+                  <a id="TryBindAssemblyNameToTarget">
+                    <a href="#TryBindAssemblyNameToTarget">
+                      <code><span>this.TryBindAssemblyNameToTarget</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="750">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TryBindAssemblyNameToTarget</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        aref
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assemblyname">AssemblyName</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpchoice-2">Choice</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>,&#32;exn</span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.TryBindAssemblyNameToTarget`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.TryBindAssemblyNameToTarget\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9463-9463" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Try to find the given target assembly in the context
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  aref
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assemblyname">AssemblyName</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpchoice-2">Choice</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>,&#32;exn</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '751', 751)" onmouseover="showTip(event, '751', 751)">
+                <p>
+                  <a id="TryBindSimpleAssemblyNameToTarget">
+                    <a href="#TryBindSimpleAssemblyNameToTarget">
+                      <code><span>this.TryBindSimpleAssemblyNameToTarget</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="751">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TryBindSimpleAssemblyNameToTarget</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        assemblyName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpchoice-2">Choice</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>,&#32;exn</span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.TryBindSimpleAssemblyNameToTarget`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedTypesContext.TryBindSimpleAssemblyNameToTarget\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L9465-9465" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Try to find the given target assembly in the context
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  assemblyName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpchoice-2">Choice</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>,&#32;exn</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

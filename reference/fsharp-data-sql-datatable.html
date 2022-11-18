@@ -1,258 +1,1050 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>DataTable - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>DataTable (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>DataTable</h1>
-<p>
-  <span>Namespace: FSharp.Data.Sql</span><br />
-  </p>
-<div class="xmldoc">
-</div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '7', 7)" onmouseover="showTip(event, '7', 7)">
-            cache cache f dt
-          </code>
-          <div class="tip" id="7">
-            <strong>Signature:</strong> cache:IDictionary&lt;string,&#39;a&gt; -&gt; f:(DataRow -&gt; (string * &#39;a) option) -&gt; dt:DataTable -&gt; &#39;a list<br />
-                          <strong>Type parameters:</strong> 'a                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L25-25" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '8', 8)" onmouseover="showTip(event, '8', 8)">
-            choose f dt
-          </code>
-          <div class="tip" id="8">
-            <strong>Signature:</strong> f:(DataRow -&gt; DataRow option) -&gt; dt:DataTable -&gt; DataTable<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L43-43" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '9', 9)" onmouseover="showTip(event, '9', 9)">
-            filter f dt
-          </code>
-          <div class="tip" id="9">
-            <strong>Signature:</strong> f:(DataRow -&gt; bool) -&gt; dt:DataTable -&gt; DataTable<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L52-52" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '10', 10)" onmouseover="showTip(event, '10', 10)">
-            groupBy f dt
-          </code>
-          <div class="tip" id="10">
-            <strong>Signature:</strong> f:(DataRow -&gt; &#39;a * &#39;b) -&gt; dt:DataTable -&gt; seq&lt;&#39;a * seq&lt;&#39;b&gt;&gt;<br />
-                          <strong>Type parameters:</strong> 'a, 'b                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L20-20" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '11', 11)" onmouseover="showTip(event, '11', 11)">
-            headers(dt)
-          </code>
-          <div class="tip" id="11">
-            <strong>Signature:</strong> dt:DataTable -&gt; string list<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L59-59" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
-            iter f dt
-          </code>
-          <div class="tip" id="12">
-            <strong>Signature:</strong> f:(obj [] -&gt; unit) -&gt; dt:DataTable -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L14-14" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
-            map f dt
-          </code>
-          <div class="tip" id="13">
-            <strong>Signature:</strong> f:(DataRow -&gt; &#39;a) -&gt; dt:DataTable -&gt; &#39;a list<br />
-                          <strong>Type parameters:</strong> 'a                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L8-8" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '14', 14)" onmouseover="showTip(event, '14', 14)">
-            mapChoose f dt
-          </code>
-          <div class="tip" id="14">
-            <strong>Signature:</strong> f:(DataRow -&gt; &#39;a option) -&gt; dt:DataTable -&gt; &#39;a list<br />
-                          <strong>Type parameters:</strong> 'a                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L32-32" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '15', 15)" onmouseover="showTip(event, '15', 15)">
-            printDataTable(dt)
-          </code>
-          <div class="tip" id="15">
-            <strong>Signature:</strong> dt:DataTable -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L65-65" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '16', 16)" onmouseover="showTip(event, '16', 16)">
-            toList(dt)
-          </code>
-          <div class="tip" id="16">
-            <strong>Signature:</strong> dt:DataTable -&gt; DataRow list<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/DataTable.fs#L18-18" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    DataTable Module
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql.html">
+        FSharp.Data.Sql
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div>
+    <h3>
+      Functions and values
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Function or value
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9', 9)" onmouseover="showTip(event, '9', 9)">
+                <p>
+                  <a id="cache">
+                    <a href="#cache">
+                      <code><span>cache&#32;<span>cache&#32;f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>cache&#32;<span>cache&#32;f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        cache
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;'a</span>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><span>(<span>string&#32;*&#32;'a</span>)</span>&#32;option</span></span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>'a&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.DataTable.cache``1```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.cache``1\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  cache
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;'a</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><span>(<span>string&#32;*&#32;'a</span>)</span>&#32;option</span></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>'a&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '10', 10)" onmouseover="showTip(event, '10', 10)">
+                <p>
+                  <a id="choose">
+                    <a href="#choose">
+                      <code><span>choose&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="10">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>choose&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;option</span></span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.choose`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.choose\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L43-43" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;option</span></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '11', 11)" onmouseover="showTip(event, '11', 11)">
+                <p>
+                  <a id="filter">
+                    <a href="#filter">
+                      <code><span>filter&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="11">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>filter&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;bool</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.filter`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.filter\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;bool</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
+                <p>
+                  <a id="groupBy">
+                    <a href="#groupBy">
+                      <code><span>groupBy&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="12">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>groupBy&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;*&#32;'b</span></span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>seq&lt;<span>'a&#32;*&#32;<span>seq&lt;'b&gt;</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.DataTable.groupBy``2```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.groupBy``2\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;*&#32;'b</span></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>seq&lt;<span>'a&#32;*&#32;<span>seq&lt;'b&gt;</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
+                <p>
+                  <a id="headers">
+                    <a href="#headers">
+                      <code><span>headers&#32;<span>dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="13">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>headers&#32;<span>dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.headers`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.headers\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L59-59" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>string&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '14', 14)" onmouseover="showTip(event, '14', 14)">
+                <p>
+                  <a id="iter">
+                    <a href="#iter">
+                      <code><span>iter&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="14">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>iter&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><span>obj[]</span>&#32;->&#32;unit</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.iter`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.iter\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L14-14" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><span>obj[]</span>&#32;->&#32;unit</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '15', 15)" onmouseover="showTip(event, '15', 15)">
+                <p>
+                  <a id="map">
+                    <a href="#map">
+                      <code><span>map&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="15">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>map&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;'a</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>'a&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.DataTable.map``1```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.map``1\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L8-8" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;'a</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>'a&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '16', 16)" onmouseover="showTip(event, '16', 16)">
+                <p>
+                  <a id="mapChoose">
+                    <a href="#mapChoose">
+                      <code><span>mapChoose&#32;<span>f&#32;dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="16">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>mapChoose&#32;<span>f&#32;dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        f
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;option</span></span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>'a&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.DataTable.mapChoose``1```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.mapChoose``1\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  f
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;option</span></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>'a&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '17', 17)" onmouseover="showTip(event, '17', 17)">
+                <p>
+                  <a id="printDataTable">
+                    <a href="#printDataTable">
+                      <code><span>printDataTable&#32;<span>dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="17">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>printDataTable&#32;<span>dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.printDataTable`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.printDataTable\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '18', 18)" onmouseover="showTip(event, '18', 18)">
+                <p>
+                  <a id="toList">
+                    <a href="#toList">
+                      <code><span>toList&#32;<span>dt</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="18">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>toList&#32;<span>dt</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dt
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DataTable.toList`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DataTable.toList\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/DataTable.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dt
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

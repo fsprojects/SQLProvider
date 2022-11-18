@@ -1,241 +1,936 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>QuotationHelpers - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>QuotationHelpers (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>QuotationHelpers</h1>
-<p>
-  <span>Namespace: FSharp.Data.Sql</span><br />
-  </p>
-<div class="xmldoc">
-</div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '26', 26)" onmouseover="showTip(event, '26', 26)">
-            arrayExpr(instance)
-          </code>
-          <div class="tip" id="26">
-            <strong>Signature:</strong> instance:&#39;a array -&gt; Type * Expr<br />
-                          <strong>Type parameters:</strong> 'a                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L34-34" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '27', 27)" onmouseover="showTip(event, '27', 27)">
-            coerceValues fieldTypeLookup fields
-          </code>
-          <div class="tip" id="27">
-            <strong>Signature:</strong> fieldTypeLookup:(int -&gt; Type) -&gt; fields:obj [] -&gt; Expr list<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L9-9" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '28', 28)" onmouseover="showTip(event, '28', 28)">
-            createLetExpr varType instance body args
-          </code>
-          <div class="tip" id="28">
-            <strong>Signature:</strong> varType:Type -&gt; instance:Expr -&gt; body:(&#39;?9591 -&gt; Expr -&gt; &#39;?9592) -&gt; args:&#39;?9591 -&gt; Expr<br />
-                          <strong>Type parameters:</strong> '?9591, '?9592                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L40-40" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '29', 29)" onmouseover="showTip(event, '29', 29)">
-            quoteArray(instance)
-          </code>
-          <div class="tip" id="29">
-            <strong>Signature:</strong> instance:&#39;?9602 array -&gt; (&#39;?9603 -&gt; Expr -&gt; &#39;?9604) -&gt; &#39;?9603 -&gt; Expr<br />
-                          <strong>Type parameters:</strong> '?9602, '?9603, '?9604                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L46-46" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
-            quoteRecord(instance)
-          </code>
-          <div class="tip" id="30">
-            <strong>Signature:</strong> instance:&#39;a -&gt; (&#39;b -&gt; Expr -&gt; &#39;c) -&gt; &#39;b -&gt; Expr<br />
-                          <strong>Type parameters:</strong> 'a, 'b, 'c                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L45-45" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
-            quoteUnion(instance)
-          </code>
-          <div class="tip" id="31">
-            <strong>Signature:</strong> instance:&#39;?9594 -&gt; (&#39;?9595 -&gt; Expr -&gt; &#39;?9596) -&gt; &#39;?9595 -&gt; Expr<br />
-                          <strong>Type parameters:</strong> '?9594, '?9595, '?9596                      </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L44-44" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
-            recordExpr(instance)
-          </code>
-          <div class="tip" id="32">
-            <strong>Signature:</strong> instance:obj -&gt; Type * Expr<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L27-27" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
-            simpleTypeExpr(instance)
-          </code>
-          <div class="tip" id="33">
-            <strong>Signature:</strong> instance:obj -&gt; Expr<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L19-19" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '34', 34)" onmouseover="showTip(event, '34', 34)">
-            unionExpr(instance)
-          </code>
-          <div class="tip" id="34">
-            <strong>Signature:</strong> instance:obj -&gt; Type * Expr<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/QuotationHelpers.fs#L21-21" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    QuotationHelpers Module
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql.html">
+        FSharp.Data.Sql
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div>
+    <h3>
+      Functions and values
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Function or value
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '28', 28)" onmouseover="showTip(event, '28', 28)">
+                <p>
+                  <a id="arrayExpr">
+                    <a href="#arrayExpr">
+                      <code><span>arrayExpr&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="28">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>arrayExpr&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code><span>'a&#32;array</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.QuotationHelpers.arrayExpr``1```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.arrayExpr``1\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code><span>'a&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '29', 29)" onmouseover="showTip(event, '29', 29)">
+                <p>
+                  <a id="coerceValues">
+                    <a href="#coerceValues">
+                      <code><span>coerceValues&#32;<span>fieldTypeLookup&#32;fields</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="29">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>coerceValues&#32;<span>fieldTypeLookup&#32;fields</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        fieldTypeLookup
+                      </b>
+                      :
+                      <code><span>int&#32;->&#32;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fields
+                      </b>
+                      :
+                      <code><span>obj[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.QuotationHelpers.coerceValues`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.coerceValues\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fieldTypeLookup
+                </span>
+                :
+                <code><span>int&#32;->&#32;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fields
+                </span>
+                :
+                <code><span>obj[]</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
+                <p>
+                  <a id="createLetExpr">
+                    <a href="#createLetExpr">
+                      <code><span>createLetExpr&#32;<span>varType&#32;instance&#32;body&#32;args</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="30">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createLetExpr&#32;<span>varType&#32;instance&#32;body&#32;args</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        varType
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        body
+                      </b>
+                      :
+                      <code><span>'a&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'b</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        args
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.QuotationHelpers.createLetExpr``2```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.createLetExpr``2\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L40-40" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  varType
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  body
+                </span>
+                :
+                <code><span>'a&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'b</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  args
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
+                <p>
+                  <a id="quoteArray">
+                    <a href="#quoteArray">
+                      <code><span>quoteArray&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="31">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>quoteArray&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code><span>'a&#32;array</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.QuotationHelpers.quoteArray``3```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.quoteArray``3\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L46-46" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code><span>'a&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
+                <p>
+                  <a id="quoteRecord">
+                    <a href="#quoteRecord">
+                      <code><span>quoteRecord&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="32">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>quoteRecord&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.QuotationHelpers.quoteRecord``3```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.quoteRecord``3\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L45-45" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
+                <p>
+                  <a id="quoteUnion">
+                    <a href="#quoteUnion">
+                      <code><span>quoteUnion&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="33">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>quoteUnion&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.QuotationHelpers.quoteUnion``3```')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.quoteUnion``3\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L44-44" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><span>(<span>'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;->&#32;'c</span>)</span>&#32;->&#32;'b&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '34', 34)" onmouseover="showTip(event, '34', 34)">
+                <p>
+                  <a id="recordExpr">
+                    <a href="#recordExpr">
+                      <code><span>recordExpr&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="34">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>recordExpr&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.QuotationHelpers.recordExpr`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.recordExpr\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '35', 35)" onmouseover="showTip(event, '35', 35)">
+                <p>
+                  <a id="simpleTypeExpr">
+                    <a href="#simpleTypeExpr">
+                      <code><span>simpleTypeExpr&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="35">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>simpleTypeExpr&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.QuotationHelpers.simpleTypeExpr`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.simpleTypeExpr\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '36', 36)" onmouseover="showTip(event, '36', 36)">
+                <p>
+                  <a id="unionExpr">
+                    <a href="#unionExpr">
+                      <code><span>unionExpr&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="36">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>unionExpr&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.QuotationHelpers.unionExpr`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.QuotationHelpers.unionExpr\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/QuotationHelpers.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  instance
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

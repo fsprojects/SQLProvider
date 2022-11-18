@@ -1,335 +1,619 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>SqlDataProvider - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>SqlDataProvider (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>SqlDataProvider</h1>
-<p>
-
-    <span>Namespace: FSharp.Data.Sql</span><br />
-    </p>
-<div class="xmldoc">
-<p>Typed representation of a database</p>
-
-</div>
-  <h3>Static parameters</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Static parameters</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '344', 344)" onmouseover="showTip(event, '344', 344)">
-            DatabaseVendor
-          </code>
-          <div class="tip" id="344">
-            <strong>Signature:</strong> DatabaseProviderTypes (optional, default = MSSQLSERVER)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The target database vendor</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '345', 345)" onmouseover="showTip(event, '345', 345)">
-            ConnectionString
-          </code>
-          <div class="tip" id="345">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The connection string for the SQL database</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '346', 346)" onmouseover="showTip(event, '346', 346)">
-            ConnectionStringName
-          </code>
-          <div class="tip" id="346">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The connection string name to select from a configuration file</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '347', 347)" onmouseover="showTip(event, '347', 347)">
-            ResolutionPath
-          </code>
-          <div class="tip" id="347">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '348', 348)" onmouseover="showTip(event, '348', 348)">
-            IndividualsAmount
-          </code>
-          <div class="tip" id="348">
-            <strong>Signature:</strong> int (optional, default = 1000)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The amount of sample entities to project into the type system for each SQL entity type. Default 1000.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '349', 349)" onmouseover="showTip(event, '349', 349)">
-            UseOptionTypes
-          </code>
-          <div class="tip" id="349">
-            <strong>Signature:</strong> bool (optional, default = false)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>If FSharp.Data.Sql.Common.NullableColumnType.OPTION, F# option types will be used in place of nullable database columns.  If NO_OPTION, you will always receive the default value of the column's type even if it is null in the database.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '350', 350)" onmouseover="showTip(event, '350', 350)">
-            Owner
-          </code>
-          <div class="tip" id="350">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '351', 351)" onmouseover="showTip(event, '351', 351)">
-            CaseSensitivityChange
-          </code>
-          <div class="tip" id="351">
-            <strong>Signature:</strong> CaseSensitivityChange (optional, default = ORIGINAL)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Should we do ToUpper or ToLower when generating table names?</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '352', 352)" onmouseover="showTip(event, '352', 352)">
-            TableNames
-          </code>
-          <div class="tip" id="352">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '353', 353)" onmouseover="showTip(event, '353', 353)">
-            ContextSchemaPath
-          </code>
-          <div class="tip" id="353">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '354', 354)" onmouseover="showTip(event, '354', 354)">
-            OdbcQuote
-          </code>
-          <div class="tip" id="354">
-            <strong>Signature:</strong> OdbcQuoteCharacter (optional, default = DEFAULT_QUOTE)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Odbc quote characters: Quote characters for the table and column names: <a href="fsharp-data-sql-columnschema-alias.html" title="alias"><code>alias</code></a>, <a href="fsharp-data-sql-columnschema-alias.html" title="alias">alias</a></p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '355', 355)" onmouseover="showTip(event, '355', 355)">
-            SQLiteLibrary
-          </code>
-          <div class="tip" id="355">
-            <strong>Signature:</strong> SQLiteLibrary (optional, default = AutoSelect)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '356', 356)" onmouseover="showTip(event, '356', 356)">
-            SsdtPath
-          </code>
-          <div class="tip" id="356">
-            <strong>Signature:</strong> string (optional, default = &quot;&quot;)<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/docs/tools/startup#L1-1" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>A path to an SSDT .dacpac file.'</p>
-
-
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
-        
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    SqlDataProvider Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql.html">
+        FSharp.Data.Sql
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      This is a provided type definition
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        Typed representation of a database
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Static parameters
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static parameters
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '372', 372)" onmouseover="showTip(event, '372', 372)">
+                <p>
+                  <a id="CaseSensitivityChange">
+                    <a href="#CaseSensitivityChange">
+                      <code><span>CaseSensitivityChange:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>(optional,default=ORIGINAL)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="372">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CaseSensitivityChange:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>(optional,default=ORIGINAL)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Should we do ToUpper or ToLower when generating table names?
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '373', 373)" onmouseover="showTip(event, '373', 373)">
+                <p>
+                  <a id="ConnectionString">
+                    <a href="#ConnectionString">
+                      <code><span>ConnectionString:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="373">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ConnectionString:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                The connection string for the SQL database
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '374', 374)" onmouseover="showTip(event, '374', 374)">
+                <p>
+                  <a id="ConnectionStringName">
+                    <a href="#ConnectionStringName">
+                      <code><span>ConnectionStringName:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="374">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ConnectionStringName:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                The connection string name to select from a configuration file
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '375', 375)" onmouseover="showTip(event, '375', 375)">
+                <p>
+                  <a id="ContextSchemaPath">
+                    <a href="#ContextSchemaPath">
+                      <code><span>ContextSchemaPath:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="375">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ContextSchemaPath:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '376', 376)" onmouseover="showTip(event, '376', 376)">
+                <p>
+                  <a id="DatabaseVendor">
+                    <a href="#DatabaseVendor">
+                      <code><span>DatabaseVendor:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>(optional,default=MSSQLSERVER)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="376">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DatabaseVendor:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>(optional,default=MSSQLSERVER)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                 The target database vendor
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '377', 377)" onmouseover="showTip(event, '377', 377)">
+                <p>
+                  <a id="IndividualsAmount">
+                    <a href="#IndividualsAmount">
+                      <code><span>IndividualsAmount:&#32;int(optional,default=1000)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="377">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>IndividualsAmount:&#32;int(optional,default=1000)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                The amount of sample entities to project into the type system for each SQL entity type. Default 1000.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '378', 378)" onmouseover="showTip(event, '378', 378)">
+                <p>
+                  <a id="OdbcQuote">
+                    <a href="#OdbcQuote">
+                      <code><span>OdbcQuote:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>(optional,default=DEFAULT_QUOTE)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="378">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>OdbcQuote:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>(optional,default=DEFAULT_QUOTE)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '379', 379)" onmouseover="showTip(event, '379', 379)">
+                <p>
+                  <a id="Owner">
+                    <a href="#Owner">
+                      <code><span>Owner:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="379">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Owner:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '380', 380)" onmouseover="showTip(event, '380', 380)">
+                <p>
+                  <a id="ResolutionPath">
+                    <a href="#ResolutionPath">
+                      <code><span>ResolutionPath:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="380">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ResolutionPath:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '381', 381)" onmouseover="showTip(event, '381', 381)">
+                <p>
+                  <a id="SQLiteLibrary">
+                    <a href="#SQLiteLibrary">
+                      <code><span>SQLiteLibrary:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>(optional,default=AutoSelect)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="381">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SQLiteLibrary:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>(optional,default=AutoSelect)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '382', 382)" onmouseover="showTip(event, '382', 382)">
+                <p>
+                  <a id="SsdtPath">
+                    <a href="#SsdtPath">
+                      <code><span>SsdtPath:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="382">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SsdtPath:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                A path to an SSDT .dacpac file.'
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '383', 383)" onmouseover="showTip(event, '383', 383)">
+                <p>
+                  <a id="TableNames">
+                    <a href="#TableNames">
+                      <code><span>TableNames:&#32;string(optional,default="")</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="383">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TableNames:&#32;string(optional,default="")</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '384', 384)" onmouseover="showTip(event, '384', 384)">
+                <p>
+                  <a id="UseOptionTypes">
+                    <a href="#UseOptionTypes">
+                      <code><span>UseOptionTypes:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>(optional,default=NO_OPTION)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="384">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>UseOptionTypes:&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>(optional,default=NO_OPTION)</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/startup#L1-1" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column's type even if it is null in the database.
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

@@ -1,280 +1,933 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>ProvidedField - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>ProvidedField (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>ProvidedField</h1>
-<p>
-
-    <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
-            <span>
-            Attributes: <br />
-[&lt;Class&gt;]<br />
-            
-        </span>
-</p>
-<div class="xmldoc">
-<p>Represents an erased provided field.</p>
-
-</div>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '632', 632)" onmouseover="showTip(event, '632', 632)">
-            new(fieldName, fieldType)
-          </code>
-          <div class="tip" id="632">
-            <strong>Signature:</strong> (fieldName:string * fieldType:Type) -&gt; ProvidedField<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1273-1273" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided field. It is not initially associated with any specific provided type definition.</p>
-
-
-              <p>CompiledName: <code>.ctor</code></p>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '633', 633)" onmouseover="showTip(event, '633', 633)">
-            x.AddCustomAttribute(arg1)
-          </code>
-          <div class="tip" id="633">
-            <strong>Signature:</strong> CustomAttributeData -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1285-1285" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add a custom attribute to the provided property definition.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '634', 634)" onmouseover="showTip(event, '634', 634)">
-            x.AddDefinitionLocation(...)
-          </code>
-          <div class="tip" id="634">
-            <strong>Signature:</strong> (line:int * column:int * filePath:string) -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1279-1279" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add definition location information to the provided field definition.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '635', 635)" onmouseover="showTip(event, '635', 635)">
-            x.AddObsoleteAttribute(message, isError)
-          </code>
-          <div class="tip" id="635">
-            <strong>Signature:</strong> (message:string * isError:bool option) -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1278-1278" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add a 'Obsolete' attribute to this provided field</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '636', 636)" onmouseover="showTip(event, '636', 636)">
-            x.AddXmlDoc(xmlDoc)
-          </code>
-          <div class="tip" id="636">
-            <strong>Signature:</strong> xmlDoc:string -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1277-1277" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '637', 637)" onmouseover="showTip(event, '637', 637)">
-            x.AddXmlDocComputed(xmlDocFunction)
-          </code>
-          <div class="tip" id="637">
-            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1275-1275" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
-The documentation is re-computed  every time it is required.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '638', 638)" onmouseover="showTip(event, '638', 638)">
-            x.AddXmlDocDelayed(xmlDocFunction)
-          </code>
-          <div class="tip" id="638">
-            <strong>Signature:</strong> (xmlDocFunction:(unit -&gt; string)) -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1276-1276" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '639', 639)" onmouseover="showTip(event, '639', 639)">
-            x.SetFieldAttributes(attributes)
-          </code>
-          <div class="tip" id="639">
-            <strong>Signature:</strong> attributes:FieldAttributes -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1280-1280" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Static members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Static member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '640', 640)" onmouseover="showTip(event, '640', 640)">
-            ProvidedField.Literal(...)
-          </code>
-          <div class="tip" id="640">
-            <strong>Signature:</strong> (fieldName:string * fieldType:Type * literalValue:obj) -&gt; ProvidedField<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1305-1305" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Create a new provided literal field. It is not initially associated with any specific provided type definition.</p>
-
-
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    ProvidedField Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes.html">
+        ProviderImplementation.ProvidedTypes
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.fieldinfo">FieldInfo</a></code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.icustomattributeprovider">ICustomAttributeProvider</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+ Represents an erased provided field.
+
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '663', 663)" onmouseover="showTip(event, '663', 663)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>ProvidedField<span><span>(<span>fieldName,&#32;fieldType</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="663">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ProvidedField<span><span>(<span>fieldName,&#32;fieldType</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        fieldName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fieldType
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedfield.html">ProvidedField</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.#ctor`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.#ctor\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1274-1274" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Create a new provided field. It is not initially associated with any specific provided type definition.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fieldName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fieldType
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedfield.html">ProvidedField</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '664', 664)" onmouseover="showTip(event, '664', 664)">
+                <p>
+                  <a id="AddCustomAttribute">
+                    <a href="#AddCustomAttribute">
+                      <code><span>this.AddCustomAttribute</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="664">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddCustomAttribute</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.customattributedata">CustomAttributeData</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddCustomAttribute`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddCustomAttribute\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1286-1286" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add a custom attribute to the provided property definition.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.customattributedata">CustomAttributeData</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '665', 665)" onmouseover="showTip(event, '665', 665)">
+                <p>
+                  <a id="AddDefinitionLocation">
+                    <a href="#AddDefinitionLocation">
+                      <code><span>this.AddDefinitionLocation</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="665">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddDefinitionLocation</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        line
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        column
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        filePath
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddDefinitionLocation`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddDefinitionLocation\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1280-1280" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add definition location information to the provided field definition.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  line
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  column
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  filePath
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '666', 666)" onmouseover="showTip(event, '666', 666)">
+                <p>
+                  <a id="AddObsoleteAttribute">
+                    <a href="#AddObsoleteAttribute">
+                      <code><span>this.AddObsoleteAttribute</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="666">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddObsoleteAttribute</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        message
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?isError
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddObsoleteAttribute`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddObsoleteAttribute\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1279-1279" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add a 'Obsolete' attribute to this provided field
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  message
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?isError
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '667', 667)" onmouseover="showTip(event, '667', 667)">
+                <p>
+                  <a id="AddXmlDoc">
+                    <a href="#AddXmlDoc">
+                      <code><span>this.AddXmlDoc</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="667">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddXmlDoc</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        xmlDoc
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDoc`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDoc\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1278-1278" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add XML documentation information to this provided field
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  xmlDoc
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '668', 668)" onmouseover="showTip(event, '668', 668)">
+                <p>
+                  <a id="AddXmlDocComputed">
+                    <a href="#AddXmlDocComputed">
+                      <code><span>this.AddXmlDocComputed</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="668">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddXmlDocComputed</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        xmlDocFunction
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;string</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDocComputed`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDocComputed\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1276-1276" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
+ The documentation is re-computed  every time it is required.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  xmlDocFunction
+                </span>
+                :
+                <code><span>unit&#32;->&#32;string</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '669', 669)" onmouseover="showTip(event, '669', 669)">
+                <p>
+                  <a id="AddXmlDocDelayed">
+                    <a href="#AddXmlDocDelayed">
+                      <code><span>this.AddXmlDocDelayed</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="669">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddXmlDocDelayed</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        xmlDocFunction
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;string</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDocDelayed`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.AddXmlDocDelayed\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1277-1277" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Add XML documentation information to this provided field, where the computation of the documentation is delayed until necessary
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  xmlDocFunction
+                </span>
+                :
+                <code><span>unit&#32;->&#32;string</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '670', 670)" onmouseover="showTip(event, '670', 670)">
+                <p>
+                  <a id="SetFieldAttributes">
+                    <a href="#SetFieldAttributes">
+                      <code><span>this.SetFieldAttributes</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="670">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.SetFieldAttributes</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        attributes
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.fieldattributes">FieldAttributes</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.SetFieldAttributes`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.SetFieldAttributes\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1281-1281" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  attributes
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.fieldattributes">FieldAttributes</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '671', 671)" onmouseover="showTip(event, '671', 671)">
+                <p>
+                  <a id="Literal">
+                    <a href="#Literal">
+                      <code><span>ProvidedField.Literal<span><span>(<span>fieldName,&#32;fieldType,&#32;literalValue</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="671">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ProvidedField.Literal<span><span>(<span>fieldName,&#32;fieldType,&#32;literalValue</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        fieldName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fieldType
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        literalValue
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedfield.html">ProvidedField</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.ProvidedField.Literal`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.ProvidedField.Literal\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L1306-1306" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Create a new provided literal field. It is not initially associated with any specific provided type definition.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fieldName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fieldType
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  literalValue
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedfield.html">ProvidedField</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

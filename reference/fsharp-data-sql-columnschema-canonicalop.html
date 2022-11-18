@@ -1,903 +1,2522 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>CanonicalOp - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>CanonicalOp (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>CanonicalOp</h1>
-<p>
-
-    <span>Namespace: FSharp.Data.Sql</span><br />
-        <span>Parent Module: <a href="fsharp-data-sql-columnschema.html">ColumnSchema</a></span><br />
-    </p>
-<div class="xmldoc">
-</div>
-  <h3>Union Cases</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Union Case</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '256', 256)" onmouseover="showTip(event, '256', 256)">
-            Abs
-          </code>
-          <div class="tip" id="256">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L103-103" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '257', 257)" onmouseover="showTip(event, '257', 257)">
-            ACos
-          </code>
-          <div class="tip" id="257">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L114-114" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '258', 258)" onmouseover="showTip(event, '258', 258)">
-            AddDays(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="258">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L95-95" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '259', 259)" onmouseover="showTip(event, '259', 259)">
-            AddHours(float)
-          </code>
-          <div class="tip" id="259">
-            <strong>Signature:</strong> float<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L96-96" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '260', 260)" onmouseover="showTip(event, '260', 260)">
-            AddMinutes(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="260">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L97-97" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '261', 261)" onmouseover="showTip(event, '261', 261)">
-            AddMonths(int)
-          </code>
-          <div class="tip" id="261">
-            <strong>Signature:</strong> int<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L94-94" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '262', 262)" onmouseover="showTip(event, '262', 262)">
-            AddSeconds(float)
-          </code>
-          <div class="tip" id="262">
-            <strong>Signature:</strong> float<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L98-98" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '263', 263)" onmouseover="showTip(event, '263', 263)">
-            AddYears(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="263">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L93-93" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '264', 264)" onmouseover="showTip(event, '264', 264)">
-            ASin
-          </code>
-          <div class="tip" id="264">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L113-113" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '265', 265)" onmouseover="showTip(event, '265', 265)">
-            ATan
-          </code>
-          <div class="tip" id="265">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L115-115" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '266', 266)" onmouseover="showTip(event, '266', 266)">
-            BasicMath(string,obj)
-          </code>
-          <div class="tip" id="266">
-            <strong>Signature:</strong> string * obj<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L121-121" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '267', 267)" onmouseover="showTip(event, '267', 267)">
-            BasicMathLeft(string,obj)
-          </code>
-          <div class="tip" id="267">
-            <strong>Signature:</strong> string * obj<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L122-122" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '268', 268)" onmouseover="showTip(event, '268', 268)">
-            BasicMathOfColumns(...)
-          </code>
-          <div class="tip" id="268">
-            <strong>Signature:</strong> string * string * SqlColumnType<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L123-123" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '269', 269)" onmouseover="showTip(event, '269', 269)">
-            CaseNotSql(Condition,SqlItemOrColumn)
-          </code>
-          <div class="tip" id="269">
-            <strong>Signature:</strong> Condition * SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L125-125" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '270', 270)" onmouseover="showTip(event, '270', 270)">
-            CaseSql(Condition,SqlItemOrColumn)
-          </code>
-          <div class="tip" id="270">
-            <strong>Signature:</strong> Condition * SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L124-124" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '271', 271)" onmouseover="showTip(event, '271', 271)">
-            CaseSqlPlain(Condition,obj,obj)
-          </code>
-          <div class="tip" id="271">
-            <strong>Signature:</strong> Condition * obj * obj<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L126-126" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '272', 272)" onmouseover="showTip(event, '272', 272)">
-            CastVarchar
-          </code>
-          <div class="tip" id="272">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L127-127" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '273', 273)" onmouseover="showTip(event, '273', 273)">
-            Ceil
-          </code>
-          <div class="tip" id="273">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L104-104" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '274', 274)" onmouseover="showTip(event, '274', 274)">
-            Cos
-          </code>
-          <div class="tip" id="274">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L111-111" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '275', 275)" onmouseover="showTip(event, '275', 275)">
-            Date
-          </code>
-          <div class="tip" id="275">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L86-86" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '276', 276)" onmouseover="showTip(event, '276', 276)">
-            DateDiffDays(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="276">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L99-99" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '277', 277)" onmouseover="showTip(event, '277', 277)">
-            DateDiffSecs(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="277">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L100-100" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '278', 278)" onmouseover="showTip(event, '278', 278)">
-            Day
-          </code>
-          <div class="tip" id="278">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L89-89" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '279', 279)" onmouseover="showTip(event, '279', 279)">
-            Floor
-          </code>
-          <div class="tip" id="279">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L105-105" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '280', 280)" onmouseover="showTip(event, '280', 280)">
-            Greatest(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="280">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L118-118" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '281', 281)" onmouseover="showTip(event, '281', 281)">
-            Hour
-          </code>
-          <div class="tip" id="281">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L90-90" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '282', 282)" onmouseover="showTip(event, '282', 282)">
-            IndexOf(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="282">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L83-83" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '283', 283)" onmouseover="showTip(event, '283', 283)">
-            IndexOfStart(...)
-          </code>
-          <div class="tip" id="283">
-            <strong>Signature:</strong> SqlItemOrColumn * SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L84-84" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '284', 284)" onmouseover="showTip(event, '284', 284)">
-            Least(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="284">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L119-119" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '285', 285)" onmouseover="showTip(event, '285', 285)">
-            Length
-          </code>
-          <div class="tip" id="285">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L81-81" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '286', 286)" onmouseover="showTip(event, '286', 286)">
-            Minute
-          </code>
-          <div class="tip" id="286">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L91-91" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '287', 287)" onmouseover="showTip(event, '287', 287)">
-            Month
-          </code>
-          <div class="tip" id="287">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L88-88" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '288', 288)" onmouseover="showTip(event, '288', 288)">
-            Pow(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="288">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L116-116" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '289', 289)" onmouseover="showTip(event, '289', 289)">
-            PowConst(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="289">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L117-117" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '290', 290)" onmouseover="showTip(event, '290', 290)">
-            Replace(SqlItemOrColumn,SqlItemOrColumn)
-          </code>
-          <div class="tip" id="290">
-            <strong>Signature:</strong> SqlItemOrColumn * SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L82-82" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '291', 291)" onmouseover="showTip(event, '291', 291)">
-            Round
-          </code>
-          <div class="tip" id="291">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L106-106" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '292', 292)" onmouseover="showTip(event, '292', 292)">
-            RoundDecimals(int)
-          </code>
-          <div class="tip" id="292">
-            <strong>Signature:</strong> int<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L107-107" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '293', 293)" onmouseover="showTip(event, '293', 293)">
-            Second
-          </code>
-          <div class="tip" id="293">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L92-92" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '294', 294)" onmouseover="showTip(event, '294', 294)">
-            Sin
-          </code>
-          <div class="tip" id="294">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L110-110" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '295', 295)" onmouseover="showTip(event, '295', 295)">
-            Sqrt
-          </code>
-          <div class="tip" id="295">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L109-109" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '296', 296)" onmouseover="showTip(event, '296', 296)">
-            Substring(SqlItemOrColumn)
-          </code>
-          <div class="tip" id="296">
-            <strong>Signature:</strong> SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L76-76" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '297', 297)" onmouseover="showTip(event, '297', 297)">
-            SubstringWithLength(...)
-          </code>
-          <div class="tip" id="297">
-            <strong>Signature:</strong> SqlItemOrColumn * SqlItemOrColumn<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L77-77" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '298', 298)" onmouseover="showTip(event, '298', 298)">
-            Tan
-          </code>
-          <div class="tip" id="298">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L112-112" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '299', 299)" onmouseover="showTip(event, '299', 299)">
-            ToLower
-          </code>
-          <div class="tip" id="299">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L79-79" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '300', 300)" onmouseover="showTip(event, '300', 300)">
-            ToUpper
-          </code>
-          <div class="tip" id="300">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L78-78" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '301', 301)" onmouseover="showTip(event, '301', 301)">
-            Trim
-          </code>
-          <div class="tip" id="301">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L80-80" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '302', 302)" onmouseover="showTip(event, '302', 302)">
-            Truncate
-          </code>
-          <div class="tip" id="302">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L108-108" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '303', 303)" onmouseover="showTip(event, '303', 303)">
-            Year
-          </code>
-          <div class="tip" id="303">
-            <strong>Signature:</strong> <br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider/Operators.fs#L87-87" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    CanonicalOp Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql.html">
+        FSharp.Data.Sql
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+    <dt>
+      Parent Module: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema.html">
+        ColumnSchema
+      </a>
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html">CanonicalOp</a>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Union cases
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Union case
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '284', 284)" onmouseover="showTip(event, '284', 284)">
+                <p>
+                  <a id="ACos">
+                    <a href="#ACos">
+                      <code><span>ACos</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="284">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ACos</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '285', 285)" onmouseover="showTip(event, '285', 285)">
+                <p>
+                  <a id="ASin">
+                    <a href="#ASin">
+                      <code><span>ASin</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="285">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ASin</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L113-113" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '286', 286)" onmouseover="showTip(event, '286', 286)">
+                <p>
+                  <a id="ATan">
+                    <a href="#ATan">
+                      <code><span>ATan</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="286">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ATan</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L115-115" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '287', 287)" onmouseover="showTip(event, '287', 287)">
+                <p>
+                  <a id="Abs">
+                    <a href="#Abs">
+                      <code><span>Abs</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="287">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Abs</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L103-103" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '288', 288)" onmouseover="showTip(event, '288', 288)">
+                <p>
+                  <a id="AddDays">
+                    <a href="#AddDays">
+                      <code><span>AddDays&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="288">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddDays&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L95-95" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '289', 289)" onmouseover="showTip(event, '289', 289)">
+                <p>
+                  <a id="AddHours">
+                    <a href="#AddHours">
+                      <code><span>AddHours&#32;float</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="289">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddHours&#32;float</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>float</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L96-96" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code>float</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '290', 290)" onmouseover="showTip(event, '290', 290)">
+                <p>
+                  <a id="AddMinutes">
+                    <a href="#AddMinutes">
+                      <code><span>AddMinutes&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="290">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddMinutes&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L97-97" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '291', 291)" onmouseover="showTip(event, '291', 291)">
+                <p>
+                  <a id="AddMonths">
+                    <a href="#AddMonths">
+                      <code><span>AddMonths&#32;int</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="291">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddMonths&#32;int</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L94-94" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '292', 292)" onmouseover="showTip(event, '292', 292)">
+                <p>
+                  <a id="AddSeconds">
+                    <a href="#AddSeconds">
+                      <code><span>AddSeconds&#32;float</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="292">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddSeconds&#32;float</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>float</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L98-98" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code>float</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '293', 293)" onmouseover="showTip(event, '293', 293)">
+                <p>
+                  <a id="AddYears">
+                    <a href="#AddYears">
+                      <code><span>AddYears&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="293">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddYears&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L93-93" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '294', 294)" onmouseover="showTip(event, '294', 294)">
+                <p>
+                  <a id="BasicMath">
+                    <a href="#BasicMath">
+                      <code><span>BasicMath(<span>string,&#32;obj</span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="294">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>BasicMath(<span>string,&#32;obj</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L121-121" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '295', 295)" onmouseover="showTip(event, '295', 295)">
+                <p>
+                  <a id="BasicMathLeft">
+                    <a href="#BasicMathLeft">
+                      <code><span>BasicMathLeft(<span>string,&#32;obj</span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="295">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>BasicMathLeft(<span>string,&#32;obj</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '296', 296)" onmouseover="showTip(event, '296', 296)">
+                <p>
+                  <a id="BasicMathOfColumns">
+                    <a href="#BasicMathOfColumns">
+                      <code><span>BasicMathOfColumns(<span>string,&#32;string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="296">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>BasicMathOfColumns(<span>string,&#32;string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item3
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L123-123" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item3
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '297', 297)" onmouseover="showTip(event, '297', 297)">
+                <p>
+                  <a id="CaseNotSql">
+                    <a href="#CaseNotSql">
+                      <code><span>CaseNotSql(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="297">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CaseNotSql(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '298', 298)" onmouseover="showTip(event, '298', 298)">
+                <p>
+                  <a id="CaseSql">
+                    <a href="#CaseSql">
+                      <code><span>CaseSql(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="298">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CaseSql(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L124-124" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '299', 299)" onmouseover="showTip(event, '299', 299)">
+                <p>
+                  <a id="CaseSqlPlain">
+                    <a href="#CaseSqlPlain">
+                      <code><span>CaseSqlPlain(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;obj,&#32;obj</span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="299">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CaseSqlPlain(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>,&#32;obj,&#32;obj</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item3
+                      </b>
+                      :
+                      <code>obj</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L126-126" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item3
+                </span>
+                :
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '300', 300)" onmouseover="showTip(event, '300', 300)">
+                <p>
+                  <a id="CastVarchar">
+                    <a href="#CastVarchar">
+                      <code><span>CastVarchar</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="300">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CastVarchar</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L127-127" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '301', 301)" onmouseover="showTip(event, '301', 301)">
+                <p>
+                  <a id="Ceil">
+                    <a href="#Ceil">
+                      <code><span>Ceil</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="301">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Ceil</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L104-104" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '302', 302)" onmouseover="showTip(event, '302', 302)">
+                <p>
+                  <a id="Cos">
+                    <a href="#Cos">
+                      <code><span>Cos</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="302">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Cos</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '303', 303)" onmouseover="showTip(event, '303', 303)">
+                <p>
+                  <a id="Date">
+                    <a href="#Date">
+                      <code><span>Date</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="303">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Date</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L86-86" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '304', 304)" onmouseover="showTip(event, '304', 304)">
+                <p>
+                  <a id="DateDiffDays">
+                    <a href="#DateDiffDays">
+                      <code><span>DateDiffDays&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="304">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DateDiffDays&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L99-99" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '305', 305)" onmouseover="showTip(event, '305', 305)">
+                <p>
+                  <a id="DateDiffSecs">
+                    <a href="#DateDiffSecs">
+                      <code><span>DateDiffSecs&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="305">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DateDiffSecs&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L100-100" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '306', 306)" onmouseover="showTip(event, '306', 306)">
+                <p>
+                  <a id="Day">
+                    <a href="#Day">
+                      <code><span>Day</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="306">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Day</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L89-89" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '307', 307)" onmouseover="showTip(event, '307', 307)">
+                <p>
+                  <a id="Floor">
+                    <a href="#Floor">
+                      <code><span>Floor</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="307">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Floor</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L105-105" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '308', 308)" onmouseover="showTip(event, '308', 308)">
+                <p>
+                  <a id="Greatest">
+                    <a href="#Greatest">
+                      <code><span>Greatest&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="308">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Greatest&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '309', 309)" onmouseover="showTip(event, '309', 309)">
+                <p>
+                  <a id="Hour">
+                    <a href="#Hour">
+                      <code><span>Hour</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="309">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Hour</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L90-90" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '310', 310)" onmouseover="showTip(event, '310', 310)">
+                <p>
+                  <a id="IndexOf">
+                    <a href="#IndexOf">
+                      <code><span>IndexOf&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="310">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>IndexOf&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L83-83" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '311', 311)" onmouseover="showTip(event, '311', 311)">
+                <p>
+                  <a id="IndexOfStart">
+                    <a href="#IndexOfStart">
+                      <code><span>IndexOfStart(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="311">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>IndexOfStart(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L84-84" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '312', 312)" onmouseover="showTip(event, '312', 312)">
+                <p>
+                  <a id="Least">
+                    <a href="#Least">
+                      <code><span>Least&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="312">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Least&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L119-119" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '313', 313)" onmouseover="showTip(event, '313', 313)">
+                <p>
+                  <a id="Length">
+                    <a href="#Length">
+                      <code><span>Length</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="313">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Length</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '314', 314)" onmouseover="showTip(event, '314', 314)">
+                <p>
+                  <a id="Minute">
+                    <a href="#Minute">
+                      <code><span>Minute</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="314">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Minute</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '315', 315)" onmouseover="showTip(event, '315', 315)">
+                <p>
+                  <a id="Month">
+                    <a href="#Month">
+                      <code><span>Month</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="315">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Month</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L88-88" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '316', 316)" onmouseover="showTip(event, '316', 316)">
+                <p>
+                  <a id="Pow">
+                    <a href="#Pow">
+                      <code><span>Pow&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="316">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Pow&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '317', 317)" onmouseover="showTip(event, '317', 317)">
+                <p>
+                  <a id="PowConst">
+                    <a href="#PowConst">
+                      <code><span>PowConst&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="317">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>PowConst&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L117-117" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '318', 318)" onmouseover="showTip(event, '318', 318)">
+                <p>
+                  <a id="Replace">
+                    <a href="#Replace">
+                      <code><span>Replace(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="318">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Replace(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '319', 319)" onmouseover="showTip(event, '319', 319)">
+                <p>
+                  <a id="Round">
+                    <a href="#Round">
+                      <code><span>Round</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="319">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Round</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L106-106" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '320', 320)" onmouseover="showTip(event, '320', 320)">
+                <p>
+                  <a id="RoundDecimals">
+                    <a href="#RoundDecimals">
+                      <code><span>RoundDecimals&#32;int</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="320">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>RoundDecimals&#32;int</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L107-107" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '321', 321)" onmouseover="showTip(event, '321', 321)">
+                <p>
+                  <a id="Second">
+                    <a href="#Second">
+                      <code><span>Second</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="321">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Second</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L92-92" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '322', 322)" onmouseover="showTip(event, '322', 322)">
+                <p>
+                  <a id="Sin">
+                    <a href="#Sin">
+                      <code><span>Sin</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="322">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Sin</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L110-110" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '323', 323)" onmouseover="showTip(event, '323', 323)">
+                <p>
+                  <a id="Sqrt">
+                    <a href="#Sqrt">
+                      <code><span>Sqrt</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="323">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Sqrt</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L109-109" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '324', 324)" onmouseover="showTip(event, '324', 324)">
+                <p>
+                  <a id="Substring">
+                    <a href="#Substring">
+                      <code><span>Substring&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="324">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Substring&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L76-76" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '325', 325)" onmouseover="showTip(event, '325', 325)">
+                <p>
+                  <a id="SubstringWithLength">
+                    <a href="#SubstringWithLength">
+                      <code><span>SubstringWithLength(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="325">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SubstringWithLength(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L77-77" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html">SqlItemOrColumn</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '326', 326)" onmouseover="showTip(event, '326', 326)">
+                <p>
+                  <a id="Tan">
+                    <a href="#Tan">
+                      <code><span>Tan</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="326">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Tan</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '327', 327)" onmouseover="showTip(event, '327', 327)">
+                <p>
+                  <a id="ToLower">
+                    <a href="#ToLower">
+                      <code><span>ToLower</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="327">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ToLower</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L79-79" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '328', 328)" onmouseover="showTip(event, '328', 328)">
+                <p>
+                  <a id="ToUpper">
+                    <a href="#ToUpper">
+                      <code><span>ToUpper</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="328">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ToUpper</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '329', 329)" onmouseover="showTip(event, '329', 329)">
+                <p>
+                  <a id="Trim">
+                    <a href="#Trim">
+                      <code><span>Trim</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="329">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Trim</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L80-80" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '330', 330)" onmouseover="showTip(event, '330', 330)">
+                <p>
+                  <a id="Truncate">
+                    <a href="#Truncate">
+                      <code><span>Truncate</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="330">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Truncate</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L108-108" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '331', 331)" onmouseover="showTip(event, '331', 331)">
+                <p>
+                  <a id="Year">
+                    <a href="#Year">
+                      <code><span>Year</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="331">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Year</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Operators.fs#L87-87" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

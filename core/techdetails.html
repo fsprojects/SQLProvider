@@ -1,37 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
     <title>techdetails</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Type providers for SQL server access.">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="../content/style.css" />
-    <script type="text/javascript" src="../content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          <h2><a name="Version-control-instructions" class="anchor" href="#Version-control-instructions">Version control instructions</a></h2>
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <h2><a name="Version-control-instructions" class="anchor" href="#Version-control-instructions">Version control instructions</a></h2>
 <p>Git information is in a separate <a href="http://fsprojects.github.io/SQLProvider/core/contributing.html">document</a>.</p>
 <h2><a name="The-environment" class="anchor" href="#The-environment">The environment</a></h2>
 <p>Databases that you should need for development:</p>
@@ -44,7 +117,7 @@
 <h3><a name="Solution-structure" class="anchor" href="#Solution-structure">Solution structure</a></h3>
 <p>We use Fake and Paket. You have to run <code>build.cmd</code> on Windows (or <code>sh ./build.sh</code> on Mac/Linux) before opening the solutions.</p>
 <p>The main source solution is <code>SQLProvider.sln</code>.
-The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, and when you open the solution, it will lock the <code>bin\net451\FSharp.Data.SqlProvider.dll</code>, and after that you can't build the main solution.</p>
+The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, and when you open the solution, it will lock the <code>bin\net472\FSharp.Data.SqlProvider.dll</code>, and after that you can't build the main solution.</p>
 <ul>
 <li>To debug design-time features you "Attach to process" the main solution debugger to another instance of Visual Studio running the tests solution.</li>
 <li>To debug runtime you attach it to e.g. fsi.exe and run the code in interactive.</li>
@@ -64,44 +137,24 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 <h2><a name="High-level-description-of-the-provider" class="anchor" href="#High-level-description-of-the-provider">High level description of the provider</a></h2>
 <h3><a name="Context-and-design-time" class="anchor" href="#Context-and-design-time">Context and design time</a></h3>
 <p>You have a source code like:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="id">sql</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="o">&lt;...</span><span class="id">params</span><span class="pn">.</span><span class="o">..&gt;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span class="id">sql</span> <span class="o">=</span> <span class="id">SqlDataProvider</span><span class="o">&lt;...</span><span class="id">params</span><span class="pn">.</span><span class="o">..&gt;</span>
 <span class="k">let</span> <span class="id">dc</span> <span class="o">=</span> <span class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
-</code></pre></td>
-</tr>
-</table>
+</code></pre>
 <p>What will first happen in the design-time, is that this will call <code>createTypes</code> of <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlDesignTime.fs">SqlDesignTime.fs</a> and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the <code>sql.datacontext</code> and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.</p>
 <p><code>GetDataContext()</code> will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.DataContext.fs">SqlRuntime.DataContext.fs</a> through interface <code>ISqlDataContext</code>. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented <code>ISqlProvider</code> in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a>.</p>
 <h3><a name="Querying" class="anchor" href="#Querying">Querying</a></h3>
 <p>The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of <code>SqlEntity</code>, base-class in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a> which can be basically think of as wrapper for <code>Dictionary&lt;string,obj&gt;</code> (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as <code>SqlQueryable&lt;SqlEntity&gt;</code>, or <code>SqlQueryable&lt;'T&gt;</code> which is a SQLProvider's class for <code>IQueryable&lt;'T&gt;</code> items.</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">query</span> <span class="pn">{</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">query</span> <span class="pn">{</span>
     <span class="k">for</span> <span class="id">cust</span> <span class="k">in</span> <span class="id">dbc</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span> <span class="k">do</span>
     <span class="id">where</span> <span class="pn">(</span><span class="s">&quot;ALFKI&quot;</span> <span class="o">=</span> <span class="id">cust</span><span class="pn">.</span><span class="id">CustomerId</span><span class="pn">)</span>
     <span class="id">select</span> <span class="id">cust</span>
 <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="id">toArray</span>
-</code></pre></td>
-</tr>
-</table>
+</code></pre>
 <p>This query is translated to a LINQ-expression-tree through Microsoft.FSharp.Linq.QueryFSharpBuilder. That will call <code>IQueryable&lt;'T&gt;</code>'s member Provider to execute two things for the LINQ-expression-tree: first <code>CreateQuery</code> and later <code>Execute</code>.</p>
 <h3><a name="Parsing-the-LINQ-expression-tree" class="anchor" href="#Parsing-the-LINQ-expression-tree">Parsing the LINQ-expression-tree</a></h3>
 <p><code>CreateQuery</code> will hit our <code>SqlQueryable&lt;...&gt;</code>'s Provider (IQueryProvider) property. LINQ-expression-trees can be kind of recursive type structures, so we it will call CreateQuery for each linq-method. We get the expression-tree as parameter, and parse that with (multi-layer-) active patterns.</p>
 <p>Our example the LINQ-expression tree is:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">.Call System.Linq.Queryable.Where(
+<table class="pre"><tr><td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">.Call System.Linq.Queryable.Where(
     .Constant&lt;System.Linq.IQueryable`<span class="n">1</span>[SqlEntity]<span class="o">&gt;</span>(SqlQueryable`<span class="n">1</span>[SqlEntity]),
     '(.Lambda #Lambda<span class="n">1</span>&lt;System.Func`<span class="n">2</span>[SqlEntity,Boolean]<span class="o">&gt;</span>))
 .Lambda #Lambda<span class="n">1</span>&lt;System.Func`<span class="n">2</span>[SqlEntity,Boolean]<span class="o">&gt;</span>(SqlEntity $cust) {
@@ -109,12 +162,8 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 }
 </code></pre></td></tr></table>
 <p>so it would hit this in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">|</span> <span class="id">MethodCall</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="id">None</span><span class="pn">,</span> <span class="pn">(</span><span class="id">MethodWithName</span> <span class="s">&quot;Where&quot;</span> <span class="k">as</span> <span class="id">meth</span><span class="pn">)</span><span class="pn">,</span> <span class="pn">[</span> <span class="id">SourceWithQueryData</span> <span class="id">source</span><span class="pn">;</span> <span class="id">OptionalQuote</span> <span class="id">qual</span> <span class="pn">]</span><span class="pn">)</span> <span class="k">-&gt;</span>
-</code></pre></td>
-</tr>
-</table>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">|</span> <span class="id">MethodCall</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="id">None</span><span class="pn">,</span> <span class="pn">(</span><span class="id">MethodWithName</span> <span class="s">&quot;Where&quot;</span> <span class="k">as</span> <span class="id">meth</span><span class="pn">)</span><span class="pn">,</span> <span class="pn">[</span> <span class="id">SourceWithQueryData</span> <span class="id">source</span><span class="pn">;</span> <span class="id">OptionalQuote</span> <span class="id">qual</span> <span class="pn">]</span><span class="pn">)</span> <span class="k">-&gt;</span>
+</code></pre>
 <p>because the LINQ-expression-tree has <code>ExpressionType.Call</code> named "Where" with source of IWithSqlService (which is the SqlQueryable<SqlEntity>).
 What happens then is parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern <code>Condition</code>). If the conditions are having <code>SqlColumnGet</code>s, a pattern that says that it's <code>SqlEntity</code> with method <code>GetColumn</code>, we know that it has to be part of SQL-clause.</p>
 <p>We collect all the known patterns to <code>IWithSqlService</code>s field SqlExpression, being a type <code>SqlExp</code>, our non-complete known recursive model-tree of SQL clauses.</p>
@@ -130,23 +179,7 @@ What happens then is parsing of the Where-query. Where-queries are nested struct
 <p>In our example the whole cust object was selected.
 For security reasons we don't do <code>SELECT *</code> but we actually list the columns that are there at compile time.</p>
 <p>The <code>TupleIndex</code> of IWithSqlService is a way to collect joined tables to match the sql-aliasses, here the <code>[cust]</code>.</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
-<span class="l"> 2: </span>
-<span class="l"> 3: </span>
-<span class="l"> 4: </span>
-<span class="l"> 5: </span>
-<span class="l"> 6: </span>
-<span class="l"> 7: </span>
-<span class="l"> 8: </span>
-<span class="l"> 9: </span>
-<span class="l">10: </span>
-<span class="l">11: </span>
-<span class="l">12: </span>
-<span class="l">13: </span>
-<span class="l">14: </span>
-<span class="l">15: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> [cust].[Address] <span class="k">as</span> <span class="s">'Address'</span>, 
+<table class="pre"><tr><td class="snippet"><pre class="fssnip highlighted"><code lang="sql"><span class="k">SELECT</span> [cust].[Address] <span class="k">as</span> <span class="s">'Address'</span>, 
        [cust].[City] <span class="k">as</span> <span class="s">'City'</span>,
        [cust].[CompanyName] <span class="k">as</span> <span class="s">'CompanyName'</span>,
      [cust].[ContactName] <span class="k">as</span> <span class="s">'ContactName'</span>,
@@ -164,27 +197,13 @@ For security reasons we don't do <code>SELECT *</code> but we actually list the 
 </code></pre></td></tr></table>
 <h3><a name="Projection-lambda" class="anchor" href="#Projection-lambda">Projection-lambda</a></h3>
 <p>Now, if the select-clause would have been complex:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 5)" onmouseover="showTip(event, 'fs1', 5)" class="id">query</span> <span class="pn">{</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 5)" onmouseover="showTip(event, 'fs1', 5)" class="id">query</span> <span class="pn">{</span>
     <span class="k">for</span> <span class="id">emp</span> <span class="k">in</span> <span class="id">dc</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
     <span class="id">select</span> <span class="pn">(</span><span class="id">emp</span><span class="pn">.</span><span class="id">BirthDate</span><span class="pn">.</span><span class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span><span class="pn">)</span>
 <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs2', 6)" onmouseover="showTip(event, 'fs2', 6)" class="id">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 7)" onmouseover="showTip(event, 'fs3', 7)" class="id">toArray</span>
-</code></pre></td>
-</tr>
-</table>
+</code></pre>
 <p>We don't know the function of DayOfYear for each different SQL-providers (Oracle/MSSQL/Odbc/...), but we still want tihs code to work. The LINQ-expression-tree for this query is:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">.Call System.Linq.Queryable.Select(
+<table class="pre"><tr><td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">.Call System.Linq.Queryable.Select(
     .Constant&lt;System.Linq.IQueryable`<span class="n">1</span>[SqlEntity]<span class="o">&gt;</span>(SqlQueryable`<span class="n">1</span>[SqlEntity]),
     '(.Lambda #Lambda<span class="n">1</span>&lt;System.Func`<span class="n">2</span>[SqlEntity,Int<span class="n">32</span>]<span class="o">&gt;</span>))
 .Lambda #Lambda<span class="n">1</span>&lt;System.Func`<span class="n">2</span>[SqlEntity,System.Int<span class="n">32</span>]<span class="o">&gt;</span>(SqlEntity $emp) {
@@ -193,12 +212,8 @@ For security reasons we don't do <code>SELECT *</code> but we actually list the 
 </code></pre></td></tr></table>
 <p>What happens now, is that in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.QueryExpression.fs">SqlRuntime.QueryExpression.fs</a> we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
 the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-expression where this is replaced with a parameter:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">fun</span> <span class="id">empBirthDate</span> <span class="k">-&gt;</span> <span class="id">empBirthDate</span><span class="pn">.</span><span class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span>
-</code></pre></td>
-</tr>
-</table>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">fun</span> <span class="id">empBirthDate</span> <span class="k">-&gt;</span> <span class="id">empBirthDate</span><span class="pn">.</span><span class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span>
+</code></pre>
 <p>Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with <code>for e in results -&gt; projector.DynamicInvoke(e)</code> in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>.</p>
 <h3><a name="Other-things-to-know" class="anchor" href="#Other-things-to-know">Other things to know</a></h3>
 <ul>
@@ -209,43 +224,43 @@ the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-exp
 </li>
 </ul>
 
-<div class="tip" id="fs1">val query : Linq.QueryBuilder</div>
-<div class="tip" id="fs2">module Seq<br /><br />from Microsoft.FSharp.Collections</div>
-<div class="tip" id="fs3">val toArray : source:seq&lt;&#39;T&gt; -&gt; &#39;T []</div>
-<div class="tip" id="fs4">union case Option.None: Option&lt;&#39;T&gt;</div>
+            <div class="fsdocs-tip" id="fs1">val query: Linq.QueryBuilder<br /><em>&lt;summary&gt;Builds a query using query syntax and operators.&lt;/summary&gt;<br />&lt;example id=&quot;query-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&amp;lt;int&amp;gt;) =
+     query {
+         for x in xs do
+         where (x % 2 = 0)
+         sortBy x
+         select (x+x)
+      }
+
+ let data = [1; 2; 6; 7; 3; 6; 2; 1]
+
+ findEvensAndSortAndDouble (data.AsQueryable()) |&amp;gt; Seq.toList
+ &lt;/code&gt;
+ Evaluates to &lt;c&gt;[4; 4; 12; 12]&lt;/c&gt;.
+ &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs2">module Seq
+
+from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations for working with values of type &lt;see cref=&quot;T:Microsoft.FSharp.Collections.seq`1&quot; /&gt;.&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs3">val toArray: source: seq&lt;&#39;T&gt; -&gt; &#39;T[]<br /><em>&lt;summary&gt;Builds an array from the given collection.&lt;/summary&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;returns&gt;The result array.&lt;/returns&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;example id=&quot;toarray-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let inputs = seq { 1; 2; 5 }
+
+ inputs |&amp;gt; Seq.toArray
+ &lt;/code&gt;
+ Evaluates to &lt;c&gt;[| 1; 2; 5 |]&lt;/c&gt;.
+ &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs4">union case Option.None: Option&lt;&#39;T&gt;<br /><em>&lt;summary&gt;The representation of &quot;No value&quot;&lt;/summary&gt;</em></div>
 
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="../index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
-        
-            <li class="nav-header">Documentation</li>
-              <li><a href="../core/general.html">General</a></li>
-              <li><a href="../core/parameters.html">Static Parameters</a></li>
-              <li><a href="../core/querying.html">Querying</a></li>
-              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="../core/crud.html">CRUD</a></li>
-              <li><a href="../core/programmability.html">Programmability</a></li>
-              <li><a href="../core/individuals.html">Individuals</a></li>
-              <li><a href="../core/composable.html">Composable Query</a></li>
-              <li><a href="../core/mssql.html">SQL Server</a></li>
-              <li><a href="../core/oracle.html">Oracle</a></li>
-              <li><a href="../core/sqlite.html">SQLite</a></li>
-              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="../core/mysql.html">MySQL</a></li>
-              <li><a href="../core/odbc.html">ODBC</a></li>
-              <li><a href="../reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+</body>
+
+</html>

@@ -1,397 +1,1287 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>TypeProviderForNamespaces - SQLProvider</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <title>TypeProviderForNamespaces (SQLProvider)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="..//content/style.css" />
-    <script type="text/javascript" src="..//content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="..//index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          
-
-<h1>TypeProviderForNamespaces</h1>
-<p>
-
-    <span>Namespace: ProviderImplementation.ProvidedTypes</span><br />
-    </p>
-<div class="xmldoc">
-<p>A base type providing default implementations of type provider functionality.</p>
-
-</div>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '723', 723)" onmouseover="showTip(event, '723', 723)">
-            new(...)
-          </code>
-          <div class="tip" id="723">
-            <strong>Signature:</strong> (config:TypeProviderConfig * sourceAssemblies:Assembly list option * assemblyReplacementMap:(string * string) list option * addDefaultProbingLocation:bool option) -&gt; TypeProviderForNamespaces<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15813-15813" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Initializes a type provider.</p>
-
-
-              <p>CompiledName: <code>.ctor</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '724', 724)" onmouseover="showTip(event, '724', 724)">
-            new(...)
-          </code>
-          <div class="tip" id="724">
-            <strong>Signature:</strong> (config:TypeProviderConfig * namespaceName:string * types:ProvidedTypeDefinition list * sourceAssemblies:Assembly list option * assemblyReplacementMap:(string * string) list option * addDefaultProbingLocation:bool option) -&gt; TypeProviderForNamespaces<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15807-15807" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Initializes a type provider to provide the types in the given namespace.</p>
-
-
-              <p>CompiledName: <code>.ctor</code></p>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '725', 725)" onmouseover="showTip(event, '725', 725)">
-            x.add_Disposing(arg1)
-          </code>
-          <div class="tip" id="725">
-            <strong>Signature:</strong> EventHandler -&gt; unit<br />
-                                    <span>
-            <strong>Attributes:</strong><br />
-[&lt;CLIEvent&gt;]<br />
-          </span>
-          </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15822-15822" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '726', 726)" onmouseover="showTip(event, '726', 726)">
-            x.AddNamespace(namespaceName, types)
-          </code>
-          <div class="tip" id="726">
-            <strong>Signature:</strong> (namespaceName:string * types:ProvidedTypeDefinition list) -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15860-15860" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Invoked by the type provider to add a namespace of provided types in the specification of the type provider.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '727', 727)" onmouseover="showTip(event, '727', 727)">
-            x.ApplyStaticArgumentsForMethod(...)
-          </code>
-          <div class="tip" id="727">
-            <strong>Signature:</strong> (MethodBase * string * obj []) -&gt; MethodBase<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15874-15874" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Invoked by the host of the type provider to apply the static argumetns for a method.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '728', 728)" onmouseover="showTip(event, '728', 728)">
-            x.Disposing
-          </code>
-          <div class="tip" id="728">
-            <strong>Signature:</strong> IEvent&lt;EventHandler,EventArgs&gt;<br />
-                                    <span>
-            <strong>Attributes:</strong><br />
-[&lt;CLIEvent&gt;]<br />
-          </span>
-          </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15822-15822" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-              <p>CompiledName: <code>get_Disposing</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '729', 729)" onmouseover="showTip(event, '729', 729)">
-            x.GetStaticParametersForMethod(arg1)
-          </code>
-          <div class="tip" id="729">
-            <strong>Signature:</strong> MethodBase -&gt; ParameterInfo []<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15869-15869" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Invoked by the host of the type provider to get the static parameters for a method.</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '730', 730)" onmouseover="showTip(event, '730', 730)">
-            x.Invalidate()
-          </code>
-          <div class="tip" id="730">
-            <strong>Signature:</strong> unit -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15866-15866" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Invoked by the type provider to invalidate the information provided by the provider</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '731', 731)" onmouseover="showTip(event, '731', 731)">
-            x.Namespaces
-          </code>
-          <div class="tip" id="731">
-            <strong>Signature:</strong> IProvidedNamespace []<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15863-15863" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Invoked by the type provider to get all provided namespaces with their provided types.</p>
-
-
-              <p>CompiledName: <code>get_Namespaces</code></p>
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '732', 732)" onmouseover="showTip(event, '732', 732)">
-            x.RegisterGeneratedTargetAssembly(...)
-          </code>
-          <div class="tip" id="732">
-            <strong>Signature:</strong> fileName:string -&gt; Assembly<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15967-15967" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Register that a given file is a provided generated target assembly, e.g. an assembly produced by an external
-code generation tool.  This assembly should be a target assembly, i.e. use the same asssembly references
-as given by TargetContext.ReferencedAssemblyPaths</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '733', 733)" onmouseover="showTip(event, '733', 733)">
-            x.RegisterProbingFolder(folder)
-          </code>
-          <div class="tip" id="733">
-            <strong>Signature:</strong> folder:string -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15844-15844" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Registers custom probing path that can be used for probing assemblies</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '734', 734)" onmouseover="showTip(event, '734', 734)">
-            x.RegisterRuntimeAssemblyLocationAsProbingFolder(...)
-          </code>
-          <div class="tip" id="734">
-            <strong>Signature:</strong> config:TypeProviderConfig -&gt; unit<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15849-15849" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Registers location of RuntimeAssembly (from TypeProviderConfig) as probing folder</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '735', 735)" onmouseover="showTip(event, '735', 735)">
-            x.remove_Disposing(arg1)
-          </code>
-          <div class="tip" id="735">
-            <strong>Signature:</strong> EventHandler -&gt; unit<br />
-                                    <span>
-            <strong>Attributes:</strong><br />
-[&lt;CLIEvent&gt;]<br />
-          </span>
-          </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15822-15822" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '736', 736)" onmouseover="showTip(event, '736', 736)">
-            x.ResolveAssembly(arg1)
-          </code>
-          <div class="tip" id="736">
-            <strong>Signature:</strong> ResolveEventArgs -&gt; Assembly<br />
-              <strong>Modifiers:</strong> abstract<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15832-15832" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders</p>
-
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-          <code onmouseout="hideTip(event, '737', 737)" onmouseover="showTip(event, '737', 737)">
-            x.TargetContext
-          </code>
-          <div class="tip" id="737">
-            <strong>Signature:</strong> ProvidedTypesContext<br />
-                                  </div>
-        </td>
-        <td class="xmldoc">
-                      <a href="http://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15819-15819" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>The context for which code is eventually to be generated. You should not normally
-need to use this property directly, as translation from the compiler-hosted context to
-the design-time context will normally be performed automatically.</p>
-
-
-              <p>CompiledName: <code>get_TargetContext</code></p>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="..//index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    TypeProviderForNamespaces Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes.html">
+        ProviderImplementation.ProvidedTypes
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-itypeprovider">ITypeProvider</a></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.idisposable">IDisposable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
         
-            <li class="nav-header">Documentation</li>
-              <li><a href="..//core/general.html">General</a></li>
-              <li><a href="..//core/parameters.html">Static Parameters</a></li>
-              <li><a href="..//core/querying.html">Querying</a></li>
-              <li><a href="..//core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="..//core/crud.html">CRUD</a></li>
-              <li><a href="..//core/programmability.html">Programmability</a></li>
-              <li><a href="..//core/individuals.html">Individuals</a></li>
-              <li><a href="..//core/composable.html">Composable Query</a></li>
-              <li><a href="..//core/mssql.html">SQL Server</a></li>
-              <li><a href="..//core/oracle.html">Oracle</a></li>
-              <li><a href="..//core/sqlite.html">SQLite</a></li>
-              <li><a href="..//core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="..//core/mysql.html">MySQL</a></li>
-              <li><a href="..//core/odbc.html">ODBC</a></li>
-              <li><a href="..//reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+ A base type providing default implementations of type provider functionality.
+
+      </p>
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '752', 752)" onmouseover="showTip(event, '752', 752)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>TypeProviderForNamespaces<span><span>(<span>config,&#32;?sourceAssemblies,&#32;?assemblyReplacementMap,&#32;?addDefaultProbingLocation</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="752">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TypeProviderForNamespaces<span><span>(<span>config,&#32;?sourceAssemblies,&#32;?assemblyReplacementMap,&#32;?addDefaultProbingLocation</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        config
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                       - 
+                       Type provider config. 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?sourceAssemblies
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&#32;list</span></code>
+                       - 
+                      
+    Optionally specify the design-time assemblies available to use as a basis for authoring provided types.
+    The transitive dependencies of these assemblies are also included. By default
+    Assembly.GetCallingAssembly() and its transitive dependencies are used.
+ 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?assemblyReplacementMap
+                      </b>
+                      :
+                      <code><span><span>(<span>string&#32;*&#32;string</span>)</span>&#32;list</span></code>
+                       - 
+                      
+    Optionally specify a map of assembly names from source model to referenced assemblies.
+ 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?addDefaultProbingLocation
+                      </b>
+                      :
+                      <code>bool</code>
+                       - 
+                      
+    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
+    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
+ 
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html">TypeProviderForNamespaces</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.#ctor`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.#ctor\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15819-15819" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Initializes a type provider.
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  config
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                   Type provider config. 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?sourceAssemblies
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify the design-time assemblies available to use as a basis for authoring provided types.
+    The transitive dependencies of these assemblies are also included. By default
+    Assembly.GetCallingAssembly() and its transitive dependencies are used.
+ 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?assemblyReplacementMap
+                </span>
+                :
+                <code><span><span>(<span>string&#32;*&#32;string</span>)</span>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify a map of assembly names from source model to referenced assemblies.
+ 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?addDefaultProbingLocation
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
+    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
+ 
+                </p>
+              </dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html">TypeProviderForNamespaces</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '753', 753)" onmouseover="showTip(event, '753', 753)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>TypeProviderForNamespaces<span><span>(<span>config,&#32;namespaceName,&#32;types,&#32;?sourceAssemblies,&#32;?assemblyReplacementMap,&#32;?addDefaultProbingLocation</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="753">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TypeProviderForNamespaces<span><span>(<span>config,&#32;namespaceName,&#32;types,&#32;?sourceAssemblies,&#32;?assemblyReplacementMap,&#32;?addDefaultProbingLocation</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        config
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                       - 
+                       Type provider config. 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        namespaceName
+                      </b>
+                      :
+                      <code>string</code>
+                       - 
+                       Name of namespace. 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        types
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;list</span></code>
+                       - 
+                       Provided type definitions. 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?sourceAssemblies
+                      </b>
+                      :
+                      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&#32;list</span></code>
+                       - 
+                      
+    Optionally specify the design-time assemblies available to use as a basis for authoring provided types.
+    The transitive dependencies of these assemblies are also included. By default
+    Assembly.GetCallingAssembly() and its transitive dependencies are used.
+ 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?assemblyReplacementMap
+                      </b>
+                      :
+                      <code><span><span>(<span>string&#32;*&#32;string</span>)</span>&#32;list</span></code>
+                       - 
+                      
+    Optionally specify a map of assembly names from source model to referenced assemblies.
+ 
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?addDefaultProbingLocation
+                      </b>
+                      :
+                      <code>bool</code>
+                       - 
+                      
+    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
+    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
+ 
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html">TypeProviderForNamespaces</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.#ctor`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.#ctor\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15813-15813" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                Initializes a type provider to provide the types in the given namespace.
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  config
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                   Type provider config. 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  namespaceName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                   Name of namespace. 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  types
+                </span>
+                :
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                   Provided type definitions. 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?sourceAssemblies
+                </span>
+                :
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify the design-time assemblies available to use as a basis for authoring provided types.
+    The transitive dependencies of these assemblies are also included. By default
+    Assembly.GetCallingAssembly() and its transitive dependencies are used.
+ 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?assemblyReplacementMap
+                </span>
+                :
+                <code><span><span>(<span>string&#32;*&#32;string</span>)</span>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify a map of assembly names from source model to referenced assemblies.
+ 
+                </p>
+              </dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?addDefaultProbingLocation
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs">
+                <p>
+                  
+    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
+    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
+ 
+                </p>
+              </dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html">TypeProviderForNamespaces</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '754', 754)" onmouseover="showTip(event, '754', 754)">
+                <p>
+                  <a id="AddNamespace">
+                    <a href="#AddNamespace">
+                      <code><span>this.AddNamespace</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="754">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddNamespace</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        namespaceName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        types
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.AddNamespace`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.AddNamespace\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15866-15866" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Invoked by the type provider to add a namespace of provided types in the specification of the type provider.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  namespaceName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  types
+                </span>
+                :
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '755', 755)" onmouseover="showTip(event, '755', 755)">
+                <p>
+                  <a id="ApplyStaticArgumentsForMethod">
+                    <a href="#ApplyStaticArgumentsForMethod">
+                      <code><span>this.ApplyStaticArgumentsForMethod</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="755">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyStaticArgumentsForMethod</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        arg1
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        arg2
+                      </b>
+                      :
+                      <code><span>obj[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.ApplyStaticArgumentsForMethod`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.ApplyStaticArgumentsForMethod\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15880-15880" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Invoked by the host of the type provider to apply the static argumetns for a method.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg1
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg2
+                </span>
+                :
+                <code><span>obj[]</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '756', 756)" onmouseover="showTip(event, '756', 756)">
+                <p>
+                  <a id="Disposing">
+                    <a href="#Disposing">
+                      <code><span>this.Disposing</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="756">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Disposing</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-control-ievent-2">IEvent</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.eventhandler">EventHandler</a>,&#32;<a href="https://docs.microsoft.com/dotnet/api/system.eventargs">EventArgs</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Disposing`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Disposing\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15828-15828" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-control-ievent-2">IEvent</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.eventhandler">EventHandler</a>,&#32;<a href="https://docs.microsoft.com/dotnet/api/system.eventargs">EventArgs</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '757', 757)" onmouseover="showTip(event, '757', 757)">
+                <p>
+                  <a id="GetStaticParametersForMethod">
+                    <a href="#GetStaticParametersForMethod">
+                      <code><span>this.GetStaticParametersForMethod</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="757">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetStaticParametersForMethod</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.parameterinfo">ParameterInfo</a>[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.GetStaticParametersForMethod`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.GetStaticParametersForMethod\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15875-15875" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Invoked by the host of the type provider to get the static parameters for a method.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodbase">MethodBase</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.reflection.parameterinfo">ParameterInfo</a>[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '758', 758)" onmouseover="showTip(event, '758', 758)">
+                <p>
+                  <a id="Invalidate">
+                    <a href="#Invalidate">
+                      <code><span>this.Invalidate</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="758">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Invalidate</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Invalidate`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Invalidate\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15872-15872" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Invoked by the type provider to invalidate the information provided by the provider
+
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '759', 759)" onmouseover="showTip(event, '759', 759)">
+                <p>
+                  <a id="Namespaces">
+                    <a href="#Namespaces">
+                      <code><span>this.Namespaces</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="759">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Namespaces</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-iprovidednamespace">IProvidedNamespace</a>[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Namespaces`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Namespaces\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15869-15869" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Invoked by the type provider to get all provided namespaces with their provided types.
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-iprovidednamespace">IProvidedNamespace</a>[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '760', 760)" onmouseover="showTip(event, '760', 760)">
+                <p>
+                  <a id="RegisterProbingFolder">
+                    <a href="#RegisterProbingFolder">
+                      <code><span>this.RegisterProbingFolder</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="760">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.RegisterProbingFolder</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        folder
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.RegisterProbingFolder`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.RegisterProbingFolder\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15850-15850" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Registers custom probing path that can be used for probing assemblies
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  folder
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '761', 761)" onmouseover="showTip(event, '761', 761)">
+                <p>
+                  <a id="RegisterRuntimeAssemblyLocationAsProbingFolder">
+                    <a href="#RegisterRuntimeAssemblyLocationAsProbingFolder">
+                      <code><span>this.RegisterRuntimeAssemblyLocationAsProbingFolder</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="761">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.RegisterRuntimeAssemblyLocationAsProbingFolder</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        config
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15855-15855" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Registers location of RuntimeAssembly (from TypeProviderConfig) as probing folder
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  config
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '762', 762)" onmouseover="showTip(event, '762', 762)">
+                <p>
+                  <a id="ResolveAssembly">
+                    <a href="#ResolveAssembly">
+                      <code><span>this.ResolveAssembly</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="762">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ResolveAssembly</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.resolveeventargs">ResolveEventArgs</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.ResolveAssembly`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.ResolveAssembly\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15838-15838" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.resolveeventargs">ResolveEventArgs</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '763', 763)" onmouseover="showTip(event, '763', 763)">
+                <p>
+                  <a id="TargetContext">
+                    <a href="#TargetContext">
+                      <code><span>this.TargetContext</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="763">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TargetContext</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypescontext.html">ProvidedTypesContext</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.TargetContext`')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.TargetContext\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/fsprojects/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs#L15825-15825" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypescontext.html">ProvidedTypesContext</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

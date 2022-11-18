@@ -1,238 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
     <title>mappers</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Type providers for SQL server access.">
-    <meta name="author" content="Ross McKinlay, Colin Bull, Tuomas Hietanen">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="pezipink,colinbull,thorium">
 
-    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 
-    <link type="text/css" rel="stylesheet" href="../content/style.css" />
-    <script type="text/javascript" src="../content/tips.js"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
     <div class="container">
-      <div class="masthead">
-        <ul class="nav nav-pills pull-right">
-          <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/fsprojects/SQLProvider">github page</a></li>
-        </ul>
-        <h3 class="muted"><a href="../index.html">SQLProvider</a></h3>
-      </div>
-      <hr />
-      <div class="row">
-        <div class="span9" id="main">
-          <h2><a name="Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db" class="anchor" href="#Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db">Adding a Mapper using dataContext to use generated types from db</a></h2>
+        <div class="masthead">
+            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <h2><a name="Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db" class="anchor" href="#Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db">Adding a Mapper using dataContext to use generated types from db</a></h2>
 <p>This mapper will get sure that you always sync your types with types you receive from your db.</p>
 <p>First add an Domain Model</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs5', 6)" onmouseover="showTip(event, 'fs5', 6)" class="rt">Employee</span> <span class="o">=</span> <span class="pn">{</span>
-    <span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="id">EmployeeId</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="vt">int64</span>
-    <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">FirstName</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="rt">string</span>
-    <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">LastName</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 12)" onmouseover="showTip(event, 'fs9', 12)" class="rt">string</span>
-    <span onmouseout="hideTip(event, 'fs11', 13)" onmouseover="showTip(event, 'fs11', 13)" class="id">HireDate</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs12', 14)" onmouseover="showTip(event, 'fs12', 14)" class="vt">DateTime</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">System</span>
+
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="rt">Employee</span> <span class="o">=</span> <span class="pn">{</span>
+    <span onmouseout="hideTip(event, 'fs18', 23)" onmouseover="showTip(event, 'fs18', 23)" class="prop">EmployeeId</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs19', 24)" onmouseover="showTip(event, 'fs19', 24)" class="vt">int64</span>
+    <span onmouseout="hideTip(event, 'fs20', 25)" onmouseover="showTip(event, 'fs20', 25)" class="prop">FirstName</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs21', 26)" onmouseover="showTip(event, 'fs21', 26)" class="rt">string</span>
+    <span onmouseout="hideTip(event, 'fs22', 27)" onmouseover="showTip(event, 'fs22', 27)" class="prop">LastName</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="rt">string</span>
+    <span onmouseout="hideTip(event, 'fs23', 29)" onmouseover="showTip(event, 'fs23', 29)" class="prop">HireDate</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs24', 30)" onmouseover="showTip(event, 'fs24', 30)" class="vt">DateTime</span>
 <span class="pn">}</span>
-</code></pre></td>
-</tr>
-</table>
+</code></pre>
 <p>Then you can create the mapper using dataContext to use generated types from db</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 15)" onmouseover="showTip(event, 'fs13', 15)" class="fn">mapEmployee</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs14', 16)" onmouseover="showTip(event, 'fs14', 16)" class="id">dbRecord</span><span class="pn">:</span><span class="id">sql</span><span class="pn">.</span><span class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs5', 17)" onmouseover="showTip(event, 'fs5', 17)" class="rt">Employee</span> <span class="o">=</span>
-    <span class="pn">{</span> <span class="id">EmployeeId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 18)" onmouseover="showTip(event, 'fs14', 18)" class="id">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 19)" onmouseover="showTip(event, 'fs6', 19)" class="id">EmployeeId</span>
-      <span class="id">FirstName</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="id">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 21)" onmouseover="showTip(event, 'fs8', 21)" class="id">FirstName</span>
-      <span class="id">LastName</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 22)" onmouseover="showTip(event, 'fs14', 22)" class="id">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 23)" onmouseover="showTip(event, 'fs10', 23)" class="id">LastName</span>
-      <span class="id">HireDate</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 24)" onmouseover="showTip(event, 'fs14', 24)" class="id">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 25)" onmouseover="showTip(event, 'fs11', 25)" class="id">HireDate</span> <span class="pn">}</span>
-</code></pre></td>
-</tr>
-</table>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 31)" onmouseover="showTip(event, 'fs25', 31)" class="fn">mapEmployee</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs26', 32)" onmouseover="showTip(event, 'fs26', 32)" class="fn">dbRecord</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs7', 33)" onmouseover="showTip(event, 'fs7', 33)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs27', 34)" onmouseover="showTip(event, 'fs27', 34)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs17', 35)" onmouseover="showTip(event, 'fs17', 35)" class="rt">Employee</span> <span class="o">=</span>
+    <span class="pn">{</span> <span class="prop">EmployeeId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 36)" onmouseover="showTip(event, 'fs26', 36)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 37)" onmouseover="showTip(event, 'fs28', 37)" class="id">EmployeeId</span>
+      <span class="prop">FirstName</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 38)" onmouseover="showTip(event, 'fs26', 38)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 39)" onmouseover="showTip(event, 'fs29', 39)" class="id">FirstName</span>
+      <span class="prop">LastName</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 40)" onmouseover="showTip(event, 'fs26', 40)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 41)" onmouseover="showTip(event, 'fs30', 41)" class="id">LastName</span>
+      <span class="prop">HireDate</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs26', 42)" onmouseover="showTip(event, 'fs26', 42)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 43)" onmouseover="showTip(event, 'fs31', 43)" class="id">HireDate</span> <span class="pn">}</span>
+</code></pre>
 <p>SqlProvider also has a <code>.MapTo&lt;'T&gt;</code> convenience  method:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
-<span class="l"> 2: </span>
-<span class="l"> 3: </span>
-<span class="l"> 4: </span>
-<span class="l"> 5: </span>
-<span class="l"> 6: </span>
-<span class="l"> 7: </span>
-<span class="l"> 8: </span>
-<span class="l"> 9: </span>
-<span class="l">10: </span>
-<span class="l">11: </span>
-<span class="l">12: </span>
-<span class="l">13: </span>
-<span class="l">14: </span>
-<span class="l">15: </span>
-<span class="l">16: </span>
-<span class="l">17: </span>
-<span class="l">18: </span>
-<span class="l">19: </span>
-<span class="l">20: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 26)" onmouseover="showTip(event, 'fs1', 26)" class="id">System</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs15', 27)" onmouseover="showTip(event, 'fs15', 27)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 28)" onmouseover="showTip(event, 'fs16', 28)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 29)" onmouseover="showTip(event, 'fs17', 29)" class="id">Sql</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 44)" onmouseover="showTip(event, 'fs32', 44)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 45)" onmouseover="showTip(event, 'fs7', 45)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs33', 46)" onmouseover="showTip(event, 'fs33', 46)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs18', 30)" onmouseover="showTip(event, 'fs18', 30)" class="rt">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs19', 31)" onmouseover="showTip(event, 'fs19', 31)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="en">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="vt">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="id">SQLITE</span><span class="pn">,</span>
-                           <span onmouseout="hideTip(event, 'fs3', 35)" onmouseover="showTip(event, 'fs3', 35)" class="id">connectionString</span><span class="pn">,</span>
-                           <span class="id">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 36)" onmouseover="showTip(event, 'fs4', 36)" class="id">resolutionPath</span><span class="pn">,</span>
-                           <span class="id">CaseSensitivityChange</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs20', 37)" onmouseover="showTip(event, 'fs20', 37)" class="en">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 38)" onmouseover="showTip(event, 'fs23', 38)" class="vt">CaseSensitivityChange</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 39)" onmouseover="showTip(event, 'fs24', 39)" class="id">ORIGINAL</span><span class="pn">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs34', 47)" onmouseover="showTip(event, 'fs34', 47)" class="id">orders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 48)" onmouseover="showTip(event, 'fs32', 48)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 49)" onmouseover="showTip(event, 'fs35', 49)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 50)" onmouseover="showTip(event, 'fs36', 50)" class="id">Orders</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs37', 51)" onmouseover="showTip(event, 'fs37', 51)" class="id">employees</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 52)" onmouseover="showTip(event, 'fs32', 52)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 53)" onmouseover="showTip(event, 'fs35', 53)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs38', 54)" onmouseover="showTip(event, 'fs38', 54)" class="id">Employees</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 40)" onmouseover="showTip(event, 'fs25', 40)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 41)" onmouseover="showTip(event, 'fs18', 41)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
-
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 42)" onmouseover="showTip(event, 'fs26', 42)" class="id">orders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 43)" onmouseover="showTip(event, 'fs25', 43)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Orders</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 44)" onmouseover="showTip(event, 'fs27', 44)" class="id">employees</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 45)" onmouseover="showTip(event, 'fs25', 45)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Employees</span>
-
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs28', 46)" onmouseover="showTip(event, 'fs28', 46)" class="rt">Employee2</span> <span class="o">=</span> <span class="pn">{</span>
-    <span onmouseout="hideTip(event, 'fs29', 47)" onmouseover="showTip(event, 'fs29', 47)" class="id">FirstName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs9', 48)" onmouseover="showTip(event, 'fs9', 48)" class="rt">string</span>
-    <span onmouseout="hideTip(event, 'fs30', 49)" onmouseover="showTip(event, 'fs30', 49)" class="id">LastName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs9', 50)" onmouseover="showTip(event, 'fs9', 50)" class="rt">string</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs39', 55)" onmouseover="showTip(event, 'fs39', 55)" class="rt">Employee2</span> <span class="o">=</span> <span class="pn">{</span>
+    <span onmouseout="hideTip(event, 'fs40', 56)" onmouseover="showTip(event, 'fs40', 56)" class="prop">FirstName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs21', 57)" onmouseover="showTip(event, 'fs21', 57)" class="rt">string</span>
+    <span onmouseout="hideTip(event, 'fs41', 58)" onmouseover="showTip(event, 'fs41', 58)" class="prop">LastName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs21', 59)" onmouseover="showTip(event, 'fs21', 59)" class="rt">string</span>
     <span class="pn">}</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 51)" onmouseover="showTip(event, 'fs31', 51)" class="id">qry</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 52)" onmouseover="showTip(event, 'fs32', 52)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs33', 53)" onmouseover="showTip(event, 'fs33', 53)" class="id">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs27', 54)" onmouseover="showTip(event, 'fs27', 54)" class="id">employees</span> <span class="k">do</span>
-                  <span onmouseout="hideTip(event, 'fs34', 55)" onmouseover="showTip(event, 'fs34', 55)" class="k">select</span> <span onmouseout="hideTip(event, 'fs33', 56)" onmouseover="showTip(event, 'fs33', 56)" class="id">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 57)" onmouseover="showTip(event, 'fs35', 57)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 58)" onmouseover="showTip(event, 'fs36', 58)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs37', 59)" onmouseover="showTip(event, 'fs37', 59)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs37', 60)" onmouseover="showTip(event, 'fs37', 60)" class="id">x</span><span class="pn">.</span><span class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs28', 61)" onmouseover="showTip(event, 'fs28', 61)" class="id">Employee2</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
-</code></pre></td>
-</tr>
-</table>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 60)" onmouseover="showTip(event, 'fs42', 60)" class="id">qry</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs43', 61)" onmouseover="showTip(event, 'fs43', 61)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs44', 62)" onmouseover="showTip(event, 'fs44', 62)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs37', 63)" onmouseover="showTip(event, 'fs37', 63)" class="id">employees</span> <span class="k">do</span>
+                  <span onmouseout="hideTip(event, 'fs45', 64)" onmouseover="showTip(event, 'fs45', 64)" class="k">select</span> <span onmouseout="hideTip(event, 'fs44', 65)" onmouseover="showTip(event, 'fs44', 65)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 66)" onmouseover="showTip(event, 'fs46', 66)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 67)" onmouseover="showTip(event, 'fs47', 67)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs48', 68)" onmouseover="showTip(event, 'fs48', 68)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs48', 69)" onmouseover="showTip(event, 'fs48', 69)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 70)" onmouseover="showTip(event, 'fs49', 70)" class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs39', 71)" onmouseover="showTip(event, 'fs39', 71)" class="rt">Employee2</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+</code></pre>
 <p>The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
 The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-<span class="l">6: </span>
-<span class="l">7: </span>
-<span class="l">8: </span>
-<span class="l">9: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs15', 62)" onmouseover="showTip(event, 'fs15', 62)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 63)" onmouseover="showTip(event, 'fs16', 63)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 64)" onmouseover="showTip(event, 'fs17', 64)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 65)" onmouseover="showTip(event, 'fs20', 65)" class="id">Common</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 72)" onmouseover="showTip(event, 'fs4', 72)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 73)" onmouseover="showTip(event, 'fs5', 73)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 74)" onmouseover="showTip(event, 'fs6', 74)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 75)" onmouseover="showTip(event, 'fs9', 75)" class="id">Common</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs38', 66)" onmouseover="showTip(event, 'fs38', 66)" class="rt">Employee3</span> <span class="o">=</span> <span class="pn">{</span>
-    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs39', 67)" onmouseover="showTip(event, 'fs39', 67)" class="rt">MappedColumn</span><span class="pn">(</span><span class="s">&quot;FirstName&quot;</span><span class="pn">)</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs40', 68)" onmouseover="showTip(event, 'fs40', 68)" class="id">GivenName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs9', 69)" onmouseover="showTip(event, 'fs9', 69)" class="rt">string</span>
-    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs39', 70)" onmouseover="showTip(event, 'fs39', 70)" class="rt">MappedColumn</span><span class="pn">(</span><span class="s">&quot;LastName&quot;</span><span class="pn">)</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs41', 71)" onmouseover="showTip(event, 'fs41', 71)" class="id">FamilyName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs9', 72)" onmouseover="showTip(event, 'fs9', 72)" class="rt">string</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs50', 76)" onmouseover="showTip(event, 'fs50', 76)" class="rt">Employee3</span> <span class="o">=</span> <span class="pn">{</span>
+    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs51', 77)" onmouseover="showTip(event, 'fs51', 77)" class="rt">MappedColumn</span><span class="pn">(</span><span class="s">&quot;FirstName&quot;</span><span class="pn">)</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs52', 78)" onmouseover="showTip(event, 'fs52', 78)" class="prop">GivenName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs21', 79)" onmouseover="showTip(event, 'fs21', 79)" class="rt">string</span>
+    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs51', 80)" onmouseover="showTip(event, 'fs51', 80)" class="rt">MappedColumn</span><span class="pn">(</span><span class="s">&quot;LastName&quot;</span><span class="pn">)</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs53', 81)" onmouseover="showTip(event, 'fs53', 81)" class="prop">FamilyName</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs21', 82)" onmouseover="showTip(event, 'fs21', 82)" class="rt">string</span>
     <span class="pn">}</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 73)" onmouseover="showTip(event, 'fs31', 73)" class="id">qry</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 74)" onmouseover="showTip(event, 'fs32', 74)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs33', 75)" onmouseover="showTip(event, 'fs33', 75)" class="id">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs27', 76)" onmouseover="showTip(event, 'fs27', 76)" class="id">employees</span> <span class="k">do</span>
-                  <span onmouseout="hideTip(event, 'fs34', 77)" onmouseover="showTip(event, 'fs34', 77)" class="k">select</span> <span onmouseout="hideTip(event, 'fs33', 78)" onmouseover="showTip(event, 'fs33', 78)" class="id">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 79)" onmouseover="showTip(event, 'fs35', 79)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 80)" onmouseover="showTip(event, 'fs36', 80)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs37', 81)" onmouseover="showTip(event, 'fs37', 81)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs37', 82)" onmouseover="showTip(event, 'fs37', 82)" class="id">x</span><span class="pn">.</span><span class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs38', 83)" onmouseover="showTip(event, 'fs38', 83)" class="id">Employee3</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
-</code></pre></td>
-</tr>
-</table>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 83)" onmouseover="showTip(event, 'fs54', 83)" class="id">qry2</span> <span class="o">=</span> 
+          <span onmouseout="hideTip(event, 'fs43', 84)" onmouseover="showTip(event, 'fs43', 84)" class="k">query</span> <span class="pn">{</span> 
+                <span class="k">for</span> <span onmouseout="hideTip(event, 'fs44', 85)" onmouseover="showTip(event, 'fs44', 85)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs37', 86)" onmouseover="showTip(event, 'fs37', 86)" class="id">employees</span> <span class="k">do</span>
+                <span onmouseout="hideTip(event, 'fs45', 87)" onmouseover="showTip(event, 'fs45', 87)" class="k">select</span> <span onmouseout="hideTip(event, 'fs44', 88)" onmouseover="showTip(event, 'fs44', 88)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 89)" onmouseover="showTip(event, 'fs46', 89)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 90)" onmouseover="showTip(event, 'fs47', 90)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs48', 91)" onmouseover="showTip(event, 'fs48', 91)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs48', 92)" onmouseover="showTip(event, 'fs48', 92)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs55', 93)" onmouseover="showTip(event, 'fs55', 93)" class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs50', 94)" onmouseover="showTip(event, 'fs50', 94)" class="rt">Employee3</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+</code></pre>
 <p>Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
 column as a key:</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
-<span class="l">5: </span>
-</pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 84)" onmouseover="showTip(event, 'fs42', 84)" class="id">rows</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 85)" onmouseover="showTip(event, 'fs32', 85)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs33', 86)" onmouseover="showTip(event, 'fs33', 86)" class="id">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs27', 87)" onmouseover="showTip(event, 'fs27', 87)" class="id">employees</span> <span class="k">do</span>
-                  <span onmouseout="hideTip(event, 'fs34', 88)" onmouseover="showTip(event, 'fs34', 88)" class="k">select</span> <span onmouseout="hideTip(event, 'fs33', 89)" onmouseover="showTip(event, 'fs33', 89)" class="id">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 90)" onmouseover="showTip(event, 'fs35', 90)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs43', 91)" onmouseover="showTip(event, 'fs43', 91)" class="id">toArray</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs56', 95)" onmouseover="showTip(event, 'fs56', 95)" class="id">rows</span> <span class="o">=</span> 
+        <span onmouseout="hideTip(event, 'fs43', 96)" onmouseover="showTip(event, 'fs43', 96)" class="k">query</span> <span class="pn">{</span> 
+            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs44', 97)" onmouseover="showTip(event, 'fs44', 97)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs37', 98)" onmouseover="showTip(event, 'fs37', 98)" class="id">employees</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs45', 99)" onmouseover="showTip(event, 'fs45', 99)" class="k">select</span> <span onmouseout="hideTip(event, 'fs44', 100)" onmouseover="showTip(event, 'fs44', 100)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 101)" onmouseover="showTip(event, 'fs46', 101)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs57', 102)" onmouseover="showTip(event, 'fs57', 102)" class="id">toArray</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 92)" onmouseover="showTip(event, 'fs44', 92)" class="id">employees2map</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs42', 93)" onmouseover="showTip(event, 'fs42', 93)" class="id">rows</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 94)" onmouseover="showTip(event, 'fs35', 94)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 95)" onmouseover="showTip(event, 'fs36', 95)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs45', 96)" onmouseover="showTip(event, 'fs45', 96)" class="id">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs45', 97)" onmouseover="showTip(event, 'fs45', 97)" class="id">i</span><span class="pn">.</span><span class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 98)" onmouseover="showTip(event, 'fs46', 98)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 99)" onmouseover="showTip(event, 'fs47', 99)" class="id">ofSeq</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 100)" onmouseover="showTip(event, 'fs48', 100)" class="id">firstNames</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs44', 101)" onmouseover="showTip(event, 'fs44', 101)" class="id">employees2map</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs35', 102)" onmouseover="showTip(event, 'fs35', 102)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 103)" onmouseover="showTip(event, 'fs36', 103)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs49', 104)" onmouseover="showTip(event, 'fs49', 104)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs49', 105)" onmouseover="showTip(event, 'fs49', 105)" class="id">x</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;FirstName&quot;</span><span class="pn">]</span><span class="pn">)</span>
-</code></pre></td>
-</tr>
-</table>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs58', 103)" onmouseover="showTip(event, 'fs58', 103)" class="id">employees2map</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs56', 104)" onmouseover="showTip(event, 'fs56', 104)" class="id">rows</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 105)" onmouseover="showTip(event, 'fs46', 105)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 106)" onmouseover="showTip(event, 'fs47', 106)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs59', 107)" onmouseover="showTip(event, 'fs59', 107)" class="fn">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs59', 108)" onmouseover="showTip(event, 'fs59', 108)" class="fn">i</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs60', 109)" onmouseover="showTip(event, 'fs60', 109)" class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs61', 110)" onmouseover="showTip(event, 'fs61', 110)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs62', 111)" onmouseover="showTip(event, 'fs62', 111)" class="id">ofSeq</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs63', 112)" onmouseover="showTip(event, 'fs63', 112)" class="id">firstNames</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs58', 113)" onmouseover="showTip(event, 'fs58', 113)" class="id">employees2map</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs46', 114)" onmouseover="showTip(event, 'fs46', 114)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 115)" onmouseover="showTip(event, 'fs47', 115)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs64', 116)" onmouseover="showTip(event, 'fs64', 116)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs64', 117)" onmouseover="showTip(event, 'fs64', 117)" class="fn">x</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;FirstName&quot;</span><span class="pn">]</span><span class="pn">)</span>
+</code></pre>
 
-<div class="tip" id="fs1">namespace System</div>
-<div class="tip" id="fs2">Multiple items<br />type LiteralAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; LiteralAttribute<br /><br />--------------------<br />new : unit -&gt; LiteralAttribute</div>
-<div class="tip" id="fs3">val connectionString : string</div>
-<div class="tip" id="fs4">val resolutionPath : string</div>
-<div class="tip" id="fs5">type Employee =<br />&#160;&#160;{ EmployeeId: int64<br />&#160;&#160;&#160;&#160;FirstName: string<br />&#160;&#160;&#160;&#160;LastName: string<br />&#160;&#160;&#160;&#160;HireDate: DateTime }</div>
-<div class="tip" id="fs6">Employee.EmployeeId: int64</div>
-<div class="tip" id="fs7">Multiple items<br />val int64 : value:&#39;T -&gt; int64 (requires member op_Explicit)<br /><br />--------------------<br />type int64 = Int64<br /><br />--------------------<br />type int64&lt;&#39;Measure&gt; = int64</div>
-<div class="tip" id="fs8">Employee.FirstName: string</div>
-<div class="tip" id="fs9">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />--------------------<br />type string = String</div>
-<div class="tip" id="fs10">Employee.LastName: string</div>
-<div class="tip" id="fs11">Employee.HireDate: DateTime</div>
-<div class="tip" id="fs12">Multiple items<br />type DateTime =<br />&#160;&#160;struct<br />&#160;&#160;&#160;&#160;new : ticks:int64 -&gt; DateTime + 10 overloads<br />&#160;&#160;&#160;&#160;member Add : value:TimeSpan -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddDays : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddHours : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMilliseconds : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMinutes : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddMonths : months:int -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddSeconds : value:float -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddTicks : value:int64 -&gt; DateTime<br />&#160;&#160;&#160;&#160;member AddYears : value:int -&gt; DateTime<br />&#160;&#160;&#160;&#160;...<br />&#160;&#160;end<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="tip" id="fs13">val mapEmployee : dbRecord:Employee -&gt; Employee</div>
-<div class="tip" id="fs14">val dbRecord : Employee</div>
-<div class="tip" id="fs15">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
-<div class="tip" id="fs16">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
-<div class="tip" id="fs17">namespace FSharp.Data.Sql</div>
-<div class="tip" id="fs18">type sql = obj</div>
-<div class="tip" id="fs19">type SqlDataProvider<br /><em><br /><br />&lt;summary&gt;Typed representation of a database&lt;/summary&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 1000.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;UseOptionTypes&#39;&gt;If FSharp.Data.Sql.Common.NullableColumnType.OPTION, F# option types will be used in place of nullable database columns.  If NO_OPTION, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;Owner&#39;&gt;Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;CaseSensitivityChange&#39;&gt;Should we do ToUpper or ToLower when generating table names?&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;TableNames&#39;&gt;Comma separated table names list to limit a number of tables in big instances. The names can have &#39;%&#39; sign to handle it as in the &#39;LIKE&#39; query (Oracle and MSSQL Only)&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;ContextSchemaPath&#39;&gt;The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;OdbcQuote&#39;&gt;Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;<br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</em></div>
-<div class="tip" id="fs20">namespace FSharp.Data.Sql.Common</div>
-<div class="tip" id="fs21">type DatabaseProviderTypes =<br />&#160;&#160;| MSSQLSERVER = 0<br />&#160;&#160;| SQLITE = 1<br />&#160;&#160;| POSTGRESQL = 2<br />&#160;&#160;| MYSQL = 3<br />&#160;&#160;| ORACLE = 4<br />&#160;&#160;| MSACCESS = 5<br />&#160;&#160;| ODBC = 6<br />&#160;&#160;| FIREBIRD = 7<br />&#160;&#160;| MSSQLSERVER_DYNAMIC = 8<br />&#160;&#160;| MSSQLSERVER_SSDT = 9</div>
-<div class="tip" id="fs22">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
-<div class="tip" id="fs23">type CaseSensitivityChange =<br />&#160;&#160;| ORIGINAL = 0<br />&#160;&#160;| TOUPPER = 1<br />&#160;&#160;| TOLOWER = 2</div>
-<div class="tip" id="fs24">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
-<div class="tip" id="fs25">val ctx : obj</div>
-<div class="tip" id="fs26">val orders : obj</div>
-<div class="tip" id="fs27">val employees : Linq.IQueryable&lt;obj&gt;</div>
-<div class="tip" id="fs28">type Employee2 =<br />&#160;&#160;{ FirstName: string<br />&#160;&#160;&#160;&#160;LastName: string }</div>
-<div class="tip" id="fs29">Employee2.FirstName: string</div>
-<div class="tip" id="fs30">Employee2.LastName: string</div>
-<div class="tip" id="fs31">val qry : seq&lt;obj&gt;</div>
-<div class="tip" id="fs32">val query : Linq.QueryBuilder</div>
-<div class="tip" id="fs33">val row : obj</div>
-<div class="tip" id="fs34">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
-<div class="tip" id="fs35">Multiple items<br />module Seq<br /><br />from FSharp.Data.Sql<br /><br />--------------------<br />module Seq<br /><br />from Microsoft.FSharp.Collections</div>
-<div class="tip" id="fs36">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; source:seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;</div>
-<div class="tip" id="fs37">val x : obj</div>
-<div class="tip" id="fs38">type Employee3 =<br />&#160;&#160;{ GivenName: string<br />&#160;&#160;&#160;&#160;FamilyName: string }</div>
-<div class="tip" id="fs39">Multiple items<br />type MappedColumnAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : name:string -&gt; MappedColumnAttribute<br />&#160;&#160;member Name : string<br /><br />--------------------<br />new : name:string -&gt; MappedColumnAttribute</div>
-<div class="tip" id="fs40">Employee3.GivenName: string</div>
-<div class="tip" id="fs41">Employee3.FamilyName: string</div>
-<div class="tip" id="fs42">val rows : obj []</div>
-<div class="tip" id="fs43">val toArray : source:seq&lt;&#39;T&gt; -&gt; &#39;T []</div>
-<div class="tip" id="fs44">val employees2map : seq&lt;Map&lt;string,obj&gt;&gt;</div>
-<div class="tip" id="fs45">val i : obj</div>
-<div class="tip" id="fs46">Multiple items<br />module Map<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&lt;&#39;Key,&#39;Value (requires comparison)&gt; =<br />&#160;&#160;interface IReadOnlyDictionary&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;interface IReadOnlyCollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface IEnumerable<br />&#160;&#160;interface IComparable<br />&#160;&#160;interface IEnumerable&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface ICollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface IDictionary&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member Add : key:&#39;Key * value:&#39;Value -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member Change : key:&#39;Key * f:(&#39;Value option -&gt; &#39;Value option) -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;...<br /><br />--------------------<br />new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;</div>
-<div class="tip" id="fs47">val ofSeq : elements:seq&lt;&#39;Key * &#39;T&gt; -&gt; Map&lt;&#39;Key,&#39;T&gt; (requires comparison)</div>
-<div class="tip" id="fs48">val firstNames : seq&lt;obj&gt;</div>
-<div class="tip" id="fs49">val x : Map&lt;string,obj&gt;</div>
+            <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
+  inherit Attribute
+  new: unit -&gt; LiteralAttribute<br /><em>&lt;summary&gt;Adding this attribute to a value causes it to be compiled as a CLI constant literal.&lt;/summary&gt;<br />&lt;category&gt;Attributes&lt;/category&gt;</em><br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
+<div class="fsdocs-tip" id="fs2">[&lt;Literal&gt;]
+val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../files/sqlite&quot;</div>
+<div class="fsdocs-tip" id="fs3">[&lt;Literal&gt;]
+val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;&quot;</div>
+<div class="fsdocs-tip" id="fs4">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div class="fsdocs-tip" id="fs5">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
+<div class="fsdocs-tip" id="fs6">namespace FSharp.Data.Sql</div>
+<div class="fsdocs-tip" id="fs7">type sql = SqlDataProvider&lt;...&gt;</div>
+<div class="fsdocs-tip" id="fs8">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+                    &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
+                    &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
+                    &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
+                    &lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 1000.&lt;/param&gt;
+                    &lt;param name=&#39;UseOptionTypes&#39;&gt;If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;
+                    &lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.&lt;/param&gt;
+                    &lt;param name=&#39;Owner&#39;&gt;Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.&lt;/param&gt;
+                    &lt;param name=&#39;CaseSensitivityChange&#39;&gt;Should we do ToUpper or ToLower when generating table names?&lt;/param&gt;
+                    &lt;param name=&#39;TableNames&#39;&gt;Comma separated table names list to limit a number of tables in big instances. The names can have &#39;%&#39; sign to handle it as in the &#39;LIKE&#39; query (Oracle and MSSQL Only)&lt;/param&gt;
+                    &lt;param name=&#39;ContextSchemaPath&#39;&gt;The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.&lt;/param&gt;
+                    &lt;param name=&#39;OdbcQuote&#39;&gt;Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]&lt;/param&gt;
+                    &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
+                    &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
+                    </em></div>
+<div class="fsdocs-tip" id="fs9">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs10">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9</div>
+<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+<div class="fsdocs-tip" id="fs12">[&lt;Struct&gt;]
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3</div>
+<div class="fsdocs-tip" id="fs13">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0</div>
+<div class="fsdocs-tip" id="fs14">[&lt;Struct&gt;]
+type CaseSensitivityChange =
+  | ORIGINAL = 0
+  | TOUPPER = 1
+  | TOLOWER = 2</div>
+<div class="fsdocs-tip" id="fs15">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+<div class="fsdocs-tip" id="fs16">namespace System</div>
+<div class="fsdocs-tip" id="fs17">type Employee =
+  {
+    EmployeeId: int64
+    FirstName: string
+    LastName: string
+    HireDate: DateTime
+  }</div>
+<div class="fsdocs-tip" id="fs18">Employee.EmployeeId: int64</div>
+<div class="fsdocs-tip" id="fs19">Multiple items<br />val int64: value: &#39;T -&gt; int64 (requires member op_Explicit)<br /><em>&lt;summary&gt;Converts the argument to signed 64-bit integer. This is a direct conversion for all 
+ primitive numeric types. For strings, the input is converted using &lt;c&gt;Int64.Parse()&lt;/c&gt; 
+ with InvariantCulture settings. Otherwise the operation requires an appropriate
+ static conversion method on the input type.&lt;/summary&gt;<br />&lt;param name=&quot;value&quot;&gt;The input value.&lt;/param&gt;<br />&lt;returns&gt;The converted int64&lt;/returns&gt;<br />&lt;example id=&quot;int64-example&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;&lt;/code&gt;&lt;/example&gt;</em><br /><br />--------------------<br />[&lt;Struct&gt;]
+type int64 = Int64<br /><em>&lt;summary&gt;An abbreviation for the CLI type &lt;see cref=&quot;T:System.Int64&quot; /&gt;.&lt;/summary&gt;<br />&lt;category&gt;Basic Types&lt;/category&gt;</em><br /><br />--------------------<br />type int64&lt;&#39;Measure&gt; =
+  int64<br /><em>&lt;summary&gt;The type of 64-bit signed integer numbers, annotated with a unit of measure. The unit
+ of measure is erased in compiled code and when values of this type
+ are analyzed using reflection. The type is representationally equivalent to
+ &lt;see cref=&quot;T:System.Int64&quot; /&gt;.&lt;/summary&gt;<br />&lt;category&gt;Basic Types with Units of Measure&lt;/category&gt;</em></div>
+<div class="fsdocs-tip" id="fs20">Employee.FirstName: string</div>
+<div class="fsdocs-tip" id="fs21">Multiple items<br />val string: value: &#39;T -&gt; string<br /><em>&lt;summary&gt;Converts the argument to a string using &lt;c&gt;ToString&lt;/c&gt;.&lt;/summary&gt;<br />&lt;remarks&gt;For standard integer and floating point values the and any type that implements &lt;c&gt;IFormattable&lt;/c&gt;&lt;c&gt;ToString&lt;/c&gt; conversion uses &lt;c&gt;CultureInfo.InvariantCulture&lt;/c&gt;. &lt;/remarks&gt;<br />&lt;param name=&quot;value&quot;&gt;The input value.&lt;/param&gt;<br />&lt;returns&gt;The converted string.&lt;/returns&gt;<br />&lt;example id=&quot;string-example&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;&lt;/code&gt;&lt;/example&gt;</em><br /><br />--------------------<br />type string = String<br /><em>&lt;summary&gt;An abbreviation for the CLI type &lt;see cref=&quot;T:System.String&quot; /&gt;.&lt;/summary&gt;<br />&lt;category&gt;Basic Types&lt;/category&gt;</em></div>
+<div class="fsdocs-tip" id="fs22">Employee.LastName: string</div>
+<div class="fsdocs-tip" id="fs23">Employee.HireDate: DateTime</div>
+<div class="fsdocs-tip" id="fs24">Multiple items<br />[&lt;Struct&gt;]
+type DateTime =
+  new: year: int * month: int * day: int -&gt; unit + 10 overloads
+  member Add: value: TimeSpan -&gt; DateTime
+  member AddDays: value: float -&gt; DateTime
+  member AddHours: value: float -&gt; DateTime
+  member AddMilliseconds: value: float -&gt; DateTime
+  member AddMinutes: value: float -&gt; DateTime
+  member AddMonths: months: int -&gt; DateTime
+  member AddSeconds: value: float -&gt; DateTime
+  member AddTicks: value: int64 -&gt; DateTime
+  member AddYears: value: int -&gt; DateTime
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs25">val mapEmployee: dbRecord: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; Employee</div>
+<div class="fsdocs-tip" id="fs26">val dbRecord: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs27">type dataContext =
+  member ClearUpdates: unit -&gt; List&lt;SqlEntity&gt;
+  member CreateConnection: unit -&gt; IDbConnection
+  member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
+  member SaveContextSchema: unit -&gt; SaveContextResponse
+  member SubmitUpdates: unit -&gt; Unit
+  member SubmitUpdatesAsync: unit -&gt; Task&lt;Unit&gt;
+  member ``Design Time Commands`` : DesignTimeCommands
+  member Main: mainSchema
+  member Pragma: Pragma
+  nested type DesignTimeCommands
+  ...</div>
+<div class="fsdocs-tip" id="fs28">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.EmployeeId: int64 with get, set<br /><em>&lt;summary&gt;EmployeeID:   integer&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs29">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.FirstName: string with get, set<br /><em>&lt;summary&gt;FirstName:   nvarchar(10)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs30">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.LastName: string with get, set<br /><em>&lt;summary&gt;LastName:   nvarchar(20)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs31">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.HireDate: DateTime with get, set<br /><em>&lt;summary&gt;HireDate:   datetime&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs32">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div class="fsdocs-tip" id="fs33">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs34">val orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders</div>
+<div class="fsdocs-tip" id="fs35">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
+<div class="fsdocs-tip" id="fs36">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders with get<br /><em>&lt;summary&gt;  The table Orders belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs37">val employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees</div>
+<div class="fsdocs-tip" id="fs38">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs39">type Employee2 =
+  {
+    FirstName: string
+    LastName: string
+  }</div>
+<div class="fsdocs-tip" id="fs40">Employee2.FirstName: string</div>
+<div class="fsdocs-tip" id="fs41">Employee2.LastName: string</div>
+<div class="fsdocs-tip" id="fs42">val qry: seq&lt;Employee2&gt;</div>
+<div class="fsdocs-tip" id="fs43">val query: Linq.QueryBuilder<br /><em>&lt;summary&gt;Builds a query using query syntax and operators.&lt;/summary&gt;<br />&lt;example id=&quot;query-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&amp;lt;int&amp;gt;) =
+     query {
+         for x in xs do
+         where (x % 2 = 0)
+         sortBy x
+         select (x+x)
+      }
+
+ let data = [1; 2; 6; 7; 3; 6; 2; 1]
+
+ findEvensAndSortAndDouble (data.AsQueryable()) |&amp;gt; Seq.toList
+ &lt;/code&gt;
+ Evaluates to &lt;c&gt;[4; 4; 12; 12]&lt;/c&gt;.
+ &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs44">val row: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs45">custom operation: select (&#39;Result)
+
+Calls Linq.QueryBuilder.Select<br /><em>&lt;summary&gt;A query operator that projects each of the elements selected so far.
+ &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
+<div class="fsdocs-tip" id="fs46">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
+
+from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations for working with values of type &lt;see cref=&quot;T:Microsoft.FSharp.Collections.seq`1&quot; /&gt;.&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs47">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: seq&lt;&#39;T&gt; -&gt; seq&lt;&#39;U&gt;<br /><em>&lt;summary&gt;Builds a new collection whose elements are the results of applying the given function
+ to each of the elements of the collection.  The given function will be applied
+ as elements are demanded using the &lt;c&gt;MoveNext&lt;/c&gt; method on enumerators retrieved from the
+ object.&lt;/summary&gt;<br />&lt;remarks&gt;The returned sequence may be passed between threads safely. However,
+ individual IEnumerator values generated from the returned sequence should not be accessed concurrently.&lt;/remarks&gt;<br />&lt;param name=&quot;mapping&quot;&gt;A function to transform items from the input sequence.&lt;/param&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;returns&gt;The result sequence.&lt;/returns&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;example id=&quot;item-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let inputs = [&quot;a&quot;; &quot;bbb&quot;; &quot;cc&quot;]
+
+ inputs |&amp;gt; Seq.map (fun x -&amp;gt; x.Length)
+ &lt;/code&gt;
+ Evaluates to a sequence yielding the same results as &lt;c&gt;seq { 1; 3; 2 }&lt;/c&gt;&lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs48">val x: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs49">member Common.SqlEntity.MapTo: ?propertyTypeMapping: (string * obj -&gt; obj) -&gt; &#39;a</div>
+<div class="fsdocs-tip" id="fs50">type Employee3 =
+  {
+    GivenName: string
+    FamilyName: string
+  }</div>
+<div class="fsdocs-tip" id="fs51">Multiple items<br />type MappedColumnAttribute =
+  inherit Attribute
+  new: name: string -&gt; MappedColumnAttribute
+  member Name: string<br /><br />--------------------<br />new: name: string -&gt; MappedColumnAttribute</div>
+<div class="fsdocs-tip" id="fs52">Employee3.GivenName: string</div>
+<div class="fsdocs-tip" id="fs53">Employee3.FamilyName: string</div>
+<div class="fsdocs-tip" id="fs54">val qry2: seq&lt;Employee3&gt;</div>
+<div class="fsdocs-tip" id="fs55">member SqlEntity.MapTo: ?propertyTypeMapping: (string * obj -&gt; obj) -&gt; &#39;a</div>
+<div class="fsdocs-tip" id="fs56">val rows: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity[]</div>
+<div class="fsdocs-tip" id="fs57">val toArray: source: seq&lt;&#39;T&gt; -&gt; &#39;T[]<br /><em>&lt;summary&gt;Builds an array from the given collection.&lt;/summary&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;returns&gt;The result array.&lt;/returns&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;example id=&quot;toarray-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let inputs = seq { 1; 2; 5 }
+
+ inputs |&amp;gt; Seq.toArray
+ &lt;/code&gt;
+ Evaluates to &lt;c&gt;[| 1; 2; 5 |]&lt;/c&gt;.
+ &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs58">val employees2map: seq&lt;Map&lt;string,obj&gt;&gt;</div>
+<div class="fsdocs-tip" id="fs59">val i: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs60">property SqlEntity.ColumnValues: seq&lt;string * obj&gt; with get</div>
+<div class="fsdocs-tip" id="fs61">Multiple items<br />module Map
+
+from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations for working with values of type &lt;see cref=&quot;T:Microsoft.FSharp.Collections.FSharpMap`2&quot; /&gt;.&lt;/summary&gt;</em><br /><br />--------------------<br />type Map&lt;&#39;Key,&#39;Value (requires comparison)&gt; =
+  interface IReadOnlyDictionary&lt;&#39;Key,&#39;Value&gt;
+  interface IReadOnlyCollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;
+  interface IEnumerable
+  interface IComparable
+  interface IEnumerable&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;
+  interface ICollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;
+  interface IDictionary&lt;&#39;Key,&#39;Value&gt;
+  new: elements: seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;
+  member Add: key: &#39;Key * value: &#39;Value -&gt; Map&lt;&#39;Key,&#39;Value&gt;
+  member Change: key: &#39;Key * f: (&#39;Value option -&gt; &#39;Value option) -&gt; Map&lt;&#39;Key,&#39;Value&gt;
+  ...<br /><em>&lt;summary&gt;Immutable maps based on binary trees, where keys are ordered by F# generic comparison. By default
+ comparison is the F# structural comparison function or uses implementations of the IComparable interface on key values.&lt;/summary&gt;<br />&lt;remarks&gt;See the &lt;see cref=&quot;T:Microsoft.FSharp.Collections.MapModule&quot; /&gt; module for further operations on maps.
+
+ All members of this class are thread-safe and may be used concurrently from multiple threads.&lt;/remarks&gt;</em><br /><br />--------------------<br />new: elements: seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;</div>
+<div class="fsdocs-tip" id="fs62">val ofSeq: elements: seq&lt;&#39;Key * &#39;T&gt; -&gt; Map&lt;&#39;Key,&#39;T&gt; (requires comparison)<br /><em>&lt;summary&gt;Returns a new map made from the given bindings.&lt;/summary&gt;<br />&lt;param name=&quot;elements&quot;&gt;The input sequence of key/value pairs.&lt;/param&gt;<br />&lt;returns&gt;The resulting map.&lt;/returns&gt;<br />&lt;example id=&quot;ofseq-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
+ let input = seq { (1, &quot;a&quot;); (2, &quot;b&quot;) }
+
+ input |&amp;gt; Map.ofSeq // evaluates to map [(1, &quot;a&quot;); (2, &quot;b&quot;)]
+ &lt;/code&gt;&lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs63">val firstNames: seq&lt;obj&gt;</div>
+<div class="fsdocs-tip" id="fs64">val x: Map&lt;string,obj&gt;</div>
 
         </div>
-        <div class="span3">
-          <ul class="nav nav-list" id="menu">
-            <li class="nav-header">SQLProvider</li>
-            <li><a href="../index.html">Home page</a></li>
-            <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider">Source Code on GitHub</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-            <li><a href="http://github.com/fsprojects/SQLProvider/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
-            
-        
-            <li class="nav-header">Documentation</li>
-              <li><a href="../core/general.html">General</a></li>
-              <li><a href="../core/parameters.html">Static Parameters</a></li>
-              <li><a href="../core/querying.html">Querying</a></li>
-              <li><a href="../core/constraints-relationships.html">Constraints & Relationships</a></li>
-              <li><a href="../core/crud.html">CRUD</a></li>
-              <li><a href="../core/programmability.html">Programmability</a></li>
-              <li><a href="../core/individuals.html">Individuals</a></li>
-              <li><a href="../core/composable.html">Composable Query</a></li>
-              <li><a href="../core/mssql.html">SQL Server</a></li>
-              <li><a href="../core/oracle.html">Oracle</a></li>
-              <li><a href="../core/sqlite.html">SQLite</a></li>
-              <li><a href="../core/postgresql.html">PostgreSQL</a></li>
-              <li><a href="../core/mysql.html">MySQL</a></li>
-              <li><a href="../core/odbc.html">ODBC</a></li>
-              <li><a href="../reference/index.html">Internal API Docs</a></li>
-          </ul>
-        </div>
-      </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
     </div>
-    <a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-  </body>
-  </html>
+</body>
+
+</html>
