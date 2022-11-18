@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;netcoreapp3.1;net472</TargetFrameworks>
-    <DefineConstants>NETSTANDARD;NO_GENERATIVE</DefineConstants>
+    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

@@ -73,6 +73,7 @@ group Docs
     nuget FSharp.Formatting >= 4.0.0
     nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
+	nuget FSharp.Compiler.Service 41.0.7
 
 group Tests
     source https://api.nuget.org/v3/index.json

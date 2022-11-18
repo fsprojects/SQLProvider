@@ -266,6 +266,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             providerCache
             |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save(filePath))
 
+#if !DESIGNTIME
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DesignTime.dll")>]
 do ()
+#endif
