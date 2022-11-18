@@ -3,11 +3,19 @@
         <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
         <PackageTags>f#, fsharp</PackageTags>
         <PackageProjectUrl>https://github.com/fsprojects/SQLProvider</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.md</PackageLicenseUrl>
+        <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <RepositoryType>git</RepositoryType>
         <Authors>pezipink,colinbull,thorium</Authors>
-        <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
+        <RepositoryUrl>https://github.com/fsprojects/SQLProvider.git</RepositoryUrl>
         <!-- owners is not supported in MSBuild -->
+		
+		<PackageProjectUrl>https://www.nuget.org/packages/SQLProvider</PackageProjectUrl>
+		<FsDocsLicenseLink>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</FsDocsLicenseLink>
+		<FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+		<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
+		<FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
+		<FsDocsTheme>default</FsDocsTheme>
+		
     </PropertyGroup>
 </Project>

@@ -70,7 +70,7 @@ let description = "Type providers for SQL database access."
 let authors = [ "Ross McKinlay, Colin Bull, Tuomas Hietanen" ]
 
 // Tags for your project (for NuGet package)
-let tags = "F#, fsharp, typeprovider, sql, sqlserver"
+let tags = "F#, fsharp, typeprovider, sql, sqlserver, mysql, sql-server, sqlite, postgresql, oracle, mariadb, firebirdsql, database, dotnet"
 
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
@@ -320,80 +320,16 @@ Target.create "PackNuGet" (fun _ ->
 // Generate the documentation
 
 Target.create "GenerateReferenceDocs" (fun _ ->
-
-    let result =
-        Fake.DotNet.DotNet.exec
-            (fun p -> { p with WorkingDirectory = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
-            "fsi" "--define:RELEASE --define:REFERENCE --exec generate.fsx"
+    Shell.cleanDir ".fsdocs"
+    let result = Fake.DotNet.DotNet.exec id "fsdocs" "build --output docs/output --input docs/content --clean"
     if not result.OK then failwith "generating reference documentation failed"
-
-    //if not <| executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"; "--define:REFERENCE"] [] then
-    //  failwith "generating reference documentation failed"
 )
 
-let generateHelp' fail debug =
-    let args =
-        if debug then "--define:HELP"
-        else "--define:RELEASE --define:HELP"
-    let result =
-        Fake.DotNet.DotNet.exec
-            (fun p -> { p with WorkingDirectory = __SOURCE_DIRECTORY__ @@ "docs" @@ "tools" })
-            "fsi"  (args + "  --exec generate.fsx")
-    if result.OK then
-        Fake.Core.Trace.traceImportant "Help generated"
-    else
-        if fail then
-            failwith "generating help documentation failed"
-        else
-            Fake.Core.Trace.traceImportant "generating help documentation failed"
+Target.create "WatchLocalDocs" (fun _ ->
+    Shell.cleanDir ".fsdocs"
+    Fake.DotNet.DotNet.exec id "fsdocs" "watch --output docs/output --input docs/content --clean --parameters fsdocs-package-project-url http://localhost:8901/" |> ignore
 
-let generateHelp fail =
-    generateHelp' fail false
-
-Target.create "GenerateHelp" (fun _ ->
-    System.IO.File.Delete "docs/content/release-notes.md"
-    Fake.IO.Shell.copyFile "docs/content/" "RELEASE_NOTES.md"
-    Fake.IO.Shell.rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
-
-    System.IO.File.Delete "docs/content/license.md"
-    Fake.IO.Shell.copyFile "docs/content/" "LICENSE.txt"
-    Fake.IO.Shell.rename "docs/content/license.md" "docs/content/LICENSE.txt"
-
-    Fake.IO.Shell.copyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.sigdata"
-    Fake.IO.Shell.copyFile "bin/net451" "packages/FSharp.Core/lib/net40/FSharp.Core.optdata"
-
-    generateHelp true
 )
-
-Target.create "GenerateHelpDebug" (fun _ ->
-    System.IO.File.Delete "docs/content/release-notes.md"
-    Fake.IO.Shell.copyFile "docs/content/" "RELEASE_NOTES.md"
-    Fake.IO.Shell.rename "docs/content/release-notes.md" "docs/content/RELEASE_NOTES.md"
-
-    System.IO.File.Delete "docs/content/license.md"
-    Fake.IO.Shell.copyFile "docs/content/" "LICENSE.txt"
-    Fake.IO.Shell.rename "docs/content/license.md" "docs/content/LICENSE.txt"
-
-    generateHelp' true true
-)
-
-Target.create "KeepRunning" (fun _ ->    
-    use watcher = new FileSystemWatcher(DirectoryInfo("docs/content").FullName,"*.*")
-    watcher.EnableRaisingEvents <- true
-    watcher.Changed.Add(fun _ -> generateHelp false)
-    watcher.Created.Add(fun _ -> generateHelp false)
-    watcher.Renamed.Add(fun _ -> generateHelp false)
-    watcher.Deleted.Add(fun _ -> generateHelp false)
-
-    Fake.Core.Trace.traceImportant "Waiting for help edits. Press any key to stop."
-
-    System.Console.ReadKey() |> ignore
-
-    watcher.EnableRaisingEvents <- false
-    watcher.Dispose()
-)
-
-Target.create "GenerateDocs" ignore
 
 #if MONO
 Target.create "SourceLink" <| fun _ -> ()
@@ -460,6 +396,11 @@ Target.create "BuildDocs" ignore
 "Build"
   ==> "NuGet"
   
+// Use this to test and run document generation in localhost:
+// build -t WatchLocalDocs
+"Build" 
+  ==> "WatchLocalDocs"
+
 "All"
   ==> "BuildDocs"
 

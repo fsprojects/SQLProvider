@@ -1,19 +1,21 @@
 (*** hide ***)
-#I "../../files/sqlite"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
-(*** hide ***)
-open System
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 (*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+open FSharp.Data.Sql
 
 (*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
+type sql  = SqlDataProvider<
+                Common.DatabaseProviderTypes.SQLITE,
+                connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
+            >
 
 (**
 ## Adding a Mapper using dataContext to use generated types from db
@@ -23,6 +25,8 @@ This mapper will get sure that you always sync your types with types you receive
 First add an Domain Model
 
 *)
+
+open System
 
 type Employee = {
     EmployeeId : int64
@@ -45,13 +49,7 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
 SqlProvider also has a `.MapTo<'T>` convenience  method:
 *)
 
-open System
-open FSharp.Data.Sql
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
-                           connectionString,
-                           ResolutionPath = resolutionPath,
-                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 let ctx = sql.GetDataContext()
 
@@ -78,8 +76,10 @@ type Employee3 = {
     [<MappedColumn("LastName")>] FamilyName:string
     }
 
-let qry = query { for row in employees do
-                  select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
+let qry2 = 
+          query { 
+                for row in employees do
+                select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
 
 
 (**
@@ -87,8 +87,10 @@ Or alternatively the ColumnValues from  SQLEntity can be used to create a map, w
 column as a key:
 *)
 
-let rows = query { for row in employees do
-                  select row} |> Seq.toArray
+let rows = 
+        query { 
+            for row in employees do
+            select row} |> Seq.toArray
 
 let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
 let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])

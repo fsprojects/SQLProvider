@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>{{fsdocs-page-title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="{{fsdocs-authors}}">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="{{fsdocs-package-project-url}}/img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="{{fsdocs-package-project-url}}/content/navbar-{{fsdocs-navbar-position}}.css" />
+    <link type="text/css" rel="stylesheet" href="{{fsdocs-package-project-url}}/content/fsdocs-{{fsdocs-theme}}.css" />
+    <link type="text/css" rel="stylesheet" href="{{fsdocs-package-project-url}}/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="{{fsdocs-package-project-url}}/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    {{fsdocs-watch-script}}
+	<style>
+		#fsdocs-content li {
+			margin: 0px 0px 5px 0px;
+		}
+		.navbar-nav .nav-link {
+			padding-top: 0.2rem;
+			padding-bottom: 0.2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary {{fsdocs-navbar-position}}" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+
+            <ul class="navbar-nav">
+                <a href="{{fsdocs-package-project-url}}"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
+				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="{{fsdocs-repository-link}}">Source Code on GitHub</a></li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="{{fsdocs-license-link}}">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="{{fsdocs-release-notes-link}}">Release Notes</a></li>
+								
+				<li class="nav-header" style="text-transform: uppercase">
+					Documentation
+				</li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/general.html" class="nav-link">General</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/parameters.html" class="nav-link">Static Parameters</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/querying.html" class="nav-link">Querying</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/crud.html" class="nav-link">CRUD</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/programmability.html" class="nav-link">Programmability</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/individuals.html" class="nav-link">Individuals</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/composable.html" class="nav-link">Composable Query</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/mssql.html" class="nav-link">SQL Server</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/oracle.html" class="nav-link">Oracle</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/sqlite.html" class="nav-link">SQLite</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/mysql.html" class="nav-link">MySQL</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="{{fsdocs-package-project-url}}/reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+                {{fsdocs-list-of-namespaces}}
+            </ul>
+			
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="{{fsdocs-collection-name-link}}">{{fsdocs-collection-name}}</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            {{fsdocs-content}}
+            {{fsdocs-tooltips}}
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = '{{fsdocs-package-project-url}}';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="{{fsdocs-package-project-url}}content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
+
+

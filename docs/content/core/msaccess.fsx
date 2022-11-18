@@ -3,7 +3,7 @@
 (*** hide ***)
 #I "../../../bin/netstandard2.0"
 (*** hide ***)
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 
 //type mdb = SqlDataProvider< "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:\\ACCESS\\BT.mdb", Common.DatabaseProviderTypes.MSACCESS, "c:\\ACCESS" , 100, true >
 

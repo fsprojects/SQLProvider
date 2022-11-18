@@ -1,23 +1,12 @@
 (*** hide ***)
-#I "../../files/sqlite"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 (*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
-
-(*** hide ***)
-let connectionString2 = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
-
-(*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
-
-(**
-
+(*
 
 # SQL Provider Basics
 
@@ -64,10 +53,13 @@ more detail about the available static parameters in other areas of the
 documentation.
 *)
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
-                           connectionString,
-                           ResolutionPath = resolutionPath,
-                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+type sql  = SqlDataProvider<
+                Common.DatabaseProviderTypes.SQLITE,
+                connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
+            >
 
 (** 
 Now we have a type ``sql`` that represents the SQLite database provided in 
@@ -82,6 +74,7 @@ If you want to use non-literal connectionString at runtime (e.g. crypted product
 passwords), you can pass your runtime connectionString parameter to GetDataContext:
 *)
 
+let connectionString2 = "(insert runtime connection here)"
 let ctx2 = sql.GetDataContext connectionString2
 
 (**
@@ -161,7 +154,7 @@ let customersQueryAsync =
         for customer in ctx.Main.Customers do
             select customer
     }
-    |> Seq.executeQueryAsync |> Async.StartAsTask
+    |> Seq.executeQueryAsync 
 
 
 (**

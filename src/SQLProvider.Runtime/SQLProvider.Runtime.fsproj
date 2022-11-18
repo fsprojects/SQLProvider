@@ -21,6 +21,17 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>	
 	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
+
+	<PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet</PackageTags>
+	<PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
+	<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	<RepositoryType>git</RepositoryType>
+	<Authors>pezipink,colinbull,thorium</Authors>
+	<FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+	<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
+	<FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
+	<FsDocsTheme>default</FsDocsTheme>
+	
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>

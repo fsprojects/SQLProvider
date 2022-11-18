@@ -1,14 +1,10 @@
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-[<Literal>]
-let connectionString =
-    "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-[<Literal>]
-let resolutionPath =
-    __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
-#r "FSharp.Data.SqlProvider.dll"
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+
 open FSharp.Data.Sql
 open System
 (*** hide ***)
@@ -35,7 +31,8 @@ for you to store your clauses with a strongly typed logging system like [Logary]
 type sql  = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE,
                 connectionString,
-                ResolutionPath = resolutionPath, 
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
                 CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
             >
 let ctx = sql.GetDataContext()
@@ -73,7 +70,7 @@ Or async versions:
 *)
 
 let exampleAsync =
-    async {
+    task {
         let! res =
             query {
                 for order in ctx.Main.Orders do
@@ -81,17 +78,17 @@ let exampleAsync =
                 select (order)
             } |> Seq.executeQueryAsync
         return res
-    } |> Async.StartAsTask
+    } 
 
 let itemAsync =
-    async {
+    task {
         let! item =
             query {
                 for order in ctx.Main.Orders do
                 where (order.Freight > 0m)
             } |> Seq.headAsync
         return item
-    } |> Async.StartAsTask
+    } 
 
 (**
 
@@ -645,13 +642,13 @@ F# Linq query syntax doesnt support doing `select count(1), sum(UnitPrice) from 
 but you can group by a constant to get that:
 
 *)
-	
+
 let qry = 
-	query {
-		for p in dc.Main.Products do
-		groupBy 1 into g
-		select (g.Count(), g.Sum(fun p -> p.UnitPrice))
-	} |> Seq.head
+    query {
+        for p in ctx.Main.Products do
+        groupBy 1 into g
+        select (g.Count(), g.Sum(fun p -> p.UnitPrice))
+    } |> Seq.head
 
 (**
 

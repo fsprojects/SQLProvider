@@ -1,29 +1,26 @@
 (*** hide ***)
-#I "../../files/sqlite"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
+open FSharp.Data.Sql
 (*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
-
-(*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../"
+type sql  = SqlDataProvider<
+                Common.DatabaseProviderTypes.SQLITE,
+                connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
+            >
 
 (**
 # CRUD sample
 *)
 
 open System
-open FSharp.Data.Sql
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
-                           connectionString,
-                           ResolutionPath = resolutionPath,
-                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
 let ctx = sql.GetDataContext()
 
@@ -188,7 +185,7 @@ SQLProvider also supports async database operations:
 
 *)
 
-ctx.SubmitUpdatesAsync() |> Async.StartAsTask
+ctx.SubmitUpdatesAsync() // |> Async.AwaitTask
         
 (**
 ### OnConflict

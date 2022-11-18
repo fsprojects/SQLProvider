@@ -1,19 +1,17 @@
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
-(*** hide ***)
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+
 open System.Linq
-#r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 (*** hide ***)
 type sql  = SqlDataProvider<
                 Common.DatabaseProviderTypes.SQLITE,
                 connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
                 ResolutionPath = resolutionPath,
                 CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
             >

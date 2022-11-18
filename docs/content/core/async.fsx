@@ -1,24 +1,23 @@
-(*** hide ***)
-#I @"../../files/sqlite"
 
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
-
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-#if INTERACTIVE
-#r "FSharp.Data.SqlProvider.dll"
-#r @"System.Transactions.dll"
-#endif
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+(*** hide ***)
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+(*** hide ***)
+let cstr = connectionString
 (*** hide ***)
 open FSharp.Data.Sql
 (*** hide ***)
 type TypeProviderConnection = 
     SqlDataProvider<
-        ConnectionString = "Server=localhost;Database=test;User=test;Password=test",
-        DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER,
+        ConnectionString = connectionString,
+        DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
         IndividualsAmount=1000,
         UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, 
-        CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+        CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL,
+        SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
 (**
 

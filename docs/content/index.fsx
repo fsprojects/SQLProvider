@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/net472"
+
 (**
 SQLProvider
 ===========
@@ -67,18 +67,22 @@ This example demonstrates the use of the SQL type provider:
 
 *)
 // reference the type provider dll
-#r "FSharp.Data.SQLProvider.dll"
+
+#r "../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+
 open FSharp.Data.Sql
 
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\files\sqlite" 
-let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../files/sqlite" 
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 // create a type alias with the connection string and database vendor settings
 type sql = SqlDataProvider< 
               ConnectionString = connectionString,
               DatabaseVendor = Common.DatabaseProviderTypes.SQLITE,
+              SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
               ResolutionPath = resolutionPath,
               IndividualsAmount = 1000,
-              UseOptionTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION >
+              UseOptionTypes = Common.NullableColumnType.OPTION
+              >
 let ctx = sql.GetDataContext()
 
 // To use dynamic runtime connectionString, you could use:

@@ -1,17 +1,9 @@
 (*** hide ***)
-#I "../../files/sqlite"
+#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
 (*** hide ***)
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
-
-(*** hide ***)
-[<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
-
-(*** hide ***)
-[<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 (**
 # Individuals
@@ -22,10 +14,13 @@ Find individual rows in tables with code completion in the editor.
 open System
 open FSharp.Data.Sql
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
-                           connectionString,
-                           ResolutionPath = resolutionPath,
-                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+type sql  = SqlDataProvider<
+                Common.DatabaseProviderTypes.SQLITE,
+                connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL
+            >
 
 let ctx = sql.GetDataContext()
 
