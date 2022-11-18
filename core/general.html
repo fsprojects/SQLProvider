@@ -38,13 +38,14 @@
 </head>
 
 <body>
-	<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-
     <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+		
         <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+			<div style="height: 105px"></div>
 
             <ul class="navbar-nav">
                 <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
@@ -248,7 +249,7 @@ can read about elsewhere in this documentation.</p>
 <h2><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h2>
 <p>The SQL provider has the ability via intellisense to navigate the actual data
 held within a table or view. You can then bind that data as an entity to a value.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 151)" onmouseover="showTip(event, 'fs48', 151)" class="id">BERGS</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 152)" onmouseover="showTip(event, 'fs16', 152)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 153)" onmouseover="showTip(event, 'fs21', 153)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 154)" onmouseover="showTip(event, 'fs22', 154)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 155)" onmouseover="showTip(event, 'fs49', 155)" class="prop">Individuals</span><span class="pn">.</span><span class="id">BERGS</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 151)" onmouseover="showTip(event, 'fs48', 151)" class="id">BERGS</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 152)" onmouseover="showTip(event, 'fs16', 152)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 153)" onmouseover="showTip(event, 'fs21', 153)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 154)" onmouseover="showTip(event, 'fs22', 154)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 155)" onmouseover="showTip(event, 'fs49', 155)" class="prop">Individuals</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs50', 156)" onmouseover="showTip(event, 'fs50', 156)" class="id">BERGS</span>
 </code></pre>
 <p>Every table and view has an <code>Individuals</code> property. When you press dot on
 this property, intellisense will display a list of the data in that table,
@@ -261,7 +262,7 @@ in addition to this you will see a series of properties named "As X" where X
 is the name of a column in the table.
 When you press . on one of these properties, the data is re-projected to you
 using both the primary key and the text of the column you have selected.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 156)" onmouseover="showTip(event, 'fs50', 156)" class="id">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 157)" onmouseover="showTip(event, 'fs16', 157)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 158)" onmouseover="showTip(event, 'fs21', 158)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 159)" onmouseover="showTip(event, 'fs22', 159)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 160)" onmouseover="showTip(event, 'fs49', 160)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As ContactName``</span><span class="pn">.</span><span class="id">``BERGS, Christina Berglund``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs51', 157)" onmouseover="showTip(event, 'fs51', 157)" class="id">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 158)" onmouseover="showTip(event, 'fs16', 158)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 159)" onmouseover="showTip(event, 'fs21', 159)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 160)" onmouseover="showTip(event, 'fs22', 160)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 161)" onmouseover="showTip(event, 'fs49', 161)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As ContactName``</span><span class="pn">.</span><span class="id">``BERGS, Christina Berglund``</span>
 </code></pre>
 <h2><a name="DataContext" class="anchor" href="#DataContext">DataContext</a></h2>
 <p>You should create and use one data context as long as it has the parameters you need.
@@ -402,9 +403,10 @@ Calls Linq.QueryBuilder.Join<br /><em>&lt;summary&gt;A query operator that corre
 <div class="fsdocs-tip" id="fs45">val ordersQuery: (string * System.DateTime * string)[]</div>
 <div class="fsdocs-tip" id="fs46">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderDate: System.DateTime with get, set<br /><em>&lt;summary&gt;OrderDate:   datetime&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs47">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: string with get, set<br /><em>&lt;summary&gt;ShipAddress:   nvarchar(60)&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs48">val BERGS: obj</div>
+<div class="fsdocs-tip" id="fs48">val BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="fsdocs-tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs50">val christina: obj</div>
+<div class="fsdocs-tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity with get</div>
+<div class="fsdocs-tip" id="fs51">val christina: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 
         </div>
 
