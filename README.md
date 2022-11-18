@@ -37,7 +37,7 @@ There is also an ODBC provider that will let you connect to any ODBC source with
 ## Documentation
 
 Core documentation and samples can be found at the 
-[SQLProvider home page](http://fsprojects.github.io/SQLProvider/). This 
+[SQLProvider home page](https://fsprojects.github.io/SQLProvider/). This 
 documentation is generated from 
 [docs/content/](https://github.com/fsprojects/SQLProvider/tree/master/docs/content), 
 so please feel free to submit a pull request if you have fixed typos are added 

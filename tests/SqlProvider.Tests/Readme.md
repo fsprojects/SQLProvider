@@ -6,7 +6,7 @@ Query expressions enable you to query a data source and put the data in a desire
 SQLProvider generally support most of the [F# Query Expressions](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions),
 but it also can optimize the queries heavily.
 
-Here are some sample queries (taken from [QueryTests.fs](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs) and corresponding SQL (by SQLLite, but the SQL-operations do vary.) More details and best practices are described in [Querying](http://fsprojects.github.io/SQLProvider/core/querying.html) documentation.
+Here are some sample queries (taken from [QueryTests.fs](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs) and corresponding SQL (by SQLLite, but the SQL-operations do vary.) More details and best practices are described in [Querying](https://fsprojects.github.io/SQLProvider/core/querying.html) documentation.
 
 ### Select query
 

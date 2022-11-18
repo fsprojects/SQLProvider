@@ -2,7 +2,7 @@
 
 ## Version control instructions
 
-Git information is in a separate [document](http://fsprojects.github.io/SQLProvider/core/contributing.html).
+Git information is in a separate [document](https://fsprojects.github.io/SQLProvider/core/contributing.html).
 
 ## The environment
 

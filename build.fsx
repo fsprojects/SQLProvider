@@ -319,7 +319,7 @@ Target.create "PackNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
-Target.create "GenerateReferenceDocs" (fun _ ->
+Target.create "GenerateHelp" (fun _ ->
     Shell.cleanDir ".fsdocs"
     let result = Fake.DotNet.DotNet.exec id "fsdocs" "build --output docs/output --input docs/content --clean"
     if not result.OK then failwith "generating reference documentation failed"
@@ -352,7 +352,7 @@ Target.create "ReleaseDocs" (fun _ ->
     Fake.IO.Shell.cleanDir tempDocsDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
 
-    Fake.IO.Shell.deleteDir tempDocsDir
+    //Fake.IO.Shell.deleteDir tempDocsDir
     Fake.IO.Shell.copyRecursive "docs/output" tempDocsDir true |> Fake.Core.Trace.tracefn "%A"
     if not (System.IO.Directory.Exists tempDocsDir) then
        printfn "GH Pages not found, couldn't release."
@@ -389,7 +389,6 @@ Target.create "BuildDocs" ignore
   ==> "PackNuGet"
   ==> "CleanDocs"
   // Travis doesn't support mono+dotnet:
-  =?> ("GenerateReferenceDocs", Fake.Core.BuildServer.isLocalBuild && not Fake.Core.Environment.isMono)
   =?> ("GenerateHelp", Fake.Core.BuildServer.isLocalBuild && not Fake.Core.Environment.isMono)
   ==> "All"
 
