@@ -1,3 +1,8 @@
+### 1.3.3 - 18.11.2022
+* Reference updates: FSharp.Core to 6.0.7 and SQLClient to 4.8
+* Minor performance twaks
+* SQLite better error reporting
+
 ### 1.3.2 - 08.11.2022
 * Improvement for value tuple handling
 
