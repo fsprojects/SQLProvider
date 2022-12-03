@@ -83,9 +83,9 @@ type SprocName =
 
 type CompileTimeSprocDefinition =
     { Name: SprocName
-      [<NonSerialized>] 
+      [<NonSerialized>]
       Params: (IDbConnection -> QueryParameter list)
-      [<NonSerialized>] 
+      [<NonSerialized>]
       ReturnColumns: (IDbConnection -> QueryParameter list -> QueryParameter list) }
     override x.ToString() = x.Name.ToString()
 
@@ -100,7 +100,7 @@ type Sproc =
     | Sproc of CompileTimeSprocDefinition
     | Empty
     static member GetKnownTypes() =
-        typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic) 
+        typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
 
 and CompileTimePackageDefinition =
@@ -114,15 +114,21 @@ type Table =
       Name: string
       Type: string }
     with
+        static member CreateQuotedFullName(schema, name, startQuote, endQuote) =
+            let quote s = startQuote + s + endQuote
+            let tableName = name |> quoteWhiteSpace |> quote
+            if (String.IsNullOrWhiteSpace(schema)) then tableName
+            else (quote schema) + "." + tableName
+        
+        member x.QuotedFullName (startQuote, endQuote) =
+            Table.CreateQuotedFullName(x.Schema, x.Name, startQuote, endQuote)
+            
         // Note here the [].[] format is ONLY used internally.  Do not use this in queries; Different vendors have
         // different ways to qualify whitespace.
-        member x.FullName =
-            if (String.IsNullOrWhiteSpace(x.Schema)) then (quoteWhiteSpace x.Name)
-            else x.Schema + "." + (quoteWhiteSpace x.Name)
+        member x.FullName = x.QuotedFullName ("", "")
         static member FromFullName(fullName:string) =
             match fullName with
             | Patterns.MatchTable [schema;name] -> { Schema = schema; Name = name; Type="" }
             | _ -> { Schema = ""; Name = fullName; Type="" }
         static member CreateFullName(schema, name) =
-            if (String.IsNullOrWhiteSpace(schema)) then (quoteWhiteSpace name)
-            else schema + "." + (quoteWhiteSpace name)
+            Table.CreateQuotedFullName(schema, name, "", "")
