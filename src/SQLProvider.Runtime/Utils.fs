@@ -392,7 +392,7 @@ module internal Reflection =
 
     let tryLoadAssembly path = 
          try 
-             if not (File.Exists path) then None
+             if not (File.Exists path) || path.StartsWith "System.Runtime.WindowsRuntime" then None
              else
              let loadedAsm = Assembly.LoadFrom(path) 
              if loadedAsm <> null
@@ -535,11 +535,15 @@ module internal Reflection =
         let mutable handler = Unchecked.defaultof<ResolveEventHandler>
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
             System.ResolveEventHandler (fun _ args ->
-                let loadfunc x shouldCatch =
+                let loadfunc (x:string) shouldCatch =
                     if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
                     let res = 
-                        try 
-                            //File.AppendAllText(@"c:\Temp\build.txt", "Binding trial " + args.Name + " to " + x + "\r\n")
+                        try
+                            if x.StartsWith "System.Runtime.WindowsRuntime" then
+                                // Issue: https://github.com/dotnet/fsharp/pull/9644
+                                null
+                            else
+                            //File.AppendAllText(@"c:\Temp\build.txt", "Binding trial " + args.Name + " to " + x +  " " + DateTime.UtcNow.ToString() + "\r\n")
                             let r = Assembly.LoadFrom x 
                             //if r <> null then 
                             //    File.AppendAllText(@"c:\Temp\build.txt", "Binding success " + args.Name + " to " + r.FullName + "\r\n")

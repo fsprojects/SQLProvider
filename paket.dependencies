@@ -1,6 +1,6 @@
 version 6.2.1
 source https://api.nuget.org/v3/index.json
-frameworks: net472, netcoreapp3.1, netstandard2.0
+frameworks: netcoreapp3.1, net472, net60, netstandard20, netstandard21
 storage: none
 clitool dotnet-mono 0.5.2
 
@@ -19,6 +19,7 @@ nuget System.Reflection.TypeExtensions
 nuget System.Data.Common
 nuget System.Data.Odbc
 nuget Microsoft.Data.SQLite 2.0
+nuget Microsoft.Data.SqlClient framework: net6.0, netstandard2.1
 
 group Build
 

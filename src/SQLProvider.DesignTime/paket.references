@@ -11,6 +11,7 @@ System.Data.SqlClient
 System.Data.Common
 System.Data.Odbc
 System.Data.OleDb
+Microsoft.Data.SqlClient
 group SourceFiles
 File:ProvidedTypes.fsi
 File:ProvidedTypes.fs

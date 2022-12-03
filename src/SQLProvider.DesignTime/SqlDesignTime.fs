@@ -61,7 +61,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString
 
         let rootType, prov, con =
-            lock lockObj3 (fun _ ->
+            //lock lockObj3 (fun _ ->
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
@@ -69,6 +69,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
                         if ssdtPath = "" then failwith "No SsdtPath was specified."
                         elif not (ssdtPath.EndsWith(".dacpac")) then failwith "SsdtPath must point to a .dacpac file."
+                        elif not (System.IO.File.Exists ssdtPath) then failwith ("File not exists: " + ssdtPath)
                         else Some Stubs.connection
                     | _ ->
                         match conString, conStringName with
@@ -88,7 +89,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 None
 
                 rootType, prov, con
-            )
+            //)
 
         let tables =
             lazy
@@ -1065,7 +1066,9 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 types
         try DesignTimeCache.cache.GetOrAdd(arguments, fun args -> addCache args).Value
         with
-        | e -> DesignTimeCache.cache.AddOrUpdate(arguments, (fun args -> addCache args), (fun args _ -> addCache args)).Value
+        | e ->
+            let _ = DesignTimeCache.cache.TryRemove(arguments)
+            reraise()
     )
 
     do paramSqlType.AddXmlDoc helpText

@@ -65,7 +65,7 @@ module PostgreSQL =
 
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
-    let parseDbType dbTypeName =
+    let parseDbType (dbTypeName:string) =
         try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
         with _ -> None
 
