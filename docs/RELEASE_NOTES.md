@@ -1,3 +1,7 @@
+### 1.3.4 - 04.12.2022
+* Always quote schema name with backticks in MySQL PR #777
+* Smaller runtime by removing unnecessary code
+
 ### 1.3.3 - 18.11.2022
 * Reference updates: FSharp.Core to 6.0.7 and SQLClient to 4.8
 * Minor performance twaks
