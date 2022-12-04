@@ -52,7 +52,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     prov.GetTables(con,caseSensitivity) |> ignore
                     if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov
-        try providerCache.GetOrAdd(typeName, fun _ -> addCache())
+        try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
             let x = providerCache.TryRemove typeName
             reraise()
