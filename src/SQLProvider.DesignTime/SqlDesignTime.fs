@@ -41,7 +41,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
     let mutable saveInProcess = false
-    let lockObj3 = new Object();
 
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
@@ -61,7 +60,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString
 
         let rootType, prov, con =
-            //lock lockObj3 (fun _ ->
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
@@ -89,7 +87,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 None
 
                 rootType, prov, con
-            //)
 
         let tables =
             lazy
@@ -1075,6 +1072,3 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     // add them to the namespace
     do this.AddNamespace(FSHARP_DATA_SQL, [paramSqlType])
-
-[<TypeProviderAssembly>]
-do()

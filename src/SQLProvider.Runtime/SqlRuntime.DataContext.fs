@@ -52,9 +52,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     prov.GetTables(con,caseSensitivity) |> ignore
                     if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                 prov
-        try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
-        with | _ -> providerCache.AddOrUpdate(typeName, addCache(), fun _ _ -> addCache()).Value
-
+        try providerCache.GetOrAdd(typeName, fun _ -> addCache())
+        with | ex ->
+            let x = providerCache.TryRemove typeName
+            reraise()
 
     let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
         
