@@ -92,9 +92,9 @@ module public QueryEvents =
 
    let private sqlEvent = new Event<SqlEventData>()
    
-   [<CLIEvent>]
    /// This event fires immediately before the execution of every generated query. 
    /// Listen to this event to display or debug the content of your queries.
+   [<CLIEvent>]
    let SqlQueryEvent = sqlEvent.Publish
 
    let private publishSqlQuery = 

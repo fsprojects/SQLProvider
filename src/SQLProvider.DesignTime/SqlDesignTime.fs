@@ -3,6 +3,7 @@ namespace FSharp.Data.Sql
 open System
 open System.Data
 open System.Reflection
+open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
 open FSharp.Data.Sql.Transactions
@@ -427,16 +428,20 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               rt :> Type
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
-                    let asyncRet = typedefof<System.Threading.Tasks.Task<_>>.MakeGenericType([| returnType |])
+                    let isUnit, asyncRet =
+                        if returnType = typeof<unit> then
+                            true, typeof<Task>
+                        else
+                            false, typedefof<Task<_>>.MakeGenericType([| returnType |])
                     [ProvidedMethod("Invoke", parameters, returnType, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
                             <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail)) @@>));
                      ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
-                            if returnType = typeof<unit> then
+                            if isUnit then
                                 <@@ task {
                                         let! r =
                                             (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))
                                         return ()
-                                    } @@>
+                                    } :> Task @@>
                             else
                                <@@ (((%%args.[0] : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) args.Tail))  @@>
                         ))]
@@ -759,7 +764,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
               let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
               submit.AddXmlDoc("<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
               yield submit :> MemberInfo
-              let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task<unit>>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() @@>)
+              let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
               submitAsync.AddXmlDoc("<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
               yield submitAsync :> MemberInfo
               yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo

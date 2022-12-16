@@ -13,6 +13,4 @@ System.Data.Odbc
 System.Data.OleDb
 
 group SourceFiles
-      File:ProvidedTypes.fsi
-      File:ProvidedTypes.fs
       File:ExpressionOptimizer.fs
