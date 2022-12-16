@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE</DefineConstants>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
@@ -15,23 +15,21 @@
     <OutputPath>..\..\bin\</OutputPath>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
     <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
-	<RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
+    <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>	
-	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
-
-	<PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet</PackageTags>
-	<PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
-	<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-	<RepositoryType>git</RepositoryType>
-	<Authors>pezipink,colinbull,thorium</Authors>
-	<FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
-	<FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
-	<FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
-	<FsDocsTheme>default</FsDocsTheme>
-	
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
+    <PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet</PackageTags>
+    <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <Authors>pezipink,colinbull,thorium</Authors>
+    <FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+    <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
+    <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
+    <FsDocsTheme>default</FsDocsTheme>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -55,7 +53,7 @@
     <Compile Include="QuotationHelpers.fs" />
     <Compile Include="SqlRuntime.Transactions.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
-    <Compile Include="Ssdt.DacpacParser.fs" />    
+    <Compile Include="Ssdt.DacpacParser.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
     <Compile Include="Providers.MsSqlServer.Ssdt.fs" />
@@ -77,18 +75,17 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-	<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <Target Name="BeforeBuild">
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Restore" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netcoreapp3.1" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" /> 
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" />
   </Target>
   <Target Name="AfterBuild">
   </Target>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
-
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
