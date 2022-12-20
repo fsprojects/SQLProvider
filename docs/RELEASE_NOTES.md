@@ -1,3 +1,6 @@
+### 1.3.5 - 20.12.2022
+* Experimental use of Microsoft.Data.SqlClient in .net6.0 and .netstandard2.1
+
 ### 1.3.4 - 04.12.2022
 * Always quote schema name with backticks in MySQL PR #777
 * Smaller runtime by removing unnecessary code
