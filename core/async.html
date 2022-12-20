@@ -396,7 +396,7 @@ type DateTime =
  unbox&amp;lt;int&amp;gt; obj1     //  Evaluates to 123 (int)
  unbox&amp;lt;double&amp;gt; obj1  //  Throws System.InvalidCastException
  &lt;/code&gt;&lt;/example&gt;</em></div>
-<div class="fsdocs-tip" id="fs48">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdatesAsync() : Task&lt;Unit&gt;<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs48">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdatesAsync() : Task<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs49">Transactions.TransactionScope.Complete() : unit</div>
 <div class="fsdocs-tip" id="fs50">Multiple items<br />type Async =
   static member AsBeginEnd: computation: (&#39;Arg -&gt; Async&lt;&#39;T&gt;) -&gt; (&#39;Arg * AsyncCallback * obj -&gt; IAsyncResult) * (IAsyncResult -&gt; &#39;T) * (IAsyncResult -&gt; unit)

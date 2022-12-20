@@ -259,7 +259,7 @@ type DateTime =
   member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
   member SaveContextSchema: unit -&gt; SaveContextResponse
   member SubmitUpdates: unit -&gt; Unit
-  member SubmitUpdatesAsync: unit -&gt; Task&lt;Unit&gt;
+  member SubmitUpdatesAsync: unit -&gt; Task
   member ``Design Time Commands`` : DesignTimeCommands
   member Main: mainSchema
   member Pragma: Pragma
