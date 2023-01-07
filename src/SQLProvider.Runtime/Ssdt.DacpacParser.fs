@@ -87,7 +87,9 @@ and SsdtDescriptionItem = {
     ColumnName: string voption
     Description: string
 }
-and SsdtUserDefinedDataType = Map<string, string>
+and SsdtUserDefinedDataType = Map<UDDTName, UDDTInheritedType>
+and UDDTName = UDDTName of string
+and UDDTInheritedType = UDDTInheritedType of string
 
 module RegexParsers =
     open System.Text.RegularExpressions
@@ -390,7 +392,7 @@ let parseXml(xml: string) =
 
     let parseUserDefinedDataType (udts: XmlNode) =
         let name = udts |> att "Name"
-        let name = name |> RegexParsers.splitFullName |> fun parsed -> String.Join(".", parsed) |> fun n -> n.ToUpper()
+        let name = name |> RegexParsers.splitFullName |> fun parsed -> String.Join(".", parsed) |> fun n -> n.ToUpper() |> UDDTName
         let inheritedType =
             udts
             |> nodes "x:Relationship"
@@ -400,6 +402,7 @@ let parseXml(xml: string) =
             |> RegexParsers.splitFullName
             |> fun parsed -> String.Join(".", parsed)
             |> fun t -> t.ToUpper()
+            |> UDDTInheritedType
         (name, inheritedType)
 
     let userDefinedDataTypes =

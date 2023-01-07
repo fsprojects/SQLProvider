@@ -170,8 +170,8 @@ module MSSqlServerSsdt =
         match typeMappingsByName.TryFind dataType with
         | Some tm -> tm
         | None ->
-            match Map.tryFind dataType uddts with
-            | Some x -> tryFindMappingOrVariant uddts x
+            match Map.tryFind (UDDTName dataType) uddts with
+            | Some (UDDTInheritedType x) -> tryFindMappingOrVariant uddts x
             | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
 
     let ssdtTableToTable (tbl: SsdtTable) =
