@@ -172,7 +172,7 @@ module MSSqlServerSsdt =
         | None ->
             match Map.tryFind (UDDTName dataType) uddts with
             | Some (UDDTInheritedType x) -> tryFindMappingOrVariant uddts x
-            | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
+            | None -> typeMappingsByName["SQL_VARIANT"]
 
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
