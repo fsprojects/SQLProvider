@@ -10,6 +10,7 @@ type SsdtSchema = {
     StoredProcs: SsdtStoredProc list
     Relationships: SsdtRelationship list
     Descriptions: SsdtDescriptionItem list
+    UserDefinedDataTypes: SsdtUserDefinedDataType list
 }
 and SsdtTable = {
     FullName: string
@@ -85,6 +86,10 @@ and SsdtDescriptionItem = {
     TableName: string
     ColumnName: string voption
     Description: string
+}
+and SsdtUserDefinedDataType = {
+    Name: string
+    Inheritance: string
 }
 
 module RegexParsers =
@@ -386,6 +391,25 @@ let parseXml(xml: string) =
             Description = description
         }
 
+    let parseUserDefinedDataType (udts: XmlNode) =
+        let name = udts |> att "Name"
+        let parts = name |> RegexParsers.splitFullName
+        let inheritance =
+            udts
+            |> nodes "x:Relationship"
+            |> Seq.find (fun n -> n |> att "Name" = "Type")
+            |> node "x:Entry/x:References"
+            |> att "Name"
+            |> RegexParsers.splitFullName
+        { Name = Array.last parts; Inheritance = Array.last inheritance }
+
+    let userDefinedDataTypes =
+        model
+        |> nodes "x:Element"
+        |> Seq.filter (fun e -> e |> att "Type" = "SqlUserDefinedDataType")
+        |> Seq.map parseUserDefinedDataType
+        |> Seq.toList
+
     let storedProcs =
         model
         |> nodes "x:Element"
@@ -465,4 +489,5 @@ let parseXml(xml: string) =
       StoredProcs = storedProcs
       TryGetTableByName = fun nm -> tablesAndViews |> (List.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
       Relationships = relationships
-      Descriptions = descriptions } : SsdtSchema
+      Descriptions = descriptions
+      UserDefinedDataTypes = userDefinedDataTypes } : SsdtSchema
