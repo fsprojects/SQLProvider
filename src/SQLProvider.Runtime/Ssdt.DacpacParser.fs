@@ -390,11 +390,11 @@ let parseXml(xml: string) =
             Description = description
         }
 
-    let parseUserDefinedDataType (udts: XmlNode) =
-        let name = udts |> att "Name"
+    let parseUserDefinedDataType (uddts: XmlNode) =
+        let name = uddts |> att "Name"
         let name = name |> RegexParsers.splitFullName |> fun parsed -> String.Join(".", parsed) |> fun n -> n.ToUpper() |> UDDTName
         let inheritedType =
-            udts
+            uddts
             |> nodes "x:Relationship"
             |> Seq.find (fun n -> n |> att "Name" = "Type")
             |> node "x:Entry/x:References"
