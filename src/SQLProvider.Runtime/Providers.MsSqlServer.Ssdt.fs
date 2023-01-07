@@ -165,32 +165,31 @@ module MSSqlServerSsdt =
     let tryFindMapping (dataType: string) =
         typeMappingsByName.TryFind (dataType.ToUpper())
 
-    let rec tryFindMappingOrVariant (uddts: SsdtUserDefinedDataType list) (dataType: string) =
-        match typeMappingsByName.TryFind (dataType.ToUpper()) with
+    let rec tryFindMappingOrVariant (uddts: SsdtUserDefinedDataType) (dataType: string) =
+        let dataType = dataType.ToUpper()
+        match typeMappingsByName.TryFind dataType with
         | Some tm -> tm
         | None ->
-            match List.tryFind (fun x -> x.Name = dataType) uddts with
-            | Some x -> tryFindMappingOrVariant uddts x.Inheritance
+            match Map.tryFind dataType uddts with
+            | Some x -> tryFindMappingOrVariant uddts x
             | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
 
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
 
-
     let ssdtColumnToColumn uddts (tbl: SsdtTable) (col: SsdtColumn) =
-        let typeMapping = tryFindMappingOrVariant uddts col.DataType
-        Some
-            { Column.Name = col.Name
-              Column.TypeMapping = typeMapping
-              Column.IsNullable = col.AllowNulls
-              Column.IsPrimaryKey =
-                tbl.PrimaryKey
-                |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
-                |> ValueOption.defaultValue false
-              Column.IsAutonumber = col.IsIdentity
-              Column.HasDefault = col.HasDefault
-              Column.IsComputed = col.ComputedColumn
-              Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
+        let typeMapping = tryFindMappingOrVariant uddts col.DataType        
+        { Column.Name = col.Name
+          Column.TypeMapping = typeMapping
+          Column.IsNullable = col.AllowNulls
+          Column.IsPrimaryKey =
+            tbl.PrimaryKey
+            |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
+            |> ValueOption.defaultValue false
+          Column.IsAutonumber = col.IsIdentity
+          Column.HasDefault = col.HasDefault
+          Column.IsComputed = col.ComputedColumn
+          Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
 
 type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.Empty
@@ -318,7 +317,6 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 | ValueSome ssdtTbl ->
                     ssdtTbl.Columns
                     |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
-                    |> List.choose id
                     |> List.map (fun col -> col.Name, col)
                 | ValueNone -> []
                 |> Map.ofList
