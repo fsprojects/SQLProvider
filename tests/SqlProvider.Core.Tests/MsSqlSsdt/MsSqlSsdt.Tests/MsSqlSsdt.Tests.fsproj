@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="AdventureWorks_SSDT.dacpac" />
     <Compile Include="..\..\..\..\src\SQLProvider.Runtime\Ssdt.DacpacParser.fs" Link="Ssdt.DacpacParser.fs" />
     <Compile Include="UnzipTests.fs" />
     <Compile Include="ParseSchemaTests.fs" />
