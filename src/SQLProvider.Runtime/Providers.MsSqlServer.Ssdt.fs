@@ -112,7 +112,6 @@ module MSSqlServerSsdt =
                 sb.AppendLine(s.FullName) |> ignore
             failwith (sb.ToString())
 
-
     /// Tries to parse a schema model from the given .dacpac file path.
     let parseDacpac = findDacPacFile >> extractModelXml >> parseXml
 
@@ -367,38 +366,43 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             )
 
         member __.GetSprocs(con) =
-            ssdtSchema.Value.StoredProcs
-            |> List.map (fun sp ->
-                let inParams =
-                    sp.Parameters
-                    |> List.mapi (fun idx p ->
-                        { Name = p.Name
-                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
-                          Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
-                          Length = p.Length
-                          Ordinal = idx }
-                    )
-                let outParams =
-                    sp.Parameters
-                    |> List.filter (fun p -> p.IsOutput)
-                    |> List.mapi (fun idx p ->
-                        { Name = p.Name
-                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
-                          Direction = ParameterDirection.InputOutput
-                          Length = p.Length
-                          Ordinal = idx }
-                    )
-
-                // If no outParams, add a "ResultSet" property (see issue #706)
-                let outParams =
-                    match outParams with
-                    | [] -> [ sprocReturnParam 0 ]
-                    | _ -> outParams
-
-                let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
-
-                Root("Procedures", Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
-            )
+            let convertExecutable type' elems =
+                elems
+                |> List.map (fun sp ->
+                    let inParams =
+                        sp.Parameters
+                        |> List.mapi (fun idx p ->
+                            { Name = p.Name
+                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
+                              Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
+                              Length = p.Length
+                              Ordinal = idx }
+                        )
+                    let outParams =
+                        sp.Parameters
+                        |> List.filter (fun p -> p.IsOutput)
+                        |> List.mapi (fun idx p ->
+                            { Name = p.Name
+                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
+                              Direction = ParameterDirection.InputOutput
+                              Length = p.Length
+                              Ordinal = idx }
+                        )
+    
+                    // If no outParams, add a "ResultSet" property (see issue #706)
+                    let outParams =
+                        match outParams with
+                        | [] -> [ sprocReturnParam 0 ]
+                        | _ -> outParams
+    
+                    let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
+    
+                    Root(type', Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
+                )
+            let sprocs = convertExecutable "Procedures" ssdtSchema.Value.StoredProcs
+            let funcs = convertExecutable "Functions" ssdtSchema.Value.Functions
+            List.append sprocs funcs
+            
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
         member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
