@@ -10,6 +10,7 @@ type SsdtSchema = {
     StoredProcs: SsdtStoredProc list
     Relationships: SsdtRelationship list
     Descriptions: SsdtDescriptionItem list
+    UserDefinedDataTypes: SsdtUserDefinedDataType
 }
 and SsdtTable = {
     FullName: string
@@ -86,6 +87,9 @@ and SsdtDescriptionItem = {
     ColumnName: string voption
     Description: string
 }
+and SsdtUserDefinedDataType = Map<UDDTName, UDDTInheritedType>
+and UDDTName = UDDTName of string
+and UDDTInheritedType = UDDTInheritedType of string
 
 module RegexParsers =
     open System.Text.RegularExpressions
@@ -386,6 +390,28 @@ let parseXml(xml: string) =
             Description = description
         }
 
+    let parseUserDefinedDataType (uddts: XmlNode) =
+        let name = uddts |> att "Name"
+        let name = name |> RegexParsers.splitFullName |> fun parsed -> String.Join(".", parsed) |> fun n -> n.ToUpper() |> UDDTName
+        let inheritedType =
+            uddts
+            |> nodes "x:Relationship"
+            |> Seq.find (fun n -> n |> att "Name" = "Type")
+            |> node "x:Entry/x:References"
+            |> att "Name"
+            |> RegexParsers.splitFullName
+            |> fun parsed -> String.Join(".", parsed)
+            |> fun t -> t.ToUpper()
+            |> UDDTInheritedType
+        (name, inheritedType)
+
+    let userDefinedDataTypes =
+        model
+        |> nodes "x:Element"
+        |> Seq.filter (fun e -> e |> att "Type" = "SqlUserDefinedDataType")
+        |> Seq.map parseUserDefinedDataType
+        |> Map.ofSeq
+
     let storedProcs =
         model
         |> nodes "x:Element"
@@ -465,4 +491,5 @@ let parseXml(xml: string) =
       StoredProcs = storedProcs
       TryGetTableByName = fun nm -> tablesAndViews |> (List.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
       Relationships = relationships
-      Descriptions = descriptions } : SsdtSchema
+      Descriptions = descriptions
+      UserDefinedDataTypes = userDefinedDataTypes } : SsdtSchema
