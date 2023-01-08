@@ -1,6 +1,6 @@
 <Project Sdk="MSBuild.Sdk.SqlProj/2.0.0">
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6</TargetFramework>
         <SuppressTSqlWarnings>71558,71502</SuppressTSqlWarnings>
         <SqlServerVersion>SqlAzure</SqlServerVersion>
         <BundledNETCoreAppTargetFrameworkVersion>5.0</BundledNETCoreAppTargetFrameworkVersion>
