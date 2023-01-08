@@ -165,32 +165,31 @@ module MSSqlServerSsdt =
     let tryFindMapping (dataType: string) =
         typeMappingsByName.TryFind (dataType.ToUpper())
 
-    let tryFindMappingOrVariant (dataType: string) =
-        match typeMappingsByName.TryFind (dataType.ToUpper()) with
+    let rec tryFindMappingOrVariant (uddts: SsdtUserDefinedDataType) (dataType: string) =
+        let dataType = dataType.ToUpper()
+        match typeMappingsByName.TryFind dataType with
         | Some tm -> tm
-        | None -> (typeMappingsByName.TryFind "SQL_VARIANT").Value
+        | None ->
+            match Map.tryFind (UDDTName dataType) uddts with
+            | Some (UDDTInheritedType x) -> tryFindMappingOrVariant uddts x
+            | None -> typeMappingsByName["SQL_VARIANT"]
 
     let ssdtTableToTable (tbl: SsdtTable) =
         { Schema = tbl.Schema ; Name = tbl.Name ; Type =  if tbl.IsView then "view" else "base table" }
 
-    let ssdtColumnToColumn (tbl: SsdtTable) (col: SsdtColumn) =
-        match tryFindMapping col.DataType with
-        | Some typeMapping ->
-            Some
-                { Column.Name = col.Name
-                  Column.TypeMapping = typeMapping
-                  Column.IsNullable = col.AllowNulls
-                  Column.IsPrimaryKey =
-                    tbl.PrimaryKey
-                    |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
-                    |> ValueOption.defaultValue false
-                  Column.IsAutonumber = col.IsIdentity
-                  Column.HasDefault = col.HasDefault
-                  Column.IsComputed = col.ComputedColumn
-                  Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
-        | None ->
-            None
-
+    let ssdtColumnToColumn uddts (tbl: SsdtTable) (col: SsdtColumn) =
+        let typeMapping = tryFindMappingOrVariant uddts col.DataType        
+        { Column.Name = col.Name
+          Column.TypeMapping = typeMapping
+          Column.IsNullable = col.AllowNulls
+          Column.IsPrimaryKey =
+            tbl.PrimaryKey
+            |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
+            |> ValueOption.defaultValue false
+          Column.IsAutonumber = col.IsIdentity
+          Column.HasDefault = col.HasDefault
+          Column.IsComputed = col.ComputedColumn
+          Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
 
 type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.Empty
@@ -317,8 +316,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 match ssdtSchema.Value.TryGetTableByName(table.Name) with
                 | ValueSome ssdtTbl ->
                     ssdtTbl.Columns
-                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn ssdtTbl)
-                    |> List.choose id
+                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
                     |> List.map (fun col -> col.Name, col)
                 | ValueNone -> []
                 |> Map.ofList
@@ -375,7 +373,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     sp.Parameters
                     |> List.mapi (fun idx p ->
                         { Name = p.Name
-                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
+                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
                           Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
                           Length = p.Length
                           Ordinal = idx }
@@ -385,7 +383,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     |> List.filter (fun p -> p.IsOutput)
                     |> List.mapi (fun idx p ->
                         { Name = p.Name
-                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant p.DataType
+                          TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
                           Direction = ParameterDirection.InputOutput
                           Length = p.Length
                           Ordinal = idx }

@@ -22,6 +22,7 @@
     <Compile Include="Dacpac\UnzipTests.fs" />
     <Compile Include="Dacpac\ParseSchemaTests.fs" />
     <Compile Include="Dacpac\TypeAnnotationTests.fs" />
+    <Compile Include="UserDefinedDataTypes.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
