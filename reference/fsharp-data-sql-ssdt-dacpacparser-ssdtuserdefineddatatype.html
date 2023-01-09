@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>SsdtStoredProc (SQLProvider)</title>
+    <title>SsdtUserDefinedDataType (SQLProvider)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="author" content="pezipink,colinbull,thorium">
 
@@ -107,7 +107,7 @@
         <div class="container" id="fsdocs-content">
             <div>
   <h2>
-    SsdtStoredProc Type
+    SsdtUserDefinedDataType Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -126,20 +126,28 @@
       </a>
     </dt>
     <dt>
+      Abbreviation For: 
+      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span></code>
+    </dt>
+    <dt>
       Base Type: 
       <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredproc.html">SsdtStoredProc</a>&gt;</span></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span></code>
       , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredproc.html">SsdtStoredProc</a>&gt;</span></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span>&gt;</span></code>
       , 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span></code>
+      , 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span>&gt;</span></code>
+      , 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.keyvaluepair-2">KeyValuePair</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></span>&gt;</span>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -153,15 +161,18 @@
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Record fields
+      Instance members
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Instance member
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -172,24 +183,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '617', 617)" onmouseover="showTip(event, '617', 617)">
+              <code onmouseout="hideTip(event, '632', 632)" onmouseover="showTip(event, '632', 632)">
                 <p>
-                  <a id="FullName">
-                    <a href="#FullName">
-                      <code>FullName</code>
+                  <a id="Count">
+                    <a href="#Count">
+                      <code><span>this.Count</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="617">
+              <div class="fsdocs-tip" id="632">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FullName</code>
+                  <code><span>this.Count</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>string</code>
+                    Returns: 
+                    <code>int</code>
                   </span>
                   <br/>
                 </div>
@@ -198,7 +209,15 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Ssdt.DacpacParser.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Microsoft.FSharp.Collections.FSharpMap`2.Count``')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Microsoft.FSharp.Collections.FSharpMap`2.Count\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
               </a>
@@ -209,9 +228,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>string</code>
+                <code>int</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -220,24 +239,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '618', 618)" onmouseover="showTip(event, '618', 618)">
+              <code onmouseout="hideTip(event, '633', 633)" onmouseover="showTip(event, '633', 633)">
                 <p>
-                  <a id="Name">
-                    <a href="#Name">
-                      <code>Name</code>
+                  <a id="IsEmpty">
+                    <a href="#IsEmpty">
+                      <code><span>this.IsEmpty</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="618">
+              <div class="fsdocs-tip" id="633">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Name</code>
+                  <code><span>this.IsEmpty</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>string</code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -246,7 +265,15 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Ssdt.DacpacParser.fs#L73-73" class="fsdocs-source-link" title="Source on GitHub">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Microsoft.FSharp.Collections.FSharpMap`2.IsEmpty``')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Microsoft.FSharp.Collections.FSharpMap`2.IsEmpty\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
               </a>
@@ -257,9 +284,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>string</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -268,24 +295,36 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '619', 619)" onmouseover="showTip(event, '619', 619)">
+              <code onmouseout="hideTip(event, '634', 634)" onmouseover="showTip(event, '634', 634)">
                 <p>
-                  <a id="Parameters">
-                    <a href="#Parameters">
-                      <code>Parameters</code>
+                  <a id="Item">
+                    <a href="#Item">
+                      <code><span>this[<span>key</span>]</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="619">
+              <div class="fsdocs-tip" id="634">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Parameters</code>
+                  <code><span>this[<span>key</span>]</span></code>
                   <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        key
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a></code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredprocparam.html">SsdtStoredProcParam</a>&#32;list</span></code>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></code>
                   </span>
                   <br/>
                 </div>
@@ -294,7 +333,15 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Ssdt.DacpacParser.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Microsoft.FSharp.Collections.FSharpMap`2.Item``')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Microsoft.FSharp.Collections.FSharpMap`2.Item\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
               </a>
@@ -302,12 +349,22 @@
                 
               </p>
             </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  key
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredprocparam.html">SsdtStoredProcParam</a>&#32;list</span></code>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -316,24 +373,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '620', 620)" onmouseover="showTip(event, '620', 620)">
+              <code onmouseout="hideTip(event, '635', 635)" onmouseover="showTip(event, '635', 635)">
                 <p>
-                  <a id="Schema">
-                    <a href="#Schema">
-                      <code>Schema</code>
+                  <a id="Keys">
+                    <a href="#Keys">
+                      <code><span>this.Keys</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="620">
+              <div class="fsdocs-tip" id="635">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Schema</code>
+                  <code><span>this.Keys</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>string</code>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -342,7 +399,15 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Ssdt.DacpacParser.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Microsoft.FSharp.Collections.FSharpMap`2.Keys``')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Microsoft.FSharp.Collections.FSharpMap`2.Keys\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
                 <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
               </a>
@@ -353,9 +418,65 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>string</code>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtname.html">UDDTName</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '636', 636)" onmouseover="showTip(event, '636', 636)">
+                <p>
+                  <a id="Values">
+                    <a href="#Values">
+                      <code><span>this.Values</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="636">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Values</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:P:Microsoft.FSharp.Collections.FSharpMap`2.Values``')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Microsoft.FSharp.Collections.FSharpMap`2.Values\'/>')">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
+                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-uddtinheritedtype.html">UDDTInheritedType</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -364,9 +485,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
 </div>
             
