@@ -44,10 +44,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7BB500F4-9F6A-4AE2-848B-72204AFC706C}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsSqlSsdt.Tests", "tests\SqlProvider.Core.Tests\MsSqlSsdt\MsSqlSsdt.Tests\MsSqlSsdt.Tests.fsproj", "{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F} = {6DE61DDD-AFBC-4646-B409-2266B456D06F}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SSDT", "SSDT", "{E1968454-7F5E-4EC7-BA12-2CD200F74324}"
 EndProject
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "tests\SqlProvider.Core.Tests\MsSqlSsdt\MsSqlSsdt.Tests\AdventureWorks_SSDT\AdventureWorks_SSDT.sqlproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "tests\SqlProvider.Core.Tests\MsSqlSsdt\MsSqlSsdt.Tests\AdventureWorks_SSDT\AdventureWorks_SSDT.fsproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

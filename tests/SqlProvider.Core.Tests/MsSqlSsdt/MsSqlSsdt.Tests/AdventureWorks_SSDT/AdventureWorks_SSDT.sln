@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "AdventureWorks_SSDT.sqlproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "AdventureWorks_SSDT.fsproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
