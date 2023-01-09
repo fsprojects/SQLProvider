@@ -43,6 +43,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{DB81
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7BB500F4-9F6A-4AE2-848B-72204AFC706C}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsSqlSsdt.Tests", "tests\SqlProvider.Core.Tests\MsSqlSsdt\MsSqlSsdt.Tests\MsSqlSsdt.Tests.fsproj", "{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F} = {6DE61DDD-AFBC-4646-B409-2266B456D06F}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SSDT", "SSDT", "{E1968454-7F5E-4EC7-BA12-2CD200F74324}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "AdventureWorks_SSDT", "tests\SqlProvider.Core.Tests\MsSqlSsdt\MsSqlSsdt.Tests\AdventureWorks_SSDT\AdventureWorks_SSDT.fsproj", "{6DE61DDD-AFBC-4646-B409-2266B456D06F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,12 +68,34 @@ Global
 		{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}.Release|x86.ActiveCfg = Release|Any CPU
 		{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}.Release|x86.Build.0 = Release|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877}.Release|x86.Build.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|x86.Build.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Debug|x86.Deploy.0 = Debug|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|x86.ActiveCfg = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|x86.Build.0 = Release|Any CPU
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F}.Release|x86.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C7E85487-91DA-43CE-B343-C54614949C13} = {D383A6BC-FD4A-4C9C-99CA-5AE5C8A7B261}
+		{A4EF7241-F3C2-4149-9AB8-9F23D6DFC877} = {E1968454-7F5E-4EC7-BA12-2CD200F74324}
+		{6DE61DDD-AFBC-4646-B409-2266B456D06F} = {E1968454-7F5E-4EC7-BA12-2CD200F74324}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {266D1D48-A28A-48A9-AAB2-3BE4132FBA88}
