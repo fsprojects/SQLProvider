@@ -378,38 +378,6 @@ let parseXml(xml: string) =
           Name = parts.[1]
           Parameters = parameters |> Seq.toList }
 
-    let parseFunctions (funElement: XmlNode) =
-        let fullName = funElement |> att "Name" |> RegexParsers.splitFullName |> fun n -> String.Join(".", n) |> fun n -> n.ToUpper()
-        let parameters =
-            let paramsNode = funElement |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Parameters")
-            match paramsNode with
-            | Some e ->
-                e
-                |> nodes "x:Entry"
-                |> Seq.map (fun entry ->
-                    let el = entry |> node "x:Element"
-                    let parameterName = el |> att "Name"
-                    let isOutput =
-                        match el |> nodes "x:Property" |> Seq.tryFind (fun p -> p |> att "Name" = "IsOutput") with
-                        | Some p when p |> att "Value" = "True" -> true
-                        | _ -> false
-                    let dataType =
-                        el
-                        |> node "x:Relationship/x:Entry/x:Element/x:Relationship/x:Entry/x:References"
-                        |> att "Name"
-                    { FullName = parameterName
-                      Name = parameterName |> RegexParsers.splitFullName |> Array.last
-                      DataType = dataType |> removeBrackets
-                      Length = ValueNone
-                      IsOutput = isOutput })
-            | None -> Seq.empty
-        
-        let parts = fullName |> RegexParsers.splitFullName
-        { FullName = fullName
-          Schema = parts.[0]
-          Name = parts.[1]
-          Parameters = parameters |> Seq.toList }
-
     let parseDescription (extElement: XmlNode) =
         let fullName = extElement |> att "Name"
         let parts = fullName |> RegexParsers.splitFullName
@@ -452,7 +420,7 @@ let parseXml(xml: string) =
         model
         |> nodes "x:Element"
         |> Seq.filter filterPredicate
-        |> Seq.map parseFunctions
+        |> Seq.map parseStoredProc
         |> Seq.toList
 
     let storedProcs =
