@@ -1,3 +1,6 @@
+### 1.3.6 - 09.01.2023
+* User defined data type support for SQL Server SSDT 
+
 ### 1.3.5 - 20.12.2022
 * Experimental use of Microsoft.Data.SqlClient in .net6.0 and .netstandard2.1
 
