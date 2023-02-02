@@ -273,10 +273,52 @@ states. Upon calling `SubmitUpdates()`, all entities modified/created that belon
 that data context are wrapped in a single transaction scope, and then a connection
 is created and thus enlisted into the transaction.
 
-Database schema is cached lazily meanwhile you use it. Sometimes your schema
-may change meanwhile you develop your code, and you would like to refresh and invalidate
-the database schema cache without restarting your IDE. This can be done via method 
-`ClearDatabaseSchemaCache.` under property `Design Time Commands` under database context 
-while in on-line mode.
 
+
+**#Important**: 
+The database schema (SQLProvider's understanding of the structure of tables, columns, names, types, etc of your database 
+- a "snapshot" if you will) is cached **lazily** while you use it. 
+
+What does that entail? 
+
+A.  Once SQLProvider gets a "mental model" of your database (the schema), 
+    that is what is used for any intellisense/completion suggestions for the rest of your IDE session.
+   
+    This is a fantastic feature, because it means that you're not assaulting your database with a 
+    new "What are you like?" query on EVERY SINGLE KEYSTROKE. 
+
+    But what if the database changes? SQLProvider will NOT see your change because it's source of truth is
+    that locally cached schema snapshot it took right when it started, and that snapshot will persist until
+    one of 2 things happens: 
+    
+    1.  A restart of your Editor/IDE. 
+        The database is queried right when SQLProvider starts up, so you 
+        could certainly force a refresh by restarting. 
+       
+    2.  Forced clearing of the local database schema cache.
+        If SQLProvider is currently able to communicate with the database,
+        you can force the local cache to clear, to be invalidated and refreshed by
+        by using what are called `Design Time Commands`, specifically the 
+        `ClearDatabaseSchemaCache` method. 
+        
+        You're probably thinking: "Ok, fine, that sounds good! How do I do that though?"
+        
+        Just as SQLProvider can interact at compile time with the structure of data in your 
+        database through your editor's completion tooling 
+        (intellisense, language server protocol completion suggestions, etc),
+        you can also interact with SQLProvider at compile time the exact same way. 
+        
+        SQLProvider provides methods under the DataContext you get from your type alias, 
+        and they actually show up as ``Design Time Commands`` in the completion. 
+        
+        Select that, and then "dot into" it afterwards, then under that is ClearDatabaseSchemaCache.
+        Then after that typing in a "." will actualy RUN the command, thereby clearing the cache. 
+        
+ B. LAZY evaluation means that where you save the database schema in your code matters. 
+    Do not call the "Design Time Command" SaveContextSchema at the top of your code. FSharp is evaluated
+    top to bottom, and so if you call SaveContextSchema at the top, before you ask for specific columns in your code, 
+    you will not get a schema that reflects your needs.  
+    
+    sql.GetDataContext(cs).``Design Time Commands``.SaveContextSchema  // put a "." at the end to call the command at compile time.
+        
 *)
