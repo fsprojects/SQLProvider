@@ -5,6 +5,9 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>bin\</OutputPath>	
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,9 +28,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="AdventureWorks_SSDT\AdventureWorks_SSDT.dacpac">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Compile Include="UnzipTests.fs" />
     <Compile Include="ParseSchemaTests.fs" />
     <Compile Include="TypeAnnotationTests.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
 </Project>

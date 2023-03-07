@@ -462,7 +462,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     let query = $"SELECT typeof([%s{colName}]) FROM [%s{table.Name}] LIMIT 1"
                     use com = (this:>ISqlProvider).CreateCommand(con,query)
                     use reader = com.ExecuteReader()
-                    reader.Read()
+                    let r = reader.Read()
                     reader.GetString(0).ToLower()
 
                 if con.State <> ConnectionState.Open then con.Open()
