@@ -276,11 +276,48 @@ entities that were retrieved using it via queries or <code>Individuals</code> an
 states. Upon calling <code>SubmitUpdates()</code>, all entities modified/created that belong to
 that data context are wrapped in a single transaction scope, and then a connection
 is created and thus enlisted into the transaction.</p>
-<p>Database schema is cached lazily meanwhile you use it. Sometimes your schema
-may change meanwhile you develop your code, and you would like to refresh and invalidate
-the database schema cache without restarting your IDE. This can be done via method
-<code>ClearDatabaseSchemaCache.</code> under property <code>Design Time Commands</code> under database context
-while in on-line mode.</p>
+<p>*<em>#Important*</em>:
+The database schema (SQLProvider's understanding of the structure of tables, columns, names, types, etc of your database
+- a "snapshot" if you will) is cached <strong>lazily</strong> while you use it.</p>
+<p>What does that entail?</p>
+<p>A.  Once SQLProvider gets a "mental model" of your database (the schema),
+that is what is used for any intellisense/completion suggestions for the rest of your IDE session.</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">This</span> <span class="id">is</span> <span class="id">a</span> <span class="id">fantastic</span> <span class="id">feature</span><span class="pn">,</span> <span class="id">because</span> <span class="id">it</span> <span class="id">means</span> <span class="id">that</span> <span class="id">you&#39;re</span> <span class="id">not</span> <span class="id">assaulting</span> <span class="id">your</span> <span class="id">database</span> <span class="k">with</span> <span class="id">a</span> 
+<span class="k">new</span> <span class="s">&quot;What are you like?&quot;</span> <span onmouseout="hideTip(event, 'fs30', 162)" onmouseover="showTip(event, 'fs30', 162)" class="id">query</span> <span class="id">on</span> <span class="id">EVERY</span> <span class="id">SINGLE</span> <span class="id">KEYSTROKE</span><span class="pn">.</span> 
+
+<span class="id">But</span> <span class="id">what</span> <span class="k">if</span> <span class="id">the</span> <span class="id">database</span> <span class="id">changes</span><span class="o">?</span> <span class="id">SQLProvider</span> <span class="id">will</span> <span class="id">NOT</span> <span class="id">see</span> <span class="id">your</span> <span class="id">change</span> <span class="id">because</span> <span class="id">it&#39;s</span> <span class="id">source</span> <span class="k">of</span> <span class="id">truth</span> <span class="id">is</span>
+<span class="id">that</span> <span class="id">locally</span> <span class="id">cached</span> <span class="id">schema</span> <span class="id">snapshot</span> <span class="id">it</span> <span class="id">took</span> <span class="id">right</span> <span class="k">when</span> <span class="id">it</span> <span class="id">started</span><span class="pn">,</span> <span class="k">and</span> <span class="id">that</span> <span class="id">snapshot</span> <span class="id">will</span> <span class="id">persist</span> <span class="id">until</span>
+<span class="id">one</span> <span class="k">of</span> <span class="n">2</span> <span class="id">things</span> <span class="id">happens</span><span class="pn">:</span> 
+
+<span class="n">1.</span>  <span class="id">A</span> <span class="id">restart</span> <span class="k">of</span> <span class="id">your</span> <span class="id">Editor</span><span class="o">/</span><span class="id">IDE</span><span class="pn">.</span> 
+    <span class="id">The</span> <span class="id">database</span> <span class="id">is</span> <span class="id">queried</span> <span class="id">right</span> <span class="k">when</span> <span class="id">SQLProvider</span> <span class="id">starts</span> <span class="id">up</span><span class="pn">,</span> <span class="id">so</span> <span class="id">you</span> 
+    <span class="id">could</span> <span class="id">certainly</span> <span class="id">force</span> <span class="id">a</span> <span class="id">refresh</span> <span class="id">by</span> <span class="id">restarting</span><span class="pn">.</span> 
+   
+<span class="n">2.</span>  <span class="id">Forced</span> <span class="id">clearing</span> <span class="k">of</span> <span class="id">the</span> <span class="id">local</span> <span class="id">database</span> <span class="id">schema</span> <span class="id">cache</span><span class="pn">.</span>
+    <span class="id">If</span> <span class="id">SQLProvider</span> <span class="id">is</span> <span class="id">currently</span> <span class="id">able</span> <span class="k">to</span> <span class="id">communicate</span> <span class="k">with</span> <span class="id">the</span> <span class="id">database</span><span class="pn">,</span>
+    <span class="id">you</span> <span class="id">can</span> <span class="id">force</span> <span class="id">the</span> <span class="id">local</span> <span class="id">cache</span> <span class="k">to</span> <span class="id">clear</span><span class="pn">,</span> <span class="k">to</span> <span class="id">be</span> <span class="id">invalidated</span> <span class="k">and</span> <span class="id">refreshed</span> <span class="id">by</span>
+    <span class="id">by</span> <span onmouseout="hideTip(event, 'fs52', 163)" onmouseover="showTip(event, 'fs52', 163)" class="id">using</span> <span class="id">what</span> <span class="id">are</span> <span class="id">called</span> <span class="k">`</span><span class="id">Design</span> <span class="id">Time</span> <span class="id">Commands</span><span class="k">`</span><span class="pn">,</span> <span class="id">specifically</span> <span class="id">the</span> 
+    <span class="k">`</span><span class="id">ClearDatabaseSchemaCache</span><span class="k">`</span> <span class="id">method</span><span class="pn">.</span> 
+    
+    <span class="id">You&#39;re</span> <span class="id">probably</span> <span class="id">thinking</span><span class="pn">:</span> <span class="s">&quot;Ok, fine, that sounds good! How do I do that though?&quot;</span>
+    
+    <span class="id">Just</span> <span class="k">as</span> <span class="id">SQLProvider</span> <span class="id">can</span> <span class="id">interact</span> <span class="id">at</span> <span class="id">compile</span> <span class="id">time</span> <span class="k">with</span> <span class="id">the</span> <span class="id">structure</span> <span class="k">of</span> <span class="id">data</span> <span class="k">in</span> <span class="id">your</span> 
+    <span class="id">database</span> <span class="id">through</span> <span class="id">your</span> <span class="id">editor&#39;s</span> <span class="id">completion</span> <span class="id">tooling</span> 
+    <span class="pn">(</span><span class="id">intellisense</span><span class="pn">,</span> <span class="id">language</span> <span class="id">server</span> <span class="id">protocol</span> <span class="id">completion</span> <span class="id">suggestions</span><span class="pn">,</span> <span class="id">etc</span><span class="pn">)</span><span class="pn">,</span>
+    <span class="id">you</span> <span class="id">can</span> <span class="id">also</span> <span class="id">interact</span> <span class="k">with</span> <span class="id">SQLProvider</span> <span class="id">at</span> <span class="id">compile</span> <span class="id">time</span> <span class="id">the</span> <span class="id">exact</span> <span class="id">same</span> <span class="id">way</span><span class="pn">.</span> 
+    
+    <span class="id">SQLProvider</span> <span class="id">provides</span> <span class="id">methods</span> <span class="id">under</span> <span class="id">the</span> <span class="id">DataContext</span> <span class="id">you</span> <span class="id">get</span> <span class="id">from</span> <span class="id">your</span> <span class="k">type</span> <span class="id">alias</span><span class="pn">,</span> 
+    <span class="k">and</span> <span class="id">they</span> <span class="id">actually</span> <span class="id">show</span> <span class="id">up</span> <span class="k">as</span> <span class="id">``Design Time Commands``</span> <span class="k">in</span> <span class="id">the</span> <span class="id">completion</span><span class="pn">.</span> 
+    
+    <span class="id">Select</span> <span class="id">that</span><span class="pn">,</span> <span class="k">and</span> <span class="k">then</span> <span class="s">&quot;dot into&quot;</span> <span class="id">it</span> <span class="id">afterwards</span><span class="pn">,</span> <span class="k">then</span> <span class="id">under</span> <span class="id">that</span> <span class="id">is</span> <span class="id">ClearDatabaseSchemaCache</span><span class="pn">.</span>
+    <span class="id">Then</span> <span class="id">after</span> <span class="id">that</span> <span class="id">typing</span> <span class="k">in</span> <span class="id">a</span> <span class="s">&quot;.&quot;</span> <span class="id">will</span> <span class="id">actualy</span> <span class="id">RUN</span> <span class="id">the</span> <span class="id">command</span><span class="pn">,</span> <span class="id">thereby</span> <span class="id">clearing</span> <span class="id">the</span> <span class="id">cache</span><span class="pn">.</span> 
+</code></pre>
+<p>B. LAZY evaluation means that where you save the database schema in your code matters.
+Do not call the "Design Time Command" SaveContextSchema at the top of your code. FSharp is evaluated
+top to bottom, and so if you call SaveContextSchema at the top, before you ask for specific columns in your code,
+you will not get a schema that reflects your needs.</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="id">cs</span><span class="pn">)</span><span class="pn">.</span><span class="id">``Design Time Commands``</span><span class="pn">.</span><span class="id">SaveContextSchema</span>  <span class="c">// put a &quot;.&quot; at the end to call the command at compile time.</span>
+</code></pre>
 
             <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
@@ -407,6 +444,18 @@ Calls Linq.QueryBuilder.Join<br /><em>&lt;summary&gt;A query operator that corre
 <div class="fsdocs-tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity with get</div>
 <div class="fsdocs-tip" id="fs51">val christina: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs52">val using: resource: &#39;T -&gt; action: (&#39;T -&gt; &#39;U) -&gt; &#39;U (requires &#39;T :&gt; System.IDisposable)<br /><em>&lt;summary&gt;Clean up resources associated with the input object after the completion of the given function.
+ Cleanup occurs even when an exception is raised by the protected
+ code. &lt;/summary&gt;<br />&lt;param name=&quot;resource&quot;&gt;The resource to be disposed after action is called.&lt;/param&gt;<br />&lt;param name=&quot;action&quot;&gt;The action that accepts the resource.&lt;/param&gt;<br />&lt;returns&gt;The resulting value.&lt;/returns&gt;<br />&lt;example id=&quot;using-example&quot;&gt;
+ The following code appends 10 lines to test.txt, then closes the StreamWriter when finished.
+ &lt;code lang=&quot;fsharp&quot;&gt;
+ open System.IO
+ 
+ using (File.AppendText &quot;test.txt&quot;) (fun writer -&amp;gt;
+     for i in 1 .. 10 do
+         writer.WriteLine(&quot;Hello World {0}&quot;, i))
+ 
+ &lt;/code&gt;&lt;/example&gt;</em></div>
 
         </div>
 
