@@ -681,9 +681,16 @@ module Sql =
                 }
 
         if List.length entityList <= 1000 then
-            executeOneByOneTask' asyncFunc entityList []
+            task {
+                let! res = executeOneByOneTask' asyncFunc entityList []
+                return res |> List.rev
+            }
+            
         else // Slower but avoid StackOverflowException
-            executeOneByOneAsync' (asyncFunc >> Async.AwaitTask) entityList [] |> Async.StartAsTask
+            task {
+                let! res = executeOneByOneAsync' (asyncFunc >> Async.AwaitTask) entityList [] |> Async.StartAsTask
+                return res |> List.rev
+            }
 
 
 module Stubs =

@@ -1,4 +1,4 @@
-module Dacpac.ParseSchemaTests
+module MsSqlSsdt.Tests.ParseSchemaTests
 open NUnit.Framework
 open FSharp.Data.Sql.Providers
 open FSharp.Data.Sql.Ssdt

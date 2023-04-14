@@ -128,6 +128,10 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "BuildTests" (fun _ ->
+    // Build the dacpac
+    let dacpacSln = System.IO.Path.Combine [| "tests"; "SqlProvider.Core.Tests"; "MsSqlSsdt"; "MsSqlSsdtTests.sln" |]
+    Fake.DotNet.DotNet.exec id "build" ( dacpacSln + " -c Debug  --no-dependencies") |> ignore
+
     // Todo: Change when command-line NuGet works (6.4.0 hopefully)
     Fake.DotNet.DotNet.exec id "build" "SQLProvider.Tests.sln -c Debug  --no-dependencies" |> ignore
     //Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Debug}) "SQLProvider.Tests.sln"

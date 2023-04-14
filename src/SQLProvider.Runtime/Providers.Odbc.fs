@@ -189,9 +189,11 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf(".")+1)
+            let table = (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable()
+            let view = (con:?>OdbcConnection).GetSchema("Views",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
             let desc = 
-                (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
+                Seq.append table view
                 |> Seq.map(fun row ->
                     try 
                         let remarks = row.["REMARKS"].ToString()
@@ -261,7 +263,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             let con = con :?> OdbcConnection
             if con.State <> ConnectionState.Open then con.Open()
             let dataTables = con.GetSchema("Tables").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
-            [ for dataTable in dataTables do
+            let dataViews = con.GetSchema("Views").Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
+            [ for dataTable in Seq.append dataTables dataViews do
                 let schema = 
                     if String.IsNullOrEmpty(dataTable.[1].ToString()) then
                         "dbo"
@@ -282,7 +285,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             | _ ->
                 let con = con :?> OdbcConnection
                 if con.State <> ConnectionState.Open then con.Open()
-                let primaryKey = con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
+                let primaryKey =
+                    if table.Type = "table"
+                    then con.GetSchema("Indexes", [| null; null; table.Name |]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray) |> Array.ofSeq
+                    else Array.empty
                 let dataTable = con.GetSchema("Columns", [| null; null; table.Name; null|]).Rows |> Seq.cast<DataRow> |> Seq.map (fun i -> i.ItemArray)
                 let columns =
                     [ for i in dataTable do

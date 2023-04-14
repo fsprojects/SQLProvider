@@ -1,35 +1,41 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
 
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
+    <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>bin\</OutputPath>	
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Remove="Sql\**" />
   </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj" />
+    </ItemGroup>
+
   <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="6.0.7" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="TestQueries.fs" />
-    <Compile Include="Dacpac\UnzipTests.fs" />
-    <Compile Include="Dacpac\ParseSchemaTests.fs" />
-    <Compile Include="Dacpac\TypeAnnotationTests.fs" />
-    <Compile Include="UserDefinedDataTypes.fs" />
-    <Compile Include="Program.fs" />
+    <None Include="AdventureWorks_SSDT\AdventureWorks_SSDT.dacpac">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Compile Include="UnzipTests.fs" />
+    <Compile Include="ParseSchemaTests.fs" />
+    <Compile Include="TypeAnnotationTests.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="FSharp.Data.SqlProvider">
-      <HintPath>..\..\..\..\bin\net472\FSharp.Data.SqlProvider.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <ItemGroup />
 
 </Project>

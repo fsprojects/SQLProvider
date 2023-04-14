@@ -1,4 +1,4 @@
-module UserDefinedDataTypesTests
+module MsSqlSsdt.Tests.UserDefinedDataTypesTests
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 

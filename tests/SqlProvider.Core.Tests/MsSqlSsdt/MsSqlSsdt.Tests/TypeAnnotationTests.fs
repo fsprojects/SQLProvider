@@ -1,4 +1,4 @@
-module Dacpac.TypeAnnotationTests
+module MsSqlSsdt.Tests.TypeAnnotationTests
 open NUnit.Framework
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Ssdt
@@ -22,9 +22,9 @@ let ``Should find view annotation``() =
     // #3: Created/* DatetimeOffset Not Null*/
 
     let expected = [
-        { Column = "ProjectNumber"; DataType = "int"; Nullability = "null" |> Some }
-        { Column = "Hours"; DataType = "FLOAT"; Nullability = "NOT NULL"  |> Some }
-        { Column = "Created"; DataType = "DatetimeOffset"; Nullability = "Not Null" |> Some }
+        { Column = "ProjectNumber"; DataType = "int"; Nullability = ValueSome "null" }
+        { Column = "Hours"; DataType = "FLOAT"; Nullability = ValueSome "NOT NULL"  }
+        { Column = "Created"; DataType = "DatetimeOffset"; Nullability = ValueSome "Not Null" }
     ]
     Assert.AreEqual(expected, results)
 
@@ -32,7 +32,7 @@ let ``Should find view annotation``() =
 let ``Should find table column annotation``() =
     let colExpr = "[LineTotal] AS (isnull(([UnitPrice]*((1.0)-[UnitPriceDiscount]))*[OrderQty],(0.0)) /* MONEY NOT NULL */ ),"
     let result = RegexParsers.parseTableColumnAnnotation "LineTotal" colExpr
-    let expected = { Column = "LineTotal"; DataType = "MONEY"; Nullability = Some "NOT NULL" }
+    let expected = { Column = "LineTotal"; DataType = "MONEY"; Nullability = ValueSome "NOT NULL" }
     Assert.AreEqual(expected, result.Value)
 
 [<Test>]

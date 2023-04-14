@@ -458,20 +458,29 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
+                let typeofColumn colName =
+                    let query = $"SELECT typeof([%s{colName}]) FROM [%s{table.Name}] LIMIT 1"
+                    use com = (this:>ISqlProvider).CreateCommand(con,query)
+                    use reader = com.ExecuteReader()
+                    let r = reader.Read()
+                    reader.GetString(0).ToLower()
+
                 if con.State <> ConnectionState.Open then con.Open()
                 let query = sprintf "pragma table_info(%s)" table.Name
                 use com = (this:>ISqlProvider).CreateCommand(con,query)
                 use reader = com.ExecuteReader()
                 let columns =
                     [ while reader.Read() do
+                        let colName = reader.GetString(1)
                         let dtv = reader.GetString(2).ToLower()
+                        let dtv = if String.IsNullOrWhiteSpace dtv then typeofColumn colName else dtv
                         let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf("(")) else dtv
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
                             let pkColumn = if reader.GetBoolean(5) then true else false
                             let col =
-                                { Column.Name = reader.GetString(1);
+                                { Column.Name = colName
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = pkColumn
