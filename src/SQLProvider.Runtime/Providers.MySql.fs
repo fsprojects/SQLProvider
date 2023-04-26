@@ -376,7 +376,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
 
-        let columnNames, values =
+        let columnNamesWithValues =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
                 let name = sprintf "@param%i" i
@@ -385,13 +385,25 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             |> fun (x,_)-> x
             |> List.rev
             |> List.toArray
-            |> Array.unzip
+
+        let columnNames, values = columnNamesWithValues |> Array.unzip
 
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO %s (%s) VALUES (%s); SELECT LAST_INSERT_ID();"
+        ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)"
             (entity.Table |> quotedTableName)
             ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+
+        match entity.OnConflict with
+        | Throw -> ()
+        | Update ->
+          ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
+                (String.Join(",", columnNamesWithValues |> List.map(fun (c,p) -> sprintf "`%s`=%s" c p.ParameterName))))
+        | DoNothing ->
+          ~~(sprintf " AS x ON DUPLICATE KEY UPDATE %s"
+                (String.Join(",", columnNamesWithValues |> List.map(fun (c,p) -> sprintf "`%s`=x.`%s`" c p.ParameterName))))
+
+        ~~"; SELECT LAST_INSERT_ID();"
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
