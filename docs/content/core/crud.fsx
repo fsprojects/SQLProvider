@@ -190,7 +190,7 @@ ctx.SubmitUpdatesAsync() // |> Async.AwaitTask
 (**
 ### OnConflict
 
-The [SQLite](http://sqlite.org/lang_conflict.html) and [PostgreSQL 9.5+](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT) providers support conflict resolution for INSERT statements.
+The [SQLite](http://sqlite.org/lang_conflict.html), [PostgreSQL 9.5+](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT) and [MySQL 8.0+](https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html) providers support conflict resolution for INSERT statements.
 
 They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).
 
