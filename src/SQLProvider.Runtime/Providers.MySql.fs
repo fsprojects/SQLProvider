@@ -400,8 +400,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
                 (String.Join(",", columnNamesWithValues |> Array.map(fun (c,p) -> sprintf "`%s`=%s" c p.ParameterName))))
         | DoNothing ->
-          ~~(sprintf " AS x ON DUPLICATE KEY UPDATE %s"
-                (String.Join(",", columnNamesWithValues |> Array.map(fun (c,_) -> sprintf "`%s`=x.`%s`" c c))))
+          ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
+                (String.Join(",", columnNamesWithValues |> Array.map(fun (c,_) -> sprintf "`%s`=`%s`" c c))))
 
         ~~"; SELECT LAST_INSERT_ID();"
 
