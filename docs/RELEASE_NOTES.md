@@ -1,3 +1,6 @@
+### 1.3.8 - 12.05.2023
+* MySql support for OnConnflict, PR #790
+
 ### 1.3.7 - 08.03.2023
 * ODBC: Support for views, PR #788
 * SQLite: Support for columns outside pragma info PR #787
