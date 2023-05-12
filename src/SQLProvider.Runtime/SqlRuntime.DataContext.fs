@@ -228,7 +228,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             entity
 
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =
-            [| while reader.Read() = true do
+            [| while reader.Read() do
                  let e = SqlEntity(this, name, columns)
                  for i = 0 to reader.FieldCount - 1 do
                     match reader.GetValue(i) with

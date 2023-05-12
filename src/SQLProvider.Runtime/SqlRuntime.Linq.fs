@@ -546,7 +546,7 @@ module internal QueryImplementation =
                         | _ -> ()
 
                         let innersrc = (src :?> IWithSqlService)
-                        source.TupleIndex |> Seq.filter(fun s -> not(innersrc.TupleIndex.Contains s)) |> Seq.iter(fun s -> innersrc.TupleIndex.Add s)
+                        source.TupleIndex |> Seq.filter(innersrc.TupleIndex.Contains >> not) |> Seq.iter(innersrc.TupleIndex.Add)
                         let qry = parseWhere meth innersrc qual :> IQueryable
                         let svc = (qry :?> IWithSqlService)
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
@@ -589,11 +589,11 @@ module internal QueryImplementation =
                         | OrElse(_) -> Or(conditions,nextFilter)
                         | _ -> failwith ("Filter problem: " + exp.ToString())
                     match exp with
-                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
+                    | AndAlsoOrElse(AndAlsoOrElse(_) as left, (AndAlsoOrElse(_) as right)) ->
                         extendFilter [] (Some ([filterExpression left; filterExpression right]))
-                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,Condition(c))  ->
+                    | AndAlsoOrElse(AndAlsoOrElse(_) as left,Condition(c))  ->
                         extendFilter [c] (Some ([filterExpression left]))
-                    | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_,_) as right))  ->
+                    | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_) as right))  ->
                         extendFilter [c] (Some ([filterExpression right]))
                     | AndAlsoOrElse(Condition(c1) as cc1 ,Condition(c2)) as cc2 ->
                         if cc1 = cc2 then extendFilter [c1] None
@@ -602,8 +602,8 @@ module internal QueryImplementation =
                         Condition.And([cond],None)
 
                     // Support for simple boolean expressions:
-                    | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b = true -> filterExpression x
-                    | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
+                    | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b -> filterExpression x
+                    | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when not b -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
                     | KnownTemporaryVariable(Lambda(_,Condition(cond))) ->
@@ -638,9 +638,9 @@ module internal QueryImplementation =
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
                         sourceAlias, sourceEntity
-                    | FilterClause(_, SelectMany(a1, a2,CrossJoin(_,_),sqlExp))
+                    | FilterClause(_, SelectMany(a1, a2,CrossJoin(_),sqlExp))
                     | FilterClause(_, SelectMany(a1, a2,LinkQuery(_),sqlExp))
-                    | SelectMany(a1, a2,CrossJoin(_,_),sqlExp)
+                    | SelectMany(a1, a2,CrossJoin(_),sqlExp)
                     | SelectMany(a1, a2,LinkQuery(_),sqlExp)  ->
                         //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
                         //if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
@@ -650,9 +650,9 @@ module internal QueryImplementation =
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
                         | BaseTable(alias,sourceEntity)
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
-                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_,_),sqlExp2))
+                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_),sqlExp2))
                         | FilterClause(_, SelectMany(a3, a4,LinkQuery(_),sqlExp2))
-                        | SelectMany(a3, a4,CrossJoin(_,_),sqlExp2)
+                        | SelectMany(a3, a4,CrossJoin(_),sqlExp2)
                         | SelectMany(a3, a4,LinkQuery(_),sqlExp2)  ->
                             match sqlExp2 with
                             | BaseTable(alias,sourceEntity)
@@ -1067,13 +1067,13 @@ module internal QueryImplementation =
                         |> Option.fold (fun _ x -> x) Unchecked.defaultof<'T>
                     | MethodCall(_, (MethodWithName "Single"), [Constant(query, _)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
-                        | x::[] -> x
+                        | [x] -> x
                         | [] -> raise <| InvalidOperationException("Encountered zero elements in the input sequence")
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(_, (MethodWithName "SingleOrDefault"), [ConstantOrNullableConstant(Some query)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
                         | [] -> Unchecked.defaultof<'T>
-                        | x::[] -> x
+                        | [x] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
@@ -1088,7 +1088,7 @@ module internal QueryImplementation =
                                 member t.Provider = source.Provider
                                 member t.TupleIndex = source.TupleIndex }
                         let res = parseWhere meth limitedSource qual
-                        res |> Seq.length > 0 |> box :?> 'T
+                        res |> Seq.isEmpty |> not |> box :?> 'T
                     | MethodCall(None, (MethodWithName "All" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let negativeCheck = 
                             match qual with
@@ -1103,7 +1103,7 @@ module internal QueryImplementation =
                                 member t.TupleIndex = source.TupleIndex }
                         
                         let res = parseWhere meth limitedSource negativeCheck
-                        res |> Seq.length = 0 |> box :?> 'T
+                        res |> Seq.isEmpty |> box :?> 'T
                     | MethodCall(None, (MethodWithName "First" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let limitedSource = 
                             {new IWithSqlService with 

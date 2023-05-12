@@ -526,7 +526,7 @@ module internal QueryExpressionTransformer =
                         | ExpressionType.Quote, (:? UnaryExpression as ce) ->  
                             generateReplacementParams ce.Operand
                         | ExpressionType.Call, (:? MethodCallExpression as me) ->  
-                            me.Arguments |> Seq.iter(fun a -> generateReplacementParams a)
+                            me.Arguments |> Seq.iter generateReplacementParams
                         | _ -> ()
 
                     generateReplacementParams(currentProj)
@@ -547,7 +547,7 @@ module internal QueryExpressionTransformer =
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
                                     List.concat [ x; (groupProjectionMap |> Seq.toList)]
-                                    |> Seq.map(fun op ->
+                                    |> List.collect(fun op ->
                                         if not (group |> List.isEmpty) then 
                                             group 
                                             |> List.choose(fun (baseal, cc) -> 
@@ -566,7 +566,7 @@ module internal QueryExpressionTransformer =
                                                 | _ -> None)
 
                                         else [op]
-                                    ) |> Seq.concat |> Seq.toList
+                                    )
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
 
@@ -610,7 +610,7 @@ module internal QueryExpressionTransformer =
                             // Whole entity plus operation columns. We need urgent table lookup.
                             let myLock = provider.GetLockObject()
                             let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
-                            let opcols = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat
+                            let opcols = projectionColumns |> Seq.collect(fun p -> p.Value)
                             let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
                             let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
                             let tmp = sel
@@ -623,7 +623,7 @@ module internal QueryExpressionTransformer =
                             projectionColumns.Add(tmp.Key, tmp.Value)
                             tmp.Key
                         | None ->
-                            let itms = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat |> Seq.distinct |> Seq.toList
+                            let itms = projectionColumns |> Seq.collect(fun p -> p.Value) |> Seq.distinct |> Seq.toList
                             let selKey = (projectionColumns.Keys |> Seq.head)
                             projectionColumns.Clear()
                             projectionColumns.Add(selKey, new ResizeArray<ProjectionParameter>(itms))

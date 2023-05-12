@@ -112,7 +112,7 @@ module Firebird =
            failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package Firebird.Data) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(String.IsNullOrEmpty >> not)))
                 details
 
     let connectionType =  lazy (findType "FbConnection")
@@ -637,7 +637,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                             else reader.GetValue(2).ToString()
                         match Firebird.findDbType dt with
                         | Some(m) ->
-                            let pkColumn = if reader.GetString(5) = "PRIMARY KEY" then true else false 
+                            let pkColumn = reader.GetString(5) = "PRIMARY KEY"
                             let col =
                                 { Column.Name = reader.GetString(0)
                                   TypeMapping = m
@@ -819,7 +819,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (fun i -> createParamet (elements.GetValue(i)))
+                                                Array.init (elements.Length) (elements.GetValue >> createParamet)
                                             | Some(x) -> [|createParamet (box x)|]
                                             | None ->    [|createParamet DBNull.Value|]
 
@@ -873,10 +873,10 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -945,13 +945,13 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as [%s]" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -1025,13 +1025,13 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "

@@ -542,7 +542,7 @@ and internal SqlQuery =
 
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
-                                        | Some(_,_) when q.CrossJoins.IsEmpty -> q
+                                        | Some(_) when q.CrossJoins.IsEmpty -> q
                                         | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false ->
                                                 // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
@@ -813,7 +813,7 @@ module internal CommonTasks =
             let replaceEmptyKey = 
                 match key with
                 | KeyColumn keyName -> function GroupColumn (KeyOp k,c) when k = "" -> GroupColumn (KeyOp keyName,c) | x -> x
-                | _ -> fun x -> x
+                | _ -> id
 
             let rec parseFilters conditionList = 
                 conditionList |> List.map(function 

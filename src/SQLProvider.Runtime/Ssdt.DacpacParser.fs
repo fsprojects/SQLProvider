@@ -177,8 +177,10 @@ let parseXml(xml: string) =
         let columns =
             relationship
             |> nodes "x:Entry"
-            |> Seq.map (node "x:Element/x:Relationship/x:Entry/x:References" >> att "Name")
-            |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
+            |> Seq.map (
+                node "x:Element/x:Relationship/x:Entry/x:References"
+                    >> att "Name" 
+                    >> fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
             |> Seq.toList
         { PrimaryKeyConstraint.Name = name
           PrimaryKeyConstraint.Columns = columns }

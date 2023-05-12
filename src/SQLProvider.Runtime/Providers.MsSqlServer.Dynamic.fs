@@ -43,7 +43,7 @@ module MSSqlServerDynamic =
            failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package Microsoft.Data.SqlClient) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(String.IsNullOrEmpty >> not)))
                 details
 
     let connectionType =  lazy (findType "SqlConnection")
@@ -474,7 +474,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
-        values |> Array.iter(fun v -> cmd.Parameters.Add v |> ignore)
+        values |> Array.iter(cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -520,7 +520,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
             ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
-        data |> Array.map snd |> Array.iter(fun v ->cmd.Parameters.Add v |> ignore)
+        data |> Array.map snd |> Array.iter(cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
             let pkParam = createOpenParameter("@pk"+i.ToString(),pkValue)
             cmd.Parameters.Add pkParam |> ignore)
@@ -688,8 +688,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                            let col =
                              { Column.Name = reader.GetString(0);
                                TypeMapping = m
-                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                               IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false
+                               IsNullable = let b = reader.GetString(4) in b = "YES"
+                               IsPrimaryKey = reader.GetString(5) = "PRIMARY KEY"
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
                                IsComputed = reader.GetInt32(8) = 1
@@ -886,7 +886,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
+                                                Array.init (elements.Length) (elements.GetValue >> createParam)
                                             | Some(x) -> [|createParam (box x)|]
                                             | None ->    [|createParam DBNull.Value|]
 
@@ -940,10 +940,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -1011,13 +1011,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -1092,13 +1092,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "

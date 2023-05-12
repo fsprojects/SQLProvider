@@ -241,7 +241,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
             let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
             odbcCommand.CommandType <- CommandType.StoredProcedure;
-            inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+            inputParameters |> Array.iter (odbcCommand.Parameters.Add >> ignore)
             odbcCommand.ExecuteNonQuery() |> ignore
             ReturnValueType.Unit
 
@@ -251,7 +251,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
                 let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
                 odbcCommand.CommandType <- CommandType.StoredProcedure;
-                inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+                inputParameters |> Array.iter (odbcCommand.Parameters.Add >> ignore)
                 let! r = odbcCommand.ExecuteNonQueryAsync()
                 return ReturnValueType.Unit
             }
@@ -298,11 +298,11 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             let name = i.[3] :?> string
                             let maxlen = if i.[6] = box(DBNull.Value) then 0 else i.[6] :?> int
                             
-                            let pkColumn = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
+                            let pkColumn = (Array.isEmpty primaryKey |> not) && primaryKey.[0].[8] = box name
                             let col =
                                 { Column.Name = name
                                   TypeMapping = m
-                                  IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
+                                  IsNullable = let b = i.[17] :?> string in b = "YES"
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
                                   HasDefault = false
@@ -479,10 +479,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -553,13 +553,13 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -637,13 +637,13 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "

@@ -143,7 +143,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let baseTypes =
             lazy
                 dict [ let tablesforced = tables.Force()
-                       if tablesforced.Length = 0 then
+                       if List.isEmpty tablesforced then
                             let hint =
                                 match con with
                                 | Some con ->
@@ -575,7 +575,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // Create: ('a * 'b * 'c * ...) -> SqlEntity
                     let create2 =
-                        if normalParameters.Length = 0 then Unchecked.defaultof<ProvidedMethod> else
+                        if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
                         ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args ->
 
                           let dc = args.Head
@@ -597,7 +597,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // Create: ('a * 'b * 'c * ...) -> SqlEntity
                     let create2old =
-                        if backwardCompatibilityOnly.Length = 0 || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
+                        if List.isEmpty backwardCompatibilityOnly || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
                         ProvidedMethod("Create", backwardCompatibilityOnly, entityType, invokeCode = fun args ->
 
                           let dc = args.Head
@@ -635,7 +635,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                     let create4 =
-                        if normalParameters.Length = 0 then Unchecked.defaultof<ProvidedMethod> else
+                        if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = normalParameters |> Seq.map(fun c -> c.Name )
                             "Create(" + String.Join(", ", cols) + ")"
@@ -666,7 +666,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                     let create4old =
-                        if backwardCompatibilityOnly.Length = 0 || backwardCompatibilityOnly.Length = normalParameters.Length ||
+                        if List.isEmpty backwardCompatibilityOnly || backwardCompatibilityOnly.Length = normalParameters.Length ||
                             backwardCompatibilityOnly.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = backwardCompatibilityOnly |> Seq.map(fun c -> c.Name )
@@ -691,7 +691,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                     let create5 =
-                        if minimalParameters.Length = 0 || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
+                        if List.isEmpty minimalParameters || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = minimalParameters |> Seq.map(fun c -> c.Name )
                             "Create(" + String.Join(", ", cols) + ")"
@@ -1066,7 +1066,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     DesignTimeCache.cache.TryRemove args |> ignore
                 } |> Async.Start
                 types
-        try DesignTimeCache.cache.GetOrAdd(arguments, fun args -> addCache args).Value
+        try DesignTimeCache.cache.GetOrAdd(arguments, addCache).Value
         with
         | e ->
             let _ = DesignTimeCache.cache.TryRemove(arguments)

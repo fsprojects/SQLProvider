@@ -518,11 +518,11 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | OrElse(_) -> Or(conditions,nextFilter)
                 | _ -> failwith ("Filter problem: " + exp.ToString())
             match exp with
-            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
+            | AndAlsoOrElse(AndAlsoOrElse(_) as left, (AndAlsoOrElse(_) as right)) ->
                 extendFilter [] (Some ([filterExpression left; filterExpression right]))
-            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,SimpleCondition(c))  ->
+            | AndAlsoOrElse(AndAlsoOrElse(_) as left,SimpleCondition(c))  ->
                 extendFilter [c] (Some ([filterExpression left]))
-            | AndAlsoOrElse(SimpleCondition(c),(AndAlsoOrElse(_,_) as right))  ->
+            | AndAlsoOrElse(SimpleCondition(c),(AndAlsoOrElse(_) as right))  ->
                 extendFilter [c] (Some ([filterExpression right]))
             | AndAlsoOrElse(SimpleCondition(c1) as cc1 ,SimpleCondition(c2)) as cc2 ->
                 if cc1 = cc2 then extendFilter [c1] None
@@ -531,10 +531,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 Condition.And([cond],None)
 
             // Support for simple boolean expressions:
-            | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b = true -> filterExpression x
-            | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
+            | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b -> filterExpression x
+            | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when not b -> filterExpression x
             | Bool(b) when b -> Condition.ConstantTrue
-            | Bool(b) when not(b) -> Condition.ConstantFalse
+            | Bool(b) when not b -> Condition.ConstantFalse
             | _ -> Condition.NotSupported exp
 
         let filter = filterExpression (ExpressionOptimizer.visit ce.Test)
