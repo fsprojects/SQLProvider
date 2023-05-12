@@ -241,7 +241,7 @@ output of .ColumnValues:</p>
         
 </code></pre>
 <h3><a name="OnConflict" class="anchor" href="#OnConflict">OnConflict</a></h3>
-<p>The <a href="http://sqlite.org/lang_conflict.html">SQLite</a> and <a href="https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT">PostgreSQL 9.5+</a> providers support conflict resolution for INSERT statements.</p>
+<p>The <a href="http://sqlite.org/lang_conflict.html">SQLite</a>, <a href="https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT">PostgreSQL 9.5+</a> and <a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">MySQL 8.0+</a> providers support conflict resolution for INSERT statements.</p>
 <p>They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).</p>
 <p>You can leverage this feature by setting the <code>OnConflict</code> property on a row object:
 * Setting it to <code>DoNothing</code> will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite).
