@@ -59,17 +59,6 @@ module internal Utilities =
             | count -> name + "_" + (string count)
         )
 
-    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
-    /// async thread is available, it can't be used to execute another SQL at the same time.
-    let rec executeOneByOne asyncFunc entityList =
-        match entityList with
-        | h::t -> 
-            task {
-                do! asyncFunc h
-                return! executeOneByOne asyncFunc t
-            }
-        | [] -> task { () }
-
     let parseAggregates fieldNotat fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
             match query with
@@ -662,6 +651,8 @@ module Sql =
 
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
+    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
+    /// async thread is available, it can't be used to execute another SQL at the same time.
     let evaluateOneByOne asyncFunc entityList =
         let rec executeOneByOneTask' asyncFunc entityList acc =
             match entityList with

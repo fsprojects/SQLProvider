@@ -775,7 +775,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
+                    let! _ = Sql.evaluateOneByOne handleEntity (entities.Keys|>Seq.toList)
                     if scope<>null then scope.Complete()
 
                 finally
