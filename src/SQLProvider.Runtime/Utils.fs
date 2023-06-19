@@ -654,35 +654,16 @@ module Sql =
     /// DB-connections are not usually supporting parallel SQL-query execution, so even when
     /// async thread is available, it can't be used to execute another SQL at the same time.
     let evaluateOneByOne asyncFunc entityList =
-        let rec executeOneByOneTask' asyncFunc entityList acc =
-            match entityList with
-            | [] -> task { return acc }
-            | h::t -> 
-                task {
-                    let! res = asyncFunc h
-                    return! executeOneByOneTask' asyncFunc t (res::acc)
-                }
-        let rec executeOneByOneAsync' asyncFunc entityList acc =
-            match entityList with
-            | [] -> async { return acc }
-            | h::t -> 
-                async {
-                    let! res = asyncFunc h
-                    return! executeOneByOneAsync' asyncFunc t (res::acc)
-                }
-
-        if List.length entityList <= 1000 then
-            task {
-                let! res = executeOneByOneTask' asyncFunc entityList []
-                return res |> List.rev
-            }
-            
-        else // Slower but avoid StackOverflowException
-            task {
-                let! res = executeOneByOneAsync' (asyncFunc >> Async.AwaitTask) entityList [] |> Async.StartAsTask
-                return res |> List.rev
-            }
-
+        async {
+            let! arr = 
+                entityList
+                |> Seq.map (fun x -> 
+                    async { // task { } would start as parallel, async { } is not.
+                        return! asyncFunc x |> Async.AwaitTask
+                    })
+                |> Async.Sequential
+            return arr |> Seq.toList
+        } |> Async.StartImmediateAsTask
 
 module Stubs =
     open System.Data

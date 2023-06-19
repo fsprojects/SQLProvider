@@ -1,3 +1,9 @@
+### 1.3.10 - 19.06.2023
+* Even better way of updating thousands of entities
+
+### 1.3.9 - 15.06.2023
+* Avoid stackoverflow when updating thousands of entities
+
 ### 1.3.8 - 12.05.2023
 * MySql support for OnConnflict, PR #790
 
