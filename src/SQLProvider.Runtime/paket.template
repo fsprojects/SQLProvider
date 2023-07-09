@@ -26,8 +26,8 @@ description
 files
     ../../bin/net472/FSharp.Data.SqlProvider.* ==> lib/net472
     ../../bin/net6.0/FSharp.Data.SqlProvider.* ==> lib/net6.0
-    ../../bin/netstandard2.0/FSharp.Data.SQLProvider.* ==> lib/netstandard2.0
-    ../../bin/netstandard2.1/FSharp.Data.SQLProvider.* ==> lib/netstandard2.1
+    ../../bin/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
+    ../../bin/netstandard2.1/FSharp.Data.SqlProvider.* ==> lib/netstandard2.1
     ../../bin/typeproviders/fsharp41/net6.0/*.dll ==> typeproviders/fsharp41/net6.0
     ../../bin/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
     ../../bin/typeproviders/fsharp41/netcoreapp3.1/*.dll ==> typeproviders/fsharp41/netcoreapp3.1
