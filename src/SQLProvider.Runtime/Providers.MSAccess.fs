@@ -666,7 +666,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 use trnsx = con.BeginTransaction()
                 try
                     // initially supporting update/create/delete of single entities, no hierarchies yet
-                    entities.Keys
+                    (CommonTasks.sortEntities entities |> Seq.toList)
                     |> Seq.iter(fun e ->
                         match e._State with
                         | Created ->
@@ -762,7 +762,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                 }
                             | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                        let! _ = Sql.evaluateOneByOne handleEntity (entities.Keys|>Seq.toList)
+                        let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
                         trnsx.Commit()
 
                     with _ ->

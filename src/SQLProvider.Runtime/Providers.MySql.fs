@@ -1020,7 +1020,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 con.Open()
 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -1106,7 +1106,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    let! _ = Sql.evaluateOneByOne handleEntity (entities.Keys|>Seq.toList)
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
 
                     if scope<>null then scope.Complete()
 

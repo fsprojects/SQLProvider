@@ -104,7 +104,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
 
         member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
         member __.ClearPendingChanges() = pendingChanges.Clear()
-        member __.GetPendingEntities() = pendingChanges.Keys |> Seq.toList
+        member __.GetPendingEntities() = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
 
         member __.SubmitPendingChanges() =
             use con = provider.CreateConnection(connectionString)

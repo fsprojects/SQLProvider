@@ -1082,7 +1082,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 con.Open()
 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -1168,7 +1168,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                             }
                         | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
 
-                    let! _ = Sql.evaluateOneByOne handleEntity (entities.Keys|>Seq.toList)
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
 
                     if scope<>null then scope.Complete()
 

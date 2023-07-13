@@ -826,6 +826,9 @@ module internal CommonTasks =
                     | x -> x)
             parseFilters conditionList
 
+    /// deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
+    let sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
+
 module public OfflineTools =
 
     /// Merges two ContexSchemaPath offline schema files into one target schema file.
