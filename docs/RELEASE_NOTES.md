@@ -1,3 +1,6 @@
+### 1.3.11 - 13.07.2023
+* SubmitUpdates time-based ordering PR #797
+
 ### 1.3.10 - 19.06.2023
 * Even better way of updating thousands of entities
 
