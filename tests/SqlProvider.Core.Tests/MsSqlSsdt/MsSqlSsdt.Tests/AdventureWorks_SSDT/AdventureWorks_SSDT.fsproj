@@ -1,11 +1,11 @@
 <Project Sdk="MSBuild.Sdk.SqlProj/2.0.0">
   <PropertyGroup>
-    <TargetFramework>net6</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <SuppressTSqlWarnings>71558,71502</SuppressTSqlWarnings>
     <SqlServerVersion>SqlAzure</SqlServerVersion>
     <BundledNETCoreAppTargetFrameworkVersion>6.0</BundledNETCoreAppTargetFrameworkVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <TargetFrameworkProfile />
+    <TargetDatabaseSet>True</TargetDatabaseSet>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

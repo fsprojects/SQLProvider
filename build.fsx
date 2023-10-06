@@ -112,7 +112,10 @@ Target.create "Clean" (fun _ ->
     !! "**/**/temp/" |> Shell.cleanDirs
     !! "**/**/obj/" |> Shell.cleanDirs
     !! "**/**/test*/**/obj/" |> Shell.cleanDirs
-    
+    !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/obj/" |> Shell.cleanDirs
+    !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/obj/" |> Shell.cleanDirs
+    "tests/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/AdventureWorks_SSDT.dacpac" |> Shell.rm
+ 
     Shell.cleanDirs ["bin"; "temp"]
 )
 
