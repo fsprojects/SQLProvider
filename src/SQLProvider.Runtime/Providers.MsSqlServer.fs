@@ -79,8 +79,14 @@ module MSSqlServer =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
-    let createConnection connectionString = new SqlConnection(connectionString) :> IDbConnection
-
+    let createConnection connectionString =
+        //try
+            new SqlConnection(connectionString) :> IDbConnection
+        //with
+        //| :? System.PlatformNotSupportedException ->
+        //    printfn "%O" System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+        //    reraise()
+            
     let createCommand commandText (connection:IDbConnection) = new SqlCommand(commandText, downcast connection) :> IDbCommand
 
     let dbUnbox<'a> (v:obj) : 'a =

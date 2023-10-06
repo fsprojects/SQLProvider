@@ -91,8 +91,6 @@ module MSSqlServerSsdt =
                     relativeEnvFilePath
                 ] |> List.choose id
 
-
-
         let allPossiblePaths =
             paths
             |> List.choose chooseDacpac
@@ -111,7 +109,6 @@ module MSSqlServerSsdt =
                 sb.Append("\t") |> ignore
                 sb.AppendLine(s.FullName) |> ignore
             failwith (sb.ToString())
-
 
     /// Tries to parse a schema model from the given .dacpac file path.
     let parseDacpac = findDacPacFile >> extractModelXml >> parseXml
@@ -259,8 +256,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     else " / " + d.Description)
              |> Option.defaultValue ""
              )
-        member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
-        member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
+        member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
+        member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) =
             let p = SqlParameter(param.Name,value)
             p.DbType <- param.TypeMapping.DbType

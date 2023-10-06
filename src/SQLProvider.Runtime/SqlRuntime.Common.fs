@@ -581,6 +581,7 @@ and internal SqlQuery =
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) ->
                     if q.Skip.IsSome then failwith "skip may only be specified once"
+                    elif amount = 0 then convert q rest
                     else convert { q with Skip = Some(amount) } rest
                 | Take(amount, rest) ->
                     if q.Union.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
