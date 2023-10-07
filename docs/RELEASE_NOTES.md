@@ -1,3 +1,6 @@
+### 1.3.12 - 07.10.2023
+* Some performance updates PR #802
+
 ### 1.3.11 - 13.07.2023
 * SubmitUpdates time-based ordering PR #797
 
