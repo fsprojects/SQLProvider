@@ -280,11 +280,15 @@ module ConfigHelpers =
 module internal SchemaProjections = 
     
     //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
-    let private tryAt (s:string) i = if i >= s.Length then None else Some s.[i]
-    let private sat f (c:option<char>) = match c with Some c when f c -> Some c | _ -> None
-    let private (|EOF|_|) c = match c with Some _ -> None | _ -> Some ()
+    let private tryAt (s:string) i = if i >= s.Length then ValueNone else ValueSome s.[i]
+    let private sat f (c:voption<char>) = match c with ValueSome c when f c -> ValueSome c | _ -> ValueNone
+    [<return: Struct>]
+    let private (|EOF|_|) c = match c with ValueSome _ -> ValueNone | _ -> ValueSome ()
+    [<return: Struct>]
     let private (|LetterDigit|_|) = sat Char.IsLetterOrDigit
+    [<return: Struct>]
     let private (|Upper|_|) = sat (fun c -> Char.IsUpper c || Char.IsDigit c)
+    [<return: Struct>]
     let private (|Lower|_|) = sat (fun c -> Char.IsLower c || Char.IsDigit c)
     
     // --------------------------------------------------------------------------------------
@@ -634,14 +638,14 @@ module Sql =
     let executeSqlAsDataTable createCommand sql con = 
         use r = executeSql createCommand sql con
         let dt = new DataTable()
-        dt.Load(r)
+        dt.Load r
         dt
 
     let executeSqlAsDataTableAsync createCommand sql con = 
         task{
             use! r = executeSqlAsync createCommand sql con
             let dt = new DataTable()
-            dt.Load(r)
+            dt.Load r
             return dt
         }
 

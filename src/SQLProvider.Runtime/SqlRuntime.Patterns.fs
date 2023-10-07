@@ -93,10 +93,11 @@ let (|OptionNone|_|) (e: Expression) =
         | _ -> None
     | _ -> None
 
+[<return: Struct>]
 let (|NullConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) when ce.Value = null -> Some()
-    | _ -> None
+    | ExpressionType.Constant, (:? ConstantExpression as ce) when ce.Value = null -> ValueSome()
+    | _ -> ValueNone
 
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 

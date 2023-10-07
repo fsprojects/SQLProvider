@@ -15,6 +15,7 @@ open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
+[<Struct>]
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
@@ -26,13 +27,17 @@ type DatabaseProviderTypes =
     | FIREBIRD = 7
     | MSSQLSERVER_DYNAMIC = 8
     | MSSQLSERVER_SSDT = 9
+
+[<Struct>]
 type RelationshipDirection = Children = 0 | Parents = 1
 
+[<Struct>]
 type CaseSensitivityChange =
     | ORIGINAL = 0
     | TOUPPER = 1
     | TOLOWER = 2
 
+[<Struct>]
 type NullableColumnType =
     /// Nullable types are just Unchecked default. (Old false.)
     | NO_OPTION = 0
@@ -41,6 +46,7 @@ type NullableColumnType =
     /// ValueOption is more performant.
     | VALUE_OPTION = 2
 
+[<Struct>]
 type OdbcQuoteCharacter =
     | DEFAULT_QUOTE = 0
     /// MySQL/Postgre style: `alias` 
@@ -54,6 +60,7 @@ type OdbcQuoteCharacter =
     /// Single quote: 'alias'
     | APHOSTROPHE = 5 
 
+[<Struct>]
 type SQLiteLibrary =
     // .NET Framework default
     | SystemDataSQLite = 0
@@ -129,7 +136,7 @@ module public QueryEvents =
 
    let internal PublishExpression(e) = expressionEvent.Trigger(e)
 
-   
+[<Struct>]
 type EntityState =
     | Unchanged
     | Created
@@ -137,6 +144,7 @@ type EntityState =
     | Delete
     | Deleted
 
+[<Struct>]
 type OnConflict = 
     /// Throws an exception if the primary key already exists (default behaviour).
     | Throw
@@ -156,8 +164,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()
 
-    let data = Dictionary<string,obj>()
-    let aliasCache = new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural)
+    let data = Dictionary<string,obj>(columns.Count)
+    let mutable aliasCache = None
 
     let replaceFirst (text:string) (oldValue:string) (newValue) =
         let position = text.IndexOf oldValue
@@ -287,7 +295,13 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        aliasCache.GetOrAdd(alias, fun alias ->
+
+        match aliasCache with
+        | Some x -> ()
+        | None ->
+            aliasCache <- Some (new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural))
+
+        aliasCache.Value.GetOrAdd(alias, fun alias ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
             let newEntity = SqlEntity(dc, tableName, columns)
             // attributes names cannot have a period in them unless they are an alias
