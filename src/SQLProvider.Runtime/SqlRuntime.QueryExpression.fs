@@ -159,7 +159,7 @@ module internal QueryExpressionTransformer =
                                 | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
                                     match o.NodeType, o with
                                     | ExpressionType.Call, (:? MethodCallExpression as ce)
-                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression ) ->
+                                            when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression ) ->
                                         let alias = (ce.Object :?> ParameterExpression).Name
                                         getOp alias (KeyColumn key)
                                     | _ -> None
@@ -231,7 +231,7 @@ module internal QueryExpressionTransformer =
                         values.Add(OperationColumn(name, coltyp))
                         Some projection
                 | false, _ -> 
-                    projectionMap.Add(foundAlias,new ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
+                    projectionMap.Add(foundAlias, ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
                     Some projection           
                 | _ -> 
                     // This table is alredy fetched as all columns
@@ -244,12 +244,12 @@ module internal QueryExpressionTransformer =
                 // needs to be replaced with a call to GetSubEntity using the result as an input
                 match projectionMap.TryGetValue alias with
                 | true, values -> values.Clear()
-                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>())
+                | false, _ -> projectionMap.Add(alias, ResizeArray<_>())
                 Some (Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)))
             | _, SourceTupleGet(alias,name,Some(key,mi)) ->
                 match projectionMap.TryGetValue alias with
                 | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
-                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
+                | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
                     (match databaseParam.Type.Name.StartsWith("IGrouping") with
@@ -279,7 +279,7 @@ module internal QueryExpressionTransformer =
                 | Some alias ->
                     match projectionMap.TryGetValue alias with
                     | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
-                    | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
+                    | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                     | _ -> ()
                     Some
                         (match databaseParam.Type.Name.StartsWith("IGrouping") with
@@ -292,7 +292,7 @@ module internal QueryExpressionTransformer =
         // this is not tail recursive but it shouldn't matter in practice ....
         let rec transform  (en:String voption) (e:Expression): Expression =
             let e = ExpressionOptimizer.doReduction e
-            if e = null then null else
+            if isNull e then null else
             match e.NodeType, e with
             | OperationItem me -> upcast me
             | ProjectionItem me -> upcast me
@@ -326,7 +326,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as e)      -> upcast Expression.GreaterThanOrEqual(transform en e.Left, transform en e.Right)
             | ExpressionType.Equal,              (:? BinaryExpression as e)      -> upcast Expression.Equal(transform en e.Left, transform en e.Right)
             | ExpressionType.NotEqual,           (:? BinaryExpression as e)      -> upcast Expression.NotEqual(transform en e.Left, transform en e.Right)
-            | ExpressionType.Coalesce,           (:? BinaryExpression as e)   when e.Conversion <> null -> 
+            | ExpressionType.Coalesce,           (:? BinaryExpression as e)   when not (isNull e.Conversion) -> 
                                                                                     let left = transform en e.Left
                                                                                     let right = transform en e.Right
                                                                                     let conv = transform en e.Conversion
@@ -347,13 +347,13 @@ module internal QueryExpressionTransformer =
                                                                                     upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with //Todo:ValueOption upcast here too
-                                                                                    | ValueSome(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
+                                                                                    | ValueSome(en) when en = e.Name && (isNull replaceParams || not(replaceParams.ContainsKey(e))) ->
                                                                                          match projectionMap.TryGetValue en with
                                                                                          | true, values -> values.Clear()
-                                                                                         | false, _ -> projectionMap.Add(en,new ResizeArray<_>())
+                                                                                         | false, _ -> projectionMap.Add(en, ResizeArray<_>())
                                                                                          upcast databaseParam
                                                                                     | _ ->
-                                                                                        if replaceParams<>null && replaceParams.ContainsKey(e) then
+                                                                                        if (not (isNull replaceParams)) && replaceParams.ContainsKey(e) then
                                                                                             replaceParams.[e].Body
                                                                                         else
                                                                                             upcast e
@@ -362,7 +362,7 @@ module internal QueryExpressionTransformer =
                                                                                     if replaceParams.Count>0 then
                                                                                         ExpressionOptimizer.Methods.``remove AnonymousType`` memb
                                                                                     else upcast memb
-            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if isNull e.Object then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     match transformed with
                                                                                     | GroupByAggregate(param, callreplace) -> 
                                                                                         if not(groupProjectionMap.Contains param) then
@@ -377,7 +377,7 @@ module internal QueryExpressionTransformer =
                                                                                         upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
                                                                                     else
                                                                                         upcast Expression.Lambda(transform en e.Body, e.Parameters)
-            | ExpressionType.New,                (:? NewExpression as e)         -> if e.Members = null then
+            | ExpressionType.New,                (:? NewExpression as e)         -> if isNull e.Members then
                                                                                       upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     else
                                                                                       upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
@@ -393,7 +393,7 @@ module internal QueryExpressionTransformer =
                 if useCanonicalsOnSelect then
                     match projection with
                     | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
-                        projectionMap.Add(al,new ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
+                        projectionMap.Add(al, ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
                         let meth = 
                             if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
                                 typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
@@ -422,10 +422,10 @@ module internal QueryExpressionTransformer =
         let legaliseName (alias:alias) =
                 if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
 
-        let entityIndex = new ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
+        let entityIndex = ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
 
         let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
-        let groupgin = new ResizeArray<_>()
+        let groupgin = ResizeArray<_>()
 
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it
         let baseAlias,baseTable =
@@ -451,7 +451,7 @@ module internal QueryExpressionTransformer =
                     | true, 3 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>>,"result")
                     | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
                 let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
-                pmap.Add(baseAlias, new ResizeArray<_>())
+                pmap.Add(baseAlias, ResizeArray<_>())
                 (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
             | projs -> 
                 let replaceParams = Dictionary<ParameterExpression, LambdaExpression>()
@@ -466,18 +466,18 @@ module internal QueryExpressionTransformer =
                     let rec shouldFlattenToSqlEntity (e:Expression) =
                         let callEntityType (exp:Expression) =
                             exp.NodeType = ExpressionType.Call &&
-                            (exp :?> MethodCallExpression).Object <> null && 
+                            (not(isNull (exp :?> MethodCallExpression).Object)) && 
                             (exp :?> MethodCallExpression).Object.Type = typeof<SqlEntity>
                         
                         let rec tupleofentities (tupleType:Type) =
                             if (tupleType.Name.StartsWith("AnonymousObject") || tupleType.Name.StartsWith("Tuple")) then
                                 let ps = tupleType.GetGenericArguments()
-                                ps |> Seq.forall(fun t -> t<>null && (t = typeof<SqlEntity> || (tupleofentities t))) 
+                                ps |> Seq.forall(fun t -> (not(isNull t)) && (t = typeof<SqlEntity> || (tupleofentities t))) 
                             else false
 
                         if e.NodeType = ExpressionType.New then
                             let ne = e :?> NewExpression
-                            ne <> null && (ne.Type.Name.StartsWith("AnonymousObject") || ne.Type.Name.StartsWith("Tuple")) && 
+                            (not(isNull ne)) && (ne.Type.Name.StartsWith("AnonymousObject") || ne.Type.Name.StartsWith("Tuple")) && 
                                 (ne.Arguments |> Seq.forall(fun a -> (callEntityType a) || (shouldFlattenToSqlEntity a))) 
                         else if e.NodeType = ExpressionType.Parameter then
                             let p = e :?> ParameterExpression
@@ -615,7 +615,7 @@ module internal QueryExpressionTransformer =
                             let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
                             let tmp = sel
                             projectionColumns.Clear()
-                            projectionColumns.Add(tmp.Key, new ResizeArray<ProjectionParameter>(itms))
+                            projectionColumns.Add(tmp.Key, ResizeArray<ProjectionParameter>(itms))
                             tmp.Key
                         | Some sel ->
                             let tmp = sel
@@ -626,7 +626,7 @@ module internal QueryExpressionTransformer =
                             let itms = projectionColumns |> Seq.collect(fun p -> p.Value) |> Seq.distinct |> Seq.toList
                             let selKey = (projectionColumns.Keys |> Seq.head)
                             projectionColumns.Clear()
-                            projectionColumns.Add(selKey, new ResizeArray<ProjectionParameter>(itms))
+                            projectionColumns.Add(selKey, ResizeArray<ProjectionParameter>(itms))
                             projectionColumns.Keys |> Seq.head
 
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias

@@ -369,19 +369,19 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | :? System.Reflection.ReflectionTypeLoadException as ex ->
                 let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
                 let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex))
-            | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+                raise(System.Reflection.TargetInvocationException(msg, ex))
+            | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
                 let resp = Path.GetFullPath resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex))
+                raise(System.Reflection.TargetInvocationException(msg, ex))
             | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
                 let ex = te.InnerException :?> System.Reflection.TargetInvocationException
                 let resp = Path.GetFullPath resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException))
-            | :? System.Reflection.TargetInvocationException as ex when ex.InnerException <> null ->
+                raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
+            | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->
                 let msg = ex.GetBaseException().Message
-                raise(new System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
+                raise(System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
@@ -933,8 +933,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -987,10 +987,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

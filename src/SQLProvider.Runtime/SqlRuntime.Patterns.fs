@@ -96,7 +96,7 @@ let (|OptionNone|_|) (e: Expression) =
 [<return: Struct>]
 let (|NullConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) when ce.Value = null -> ValueSome()
+    | ExpressionType.Constant, (:? ConstantExpression as ce) when isNull ce.Value -> ValueSome()
     | _ -> ValueNone
 
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
@@ -111,7 +111,7 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
             Some(Some(ce.Value))
     | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
         match ue.Operand with
-        | :? ConstantExpression as ce -> if ce.Value = null then Some(None) else Some(Some(ce.Value))
+        | :? ConstantExpression as ce -> if isNull ce.Value then Some(None) else Some(Some(ce.Value))
         | :? NewExpression as ne -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
@@ -255,7 +255,7 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
 let (|MethodCallOrFSharpWrap|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, (:? MethodCallExpression as e) ->
-        if e.Object = null && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+        if isNull e.Object && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
             match e.Arguments.[0].NodeType, e.Arguments.[0] with
             | ExpressionType.Call, (:? MethodCallExpression as ec) when ec.Method.Name = "ToFSharpFunc" && ec.Arguments.Count = 1 ->
                 match ec.Arguments.[0] with
@@ -301,8 +301,8 @@ let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;
                       typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Int16>>; typeof<ValueOption<int8>>; typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<uint8>>;|]
 
 let intType (typ:Type) = 
-    if typ <> null && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
-    elif typ <> null && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
+    if (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
+    elif (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
     else typeof<int>
 
 let rec (|SqlColumnGet|_|) (e:Expression) =  
@@ -311,13 +311,13 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
 
     // These are aggregations, e.g. GROUPBY, HAVING-clause
     | ExpressionType.MemberAccess, ( :? MemberExpression as me) when 
-            me.Expression <> null && me.Expression.Type <> null && me.Expression.Type.Name <> null &&
+            (not (isNull me.Expression || isNull me.Expression.Type || isNull me.Expression.Type.Name)) &&
             me.Expression.Type.Name.StartsWith("IGrouping")  -> 
         match me.Member with 
         | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp "",SqlColumnType.KeyColumn("Key")), p.DeclaringType) 
         | _ -> None
-    | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments <> null && e.Arguments.Count = 1 && 
-            e.Arguments.[0] <> null && e.Arguments.[0].Type <> null && e.Arguments.[0].Type.Name <> null &&
+    | ExpressionType.Call, ( :? MethodCallExpression as e) when (not (isNull e.Arguments)) && e.Arguments.Count = 1 && 
+            not( isNull e.Arguments.[0] || isNull e.Arguments.[0].Type || isNull e.Arguments.[0].Type.Name) &&
             e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
         if e.Arguments.[0].NodeType = ExpressionType.Parameter then
             let pn = match e.Arguments.[0] with :? ParameterExpression as p -> p.Name | _ -> e.Method.Name
@@ -467,7 +467,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | ExpressionType.Multiply -> "*"
             | ExpressionType.Divide -> "/"
             | ExpressionType.Modulo -> "%"
-            | _ -> failwith "Shouldn't hit"
+            | _ -> failwith ("Shouldn't hit " + op.ToString())
 
         if be.Left.Type = typeof<System.DateTime> || be.Right.Type = typeof<System.DateTime> || be.Left.Type = typeof<Option<System.DateTime>> || be.Right.Type = typeof<Option<System.DateTime>>
                 || be.Left.Type = typeof<ValueOption<System.DateTime>> || be.Right.Type = typeof<ValueOption<System.DateTime>> then
@@ -586,7 +586,7 @@ and (|SimpleCondition|_|) exp =
                 | ConditionOperator.NotEqual -> Some(ti,key,ConditionOperator.NotNull,None)
                 | _ -> Some(ti,key,op,Some(invokedResult))
 
-            if invokedResult = null then handleNullCompare()
+            if isNull invokedResult then handleNullCompare()
             else
             let retType = invokedResult.GetType()
             if retType.IsGenericType && (retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") ||

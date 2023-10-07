@@ -142,7 +142,7 @@ let extractModelXml (dacPacPath: string) =
 
 /// Returns a doc and node/nodes ns helper fns
 let toXmlNamespaceDoc ns xml =
-    let doc = new XmlDocument()
+    let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
     nsMgr.AddNamespace("x", ns)
     doc.LoadXml(xml)

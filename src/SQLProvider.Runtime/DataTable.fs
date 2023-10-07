@@ -30,15 +30,14 @@ module DataTable =
         cache.Values |> Seq.toList
     
     let mapChoose (f:DataRow -> 'a option) (dt:DataTable) = 
-        if dt <> null
-        then
+        if isNull dt then []
+        else
             [
                 for row in dt.Rows do
                     match f row with
                     | Some(a) -> yield a
                     | None -> ()
             ]
-        else []
 
     let choose (f : DataRow -> DataRow option) (dt:DataTable) =
         let copy = dt.Clone()
@@ -63,9 +62,9 @@ module DataTable =
         ]
     
     let printDataTable (dt:System.Data.DataTable) = 
-        if dt <> null
-        then
-            let widths = new Dictionary<int, int>()
+        if isNull dt then ()
+        else
+            let widths = Dictionary<int, int>()
 
             let computeMaxWidth indx length = 
                 let len =

@@ -529,7 +529,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
 
         serviceType.AddMembersDelayed( fun () ->
-            let schemaMap = new System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
+            let schemaMap = System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
             let getOrAddSchema name =
                 match schemaMap.TryGetValue name with
                 | true, pt -> pt

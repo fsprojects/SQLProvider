@@ -49,7 +49,7 @@ module internal TransactionUtils =
             Unchecked.defaultof<Transactions.TransactionScope>
         else
         let transactionOptions =
-            new Transactions.TransactionOptions(
+            Transactions.TransactionOptions(
                 Timeout = transactionOptions.Timeout,
                 IsolationLevel = toSystemTransactionsIsolationLevel transactionOptions.IsolationLevel)
         
@@ -59,7 +59,7 @@ module internal TransactionUtils =
         // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
         // However, default option for TransactionScopeOption is Required, so you can create top level transaction
         // and this Mono-transaction will have its properties.
-        let isMono = Type.GetType ("Mono.Runtime") <> null
+        let isMono = not (isNull(Type.GetType "Mono.Runtime"))
         match isMono with
         | true -> new Transactions.TransactionScope(transactionScopeOption, transactionOptions)
         | false ->
@@ -68,7 +68,7 @@ module internal TransactionUtils =
 
 type TransactionOptions with
     static member Default =
-        let sysTranOpt = new System.Transactions.TransactionOptions()
+        let sysTranOpt = System.Transactions.TransactionOptions()
         {
             Timeout = sysTranOpt.Timeout
             IsolationLevel = TransactionUtils.fromSystemTransactionsIsolationLevel sysTranOpt.IsolationLevel

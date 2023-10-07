@@ -131,8 +131,8 @@ module Firebird =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createCommandParameter sprocCommand (param:QueryParameter) value =
-        let mapping = if value <> null && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
-        let value = if value = null then (box System.DBNull.Value) else value
+        let mapping = if (not(isNull value)) && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
+        let value = if isNull value then (box System.DBNull.Value) else value
 
         let parameterType = parameterType.Value
         let firebirdDbTypeSetter =
@@ -211,19 +211,19 @@ module Firebird =
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
+            raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                       (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -279,7 +279,7 @@ module Firebird =
             |> Option.map (fun m ->
                 let ordinal_position = Sql.dbUnboxWithDefault<int16> 0s row.["ORDINAL_POSITION"] |> Convert.ToInt32
                 let parameter_mode = Sql.dbUnbox<int16> row.["PARAMETER_MODE"] |> Convert.ToInt32
-                //let returnValue = argumentName = null && ordinal_position = 0
+                //let returnValue = isNull argumentName && ordinal_position = 0
                 let direction =
                     match parameter_mode with
                     | 0 -> ParameterDirection.Input
@@ -287,7 +287,7 @@ module Firebird =
                     //| "INOUT" -> ParameterDirection.InputOutput
                     //| null when returnValue -> ParameterDirection.ReturnValue
                     | a -> failwithf "Direction not supported %s %i" argumentName a
-                { Name = if argumentName = null then failwithf "Parameter name is null for procedure %s" argumentName else argumentName
+                { Name = if isNull argumentName then failwithf "Parameter name is null for procedure %s" argumentName else argumentName
                   TypeMapping = m
                   Direction = direction
                   Length = maxLength
@@ -324,11 +324,9 @@ module Firebird =
         |> Seq.toList
 
     let readParameter (parameter:IDbDataParameter) =
-        if parameter <> null then
+        if isNull parameter then null else
             let par = parameter
             par.Value
-        else null
-
 
     let processReturnColumn reader (outps:(int*IDbDataParameter)[]) (retCol:QueryParameter) =
         match retCol.TypeMapping.ProviderTypeName with
@@ -558,7 +556,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             use reader = com.ExecuteReader()
             if reader.Read() then 
                 let comm = reader.GetString(0)
-                if comm <> null then comm else ""
+                if isNull comm then "" else comm
             else ""
         member __.GetColumnDescription(con,tableName,columnName) = 
             let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
@@ -574,7 +572,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             use reader = com.ExecuteReader()
             if reader.Read() then 
                 let comm = reader.GetString(0)
-                if comm <> null then comm else ""
+                if isNull comm then "" else comm
             else ""
         member __.CreateConnection(connectionString) = Firebird.createConnection connectionString
         member __.CreateCommand(connection,commandText) = Firebird.createCommand commandText connection
@@ -828,14 +826,14 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1<>1" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
                                             let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -848,7 +846,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedExists -> sprintf "EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -1109,9 +1107,9 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
 
-                if scope<>null then scope.Complete() //scope.Complete()
+                if not(isNull scope) then scope.Complete() //scope.Complete()
                 
             finally
                 con.Close()
@@ -1166,11 +1164,11 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
 
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

@@ -35,7 +35,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
-            let p = new OleDbParameter()
+            let p = OleDbParameter()
             p.OleDbType <- (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
             p.DbType
 
@@ -584,7 +584,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM %s[%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")))
+                ~~(sprintf "DELETE FROM %s[%s] " (String('(',numLinks)) (baseTable.Name.Replace("\"","")))
             else 
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
@@ -597,7 +597,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 // FROM
 
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")) bal)
+                ~~(sprintf "FROM %s[%s] as [%s] " (String('(',numLinks)) (baseTable.Name.Replace("\"","")) bal)
                 sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", [%s] as [%s] " (t.Name.Replace("\"","")) a))
 
             fromBuilder(numLinks)
@@ -696,7 +696,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             // remove the pk to prevent this attempting to be used again
                             e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                             e._State <- Deleted
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                     trnsx.Commit()
 
                 with _ ->
@@ -760,7 +760,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                     e._State <- Deleted
                                 }
-                            | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                            | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                         let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
                         trnsx.Commit()

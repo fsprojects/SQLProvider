@@ -52,7 +52,7 @@ module internal Utilities =
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
     let uniqueName()= 
-        let dict = new ConcurrentDictionary<string, int>()
+        let dict = ConcurrentDictionary<string, int>()
         (fun name -> 
             match dict.AddOrUpdate(name,(fun n -> 0),(fun n v -> v + 1)) with
             | 0 -> name
@@ -71,7 +71,7 @@ module internal Utilities =
 
     let rec convertTypes (itm:obj) (returnType:Type) =
         if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then None |> box
+            if isNull itm then None |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> Option.Some t |> box
@@ -93,7 +93,7 @@ module internal Utilities =
             | :? TimeSpan as t -> Option.Some t |> box
             | t -> Option.Some t |> box
         elif (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then ValueNone |> box
+            if isNull itm then ValueNone |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> ValueOption.Some t |> box
@@ -115,7 +115,7 @@ module internal Utilities =
             | :? TimeSpan as t -> ValueOption.Some t |> box
             | t -> ValueOption.Some t |> box
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then null |> box
+            if isNull itm then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])
         else
         match itm, returnType with
@@ -388,9 +388,9 @@ module internal Reflection =
              if not (File.Exists path) || path.StartsWith "System.Runtime.WindowsRuntime" then None
              else
              let loadedAsm = Assembly.LoadFrom(path) 
-             if loadedAsm <> null
-             then Some(Choice1Of2 loadedAsm)
-             else None
+             if isNull loadedAsm
+             then None
+             else Some(Choice1Of2 loadedAsm)
          with e ->
              Some(Choice2Of2 e)
 
@@ -412,7 +412,7 @@ module internal Reflection =
                 else Path.Combine(resolutionPath,asm))
 
         let ifNotNull (x:Assembly) =
-            if x = null then ""
+            if isNull x then ""
             elif String.IsNullOrWhiteSpace x.Location then ""
             else x.Location |> Path.GetDirectoryName
 
@@ -493,13 +493,13 @@ module internal Reflection =
                         let assemblyPath = Path.Combine(dllPath,fileName)
                         if File.Exists assemblyPath then
                             let tryLoad = loadFunc assemblyPath true
-                            if tryLoad <> null then 
-                                Some(tryLoad) else None
+                            if isNull tryLoad then None else 
+                                Some(tryLoad)
                         else None)
                 match loaded with
                 | Some x -> 
                     x
-                | None when Environment.GetEnvironmentVariable("USERPROFILE") <> null ->
+                | None when not (isNull (Environment.GetEnvironmentVariable "USERPROFILE")) ->
                     // Final try: nuget cache
                     try 
                         let currentPlatform = getPlatform(Assembly.GetExecutingAssembly())
@@ -529,7 +529,7 @@ module internal Reflection =
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
             System.ResolveEventHandler (fun _ args ->
                 let loadfunc (x:string) shouldCatch =
-                    if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
+                    if not (isNull handler) then AppDomain.CurrentDomain.remove_AssemblyResolve handler
                     let res = 
                         try
                             if x.StartsWith "System.Runtime.WindowsRuntime" then
@@ -538,7 +538,7 @@ module internal Reflection =
                             else
                             //File.AppendAllText(@"c:\Temp\build.txt", "Binding trial " + args.Name + " to " + x +  " " + DateTime.UtcNow.ToString() + "\r\n")
                             let r = Assembly.LoadFrom x 
-                            //if r <> null then 
+                            //if not (isNull r) then 
                             //    File.AppendAllText(@"c:\Temp\build.txt", "Binding success " + args.Name + " to " + r.FullName + "\r\n")
                             r
                         with e ->
@@ -548,7 +548,7 @@ module internal Reflection =
                                 //if x.EndsWith ".dll" && not (resourceLinkedFiles.Contains x) then
                                 //    resourceLinkedFiles <- resourceLinkedFiles.Add(x)
                                 reraise()
-                    if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
+                    if not (isNull handler) then AppDomain.CurrentDomain.add_AssemblyResolve handler
                     res
                 loadHandler args loadfunc)
         System.AppDomain.CurrentDomain.add_AssemblyResolve handler

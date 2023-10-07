@@ -88,7 +88,7 @@ module MSSqlServerDynamic =
 
         let getClrType (input:string) =
             let t = Type.GetType input
-            if t <> null then t.ToString() else typeof<String>.ToString()
+            if isNull t then typeof<String>.ToString() else t.ToString()
 
         let mappings =
             [
@@ -134,19 +134,19 @@ module MSSqlServerDynamic =
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            raise (System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)+
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
+            raise (System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                       (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise (System.Reflection.TargetInvocationException(msg+platform, ex.GetBaseException()))
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 
     let createCommand commandText (connection:IDbConnection) =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -167,9 +167,8 @@ module MSSqlServerDynamic =
         com.ExecuteReader()
 
     let readParameter (parameter:IDbDataParameter) =
-        if parameter <> null then
+        if isNull parameter then null else
             parameter.Value
-        else null
         
     let readInOutParameterFromCommand name (com:IDbCommand) = 
         if not (com.Parameters.Contains name) then 
@@ -184,7 +183,7 @@ module MSSqlServerDynamic =
             parameterType.GetProperty("UdtTypeName").GetSetMethod()
 
         let p = Activator.CreateInstance(parameterType,[|box name;v|]) :?> IDbDataParameter
-        if v = null then p
+        if isNull v then p
         else
         match v.GetType().FullName with
         | "Microsoft.SqlServer.Types.SqlGeometry" -> udtTypeSetter.Invoke(p, [| "Geometry" |]) |> ignore
@@ -576,9 +575,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             use reader = com.ExecuteReader()
             if reader.Read() then
                 let itm = reader.GetValue(0)
-                if itm <> null then
+                if isNull itm then "" else
                     reader.GetValue(0).ToString()
-                else ""
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
@@ -636,7 +634,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 lazy
                     if con.State <> ConnectionState.Open then con.Open()
                     let ver = con.GetType().GetProperty("ServerVersion").GetValue(con,null)
-                    if ver = null then Version("12.0")
+                    if isNull ver then Version("12.0")
                     else
                     let success, version = ver.ToString() |> Version.TryParse
                     if success then version else Version("12.0")
@@ -895,14 +893,14 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
                                             let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -915,7 +913,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -1202,9 +1200,9 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                if scope<>null then scope.Complete()
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1257,10 +1255,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()
