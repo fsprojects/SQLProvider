@@ -72,18 +72,18 @@ module PostgreSQL =
     let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty("Value")
-        if prop <> null
+        if not (isNull prop)
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None
 
     let isOptionValue value =
-        if value = null then false else
+        if isNull value then false else
         let typ = value.GetType()
         typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let createCommandParameter (param:QueryParameter) value =
         let normalizedValue =
-            if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
+            if not (isOptionValue value) then (if isNull value || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- 
@@ -225,21 +225,21 @@ module PostgreSQL =
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as e when (e.InnerException <> null) ->
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as e when not(isNull e.InnerException) ->
             failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         try
@@ -636,7 +636,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 """ tableName) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
-                    if comment <> null then comment else ""
+                    if isNull comment then "" else comment
                 else
                 "")
         member __.GetColumnDescription(con,tableName,columnName) = 
@@ -656,7 +656,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 """ tableName sn tn columnName) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
-                    if comment <> null then comment else ""
+                    if isNull comment then "" else comment
                 else
                 "")
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
@@ -1242,8 +1242,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1298,10 +1298,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

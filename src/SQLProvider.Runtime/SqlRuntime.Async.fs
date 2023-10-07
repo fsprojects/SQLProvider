@@ -26,14 +26,14 @@ module AsyncOperations =
                     match en.GetType() with
                     | null -> null
                     | x -> x.GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-                if source <> null then
+                if isNull source then
+                    return yieldseq en
+                else
                     match source.GetValue en with
                     | :? IAsyncEnumerable as coll ->
                         do! coll.EvaluateQuery()
                         return yieldseq en
                     | c -> return yieldseq en
-                else
-                    return yieldseq en
         }
 
     let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =

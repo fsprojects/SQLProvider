@@ -41,7 +41,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
-            let p = new OdbcParameter()
+            let p = OdbcParameter()
             p.OdbcType <- (Enum.ToObject(typeof<OdbcType>, providerType) :?> OdbcType)
             p.DbType
 
@@ -58,7 +58,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         let dbType = getDbType providerType
                         yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
                     
-                    if r.Table <> null && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
+                    if (not(isNull r.Table)) && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
                         let clrType = getClrType (r.Table.Columns.["DataType"].DataType.ToString())
                         let oleDbType = r.Table.Columns.["TypeName"].DataType.ToString()
                         let providerType = unbox<int> r.Table.Columns.["ProviderDbType"].Ordinal
@@ -717,8 +717,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -773,9 +773,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |>Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

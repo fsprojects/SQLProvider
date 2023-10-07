@@ -13,6 +13,7 @@ module internal Patterns =
         let m = tablePattern.Match inp in
         if m.Success then Some (List.tail [ for g in m.Groups -> g.Value ]) else None
 
+[<Struct>]
 type TypeMapping =
     { ProviderTypeName: string voption
       ClrType: string
@@ -25,6 +26,7 @@ type TypeMapping =
               ProviderTypeName = match providerTypeName with Some x -> ValueSome x | None -> ValueNone
               ProviderType = match providerType with Some x -> ValueSome x | None -> ValueNone }
 
+[<Struct>]
 type QueryParameter =
     { Name: string
       TypeMapping: TypeMapping
@@ -39,6 +41,7 @@ type QueryParameter =
               Direction = defaultArg direction ParameterDirection.Input
               Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
+[<Struct>]
 type Column =
     { Name: string
       TypeMapping: TypeMapping
@@ -61,6 +64,7 @@ type Column =
 
 type ColumnLookup = Map<string,Column>
 
+[<Struct>]
 type Relationship =
     { Name: string
       PrimaryTable: string
@@ -68,6 +72,7 @@ type Relationship =
       ForeignTable: string
       ForeignKey: string }
 
+[<Struct>]
 type SprocName =
     { ProcName: string
       Owner: string
@@ -109,6 +114,7 @@ and CompileTimePackageDefinition =
       Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
     }
 
+[<Struct>]
 type Table =
     { Schema: string
       Name: string

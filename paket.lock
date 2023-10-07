@@ -2584,10 +2584,10 @@ GROUP SourceFiles
 STORAGE: NONE
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (d3888ccc3945ca846c01945d4876bdd5701490f6)
-    src/ProvidedTypes.fsi (d3888ccc3945ca846c01945d4876bdd5701490f6)
+    src/ProvidedTypes.fs (b7c930b0bd9e0e0476981ba0813ac17e7d61742b)
+    src/ProvidedTypes.fsi (b7c930b0bd9e0e0476981ba0813ac17e7d61742b)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (c983f5148fccf860d84fee244f6c903cb2627c41)
+    src/Code/ExpressionOptimizer.fs (5becd34b8e1c20477cd462a7699a8af764ecb6e4)
 GROUP Tests
 STORAGE: PACKAGES
 RESTRICTION: || (== net472) (== netcoreapp3.1)

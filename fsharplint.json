@@ -424,6 +424,11 @@
             "id >> f ===> f",
             "f >> id ===> f",
 
+            "x = null ===> isNull x",
+            "null = x ===> isNull x",
+            "x <> null ===> not (isNull x)",
+            "null <> x ===> not (isNull x)",
+
             "Array.append a (Array.append b c) ===> Array.concat [|a; b; c|]"
         ]
     }

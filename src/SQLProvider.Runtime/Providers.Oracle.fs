@@ -72,7 +72,7 @@ module internal Oracle =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createCommandParameter (param:QueryParameter) value =
-        let value = if value = null then (box System.DBNull.Value) else value
+        let value = if isNull value then (box System.DBNull.Value) else value
         let parameterType = parameterType.Value
         let oracleDbTypeSetter =
             parameterType.GetProperty("OracleDbType").GetSetMethod()
@@ -141,19 +141,16 @@ module internal Oracle =
         findDbType <- oracleMappings.TryFind
 
     let tryReadValueProperty (instance:obj) =
-        if instance <> null
-        then
+        if isNull instance then None else
             let typ = instance.GetType()
-            let isNull = 
+            let isNullp = 
                 let isNullProp = typ.GetProperty("IsNull")
-                if isNullProp <> null
-                then unbox<bool>(isNullProp.GetGetMethod().Invoke(instance, [||]))
-                else false
+                if isNull isNullProp then false
+                else unbox<bool>(isNullProp.GetGetMethod().Invoke(instance, [||]))
             let prop = typ.GetProperty("Value")
-            if not(isNull) && prop <> null
+            if not(isNullp || isNull prop)
             then prop.GetGetMethod().Invoke(instance, [||]) |> Some
             else None
-        else None
 
     let createConnection connectionString =
         try
@@ -162,19 +159,19 @@ module internal Oracle =
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
+            raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
             let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -186,7 +183,7 @@ module internal Oracle =
 
         match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
         | DbType.Object, 121 ->
-             if parameter.Value = null
+             if isNull parameter.Value
              then null
              else
                 let data =
@@ -206,7 +203,7 @@ module internal Oracle =
 
             match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
             | DbType.Object, 121 ->
-                 if parameter.Value = null
+                 if isNull parameter.Value
                  then return null
                  else
                     let! data =
@@ -1098,8 +1095,8 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1160,10 +1157,10 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

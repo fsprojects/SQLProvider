@@ -67,12 +67,12 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
             |> Map.ofList
 
-        let entity = new SqlEntity(dc, def.Name.DbName, columns)
+        let entity = SqlEntity(dc, def.Name.DbName, columns)
 
         let toEntityArray rowSet =
             [|
                 for row in rowSet do
-                    let entity = new SqlEntity(dc, def.Name.DbName, columns)
+                    let entity = SqlEntity(dc, def.Name.DbName, columns)
                     entity.SetData(row)
                     yield entity
             |]

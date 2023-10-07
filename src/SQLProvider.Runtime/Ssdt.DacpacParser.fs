@@ -20,7 +20,7 @@ and SsdtTable = {
     PrimaryKey: PrimaryKeyConstraint voption
     IsView: bool
 }
-and SsdtColumn = {
+and [<Struct>] SsdtColumn = {
     FullName: string
     Name: string
     Description: string
@@ -38,11 +38,11 @@ and SsdtView = {
     DynamicColumns: SsdtViewColumn list
     Annotations: CommentAnnotation list
 }
-and SsdtViewColumn = {
+and [<Struct>] SsdtViewColumn = {
     FullName: string
     ColumnRefPath: string voption
 }
-and CommentAnnotation = {
+and [<Struct>] CommentAnnotation = {
     Column: string
     DataType: string
     Nullability: string voption
@@ -63,7 +63,7 @@ and PrimaryKeyConstraint = {
     Name: string
     Columns: ConstraintColumn list
 }
-and ConstraintColumn = {
+and [<Struct>] ConstraintColumn = {
     FullName: string
     Name: string
 }
@@ -73,14 +73,14 @@ and SsdtStoredProc = {
     Name: string
     Parameters: SsdtStoredProcParam list
 }
-and SsdtStoredProcParam = {
+and [<Struct>] SsdtStoredProcParam = {
     FullName: string
     Name: string
     DataType: string
     Length: int voption
     IsOutput: bool
 }
-and SsdtDescriptionItem = {
+and [<Struct>] SsdtDescriptionItem = {
     DecriptionType: string
     Schema: string
     TableName: string
@@ -88,8 +88,8 @@ and SsdtDescriptionItem = {
     Description: string
 }
 and SsdtUserDefinedDataType = Map<UDDTName, UDDTInheritedType>
-and UDDTName = UDDTName of string
-and UDDTInheritedType = UDDTInheritedType of string
+and [<Struct>] UDDTName = UDDTName of string
+and [<Struct>] UDDTInheritedType = UDDTInheritedType of string
 
 module RegexParsers =
     open System.Text.RegularExpressions
@@ -142,7 +142,7 @@ let extractModelXml (dacPacPath: string) =
 
 /// Returns a doc and node/nodes ns helper fns
 let toXmlNamespaceDoc ns xml =
-    let doc = new XmlDocument()
+    let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
     nsMgr.AddNamespace("x", ns)
     doc.LoadXml(xml)

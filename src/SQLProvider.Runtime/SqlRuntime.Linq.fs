@@ -51,12 +51,12 @@ module internal QueryImplementation =
         | :? IWithSqlService as svc -> Some svc
         | :? System.Linq.EnumerableQuery as eq ->
             let enuProp = eq.GetType().GetProperty("Enumerable", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if enuProp = null then
+            if isNull enuProp then
                 let expProp = eq.GetType().GetProperty("Expression", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-                if expProp = null then None
+                if isNull expProp then None
                 else
                 let exp = expProp.GetValue(eq, null)
-                if exp = null then None
+                if isNull exp then None
                 else
                 match exp with
                 | :? Expression as e ->
@@ -66,10 +66,10 @@ module internal QueryImplementation =
                 | _ -> None
             else
             let enu = enuProp.GetValue(eq, null)
-            if enu = null then None
+            if isNull enu then None
             else
             let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if srcProp = null then None
+            if isNull srcProp then None
             else
             let sval = srcProp.GetValue(enu)
             match sval with
@@ -991,7 +991,7 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in join"
+                                | _ -> failwithf "unsupported projection in join (%O)" projection
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "SelectMany"),
@@ -1001,7 +1001,7 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in select many"
+                                | _ -> failwithf "unsupported projection in select many (%O)" projection
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression projectionParams source 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>

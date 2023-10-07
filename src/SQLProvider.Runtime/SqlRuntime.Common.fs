@@ -15,6 +15,7 @@ open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
+[<Struct>]
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
@@ -26,13 +27,17 @@ type DatabaseProviderTypes =
     | FIREBIRD = 7
     | MSSQLSERVER_DYNAMIC = 8
     | MSSQLSERVER_SSDT = 9
+
+[<Struct>]
 type RelationshipDirection = Children = 0 | Parents = 1
 
+[<Struct>]
 type CaseSensitivityChange =
     | ORIGINAL = 0
     | TOUPPER = 1
     | TOLOWER = 2
 
+[<Struct>]
 type NullableColumnType =
     /// Nullable types are just Unchecked default. (Old false.)
     | NO_OPTION = 0
@@ -41,6 +46,7 @@ type NullableColumnType =
     /// ValueOption is more performant.
     | VALUE_OPTION = 2
 
+[<Struct>]
 type OdbcQuoteCharacter =
     | DEFAULT_QUOTE = 0
     /// MySQL/Postgre style: `alias` 
@@ -54,6 +60,7 @@ type OdbcQuoteCharacter =
     /// Single quote: 'alias'
     | APHOSTROPHE = 5 
 
+[<Struct>]
 type SQLiteLibrary =
     // .NET Framework default
     | SystemDataSQLite = 0
@@ -87,10 +94,11 @@ module public QueryEvents =
         x.Parameters |> Seq.fold (fun (acc:string) (pName, pValue) -> 
             match pValue with
             | :? String as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.Replace("'", "''"))))
+            | :? Guid as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString())))
             | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd hh:mm:ss"))))
             | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
 
-   let private sqlEvent = new Event<SqlEventData>()
+   let private sqlEvent = Event<SqlEventData>()
    
    /// This event fires immediately before the execution of every generated query. 
    /// Listen to this event to display or debug the content of your queries.
@@ -122,14 +130,14 @@ module public QueryEvents =
                                       yield (p.ParameterName, p.Value)]
 
 
-   let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
+   let private expressionEvent = Event<System.Linq.Expressions.Expression>()
    
    [<CLIEvent>]
    let LinqExpressionEvent = expressionEvent.Publish
 
    let internal PublishExpression(e) = expressionEvent.Trigger(e)
 
-   
+[<Struct>]
 type EntityState =
     | Unchanged
     | Created
@@ -137,6 +145,7 @@ type EntityState =
     | Delete
     | Deleted
 
+[<Struct>]
 type OnConflict = 
     /// Throws an exception if the primary key already exists (default behaviour).
     | Throw
@@ -156,8 +165,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     let table = Table.FromFullName tableName
     let propertyChanged = Event<_,_>()
 
-    let data = Dictionary<string,obj>()
-    let aliasCache = new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural)
+    let data = Dictionary<string,obj>(columns.Count)
+    let mutable aliasCache = None
 
     let replaceFirst (text:string) (oldValue:string) (newValue) =
         let position = text.IndexOf oldValue
@@ -287,7 +296,13 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        aliasCache.GetOrAdd(alias, fun alias ->
+
+        match aliasCache with
+        | Some x -> ()
+        | None ->
+            aliasCache <- Some (ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural))
+
+        aliasCache.Value.GetOrAdd(alias, fun alias ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
             let newEntity = SqlEntity(dc, tableName, columns)
             // attributes names cannot have a period in them unless they are an alias
@@ -372,7 +387,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                                              |> List.filter(fun k -> k <> "Id"))
         else 
             newItem.SetData(data 
-                      |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
+                      |> Seq.filter(fun kvp -> kvp.Key <> "Id" && not (isNull kvp.Value)) 
                       |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
             newItem._State <- Created
         newItem
@@ -543,7 +558,7 @@ and internal SqlQuery =
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
                                         | Some(_) when q.CrossJoins.IsEmpty -> q
-                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false ->
+                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) |> not ->
                                                 // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
@@ -675,7 +690,7 @@ and internal SchemaCache =
             IsOffline = false }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
-            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
+            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
             { (ser.ReadObject(ms) :?> SchemaCache) with IsOffline = true }
         static member LoadOrEmpty(filePath) =
             if String.IsNullOrEmpty(filePath) || (not(System.IO.File.Exists filePath)) then 
@@ -684,7 +699,7 @@ and internal SchemaCache =
                 SchemaCache.Load(filePath)
         member this.Save(filePath) =
             use ms = new MemoryStream()
-            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
+            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
             ser.WriteObject(ms, { this with IsOffline = true });  
             let json = ms.ToArray();  
             File.WriteAllText(filePath, Encoding.UTF8.GetString(json, 0, json.Length))

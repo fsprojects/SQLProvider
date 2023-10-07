@@ -102,7 +102,7 @@ module MSSqlServerSsdt =
         match bestOption with
         | Some b -> b.FullName
         | None ->
-            let sb = new StringBuilder()
+            let sb = StringBuilder()
             sb.AppendLine(sprintf "Unable to find .dacpac file. Search path includes executing assembly, configured ssd path, entry assembly, and the environment variable '%s'." DACPAC_SEARCH_PATH_ENV_VAR_NAME) |> ignore
             sb.AppendLine("Looked in:") |> ignore
             for s in allPossiblePaths do
@@ -532,14 +532,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
                                             let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -552,7 +552,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -841,9 +841,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                if scope<>null then scope.Complete()
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -898,10 +898,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
                     let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if scope<>null then scope.Complete()
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()
