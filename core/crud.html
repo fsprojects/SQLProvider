@@ -254,7 +254,7 @@ output of .ColumnValues:</p>
 <span onmouseout="hideTip(event, 'fs49', 223)" onmouseover="showTip(event, 'fs49', 223)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs61', 224)" onmouseover="showTip(event, 'fs61', 224)" class="id">FirstName</span> <span class="k">&lt;-</span> <span class="s">&quot;Jane&quot;</span>
 <span onmouseout="hideTip(event, 'fs49', 225)" onmouseover="showTip(event, 'fs49', 225)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs62', 226)" onmouseover="showTip(event, 'fs62', 226)" class="id">LastName</span> <span class="k">&lt;-</span> <span class="s">&quot;Doe&quot;</span>
 
-<span onmouseout="hideTip(event, 'fs49', 227)" onmouseover="showTip(event, 'fs49', 227)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs92', 228)" onmouseover="showTip(event, 'fs92', 228)" class="id">OnConflict</span> <span class="k">&lt;-</span> <span onmouseout="hideTip(event, 'fs4', 229)" onmouseover="showTip(event, 'fs4', 229)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 230)" onmouseover="showTip(event, 'fs5', 230)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 231)" onmouseover="showTip(event, 'fs6', 231)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 232)" onmouseover="showTip(event, 'fs9', 232)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs93', 233)" onmouseover="showTip(event, 'fs93', 233)" class="rt">OnConflict</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs94', 234)" onmouseover="showTip(event, 'fs94', 234)" class="id">Update</span>
+<span onmouseout="hideTip(event, 'fs49', 227)" onmouseover="showTip(event, 'fs49', 227)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs92', 228)" onmouseover="showTip(event, 'fs92', 228)" class="id">OnConflict</span> <span class="k">&lt;-</span> <span onmouseout="hideTip(event, 'fs4', 229)" onmouseover="showTip(event, 'fs4', 229)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 230)" onmouseover="showTip(event, 'fs5', 230)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 231)" onmouseover="showTip(event, 'fs6', 231)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 232)" onmouseover="showTip(event, 'fs9', 232)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs93', 233)" onmouseover="showTip(event, 'fs93', 233)" class="vt">OnConflict</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs94', 234)" onmouseover="showTip(event, 'fs94', 234)" class="id">Update</span>
 
 <span onmouseout="hideTip(event, 'fs17', 235)" onmouseover="showTip(event, 'fs17', 235)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 236)" onmouseover="showTip(event, 'fs48', 236)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
@@ -570,7 +570,8 @@ Calls Linq.QueryBuilder.ExactlyOneOrDefault<br /><em>&lt;summary&gt;A query oper
 <div class="fsdocs-tip" id="fs92">property Common.SqlEntity.OnConflict: Common.OnConflict with get, set<br /><em>&lt;summary&gt;
  Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
 &lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs93">type OnConflict =
+<div class="fsdocs-tip" id="fs93">[&lt;Struct&gt;]
+type OnConflict =
   | Throw
   | Update
   | DoNothing</div>
