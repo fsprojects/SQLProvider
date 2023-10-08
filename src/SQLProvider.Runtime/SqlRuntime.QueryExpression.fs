@@ -430,8 +430,8 @@ module internal QueryExpressionTransformer =
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it
         let baseAlias,baseTable =
             match sqlQuery.UltimateChild with
-            | Some(baseAlias,baseTable) when baseAlias = ""-> (baseTable.Name,baseTable)
-            | Some(baseAlias,baseTable) -> (baseAlias,baseTable)
+            | Some(baseAlias,baseTable) when baseAlias = ""-> baseTable.Name,baseTable
+            | Some(baseAlias,baseTable) -> baseAlias,baseTable
             | _ -> failwith ("Unknown sqlQuery.UltimateChild: " + sqlQuery.UltimateChild.ToString())
 
         let (projectionDelegate,projectionColumns) =

@@ -995,10 +995,10 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
-            | None, Some skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt64.MaxValue skip)
-            | None, None -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
+            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt64.MaxValue skip)
+            | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
             (sql,parameters)

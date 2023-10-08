@@ -1192,10 +1192,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
-            | None, Some skip -> ~~(sprintf " LIMIT ALL OFFSET %i;" skip)
-            | None, None -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
+            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT ALL OFFSET %i;" skip)
+            | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
             (sql,parameters)

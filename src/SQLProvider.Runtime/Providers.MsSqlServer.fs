@@ -901,7 +901,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             let (~~) (t:string) = sb.Append t |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
+            | ValueSome _, ValueSome _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -994,11 +994,11 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ -> 
+                | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ -> 
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -1036,7 +1036,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             // ORDER BY
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
-            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+            | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
@@ -1065,12 +1065,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     let outerSb = System.Text.StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
@@ -1079,10 +1079,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
                     | _ -> ()

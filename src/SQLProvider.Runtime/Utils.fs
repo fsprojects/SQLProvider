@@ -700,7 +700,7 @@ module Bytes =
     use sha = algo ()
     sha.ComputeHash ms
 
-  let sha1 = hash (fun () -> new SHA1CryptoServiceProvider())
+  let sha1 = hash (fun () -> SHA1.Create())
 
-  let sha256 = hash (fun () -> new SHA256CryptoServiceProvider())
+  let sha256 = hash (fun () -> SHA256.Create())
 

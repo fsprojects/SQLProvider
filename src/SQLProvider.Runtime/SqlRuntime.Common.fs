@@ -483,10 +483,10 @@ and GroupData =
 
 and table = string
 
-and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
-and UnionType = NormalUnion | UnionAll | Intersect | Except
+and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of struct (alias * Table)
+and [<Struct>] UnionType = NormalUnion | UnionAll | Intersect | Except
 and internal SqlExp =
-    | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
+    | BaseTable    of struct (alias * Table)                // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
     | HavingClause of Condition * SqlExp                    // filters from the where clause(es)
@@ -542,14 +542,14 @@ and internal SqlQuery =
       Grouping      : (list<alias * SqlColumnType> * list<alias * SqlColumnType>) list //key columns, aggregate columns
       Distinct      : bool
       UltimateChild : (string * Table) option
-      Skip          : int option
-      Take          : int option
+      Skip          : int voption
+      Take          : int voption
       Union         : (UnionType*string*seq<IDbDataParameter>) option
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
-                                Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None; HavingFilters = [] }
+                                Projection = []; Distinct = false; UltimateChild = None; Skip = ValueNone; Take = ValueNone; Union = None; HavingFilters = [] }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
             let legaliseName (alias:alias) =
@@ -597,13 +597,13 @@ and internal SqlQuery =
                 | Skip(amount, rest) ->
                     if q.Skip.IsSome then failwith "skip may only be specified once"
                     elif amount = 0 then convert q rest
-                    else convert { q with Skip = Some(amount) } rest
+                    else convert { q with Skip = ValueSome amount } rest
                 | Take(amount, rest) ->
                     if q.Union.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
                     match q.Take with
-                    | Some x when amount <= x || amount = 1 -> convert { q with Take = Some(amount) } rest
-                    | Some x -> failwith "take may only be specified once"
-                    | None -> convert { q with Take = Some(amount) } rest
+                    | ValueSome x when amount <= x || amount = 1 -> convert { q with Take = ValueSome(amount) } rest
+                    | ValueSome x -> failwith "take may only be specified once"
+                    | ValueNone -> convert { q with Take = ValueSome(amount) } rest
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest

@@ -25,11 +25,11 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, connStr
 [<SimpleJob (RuntimeMoniker.Net60)>] [<MemoryDiagnoser(true)>]
 type Benchmarks() =
     [<Params(25, 250, 2500)>]
-    member val size = 0 with get, set
+    member val rowsReturned = 0 with get, set
 
     [<Benchmark(Baseline = true)>]
     member this.FirstNamesToList () =
-        let max = this.size
+        let max = this.rowsReturned
         let ctx = HR.GetDataContext()
         let res =
             query {
