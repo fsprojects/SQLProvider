@@ -1,3 +1,6 @@
+### 1.3.13 - 08.10.2023
+* Some more performance updates
+
 ### 1.3.12 - 07.10.2023
 * Some performance updates PR #802
 

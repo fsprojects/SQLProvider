@@ -63,7 +63,7 @@ BenchmarkRunner.Run<Benchmarks>() |> ignore
 let main args =
     printfn "Arguments passed to function : %A" args
     let b = Benchmarks()
-    b.size <- 2500
+    b.rowsReturned <- 2500
     for i in 1 .. 1000 do
         printfn "Running test"
         let r = b.FirstNamesToList()
