@@ -795,10 +795,12 @@ module internal QueryExpressionTransformer =
         
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
-        |> Seq.iter(function KeyValue(k,_) ->
-                                let table = match sqlQuery.Aliases.TryFind k with
-                                            | Some v -> v
-                                            | None -> snd sqlQuery.UltimateChild.Value
+        |> Seq.map(function KeyValue(k,_) ->
+                                match sqlQuery.Aliases.TryFind k with
+                                | Some v -> v
+                                | None -> snd sqlQuery.UltimateChild.Value)
+        |> Seq.distinct
+        |> Seq.iter(function table ->
                                 let myLock = provider.GetLockObject()
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 

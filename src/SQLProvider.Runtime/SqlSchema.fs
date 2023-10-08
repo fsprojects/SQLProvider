@@ -9,9 +9,14 @@ open System.Reflection
 
 module internal Patterns =
     let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$")
+    [<return: Struct>]
     let (|MatchTable|_|) (inp:string) =
         let m = tablePattern.Match inp in
-        if m.Success then Some (List.tail [ for g in m.Groups -> g.Value ]) else None
+        if m.Success then
+            match (List.tail [ for g in m.Groups -> g.Value ]) with
+            | [schema;name] -> ValueSome struct(schema,name)
+            | _ -> ValueNone
+        else ValueNone
 
 [<Struct>]
 type TypeMapping =
@@ -134,7 +139,7 @@ type Table =
         member x.FullName = x.QuotedFullName ("", "")
         static member FromFullName(fullName:string) =
             match fullName with
-            | Patterns.MatchTable [schema;name] -> { Schema = schema; Name = name; Type="" }
+            | Patterns.MatchTable (schema, name) -> { Schema = schema; Name = name; Type="" }
             | _ -> { Schema = ""; Name = fullName; Type="" }
         static member CreateFullName(schema, name) =
             Table.CreateQuotedFullName(schema, name, "", "")

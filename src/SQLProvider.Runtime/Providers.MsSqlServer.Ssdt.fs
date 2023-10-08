@@ -309,31 +309,36 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | _ -> None
 
         member __.GetColumns(con,table) =
-            let columns =
-                match ssdtSchema.Value.TryGetTableByName(table.Name) with
-                | ValueSome ssdtTbl ->
-                    ssdtTbl.Columns
-                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
-                    |> List.map (fun col -> col.Name, col)
-                | ValueNone -> []
-                |> Map.ofList
 
-            // Add PKs to cache
-            columns
-            |> Seq.map (fun kvp -> kvp.Value)
-            |> Seq.iter (fun col ->
-                if col.IsPrimaryKey then
-                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
-                         match col.Name with
-                         | "" -> old
-                         | x -> match old with
-                                | [] -> [x]
-                                | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
-                    ) |> ignore
-            )
+            match schemaCache.Columns.TryGetValue table.FullName with
+            | (true,data) when data.Count > 0 -> data
+            | _ ->
 
-            // Add columns to cache
-            schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                let columns =
+                    match ssdtSchema.Value.TryGetTableByName(table.Name) with
+                    | ValueSome ssdtTbl ->
+                        ssdtTbl.Columns
+                        |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
+                        |> List.map (fun col -> col.Name, col)
+                    | ValueNone -> []
+                    |> Map.ofList
+
+                // Add PKs to cache
+                columns
+                |> Seq.map (fun kvp -> kvp.Value)
+                |> Seq.iter (fun col ->
+                    if col.IsPrimaryKey then
+                        schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                             match col.Name with
+                             | "" -> old
+                             | x -> match old with
+                                    | [] -> [x]
+                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                        ) |> ignore
+                )
+
+                // Add columns to cache
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con, table) =
             let ssdtSchema = ssdtSchema.Value

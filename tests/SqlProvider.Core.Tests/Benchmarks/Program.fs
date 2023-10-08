@@ -56,3 +56,18 @@ type Benchmarks() =
 BenchmarkRunner.Run<Benchmarks>() |> ignore
 
 //System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+
+(*
+// You can use this to debug
+[<EntryPoint>]
+let main args =
+    printfn "Arguments passed to function : %A" args
+    let b = Benchmarks()
+    b.size <- 2500
+    for i in 1 .. 1000 do
+        printfn "Running test"
+        let r = b.FirstNamesToList()
+        printfn "Result %O" r.Head
+        ()
+    0
+*)

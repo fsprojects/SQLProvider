@@ -162,7 +162,7 @@ type MappedColumnAttribute(name: string) =
 
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
-    let table = Table.FromFullName tableName
+
     let propertyChanged = Event<_,_>()
 
     let data = Dictionary<string,obj>(columns.Count)
@@ -188,7 +188,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.HasColumn(key, ?comparison)= 
         let comparisonOption = defaultArg comparison StringComparison.InvariantCulture
         columns |> Seq.exists(fun kp -> (kp.Key |> SchemaProjections.buildFieldName).Equals(key, comparisonOption))
-    member __.Table= table
+    member __.Table= Table.FromFullName tableName
     member __.DataContext with get() = dc
 
     member __.GetColumn<'T>(key) : 'T =
