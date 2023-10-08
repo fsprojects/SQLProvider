@@ -25,11 +25,11 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, connStr
 [<SimpleJob (RuntimeMoniker.Net60)>] [<MemoryDiagnoser(true)>]
 type Benchmarks() =
     [<Params(25, 250, 2500)>]
-    member val size = 0 with get, set
+    member val rowsReturned = 0 with get, set
 
     [<Benchmark(Baseline = true)>]
     member this.FirstNamesToList () =
-        let max = this.size
+        let max = this.rowsReturned
         let ctx = HR.GetDataContext()
         let res =
             query {
@@ -42,7 +42,7 @@ type Benchmarks() =
 
     [<Benchmark>]
     member this.FirstNamesToListAsync () =
-        let max = this.size
+        let max = this.rowsReturned
         let ctx = HR.GetDataContext()
         let res =
             query {
@@ -56,3 +56,18 @@ type Benchmarks() =
 BenchmarkRunner.Run<Benchmarks>() |> ignore
 
 //System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+
+(*
+// You can use this to debug
+[<EntryPoint>]
+let main args =
+    printfn "Arguments passed to function : %A" args
+    let b = Benchmarks()
+    b.size <- 2500
+    for i in 1 .. 1000 do
+        printfn "Running test"
+        let r = b.FirstNamesToList()
+        printfn "Result %O" r.Head
+        ()
+    0
+*)

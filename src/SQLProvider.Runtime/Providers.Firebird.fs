@@ -1056,10 +1056,10 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | Some take, Some skip ->  ~~(sprintf " ROWS %i TO %i;" (skip+1) (skip+take))
-            | Some take, None ->  ~~(sprintf " ROWS %i;" take)
-            | None, Some skip -> ~~(sprintf " ROWS %i TO %i;" skip System.UInt64.MaxValue)
-            | None, None -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " ROWS %i TO %i;" (skip+1) (skip+take))
+            | ValueSome take, ValueNone ->  ~~(sprintf " ROWS %i;" take)
+            | ValueNone, ValueSome skip -> ~~(sprintf " ROWS %i TO %i;" skip System.UInt64.MaxValue)
+            | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
             (sql,parameters)

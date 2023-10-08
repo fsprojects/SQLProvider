@@ -320,5 +320,28 @@ A.  Once SQLProvider gets a "mental model" of your database (the schema),
     you will not get a schema that reflects your needs.  
     
     sql.GetDataContext(cs).``Design Time Commands``.SaveContextSchema  // put a "." at the end to call the command at compile time.
-        
+
+
+How fast is SQLProvider?
+------------------------
+
+You may wonder does all this magic come with a huge performance cost. However, when working with databases, 
+your network connection to SQL-database is typically the bottle neck, not your processor speed.
+That's why SQLProvider does short-circuit and optimise your queries as much as possible.
+
+There is a performance-test project in this repo. This is a sample run:
+
+- BenchmarkDotNet v0.13.9
+- .NET 6 
+- Intel i9 13th Gen on Windows 11
+- Microsoft SQL Sever on local computer 
+
+
+| Method                | rowsReturned | Mean     | Error     | StdDev    | 
+|---------------------- |------------- |----------|-----------|----------|
+| **FirstNamesToList**  | **25**   | **1.269 ms** | **0.0271 ms** | **0.0764 ms** | 
+| FirstNamesToListAsync | 25       | 1.370 ms     | 0.0271 ms | 0.0468 ms |
+| **FirstNamesToList**  | **2500** | **4.230 ms** | **0.0810 ms** | **0.1541 ms** |
+| FirstNamesToListAsync | 2500     | 4.140 ms     | 0.0993 ms | 0.2801 ms |  
+
 *)

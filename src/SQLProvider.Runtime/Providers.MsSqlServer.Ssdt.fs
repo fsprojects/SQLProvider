@@ -309,31 +309,36 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | _ -> None
 
         member __.GetColumns(con,table) =
-            let columns =
-                match ssdtSchema.Value.TryGetTableByName(table.Name) with
-                | ValueSome ssdtTbl ->
-                    ssdtTbl.Columns
-                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
-                    |> List.map (fun col -> col.Name, col)
-                | ValueNone -> []
-                |> Map.ofList
 
-            // Add PKs to cache
-            columns
-            |> Seq.map (fun kvp -> kvp.Value)
-            |> Seq.iter (fun col ->
-                if col.IsPrimaryKey then
-                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
-                         match col.Name with
-                         | "" -> old
-                         | x -> match old with
-                                | [] -> [x]
-                                | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
-                    ) |> ignore
-            )
+            match schemaCache.Columns.TryGetValue table.FullName with
+            | (true,data) when data.Count > 0 -> data
+            | _ ->
 
-            // Add columns to cache
-            schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                let columns =
+                    match ssdtSchema.Value.TryGetTableByName(table.Name) with
+                    | ValueSome ssdtTbl ->
+                        ssdtTbl.Columns
+                        |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
+                        |> List.map (fun col -> col.Name, col)
+                    | ValueNone -> []
+                    |> Map.ofList
+
+                // Add PKs to cache
+                columns
+                |> Seq.map (fun kvp -> kvp.Value)
+                |> Seq.iter (fun col ->
+                    if col.IsPrimaryKey then
+                        schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                             match col.Name with
+                             | "" -> old
+                             | x -> match old with
+                                    | [] -> [x]
+                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                        ) |> ignore
+                )
+
+                // Add columns to cache
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con, table) =
             let ssdtSchema = ssdtSchema.Value
@@ -609,7 +614,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             let (~~) (t:string) = sb.Append t |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
+            | ValueSome _, ValueSome _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -702,11 +707,11 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ ->
+                | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ ->
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -744,7 +749,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             // ORDER BY
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
-            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+            | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
@@ -773,12 +778,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     let outerSb = System.Text.StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
@@ -787,10 +792,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
                     | _ -> ()
