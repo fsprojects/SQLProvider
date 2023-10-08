@@ -42,7 +42,7 @@ type Benchmarks() =
 
     [<Benchmark>]
     member this.FirstNamesToListAsync () =
-        let max = this.size
+        let max = this.rowsReturned
         let ctx = HR.GetDataContext()
         let res =
             query {
