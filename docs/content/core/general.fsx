@@ -332,16 +332,16 @@ That's why SQLProvider does short-circuit and optimise your queries as much as p
 There is a performance-test project in this repo. This is a sample run:
 
 - BenchmarkDotNet v0.13.9
-- .NET 6 
-- Intel i9 13th Gen on Windows 11
-- Microsoft SQL Sever on local computer 
+- .NET 6
+- Laptop, Intel i9 13th Gen on Windows 11
+- Microsoft SQL Sever on local computer
 
 
-| Method                | rowsReturned | Mean     | Error     | StdDev    | 
+| Method                | rowsReturned | Mean     | Error     | StdDev    |
 |---------------------- |------------- |----------|-----------|----------|
-| **FirstNamesToList**  | **25**   | **1.269 ms** | **0.0271 ms** | **0.0764 ms** | 
-| FirstNamesToListAsync | 25       | 1.370 ms     | 0.0271 ms | 0.0468 ms |
-| **FirstNamesToList**  | **2500** | **4.230 ms** | **0.0810 ms** | **0.1541 ms** |
-| FirstNamesToListAsync | 2500     | 4.140 ms     | 0.0993 ms | 0.2801 ms |  
+| **FirstNamesToList**  | **25**   | **1.216 ms** | **0.0218 ms** | **0.0218 ms** |
+| FirstNamesToListAsync | 25       | 1.364 ms     | 0.0313 ms | 0.0854 ms |
+| **FirstNamesToList**  | **2500** | **4.090 ms** | **0.0794 ms** | **0.1708 ms** |
+| FirstNamesToListAsync | 2500     | 4.094 ms     | 0.0941 ms | 0.2685 ms |
 
 *)
