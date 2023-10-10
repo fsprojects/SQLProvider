@@ -203,6 +203,15 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
+let (|FSharpIsNullMethod|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, (:? MethodCallExpression as e) ->
+        if isNull e.Object && e.Method.Name = "IsNull" && e.Arguments.Count = 1 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+            Some (e.Arguments.[0])
+        else
+            None
+    | _ -> None
+
 let (|OptionIsSome|_|) : Expression -> _ = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
@@ -211,6 +220,7 @@ let (|OptionIsSome|_|) : Expression -> _ = function
         | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
         | MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[e]) when para = "copyOfStruct" && me.Member.Name = "IsNone" -> Some e
         | CopyOfStruct "IsNone" exp -> Some exp
+        | FSharpIsNullMethod exp -> Some exp
         | _ -> None
     | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
     | CopyOfStruct "IsSome" exp -> Some exp
@@ -226,6 +236,7 @@ let (|OptionIsNone|_|) : Expression -> _ = function
         | _ -> None
     | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
     | CopyOfStruct "IsNone" exp -> Some exp
+    | FSharpIsNullMethod exp -> Some exp
     | _ -> None
 
 let (|SqlCondOp|_|) (e:Expression) = 

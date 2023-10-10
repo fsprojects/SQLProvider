@@ -1,3 +1,7 @@
+### 1.3.14 - 10.10.2023
+* More performance updates
+* Support FSharp built-in isNull function
+
 ### 1.3.12 - 07.10.2023
 * Some performance updates PR #802
 
