@@ -160,6 +160,7 @@ type MappedColumnAttribute(name: string) =
     inherit Attribute()
     member x.Name with get() = name
 
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
@@ -167,13 +168,6 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     let data = Dictionary<string,obj>(columns.Count)
     let mutable aliasCache = None
-
-    let replaceFirst (text:string) (oldValue:string) (newValue) =
-        let position = text.IndexOf oldValue
-        if position < 0 then
-            text
-        else
-            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
 
     member val _State = Unchanged with get, set
 
@@ -195,8 +189,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         let defaultValue() =
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
-        if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> defaultValue()
+        | true, dataitem ->
+           match dataitem with
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
            // Postgres array types
@@ -208,25 +204,26 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                        (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
-        else defaultValue()
 
     member __.GetColumnOption<'T>(key) : Option<'T> =
-       if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> None
+        | true, dataitem ->
+           match dataitem with
            | null -> None
            | :? System.DBNull -> None
            | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> Some(unbox data)
-       else None
 
     member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
-       if data.ContainsKey key then
-           match data.[key] with
+       match data.TryGetValue key with
+       | false, _ -> ValueNone
+       | true, dataitem ->
+           match dataitem with
            | null -> ValueNone
            | :? System.DBNull -> ValueNone
            | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> ValueSome(unbox data)
-       else ValueNone
 
     member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
         keys |> List.choose(fun key -> 
@@ -267,12 +264,13 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
       | None -> data.Remove key |> ignore
 
     member __.SetPkColumnOptionSilent(keys,value) =
-        keys |> List.iter(fun x -> 
-            match value with
-            | Some value ->
+        match value with
+        | Some value ->
+            keys |> List.iter(fun x -> 
                 if not (data.ContainsKey x) then data.Add(x,value)
-                else data.[x] <- value
-            | None -> data.Remove x |> ignore)
+                else data.[x] <- value)
+        | None ->
+            keys |> List.iter(fun x -> data.Remove x |> ignore)
 
     member e.SetColumnOption(key,value) =
       match value with
@@ -300,49 +298,21 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         match aliasCache with
         | Some x -> ()
         | None ->
-            aliasCache <- Some (ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural))
+            aliasCache <- Some (Dictionary<string,SqlEntity>(HashIdentity.Structural))
 
-        aliasCache.Value.GetOrAdd(alias, fun alias ->
+        match aliasCache.Value.TryGetValue alias with
+        | true, entity -> entity
+        | false, _ ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
             let newEntity = SqlEntity(dc, tableName, columns)
             // attributes names cannot have a period in them unless they are an alias
-            let pred =
-                let prefix = "[" + alias + "]."
-                let prefix2 = alias + "."
-                let prefix3 = "`" + alias + "`."
-                let prefix4 = alias + "_"
-                let prefix5 = alias.ToUpper() + "_"
-                (fun (k:string,v) ->
-                    if k.StartsWith prefix then
-                        let temp = replaceFirst k prefix ""
-                        let temp = temp.Substring(1,temp.Length-2)
-                        Some(temp,v)
-                    // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
-                    elif  k.StartsWith prefix2 then
-                        let temp = replaceFirst k prefix2 ""
-                        Some(temp,v)
-                    // this case is for MySQL and other vendors that use ` as whitespace qualifiers
-                    elif  k.StartsWith prefix3 then
-                        let temp = replaceFirst k prefix3 ""
-                        let temp = temp.Substring(1,temp.Length-2)
-                        Some(temp,v)
-                    //this case for MSAccess, uses _ as whitespace qualifier
-                    elif  k.StartsWith prefix4 then
-                        let temp = replaceFirst k prefix4 ""
-                        Some(temp,v)
-                    //this case for Firebird version<=2.1, all uppercase
-                    elif  k.StartsWith prefix5 then 
-                        let temp = replaceFirst k prefix5 ""
-                        Some(temp,v)
-                    elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
-                        Some(k,v)
-                    else None)
 
             e.ColumnValues
-            |> Seq.choose pred
+            |> Seq.choose (Utilities.checkPred alias)
             |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
 
-            newEntity)
+            aliasCache.Value.Add(alias,newEntity)
+            newEntity
 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
         let typ = typeof<'a>
@@ -813,12 +783,14 @@ module internal CommonTasks =
                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
 
     let checkKey (pkLookup:ConcurrentDictionary<string, string list>) id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
+        match pkLookup.TryGetValue e.Table.FullName with
+        | true, pkKey ->
+            match e.GetPkColumnOption pkKey with
+            | [] ->  e.SetPkColumnSilent(pkKey, id)
             | _  -> () // if the primary key exists, do nothing
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
+        | false, _ -> ()
 
     let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =
         if keys.Length <> 1 then

@@ -337,11 +337,11 @@ There is a performance-test project in this repo. This is a sample run:
 - Microsoft SQL Sever on local computer
 
 
-| Method                | rowsReturned | Mean     | Error     | StdDev    |
-|---------------------- |------------- |----------|-----------|----------|
-| **FirstNamesToList**  | **25**   | **1.216 ms** | **0.0218 ms** | **0.0218 ms** |
-| FirstNamesToListAsync | 25       | 1.364 ms     | 0.0313 ms | 0.0854 ms |
-| **FirstNamesToList**  | **2500** | **4.090 ms** | **0.0794 ms** | **0.1708 ms** |
-| FirstNamesToListAsync | 2500     | 4.094 ms     | 0.0941 ms | 0.2685 ms |
+| Method                | rowsReturned | Mean     | Error     | StdDev    | Median   | Ratio | RatioSD | Gen0     | Gen1     | Gen2  | 
+|---------------------- |------------- |---------:|----------:|----------:|---------:|------:|--------:|---------:|---------:|------------:|
+| **FirstNamesToList**      | **25**           | **1.216 ms** | **0.0345 ms** | **0.1002 ms** | **1.221 ms** |  **1.00** |    **0.00** |  **29.2969** |   **9.7656** |  **0** |     
+| FirstNamesToListAsync | 25           | 1.232 ms | 0.0243 ms | 0.0438 ms | 1.220 ms |  0.98 |    0.08 |  29.2969 |   9.7656 |  0 |
+| **FirstNamesToList**      | **2500**         | **3.408 ms** | **0.0679 ms** | **0.1518 ms** | **3.356 ms** |  **1.00** |    **0.00** | **234.3750** | **101.5625** | **0** |
+| FirstNamesToListAsync | 2500         | 3.841 ms | 0.1009 ms | 0.2710 ms | 3.740 ms |  1.12 |    0.10 | 187.5000 |  62.5000 | 0 |
 
 *)

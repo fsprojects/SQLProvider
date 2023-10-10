@@ -223,6 +223,45 @@ module internal Utilities =
         | :? String -> sprintf "'%s'" (value.ToString().Replace("'", ""))
         | _ -> value.ToString()
 
+    let replaceFirst (text:string) (oldValue:string) (newValue) =
+        let position = text.IndexOf oldValue
+        if position < 0 then
+            text
+        else
+            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+
+    let checkPred alias =
+        let prefix = "[" + alias + "]."
+        let prefix2 = alias + "."
+        let prefix3 = "`" + alias + "`."
+        let prefix4 = alias + "_"
+        let prefix5 = alias.ToUpper() + "_"
+        (fun (k:string,v) ->
+            if k.StartsWith prefix then
+                let temp = replaceFirst k prefix ""
+                let temp = temp.Substring(1,temp.Length-2)
+                Some(temp,v)
+            // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
+            elif  k.StartsWith prefix2 then
+                let temp = replaceFirst k prefix2 ""
+                Some(temp,v)
+            // this case is for MySQL and other vendors that use ` as whitespace qualifiers
+            elif  k.StartsWith prefix3 then
+                let temp = replaceFirst k prefix3 ""
+                let temp = temp.Substring(1,temp.Length-2)
+                Some(temp,v)
+            //this case for MSAccess, uses _ as whitespace qualifier
+            elif  k.StartsWith prefix4 then
+                let temp = replaceFirst k prefix4 ""
+                Some(temp,v)
+            //this case for Firebird version<=2.1, all uppercase
+            elif  k.StartsWith prefix5 then 
+                let temp = replaceFirst k prefix5 ""
+                Some(temp,v)
+            elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
+                Some(k,v)
+            else None)
+
 module ConfigHelpers = 
     
     open System
@@ -460,9 +499,9 @@ module internal Reflection =
 
             assemblyNames
             |> List.tryPick (fun name ->
-                if assemblies.ContainsKey(name)
-                then Some assemblies.[name]
-                else None
+                match assemblies.TryGetValue name with
+                | true, aname -> Some aname
+                | false, _ -> None
             )
 
         let result = 
