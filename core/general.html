@@ -326,7 +326,7 @@ That's why SQLProvider does short-circuit and optimise your queries as much as p
 <ul>
 <li>BenchmarkDotNet v0.13.9</li>
 <li>.NET 6</li>
-<li>Intel i9 13th Gen on Windows 11</li>
+<li>Laptop, Intel i9 13th Gen on Windows 11</li>
 <li>Microsoft SQL Sever on local computer</li>
 </ul>
 <table>
@@ -334,39 +334,69 @@ That's why SQLProvider does short-circuit and optimise your queries as much as p
 <tr class="header">
 <th><p>Method</p></th>
 <th><p>rowsReturned</p></th>
-<th><p>Mean</p></th>
-<th><p>Error</p></th>
-<th><p>StdDev</p></th>
+<th align="right"><p>Mean</p></th>
+<th align="right"><p>Error</p></th>
+<th align="right"><p>StdDev</p></th>
+<th align="right"><p>Median</p></th>
+<th align="right"><p>Ratio</p></th>
+<th align="right"><p>RatioSD</p></th>
+<th align="right"><p>Gen0</p></th>
+<th align="right"><p>Gen1</p></th>
+<th align="right"><p>Gen2</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>25</strong></p></td>
-<td><p><strong>1.269 ms</strong></p></td>
-<td><p><strong>0.0271 ms</strong></p></td>
-<td><p><strong>0.0764 ms</strong></p></td>
+<td align="right"><p><strong>1.216 ms</strong></p></td>
+<td align="right"><p><strong>0.0345 ms</strong></p></td>
+<td align="right"><p><strong>0.1002 ms</strong></p></td>
+<td align="right"><p><strong>1.221 ms</strong></p></td>
+<td align="right"><p><strong>1.00</strong></p></td>
+<td align="right"><p><strong>0.00</strong></p></td>
+<td align="right"><p><strong>29.2969</strong></p></td>
+<td align="right"><p><strong>9.7656</strong></p></td>
+<td align="right"><p><strong>0</strong></p></td>
 </tr>
 <tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>25</p></td>
-<td><p>1.370 ms</p></td>
-<td><p>0.0271 ms</p></td>
-<td><p>0.0468 ms</p></td>
+<td align="right"><p>1.232 ms</p></td>
+<td align="right"><p>0.0243 ms</p></td>
+<td align="right"><p>0.0438 ms</p></td>
+<td align="right"><p>1.220 ms</p></td>
+<td align="right"><p>0.98</p></td>
+<td align="right"><p>0.08</p></td>
+<td align="right"><p>29.2969</p></td>
+<td align="right"><p>9.7656</p></td>
+<td align="right"><p>0</p></td>
 </tr>
 <tr class="odd">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>2500</strong></p></td>
-<td><p><strong>4.230 ms</strong></p></td>
-<td><p><strong>0.0810 ms</strong></p></td>
-<td><p><strong>0.1541 ms</strong></p></td>
+<td align="right"><p><strong>3.408 ms</strong></p></td>
+<td align="right"><p><strong>0.0679 ms</strong></p></td>
+<td align="right"><p><strong>0.1518 ms</strong></p></td>
+<td align="right"><p><strong>3.356 ms</strong></p></td>
+<td align="right"><p><strong>1.00</strong></p></td>
+<td align="right"><p><strong>0.00</strong></p></td>
+<td align="right"><p><strong>234.3750</strong></p></td>
+<td align="right"><p><strong>101.5625</strong></p></td>
+<td align="right"><p><strong>0</strong></p></td>
 </tr>
 <tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>2500</p></td>
-<td><p>4.140 ms</p></td>
-<td><p>0.0993 ms</p></td>
-<td><p>0.2801 ms</p></td>
+<td align="right"><p>3.841 ms</p></td>
+<td align="right"><p>0.1009 ms</p></td>
+<td align="right"><p>0.2710 ms</p></td>
+<td align="right"><p>3.740 ms</p></td>
+<td align="right"><p>1.12</p></td>
+<td align="right"><p>0.10</p></td>
+<td align="right"><p>187.5000</p></td>
+<td align="right"><p>62.5000</p></td>
+<td align="right"><p>0</p></td>
 </tr>
 </tbody>
 </table>
