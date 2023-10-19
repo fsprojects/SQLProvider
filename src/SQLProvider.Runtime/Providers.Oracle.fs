@@ -725,12 +725,16 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 incr param
                 sprintf ":param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
-                Oracle.createCommandParameter (QueryParameter.Create(paramName, !param)) value
+                let p = Oracle.createCommandParameter (QueryParameter.Create(paramName, !param)) value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let fieldParam (value:obj) =
-                let p = createParam value
+                let p = createParam ValueNone value
                 parameters.Add p
                 p.ParameterName
 
@@ -821,6 +825,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -828,9 +833,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (elements.GetValue >> createParam)
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam null|]
+                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType null|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data

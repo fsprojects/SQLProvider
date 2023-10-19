@@ -712,9 +712,13 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 incr param
                 sprintf "@param%i" !param
 
-            let createParamet (value:obj) =
+            let createParamet (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
-                Firebird.createCommandParameter false (Firebird.createParam paramName !param value) value
+                let p =Firebird.createCommandParameter false (Firebird.createParam paramName !param value) value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) =
                 let buildf (c:Condition)= 
@@ -728,7 +732,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     | false -> sprintf "%s.%s" al
 
                 let fieldParam (value:obj) =
-                    let p = createParamet value
+                    let p = createParamet ValueNone value
                     parameters.Add p
                     p.ParameterName
 
@@ -817,6 +821,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -824,9 +829,9 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (elements.GetValue >> createParamet)
-                                            | Some(x) -> [|createParamet (box x)|]
-                                            | None ->    [|createParamet DBNull.Value|]
+                                                Array.init (elements.Length) (elements.GetValue >> createParamet columnDataType)
+                                            | Some(x) -> [|createParamet columnDataType (box x)|]
+                                            | None ->    [|createParamet columnDataType DBNull.Value|]
 
                                     let operatorIn operator (array : IDbDataParameter[]) =
                                         if Array.isEmpty array then

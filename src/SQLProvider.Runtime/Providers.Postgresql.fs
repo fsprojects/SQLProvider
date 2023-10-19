@@ -882,12 +882,15 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
-                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
-
+                let p =PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
             let fieldParam (value:obj) =
-                let p = createParam value
+                let p = createParam ValueNone value
                 parameters.Add p
                 p.ParameterName
 
@@ -974,16 +977,17 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
                                             | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                             | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn ->
                                                 // in and not in operators pass an array
-                                                (box x :?> obj []) |> Array.map createParam
+                                                (box x :?> obj []) |> Array.map (createParam columnDataType)
                                             | Some(x) ->
-                                                [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
