@@ -24,16 +24,23 @@ module MySql =
     let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) ->
-            let types =
-                try assembly.GetTypes()
+            let types, err =
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
             match types |> Array.tryFind(fun t -> t.Name = name) with
             | Some t -> t
-            | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
                                  Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
 
         | Choice2Of2(paths, errors) ->

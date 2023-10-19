@@ -146,14 +146,26 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #endif
         match assembly.Value with
         | Choice1Of2(assembly) ->
-            let types =
-                try assembly.GetTypes()
+            let types, err =
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            types |> Array.find f
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
+            match types |> Array.tryFind f with
+            | Some t -> t
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    let typeLooked = match f.GetType().BaseType with null -> "" | x when not(isNull x.GenericTypeArguments) && x.GenericTypeArguments.Length > 0 -> x.GenericTypeArguments.[0].ToString() | _ -> ""
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + typeLooked +
+                                 Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
+
         | Choice2Of2(paths, errors) ->
            let details =
                 match errors with

@@ -1,18 +1,19 @@
+#r "nuget: System.Data.SqlClient"
+#r "nuget: Microsoft.Data.SqlClient"
 
 // This is with classic FSI:
 #I @"../../../bin/net472"
 #r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
-#I @"../../../bin/netstandard2.0"
-#r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
-
+#I @"../../../bin/netstandard2.1"
+#r @"../../../bin/netstandard2.1/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True"
-//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
+let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True; TrustServerCertificate=true"
+//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password; TrustServerCertificate=true"
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs"
@@ -34,7 +35,6 @@ type Employee = {
 
 //***************** Individuals ***********************//
 let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
-
 indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
