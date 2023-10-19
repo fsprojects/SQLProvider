@@ -1,3 +1,7 @@
+### 1.3.15 - 19.10.2023
+* Less type-loading requirements 
+* Better parameter type instantiation
+
 ### 1.3.14 - 10.10.2023
 * More performance updates
 * Support FSharp built-in isNull function
