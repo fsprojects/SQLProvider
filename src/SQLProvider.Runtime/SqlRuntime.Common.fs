@@ -817,6 +817,31 @@ module internal CommonTasks =
     /// deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
     let sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
 
+    /// Check if we know primary column data type from cache.
+    /// This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.
+    let searchDataTypeFromCache (schemaCache:SchemaCache) (sqlQuery:SqlQuery) (baseAlias:string) (baseTable:Table) (alias:string) (col:SqlColumnType) =
+        match col with
+        | KeyColumn name when not (String.IsNullOrEmpty alias) ->
+            if alias = baseAlias then
+                match schemaCache.Columns.TryGetValue baseTable.FullName with
+                | true, columns ->
+                    match columns.TryGetValue name with
+                    | true, col -> ValueSome col.TypeMapping.DbType
+                    | _ -> ValueNone
+                | _ -> ValueNone
+            else
+                match sqlQuery.Aliases.TryGetValue alias with
+                | true, table ->
+                    match schemaCache.Columns.TryGetValue table.FullName with
+                    | true, columns ->
+                        match columns.TryGetValue name with
+                        | true, col -> ValueSome col.TypeMapping.DbType
+                        | _ -> ValueNone
+                    | false, _ -> ValueNone
+                | false, _ -> ValueNone
+        | _ -> ValueNone
+
+
 module public OfflineTools =
 
     /// Merges two ContexSchemaPath offline schema files into one target schema file.

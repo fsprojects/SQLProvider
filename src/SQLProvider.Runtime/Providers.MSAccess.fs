@@ -309,15 +309,19 @@ type internal MSAccessProvider(contextSchemaPath) =
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
                 let valu = match value with
                             | :? DateTime as dt -> dt.ToOADate() |> box
                             | _           -> value
-                OleDbParameter(paramName,valu):> IDbDataParameter
+                let p = OleDbParameter(paramName,valu):> IDbDataParameter
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let fieldParam (value:obj) =
-                let p = createParam value
+                let p = createParam ValueNone value
                 parameters.Add p
                 p.ParameterName
 
@@ -417,6 +421,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -424,9 +429,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
-                                                strings |> Array.map createParam
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                strings |> Array.map (createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data

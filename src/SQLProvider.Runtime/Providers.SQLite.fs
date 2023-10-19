@@ -582,6 +582,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             let nextParam() =
                 incr param
                 sprintf "@param%i" !param
+
+            let createParamet name columnDataType ordinal value =
+                let p = createParam name ordinal value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
+
             let fieldParam (x:obj)=
                 let p = createParam (nextParam()) !param (box x)
                 parameters.Add p
@@ -669,6 +677,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -677,9 +686,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
                                                 strings
-                                                |> Array.map (fun x -> createParam (nextParam()) !param x)
-                                            | Some(x) -> [|createParam (nextParam()) !param (box x)|]
-                                            | None ->    [|createParam (nextParam()) !param DBNull.Value|]
+                                                |> Array.map (fun x -> createParamet (nextParam()) columnDataType !param x)
+                                            | Some(x) -> [|createParamet (nextParam()) columnDataType !param (box x)|]
+                                            | None ->    [|createParamet (nextParam()) columnDataType !param DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
