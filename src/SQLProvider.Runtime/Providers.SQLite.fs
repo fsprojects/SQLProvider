@@ -575,7 +575,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
         member __.GetSchemaCache() = schemaCache
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0
@@ -677,7 +677,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with

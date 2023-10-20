@@ -650,7 +650,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table |> quotedTableName) amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = @id" (table |> quotedTableName) (table |> quotedTableName) column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
@@ -758,7 +758,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with

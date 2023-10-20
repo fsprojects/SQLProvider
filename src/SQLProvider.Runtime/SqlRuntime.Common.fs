@@ -819,25 +819,19 @@ module internal CommonTasks =
 
     /// Check if we know primary column data type from cache.
     /// This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.
-    let searchDataTypeFromCache (schemaCache:SchemaCache) (sqlQuery:SqlQuery) (baseAlias:string) (baseTable:Table) (alias:string) (col:SqlColumnType) =
+    let searchDataTypeFromCache (provider:ISqlProvider) con (sqlQuery:SqlQuery) (baseAlias:string) (baseTable:Table) (alias:string) (col:SqlColumnType) =
         match col with
         | KeyColumn name when not (String.IsNullOrEmpty alias) ->
             if alias = baseAlias then
-                match schemaCache.Columns.TryGetValue baseTable.FullName with
-                | true, columns ->
-                    match columns.TryGetValue name with
-                    | true, col -> ValueSome col.TypeMapping.DbType
-                    | _ -> ValueNone
+                match provider.GetColumns(con,baseTable).TryGetValue name with
+                | true, col -> ValueSome col.TypeMapping.DbType
                 | _ -> ValueNone
             else
                 match sqlQuery.Aliases.TryGetValue alias with
                 | true, table ->
-                    match schemaCache.Columns.TryGetValue table.FullName with
-                    | true, columns ->
-                        match columns.TryGetValue name with
-                        | true, col -> ValueSome col.TypeMapping.DbType
-                        | _ -> ValueNone
-                    | false, _ -> ValueNone
+                    match provider.GetColumns(con,table).TryGetValue name with
+                    | true, col -> ValueSome col.TypeMapping.DbType
+                    | _ -> ValueNone
                 | false, _ -> ValueNone
         | _ -> ValueNone
 

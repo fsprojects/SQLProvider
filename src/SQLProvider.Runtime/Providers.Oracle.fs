@@ -716,7 +716,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         member __.GetIndividualsQueryText(table,amount) = Oracle.getIndivdualsQueryText amount table
         member __.GetIndividualQueryText(table,column) = Oracle.getIndivdualQueryText table column
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
 
             // NOTE: really need to assign the parameters their correct db types
@@ -825,7 +825,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
