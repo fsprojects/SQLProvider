@@ -8,7 +8,7 @@ open FSharp.Data.Sql.Common.Utilities
 open System.Reflection
 
 module internal Patterns =
-    let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$")
+    let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$", RegexOptions.Compiled)
     [<return: Struct>]
     let (|MatchTable|_|) (inp:string) =
         let m = tablePattern.Match inp in
