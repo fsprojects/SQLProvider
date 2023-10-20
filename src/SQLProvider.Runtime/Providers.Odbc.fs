@@ -335,7 +335,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             sprintf "SELECT * FROM %c%s%c WHERE %c%s%s%s%c = ?" 
                         cOpen table.Name cClose cOpen table.Name separator column cClose
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let separator = (sprintf "%c.%c" cClose cOpen).Trim()
 
             let parameters = ResizeArray<_>()
@@ -428,7 +428,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with

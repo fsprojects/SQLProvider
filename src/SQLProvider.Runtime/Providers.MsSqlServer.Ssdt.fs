@@ -404,7 +404,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
         member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared? (also exists in Providers.MsSqlServer.Dynamic)
 
             let parameters = ResizeArray<_>()
@@ -524,7 +524,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with

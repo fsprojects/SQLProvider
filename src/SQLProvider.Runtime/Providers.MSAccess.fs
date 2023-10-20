@@ -300,7 +300,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct SQL types
@@ -421,7 +421,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
-                                    let columnDataType = CommonTasks.searchDataTypeFromCache schemaCache sqlQuery baseAlias baseTable alias col
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
