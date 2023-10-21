@@ -32,7 +32,8 @@ module internal QueryExpressionTransformer =
         let groupProjectionMap = ResizeArray<alias*SqlColumnType>()
 
         let (|SingleTable|MultipleTables|) = function
-            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when
+                    (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && aliasEntityDict.Count < 2 ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
@@ -584,7 +585,19 @@ module internal QueryExpressionTransformer =
                 let rec composeProjections projs prevLambda (foundparams : Dictionary<string, ResizeArray<ProjectionParameter>>) = 
                     match projs with 
                     | [] -> prevLambda, foundparams
-                    | proj::tail -> 
+                    | proj::tail ->
+                        let operations =
+                            // Full entities don't need to be transferred recursively
+                            // but Canonical operation structures cannot be lost.
+                            [| for KeyValue(k,v) in foundparams do
+                                if k = "" then yield k, v
+                                else
+                                  for colp in v do
+                                    match colp with
+                                    | OperationColumn _ ->  yield k, v
+                                    | EntityColumn _ -> () |]
+                        foundparams.Clear()
+                        operations |> Array.distinct |> Array.iter(fun (k, v) ->foundparams.Add(k,v))
                         let lambda1, dbparams1 = visitExpression proj prevLambda initDbParam
                         dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
                         composeProjections tail lambda1 foundparams
