@@ -645,7 +645,7 @@ and internal SchemaCache =
       Sprocs        : ResizeArray<Sproc>
       SprocsParams  : ConcurrentDictionary<string,QueryParameter list> //sproc name and params
       Packages      : ResizeArray<CompileTimeSprocDefinition>
-      Individuals   : ResizeArray<SqlEntity>
+      Individuals   : ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array> //table name and entities
       IsOffline     : bool }
     with
         static member Empty = { 
@@ -656,7 +656,7 @@ and internal SchemaCache =
             Sprocs = ResizeArray()
             SprocsParams = ConcurrentDictionary<string,QueryParameter list>()
             Packages = ResizeArray()
-            Individuals = ResizeArray()
+            Individuals = ConcurrentDictionary<string, _>()
             IsOffline = false }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
@@ -868,7 +868,8 @@ module public OfflineTools =
                 SprocsParams = System.Collections.Concurrent.ConcurrentDictionary( 
                                 Seq.concat [|s1.SprocsParams ; s2.SprocsParams |] |> Seq.distinctBy(fun d -> d.Key));
                 Packages = ResizeArray(Seq.concat [| s1.Packages ; s2.Packages |] |> Seq.distinctBy(fun s -> s.ToString()));
-                Individuals = ResizeArray(Seq.concat [| s1.Individuals ; s2.Individuals |] |> Seq.distinct);
+                Individuals = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.Individuals ; s2.Individuals |] |> Seq.distinctBy(fun d -> d.Key));
                 IsOffline = s1.IsOffline || s2.IsOffline}
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")

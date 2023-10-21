@@ -191,35 +191,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
                match prov.GetPrimaryKey table with
                | Some pkName ->
-                   let entities =
-                        match con with
-                        | Some con ->
-                            use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
-                            if con.State <> ConnectionState.Open then con.Open()
-                            use reader = com.ExecuteReader()
-                            let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName, columns, reader)
-                            if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
-                            if ret.Length > 0 then
-                                prov.GetSchemaCache().Individuals.AddRange ret
-                            ret
-                        | None -> prov.GetSchemaCache().Individuals |> Seq.toArray
-                   if Array.isEmpty entities then [] else
-                   // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
-                   // inside that type the individuals will be listed again but with the text for the relevant column as the name
-                   // of the property and the primary key e.g. ``1, Dennis The Squirrel``
-                   let buildFieldName = SchemaProjections.buildFieldName
-                   let propertyMap =
-                      match con with
-                      | Some con -> prov.GetColumns(con,table)
-                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
-                      |> Seq.choose(fun col ->
-                        if col.Key = pkName then None else
-                        let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
-                        let ty = ProvidedTypeDefinition(name, Some typeof<obj>, isErased=true)
-                        ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
-                        individualsTypes.Add ty
-                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
-                      |> Map.ofSeq
 
                    let rec (|FixedType|_|) (o:obj) =
                       match o, o.GetType().IsValueType with
@@ -235,6 +206,40 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                       // can't support any other types
                       | _, _ -> None
 
+                   let entities =
+                        prov.GetSchemaCache().Individuals.GetOrAdd((table.FullName+"_"+pkName), fun k ->
+                            match con with
+                            | Some con ->
+                                use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
+                                if con.State <> ConnectionState.Open then con.Open()
+                                use reader = com.ExecuteReader()
+                                let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
+                                if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                                let mapped = ret |> Array.choose(fun e ->
+                                     match e.GetColumn pkName with
+                                     | FixedType pkValue -> Some (pkValue, e.ColumnValues |> dict)
+                                     | _ -> None)
+                                mapped
+                            | None -> [||]
+                        )
+                   if Array.isEmpty entities then [] else
+                   // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
+                   // inside that type the individuals will be listed again but with the text for the relevant column as the name
+                   // of the property and the primary key e.g. ``1, Dennis The Squirrel``
+                   let buildFieldName = SchemaProjections.buildFieldName
+
+                   let propertyMap =
+                      match con with
+                      | Some con -> prov.GetColumns(con,table)
+                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
+                      |> Seq.choose(fun col ->
+                        if col.Key = pkName then None else
+                        let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
+                        let ty = ProvidedTypeDefinition(name, Some typeof<obj>, isErased=true)
+                        ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
+                        individualsTypes.Add ty
+                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
+                      |> Map.ofSeq
 
                    let prettyPrint (value : obj) =
                        let dirtyName =
@@ -247,17 +252,14 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                    // on the main object create a property for each entity simply using the primary key
                    let props =
                       entities
-                      |> Array.choose(fun e ->
-                         match e.GetColumn pkName with
-                         | FixedType pkValue ->
-
+                      |> Array.choose(fun (pkValue, columnValues) ->
                             let tableName = table.FullName
                             let getterCode (args : Expr list) =
                                 let a0 = args.[0]
                                 <@@ ((%%a0 : obj) :?> ISqlDataContext).GetIndividual(tableName, pkValue) @@>
 
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
-                            for colName, colValue in e.ColumnValues do
+                            for colName, colValue in columnValues |> Seq.map(fun kvp -> kvp.Key, kvp.Value) do
                                 if colName <> pkName then
                                     let colDefinition, _ = propertyMap.[colName]
                                     colDefinition.AddMemberDelayed(fun() ->
@@ -271,7 +273,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                                     , tableTypeDef
                                                     , getterCode = getterCode
                                                     )
-                         | _ -> None)
+                         )
                       |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
 
                    propertyMap
@@ -1044,7 +1046,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let connStringName = ProvidedStaticParameter("ConnectionStringName", typeof<string>, "")
     let optionTypes = ProvidedStaticParameter("UseOptionTypes",typeof<NullableColumnType>,NullableColumnType.NO_OPTION)
     let dbVendor = ProvidedStaticParameter("DatabaseVendor",typeof<DatabaseProviderTypes>,DatabaseProviderTypes.MSSQLSERVER)
-    let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,1000)
+    let individualsAmount = ProvidedStaticParameter("IndividualsAmount",typeof<int>,50)
     let owner = ProvidedStaticParameter("Owner", typeof<string>, "")
     let resolutionPath = ProvidedStaticParameter("ResolutionPath",typeof<string>, "")
     let caseSensitivity = ProvidedStaticParameter("CaseSensitivityChange",typeof<CaseSensitivityChange>,CaseSensitivityChange.ORIGINAL)
@@ -1057,7 +1059,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='ConnectionString'>The connection string for the SQL database</param>
                     <param name='ConnectionStringName'>The connection string name to select from a configuration file</param>
                     <param name='DatabaseVendor'> The target database vendor</param>
-                    <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 1000.</param>
+                    <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.</param>
                     <param name='UseOptionTypes'>If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column's type even if it is null in the database.</param>
                     <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
                     <param name='Owner'>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</param>
