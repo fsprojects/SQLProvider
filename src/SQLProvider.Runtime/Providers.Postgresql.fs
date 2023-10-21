@@ -1107,7 +1107,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as \"%s\"" fn fn)
+                            else sprintf "%s as \"%s\"" fn (fn.Replace("\"", "")))
                         let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
