@@ -124,13 +124,13 @@
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">customers</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">Customers</span>
 </code></pre>
 <p>Get individual customer row by primary key value</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="prop">Individuals</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 31)" onmouseover="showTip(event, 'fs23', 31)" class="id">COMMI</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="prop">Individuals</span><span class="pn">.</span><span class="id">COMMI</span>
 </code></pre>
 <p>Get individual customer row using address</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 32)" onmouseover="showTip(event, 'fs19', 32)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 33)" onmouseover="showTip(event, 'fs22', 33)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As ContactName``</span><span class="pn">.</span><span class="id">``COMMI, Pedro Afonso``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 31)" onmouseover="showTip(event, 'fs19', 31)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 32)" onmouseover="showTip(event, 'fs22', 32)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As ContactName``</span><span class="pn">.</span><span class="id">``COMMI, Pedro Afonso``</span>
 </code></pre>
 <p>Get individual customer row using address</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 34)" onmouseover="showTip(event, 'fs19', 34)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As Address``</span><span class="pn">.</span><span class="id">``CONSH, Berkeley Gardens 12  Brewery``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 33)" onmouseover="showTip(event, 'fs19', 33)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As Address``</span><span class="pn">.</span><span class="id">``CONSH, Berkeley Gardens 12  Brewery``</span>
 </code></pre>
 
             <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
@@ -149,7 +149,7 @@ val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
                     &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
-                    &lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 1000.&lt;/param&gt;
+                    &lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.&lt;/param&gt;
                     &lt;param name=&#39;UseOptionTypes&#39;&gt;If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;
                     &lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.&lt;/param&gt;
                     &lt;param name=&#39;Owner&#39;&gt;Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.&lt;/param&gt;
@@ -193,7 +193,6 @@ type CaseSensitivityChange =
 <div class="fsdocs-tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
 <div class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs22">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.COMMI: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity with get</div>
 
         </div>
 
