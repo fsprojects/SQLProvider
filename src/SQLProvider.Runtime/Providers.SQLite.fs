@@ -156,7 +156,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
-            match types |> Array.tryFind f with
+            match types |> Array.filter(fun t -> not (isNull t)) |> Array.tryFind f with
             | Some t -> t
             | None ->
                 match err with

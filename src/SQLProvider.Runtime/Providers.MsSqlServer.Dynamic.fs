@@ -33,7 +33,7 @@ module MSSqlServerDynamic =
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
-            match types |> Array.tryFind(fun t -> t.Name = name) with
+            match types |> Array.tryFind(fun t -> (not (isNull t)) && t.Name = name) with
             | Some t -> t
             | None ->
                 match err with
