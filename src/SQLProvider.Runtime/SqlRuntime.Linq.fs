@@ -338,6 +338,7 @@ module internal QueryImplementation =
            return executed
        }
 
+    type [<Struct>]SqlWhereType = NormalWhere | HavingWhere
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
         let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
@@ -460,7 +461,6 @@ module internal QueryImplementation =
                     let toseq = executeSql |> Seq.cast<IGrouping<'TKey, 'TEntity>>
                     return toseq.GetEnumerator()
                 }
-    and SqlWhereType = NormalWhere | HavingWhere
     and SqlQueryProvider() =
          static member val Provider =
 

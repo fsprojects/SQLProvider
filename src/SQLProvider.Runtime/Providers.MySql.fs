@@ -419,8 +419,10 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table |> quotedTableName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table |> quotedTableName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue (entity.Table |> quotedTableName) with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -467,8 +469,10 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table |> quotedTableName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table |> quotedTableName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue (entity.Table |> quotedTableName) with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with

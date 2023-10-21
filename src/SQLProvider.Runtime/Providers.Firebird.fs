@@ -475,8 +475,10 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.Name)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.Name] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.Name with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -523,8 +525,10 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.Name)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.Name] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.Name with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with

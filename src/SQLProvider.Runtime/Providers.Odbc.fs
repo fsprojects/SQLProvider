@@ -115,8 +115,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -166,8 +168,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with

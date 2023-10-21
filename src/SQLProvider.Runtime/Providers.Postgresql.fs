@@ -507,9 +507,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
-
+        let haspk, pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> true, pk
+            | false, _ -> false, []
         let columnNamesWithValues = 
             (([],0), entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out, i) (k,v,c) ->
@@ -554,8 +555,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -603,8 +606,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with

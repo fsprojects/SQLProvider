@@ -361,8 +361,10 @@ module MSSqlServer =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk, pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> true, pk
+            | false, _ -> false, []
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -403,8 +405,10 @@ module MSSqlServer =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         match pk with
         | [x] when changedColumns |> List.exists ((=)x)
@@ -452,8 +456,10 @@ module MSSqlServer =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with

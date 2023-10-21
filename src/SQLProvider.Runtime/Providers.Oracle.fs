@@ -1084,12 +1084,14 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        if schemaCache.PrimaryKeys.ContainsKey e.Table.Name then
-                            match e.GetPkColumnOption schemaCache.PrimaryKeys.[e.Table.Name] with
-                            | [] ->  e.SetPkColumnSilent(schemaCache.PrimaryKeys.[e.Table.Name], id)
+                        match schemaCache.PrimaryKeys.TryGetValue e.Table.Name with
+                        | true, pk ->
+                            match e.GetPkColumnOption pk with
+                            | [] ->  e.SetPkColumnSilent(pk, id)
                             | _ -> () // if the primary key exists, do nothing
                                             // this is because non-identity columns will have been set
                                             // manually and in that case scope_identity would bring back 0 "" or whatever
+                        | false, _ -> ()
                         e._State <- Unchanged
                     | Modified fields ->
                         let cmd = createUpdateCommand provider con sb e fields
@@ -1141,12 +1143,14 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync()
-                                if schemaCache.PrimaryKeys.ContainsKey e.Table.Name then
-                                    match e.GetPkColumnOption schemaCache.PrimaryKeys.[e.Table.Name] with
-                                    | [] ->  e.SetPkColumnSilent(schemaCache.PrimaryKeys.[e.Table.Name], id)
+                                match schemaCache.PrimaryKeys.TryGetValue e.Table.Name with
+                                | true, pk ->
+                                    match e.GetPkColumnOption pk with
+                                    | [] ->  e.SetPkColumnSilent(pk, id)
                                     | _ -> () // if the primary key exists, do nothing
                                                     // this is because non-identity columns will have been set
                                                     // manually and in that case scope_identity would bring back 0 "" or whatever
+                                | false, _ -> ()
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

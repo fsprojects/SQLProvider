@@ -160,6 +160,15 @@ type MappedColumnAttribute(name: string) =
     inherit Attribute()
     member x.Name with get() = name
 
+type ResultSet = seq<(string * obj)[]>
+type ReturnSetType =
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
+type ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
 
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
@@ -259,24 +268,25 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.SetColumnOptionSilent(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then
+              data.[key] <- value
+          else data.Add(key,value)
       | None -> data.Remove key |> ignore
 
     member __.SetPkColumnOptionSilent(keys,value) =
         match value with
         | Some value ->
             keys |> List.iter(fun x -> 
-                if not (data.ContainsKey x) then data.Add(x,value)
-                else data.[x] <- value)
+                if data.ContainsKey x then data.[x] <- value
+                else data.Add(x,value))
         | None ->
             keys |> List.iter(fun x -> data.Remove x |> ignore)
 
     member e.SetColumnOption(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then data.[key] <- value
+          else data.Add(key,value)
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
@@ -284,8 +294,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member e.SetColumnValueOption(key,value) =
       match value with
       | ValueSome value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then data.[key] <- value
+          else data.Add(key,value)
           e.TriggerPropertyChange key
       | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
@@ -401,16 +411,6 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                                  override __.ShouldSerializeValue(_) = false })
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
-and ResultSet = seq<(string * obj)[]>
-and ReturnSetType =
-    | ScalarResultSet of string * obj
-    | ResultSet of string * ResultSet
-and ReturnValueType =
-    | Unit
-    | Scalar of string * obj
-    | SingleResultSet of string * ResultSet
-    | Set of seq<ReturnSetType>
-
 and ISqlDataContext =
     abstract ConnectionString           : string
     abstract CommandTimeout             : Option<int>
@@ -433,7 +433,7 @@ and ISqlDataContext =
     abstract SaveContextSchema          : string -> unit
 
 // LinkData is for joins with SelectMany
-and LinkData =
+type LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : SqlColumnType list
       ForeignTable       : Table
@@ -445,17 +445,17 @@ and LinkData =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
 // GroupData is for group-by projections
-and GroupData =
+type GroupData =
     { PrimaryTable       : Table
       KeyColumns         : (alias * SqlColumnType) list
       AggregateColumns   : (alias * SqlColumnType) list
       Projection         : Expression option }
 
-and table = string
+type table = string
 
-and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of struct (alias * Table)
-and [<Struct>] UnionType = NormalUnion | UnionAll | Intersect | Except
-and internal SqlExp =
+type SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of struct (alias * Table)
+type [<Struct>] UnionType = NormalUnion | UnionAll | Intersect | Except
+type internal SqlExp =
     | BaseTable    of struct (alias * Table)                // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
@@ -501,7 +501,7 @@ and internal SqlExp =
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
 
-and internal SqlQuery =
+type internal SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
@@ -586,7 +586,7 @@ and internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-and internal ISqlProvider =
+type internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
