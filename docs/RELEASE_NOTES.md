@@ -1,3 +1,6 @@
+### 1.3.17 - 21.10.2023
+* More performance optimizations of non-trivial queries
+
 ### 1.3.16 - 21.10.2023
 * Individuals added to ContextSchemaCache
 * Better parameter type instantiation 
