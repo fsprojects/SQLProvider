@@ -1,3 +1,8 @@
+### 1.3.16 - 21.10.2023
+* Individuals added to ContextSchemaCache
+* Better parameter type instantiation 
+* Fixed null-refernce exception on some database drivers
+
 ### 1.3.15 - 19.10.2023
 * Less type-loading requirements 
 * Better parameter type instantiation
