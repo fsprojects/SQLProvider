@@ -1,3 +1,6 @@
+### 1.3.18 - 22.10.2023
+* SqlEventData rendering improved
+
 ### 1.3.17 - 21.10.2023
 * More performance optimizations of non-trivial queries
 

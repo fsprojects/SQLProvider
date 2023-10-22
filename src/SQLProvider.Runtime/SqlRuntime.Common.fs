@@ -86,17 +86,31 @@ module public QueryEvents =
    }
    with 
       override x.ToString() =
-        let paramsString = x.Parameters |> Seq.fold (fun acc (pName, pValue) -> acc + (sprintf "%s - %A; " pName pValue)) ""
-        sprintf "%s -- params %s" x.Command paramsString
+        let arr = x.Parameters |> Seq.toArray
+        if arr.Length = 0 then x.Command
+        else
+            let paramsString = arr |> Seq.fold (fun (sb:StringBuilder) (pName, pValue) -> sb.Append(sprintf "%s - %A; " pName pValue)) (StringBuilder())
+            sprintf "%s -- params %s" x.Command (paramsString.ToString())
       
       /// Use this to execute similar queries to test the result of the executed query.
       member x.ToRawSql() =
-        x.Parameters |> Seq.fold (fun (acc:string) (pName, pValue) -> 
+        x.Parameters
+        |> Seq.sortByDescending (fun (n,_) -> n.Length)
+        |> Seq.fold (fun (acc:StringBuilder) (pName, pValue) -> 
             match pValue with
             | :? String as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.Replace("'", "''"))))
             | :? Guid as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString())))
-            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd hh:mm:ss"))))
-            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
+            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss"))))
+            | :? DateTimeOffset as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss zzz"))))
+            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) (StringBuilder x.Command)
+        |> string
+
+      member x.ToRawSqlWithParamInfo() =
+        let arr = x.Parameters |> Seq.toArray
+        if arr.Length = 0 then x.Command
+        else
+            let paramsString = arr |> Seq.fold (fun (sb:StringBuilder) (pName, pValue) -> sb.Append(sprintf "%s - %A; " pName pValue)) (StringBuilder())
+            sprintf "%s -- params opened: %s" (x.ToRawSql()) (paramsString.ToString())
 
    let private sqlEvent = Event<SqlEventData>()
    
@@ -745,7 +759,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
             | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
         let itm = 
             if Seq.isEmpty itms then
-                let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> x1 + " " + x2+ " " + x3 + " " + x4 + " " + x5 + " " + x6 + " " + x7).Trim()
+                let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> StringBuilder(x1).Append(" ").Append(x2).Append(" ").Append(x3).Append(" ").Append(x4).Append(" ").Append(x5).Append(" ").Append(x6).Append(" ").Append(x7).ToString()).Trim()
                 failwithf "Unsupported aggregate: %s %s" cols (if columnName.IsSome then columnName.Value else "")
             else itms |> Seq.head |> snd
         if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
