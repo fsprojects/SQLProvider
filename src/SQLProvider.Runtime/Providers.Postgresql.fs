@@ -930,6 +930,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
                     | CastVarchar -> sprintf "(%s::varchar)" column
+                    | CastInt -> sprintf "(%s::int)" column
                     // Date functions
                     | Date -> sprintf "DATE_TRUNC('day', %s)" column
                     | Year -> sprintf "DATE_PART('year', %s)" column

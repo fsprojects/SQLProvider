@@ -128,7 +128,7 @@ module ColumnSchema =
     | CaseNotSql of Condition * SqlItemOrColumn // operation, if-true
     | CaseSqlPlain of Condition * obj * obj // with 2 constants
     | CastVarchar
-
+    | CastInt
 
     and SqlColumnType =
     | KeyColumn of string

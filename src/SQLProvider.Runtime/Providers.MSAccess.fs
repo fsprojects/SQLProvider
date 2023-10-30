@@ -362,6 +362,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | ToUpper -> sprintf "UCase(%s)" column
                     | ToLower -> sprintf "LCase(%s)" column
                     | CastVarchar -> sprintf "CStr(%s)" column
+                    | CastInt -> sprintf "Val(%s)" column
                     // Date functions
                     | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\"))" column
                     | Year -> sprintf "Year(%s)" column

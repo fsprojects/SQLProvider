@@ -41,7 +41,16 @@ module internal QueryExpressionTransformer =
                 if not(groupProjectionMap.Contains (entity,ct)) then
                     groupProjectionMap.Add(entity,ct)
                 MultipleTables exp
-            | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
+            | Lambda([ParamName sourceAlias],NewExpr(_, [
+                        (SqlColumnGet(entity1,ct1,rtyp1) as oper1);
+                        (SqlColumnGet(entity2,ct2,rtyp2) as oper2)
+                        ])) as exp ->
+                if not(groupProjectionMap.Contains (entity1,ct1)) then
+                    groupProjectionMap.Add(entity1,ct1)
+                if not(groupProjectionMap.Contains (entity2,ct2)) then
+                    groupProjectionMap.Add(entity2,ct2)
+                MultipleTables exp
+            | _ -> failwith ("Unsupported projection type " + projection.NodeType.ToString() + ": " + projection.ToString())
 
             // 1. only one table was involed so the input is a single parameter
             // 2. the input is a n tuple returned from the query
@@ -281,8 +290,19 @@ module internal QueryExpressionTransformer =
                         if aliasEntityDict.ContainsKey(al) then Some al
                         elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
                         else None
-                    elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
-                    else None
+                    else
+                    let prevParamKey = replaceParams.Keys |> Seq.toList |> List.tryFind(fun p -> p.Name = pname)
+
+                    let ultimateFallback = if ultimateChild.IsSome then Some (fst ultimateChild.Value) else None
+                    match prevParamKey |> Option.map replaceParams.TryGetValue with
+                    | Some (true, par) ->
+                        match par.Body.NodeType, par.Body with
+                        | ExpressionType.Call, (:? MethodCallExpression as ce) when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression && ce.Arguments.Count = 2) ->
+                            match ce.Arguments.[0] with
+                            | :? ConstantExpression as c when aliasEntityDict.ContainsKey (c.Value.ToString()) -> Some (c.Value.ToString())
+                            | _ -> ultimateFallback
+                        | _ -> ultimateFallback
+                    | _ -> ultimateFallback
 
                 match foundAlias with
                 | Some alias ->

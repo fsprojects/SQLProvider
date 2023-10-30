@@ -629,6 +629,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
                     | CastVarchar -> sprintf "CAST(%s AS TEXT)" column
+                    | CastInt -> sprintf "CAST(%s AS INTEGER)" column
                     // Date functions
                     | Date -> sprintf "DATE(%s)" column
                     | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column

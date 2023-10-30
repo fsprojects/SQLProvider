@@ -773,6 +773,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS VARCHAR)" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "TRUNC(%s)" column
                     | Year -> sprintf "EXTRACT(YEAR FROM %s)" column

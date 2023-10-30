@@ -1792,7 +1792,7 @@ let ``simple select entityValue form another query``() =
     Assert.IsNotNull(ent2)    
     Assert.AreEqual(ent1.CustomerId, ent2.CustomerId)    
 
-[<Test; Ignore("Not supported, issue #405")>]
+[<Test>]
 let ``simple select nested query sort``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1805,7 +1805,7 @@ let ``simple select nested query sort``() =
             sortBy emp2.EmployeeId
             select emp2.Address
         } |> Seq.toList
-    Assert.IsNotNull(qry)    
+    Assert.IsNotNull(qry)
 
 
 [<Test>]
@@ -2386,8 +2386,11 @@ let ``simple select navigation properties``() =
                             select x.OrderId
                         })
         } |> Map.ofSeq
-    let oid = qry.["ALFKI"] |> Seq.toList
-    Assert.Less(10L,oid)
+    let alfkiOrders = qry.["ALFKI"] |> Seq.toList
+    Assert.Less(alfkiOrders.Length, 10)
+    let oid = alfkiOrders |> Seq.head
+    Assert.AreEqual(10643L,oid)
+
 
 let ``where join order shouldn't matter``() = 
     let dc = sql.GetDataContext()

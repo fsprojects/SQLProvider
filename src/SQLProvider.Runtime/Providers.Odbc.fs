@@ -389,6 +389,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     | ToUpper -> sprintf "UCASE(%s)" column
                     | ToLower -> sprintf "LCASE(%s)" column
                     | CastVarchar -> sprintf "CONVERT(%s, SQL_VARCHAR)" column
+                    | CastInt -> sprintf "CONVERT(%s, INT)" column
                     // Date functions
                     | Date -> sprintf "CONVERT(%s, SQL_DATE)" column
                     | Year -> sprintf "YEAR(%s)" column

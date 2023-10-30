@@ -568,7 +568,12 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> || typ = typeof<ValueOption<String>> 
             -> Some(alias, col, e.Type)
         | _ -> None
-
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
+                           (e.Type = typeof<System.Int32> || e.Type = typeof<Option<System.Int32>> || e.Type = typeof<ValueOption<System.Int32>>) ->
+        match e.Arguments.[0] with
+        | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> || typ = typeof<ValueOption<String>> 
+            -> Some(alias, CanonicalOperation(CanonicalOp.CastInt, col), typ)
+        | _ -> None
     | _ -> None
 
 and (|SqlNegativeBooleanColumn|_|) (e:Expression) = 

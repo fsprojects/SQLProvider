@@ -1,3 +1,8 @@
+
+### 1.3.19 - 30.10.2023
+* Fixed param picking from nested SQL with navigation properties
+* Added Int32.Parse to SQL translations
+
 ### 1.3.18 - 22.10.2023
 * SqlEventData rendering improved
 

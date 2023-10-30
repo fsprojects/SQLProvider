@@ -762,6 +762,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "CAST(%s AS DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
