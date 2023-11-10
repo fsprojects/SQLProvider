@@ -556,6 +556,22 @@ let ``simple select where in query``() =
     Assert.AreEqual(3, qry.Length)
     Assert.IsTrue(qry.Contains("ANATR"))
 
+[<Test >]
+let ``simple select where in set query``() =
+    let dc = sql.GetDataContext()
+    let itmSet = ["ALFKI"; "ANATR"; "AROUT"] |> Set.ofList
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (itmSet.Contains(cust.CustomerId))
+            select cust.CustomerId
+        } |> Seq.toArray
+    let res = query
+
+    CollectionAssert.IsNotEmpty qry
+    Assert.AreEqual(3, qry.Length)
+    Assert.IsTrue(qry.Contains("ANATR"))
+
     
 [<Test >]
 let ``simple select where not-in query``() =

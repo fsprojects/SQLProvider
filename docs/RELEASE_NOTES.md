@@ -1,4 +1,7 @@
 
+### 1.3.20 - 10.11.2023
+* Support Set in LINQ queries
+
 ### 1.3.19 - 30.10.2023
 * Fixed param picking from nested SQL with navigation properties
 * Added Int32.Parse to SQL translations

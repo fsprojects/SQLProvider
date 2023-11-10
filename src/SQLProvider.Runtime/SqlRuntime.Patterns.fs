@@ -37,6 +37,8 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
         | false -> None
 
 let (|SeqValues|_|) (e:Expression) =
+    if e.Type.FullName = "System.String" then None // String is char[] but we don't want to hit that!
+    else
     let rec isEnumerable (ty : Type) = 
         ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
         |> (not << Seq.isEmpty)
@@ -673,6 +675,7 @@ and (|SqlSpecialOpArr|_|) = function
     | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.In, key, values)
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.NotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.In, key, values)
+    | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.In, key, values)
     | _ -> None
 
 and (|SqlSpecialOpArrQueryable|_|) = function
@@ -711,6 +714,7 @@ and (|SqlSpecialNegativeOpArr|_|) (e:Expression) =
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NotIn, key, values)
+        | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.In, key, values)
         | _ -> None
     | _ -> None
 
