@@ -1,3 +1,5 @@
+### 1.3.22 - 13.11.2023
+* Minor performance improvements via ProvidedTypes update
 
 ### 1.3.21 - 10.11.2023
 * Support Set in LINQ queries
