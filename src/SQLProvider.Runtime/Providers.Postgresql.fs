@@ -742,7 +742,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         let columns =
                             [ while reader.Read() do
                             
-                                let dimensions = Sql.dbUnbox<int> reader.["array_dimensions"]  
+                                let dimensions =
+                                    let dims = reader.["array_dimensions"]
+                                    try Sql.dbUnbox<int> dims
+                                    with :? InvalidCastException -> Sql.dbUnbox<int16> dims |> int
                                 let baseTypeName = Sql.dbUnbox<string> reader.["base_data_type"]
                                 let fullTypeName = Sql.dbUnbox<string> reader.["data_type_with_sizes"]
                                 let baseDataType = PostgreSQL.findDbType baseTypeName

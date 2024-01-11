@@ -103,7 +103,7 @@ module public QueryEvents =
             | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss"))))
             | :? DateTimeOffset as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss zzz"))))
             | _ -> acc.Replace(pName, (sprintf "%O" pValue))) (StringBuilder x.Command)
-        |> string
+        |> string<StringBuilder>
 
       member x.ToRawSqlWithParamInfo() =
         let arr = x.Parameters |> Seq.toArray

@@ -1,3 +1,7 @@
+### 1.3.23 - 11.01.2024
+* PostgreSQL fixed invalid cast on array_dimensions on new npgsql driver.
+* Microsoft SQL Database reference driver update
+
 ### 1.3.22 - 13.11.2023
 * Minor performance improvements via ProvidedTypes update
 
