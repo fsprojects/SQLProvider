@@ -391,11 +391,15 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | "AddYears", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
                 | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
                 | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
+                | "AddDays", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
                 | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlCol(al2,col2)), col), typ)
                 | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
+                | "AddHours", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
                 | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
+                | "AddMinutes", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
                 | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlCol(al2,col2)), col), typ)
                 | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
+                | "AddSeconds", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
                 | _ -> None
             | _ -> None
     // These are canonical properties

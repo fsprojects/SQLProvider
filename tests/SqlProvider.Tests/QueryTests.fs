@@ -1258,6 +1258,18 @@ let ``simple sort query with lambda cast to IComparable``() =
     CollectionAssert.AreEquivalent([|"Berlin"|], qry)
 
 [<Test>]
+let ``simple date opearations with implicit convert``() = 
+    let dc = sql.GetDataContext()
+    let today = DateTime.Today
+    let qry = 
+        query {
+            for emp in dc.Main.Employees do
+            where (emp.BirthDate.AddHours 5 < today)
+            select (emp.BirthDate.AddDays 5)
+        } |> Seq.toList
+    CollectionAssert.IsNotEmpty qry
+
+[<Test>]
 let ``simple sort query with then by desc query with lambda cast to IComparable``() =
     let dc = sql.GetDataContext()
     let qry =

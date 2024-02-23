@@ -1,3 +1,6 @@
+### 1.3.24 - 23.02.2024
+* Support implicit converts from AddDays, AddHours, AddMinutes and AddSeconds int to float
+
 ### 1.3.23 - 11.01.2024
 * PostgreSQL fixed invalid cast on array_dimensions on new npgsql driver.
 * Microsoft SQL Database reference driver update
