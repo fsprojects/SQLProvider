@@ -2545,7 +2545,7 @@ let test_querylogic (customers:IQueryable<sqlValueOption.dataContext.``main.Cust
     itms |> Seq.toList
 
 [<Test>]
-let ``mock database for unit-testing test``() =
+let ``mock for unit-testing: database-table``() =
 
     let realDb = sqlValueOption.GetDataContext()
     let res = test_querylogic (realDb.Main.Customers)
@@ -2554,8 +2554,44 @@ let ``mock database for unit-testing test``() =
     let mockCustomers =
         [| {| City = Some "Paris"; PostalCode = None; |}
            {| City = Some "London"; PostalCode = Some "ABC" |}
+           {| City = None; PostalCode = Some "123" |}
         |] |> FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities<sqlValueOption.dataContext.``main.CustomersEntity``> "Customers"
     
     let res = test_querylogic mockCustomers
     Assert.AreEqual(1, res.Length)
     
+
+let test_querylogic_cont (ctx:sqlValueOption.dataContext) =
+    let itms = 
+        query {
+            for o in ctx.Main.Orders do
+            join cust in ctx.Main.Customers on (o.CustomerId.Value = cust.CustomerId)
+            where (cust.City.IsSome && cust.City.Value = "London" && cust.PostalCode.IsSome)
+            select (cust.PostalCode.Value, o.OrderDate.Value)
+        }
+    itms |> Seq.toList
+
+[<Test>]
+let ``mock for unit-testing: datacontext``() =
+    
+    let sampleDataMap =
+        [ "main.Customers",
+            // Note: CustomerID, not CustomerId. These are DB-field-names, not nice LINQ names.
+            [| {| CustomerID = "1"; City = ValueSome "Paris"; PostalCode = ValueNone; |}
+               {| CustomerID = "2"; City = ValueSome "London"; PostalCode = ValueSome "ABC" |}
+               {| CustomerID = "3"; City = ValueNone; PostalCode = ValueNone |}
+            |] :> obj
+          "main.Orders",
+            [| {| CustomerID = ValueSome "1"; OrderDate = ValueSome DateTime.Today; |}
+               {| CustomerID = ValueSome "2"; OrderDate = ValueSome (DateTime(2021,01,01)); |}
+               {| CustomerID = ValueSome "2"; OrderDate = ValueSome (DateTime(2020,06,15)); |}
+            |] :> obj
+
+            ] |> Map.ofList
+    let mockContext = FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext sampleDataMap
+    
+    let res = test_querylogic_cont mockContext
+    Assert.AreEqual(2, res.Length)
+    ()
+    
+

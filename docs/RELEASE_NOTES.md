@@ -1,3 +1,6 @@
+### 1.3.26 - 27.02.2024
+* Helper method for unit-testing SQL: way to mock data-context
+
 ### 1.3.25 - 27.02.2024
 * Helper method for unit-testing SQL: way to mock data-tables
 

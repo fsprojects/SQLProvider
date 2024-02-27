@@ -426,24 +426,43 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
 and ISqlDataContext =
+    /// Connection string to database
     abstract ConnectionString           : string
+    /// Command timeout (in seconds)
     abstract CommandTimeout             : Option<int>
+    /// CreateRelated: instance, _, primary_table, primary_key, foreing_Table, foreign_key, direction. Returns entities
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    /// Create entities for a table.
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
+    /// Call stored procedure: Definition, return columns, values. Returns result.
     abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
+    /// Call stored procedure: Definition, return columns, values. Returns result task.
     abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> System.Threading.Tasks.Task<SqlEntity>
+    /// Get individual row. Takes tablename and id.
     abstract GetIndividual              : string * obj -> SqlEntity
+    /// Save entity to database.
     abstract SubmitChangedEntity        : SqlEntity -> unit
+    /// Save database-changes in a transaction to database.
     abstract SubmitPendingChanges       : unit -> unit
+    /// Save database-changes in a transaction to database.
     abstract SubmitPendingChangesAsync  : unit -> System.Threading.Tasks.Task<unit>
+    /// Remove changes that are in context.
     abstract ClearPendingChanges        : unit -> unit
+    /// List changes that are in context.
     abstract GetPendingEntities         : unit -> SqlEntity list
+    /// Give a tablename and this returns the key name
     abstract GetPrimaryKeyDefinition    : string -> string
+    /// return a new, unopened connection using the provided connection string
     abstract CreateConnection           : unit -> IDbConnection
+    /// Takes table-name. Returns new entity.
     abstract CreateEntity               : string -> SqlEntity
+    /// Read entity. Table name, columns, data-reader. Returns entities.
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
+    /// Read entity. Table name, columns, data-reader. Returns entities task.
     abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> System.Threading.Tasks.Task<SqlEntity[]>
+    /// Operations of select in SQL-side or in .NET side?
     abstract SqlOperationsInSelect      : SelectOperations
+    /// Save schema offline as Json
     abstract SaveContextSchema          : string -> unit
 
 // LinkData is for joins with SelectMany
@@ -910,15 +929,61 @@ module public OfflineTools =
             |> Seq.map(fun row ->
                 let entity = SqlEntity(Unchecked.defaultof<ISqlDataContext>, tableName, cols)
                 for (col, _) in columnNames do
-                    let colData = row.GetType().GetProperty(col).GetValue(row, null)
+                    let colProp = row.GetType().GetProperty(col)
+                    let colData = if colProp = null then null else colProp.GetValue(row, null)
                     let typ = if colData = null || colData.GetType() = null then "" else colData.GetType().Name
                     if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
-                        let optVal = colData.GetType().GetProperty("Value").GetValue(colData, null)
-                        if optVal = null then
+                        let noneProp = colData.GetType().GetProperty("IsNone")
+                        let optIsNone =
+                            if noneProp = null then null
+                            elif noneProp.GetIndexParameters().Length = 0 then
+                                colData.GetType().GetProperty("IsNone").GetValue(colData, null)
+                            else
+                                colData.GetType().GetProperty("Value") = null
+                        if optIsNone = null || optIsNone = true then
                             entity.SetColumnOptionSilent(col, None)
-                        else 
-                            entity.SetColumnOptionSilent(col, Some optVal)
+                        else
+                            let optValProp = colData.GetType().GetProperty("Value")
+                            if optValProp = null then 
+                                entity.SetColumnOptionSilent(col, None)
+                            else
+                                let optVal = optValProp.GetValue(colData, null)
+                                entity.SetColumnOptionSilent(col, Some optVal)
                     else
                         entity.SetColumnSilent(col, colData)
                 entity :?> 'T)
         rowData.AsQueryable()
+
+    /// This can be used for testing. Creates fake DB-context entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext ["schema.MyTable1"; [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |] :> obj] |> Map.ofList
+    /// See project unit-test for more examples.
+    /// NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
+    let CreateMockSqlDataContext<'T> (dummydata: Map<string,obj>) =
+        let x = { new ISqlDataContext with
+                    member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): obj = raise (System.NotImplementedException())
+                    member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): Threading.Tasks.Task<SqlEntity> = raise (System.NotImplementedException())
+                    member this.ClearPendingChanges(): unit = ()
+                    member this.CommandTimeout: Option<int> = None
+                    member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
+                    member this.CreateEntities(arg1: string): IQueryable<SqlEntity> =
+                        match dummydata.TryGetValue arg1 with
+                        | true, tableData -> CreateMockEntities arg1 tableData
+                        | false, _ -> failwith ("Add table to dummydata: " + arg1) 
+                    member this.CreateEntity(arg1: string): SqlEntity = raise (System.NotImplementedException())
+                    member this.CreateRelated(arg1: SqlEntity, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: RelationshipDirection): IQueryable<SqlEntity> = raise (System.NotImplementedException())
+                    member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
+                    member this.GetPendingEntities(): SqlEntity list = List.empty
+                    member this.GetPrimaryKeyDefinition(arg1: string): string = ""
+                    member this.ReadEntities(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.IDataReader): SqlEntity array = raise (System.NotImplementedException())
+                    member this.ReadEntitiesAsync(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.Common.DbDataReader): Threading.Tasks.Task<SqlEntity array> = raise (System.NotImplementedException())
+                    member _.SaveContextSchema(arg1: string): unit = ()
+                    member _.SqlOperationsInSelect = FSharp.Data.Sql.SelectOperations.DotNetSide
+                    member _.SubmitChangedEntity(arg1: SqlEntity): unit = ()
+                    member _.SubmitPendingChanges(): unit = ()
+                    member _.SubmitPendingChangesAsync(): Threading.Tasks.Task<unit> = task {return ()}
+                    member _.ConnectionString = ""
+               }
+        x :> obj |> unbox<'T>
+
+
+
