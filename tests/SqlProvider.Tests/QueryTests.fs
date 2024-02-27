@@ -2534,3 +2534,28 @@ let ``valueoption copyOfStruct test``() =
     let c = qtest |> Seq.length
 
     Assert.IsNotNull c
+
+let test_querylogic (customers:IQueryable<sqlValueOption.dataContext.``main.CustomersEntity``>) =
+    let itms = 
+        query {
+            for cust in customers do
+            where (cust.City.IsSome && cust.City.Value = "London" && cust.PostalCode.IsSome)
+            select (cust.PostalCode.Value)
+        }
+    itms |> Seq.toList
+
+[<Test>]
+let ``mock database for unit-testing test``() =
+
+    let realDb = sqlValueOption.GetDataContext()
+    let res = test_querylogic (realDb.Main.Customers)
+    Assert.IsTrue(res.Length > 2)
+
+    let mockCustomers =
+        [| {| City = Some "Paris"; PostalCode = None; |}
+           {| City = Some "London"; PostalCode = Some "ABC" |}
+        |] |> FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities<sqlValueOption.dataContext.``main.CustomersEntity``> "Customers"
+    
+    let res = test_querylogic mockCustomers
+    Assert.AreEqual(1, res.Length)
+    

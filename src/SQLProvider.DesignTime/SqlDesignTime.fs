@@ -238,7 +238,9 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         let ty = ProvidedTypeDefinition(name, Some typeof<obj>, isErased=true)
                         ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
                         individualsTypes.Add ty
-                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args -> <@@ ((%%args.[0] : obj) :?> ISqlDataContext)@@> ))))
+                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args ->
+                            let a0 = args.[0]
+                            <@@ ((%%a0 : obj) :?> ISqlDataContext)@@> ))))
                       |> Map.ofSeq
 
                    let prettyPrint (value : obj) =
@@ -583,10 +585,11 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     // Create: unit -> SqlEntity
                     let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
+                        let a0 = args.[0]
                         <@@
-                            let e = ((%%args.[0] : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                            let e = ((%%a0 : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
                             e._State <- Created
-                            ((%%args.[0] : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                            ((%%a0 : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                             e
                         @@> )
 

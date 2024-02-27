@@ -887,3 +887,38 @@ module public OfflineTools =
                 IsOffline = s1.IsOffline || s2.IsOffline}
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
+
+    open System.Linq
+    /// This can be used for testing. Creates de-attached entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
+    let CreateMockEntities<'T when 'T :> SqlEntity> (tableName:string) (dummydata: obj) =
+
+        let tableItem = (dummydata :?> seq<obj> |> Seq.head).GetType()
+
+        let columnNames =
+            tableItem.GetProperties()
+            |> Array.map(fun col -> col.Name, col.PropertyType.Name)
+
+        let cols = columnNames |> Array.map(fun (nam,typ) ->
+            let tempCol = { Name = nam
+                            TypeMapping = TypeMapping.Create(typ); IsPrimaryKey = false
+                            IsNullable = String.IsNullOrEmpty typ || typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption"
+                            IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
+            nam, tempCol) |> ColumnLookup
+        let rowData = 
+            dummydata :?> seq<obj>
+            |> Seq.map(fun row ->
+                let entity = SqlEntity(Unchecked.defaultof<ISqlDataContext>, tableName, cols)
+                for (col, _) in columnNames do
+                    let colData = row.GetType().GetProperty(col).GetValue(row, null)
+                    let typ = if colData = null || colData.GetType() = null then "" else colData.GetType().Name
+                    if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
+                        let optVal = colData.GetType().GetProperty("Value").GetValue(colData, null)
+                        if optVal = null then
+                            entity.SetColumnOptionSilent(col, None)
+                        else 
+                            entity.SetColumnOptionSilent(col, Some optVal)
+                    else
+                        entity.SetColumnSilent(col, colData)
+                entity :?> 'T)
+        rowData.AsQueryable()
