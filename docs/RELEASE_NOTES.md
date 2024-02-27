@@ -1,3 +1,6 @@
+### 1.3.25 - 27.02.2024
+* Helper method for unit-testing SQL: way to mock data-tables
+
 ### 1.3.24 - 23.02.2024
 * Support implicit converts from AddDays, AddHours, AddMinutes and AddSeconds int to float
 
