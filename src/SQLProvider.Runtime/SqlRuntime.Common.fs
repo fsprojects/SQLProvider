@@ -908,10 +908,8 @@ module public OfflineTools =
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
 
     open System.Linq
-    /// This can be used for testing. Creates de-attached entities..
-    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
-    let CreateMockEntities<'T when 'T :> SqlEntity> (tableName:string) (dummydata: obj) =
 
+    let internal makeColumns (dummydata: obj) =
         let tableItem = (dummydata :?> seq<obj> |> Seq.head).GetType()
 
         let columnNames =
@@ -924,10 +922,14 @@ module public OfflineTools =
                             IsNullable = String.IsNullOrEmpty typ || typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption"
                             IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
             nam, tempCol) |> ColumnLookup
+        columnNames, cols
+
+    let internal createMockEntitiesDc<'T when 'T :> SqlEntity> dc (tableName:string) (dummydata: obj) =
+        let columnNames, cols = makeColumns dummydata
         let rowData = 
             dummydata :?> seq<obj>
             |> Seq.map(fun row ->
-                let entity = SqlEntity(Unchecked.defaultof<ISqlDataContext>, tableName, cols)
+                let entity = SqlEntity(dc, tableName, cols)
                 for (col, _) in columnNames do
                     let colProp = row.GetType().GetProperty(col)
                     let colData = if colProp = null then null else colProp.GetValue(row, null)
@@ -954,31 +956,40 @@ module public OfflineTools =
                 entity :?> 'T)
         rowData.AsQueryable()
 
+    /// This can be used for testing. Creates de-attached entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
+    let CreateMockEntities<'T when 'T :> SqlEntity> (tableName:string) (dummydata: obj) =
+        createMockEntitiesDc<'T> Unchecked.defaultof<ISqlDataContext> tableName dummydata
+
     /// This can be used for testing. Creates fake DB-context entities..
     /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext ["schema.MyTable1"; [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |] :> obj] |> Map.ofList
     /// See project unit-test for more examples.
     /// NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
+    /// Limitation of mockContext: You cannot Create new entities to the mock context.
     let CreateMockSqlDataContext<'T> (dummydata: Map<string,obj>) =
+        let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
         let x = { new ISqlDataContext with
                     member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): obj = raise (System.NotImplementedException())
                     member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): Threading.Tasks.Task<SqlEntity> = raise (System.NotImplementedException())
-                    member this.ClearPendingChanges(): unit = ()
+                    member this.ClearPendingChanges(): unit = pendingChanges.Clear()
                     member this.CommandTimeout: Option<int> = None
                     member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
                     member this.CreateEntities(arg1: string): IQueryable<SqlEntity> =
                         match dummydata.TryGetValue arg1 with
-                        | true, tableData -> CreateMockEntities arg1 tableData
+                        | true, tableData -> createMockEntitiesDc this arg1 tableData
                         | false, _ -> failwith ("Add table to dummydata: " + arg1) 
-                    member this.CreateEntity(arg1: string): SqlEntity = raise (System.NotImplementedException())
+                    member this.CreateEntity(arg1: string): SqlEntity =
+                        let _, cols = makeColumns dummydata
+                        new SqlEntity(this, arg1, cols)
                     member this.CreateRelated(arg1: SqlEntity, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: RelationshipDirection): IQueryable<SqlEntity> = raise (System.NotImplementedException())
                     member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
-                    member this.GetPendingEntities(): SqlEntity list = List.empty
+                    member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
                     member this.GetPrimaryKeyDefinition(arg1: string): string = ""
                     member this.ReadEntities(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.IDataReader): SqlEntity array = raise (System.NotImplementedException())
                     member this.ReadEntitiesAsync(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.Common.DbDataReader): Threading.Tasks.Task<SqlEntity array> = raise (System.NotImplementedException())
                     member _.SaveContextSchema(arg1: string): unit = ()
                     member _.SqlOperationsInSelect = FSharp.Data.Sql.SelectOperations.DotNetSide
-                    member _.SubmitChangedEntity(arg1: SqlEntity): unit = ()
+                    member _.SubmitChangedEntity(arg1: SqlEntity): unit = pendingChanges.AddOrUpdate(arg1, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
                     member _.SubmitPendingChanges(): unit = ()
                     member _.SubmitPendingChangesAsync(): Threading.Tasks.Task<unit> = task {return ()}
                     member _.ConnectionString = ""
