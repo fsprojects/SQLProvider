@@ -45,7 +45,7 @@
         </button>
 		
         <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" alt="Fork me on GitHub"></a>
 			<div style="height: 105px"></div>
 
             <ul class="navbar-nav">
@@ -72,6 +72,7 @@
 				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
 				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
 				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
 				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
 
                 <li class="nav-header">
@@ -124,13 +125,13 @@
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">customers</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">Customers</span>
 </code></pre>
 <p>Get individual customer row by primary key value</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="prop">Individuals</span><span class="pn">.</span><span class="id">COMMI</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="prop">Individuals</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 31)" onmouseover="showTip(event, 'fs23', 31)" class="id">COMMI</span>
 </code></pre>
 <p>Get individual customer row using address</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 31)" onmouseover="showTip(event, 'fs19', 31)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 32)" onmouseover="showTip(event, 'fs22', 32)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As ContactName``</span><span class="pn">.</span><span class="id">``COMMI, Pedro Afonso``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 32)" onmouseover="showTip(event, 'fs19', 32)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 33)" onmouseover="showTip(event, 'fs22', 33)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As ContactName``</span><span class="pn">.</span><span class="id">``COMMI, Pedro Afonso``</span>
 </code></pre>
 <p>Get individual customer row using address</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 33)" onmouseover="showTip(event, 'fs19', 33)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As Address``</span><span class="pn">.</span><span class="id">``CONSH, Berkeley Gardens 12  Brewery``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs19', 34)" onmouseover="showTip(event, 'fs19', 34)" class="id">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As Address``</span><span class="pn">.</span><span class="id">``CONSH, Berkeley Gardens 12  Brewery``</span>
 </code></pre>
 
             <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
@@ -193,6 +194,7 @@ type CaseSensitivityChange =
 <div class="fsdocs-tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
 <div class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs22">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.COMMI: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity with get</div>
 
         </div>
 
