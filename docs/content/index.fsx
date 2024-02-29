@@ -128,6 +128,7 @@ The library comes with comprehensive documentation.
  * [Individuals](core/individuals.html) usage and limitations of this unique feature
  * [Composable Query](core/composable.html) information on integrating this project with the SQL provider
  * [Mapping to record types](core/mappers.html)
+ * [Unit-testing](core/unittest.html) your SQL-query logics without a database.
  * [API Reference](reference/index.html) contains automatically generated documentation for all types, modules
    and functions in the library. 
 
