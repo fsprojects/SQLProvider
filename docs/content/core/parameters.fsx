@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
 #I "../../../bin/netstandard2.0"
@@ -91,6 +91,12 @@ let resolutionPath =
     __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 
 (**
+
+The resolution path(s) (as can be semicolon separated if many) should point the
+database driver files and their reference assemblies) that work on design-time.
+So depending on your IDE you probably want there .NET Standard 2.0 (or 2.1) versions
+and not the latest .NET runtime, even when you target your final product to latest .NET.
+
 #### Note on .NET 5 PublishSingleFile and ResolutionPath
 
 If you are publishing your app using .NET 5's PublishSingleFile mode, the driver will

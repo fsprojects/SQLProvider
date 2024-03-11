@@ -371,9 +371,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             //Forces relative paths to be relative to the Runtime assembly
             let basePath =
                 if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
-                then runtimeAssembly
-                else resolutionPath
-                |> Path.GetFullPath
+                then runtimeAssembly |> Path.GetFullPath
+                else (if resolutionPath.Contains ";" then
+                        resolutionPath.Split ';'
+                        |> Array.map Path.GetFullPath
+                        |> Array.filter System.IO.Directory.Exists
+                        |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
+                      else resolutionPath |> Path.GetFullPath)
 
             let connectionString =
                 connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
@@ -387,12 +391,12 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(System.Reflection.TargetInvocationException(msg, ex))
             | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
-                let resp = Path.GetFullPath resolutionPath
+                let resp = Reflection.listResolutionFullPaths resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(System.Reflection.TargetInvocationException(msg, ex))
             | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
                 let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-                let resp = Path.GetFullPath resolutionPath
+                let resp = Reflection.listResolutionFullPaths resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
                 raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
             | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->

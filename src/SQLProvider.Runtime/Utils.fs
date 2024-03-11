@@ -422,6 +422,14 @@ module internal Reflection =
             | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
             | _ -> ""
 
+    let listResolutionFullPaths (resolutionPathSemicoloned:string) =
+        if resolutionPathSemicoloned.Contains ";" then
+            String.Join(";",
+                (resolutionPathSemicoloned.Split ';'
+                    |> Array.map System.IO.Path.GetFullPath))
+        else
+            System.IO.Path.GetFullPath resolutionPathSemicoloned
+
     let tryLoadAssembly path = 
          try 
              if not (File.Exists path) || path.StartsWith "System.Runtime.WindowsRuntime" then None
@@ -433,10 +441,19 @@ module internal Reflection =
          with e ->
              Some(Choice2Of2 e)
 
-    let tryLoadAssemblyFrom (resolutionPath:string) (referencedAssemblies:string[]) assemblyNames =
-        let resolutionPath = 
-            let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
-            if not(File.Exists p) then p else p |> Path.GetDirectoryName
+    let tryLoadAssemblyFrom (resolutionPathSemicoloned:string) (referencedAssemblies:string[]) assemblyNames =
+
+        let resolutionPaths =
+            if resolutionPathSemicoloned.Contains ";" then
+                resolutionPathSemicoloned.Split ';' |> Array.toList
+            else [ resolutionPathSemicoloned ]
+
+        let resolutionPaths =
+            resolutionPaths
+            |> List.map(fun resolutionPath ->
+                    let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+                    if not(File.Exists p) then p else p |> Path.GetDirectoryName
+               )
 
         let referencedPaths = 
             referencedAssemblies 
@@ -445,10 +462,16 @@ module internal Reflection =
         
         let resolutionPaths =
             assemblyNames 
-            |> List.map (fun asm ->
-                if String.IsNullOrEmpty resolutionPath 
-                then asm
-                else Path.Combine(resolutionPath,asm))
+            |> List.collect (fun asm ->
+                if List.isEmpty resolutionPaths then
+                    [ asm ]
+                else
+                    resolutionPaths
+                    |> List.map(fun resolutionPath ->
+                        if String.IsNullOrEmpty resolutionPath 
+                        then asm
+                        else Path.Combine(resolutionPath,asm))
+                    )
 
         let ifNotNull (x:Assembly) =
             if isNull x then ""
@@ -470,11 +493,16 @@ module internal Reflection =
 #endif
                    Environment.CurrentDirectory;
                    System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
-            let dirs = 
-                if not(System.IO.Path.IsPathRooted resolutionPath) then
-                    dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
-                else
+            let dirs =
+                if List.isEmpty resolutionPaths then
                     dirs
+                else
+                    resolutionPaths
+                    |> List.collect(fun resolutionPath ->
+                        if not(System.IO.Path.IsPathRooted resolutionPath) then
+                            dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
+                        else
+                            dirs)
 
             dirs |> Seq.distinct |> Seq.filter(fun x -> not(String.IsNullOrEmpty x) && Directory.Exists x) |> Seq.toList
 
@@ -526,7 +554,7 @@ module internal Reflection =
                 tryLoad
             with
             | _ ->
-                let extraPathDirs = (resolutionPath :: myPaths)
+                let extraPathDirs = (resolutionPaths @ myPaths)
                 let loaded = 
                     extraPathDirs |> List.tryPick(fun dllPath ->
                         let assemblyPath = Path.Combine(dllPath,fileName)
@@ -608,11 +636,16 @@ module internal Reflection =
                 ) |> List.filter Option.isSome
                 |> List.map(fun o -> o.Value.GetBaseException().Message)
                 |> Seq.distinct |> Seq.toList
-            if not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists(resolutionPath)) then
-                let x = "" :: errors
-                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resolutionPath::errors))
-            else
+            let paths =
+                resolutionPaths
+                |> List.filter(fun resolutionPath -> not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists resolutionPath))
+
+            if List.isEmpty paths then
                 Choice2Of2(folders, errors)
+            else
+                let x = "" :: errors
+                let resPaths = String.Join(";", paths)
+                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resPaths::errors))
 
 module Sql =
     
