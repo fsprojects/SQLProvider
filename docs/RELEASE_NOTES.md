@@ -1,3 +1,6 @@
+### 1.3.29 - 12.03.2024
+* SQLite transactions support for Microsoft.Data.Sqlite driver, PR #817
+
 ### 1.3.28 - 11.03.2024
 * Support for semicolon separator in ResolutionPath static parameter
 * Expression optimization update
