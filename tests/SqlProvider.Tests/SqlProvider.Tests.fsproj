@@ -23,6 +23,7 @@
     <Compile Include="CrudTests.fs" />
 	<!--<Compile Include="PostgreSQLTests.fs" />-->
     <Compile Include="SqlServerTests.fs" />
+    <Compile Include="MsDataSqliteTransactions.fs" />
     <Content Include="app.config" />
     <None Include="x86\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
