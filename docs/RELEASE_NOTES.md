@@ -1,3 +1,7 @@
+### 1.3.28 - 11.03.2024
+* Support for semicolon separator in ResolutionPath static parameter
+* Expression optimization update
+
 ### 1.3.27 - 29.02.2024
 * Mock context improved
 

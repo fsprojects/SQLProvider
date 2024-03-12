@@ -908,7 +908,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let customResPath =
           "resolutionPath",
-          "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types",
+          "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.",
           typeof<string>
 
         let customTransOpts =
@@ -1064,7 +1064,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='DatabaseVendor'> The target database vendor</param>
                     <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.</param>
                     <param name='UseOptionTypes'>If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column's type even if it is null in the database.</param>
-                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.</param>
+                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types. Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.</param>
                     <param name='Owner'>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>
                     <param name='TableNames'>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)</param>

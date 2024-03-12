@@ -237,7 +237,7 @@ module PostgreSQL =
             raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+            let msg = ex.GetBaseException().Message + " , Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as e when not(isNull e.InnerException) ->
@@ -245,7 +245,7 @@ module PostgreSQL =
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+            let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
