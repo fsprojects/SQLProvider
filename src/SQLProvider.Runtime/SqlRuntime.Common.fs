@@ -932,21 +932,21 @@ module public OfflineTools =
                 let entity = SqlEntity(dc, tableName, cols)
                 for (col, _) in columnNames do
                     let colProp = row.GetType().GetProperty(col)
-                    let colData = if colProp = null then null else colProp.GetValue(row, null)
-                    let typ = if colData = null || colData.GetType() = null then "" else colData.GetType().Name
+                    let colData = if isNull colProp then null else colProp.GetValue(row, null)
+                    let typ = if isNull colData || isNull (colData.GetType()) then "" else colData.GetType().Name
                     if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
                         let noneProp = colData.GetType().GetProperty("IsNone")
                         let optIsNone =
-                            if noneProp = null then null
+                            if isNull noneProp then null
                             elif noneProp.GetIndexParameters().Length = 0 then
                                 colData.GetType().GetProperty("IsNone").GetValue(colData, null)
                             else
-                                colData.GetType().GetProperty("Value") = null
-                        if optIsNone = null || optIsNone = true then
+                                isNull (colData.GetType().GetProperty "Value")
+                        if (isNull optIsNone) || optIsNone = true then
                             entity.SetColumnOptionSilent(col, None)
                         else
                             let optValProp = colData.GetType().GetProperty("Value")
-                            if optValProp = null then 
+                            if isNull optValProp then 
                                 entity.SetColumnOptionSilent(col, None)
                             else
                                 let optVal = optValProp.GetValue(colData, null)
