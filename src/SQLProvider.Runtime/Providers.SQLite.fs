@@ -989,54 +989,78 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
+            let processFunc (trans : System.Data.Common.DbTransaction option) = task {
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                let handleEntity (e: SqlEntity) =
+                    match e._State with
+                    | Created ->
+                        task {
+                            use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! id = cmd.ExecuteScalarAsync()
+                            CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                            e._State <- Unchanged
+                        }
+                    | Modified fields ->
+                        task {
+                            use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! c = cmd.ExecuteNonQueryAsync()
+                            e._State <- Unchanged
+                        }
+                    | Delete ->
+                        task {
+                            use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! c = cmd.ExecuteNonQueryAsync()
+                            // remove the pk to prevent this attempting to be used again
+                            e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                            e._State <- Deleted
+                        }
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
+
+                let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                return ()
+            }
+
             if entities.Count = 0 then
                 task { () }
             else
+                match sqliteLibrary with 
+                | SQLiteLibrary.MicrosoftDataSqlite -> 
+                    task {
+                        // close the connection first otherwise it won't get enlisted into the transaction
+                        if con.State = ConnectionState.Open then con.Close()
+                        con.Open()
+                        use trans = con.BeginTransaction(TransactionUtils.toSystemDataIsolationLevel transactionOptions.IsolationLevel) //System.Data.IsolationLevel. transactionOptions.IsolationLevel)
+                        try 
+                            do! processFunc (Some trans)
+                            trans.Commit()
+                        with 
+                        | ex -> 
+                            trans.Rollback()
+                            con.Close()
+                            raise ex
+                    }
+                | _ -> 
+                    task {
+                        use scope = TransactionUtils.ensureTransaction transactionOptions
+                        try
+                            // close the connection first otherwise it won't get enlisted into the transaction
+                            if con.State = ConnectionState.Open then con.Close()
+                            do! con.OpenAsync() 
+                            do! processFunc None
+                            if not(isNull scope) then scope.Complete()
 
-            task {
-                use scope = TransactionUtils.ensureTransaction transactionOptions
-                try
-                    // close the connection first otherwise it won't get enlisted into the transaction
-                    if con.State = ConnectionState.Open then con.Close()
-                    do! con.OpenAsync()
-                    // initially supporting update/create/delete of single entities, no hierarchies yet
-                    let handleEntity (e: SqlEntity) =
-                        match e._State with
-                        | Created ->
-                            task {
-                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
-                                e._State <- Unchanged
-                            }
-                        | Modified fields ->
-                            task {
-                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! c = cmd.ExecuteNonQueryAsync()
-                                e._State <- Unchanged
-                            }
-                        | Delete ->
-                            task {
-                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! c = cmd.ExecuteNonQueryAsync()
-                                // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
-                                e._State <- Deleted
-                            }
-                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
-
-                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
-                    if not(isNull scope) then scope.Complete()
-
-                finally
-                    con.Close()
-            }
+                        finally
+                            con.Close()
+                    }
