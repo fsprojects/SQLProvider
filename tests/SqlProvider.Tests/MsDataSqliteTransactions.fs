@@ -1,12 +1,7 @@
 module MsDataSqliteTransactions
 
-open System
-open System.IO
 open FSharp.Data.Sql
-open System.Linq
 open NUnit.Framework
-open System
-open System.Transactions
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
@@ -48,6 +43,38 @@ let ``If Error during transactions, database should rollback to the initial stat
     with
     | ex when ex.Message.Contains("UNIQUE constraint failed") -> 
         ()
+
+    let newCustomers = 
+        query { for cust in dc.Main.Customers do
+                select cust  }
+        |> Seq.toList
+    
+    // Clean up
+    dc.ClearUpdates() |> ignore    
+    let createdOpt = newCustomers |> List.tryFind (fun x -> x.CustomerId = "SQLPROVIDER")
+    if createdOpt.IsSome then 
+        createdOpt.Value.Delete() 
+        dc.SubmitUpdates()
+    
+    Assert.AreEqual(originalCustomers.Length, newCustomers.Length)
+
+[<Test>]
+let ``If Error during transactions, database should rollback to the initial state (Async version)``() = 
+    let dc = sql.GetDataContext()
+    
+    let originalCustomers = 
+        query { for cust in dc.Main.Customers do
+                select cust }
+        |> Seq.toList
+
+    try     
+        createCustomer dc |> ignore
+        createCustomer dc |> ignore
+        dc.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
+    with
+    | :? System.AggregateException as ex ->
+        if ex.GetBaseException().Message.Contains("UNIQUE constraint failed") |> not then 
+            raise ex
 
     let newCustomers = 
         query { for cust in dc.Main.Customers do
