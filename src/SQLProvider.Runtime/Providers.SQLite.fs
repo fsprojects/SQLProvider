@@ -922,15 +922,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then
-                ()
-            else
-
-            use scope = TransactionUtils.ensureTransaction transactionOptions
-            try
-                // close the connection first otherwise it won't get enlisted into the transaction
-                if con.State = ConnectionState.Open then con.Close()
-                con.Open()
+            let processFunc() = 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
@@ -960,10 +952,24 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
-                if not(isNull scope) then scope.Complete()
 
-            finally
-                con.Close()
+            if entities.Count = 0 then
+                ()
+            else
+                match sqliteLibrary with 
+                | SQLiteLibrary.MicrosoftDataSqlite -> 
+                    NotImplementedException() |> raise 
+                | _ -> 
+                    use scope = TransactionUtils.ensureTransaction transactionOptions
+                    try
+                        // close the connection first otherwise it won't get enlisted into the transaction
+                        if con.State = ConnectionState.Open then con.Close()
+                        con.Open()
+                        processFunc()
+                        if not(isNull scope) then scope.Complete()
+
+                    finally
+                        con.Close()
 
         member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()

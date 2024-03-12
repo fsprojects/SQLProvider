@@ -46,7 +46,7 @@ let ``If Error during transactions, database should rollback to the initial stat
         createCustomer dc |> ignore
         dc.SubmitUpdates()
     with
-    | _ -> 
+    | ex when ex.Message.Contains("UNIQUE constraint failed") -> 
         ()
 
     let newCustomers = 
