@@ -19,10 +19,10 @@
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
   </PropertyGroup>
   <ItemGroup>
-    <!-- <Compile Include="QueryTests.fs" />
-    <Compile Include="CrudTests.fs" /> -->
+    <Compile Include="QueryTests.fs" />
+    <Compile Include="CrudTests.fs" />
 	<!--<Compile Include="PostgreSQLTests.fs" />-->
-    <!-- <Compile Include="SqlServerTests.fs" /> -->
+    <Compile Include="SqlServerTests.fs" />
     <Compile Include="MsDataSqliteTransactions.fs" />
     <Content Include="app.config" />
     <None Include="x86\SQLite.Interop.dll">

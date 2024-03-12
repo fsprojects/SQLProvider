@@ -40,11 +40,10 @@ let ``If Error during transactions, database should rollback to the initial stat
         query { for cust in dc.Main.Customers do
                 select cust }
         |> Seq.toList
-     
-    createCustomer dc |> ignore
-    createCustomer dc |> ignore
 
     try     
+        createCustomer dc |> ignore
+        createCustomer dc |> ignore
         dc.SubmitUpdates()
     with
     | _ -> 
@@ -55,8 +54,12 @@ let ``If Error during transactions, database should rollback to the initial stat
                 select cust  }
         |> Seq.toList
     
+    // Clean up
+    dc.ClearUpdates() |> ignore    
+    let createdOpt = newCustomers |> List.tryFind (fun x -> x.CustomerId = "SQLPROVIDER")
+    if createdOpt.IsSome then 
+        createdOpt.Value.Delete() 
+        dc.SubmitUpdates()
+    
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length)
-    // Clean up in case of test failure - does not work correctly for now.
-    newCustomers 
-    |> List.tryFind (fun x -> x.CustomerId = "SQLPROVIDER")
-    |> Option.iter(fun created -> printfn "Cleaning up"; created.Delete(); dc.SubmitUpdates())
+    
