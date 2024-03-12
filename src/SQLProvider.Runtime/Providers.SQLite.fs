@@ -922,13 +922,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            let processFunc() = 
+            let processFunc (trans : IDbTransaction option) = 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -937,6 +938,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -944,6 +946,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -958,16 +961,26 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             else
                 match sqliteLibrary with 
                 | SQLiteLibrary.MicrosoftDataSqlite -> 
-                    NotImplementedException() |> raise 
+                    // close the connection first otherwise it won't get enlisted into the transaction
+                    if con.State = ConnectionState.Open then con.Close()
+                    con.Open()
+                    use trans = con.BeginTransaction(TransactionUtils.toSystemDataIsolationLevel transactionOptions.IsolationLevel) //System.Data.IsolationLevel. transactionOptions.IsolationLevel)
+                    try 
+                        processFunc (Some trans)
+                        trans.Commit()
+                    with 
+                    | ex -> 
+                        trans.Rollback()
+                        con.Close()
+                        raise ex
                 | _ -> 
                     use scope = TransactionUtils.ensureTransaction transactionOptions
                     try
                         // close the connection first otherwise it won't get enlisted into the transaction
                         if con.State = ConnectionState.Open then con.Close()
                         con.Open()
-                        processFunc()
+                        processFunc None
                         if not(isNull scope) then scope.Complete()
-
                     finally
                         con.Close()
 
