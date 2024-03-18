@@ -45,13 +45,13 @@
       ]
     },
     "fsdocs-tool": {
-      "version": "16.1.1",
+      "version": "20.0.0",
       "commands": [
         "fsdocs"
       ]
     },
     "dotnet-fsharplint": {
-      "version": "0.21.3",
+      "version": "0.24.2",
       "commands": [
         "dotnet-fsharplint"
       ]
