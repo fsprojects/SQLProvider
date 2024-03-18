@@ -465,7 +465,11 @@ and ISqlDataContext =
     /// Save schema offline as Json
     abstract SaveContextSchema          : string -> unit
 
-// LinkData is for joins with SelectMany
+/// This is publically exposed and used in the runtime
+type IWithDataContext =
+    abstract DataContext : ISqlDataContext
+
+/// LinkData is for joins with SelectMany
 type LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : SqlColumnType list
@@ -477,7 +481,7 @@ type LinkData =
         member x.Rev() =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-// GroupData is for group-by projections
+/// GroupData is for group-by projections
 type GroupData =
     { PrimaryTable       : Table
       KeyColumns         : (alias * SqlColumnType) list
@@ -908,6 +912,20 @@ module public OfflineTools =
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
 
     open System.Linq
+    open System.Collections
+
+    type MockQueryable<'T>(dc:ISqlDataContext, itms:IQueryable<'T>) = //itms:IQueryable<'T>) =
+        interface IQueryable<'T>
+        interface IQueryable with
+            member __.Provider = itms.Provider
+            member x.Expression =  itms.Expression
+            member __.ElementType = itms.ElementType
+        interface seq<'T> with
+             member __.GetEnumerator() = itms.GetEnumerator()
+        interface IEnumerable with
+             member x.GetEnumerator() = itms.GetEnumerator()
+        interface IWithDataContext with
+             member __.DataContext = dc
 
     let internal makeColumns (dummydata: obj) =
         let tableItem = (dummydata :?> seq<obj> |> Seq.head).GetType()
@@ -923,6 +941,7 @@ module public OfflineTools =
                             IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
             nam, tempCol) |> ColumnLookup
         columnNames, cols
+
 
     let internal createMockEntitiesDc<'T when 'T :> SqlEntity> dc (tableName:string) (dummydata: obj) =
         let columnNames, cols = makeColumns dummydata
@@ -954,7 +973,7 @@ module public OfflineTools =
                     else
                         entity.SetColumnSilent(col, colData)
                 entity :?> 'T)
-        rowData.AsQueryable()
+        MockQueryable(dc, rowData.AsQueryable()) :> IQueryable<'T>
 
     /// This can be used for testing. Creates de-attached entities..
     /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
@@ -979,8 +998,11 @@ module public OfflineTools =
                         | true, tableData -> createMockEntitiesDc this arg1 tableData
                         | false, _ -> failwith ("Add table to dummydata: " + arg1) 
                     member this.CreateEntity(arg1: string): SqlEntity =
-                        let _, cols = makeColumns dummydata
-                        new SqlEntity(this, arg1, cols)
+                        match dummydata.TryGetValue arg1 with
+                        | true, tableData ->
+                            let _, cols = makeColumns tableData
+                            new SqlEntity(this, arg1, cols)
+                        | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup)
                     member this.CreateRelated(arg1: SqlEntity, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: RelationshipDirection): IQueryable<SqlEntity> = raise (System.NotImplementedException())
                     member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
                     member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList

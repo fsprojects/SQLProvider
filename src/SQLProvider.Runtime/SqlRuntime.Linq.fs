@@ -11,10 +11,6 @@ open FSharp.Data.Sql.Common.Utilities
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
-// this is publically exposed and used in the runtime
-type IWithDataContext =
-    abstract DataContext : ISqlDataContext
-
 type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box

@@ -1,3 +1,7 @@
+### 1.3.30 - 18.03.2024
+* IWithDataContext moved from FSharp.Data.Sql.Runtime to FSharp.Data.Sql.Common
+* Support Create(...) in unit-tests
+
 ### 1.3.29 - 12.03.2024
 * SQLite transactions support for Microsoft.Data.Sqlite driver, PR #817
 

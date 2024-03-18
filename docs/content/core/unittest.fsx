@@ -147,7 +147,7 @@ There are some limitations with the SQLProvider mock a DB-context:
 
 - The mock-context will not connect the DB, and you can't save entity modifications. SubmitUpdates() will do nothing.
 - SQLProvider custom operators (like `x |=| xs` and `y %<> "A%"`) are not supported. So you have to use LINQ-ones (e.g. `xs.Contains x` and `not y.StartsWith "A"`) that do work in SQLProvider as well.
-- You cannot call database-table `.Create` methods to create new instances. (You can call update entity columns `x.Col <- Some "hi"`, but it doesn't really do anything.)
+- You can call database-table `.Create` methods to create new instances (it doesn't connect the database). You can call update entity columns `x.Col <- Some "hi"`, but it doesn't really do anything.
 - You cannot call stored procedures.
 - Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be clear error. If you mistyped anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.
 

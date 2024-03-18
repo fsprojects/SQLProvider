@@ -2589,8 +2589,12 @@ let ``mock for unit-testing: datacontext``() =
 
             ] |> Map.ofList
     let mockContext = FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext sampleDataMap
-    
+
     let res = test_querylogic_cont mockContext
+
+    let _ = mockContext.Main.Customers.``Create(CompanyName)``("Test create") // shouldn't crash
+    mockContext.SubmitUpdates() // do nothing, shouldn't crash
+
     Assert.AreEqual(2, res.Length)
     ()
     
