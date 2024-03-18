@@ -1,80 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
 <head>
-    <meta charset="utf-8">
-    <title>Asynchronous Database Operation
-</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="author" content="pezipink,colinbull,thorium">
-
-    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
-    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-    <!-- END SEARCH BOX: this adds support for the search box -->
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="Asynchronous Database Operation
+" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/core/async.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="Asynchronous Database Operation
+">
     
-	<style>
-		#fsdocs-content li {
-			margin: 0px 0px 5px 0px;
-		}
-		.navbar-nav .nav-link {
-			padding-top: 0.2rem;
-			padding-bottom: 0.2rem;
-		}
-	</style>
+    <title>Asynchronous Database Operation
+ | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
 </head>
+<body class="content">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item active">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
 
-<body>
-    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-		
-        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" alt="Fork me on GitHub"></a>
-			<div style="height: 105px"></div>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
 
-            <ul class="navbar-nav">
-                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
-                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
-                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
-								
-				<li class="nav-header" style="text-transform: uppercase">
-					Documentation
-				</li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
 
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to make a contribution
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    general
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    SQL Type Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
                 <li class="nav-header">
   API Reference
 </li>             
@@ -84,30 +194,61 @@
   </a>
 </li>
             </ul>
-			
-            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-            <div id="header">
-                <div class="searchbox" id="fsdocs-searchbox">
-                    <label for="search-by">
-                        <i class="fas fa-search"></i>
-                    </label>
-                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
-                    <span data-search-clear="">
-                        <i class="fas fa-times"></i>
-                    </span>
-                </div>
-            </div>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
 
-            <!-- END SEARCH BOX: this adds support for the search box -->
-        </div>
-    </nav>
-    <div class="container">
-        <div class="masthead">
-            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
-        </div>
-        <hr />
-        <div class="container" id="fsdocs-content">
-            <h1><a name="Asynchronous-Database-Operation" class="anchor" href="#Asynchronous-Database-Operation">Asynchronous Database Operation</a></h1>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <h1><a name="Asynchronous-Database-Operation" class="anchor" href="#Asynchronous-Database-Operation">Asynchronous Database Operation</a></h1>
 <p>You get more performance by concurrency. The idea of async database operations
 is to release the business logics thread while the database is doing its job.
 This can lead a huge performance difference on heavy traffic environment
@@ -199,9 +340,9 @@ When you exit the query-computation, you cause the traffic.</p>
 <li>Async will make your error stacktraces harder to read: You may be used to search your functions from the stacktrace to spot any problems. With async, you don't have your own code in the error-stack. At the time of e.g. SQL-exception, there is no thread waiting, your code is not actively running, there is no stack.</li>
 </ul>
 
-            <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
+        <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
-  new: unit -&gt; LiteralAttribute<br /><em>&lt;summary&gt;Adding this attribute to a value causes it to be compiled as a CLI constant literal.&lt;/summary&gt;<br />&lt;category&gt;Attributes&lt;/category&gt;</em><br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
+  new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
 <div class="fsdocs-tip" id="fs2">[&lt;Literal&gt;]
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../files/sqlite&quot;</div>
 <div class="fsdocs-tip" id="fs3">[&lt;Literal&gt;]
@@ -270,17 +411,17 @@ type SQLiteLibrary =
 <div class="fsdocs-tip" id="fs23">val id: Guid</div>
 <div class="fsdocs-tip" id="fs24">Multiple items<br />[&lt;Struct&gt;]
 type Guid =
-  new: b: byte[] -&gt; unit + 5 overloads
+  new: b: byte array -&gt; unit + 5 overloads
   member CompareTo: value: Guid -&gt; int + 1 overload
   member Equals: g: Guid -&gt; bool + 1 overload
   member GetHashCode: unit -&gt; int
-  member ToByteArray: unit -&gt; byte[]
+  member ToByteArray: unit -&gt; byte array
   member ToString: unit -&gt; string + 2 overloads
   member TryFormat: destination: Span&lt;char&gt; * charsWritten: byref&lt;int&gt; * ?format: ReadOnlySpan&lt;char&gt; -&gt; bool
   member TryWriteBytes: destination: Span&lt;byte&gt; -&gt; bool
   static member (&lt;&gt;) : a: Guid * b: Guid -&gt; bool
   static member (=) : a: Guid * b: Guid -&gt; bool
-  ...<br /><em>&lt;summary&gt;Represents a globally unique identifier (GUID).&lt;/summary&gt;</em><br /><br />--------------------<br />Guid ()<br />Guid(b: byte[]) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte[]) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
+  ...<br /><em>&lt;summary&gt;Represents a globally unique identifier (GUID).&lt;/summary&gt;</em><br /><br />--------------------<br />Guid ()<br />Guid(b: byte array) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte array) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
 <div class="fsdocs-tip" id="fs25">Multiple items<br />type Task =
   interface IAsyncResult
   interface IDisposable
@@ -301,17 +442,7 @@ type Guid =
   member WaitAsync: timeout: TimeSpan -&gt; Task&lt;&#39;TResult&gt; + 2 overloads
   member Result: &#39;TResult
   static member Factory: TaskFactory&lt;&#39;TResult&gt;<br /><em>&lt;summary&gt;Represents an asynchronous operation that can return a value.&lt;/summary&gt;<br />&lt;typeparam name=&quot;TResult&quot;&gt;The type of the result produced by this &lt;see cref=&quot;T:System.Threading.Tasks.Task`1&quot; /&gt;.&lt;/typeparam&gt;</em><br /><br />--------------------<br />Task(action: Action) : Task<br />Task(action: Action, cancellationToken: Threading.CancellationToken) : Task<br />Task(action: Action, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj) : Task<br />Task(action: Action, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task<br /><br />--------------------<br />Task(``function`` : Func&lt;&#39;TResult&gt;) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;</div>
-<div class="fsdocs-tip" id="fs26">val async: AsyncBuilder<br /><em>&lt;summary&gt;Builds an asynchronous workflow using computation expression syntax.&lt;/summary&gt;<br />&lt;example id=&quot;async-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let sleepExample() =
-     async {
-         printfn &quot;sleeping&quot;
-         do! Async.Sleep 10
-         printfn &quot;waking up&quot;
-         return 6
-      }
-
- sleepExample() |&amp;gt; Async.RunSynchronously
- &lt;/code&gt;&lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs26">val async: AsyncBuilder</div>
 <div class="fsdocs-tip" id="fs27">val transaction: Transactions.TransactionScope</div>
 <div class="fsdocs-tip" id="fs28">namespace System.Transactions</div>
 <div class="fsdocs-tip" id="fs29">Multiple items<br />type TransactionScope =
@@ -326,56 +457,28 @@ type TransactionScopeAsyncFlowOption =
 <div class="fsdocs-tip" id="fs31">field Transactions.TransactionScopeAsyncFlowOption.Enabled: Transactions.TransactionScopeAsyncFlowOption = 1<br /><em>&lt;summary&gt;Specifies that transaction flow across thread continuations is enabled.&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs32">val context: SqlDataProvider&lt;...&gt;.dataContext</div>
 <div class="fsdocs-tip" id="fs33">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="fsdocs-tip" id="fs34">val fetched: seq&lt;obj&gt;</div>
-<div class="fsdocs-tip" id="fs35">val query: Linq.QueryBuilder<br /><em>&lt;summary&gt;Builds a query using query syntax and operators.&lt;/summary&gt;<br />&lt;example id=&quot;query-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&amp;lt;int&amp;gt;) =
-     query {
-         for x in xs do
-         where (x % 2 = 0)
-         sortBy x
-         select (x+x)
-      }
-
- let data = [1; 2; 6; 7; 3; 6; 2; 1]
-
- findEvensAndSortAndDouble (data.AsQueryable()) |&amp;gt; Seq.toList
- &lt;/code&gt;
- Evaluates to &lt;c&gt;[4; 4; 12; 12]&lt;/c&gt;.
- &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs34">val fetched: obj seq</div>
+<div class="fsdocs-tip" id="fs35">val query: Linq.QueryBuilder</div>
 <div class="fsdocs-tip" id="fs36">val t2: obj</div>
 <div class="fsdocs-tip" id="fs37">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
 
-Calls Linq.QueryBuilder.Join<br /><em>&lt;summary&gt;A query operator that correlates two sets of selected values based on matching keys. 
- Normal usage is &#39;join y in elements2 on (key1 = key2)&#39;. 
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
+Calls Linq.QueryBuilder.Join</div>
 <div class="fsdocs-tip" id="fs38">val t1: obj</div>
 <div class="fsdocs-tip" id="fs39">custom operation: where (bool)
 
-Calls Linq.QueryBuilder.Where<br /><em>&lt;summary&gt;A query operator that selects those elements based on a specified predicate. 
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
+Calls Linq.QueryBuilder.Where</div>
 <div class="fsdocs-tip" id="fs40">custom operation: select (&#39;Result)
 
-Calls Linq.QueryBuilder.Select<br /><em>&lt;summary&gt;A query operator that projects each of the elements selected so far.
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
+Calls Linq.QueryBuilder.Select</div>
 <div class="fsdocs-tip" id="fs41">Multiple items<br />module Seq
 
 from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
-from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations for working with values of type &lt;see cref=&quot;T:Microsoft.FSharp.Collections.seq`1&quot; /&gt;.&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs42">val executeQueryAsync: (Linq.IQueryable&lt;&#39;a&gt; -&gt; Task&lt;seq&lt;&#39;a&gt;&gt;)<br /><em>&lt;summary&gt;
+from Microsoft.FSharp.Collections</div>
+<div class="fsdocs-tip" id="fs42">val executeQueryAsync: (Linq.IQueryable&lt;&#39;a&gt; -&gt; Task&lt;&#39;a seq&gt;)<br /><em>&lt;summary&gt;
  Execute SQLProvider query and release the OS thread while query is being executed.
 &lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs43">val iter: action: (&#39;T -&gt; unit) -&gt; source: seq&lt;&#39;T&gt; -&gt; unit<br /><em>&lt;summary&gt;Applies the given function to each element of the collection.&lt;/summary&gt;<br />&lt;param name=&quot;action&quot;&gt;A function to apply to each element of the sequence.&lt;/param&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;example id=&quot;iter-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- [&quot;a&quot;; &quot;b&quot;; &quot;c&quot;] |&amp;gt; Seq.iter (printfn &quot;%s&quot;)
- &lt;/code&gt;
- Evaluates to &lt;c&gt;unit&lt;/c&gt; and prints
- &lt;code&gt;
- a
- b
- c
- &lt;/code&gt;
- in the console.
- &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs43">val iter: action: (&#39;T -&gt; unit) -&gt; source: &#39;T seq -&gt; unit</div>
 <div class="fsdocs-tip" id="fs44">val entity: obj</div>
 <div class="fsdocs-tip" id="fs45">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
@@ -391,12 +494,7 @@ type DateTime =
   member AddYears: value: int -&gt; DateTime
   ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs46">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
-<div class="fsdocs-tip" id="fs47">val box: value: &#39;T -&gt; obj<br /><em>&lt;summary&gt;Boxes a strongly typed value.&lt;/summary&gt;<br />&lt;param name=&quot;value&quot;&gt;The value to box.&lt;/param&gt;<br />&lt;returns&gt;The boxed object.&lt;/returns&gt;<br />&lt;example id=&quot;box-example&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let x: int = 123
- let obj1 = box x    //  obj1 is a generic object type
- unbox&amp;lt;int&amp;gt; obj1     //  Evaluates to 123 (int)
- unbox&amp;lt;double&amp;gt; obj1  //  Throws System.InvalidCastException
- &lt;/code&gt;&lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs47">val box: value: &#39;T -&gt; obj</div>
 <div class="fsdocs-tip" id="fs48">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdatesAsync() : Task<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs49">Transactions.TransactionScope.Complete() : unit</div>
 <div class="fsdocs-tip" id="fs50">Multiple items<br />type Async =
@@ -407,37 +505,50 @@ type DateTime =
   static member AwaitWaitHandle: waitHandle: WaitHandle * ?millisecondsTimeout: int -&gt; Async&lt;bool&gt;
   static member CancelDefaultToken: unit -&gt; unit
   static member Catch: computation: Async&lt;&#39;T&gt; -&gt; Async&lt;Choice&lt;&#39;T,exn&gt;&gt;
-  static member Choice: computations: seq&lt;Async&lt;&#39;T option&gt;&gt; -&gt; Async&lt;&#39;T option&gt;
+  static member Choice: computations: Async&lt;&#39;T option&gt; seq -&gt; Async&lt;&#39;T option&gt;
   static member FromBeginEnd: beginAction: (AsyncCallback * obj -&gt; IAsyncResult) * endAction: (IAsyncResult -&gt; &#39;T) * ?cancelAction: (unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; + 3 overloads
   static member FromContinuations: callback: ((&#39;T -&gt; unit) * (exn -&gt; unit) * (OperationCanceledException -&gt; unit) -&gt; unit) -&gt; Async&lt;&#39;T&gt;
-  ...<br /><em>&lt;summary&gt;Holds static members for creating and manipulating asynchronous computations.&lt;/summary&gt;<br />&lt;remarks&gt;
-  See also &lt;a href=&quot;https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows&quot;&gt;F# Language Guide - Async Workflows&lt;/a&gt;.
- &lt;/remarks&gt;<br />&lt;category index=&quot;1&quot;&gt;Async Programming&lt;/category&gt;</em><br /><br />--------------------<br />type Async&lt;&#39;T&gt;<br /><em>&lt;summary&gt;
- An asynchronous computation, which, when run, will eventually produce a value  of type T, or else raises an exception.
- &lt;/summary&gt;<br />&lt;remarks&gt;
-  This type has no members. Asynchronous computations are normally specified either by using an async expression
-  or the static methods in the &lt;see cref=&quot;T:Microsoft.FSharp.Control.FSharpAsync`1&quot; /&gt; type.
-
-  See also &lt;a href=&quot;https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows&quot;&gt;F# Language Guide - Async Workflows&lt;/a&gt;.
- &lt;/remarks&gt;<br />&lt;namespacedoc&gt;&lt;summary&gt;
-   Library functionality for asynchronous programming, events and agents. See also
-   &lt;a href=&quot;https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows&quot;&gt;Asynchronous Programming&lt;/a&gt;, 
-   &lt;a href=&quot;https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/members/events&quot;&gt;Events&lt;/a&gt; and
-   &lt;a href=&quot;https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/lazy-expressions&quot;&gt;Lazy Expressions&lt;/a&gt; in the
-   F# Language Guide.
- &lt;/summary&gt;&lt;/namespacedoc&gt;<br />&lt;category index=&quot;1&quot;&gt;Async Programming&lt;/category&gt;</em></div>
+  ...<br /><br />--------------------<br />type Async&lt;&#39;T&gt;</div>
 <div class="fsdocs-tip" id="fs51">static member Async.StartAsTask: computation: Async&lt;&#39;T&gt; * ?taskCreationOptions: TaskCreationOptions * ?cancellationToken: Threading.CancellationToken -&gt; Task&lt;&#39;T&gt;</div>
 
-        </div>
-
-        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
-        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
-        <!-- END SEARCH BOX: this adds support for the search box -->
     </div>
-</body>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <ul>
+  <li class="level-1">
+    <a href="#Asynchronous-Database-Operation">
+      Asynchronous Database Operation
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Async-queries-and-updates">
+      Async queries and updates
+    </a>
+  </li>
+  <li class="level-4">
+    <a href="#Database-asynchrony-can-t-be-used-as-a-way-to-do-parallelism-inside-one-context">
+      Database asynchrony can't be used as a way to do parallelism inside one context.
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Why-Not-to-Use-Async">
+      Why Not to Use Async
+    </a>
+  </li>
+</ul>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
 
+</body>
 </html>

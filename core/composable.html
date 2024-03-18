@@ -1,80 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
 <head>
-    <meta charset="utf-8">
-    <title>Composable Queries
-</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="author" content="pezipink,colinbull,thorium">
-
-    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
-    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-    <!-- END SEARCH BOX: this adds support for the search box -->
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="Composable Queries
+" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="Composable Queries
+">
     
-	<style>
-		#fsdocs-content li {
-			margin: 0px 0px 5px 0px;
-		}
-		.navbar-nav .nav-link {
-			padding-top: 0.2rem;
-			padding-bottom: 0.2rem;
-		}
-	</style>
+    <title>Composable Queries
+ | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
 </head>
+<body class="content">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
 
-<body>
-    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-		
-        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" alt="Fork me on GitHub"></a>
-			<div style="height: 105px"></div>
+  </a>
+</li>             
+<li class="nav-item active">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
 
-            <ul class="navbar-nav">
-                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
-                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
-                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
-								
-				<li class="nav-header" style="text-transform: uppercase">
-					Documentation
-				</li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
 
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to make a contribution
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    general
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    SQL Type Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
                 <li class="nav-header">
   API Reference
 </li>             
@@ -84,30 +194,61 @@
   </a>
 </li>
             </ul>
-			
-            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-            <div id="header">
-                <div class="searchbox" id="fsdocs-searchbox">
-                    <label for="search-by">
-                        <i class="fas fa-search"></i>
-                    </label>
-                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
-                    <span data-search-clear="">
-                        <i class="fas fa-times"></i>
-                    </span>
-                </div>
-            </div>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
 
-            <!-- END SEARCH BOX: this adds support for the search box -->
-        </div>
-    </nav>
-    <div class="container">
-        <div class="masthead">
-            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
-        </div>
-        <hr />
-        <div class="container" id="fsdocs-content">
-            <h1><a name="Composable-Queries" class="anchor" href="#Composable-Queries">Composable Queries</a></h1>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <h1><a name="Composable-Queries" class="anchor" href="#Composable-Queries">Composable Queries</a></h1>
 <h2><a name="Definition-of-Composable-Queries" class="anchor" href="#Definition-of-Composable-Queries">Definition of Composable Queries</a></h2>
 <p>Basicly composable methods are those that you can chain together to build the desired functionality out of smaller parts.
 By passing functions as parameters you are able to generate higher-order query operations.
@@ -148,11 +289,11 @@ This second query produces the following output:</p>
 </code></pre>
 <p>SQLProvider to Objects queries are composable because they operate on and usually return variables of type <code>IQueryable&lt;T&gt;</code>.
 In other words, SQLProvider queries typically follow this pattern:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs32', 48)" onmouseover="showTip(event, 'fs32', 48)" class="id">qry</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs33', 49)" onmouseover="showTip(event, 'fs33', 49)" class="if">IQueryable</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span class="id">T</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs21', 50)" onmouseover="showTip(event, 'fs21', 50)" class="k">query</span> <span class="pn">{</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs32', 48)" onmouseover="showTip(event, 'fs32', 48)" class="id">qry</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs33', 49)" onmouseover="showTip(event, 'fs33', 49)" class="if">IQueryable</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span onmouseout="hideTip(event, 'fs34', 50)" onmouseover="showTip(event, 'fs34', 50)" class="id">T</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 51)" onmouseover="showTip(event, 'fs21', 51)" class="k">query</span> <span class="pn">{</span>
         <span class="c">//for is like C# foreach</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs34', 51)" onmouseover="showTip(event, 'fs34', 51)" class="fn">x</span> <span class="k">in</span> <span class="pn">(</span><span class="id">xs</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs33', 52)" onmouseover="showTip(event, 'fs33', 52)" class="if">IQueryable</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span class="id">T</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs27', 53)" onmouseover="showTip(event, 'fs27', 53)" class="k">select</span> <span onmouseout="hideTip(event, 'fs34', 54)" onmouseover="showTip(event, 'fs34', 54)" class="fn">x</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs35', 52)" onmouseover="showTip(event, 'fs35', 52)" class="fn">x</span> <span class="k">in</span> <span class="pn">(</span><span class="id">xs</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs33', 53)" onmouseover="showTip(event, 'fs33', 53)" class="if">IQueryable</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span onmouseout="hideTip(event, 'fs34', 54)" onmouseover="showTip(event, 'fs34', 54)" class="id">T</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs27', 55)" onmouseover="showTip(event, 'fs27', 55)" class="k">select</span> <span onmouseout="hideTip(event, 'fs35', 56)" onmouseover="showTip(event, 'fs35', 56)" class="fn">x</span>
     <span class="pn">}</span>
 
 <span class="c">//</span>
@@ -164,105 +305,105 @@ It allows you to take complex problems, break them into manageable pieces, and s
 They are both lazy by nature, meaning they aren’t evaluated until you enumerate over the results.</p>
 <p>Here an example:</p>
 <p>First you have to add .NET LINQ:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 55)" onmouseover="showTip(event, 'fs4', 55)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 56)" onmouseover="showTip(event, 'fs5', 56)" class="id">Linq</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 57)" onmouseover="showTip(event, 'fs4', 57)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 58)" onmouseover="showTip(event, 'fs5', 58)" class="id">Linq</span>
 </code></pre>
 <p>Then you can define a composable query outside the main query</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs35', 57)" onmouseover="showTip(event, 'fs35', 57)" class="rt">CustomersEntity</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 58)" onmouseover="showTip(event, 'fs9', 58)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 59)" onmouseover="showTip(event, 'fs36', 59)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.CustomersEntity``</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs36', 59)" onmouseover="showTip(event, 'fs36', 59)" class="rt">CustomersEntity</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 60)" onmouseover="showTip(event, 'fs9', 60)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 61)" onmouseover="showTip(event, 'fs37', 61)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.CustomersEntity``</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs37', 60)" onmouseover="showTip(event, 'fs37', 60)" class="fn">companyNameFilter</span> <span onmouseout="hideTip(event, 'fs38', 61)" onmouseover="showTip(event, 'fs38', 61)" class="fn">inUse</span> <span class="o">=</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 62)" onmouseover="showTip(event, 'fs38', 62)" class="fn">companyNameFilter</span> <span onmouseout="hideTip(event, 'fs39', 63)" onmouseover="showTip(event, 'fs39', 63)" class="fn">inUse</span> <span class="o">=</span>
 
-    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs39', 62)" onmouseover="showTip(event, 'fs39', 62)" class="fn">myFilter2</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs33', 63)" onmouseover="showTip(event, 'fs33', 63)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs35', 64)" onmouseover="showTip(event, 'fs35', 64)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs33', 65)" onmouseover="showTip(event, 'fs33', 65)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs35', 66)" onmouseover="showTip(event, 'fs35', 66)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="o">=</span> <span class="k">fun</span> <span onmouseout="hideTip(event, 'fs40', 67)" onmouseover="showTip(event, 'fs40', 67)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs40', 68)" onmouseover="showTip(event, 'fs40', 68)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 69)" onmouseover="showTip(event, 'fs41', 69)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs42', 70)" onmouseover="showTip(event, 'fs42', 70)" class="fn">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs42', 71)" onmouseover="showTip(event, 'fs42', 71)" class="fn">i</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs43', 72)" onmouseover="showTip(event, 'fs43', 72)" class="id">CustomerId</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span><span class="pn">)</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs40', 64)" onmouseover="showTip(event, 'fs40', 64)" class="fn">myFilter2</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs33', 65)" onmouseover="showTip(event, 'fs33', 65)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs36', 66)" onmouseover="showTip(event, 'fs36', 66)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs33', 67)" onmouseover="showTip(event, 'fs33', 67)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs36', 68)" onmouseover="showTip(event, 'fs36', 68)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="o">=</span> <span class="k">fun</span> <span onmouseout="hideTip(event, 'fs41', 69)" onmouseover="showTip(event, 'fs41', 69)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs41', 70)" onmouseover="showTip(event, 'fs41', 70)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs42', 71)" onmouseover="showTip(event, 'fs42', 71)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs43', 72)" onmouseover="showTip(event, 'fs43', 72)" class="fn">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs43', 73)" onmouseover="showTip(event, 'fs43', 73)" class="fn">i</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs44', 74)" onmouseover="showTip(event, 'fs44', 74)" class="id">CustomerId</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span><span class="pn">)</span>
 
-    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 73)" onmouseover="showTip(event, 'fs44', 73)" class="fn">queryable</span><span class="pn">:</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs33', 74)" onmouseover="showTip(event, 'fs33', 74)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs35', 75)" onmouseover="showTip(event, 'fs35', 75)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs33', 76)" onmouseover="showTip(event, 'fs33', 76)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs35', 77)" onmouseover="showTip(event, 'fs35', 77)" class="rt">CustomersEntity</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="o">=</span>
-        <span class="k">match</span> <span onmouseout="hideTip(event, 'fs38', 78)" onmouseover="showTip(event, 'fs38', 78)" class="fn">inUse</span> <span class="k">with</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs45', 75)" onmouseover="showTip(event, 'fs45', 75)" class="fn">queryable</span><span class="pn">:</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs33', 76)" onmouseover="showTip(event, 'fs33', 76)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs36', 77)" onmouseover="showTip(event, 'fs36', 77)" class="rt">CustomersEntity</span><span class="pn">&gt;</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs33', 78)" onmouseover="showTip(event, 'fs33', 78)" class="if">IQueryable</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs36', 79)" onmouseover="showTip(event, 'fs36', 79)" class="rt">CustomersEntity</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="o">=</span>
+        <span class="k">match</span> <span onmouseout="hideTip(event, 'fs39', 80)" onmouseover="showTip(event, 'fs39', 80)" class="fn">inUse</span> <span class="k">with</span>
         <span class="pn">|</span><span class="k">true</span> <span class="k">-&gt;</span>
-            <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs45', 79)" onmouseover="showTip(event, 'fs45', 79)" class="fn">iq</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs45', 80)" onmouseover="showTip(event, 'fs45', 80)" class="fn">iq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 81)" onmouseover="showTip(event, 'fs41', 81)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs46', 82)" onmouseover="showTip(event, 'fs46', 82)" class="fn">c</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs35', 83)" onmouseover="showTip(event, 'fs35', 83)" class="rt">CustomersEntity</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs46', 84)" onmouseover="showTip(event, 'fs46', 84)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 85)" onmouseover="showTip(event, 'fs29', 85)" class="id">CompanyName</span> <span class="o">=</span> <span class="s">&quot;The Big Cheese&quot;</span><span class="pn">)</span><span class="pn">)</span>
+            <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs46', 81)" onmouseover="showTip(event, 'fs46', 81)" class="fn">iq</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs46', 82)" onmouseover="showTip(event, 'fs46', 82)" class="fn">iq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs42', 83)" onmouseover="showTip(event, 'fs42', 83)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs47', 84)" onmouseover="showTip(event, 'fs47', 84)" class="fn">c</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs36', 85)" onmouseover="showTip(event, 'fs36', 85)" class="rt">CustomersEntity</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs47', 86)" onmouseover="showTip(event, 'fs47', 86)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 87)" onmouseover="showTip(event, 'fs29', 87)" class="id">CompanyName</span> <span class="o">=</span> <span class="s">&quot;The Big Cheese&quot;</span><span class="pn">)</span><span class="pn">)</span>
         <span class="pn">|</span><span class="k">false</span> <span class="k">-&gt;</span> 
-            <span onmouseout="hideTip(event, 'fs39', 86)" onmouseover="showTip(event, 'fs39', 86)" class="fn">myFilter2</span>
-    <span onmouseout="hideTip(event, 'fs44', 87)" onmouseover="showTip(event, 'fs44', 87)" class="fn">queryable</span>
+            <span onmouseout="hideTip(event, 'fs40', 88)" onmouseover="showTip(event, 'fs40', 88)" class="fn">myFilter2</span>
+    <span onmouseout="hideTip(event, 'fs45', 89)" onmouseover="showTip(event, 'fs45', 89)" class="fn">queryable</span>
 </code></pre>
 <p>(Let's asume that your inUse some complex data:
 E.g. Your sub-queries would come from other functions. Basic booleans you can just include to your where-clause)</p>
 <p>Then you can create the main query</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 88)" onmouseover="showTip(event, 'fs20', 88)" class="id">query1</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs21', 89)" onmouseover="showTip(event, 'fs21', 89)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs22', 90)" onmouseover="showTip(event, 'fs22', 90)" class="fn">customers</span>  <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 91)" onmouseover="showTip(event, 'fs18', 91)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 92)" onmouseover="showTip(event, 'fs23', 92)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 93)" onmouseover="showTip(event, 'fs24', 93)" class="id">Customers</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 94)" onmouseover="showTip(event, 'fs25', 94)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 95)" onmouseover="showTip(event, 'fs22', 95)" class="fn">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 96)" onmouseover="showTip(event, 'fs26', 96)" class="id">ContactTitle</span> <span class="o">=</span> <span class="s">&quot;USA&quot;</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs27', 97)" onmouseover="showTip(event, 'fs27', 97)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 98)" onmouseover="showTip(event, 'fs22', 98)" class="fn">customers</span><span class="pn">)</span><span class="pn">}</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 90)" onmouseover="showTip(event, 'fs20', 90)" class="id">query1</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 91)" onmouseover="showTip(event, 'fs21', 91)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs22', 92)" onmouseover="showTip(event, 'fs22', 92)" class="fn">customers</span>  <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 93)" onmouseover="showTip(event, 'fs18', 93)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 94)" onmouseover="showTip(event, 'fs23', 94)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 95)" onmouseover="showTip(event, 'fs24', 95)" class="id">Customers</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs25', 96)" onmouseover="showTip(event, 'fs25', 96)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 97)" onmouseover="showTip(event, 'fs22', 97)" class="fn">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 98)" onmouseover="showTip(event, 'fs26', 98)" class="id">ContactTitle</span> <span class="o">=</span> <span class="s">&quot;USA&quot;</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs27', 99)" onmouseover="showTip(event, 'fs27', 99)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 100)" onmouseover="showTip(event, 'fs22', 100)" class="fn">customers</span><span class="pn">)</span><span class="pn">}</span>
 </code></pre>
 <p>and now call you are able to call the second query like this</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs47', 99)" onmouseover="showTip(event, 'fs47', 99)" class="id">res</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs37', 100)" onmouseover="showTip(event, 'fs37', 100)" class="fn">companyNameFilter</span> <span class="k">true</span> <span onmouseout="hideTip(event, 'fs20', 101)" onmouseover="showTip(event, 'fs20', 101)" class="id">query1</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 102)" onmouseover="showTip(event, 'fs30', 102)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 103)" onmouseover="showTip(event, 'fs31', 103)" class="id">toArray</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 101)" onmouseover="showTip(event, 'fs48', 101)" class="id">res</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs38', 102)" onmouseover="showTip(event, 'fs38', 102)" class="fn">companyNameFilter</span> <span class="k">true</span> <span onmouseout="hideTip(event, 'fs20', 103)" onmouseover="showTip(event, 'fs20', 103)" class="id">query1</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 104)" onmouseover="showTip(event, 'fs30', 104)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 105)" onmouseover="showTip(event, 'fs31', 105)" class="id">toArray</span>
 </code></pre>
 <h3><a name="Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery" class="anchor" href="#Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery">Generate composable queries by using FSharp.Linq.ComposableQuery</a></h3>
 <p>The SQLProvider also supports composable queries by integrating following library FSharpLinqComposableQuery.
 You can read more about that library here: <a href="http://fsprojects.github.io/FSharp.Linq.ComposableQuery">FSharp.Linq.ComposableQuery</a></p>
 <p>Because it is implemented in the SQLProvider you dont need to add FSharpComposableQuery in your script.</p>
 <p>Example for using FSharpComposableQuery</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 104)" onmouseover="showTip(event, 'fs48', 104)" class="id">qry1</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs21', 105)" onmouseover="showTip(event, 'fs21', 105)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs49', 106)" onmouseover="showTip(event, 'fs49', 106)" class="fn">u</span> <span class="k">in</span> <span class="id">dbContext</span><span class="pn">.</span><span class="id">Users</span> <span class="k">do</span>
-            <span onmouseout="hideTip(event, 'fs27', 107)" onmouseover="showTip(event, 'fs27', 107)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs49', 108)" onmouseover="showTip(event, 'fs49', 108)" class="fn">u</span><span class="pn">.</span><span class="id">Id</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs49', 109)" onmouseover="showTip(event, 'fs49', 109)" class="fn">u</span><span class="pn">.</span><span class="id">Name</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs49', 110)" onmouseover="showTip(event, 'fs49', 110)" class="fn">u</span><span class="pn">.</span><span class="id">Email</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs49', 106)" onmouseover="showTip(event, 'fs49', 106)" class="id">qry1</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 107)" onmouseover="showTip(event, 'fs21', 107)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs50', 108)" onmouseover="showTip(event, 'fs50', 108)" class="fn">u</span> <span class="k">in</span> <span class="id">dbContext</span><span class="pn">.</span><span class="id">Users</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs27', 109)" onmouseover="showTip(event, 'fs27', 109)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs50', 110)" onmouseover="showTip(event, 'fs50', 110)" class="fn">u</span><span class="pn">.</span><span class="id">Id</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs50', 111)" onmouseover="showTip(event, 'fs50', 111)" class="fn">u</span><span class="pn">.</span><span class="id">Name</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs50', 112)" onmouseover="showTip(event, 'fs50', 112)" class="fn">u</span><span class="pn">.</span><span class="id">Email</span><span class="pn">)</span>
     <span class="pn">}</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 111)" onmouseover="showTip(event, 'fs50', 111)" class="id">qry2</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs21', 112)" onmouseover="showTip(event, 'fs21', 112)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs51', 113)" onmouseover="showTip(event, 'fs51', 113)" class="fn">c</span> <span class="k">in</span> <span class="id">dbContext</span><span class="pn">.</span><span class="id">Cars</span> <span class="k">do</span>
-            <span onmouseout="hideTip(event, 'fs27', 114)" onmouseover="showTip(event, 'fs27', 114)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs51', 115)" onmouseover="showTip(event, 'fs51', 115)" class="fn">c</span><span class="pn">.</span><span class="id">UserId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs51', 116)" onmouseover="showTip(event, 'fs51', 116)" class="fn">c</span><span class="pn">.</span><span class="id">Brand</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs51', 117)" onmouseover="showTip(event, 'fs51', 117)" class="fn">c</span><span class="pn">.</span><span class="id">Year</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs51', 113)" onmouseover="showTip(event, 'fs51', 113)" class="id">qry2</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 114)" onmouseover="showTip(event, 'fs21', 114)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs52', 115)" onmouseover="showTip(event, 'fs52', 115)" class="fn">c</span> <span class="k">in</span> <span class="id">dbContext</span><span class="pn">.</span><span class="id">Cars</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs27', 116)" onmouseover="showTip(event, 'fs27', 116)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs52', 117)" onmouseover="showTip(event, 'fs52', 117)" class="fn">c</span><span class="pn">.</span><span class="id">UserId</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs52', 118)" onmouseover="showTip(event, 'fs52', 118)" class="fn">c</span><span class="pn">.</span><span class="id">Brand</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs52', 119)" onmouseover="showTip(event, 'fs52', 119)" class="fn">c</span><span class="pn">.</span><span class="id">Year</span><span class="pn">)</span>
     <span class="pn">}</span>
 
-<span onmouseout="hideTip(event, 'fs21', 118)" onmouseover="showTip(event, 'fs21', 118)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs52', 119)" onmouseover="showTip(event, 'fs52', 119)" class="fn">i</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs53', 120)" onmouseover="showTip(event, 'fs53', 120)" class="fn">n</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs54', 121)" onmouseover="showTip(event, 'fs54', 121)" class="fn">e</span><span class="pn">)</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs48', 122)" onmouseover="showTip(event, 'fs48', 122)" class="id">qry1</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs55', 123)" onmouseover="showTip(event, 'fs55', 123)" class="k">join</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs49', 124)" onmouseover="showTip(event, 'fs49', 124)" class="fn">u</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs56', 125)" onmouseover="showTip(event, 'fs56', 125)" class="fn">b</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs57', 126)" onmouseover="showTip(event, 'fs57', 126)" class="fn">y</span><span class="pn">)</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs50', 127)" onmouseover="showTip(event, 'fs50', 127)" class="id">qry2</span> <span class="k">on</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs52', 128)" onmouseover="showTip(event, 'fs52', 128)" class="fn">i</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs49', 129)" onmouseover="showTip(event, 'fs49', 129)" class="fn">u</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs25', 130)" onmouseover="showTip(event, 'fs25', 130)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs57', 131)" onmouseover="showTip(event, 'fs57', 131)" class="fn">y</span> <span class="o">&gt;</span> <span class="n">2015</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs27', 132)" onmouseover="showTip(event, 'fs27', 132)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs52', 133)" onmouseover="showTip(event, 'fs52', 133)" class="fn">i</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs53', 134)" onmouseover="showTip(event, 'fs53', 134)" class="fn">n</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs54', 135)" onmouseover="showTip(event, 'fs54', 135)" class="fn">e</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs49', 136)" onmouseover="showTip(event, 'fs49', 136)" class="fn">u</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs56', 137)" onmouseover="showTip(event, 'fs56', 137)" class="fn">b</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs57', 138)" onmouseover="showTip(event, 'fs57', 138)" class="fn">y</span><span class="pn">)</span>
-    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 139)" onmouseover="showTip(event, 'fs30', 139)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 140)" onmouseover="showTip(event, 'fs31', 140)" class="id">toArray</span>
+<span onmouseout="hideTip(event, 'fs21', 120)" onmouseover="showTip(event, 'fs21', 120)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs53', 121)" onmouseover="showTip(event, 'fs53', 121)" class="fn">i</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs54', 122)" onmouseover="showTip(event, 'fs54', 122)" class="fn">n</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs55', 123)" onmouseover="showTip(event, 'fs55', 123)" class="fn">e</span><span class="pn">)</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs49', 124)" onmouseover="showTip(event, 'fs49', 124)" class="id">qry1</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs56', 125)" onmouseover="showTip(event, 'fs56', 125)" class="k">join</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs50', 126)" onmouseover="showTip(event, 'fs50', 126)" class="fn">u</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs57', 127)" onmouseover="showTip(event, 'fs57', 127)" class="fn">b</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs58', 128)" onmouseover="showTip(event, 'fs58', 128)" class="fn">y</span><span class="pn">)</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs51', 129)" onmouseover="showTip(event, 'fs51', 129)" class="id">qry2</span> <span class="k">on</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs53', 130)" onmouseover="showTip(event, 'fs53', 130)" class="fn">i</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs50', 131)" onmouseover="showTip(event, 'fs50', 131)" class="fn">u</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs25', 132)" onmouseover="showTip(event, 'fs25', 132)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs58', 133)" onmouseover="showTip(event, 'fs58', 133)" class="fn">y</span> <span class="o">&gt;</span> <span class="n">2015</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs27', 134)" onmouseover="showTip(event, 'fs27', 134)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs53', 135)" onmouseover="showTip(event, 'fs53', 135)" class="fn">i</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs54', 136)" onmouseover="showTip(event, 'fs54', 136)" class="fn">n</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs55', 137)" onmouseover="showTip(event, 'fs55', 137)" class="fn">e</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs50', 138)" onmouseover="showTip(event, 'fs50', 138)" class="fn">u</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs57', 139)" onmouseover="showTip(event, 'fs57', 139)" class="fn">b</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs58', 140)" onmouseover="showTip(event, 'fs58', 140)" class="fn">y</span><span class="pn">)</span>
+    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 141)" onmouseover="showTip(event, 'fs30', 141)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 142)" onmouseover="showTip(event, 'fs31', 142)" class="id">toArray</span>
 </code></pre>
 <h3><a name="Nested-Select-Where-Queries" class="anchor" href="#Nested-Select-Where-Queries">Nested Select Where Queries</a></h3>
 <p>You can create a query like <code>SELECT * FROM xs WHERE xs.x IN (SELECT y FROM ys))</code>
 with either LINQ Contains or custom operators: in <code>|=|</code> and not-in <code>|&lt;&gt;|</code>
 This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 141)" onmouseover="showTip(event, 'fs4', 141)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 142)" onmouseover="showTip(event, 'fs5', 142)" class="id">Linq</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 143)" onmouseover="showTip(event, 'fs4', 143)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 144)" onmouseover="showTip(event, 'fs5', 144)" class="id">Linq</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs58', 143)" onmouseover="showTip(event, 'fs58', 143)" class="id">nestedQueryTest</span> <span class="o">=</span>
-    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs59', 144)" onmouseover="showTip(event, 'fs59', 144)" class="fn">qry1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 145)" onmouseover="showTip(event, 'fs21', 145)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs60', 146)" onmouseover="showTip(event, 'fs60', 146)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 147)" onmouseover="showTip(event, 'fs18', 147)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 148)" onmouseover="showTip(event, 'fs25', 148)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs60', 149)" onmouseover="showTip(event, 'fs60', 149)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">.</span><span class="id">StartsWith</span><span class="pn">(</span><span class="s">&quot;S&quot;</span><span class="pn">)</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs27', 150)" onmouseover="showTip(event, 'fs27', 150)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs60', 151)" onmouseover="showTip(event, 'fs60', 151)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs59', 145)" onmouseover="showTip(event, 'fs59', 145)" class="id">nestedQueryTest</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs60', 146)" onmouseover="showTip(event, 'fs60', 146)" class="fn">qry1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 147)" onmouseover="showTip(event, 'fs21', 147)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs61', 148)" onmouseover="showTip(event, 'fs61', 148)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 149)" onmouseover="showTip(event, 'fs18', 149)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs25', 150)" onmouseover="showTip(event, 'fs25', 150)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs61', 151)" onmouseover="showTip(event, 'fs61', 151)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">.</span><span class="id">StartsWith</span><span class="pn">(</span><span class="s">&quot;S&quot;</span><span class="pn">)</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs27', 152)" onmouseover="showTip(event, 'fs27', 152)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs61', 153)" onmouseover="showTip(event, 'fs61', 153)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">)</span>
     <span class="pn">}</span>
-    <span onmouseout="hideTip(event, 'fs21', 152)" onmouseover="showTip(event, 'fs21', 152)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs60', 153)" onmouseover="showTip(event, 'fs60', 153)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 154)" onmouseover="showTip(event, 'fs18', 154)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 155)" onmouseover="showTip(event, 'fs25', 155)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs59', 156)" onmouseover="showTip(event, 'fs59', 156)" class="fn">qry1</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs61', 157)" onmouseover="showTip(event, 'fs61', 157)" class="id">Contains</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs60', 158)" onmouseover="showTip(event, 'fs60', 158)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">)</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs27', 159)" onmouseover="showTip(event, 'fs27', 159)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs60', 160)" onmouseover="showTip(event, 'fs60', 160)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs60', 161)" onmouseover="showTip(event, 'fs60', 161)" class="fn">emp</span><span class="pn">.</span><span class="id">LastName</span><span class="pn">)</span>
-    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 162)" onmouseover="showTip(event, 'fs30', 162)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 163)" onmouseover="showTip(event, 'fs31', 163)" class="id">toArray</span>
+    <span onmouseout="hideTip(event, 'fs21', 154)" onmouseover="showTip(event, 'fs21', 154)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs61', 155)" onmouseover="showTip(event, 'fs61', 155)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 156)" onmouseover="showTip(event, 'fs18', 156)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs25', 157)" onmouseover="showTip(event, 'fs25', 157)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs60', 158)" onmouseover="showTip(event, 'fs60', 158)" class="fn">qry1</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs62', 159)" onmouseover="showTip(event, 'fs62', 159)" class="id">Contains</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs61', 160)" onmouseover="showTip(event, 'fs61', 160)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">)</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs27', 161)" onmouseover="showTip(event, 'fs27', 161)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs61', 162)" onmouseover="showTip(event, 'fs61', 162)" class="fn">emp</span><span class="pn">.</span><span class="id">FirstName</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs61', 163)" onmouseover="showTip(event, 'fs61', 163)" class="fn">emp</span><span class="pn">.</span><span class="id">LastName</span><span class="pn">)</span>
+    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 164)" onmouseover="showTip(event, 'fs30', 164)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 165)" onmouseover="showTip(event, 'fs31', 165)" class="id">toArray</span>
 </code></pre>
 <h3><a name="Using-non-strongly-typed-__-GetColumn-name" class="anchor" href="#Using-non-strongly-typed-__-GetColumn-name">Using non-strongly-typed __.GetColumn "name"</a></h3>
 <p>All the entities inherit from SqlEntity which has GetColumn-method.
 So you can use non-strongly-typed columns like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs62', 164)" onmouseover="showTip(event, 'fs62', 164)" class="id">qry</span> <span class="o">=</span> 
-    <span onmouseout="hideTip(event, 'fs21', 165)" onmouseover="showTip(event, 'fs21', 165)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs63', 166)" onmouseover="showTip(event, 'fs63', 166)" class="fn">x</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs20', 167)" onmouseover="showTip(event, 'fs20', 167)" class="id">query1</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 168)" onmouseover="showTip(event, 'fs25', 168)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs63', 169)" onmouseover="showTip(event, 'fs63', 169)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs64', 170)" onmouseover="showTip(event, 'fs64', 170)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs65', 171)" onmouseover="showTip(event, 'fs65', 171)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs27', 172)" onmouseover="showTip(event, 'fs27', 172)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs63', 173)" onmouseover="showTip(event, 'fs63', 173)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs64', 174)" onmouseover="showTip(event, 'fs64', 174)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs65', 175)" onmouseover="showTip(event, 'fs65', 175)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span>
-    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 176)" onmouseover="showTip(event, 'fs30', 176)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs66', 177)" onmouseover="showTip(event, 'fs66', 177)" class="id">head</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs63', 166)" onmouseover="showTip(event, 'fs63', 166)" class="id">qry</span> <span class="o">=</span> 
+    <span onmouseout="hideTip(event, 'fs21', 167)" onmouseover="showTip(event, 'fs21', 167)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs64', 168)" onmouseover="showTip(event, 'fs64', 168)" class="fn">x</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs20', 169)" onmouseover="showTip(event, 'fs20', 169)" class="id">query1</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs25', 170)" onmouseover="showTip(event, 'fs25', 170)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs64', 171)" onmouseover="showTip(event, 'fs64', 171)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs65', 172)" onmouseover="showTip(event, 'fs65', 172)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs66', 173)" onmouseover="showTip(event, 'fs66', 173)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs27', 174)" onmouseover="showTip(event, 'fs27', 174)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs64', 175)" onmouseover="showTip(event, 'fs64', 175)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs65', 176)" onmouseover="showTip(event, 'fs65', 176)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs66', 177)" onmouseover="showTip(event, 'fs66', 177)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span>
+    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 178)" onmouseover="showTip(event, 'fs30', 178)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs67', 179)" onmouseover="showTip(event, 'fs67', 179)" class="id">head</span>
 </code></pre>
 <p>However this is not recommended as one of the SQLProvider's key benefits is strong typing.</p>
 <h2><a name="Generate-composable-queries-from-quotations" class="anchor" href="#Generate-composable-queries-from-quotations">Generate composable queries from quotations</a></h2>
 <p>You can also construct composable queries using the F# quotation mechanism. For
 example, if you need to select a filter function at runtime, you could write the
 filters as quotations, and then include them into query like that:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs67', 178)" onmouseover="showTip(event, 'fs67', 178)" class="id">johnFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs68', 179)" onmouseover="showTip(event, 'fs68', 179)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 180)" onmouseover="showTip(event, 'fs9', 180)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 181)" onmouseover="showTip(event, 'fs36', 181)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs68', 182)" onmouseover="showTip(event, 'fs68', 182)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs69', 183)" onmouseover="showTip(event, 'fs69', 183)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;John&quot;</span> <span class="pn">@&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs70', 184)" onmouseover="showTip(event, 'fs70', 184)" class="id">pamFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs68', 185)" onmouseover="showTip(event, 'fs68', 185)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 186)" onmouseover="showTip(event, 'fs9', 186)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 187)" onmouseover="showTip(event, 'fs36', 187)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs68', 188)" onmouseover="showTip(event, 'fs68', 188)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs69', 189)" onmouseover="showTip(event, 'fs69', 189)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;Pam&quot;</span> <span class="pn">@&gt;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs68', 180)" onmouseover="showTip(event, 'fs68', 180)" class="id">johnFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs69', 181)" onmouseover="showTip(event, 'fs69', 181)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 182)" onmouseover="showTip(event, 'fs9', 182)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 183)" onmouseover="showTip(event, 'fs37', 183)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs69', 184)" onmouseover="showTip(event, 'fs69', 184)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 185)" onmouseover="showTip(event, 'fs70', 185)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;John&quot;</span> <span class="pn">@&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs71', 186)" onmouseover="showTip(event, 'fs71', 186)" class="id">pamFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs69', 187)" onmouseover="showTip(event, 'fs69', 187)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 188)" onmouseover="showTip(event, 'fs9', 188)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 189)" onmouseover="showTip(event, 'fs37', 189)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs69', 190)" onmouseover="showTip(event, 'fs69', 190)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 191)" onmouseover="showTip(event, 'fs70', 191)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;Pam&quot;</span> <span class="pn">@&gt;</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs71', 190)" onmouseover="showTip(event, 'fs71', 190)" class="id">runtimeSelectedFilter</span> <span class="o">=</span> <span class="k">if</span> <span class="n">1</span> <span class="o">=</span> <span class="n">1</span> <span class="k">then</span> <span onmouseout="hideTip(event, 'fs67', 191)" onmouseover="showTip(event, 'fs67', 191)" class="id">johnFilter</span> <span class="k">else</span> <span onmouseout="hideTip(event, 'fs70', 192)" onmouseover="showTip(event, 'fs70', 192)" class="id">pamFilter</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs72', 193)" onmouseover="showTip(event, 'fs72', 193)" class="id">employees</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs21', 194)" onmouseover="showTip(event, 'fs21', 194)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs73', 195)" onmouseover="showTip(event, 'fs73', 195)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 196)" onmouseover="showTip(event, 'fs18', 196)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 197)" onmouseover="showTip(event, 'fs23', 197)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs74', 198)" onmouseover="showTip(event, 'fs74', 198)" class="id">Employees</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 199)" onmouseover="showTip(event, 'fs25', 199)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span class="o">%</span><span onmouseout="hideTip(event, 'fs71', 200)" onmouseover="showTip(event, 'fs71', 200)" class="id">runtimeSelectedFilter</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs73', 201)" onmouseover="showTip(event, 'fs73', 201)" class="fn">emp</span><span class="pn">)</span> 
-        <span onmouseout="hideTip(event, 'fs27', 202)" onmouseover="showTip(event, 'fs27', 202)" class="k">select</span> <span onmouseout="hideTip(event, 'fs73', 203)" onmouseover="showTip(event, 'fs73', 203)" class="fn">emp</span>
-    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 204)" onmouseover="showTip(event, 'fs30', 204)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 205)" onmouseover="showTip(event, 'fs31', 205)" class="id">toArray</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs72', 192)" onmouseover="showTip(event, 'fs72', 192)" class="id">runtimeSelectedFilter</span> <span class="o">=</span> <span class="k">if</span> <span class="n">1</span> <span class="o">=</span> <span class="n">1</span> <span class="k">then</span> <span onmouseout="hideTip(event, 'fs68', 193)" onmouseover="showTip(event, 'fs68', 193)" class="id">johnFilter</span> <span class="k">else</span> <span onmouseout="hideTip(event, 'fs71', 194)" onmouseover="showTip(event, 'fs71', 194)" class="id">pamFilter</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs73', 195)" onmouseover="showTip(event, 'fs73', 195)" class="id">employees</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 196)" onmouseover="showTip(event, 'fs21', 196)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs74', 197)" onmouseover="showTip(event, 'fs74', 197)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 198)" onmouseover="showTip(event, 'fs18', 198)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 199)" onmouseover="showTip(event, 'fs23', 199)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs75', 200)" onmouseover="showTip(event, 'fs75', 200)" class="id">Employees</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs25', 201)" onmouseover="showTip(event, 'fs25', 201)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span class="o">%</span><span onmouseout="hideTip(event, 'fs72', 202)" onmouseover="showTip(event, 'fs72', 202)" class="id">runtimeSelectedFilter</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs74', 203)" onmouseover="showTip(event, 'fs74', 203)" class="fn">emp</span><span class="pn">)</span> 
+        <span onmouseout="hideTip(event, 'fs27', 204)" onmouseover="showTip(event, 'fs27', 204)" class="k">select</span> <span onmouseout="hideTip(event, 'fs74', 205)" onmouseover="showTip(event, 'fs74', 205)" class="fn">emp</span>
+    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 206)" onmouseover="showTip(event, 'fs30', 206)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 207)" onmouseover="showTip(event, 'fs31', 207)" class="id">toArray</span>
 </code></pre>
 <p>Quotations are AST representations which the Linq-to-SQL translator can use.</p>
 
-            <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
+        <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
-  new: unit -&gt; LiteralAttribute<br /><em>&lt;summary&gt;Adding this attribute to a value causes it to be compiled as a CLI constant literal.&lt;/summary&gt;<br />&lt;category&gt;Attributes&lt;/category&gt;</em><br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
+  new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
 <div class="fsdocs-tip" id="fs2">[&lt;Literal&gt;]
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../files/sqlite&quot;</div>
 <div class="fsdocs-tip" id="fs3">[&lt;Literal&gt;]
@@ -318,47 +459,25 @@ type CaseSensitivityChange =
 <div class="fsdocs-tip" id="fs18">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
 <div class="fsdocs-tip" id="fs19">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs20">val query1: IQueryable&lt;SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity&gt;</div>
-<div class="fsdocs-tip" id="fs21">val query: Linq.QueryBuilder<br /><em>&lt;summary&gt;Builds a query using query syntax and operators.&lt;/summary&gt;<br />&lt;example id=&quot;query-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&amp;lt;int&amp;gt;) =
-     query {
-         for x in xs do
-         where (x % 2 = 0)
-         sortBy x
-         select (x+x)
-      }
-
- let data = [1; 2; 6; 7; 3; 6; 2; 1]
-
- findEvensAndSortAndDouble (data.AsQueryable()) |&amp;gt; Seq.toList
- &lt;/code&gt;
- Evaluates to &lt;c&gt;[4; 4; 12; 12]&lt;/c&gt;.
- &lt;/example&gt;</em></div>
+<div class="fsdocs-tip" id="fs21">val query: Linq.QueryBuilder</div>
 <div class="fsdocs-tip" id="fs22">val customers: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
 <div class="fsdocs-tip" id="fs24">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs25">custom operation: where (bool)
 
-Calls Linq.QueryBuilder.Where<br /><em>&lt;summary&gt;A query operator that selects those elements based on a specified predicate. 
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
+Calls Linq.QueryBuilder.Where</div>
 <div class="fsdocs-tip" id="fs26">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactTitle: string with get, set<br /><em>&lt;summary&gt;ContactTitle:   nvarchar(30)&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs27">custom operation: select (&#39;Result)
 
-Calls Linq.QueryBuilder.Select<br /><em>&lt;summary&gt;A query operator that projects each of the elements selected so far.
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
-<div class="fsdocs-tip" id="fs28">val query2: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity[]</div>
+Calls Linq.QueryBuilder.Select</div>
+<div class="fsdocs-tip" id="fs28">val query2: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity array</div>
 <div class="fsdocs-tip" id="fs29">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.CompanyName: string with get, set<br /><em>&lt;summary&gt;CompanyName:   nvarchar(40)&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs30">Multiple items<br />module Seq
 
 from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
-from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations for working with values of type &lt;see cref=&quot;T:Microsoft.FSharp.Collections.seq`1&quot; /&gt;.&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs31">val toArray: source: seq&lt;&#39;T&gt; -&gt; &#39;T[]<br /><em>&lt;summary&gt;Builds an array from the given collection.&lt;/summary&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;returns&gt;The result array.&lt;/returns&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;example id=&quot;toarray-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let inputs = seq { 1; 2; 5 }
-
- inputs |&amp;gt; Seq.toArray
- &lt;/code&gt;
- Evaluates to &lt;c&gt;[| 1; 2; 5 |]&lt;/c&gt;.
- &lt;/example&gt;</em></div>
+from Microsoft.FSharp.Collections</div>
+<div class="fsdocs-tip" id="fs31">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
 <div class="fsdocs-tip" id="fs32">val qry: IQueryable&lt;obj&gt;</div>
 <div class="fsdocs-tip" id="fs33">Multiple items<br />type IQueryable =
   inherit IEnumerable
@@ -368,9 +487,10 @@ from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations fo
   inherit IEnumerable&lt;&#39;T&gt;
   inherit IEnumerable
   inherit IQueryable<br /><em>&lt;summary&gt;Provides functionality to evaluate queries against a specific data source wherein the type of the data is known.&lt;/summary&gt;<br />&lt;typeparam name=&quot;T&quot;&gt;The type of the data in the data source.&lt;/typeparam&gt;</em></div>
-<div class="fsdocs-tip" id="fs34">val x: obj</div>
-<div class="fsdocs-tip" id="fs35">type CustomersEntity = SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
-<div class="fsdocs-tip" id="fs36">type dataContext =
+<div class="fsdocs-tip" id="fs34">&#39;T</div>
+<div class="fsdocs-tip" id="fs35">val x: obj</div>
+<div class="fsdocs-tip" id="fs36">type CustomersEntity = SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs37">type dataContext =
   member ClearUpdates: unit -&gt; List&lt;SqlEntity&gt;
   member CreateConnection: unit -&gt; IDbConnection
   member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
@@ -382,67 +502,105 @@ from Microsoft.FSharp.Collections<br /><em>&lt;summary&gt;Contains operations fo
   member Pragma: Pragma
   nested type DesignTimeCommands
   ...</div>
-<div class="fsdocs-tip" id="fs37">val companyNameFilter: inUse: bool -&gt; (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
-<div class="fsdocs-tip" id="fs38">val inUse: bool</div>
-<div class="fsdocs-tip" id="fs39">val myFilter2: (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
-<div class="fsdocs-tip" id="fs40">val x: IQueryable&lt;CustomersEntity&gt;</div>
-<div class="fsdocs-tip" id="fs41">(extension) System.Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: System.Func&lt;&#39;TSource,bool&gt;) : System.Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) System.Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: System.Func&lt;&#39;TSource,int,bool&gt;) : System.Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;System.Func&lt;&#39;TSource,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;System.Func&lt;&#39;TSource,int,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;</div>
-<div class="fsdocs-tip" id="fs42">val i: CustomersEntity</div>
-<div class="fsdocs-tip" id="fs43">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.CustomerId: string with get, set<br /><em>&lt;summary&gt;CustomerID:   nchar(5)&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs44">val queryable: (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
-<div class="fsdocs-tip" id="fs45">val iq: IQueryable&lt;CustomersEntity&gt;</div>
-<div class="fsdocs-tip" id="fs46">val c: CustomersEntity</div>
-<div class="fsdocs-tip" id="fs47">val res: CustomersEntity[]</div>
-<div class="fsdocs-tip" id="fs48">val qry1: IQueryable&lt;obj * obj * obj&gt;</div>
-<div class="fsdocs-tip" id="fs49">val u: obj</div>
-<div class="fsdocs-tip" id="fs50">val qry2: IQueryable&lt;obj * obj * int&gt;</div>
-<div class="fsdocs-tip" id="fs51">val c: obj</div>
-<div class="fsdocs-tip" id="fs52">val i: obj</div>
-<div class="fsdocs-tip" id="fs53">val n: obj</div>
-<div class="fsdocs-tip" id="fs54">val e: obj</div>
-<div class="fsdocs-tip" id="fs55">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
+<div class="fsdocs-tip" id="fs38">val companyNameFilter: inUse: bool -&gt; (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
+<div class="fsdocs-tip" id="fs39">val inUse: bool</div>
+<div class="fsdocs-tip" id="fs40">val myFilter2: x: IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;</div>
+<div class="fsdocs-tip" id="fs41">val x: IQueryable&lt;CustomersEntity&gt;</div>
+<div class="fsdocs-tip" id="fs42">(extension) System.Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: System.Func&lt;&#39;TSource,bool&gt;) : System.Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) System.Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: System.Func&lt;&#39;TSource,int,bool&gt;) : System.Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;System.Func&lt;&#39;TSource,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;System.Func&lt;&#39;TSource,int,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;</div>
+<div class="fsdocs-tip" id="fs43">val i: CustomersEntity</div>
+<div class="fsdocs-tip" id="fs44">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.CustomerId: string with get, set<br /><em>&lt;summary&gt;CustomerID:   nchar(5)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs45">val queryable: (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
+<div class="fsdocs-tip" id="fs46">val iq: IQueryable&lt;CustomersEntity&gt;</div>
+<div class="fsdocs-tip" id="fs47">val c: CustomersEntity</div>
+<div class="fsdocs-tip" id="fs48">val res: CustomersEntity array</div>
+<div class="fsdocs-tip" id="fs49">val qry1: IQueryable&lt;obj * obj * obj&gt;</div>
+<div class="fsdocs-tip" id="fs50">val u: obj</div>
+<div class="fsdocs-tip" id="fs51">val qry2: IQueryable&lt;obj * obj * int&gt;</div>
+<div class="fsdocs-tip" id="fs52">val c: obj</div>
+<div class="fsdocs-tip" id="fs53">val i: obj</div>
+<div class="fsdocs-tip" id="fs54">val n: obj</div>
+<div class="fsdocs-tip" id="fs55">val e: obj</div>
+<div class="fsdocs-tip" id="fs56">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
 
-Calls Linq.QueryBuilder.Join<br /><em>&lt;summary&gt;A query operator that correlates two sets of selected values based on matching keys. 
- Normal usage is &#39;join y in elements2 on (key1 = key2)&#39;. 
- &lt;/summary&gt;<br />&lt;example-tbd&gt;&lt;/example-tbd&gt;</em></div>
-<div class="fsdocs-tip" id="fs56">val b: obj</div>
-<div class="fsdocs-tip" id="fs57">val y: int</div>
-<div class="fsdocs-tip" id="fs58">val nestedQueryTest: (obj * obj)[]</div>
-<div class="fsdocs-tip" id="fs59">val qry1: IQueryable&lt;obj&gt;</div>
-<div class="fsdocs-tip" id="fs60">val emp: obj</div>
-<div class="fsdocs-tip" id="fs61">(extension) System.Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource) : bool<br />(extension) IQueryable.Contains&lt;&#39;TSource&gt;(item: &#39;TSource) : bool<br />(extension) System.Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource, comparer: System.Collections.Generic.IEqualityComparer&lt;&#39;TSource&gt;) : bool<br />(extension) IQueryable.Contains&lt;&#39;TSource&gt;(item: &#39;TSource, comparer: System.Collections.Generic.IEqualityComparer&lt;&#39;TSource&gt;) : bool</div>
-<div class="fsdocs-tip" id="fs62">val qry: string</div>
-<div class="fsdocs-tip" id="fs63">val x: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
-<div class="fsdocs-tip" id="fs64">member Common.SqlEntity.GetColumn: key: string -&gt; &#39;T</div>
-<div class="fsdocs-tip" id="fs65">Multiple items<br />val string: value: &#39;T -&gt; string<br /><em>&lt;summary&gt;Converts the argument to a string using &lt;c&gt;ToString&lt;/c&gt;.&lt;/summary&gt;<br />&lt;remarks&gt;For standard integer and floating point values the and any type that implements &lt;c&gt;IFormattable&lt;/c&gt;&lt;c&gt;ToString&lt;/c&gt; conversion uses &lt;c&gt;CultureInfo.InvariantCulture&lt;/c&gt;. &lt;/remarks&gt;<br />&lt;param name=&quot;value&quot;&gt;The input value.&lt;/param&gt;<br />&lt;returns&gt;The converted string.&lt;/returns&gt;<br />&lt;example id=&quot;string-example&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;&lt;/code&gt;&lt;/example&gt;</em><br /><br />--------------------<br />type string = System.String<br /><em>&lt;summary&gt;An abbreviation for the CLI type &lt;see cref=&quot;T:System.String&quot; /&gt;.&lt;/summary&gt;<br />&lt;category&gt;Basic Types&lt;/category&gt;</em></div>
-<div class="fsdocs-tip" id="fs66">val head: source: seq&lt;&#39;T&gt; -&gt; &#39;T<br /><em>&lt;summary&gt;Returns the first element of the sequence.&lt;/summary&gt;<br />&lt;param name=&quot;source&quot;&gt;The input sequence.&lt;/param&gt;<br />&lt;returns&gt;The first element of the sequence.&lt;/returns&gt;<br />&lt;exception cref=&quot;T:System.ArgumentNullException&quot;&gt;Thrown when the input sequence is null.&lt;/exception&gt;<br />&lt;exception cref=&quot;T:System.ArgumentException&quot;&gt;Thrown when the input does not have any elements.&lt;/exception&gt;<br />&lt;example id=&quot;head-1&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- let inputs = [&quot;banana&quot;; &quot;pear&quot;]
+Calls Linq.QueryBuilder.Join</div>
+<div class="fsdocs-tip" id="fs57">val b: obj</div>
+<div class="fsdocs-tip" id="fs58">val y: int</div>
+<div class="fsdocs-tip" id="fs59">val nestedQueryTest: (obj * obj) array</div>
+<div class="fsdocs-tip" id="fs60">val qry1: IQueryable&lt;obj&gt;</div>
+<div class="fsdocs-tip" id="fs61">val emp: obj</div>
+<div class="fsdocs-tip" id="fs62">(extension) System.Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource) : bool<br />(extension) IQueryable.Contains&lt;&#39;TSource&gt;(item: &#39;TSource) : bool<br />(extension) System.Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource, comparer: System.Collections.Generic.IEqualityComparer&lt;&#39;TSource&gt;) : bool<br />(extension) IQueryable.Contains&lt;&#39;TSource&gt;(item: &#39;TSource, comparer: System.Collections.Generic.IEqualityComparer&lt;&#39;TSource&gt;) : bool</div>
+<div class="fsdocs-tip" id="fs63">val qry: string</div>
+<div class="fsdocs-tip" id="fs64">val x: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs65">member Common.SqlEntity.GetColumn: key: string -&gt; &#39;T</div>
+<div class="fsdocs-tip" id="fs66">Multiple items<br />val string: value: &#39;T -&gt; string<br /><br />--------------------<br />type string = System.String</div>
+<div class="fsdocs-tip" id="fs67">val head: source: &#39;T seq -&gt; &#39;T</div>
+<div class="fsdocs-tip" id="fs68">val johnFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
+<div class="fsdocs-tip" id="fs69">val employee: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs70">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.FirstName: string with get, set<br /><em>&lt;summary&gt;FirstName:   nvarchar(10)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs71">val pamFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
+<div class="fsdocs-tip" id="fs72">val runtimeSelectedFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
+<div class="fsdocs-tip" id="fs73">val employees: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity array</div>
+<div class="fsdocs-tip" id="fs74">val emp: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs75">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
 
- inputs |&amp;gt; Seq.head
- &lt;/code&gt;
- Evaluates to &lt;c&gt;banana&lt;/c&gt;&lt;/example&gt;<br />&lt;example id=&quot;head-2&quot;&gt;&lt;code lang=&quot;fsharp&quot;&gt;
- [] |&amp;gt; Seq.head
- &lt;/code&gt;
- Throws &lt;c&gt;ArgumentException&lt;/c&gt;&lt;/example&gt;</em></div>
-<div class="fsdocs-tip" id="fs67">val johnFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
-<div class="fsdocs-tip" id="fs68">val employee: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div class="fsdocs-tip" id="fs69">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.FirstName: string with get, set<br /><em>&lt;summary&gt;FirstName:   nvarchar(10)&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs70">val pamFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
-<div class="fsdocs-tip" id="fs71">val runtimeSelectedFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
-<div class="fsdocs-tip" id="fs72">val employees: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity[]</div>
-<div class="fsdocs-tip" id="fs73">val emp: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div class="fsdocs-tip" id="fs74">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
-
-        </div>
-
-        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
-        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
-        <!-- END SEARCH BOX: this adds support for the search box -->
     </div>
-</body>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <ul>
+  <li class="level-1">
+    <a href="#Composable-Queries">
+      Composable Queries
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Definition-of-Composable-Queries">
+      Definition of Composable Queries
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Generate-composable-queries-by-using-Linq-IQueryable">
+      Generate composable queries by using Linq IQueryable
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable">
+      Generate composable queries by using .NET LINQ functions with IQueryable.
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery">
+      Generate composable queries by using FSharp.Linq.ComposableQuery
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Nested-Select-Where-Queries">
+      Nested Select Where Queries
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Using-non-strongly-typed-__-GetColumn-name">
+      Using non-strongly-typed __.GetColumn "name"
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Generate-composable-queries-from-quotations">
+      Generate composable queries from quotations
+    </a>
+  </li>
+</ul>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
 
+</body>
 </html>

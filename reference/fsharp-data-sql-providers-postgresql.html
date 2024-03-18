@@ -1,79 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
 <head>
-    <meta charset="utf-8">
-    <title>PostgreSQL (SQLProvider)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="author" content="pezipink,colinbull,thorium">
-
-    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
-    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-    <!-- END SEARCH BOX: this adds support for the search box -->
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="PostgreSQL (SQLProvider)" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="PostgreSQL (SQLProvider)">
     
-	<style>
-		#fsdocs-content li {
-			margin: 0px 0px 5px 0px;
-		}
-		.navbar-nav .nav-link {
-			padding-top: 0.2rem;
-			padding-bottom: 0.2rem;
-		}
-	</style>
+    <title>PostgreSQL (SQLProvider) | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
 </head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
 
-<body>
-    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-		
-        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" alt="Fork me on GitHub"></a>
-			<div style="height: 105px"></div>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
 
-            <ul class="navbar-nav">
-                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
-                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
-                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
-								
-				<li class="nav-header" style="text-transform: uppercase">
-					Documentation
-				</li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
 
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to make a contribution
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    general
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    SQL Type Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
                 <li class="nav-header">
   API Reference
 </li>             
@@ -83,30 +191,61 @@
   </a>
 </li>
             </ul>
-			
-            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-            <div id="header">
-                <div class="searchbox" id="fsdocs-searchbox">
-                    <label for="search-by">
-                        <i class="fas fa-search"></i>
-                    </label>
-                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
-                    <span data-search-clear="">
-                        <i class="fas fa-times"></i>
-                    </span>
-                </div>
-            </div>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
 
-            <!-- END SEARCH BOX: this adds support for the search box -->
-        </div>
-    </nav>
-    <div class="container">
-        <div class="masthead">
-            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
-        </div>
-        <hr />
-        <div class="container" id="fsdocs-content">
-            <div>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
   <h2>
     PostgreSQL Module
   </h2>
@@ -172,23 +311,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.ANONYMOUS_PARAMETER_NAME`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.ANONYMOUS_PARAMETER_NAME\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -228,23 +350,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.arrayProviderDbType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.arrayProviderDbType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L119-119" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -276,7 +381,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -284,29 +389,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.assembly`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.assembly\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -340,23 +428,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.assemblyNames`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.assemblyNames\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -388,7 +459,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -396,29 +467,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.commandType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.commandType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L63-63" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -444,7 +498,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -452,29 +506,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.connectionType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.connectionType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L62-62" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -520,7 +557,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
                   </span>
                   <br/>
                 </div>
@@ -528,23 +565,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.createCommand``2```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.createCommand``2\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L253-253" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -568,7 +588,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -614,7 +634,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
                   </span>
                   <br/>
                 </div>
@@ -622,23 +642,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.createCommandParameter`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.createCommandParameter\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L93-93" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -662,7 +665,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -700,7 +703,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
                   </span>
                   <br/>
                 </div>
@@ -708,23 +711,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.createConnection``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.createConnection``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -740,7 +726,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -781,23 +767,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.createTypeMappings`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.createTypeMappings\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L130-130" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -830,7 +799,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -838,29 +807,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.dbType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.dbType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -886,7 +838,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -894,29 +846,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.dbTypeGetter`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.dbTypeGetter\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L66-66" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -942,7 +877,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -950,29 +885,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.dbTypeSetter`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.dbTypeSetter\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L67-67" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1003,7 +921,7 @@
                         com
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1042,30 +960,13 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommand`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommand\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L292-292" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
                   com
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1129,7 +1030,7 @@
                         com
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1160,7 +1061,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1168,30 +1069,13 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommandAsync`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommandAsync\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L343-343" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
                   com
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1224,7 +1108,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1278,7 +1162,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span><span>(<span>int&#32;*&#32;<a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span></span></code>
+                    <code><span><span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1286,23 +1170,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommandCommon`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.executeSprocCommandCommon\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L271-271" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1334,7 +1201,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><span><span>(<span>int&#32;*&#32;<a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span></span></code>
+                <code><span><span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>[]</span></span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1388,23 +1255,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.fieldNotationAlias`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.fieldNotationAlias\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1462,23 +1312,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.findDbType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.findDbType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L75-75" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -1522,7 +1355,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1530,23 +1363,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.findType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.findType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L42-42" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1562,7 +1378,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1600,7 +1416,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
                   </span>
                   <br/>
                 </div>
@@ -1608,23 +1424,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.getDbType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.getDbType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L69-69" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1640,7 +1439,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1671,7 +1470,7 @@
                         con
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1686,30 +1485,13 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.getSprocs`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.getSprocs\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L422-422" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
                   con
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1744,7 +1526,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>string&#32;->&#32;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+                    <code><span>string&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span></code>
                   </span>
                   <br/>
                 </div>
@@ -1752,29 +1534,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.getType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.getType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L60-60" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>string&#32;->&#32;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+                <code><span>string&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -1808,23 +1573,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.isLegacyVersion`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.isLegacyVersion\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L41-41" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -1876,23 +1624,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.isOptionValue``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.isOptionValue``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L88-88" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1954,7 +1685,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>(<span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
+                    <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
                   </span>
                   <br/>
                 </div>
@@ -1962,52 +1693,51 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.namemap`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.namemap\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
- Pairs a CLR type by name with a value of Npgsql's type enumeration
-
-              </p>
-            </div>
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  name
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dbTypes
-                </span>
-                :
-                <code><span>string&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><span>(<span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.namemap`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.namemap\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Pairs a CLR type by name with a value of Npgsql's type enumeration
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    name
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dbTypes
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
@@ -2030,7 +1760,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -2038,29 +1768,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.parameterType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.parameterType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L64-64" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>Lazy&lt;<a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -2106,23 +1819,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.parseDbType`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.parseDbType\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L77-77" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -2169,7 +1865,7 @@
                         parameter
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -2184,30 +1880,13 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.readParameter`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.readParameter\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
                   parameter
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -2250,23 +1929,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.referencedAssemblies`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.referencedAssemblies\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -2306,23 +1968,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.resolutionPath`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.resolutionPath\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -2362,23 +2007,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.schemas`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.schemas\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -2430,23 +2058,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.tryReadValueProperty``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.tryReadValueProperty``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -2488,7 +2099,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                    <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
                   </span>
                   <br/>
                 </div>
@@ -2496,34 +2107,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
- Pairs a CLR type by type parameter with a value of Npgsql's type enumeration
-
-              </p>
-            </div>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://docs.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1```')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Pairs a CLR type by type parameter with a value of Npgsql's type enumeration
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
@@ -2566,44 +2176,43 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
- Pairs a CLR type by type object with a value of Npgsql's type enumeration
-
-              </p>
-            </div>
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t
-                </span>
-                :
-                <code>'a</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span>'a&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1```')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Pairs a CLR type by type object with a value of Npgsql's type enumeration
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    t
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span>'a&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>
@@ -2618,17 +2227,24 @@
   <div></div>
   <div></div>
 </div>
-            
-        </div>
-
-        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
-        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
-        <!-- END SEARCH BOX: this adds support for the search box -->
+        
     </div>
-</body>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
 
+</body>
 </html>

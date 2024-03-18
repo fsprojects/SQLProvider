@@ -1,79 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
 <head>
-    <meta charset="utf-8">
-    <title>SqlEntity (SQLProvider)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="author" content="pezipink,colinbull,thorium">
-
-    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-    <link rel="shortcut icon" type="image/x-icon" href="https://fsprojects.github.io/SQLProvider//img/favicon.ico">
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/navbar-fixed-right.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-default.css" />
-    <link type="text/css" rel="stylesheet" href="https://fsprojects.github.io/SQLProvider//content/fsdocs-custom.css" />
-    <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider//content/fsdocs-tips.js"></script>
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-    <!-- END SEARCH BOX: this adds support for the search box -->
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="SqlEntity (SQLProvider)" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="SqlEntity (SQLProvider)">
     
-	<style>
-		#fsdocs-content li {
-			margin: 0px 0px 5px 0px;
-		}
-		.navbar-nav .nav-link {
-			padding-top: 0.2rem;
-			padding-bottom: 0.2rem;
-		}
-	</style>
+    <title>SqlEntity (SQLProvider) | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
 </head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
 
-<body>
-    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-right" id="fsdocs-nav">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-		
-        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-			<a href="http://github.com/fsprojects/SQLProvider"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" alt="Fork me on GitHub"></a>
-			<div style="height: 105px"></div>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
 
-            <ul class="navbar-nav">
-                <a href="https://fsprojects.github.io/SQLProvider/"><li class="nav-header" style="text-transform: uppercase">SQLProvider</li></a>
-                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://www.nuget.org/packages/SQLProvider">Get Library via NuGet</a></li>
-				<li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source Code on GitHub</a></li>
-                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a></li>
-                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release Notes</a></li>
-								
-				<li class="nav-header" style="text-transform: uppercase">
-					Documentation
-				</li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
-				<li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
 
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to make a contribution
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    general
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    SQL Type Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
                 <li class="nav-header">
   API Reference
 </li>             
@@ -83,30 +191,61 @@
   </a>
 </li>
             </ul>
-			
-            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-            <div id="header">
-                <div class="searchbox" id="fsdocs-searchbox">
-                    <label for="search-by">
-                        <i class="fas fa-search"></i>
-                    </label>
-                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
-                    <span data-search-clear="">
-                        <i class="fas fa-times"></i>
-                    </span>
-                </div>
-            </div>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
 
-            <!-- END SEARCH BOX: this adds support for the search box -->
-        </div>
-    </nav>
-    <div class="container">
-        <div class="masthead">
-            <h3 class="muted"><a href="https://fsprojects.github.io/SQLProvider/">SQLProvider</a></h3>
-        </div>
-        <hr />
-        <div class="container" id="fsdocs-content">
-            <div>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
   <h2>
     SqlEntity Type
   </h2>
@@ -126,9 +265,9 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.componentmodel.icustomtypedescriptor">ICustomTypeDescriptor</a></code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.componentmodel.icustomtypedescriptor">ICustomTypeDescriptor</a></code>
       , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.componentmodel.inotifypropertychanged">INotifyPropertyChanged</a></code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.componentmodel.inotifypropertychanged">INotifyPropertyChanged</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -163,7 +302,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '490', 490)" onmouseover="showTip(event, '490', 490)">
+              <code onmouseout="hideTip(event, '492', 492)" onmouseover="showTip(event, '492', 492)">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -172,7 +311,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="490">
+              <div class="fsdocs-tip" id="492">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SqlEntity<span><span>(<span>dc,&#32;tableName,&#32;columns</span>)</span></span></span></code>
@@ -216,23 +355,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.#ctor`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.#ctor\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L188-188" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -292,7 +414,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '491', 491)" onmouseover="showTip(event, '491', 491)">
+              <code onmouseout="hideTip(event, '493', 493)" onmouseover="showTip(event, '493', 493)">
                 <p>
                   <a id="Clone">
                     <a href="#Clone">
@@ -301,7 +423,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="491">
+              <div class="fsdocs-tip" id="493">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Clone</span></code>
@@ -317,41 +439,40 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.Clone`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.Clone\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L391-391" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
- Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.Clone`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.Clone\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L391-391" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
  If column primaty key is something else and not-auto-generated, then, too bad...
-
-              </p>
-            </div>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '492', 492)" onmouseover="showTip(event, '492', 492)">
+              <code onmouseout="hideTip(event, '494', 494)" onmouseover="showTip(event, '494', 494)">
                 <p>
                   <a id="CloneTo">
                     <a href="#CloneTo">
@@ -360,7 +481,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="492">
+              <div class="fsdocs-tip" id="494">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.CloneTo</span></code>
@@ -396,61 +517,60 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.CloneTo`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.CloneTo\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L375-375" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
- Attach/copy entity to a different data-context.
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.CloneTo`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.CloneTo\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L375-375" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Attach/copy entity to a different data-context.
  Second parameter: SQL UPDATE or INSERT clause?  
  UPDATE: Updates the exising database entity with the values that this entity contains.
  INSERT: Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
-
-              </p>
-            </div>
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  secondContext
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  itemExistsAlready
-                </span>
-                :
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    secondContext
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    itemExistsAlready
+                  </span>
+                  :
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '493', 493)" onmouseover="showTip(event, '493', 493)">
+              <code onmouseout="hideTip(event, '495', 495)" onmouseover="showTip(event, '495', 495)">
                 <p>
                   <a id="ColumnValues">
                     <a href="#ColumnValues">
@@ -459,7 +579,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="493">
+              <div class="fsdocs-tip" id="495">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ColumnValues</span></code>
@@ -467,7 +587,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><span>seq&lt;<span>string&#32;*&#32;obj</span>&gt;</span></code>
+                    <code><span><span>(<span>string&#32;*&#32;obj</span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
                 </div>
@@ -475,29 +595,12 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Common.SqlEntity.ColumnValues`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity.ColumnValues\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L204-204" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code><span>seq&lt;<span>string&#32;*&#32;obj</span>&gt;</span></code>
+                <code><span><span>(<span>string&#32;*&#32;obj</span>)</span>&#32;seq</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -506,7 +609,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '494', 494)" onmouseover="showTip(event, '494', 494)">
+              <code onmouseout="hideTip(event, '496', 496)" onmouseover="showTip(event, '496', 496)">
                 <p>
                   <a id="DataContext">
                     <a href="#DataContext">
@@ -515,7 +618,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="494">
+              <div class="fsdocs-tip" id="496">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.DataContext</span></code>
@@ -531,23 +634,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Common.SqlEntity.DataContext`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity.DataContext\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -562,7 +648,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '495', 495)" onmouseover="showTip(event, '495', 495)">
+              <code onmouseout="hideTip(event, '497', 497)" onmouseover="showTip(event, '497', 497)">
                 <p>
                   <a id="Delete">
                     <a href="#Delete">
@@ -571,7 +657,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="495">
+              <div class="fsdocs-tip" id="497">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Delete</span></code>
@@ -584,16 +670,13 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
               <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.Delete`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
               </div>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.Delete\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
               <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L197-197" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
                 
@@ -604,7 +687,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '496', 496)" onmouseover="showTip(event, '496', 496)">
+              <code onmouseout="hideTip(event, '498', 498)" onmouseover="showTip(event, '498', 498)">
                 <p>
                   <a id="GetColumn">
                     <a href="#GetColumn">
@@ -613,7 +696,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="496">
+              <div class="fsdocs-tip" id="498">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.GetColumn</span></code>
@@ -641,23 +724,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.GetColumn``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.GetColumn``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L211-211" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -682,7 +748,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '497', 497)" onmouseover="showTip(event, '497', 497)">
+              <code onmouseout="hideTip(event, '499', 499)" onmouseover="showTip(event, '499', 499)">
                 <p>
                   <a id="GetColumnOption">
                     <a href="#GetColumnOption">
@@ -691,7 +757,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="497">
+              <div class="fsdocs-tip" id="499">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.GetColumnOption</span></code>
@@ -719,23 +785,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.GetColumnOption``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.GetColumnOption``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L231-231" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -760,7 +809,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '498', 498)" onmouseover="showTip(event, '498', 498)">
+              <code onmouseout="hideTip(event, '500', 500)" onmouseover="showTip(event, '500', 500)">
                 <p>
                   <a id="GetColumnValueOption">
                     <a href="#GetColumnValueOption">
@@ -769,7 +818,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="498">
+              <div class="fsdocs-tip" id="500">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.GetColumnValueOption</span></code>
@@ -797,23 +846,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.GetColumnValueOption``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.GetColumnValueOption``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L241-241" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -838,7 +870,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '499', 499)" onmouseover="showTip(event, '499', 499)">
+              <code onmouseout="hideTip(event, '501', 501)" onmouseover="showTip(event, '501', 501)">
                 <p>
                   <a id="GetPkColumnOption">
                     <a href="#GetPkColumnOption">
@@ -847,7 +879,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="499">
+              <div class="fsdocs-tip" id="501">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.GetPkColumnOption</span></code>
@@ -875,23 +907,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.GetPkColumnOption``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.GetPkColumnOption``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L251-251" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -916,7 +931,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '500', 500)" onmouseover="showTip(event, '500', 500)">
+              <code onmouseout="hideTip(event, '502', 502)" onmouseover="showTip(event, '502', 502)">
                 <p>
                   <a id="HasColumn">
                     <a href="#HasColumn">
@@ -925,7 +940,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="500">
+              <div class="fsdocs-tip" id="502">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.HasColumn</span></code>
@@ -946,7 +961,7 @@
                         ?comparison
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.stringcomparison">StringComparison</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.stringcomparison">StringComparison</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -961,23 +976,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.HasColumn`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.HasColumn\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L205-205" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -992,7 +990,7 @@
                   ?comparison
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.stringcomparison">StringComparison</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.stringcomparison">StringComparison</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1010,7 +1008,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '501', 501)" onmouseover="showTip(event, '501', 501)">
+              <code onmouseout="hideTip(event, '503', 503)" onmouseover="showTip(event, '503', 503)">
                 <p>
                   <a id="HasValue">
                     <a href="#HasValue">
@@ -1019,7 +1017,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="501">
+              <div class="fsdocs-tip" id="503">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.HasValue</span></code>
@@ -1047,23 +1045,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SqlEntity.HasValue`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.HasValue\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L317-317" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1088,7 +1069,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '502', 502)" onmouseover="showTip(event, '502', 502)">
+              <code onmouseout="hideTip(event, '504', 504)" onmouseover="showTip(event, '504', 504)">
                 <p>
                   <a id="MapTo">
                     <a href="#MapTo">
@@ -1097,7 +1078,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="502">
+              <div class="fsdocs-tip" id="504">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.MapTo</span></code>
@@ -1125,23 +1106,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.MapTo``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.MapTo``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L341-341" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1166,7 +1130,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '503', 503)" onmouseover="showTip(event, '503', 503)">
+              <code onmouseout="hideTip(event, '505', 505)" onmouseover="showTip(event, '505', 505)">
                 <p>
                   <a id="OnConflict">
                     <a href="#OnConflict">
@@ -1175,7 +1139,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="503">
+              <div class="fsdocs-tip" id="505">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.OnConflict</span></code>
@@ -1188,21 +1152,16 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
               <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Common.SqlEntity.OnConflict`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
               </div>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity.OnConflict\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
               <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L395-395" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
- Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
-
+                 Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
               </p>
             </div>
           </td>
@@ -1210,7 +1169,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '504', 504)" onmouseover="showTip(event, '504', 504)">
+              <code onmouseout="hideTip(event, '506', 506)" onmouseover="showTip(event, '506', 506)">
                 <p>
                   <a id="SetColumn">
                     <a href="#SetColumn">
@@ -1219,7 +1178,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="504">
+              <div class="fsdocs-tip" id="506">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetColumn</span></code>
@@ -1250,23 +1209,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetColumn``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetColumn``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L275-275" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1290,7 +1232,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '505', 505)" onmouseover="showTip(event, '505', 505)">
+              <code onmouseout="hideTip(event, '507', 507)" onmouseover="showTip(event, '507', 507)">
                 <p>
                   <a id="SetColumnOption">
                     <a href="#SetColumnOption">
@@ -1299,7 +1241,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="505">
+              <div class="fsdocs-tip" id="507">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetColumnOption</span></code>
@@ -1330,23 +1272,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetColumnOption``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetColumnOption``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L299-299" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1370,7 +1295,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '506', 506)" onmouseover="showTip(event, '506', 506)">
+              <code onmouseout="hideTip(event, '508', 508)" onmouseover="showTip(event, '508', 508)">
                 <p>
                   <a id="SetColumnOptionSilent">
                     <a href="#SetColumnOptionSilent">
@@ -1379,7 +1304,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="506">
+              <div class="fsdocs-tip" id="508">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetColumnOptionSilent</span></code>
@@ -1410,23 +1335,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetColumnOptionSilent``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetColumnOptionSilent``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L282-282" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1450,7 +1358,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '507', 507)" onmouseover="showTip(event, '507', 507)">
+              <code onmouseout="hideTip(event, '509', 509)" onmouseover="showTip(event, '509', 509)">
                 <p>
                   <a id="SetColumnSilent">
                     <a href="#SetColumnSilent">
@@ -1459,7 +1367,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="507">
+              <div class="fsdocs-tip" id="509">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetColumnSilent</span></code>
@@ -1490,23 +1398,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetColumnSilent``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetColumnSilent``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L269-269" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1530,7 +1421,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '508', 508)" onmouseover="showTip(event, '508', 508)">
+              <code onmouseout="hideTip(event, '510', 510)" onmouseover="showTip(event, '510', 510)">
                 <p>
                   <a id="SetColumnValueOption">
                     <a href="#SetColumnValueOption">
@@ -1539,7 +1430,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="508">
+              <div class="fsdocs-tip" id="510">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetColumnValueOption</span></code>
@@ -1570,23 +1461,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetColumnValueOption``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetColumnValueOption``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L308-308" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1610,7 +1484,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '509', 509)" onmouseover="showTip(event, '509', 509)">
+              <code onmouseout="hideTip(event, '511', 511)" onmouseover="showTip(event, '511', 511)">
                 <p>
                   <a id="SetData">
                     <a href="#SetData">
@@ -1619,7 +1493,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="509">
+              <div class="fsdocs-tip" id="511">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetData</span></code>
@@ -1632,7 +1506,7 @@
                         data
                       </b>
                       :
-                      <code><span>seq&lt;<span>string&#32;*&#32;'f</span>&gt;</span></code>
+                      <code><span><span>(<span>string&#32;*&#32;'f</span>)</span>&#32;seq</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -1642,30 +1516,13 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetData``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetData``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L280-280" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
                   data
                 </span>
                 :
-                <code><span>seq&lt;<span>string&#32;*&#32;'f</span>&gt;</span></code>
+                <code><span><span>(<span>string&#32;*&#32;'f</span>)</span>&#32;seq</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1674,7 +1531,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '510', 510)" onmouseover="showTip(event, '510', 510)">
+              <code onmouseout="hideTip(event, '512', 512)" onmouseover="showTip(event, '512', 512)">
                 <p>
                   <a id="SetPkColumnOptionSilent">
                     <a href="#SetPkColumnOptionSilent">
@@ -1683,7 +1540,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="510">
+              <div class="fsdocs-tip" id="512">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetPkColumnOptionSilent</span></code>
@@ -1714,23 +1571,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetPkColumnOptionSilent``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetPkColumnOptionSilent``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L290-290" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1754,7 +1594,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '511', 511)" onmouseover="showTip(event, '511', 511)">
+              <code onmouseout="hideTip(event, '513', 513)" onmouseover="showTip(event, '513', 513)">
                 <p>
                   <a id="SetPkColumnSilent">
                     <a href="#SetPkColumnSilent">
@@ -1763,7 +1603,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="511">
+              <div class="fsdocs-tip" id="513">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SetPkColumnSilent</span></code>
@@ -1794,23 +1634,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Common.SqlEntity.SetPkColumnSilent``1```')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.SetPkColumnSilent``1\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L272-272" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
@@ -1834,7 +1657,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '512', 512)" onmouseover="showTip(event, '512', 512)">
+              <code onmouseout="hideTip(event, '514', 514)" onmouseover="showTip(event, '514', 514)">
                 <p>
                   <a id="Table">
                     <a href="#Table">
@@ -1843,7 +1666,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="512">
+              <div class="fsdocs-tip" id="514">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Table</span></code>
@@ -1859,23 +1682,6 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Common.SqlEntity.Table`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity.Table\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
@@ -1890,7 +1696,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '513', 513)" onmouseover="showTip(event, '513', 513)">
+              <code onmouseout="hideTip(event, '515', 515)" onmouseover="showTip(event, '515', 515)">
                 <p>
                   <a id="_State">
                     <a href="#_State">
@@ -1899,7 +1705,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="513">
+              <div class="fsdocs-tip" id="515">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this._State</span></code>
@@ -1912,16 +1718,13 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
               <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Common.SqlEntity._State`')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-md-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
               </div>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity._State\'/>')">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/copy-xml-hover.png" class="hover"/>
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
               <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L195-195" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github.png" class="normal"/>
-                <img src="https://fsprojects.github.io/SQLProvider/content/img/github-hover.png" class="hover"/>
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
                 
@@ -1934,17 +1737,24 @@
   </div>
   <div></div>
 </div>
-            
-        </div>
-
-        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
-        <script type="text/javascript">var fsdocs_search_baseurl = 'https://fsprojects.github.io/SQLProvider/';</script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
-        <script type="text/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
-        <!-- END SEARCH BOX: this adds support for the search box -->
+        
     </div>
-</body>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
 
+</body>
 </html>
