@@ -11,6 +11,7 @@ type SsdtSchema = {
     Relationships: SsdtRelationship list
     Descriptions: SsdtDescriptionItem list
     UserDefinedDataTypes: SsdtUserDefinedDataType
+    Functions: SsdtStoredProc list
 }
 and SsdtTable = {
     FullName: string
@@ -414,6 +415,16 @@ let parseXml(xml: string) =
         |> Seq.map parseUserDefinedDataType
         |> Map.ofSeq
 
+    let functions =
+        let filterPredicate elem =
+            (att "Type" elem) = "SqlScalarFunction"
+            || (att "Type" elem) = "SqlInlineTableValuedFunction"
+        model
+        |> nodes "x:Element"
+        |> Seq.filter filterPredicate
+        |> Seq.map parseStoredProc
+        |> Seq.toList
+
     let storedProcs =
         model
         |> nodes "x:Element"
@@ -494,4 +505,5 @@ let parseXml(xml: string) =
       TryGetTableByName = fun nm -> tablesAndViews |> (List.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
       Relationships = relationships
       Descriptions = descriptions
-      UserDefinedDataTypes = userDefinedDataTypes } : SsdtSchema
+      UserDefinedDataTypes = userDefinedDataTypes
+      Functions = functions } : SsdtSchema
