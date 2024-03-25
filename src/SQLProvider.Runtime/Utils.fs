@@ -426,9 +426,9 @@ module internal Reflection =
         if resolutionPathSemicoloned.Contains ";" then
             String.Join(";",
                 (resolutionPathSemicoloned.Split ';'
-                    |> Array.map System.IO.Path.GetFullPath))
+                    |> Array.map (fun p -> p.Trim() |> System.IO.Path.GetFullPath)))
         else
-            System.IO.Path.GetFullPath resolutionPathSemicoloned
+            System.IO.Path.GetFullPath (resolutionPathSemicoloned.Trim())
 
     let tryLoadAssembly path = 
          try 
@@ -445,8 +445,8 @@ module internal Reflection =
 
         let resolutionPaths =
             if resolutionPathSemicoloned.Contains ";" then
-                resolutionPathSemicoloned.Split ';' |> Array.toList
-            else [ resolutionPathSemicoloned ]
+                resolutionPathSemicoloned.Split ';' |> Array.toList |> List.map(fun p -> p.Trim())
+            else [ resolutionPathSemicoloned.Trim() ]
 
         let resolutionPaths =
             resolutionPaths

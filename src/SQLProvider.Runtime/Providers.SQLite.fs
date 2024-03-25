@@ -374,10 +374,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 then runtimeAssembly |> Path.GetFullPath
                 else (if resolutionPath.Contains ";" then
                         resolutionPath.Split ';'
-                        |> Array.map Path.GetFullPath
+                        |> Array.map (fun p -> p.Trim() |> Path.GetFullPath)
                         |> Array.filter System.IO.Directory.Exists
                         |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
-                      else resolutionPath |> Path.GetFullPath)
+                      else resolutionPath.Trim() |> Path.GetFullPath)
 
             let connectionString =
                 connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
