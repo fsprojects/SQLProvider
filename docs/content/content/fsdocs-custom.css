@@ -607,3 +607,6 @@ div.fsdocs-tip {
         font: 0.85rem 'Fira Code Fixed', monospace;
     }
 
+#content code {
+    color: #8c938c
+}

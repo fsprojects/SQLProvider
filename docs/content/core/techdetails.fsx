@@ -164,6 +164,27 @@ fun empBirthDate -> empBirthDate.DayOfYear + 3
 
 Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with `for e in results -> projector.DynamicInvoke(e)` in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs).
 
+### How to debug SQLProvider in your own solution, not the test-project
+
+The runtime debugging can be done just like any other:
+
+1. Build your own project
+2. Then just build SQLProvider.sln and then go to bin-folder, select your framework, and copy FSharp.Data.SqlProvider.dll and FSharp.Data.SqlProvider.pdb
+2. And then replace your own project's bin-folder copies of these 2 files, run your software without rebuild.
+
+Debugging the design-time VS2022 is doable, but a bit more complex.
+This will mess your SQLProvider Nuget cache, so after done, delete the SQLProvider cache-folder and restore the package again.
+
+1. Open SQLProvider.sln (with Visual Studio 2022) and build it (in debug mode). Keep this open for now.
+2. Open explorer, it has made under bin-folder some folders, e.g. \net472 \net6.0 \netstandard2.0 \netstandard2.1 and \typeproviders
+3. Open another explorer, go to your location of Nuget cache, the version you are using e.g. `C:\Users\me\.nuget\packages\sqlprovider\1.3.30` 
+4. Replace the nuget cache \typeproviders folder with your fresh bin typeproviders folder.
+5. Replace the nuget cache \lib folder with other folders from your fresh bin folder.
+6. Open another instance of VS2022 to the start-screen but don't open any project yet.
+7. Go back to your first instance of VS2022 with SQLProvider.sln. Add some breakpoints. Select from the top menu: Debug - Attach to Process...
+8. Select devenv.exe which is the another VS2022 instance.
+9. Switch to this new instance and load your own project that uses SQLProvider and it'll stop to the breakpoints.
+
 ### Other things to know
 
  - SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees

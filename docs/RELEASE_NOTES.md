@@ -1,3 +1,6 @@
+### 1.3.31 - 25.03.2024
+* Trim paths in semicolon separator in ResolutionPath static parameter
+
 ### 1.3.30 - 18.03.2024
 * IWithDataContext moved from FSharp.Data.Sql.Runtime to FSharp.Data.Sql.Common
 * Support Create(...) in unit-tests
