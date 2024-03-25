@@ -356,6 +356,26 @@ the SqlEntity's <code>emp.GetColumn("BirthDate")</code>, and create a lambda-exp
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">fun</span> <span class="id">empBirthDate</span> <span class="k">-&gt;</span> <span class="id">empBirthDate</span><span class="pn">.</span><span class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span>
 </code></pre>
 <p>Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with <code>for e in results -&gt; projector.DynamicInvoke(e)</code> in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>.</p>
+<h3><a name="How-to-debug-SQLProvider-in-your-own-solution-not-the-test-project" class="anchor" href="#How-to-debug-SQLProvider-in-your-own-solution-not-the-test-project">How to debug SQLProvider in your own solution, not the test-project</a></h3>
+<p>The runtime debugging can be done just like any other:</p>
+<ol>
+<li>Build your own project</li>
+<li>Then just build SQLProvider.sln and then go to bin-folder, select your framework, and copy FSharp.Data.SqlProvider.dll and FSharp.Data.SqlProvider.pdb</li>
+<li>And then replace your own project's bin-folder copies of these 2 files, run your software without rebuild.</li>
+</ol>
+<p>Debugging the design-time VS2022 is doable, but a bit more complex.
+This will mess your SQLProvider Nuget cache, so after done, delete the SQLProvider cache-folder and restore the package again.</p>
+<ol>
+<li>Open SQLProvider.sln (with Visual Studio 2022) and build it (in debug mode). Keep this open for now.</li>
+<li>Open explorer, it has made under bin-folder some folders, e.g. \net472 \net6.0 \netstandard2.0 \netstandard2.1 and \typeproviders</li>
+<li>Open another explorer, go to your location of Nuget cache, the version you are using e.g. <code>C:\Users\me\.nuget\packages\sqlprovider\1.3.30</code></li>
+<li>Replace the nuget cache \typeproviders folder with your fresh bin typeproviders folder.</li>
+<li>Replace the nuget cache \lib folder with other folders from your fresh bin folder.</li>
+<li>Open another instance of VS2022 to the start-screen but don't open any project yet.</li>
+<li>Go back to your first instance of VS2022 with SQLProvider.sln. Add some breakpoints. Select from the top menu: Debug - Attach to Process...</li>
+<li>Select devenv.exe which is the another VS2022 instance.</li>
+<li>Switch to this new instance and load your own project that uses SQLProvider and it'll stop to the breakpoints.</li>
+</ol>
 <h3><a name="Other-things-to-know" class="anchor" href="#Other-things-to-know">Other things to know</a></h3>
 <ul>
 <li>SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees</li>
@@ -437,6 +457,11 @@ from Microsoft.FSharp.Collections</div>
   <li class="level-3">
     <a href="#Projection-lambda">
       Projection-lambda
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#How-to-debug-SQLProvider-in-your-own-solution-not-the-test-project">
+      How to debug SQLProvider in your own solution, not the test-project
     </a>
   </li>
   <li class="level-3">
