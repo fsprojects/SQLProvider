@@ -241,7 +241,16 @@ module PostgreSQL =
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as e when not(isNull e.InnerException) ->
-            failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
+            match e.GetBaseException() with
+            | :? System.Reflection.ReflectionTypeLoadException as rex ->
+                let errorfiles = rex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
+                let msg = rex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+                raise(System.Reflection.TargetInvocationException(msg, e))
+            | be ->
+                let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
+                let msg = be.Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
+                            (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+                failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s %s" msg e.InnerException.Message
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())

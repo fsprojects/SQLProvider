@@ -1,3 +1,6 @@
+### 1.3.32 - 27.03.2024
+* Postgres error message improvement
+
 ### 1.3.31 - 25.03.2024
 * Trim paths in semicolon separator in ResolutionPath static parameter
 
