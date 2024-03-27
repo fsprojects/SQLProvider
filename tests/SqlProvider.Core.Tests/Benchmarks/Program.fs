@@ -22,7 +22,7 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, connStr
                 SsdtPath = ssdtpath,
                 UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION>
 
-[<SimpleJob (RuntimeMoniker.Net60)>] [<MemoryDiagnoser(true)>]
+[<SimpleJob (RuntimeMoniker.Net80)>] [<MemoryDiagnoser(true)>]
 type Benchmarks() =
     [<Params(25, 250, 2500)>]
     member val rowsReturned = 0 with get, set

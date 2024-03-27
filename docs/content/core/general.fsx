@@ -331,17 +331,17 @@ That's why SQLProvider does short-circuit and optimise your queries as much as p
 
 There is a performance-test project in this repo. This is a sample run:
 
-- BenchmarkDotNet v0.13.9
-- .NET 6
+- BenchmarkDotNet v0.13.12
+- .NET 8
 - Laptop, Intel i9 13th Gen on Windows 11
 - Microsoft SQL Sever on local computer
 
 
 | Method                | rowsReturned | Mean     | Error     | StdDev    | Median   | Ratio | RatioSD | Gen0     | Gen1     | Gen2  | 
 |---------------------- |------------- |---------:|----------:|----------:|---------:|------:|--------:|---------:|---------:|------------:|
-| **FirstNamesToList**      | **25**           | **1.216 ms** | **0.0345 ms** | **0.1002 ms** | **1.221 ms** |  **1.00** |    **0.00** |  **29.2969** |   **9.7656** |  **0** |     
-| FirstNamesToListAsync | 25           | 1.232 ms | 0.0243 ms | 0.0438 ms | 1.220 ms |  0.98 |    0.08 |  29.2969 |   9.7656 |  0 |
-| **FirstNamesToList**      | **2500**         | **3.408 ms** | **0.0679 ms** | **0.1518 ms** | **3.356 ms** |  **1.00** |    **0.00** | **234.3750** | **101.5625** | **0** |
-| FirstNamesToListAsync | 2500         | 3.841 ms | 0.1009 ms | 0.2710 ms | 3.740 ms |  1.12 |    0.10 | 187.5000 |  62.5000 | 0 |
+| **FirstNamesToList**      | **25**           | **1.110 ms** | **0.0222 ms** | **0.0618 ms** | **1.096 ms** |  **1.00** |    **0.00** |  **27.3438** |  **11.7188** | **0** |
+| FirstNamesToListAsync | 25           | 1.257 ms | 0.0460 ms | 0.1326 ms | 1.300 ms |  1.14 |    0.13 |  29.2969 |  13.6719 | 0 |
+| **FirstNamesToList**      | **2500**         | **2.845 ms** | **0.0561 ms** | **0.0709 ms** | **2.829 ms** |  **1.00** |    **0.00** | **234.3750** | **179.6875** | **0** |
+| FirstNamesToListAsync | 2500         | 3.030 ms | 0.0820 ms | 0.2325 ms | 2.946 ms |  1.07 |    0.09 | 234.3750 | 171.8750 | 0 |
 
 *)
