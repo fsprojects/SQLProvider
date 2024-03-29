@@ -348,7 +348,7 @@ module internal SchemaProjections =
         | Upper _ -> yield! consume from true (i + 1) 
         | Lower _ -> yield! consume from false (i + 1) 
         | _ ->
-            yield from, i
+            yield struct(from, i)
             yield! restart (i + 1) }
       // Consume are letters of the same kind (either all lower or all upper)
       and consume from takeUpper i = seq {
@@ -356,14 +356,14 @@ module internal SchemaProjections =
         | Lower _ when not takeUpper -> yield! consume from takeUpper (i + 1)
         | Upper _ when takeUpper -> yield! consume from takeUpper (i + 1)
         | Lower _ when takeUpper ->
-            yield from, (i - 1)
+            yield struct(from, (i - 1))
             yield! restart (i - 1)
         | _ -> 
-            yield from, i
+            yield struct(from, i)
             yield! restart i }
         
       // Split string into segments and turn them to PascalCase
-      seq { for i1, i2 in restart 0 do 
+      seq { for struct(i1, i2) in restart 0 do 
               let sub = s.Substring(i1, i2 - i1) 
               if Array.forall Char.IsLetterOrDigit (sub.ToCharArray()) then
                 yield sub.[0].ToString().ToUpperInvariant() + sub.ToLowerInvariant().Substring(1) }
@@ -411,6 +411,7 @@ module internal Reflection =
     open System.Reflection
     open System.IO
 
+    let execAssembly = lazy System.Reflection.Assembly.GetExecutingAssembly()
     //let mutable resourceLinkedFiles = Set.empty
 
     let getPlatform (a:Assembly) =
@@ -489,7 +490,7 @@ module internal Reflection =
             let dirs = 
                 [__SOURCE_DIRECTORY__;
 #if !INTERACITVE
-                   System.Reflection.Assembly.GetExecutingAssembly() |> ifNotNull;
+                   execAssembly.Force() |> ifNotNull;
 #endif
                    Environment.CurrentDirectory;
                    System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
@@ -569,7 +570,7 @@ module internal Reflection =
                 | None when not (isNull (Environment.GetEnvironmentVariable "USERPROFILE")) ->
                     // Final try: nuget cache
                     try 
-                        let currentPlatform = getPlatform(Assembly.GetExecutingAssembly())
+                        let currentPlatform = getPlatform(execAssembly.Force())
                         let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
                         if System.IO.Directory.Exists c then
                             let picked = 

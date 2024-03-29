@@ -30,11 +30,18 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
 
     match (isQueryable e.Type) with
     | false -> None
-    | true -> 
-        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
-        match values.GetType().Name = "SqlQueryable`1" with
-        | true -> Some values
-        | false -> None
+    | true ->
+        match e.NodeType, e with
+        | ExpressionType.Constant, (:? ConstantExpression as ce) ->
+            if ce.Value.GetType().Name = "SqlQueryable`1" then
+                let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
+                Some values
+            else None
+        | _ ->
+            let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
+            match values.GetType().Name = "SqlQueryable`1" with
+            | true -> Some values
+            | false -> None
 
 let (|SeqValues|_|) (e:Expression) =
     if e.Type.FullName = "System.String" then None // String is char[] but we don't want to hit that!
@@ -50,7 +57,22 @@ let (|SeqValues|_|) (e:Expression) =
         // select x from xs where x in (select y from ys)
         // ...but instead we just execute the sub-query. Works when sub-query results are small.
 
-        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+        let values = 
+            match e.NodeType, e with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) when not(isNull ce.Value) ->
+                ce.Value :?> System.Collections.IEnumerable
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                myVal :?> System.Collections.IEnumerable
+            | _ -> Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
         let mutable count = 0
@@ -317,6 +339,21 @@ let intType (typ:Type) =
     if (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
     elif (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
     else typeof<int>
+
+let getRightFromOp (right:Expression) =
+    match right.NodeType, right with
+    | ExpressionType.Constant, (:? ConstantExpression as ce) -> ce.Value
+    | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+        let ceVal = (me.Expression :?> ConstantExpression).Value
+        let myVal = 
+            match me.Member with
+            | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                fieldInfo.GetValue ceVal
+            | :? PropertyInfo as propInfo when propInfo <> null ->
+                propInfo.GetValue(ceVal, null)
+            | _ -> ceVal
+        myVal
+    | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
 
 let rec (|SqlColumnGet|_|) (e:Expression) =  
     match e.NodeType, e with 
@@ -689,26 +726,27 @@ and (|SqlSpecialOpArrQueryable|_|) = function
     | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
     | _ -> None
     
-and (|SqlSpecialOp|_|) : Expression -> _ = function
-    | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
-    | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,Expression.Lambda(right).Compile().DynamicInvoke())
+and (|SqlSpecialOp|_|) e =
+    match e with
+    | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,getRightFromOp right)
+    | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,getRightFromOp right)
     // String  methods
     | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (getRightFromOp right)))
     | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (getRightFromOp right)))
     | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (getRightFromOp right)))
     
     // not (String  methods)
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not -> 
         match ue.Operand with
         | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O%%" (getRightFromOp right)))
         | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%O%%" (getRightFromOp right)))
         | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O" (getRightFromOp right)))
         | _ -> None
     | _ -> None
                 

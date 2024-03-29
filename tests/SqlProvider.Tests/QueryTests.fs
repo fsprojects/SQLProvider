@@ -333,6 +333,17 @@ let ``simple select query``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual("Obere Str. 57", qry.[0].Address)  
 
+[<Test >]
+let ``simple select query with different return types``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for ord in dc.Main.Orders do
+            select (ord.Freight, ord.CustomerId, ord.OrderDate, ord.EmployeeId)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+
 
 [<Test>]
 let ``simplest select query into temp``() = 
@@ -1904,6 +1915,17 @@ let ``simple select query async3``() =
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
+[<Test >]
+let ``simple select query with different return types options``() = 
+    let dc = sqlOption.GetDataContext()
+    let qry = 
+        query {
+            for ord in dc.Main.Orders do
+            select (ord.Freight, ord.CustomerId, ord.OrderDate, ord.EmployeeId, ord.OrderId, ord.ShipCity.IsSome)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
+
 [<Test>]
 let ``simple select with contains query with where boolean option type``() =
     let dc = sqlOption.GetDataContext()
@@ -2507,6 +2529,17 @@ let ``simple mapTo test``() =
     qry |> List.exists(fun i -> i.FirstName = "Laura") |> Assert.IsTrue
 
 type sqlValueOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+
+[<Test >]
+let ``simple select query with different return types valueoptions``() = 
+    let dc = sqlValueOption.GetDataContext()
+    let qry = 
+        query {
+            for ord in dc.Main.Orders do
+            select (ord.Freight, ord.CustomerId, ord.OrderDate, ord.EmployeeId, ord.OrderId, ord.ShipCity.IsSome)
+        } |> Seq.toArray
+    
+    CollectionAssert.IsNotEmpty qry
 
 [<Test>]
 let ``simple select with ValueOption type query``() =

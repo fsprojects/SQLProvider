@@ -15,7 +15,7 @@ open ProviderImplementation.ProvidedTypes
 
 type internal SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly =
-        Assembly.GetExecutingAssembly()
+        Reflection.execAssembly.Force()
         //let r = Reflection.tryLoadAssemblyFrom "" [||] [config.RuntimeAssembly]
         //match r with
         //| Choice1Of2(assembly) -> assembly
@@ -34,7 +34,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config, assemblyReplacementMap=["FSharp.Data.SqlProvider.DesignTime", "FSharp.Data.SqlProvider";
                                                                       "SQLProvider.DesignTime", "SQLProvider.Runtime"], addDefaultProbingLocation=true)
     let ns = "SQLProvider"
-    let asm = Assembly.GetExecutingAssembly()
+    let asm = Reflection.execAssembly.Force()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  

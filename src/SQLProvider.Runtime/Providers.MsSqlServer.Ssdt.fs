@@ -57,7 +57,7 @@ module MSSqlServerSsdt =
                     yield Path.Combine(p, origPath)
                 | _ -> ()
                 // executing assembly dir
-                match asmToPath (Assembly.GetExecutingAssembly()) with
+                match asmToPath (Reflection.execAssembly.Force()) with
                 | Some p ->
                     yield p
                     yield Path.Combine(p, origPath)
