@@ -10,7 +10,7 @@ open FSharp.Data.Sql.Patterns
 module AsyncOperations =
 
     let executeAsync (s:Linq.IQueryable<'T>) =
-        let yieldseq (en: IEnumerator<'T>) =
+        let inline yieldseq (en: IEnumerator<'T>) =
             seq {
                 while en.MoveNext() do
                 yield en.Current
@@ -60,7 +60,7 @@ module AsyncOperations =
             return res |> Seq.cast<'T> |> Seq.tryPick Some
         }
 
-    let private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
+    let inline private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
         task {
             let! res = fetchTakeN 2 s
             let converted = res |> Seq.cast<'TSource>

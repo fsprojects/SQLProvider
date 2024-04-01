@@ -35,7 +35,7 @@ module internal Utilities =
         new TempFile(filename)
 #endif
 
-    let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
+    let inline resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
@@ -48,7 +48,7 @@ module internal Utilities =
         else tupleIndex.[itemid - 1]
 
 
-    let quoteWhiteSpace (str:String) = 
+    let inline quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
     let uniqueName()= 

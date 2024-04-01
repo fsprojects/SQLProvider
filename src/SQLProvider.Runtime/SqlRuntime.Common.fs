@@ -852,7 +852,7 @@ module internal CommonTasks =
             parseFilters conditionList
 
     /// deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
-    let sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
+    let inline sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
 
     /// Check if we know primary column data type from cache.
     /// This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.

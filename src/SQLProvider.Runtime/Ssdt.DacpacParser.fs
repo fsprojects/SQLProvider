@@ -115,10 +115,10 @@ module RegexParsers =
     let parseTableColumnAnnotation colName colExpression =
         let m = colPattern.Match colExpression
         if m.Success then
-            Some { Column = colName
-                   DataType = m.Groups.["DataType"].Captures.[0].Value
-                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
-        else None
+            ValueSome { Column = colName
+                        DataType = m.Groups.["DataType"].Captures.[0].Value
+                        Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
+        else ValueNone
 
     /// Tries to find in-line commented type annotations in a view declaration.
     let parseViewAnnotations sql =
@@ -251,13 +251,13 @@ let parseXml(xml: string) =
             let annotation = RegexParsers.parseTableColumnAnnotation colName colExpr
             let dataType =
                 annotation
-                |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
-                |> Option.defaultValue "SQL_VARIANT"
+                |> ValueOption.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                |> ValueOption.defaultValue "SQL_VARIANT"
             let allowNulls =
                 match annotation with
-                | Some { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
-                | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
-                | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                | ValueSome { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                | ValueSome { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
+                | ValueNone -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
             
             Some
                 { SsdtColumn.Name = colName

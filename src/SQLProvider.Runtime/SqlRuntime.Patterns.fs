@@ -7,9 +7,9 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 
 [<return: Struct>]
-let (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
+let inline (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
 [<return: Struct>]
-let (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
+let inline (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
 
 let (|MethodCall|_|) (e:Expression) = 
     match e.NodeType, e with 
@@ -108,14 +108,15 @@ let (|Constant|_|) (e:Expression) =
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
     | _ -> None
 
-let (|OptionNone|_|) (e: Expression) =
+[<return: Struct>]
+let inline (|OptionNone|_|) (e: Expression) =
     match e with
     | MethodCall(None,MethodWithName("get_None"),[]) ->
         match e with
         | :? MethodCallExpression as e when (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                             || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> Some()
-        | _ -> None
-    | _ -> None
+                                             || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> ValueSome()
+        | _ -> ValueNone
+    | _ -> ValueNone
 
 [<return: Struct>]
 let (|NullConstant|_|) (e:Expression) = 
@@ -157,13 +158,13 @@ let rec (|Bool|_|) (e:Expression) =
     | _ -> None
 
 [<return: Struct>]
-let (|ParamName|_|) (e:Expression) = 
+let inline (|ParamName|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  ValueSome pe.Name
     | _ -> ValueNone    
 
 [<return: Struct>]
-let (|ParamWithName|_|) (s:String) (e:Expression) = 
+let inline (|ParamWithName|_|) (s:String) (e:Expression) = 
     match e with 
     | ParamName(n) when s = n -> ValueSome ()
     | _ -> ValueNone    
@@ -173,7 +174,7 @@ let (|Lambda|_|) (e:Expression) =
     | ExpressionType.Lambda, (:? LambdaExpression as ce) ->  Some (Seq.toList ce.Parameters, ce.Body)
     | _ -> None
 
-let (|OptionalQuote|) (e:Expression) = 
+let inline (|OptionalQuote|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
     | _ -> e
@@ -340,7 +341,7 @@ let intType (typ:Type) =
     elif (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
     else typeof<int>
 
-let getRightFromOp (right:Expression) =
+let inline internal getRightFromOp (right:Expression) =
     match right.NodeType, right with
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> ce.Value
     | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
@@ -630,11 +631,25 @@ and (|SqlNegativeBooleanColumn|_|) (e:Expression) =
 
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
-    let extractProperty op meth ti key =
+    let extractProperty op (meth:Expression) ti key =
         let invokation = 
-            // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
-            try Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-            with err -> None
+            match meth.NodeType, meth with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some ce.Value
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                Some myVal
+            | _ ->
+                // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
+                try
+                    Some(Expression.Lambda(meth).Compile().DynamicInvoke())
+                with err -> None
         match invokation with
         | None -> None
         | Some invokedResult -> 

@@ -284,28 +284,28 @@ module internal QueryExpressionTransformer =
                     when p.Type = typeof<SqlEntity> ->
 
                 let foundAlias = 
-                    if aliasEntityDict.ContainsKey(pname) then Some pname
+                    if aliasEntityDict.ContainsKey(pname) then ValueSome pname
                     elif pname.StartsWith "Item" then
                         let al = Utilities.resolveTuplePropertyName pname tupleIndex
-                        if aliasEntityDict.ContainsKey(al) then Some al
-                        elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
-                        else None
+                        if aliasEntityDict.ContainsKey(al) then ValueSome al
+                        elif ultimateChild.IsSome then ValueSome (fst ultimateChild.Value)
+                        else ValueNone
                     else
                     let prevParamKey = replaceParams.Keys |> Seq.toList |> List.tryFind(fun p -> p.Name = pname)
 
-                    let ultimateFallback = if ultimateChild.IsSome then Some (fst ultimateChild.Value) else None
+                    let ultimateFallback = if ultimateChild.IsSome then ValueSome (fst ultimateChild.Value) else ValueNone
                     match prevParamKey |> Option.map replaceParams.TryGetValue with
                     | Some (true, par) ->
                         match par.Body.NodeType, par.Body with
                         | ExpressionType.Call, (:? MethodCallExpression as ce) when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression && ce.Arguments.Count = 2) ->
                             match ce.Arguments.[0] with
-                            | :? ConstantExpression as c when aliasEntityDict.ContainsKey (c.Value.ToString()) -> Some (c.Value.ToString())
+                            | :? ConstantExpression as c when aliasEntityDict.ContainsKey (c.Value.ToString()) -> ValueSome (c.Value.ToString())
                             | _ -> ultimateFallback
                         | _ -> ultimateFallback
                     | _ -> ultimateFallback
 
                 match foundAlias with
-                | Some alias ->
+                | ValueSome alias ->
                     match projectionMap.TryGetValue alias with
                     | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
                     | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
@@ -314,7 +314,7 @@ module internal QueryExpressionTransformer =
                         (match databaseParam.Type.Name.StartsWith("IGrouping") with
                          | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
                          | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
-                | None -> None
+                | ValueNone -> None
             | _ -> None
 
 
@@ -680,8 +680,8 @@ module internal QueryExpressionTransformer =
             // to the only table in the query, so replace it
             if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then
                 match defaultTable with
-                | Some(s) -> s
-                | None -> baseName
+                | ValueSome(s) -> s
+                | ValueNone -> baseName
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseName else tbl
@@ -699,7 +699,7 @@ module internal QueryExpressionTransformer =
         // Resolves aliases on canonical multi-column functions
         let rec visitCanonicals resolverfunc = function
             | CanonicalOperation(subItem, col) -> 
-                let resolver (al:string) = // Don't try to resolve if already resolved
+                let inline resolver (al:string) = // Don't try to resolve if already resolved
                     if al = "" || al.StartsWith "Item" || entityIndex.Count = 0 then resolverfunc al else al
                 let resolvedSub =
                     match subItem with
@@ -781,7 +781,7 @@ module internal QueryExpressionTransformer =
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking
         // in the link data or ultimate base entity
-        let resolveAlias alias table =
+        let inline resolveAlias alias table =
             if table.Name <> "" then table else
             match sqlQuery.UltimateChild with
             | Some(uc) when alias = fst uc -> snd uc
@@ -795,12 +795,12 @@ module internal QueryExpressionTransformer =
         // able to be resolved now.
         let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            let resolvePrimary name =
+            let inline resolvePrimary name =
                 if String.IsNullOrWhiteSpace(name) || name = "__base__" then innerAlias
                 else 
                     let tbl = Utilities.resolveTuplePropertyName name entityIndex
                     if tbl = "" then innerAlias else tbl
-            let resolveForeign name =
+            let inline resolveForeign name =
                 if String.IsNullOrWhiteSpace(name) || name = "__base__" then outerAlias
                 else 
                     let tbl = Utilities.resolveTuplePropertyName name entityIndex

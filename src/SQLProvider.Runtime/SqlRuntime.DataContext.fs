@@ -13,7 +13,7 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath =
+    let inline createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath =
         let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
         match vendor with
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
@@ -27,6 +27,31 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
+
+    let internal initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) providerType =
+        
+        if (providerType <> DatabaseProviderTypes.SQLITE) then 
+            com.CommandType <- CommandType.StoredProcedure
+
+        let columns =
+            def.Params
+            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
+            |> Map.ofList
+
+        let entity = SqlEntity(dc, def.Name.DbName, columns)
+
+        let toEntityArray rowSet =
+            [|
+                for row in rowSet do
+                    let entity = SqlEntity(dc, def.Name.DbName, columns)
+                    entity.SetData(row)
+                    yield entity
+            |]
+
+        let param = def.Params |> List.toArray
+
+        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
+        param, entity, toEntityArray
 
 type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath) =
     let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
@@ -57,30 +82,6 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             let x = providerCache.TryRemove typeName
             reraise()
 
-    let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
-        
-        if (providerType <> DatabaseProviderTypes.SQLITE) then 
-            com.CommandType <- CommandType.StoredProcedure
-
-        let columns =
-            def.Params
-            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
-            |> Map.ofList
-
-        let entity = SqlEntity(dc, def.Name.DbName, columns)
-
-        let toEntityArray rowSet =
-            [|
-                for row in rowSet do
-                    let entity = SqlEntity(dc, def.Name.DbName, columns)
-                    entity.SetData(row)
-                    yield entity
-            |]
-
-        let param = def.Params |> List.toArray
-
-        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
-        param, entity, toEntityArray
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
@@ -145,7 +146,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use com = provider.CreateCommand(con, def.Name.DbName)
             if commandTimeout.IsSome then
                 com.CommandTimeout <- commandTimeout.Value
-            let param, entity, toEntityArray = initCallSproc (this) def values con com
+            let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com providerType
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -172,14 +173,14 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 use com = provider.CreateCommand(con, def.Name.DbName)
                 if commandTimeout.IsSome then
                     com.CommandTimeout <- commandTimeout.Value
-                let param, entity, toEntityArray = initCallSproc (this) def values con com
+                let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com providerType
 
                 let! resOrErr =
                     provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
                      |> Async.AwaitTask
                      |> Async.Catch
                      |> Async.StartAsTask
-                let entities =
+                return
                     match resOrErr with
                     | Choice1Of2 res ->
                         match res with
@@ -200,7 +201,6 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                         if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
                         raise err
 
-                return entities
             }
 
         member this.GetIndividual(table,id) : SqlEntity =
