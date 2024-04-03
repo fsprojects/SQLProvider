@@ -1,3 +1,8 @@
+### 1.1.102 - 03.04.2022
+* Service release due to NuGet downloads of old 1.1.101
+* Taken some of 1.3.x SQL and performance improvements and memory reductions to 1.1.x.
+* No dependencies updates, no still using old async, etc.
+
 ### 1.1.101 - 07.02.2021
 * Minor SSDT improvements
 

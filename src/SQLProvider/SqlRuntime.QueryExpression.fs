@@ -40,7 +40,16 @@ module internal QueryExpressionTransformer =
                 if not(groupProjectionMap.Contains (entity,ct)) then
                     groupProjectionMap.Add(entity,ct)
                 MultipleTables exp
-            | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
+            | Lambda([ParamName sourceAlias],NewExpr(_, [
+                        (SqlColumnGet(entity1,ct1,rtyp1) as oper1);
+                        (SqlColumnGet(entity2,ct2,rtyp2) as oper2)
+                        ])) as exp ->
+                if not(groupProjectionMap.Contains (entity1,ct1)) then
+                    groupProjectionMap.Add(entity1,ct1)
+                if not(groupProjectionMap.Contains (entity2,ct2)) then
+                    groupProjectionMap.Add(entity2,ct2)
+                MultipleTables exp
+            | _ -> failwith ("Unsupported projection type " + projection.NodeType.ToString() + ": " + projection.ToString())
 
             // 1. only one table was involed so the input is a single parameter
             // 2. the input is a n tuple returned from the query
@@ -269,8 +278,20 @@ module internal QueryExpressionTransformer =
                         if aliasEntityDict.ContainsKey(al) then Some al
                         elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
                         else None
-                    elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
-                    else None
+                    else
+                    let prevParamKey = replaceParams.Keys |> Seq.toList |> List.tryFind(fun p -> p.Name = pname)
+
+                    let ultimateFallback = if ultimateChild.IsSome then Some (fst ultimateChild.Value) else None
+                    match prevParamKey |> Option.map replaceParams.TryGetValue with
+                    | Some (true, par) ->
+                        match par.Body.NodeType, par.Body with
+                        | ExpressionType.Call, (:? MethodCallExpression as ce) when (ce.Method.Name = "GetSubTable" && (not(ce.Object = null)) && ce.Object :? ParameterExpression && ce.Arguments.Count = 2) ->
+                            match ce.Arguments.[0] with
+                            | :? ConstantExpression as c when aliasEntityDict.ContainsKey (c.Value.ToString()) -> Some (c.Value.ToString())
+                            | _ -> ultimateFallback
+                        | _ -> ultimateFallback
+                    | _ -> ultimateFallback
+
 
                 match foundAlias with
                 | Some alias ->
@@ -339,6 +360,9 @@ module internal QueryExpressionTransformer =
                                                                                     | :? ConstantExpression as c when c.Value = box(true) -> transform en e.IfTrue
                                                                                     | :? ConstantExpression as c when c.Value = box(false) -> transform en e.IfFalse
                                                                                     | _ -> upcast Expression.Condition(testExp, transform en e.IfTrue, transform en e.IfFalse)
+            | ExpressionType.Constant,           (:? ConstantExpression as e)  when e.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1") ->
+                                                                                    // https://github.com/dotnet/fsharp/issues/13370
+                                                                                    upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with
                                                                                     | Some(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
@@ -539,7 +563,7 @@ module internal QueryExpressionTransformer =
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
                                     List.concat [ x; (groupProjectionMap |> Seq.toList)]
-                                    |> Seq.map(fun op ->
+                                    |> List.collect(fun op ->
                                         if not (group |> List.isEmpty) then 
                                             group 
                                             |> List.choose(fun (baseal, cc) -> 
@@ -558,7 +582,7 @@ module internal QueryExpressionTransformer =
                                                 | _ -> None)
 
                                         else [op]
-                                    ) |> Seq.concat |> Seq.toList
+                                    )
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
 
@@ -568,7 +592,19 @@ module internal QueryExpressionTransformer =
                 let rec composeProjections projs prevLambda (foundparams : Dictionary<string, ResizeArray<ProjectionParameter>>) = 
                     match projs with 
                     | [] -> prevLambda, foundparams
-                    | proj::tail -> 
+                    | proj::tail ->
+                        let operations =
+                            // Full entities don't need to be transferred recursively
+                            // but Canonical operation structures cannot be lost.
+                            [| for KeyValue(k,v) in foundparams do
+                                if k = "" then yield k, v
+                                else
+                                  for colp in v do
+                                    match colp with
+                                    | OperationColumn _ ->  yield k, v
+                                    | EntityColumn _ -> () |]
+                        foundparams.Clear()
+                        operations |> Seq.distinct |> Seq.toArray |> Array.iter(fun (k, v) ->foundparams.Add(k,v))
                         let lambda1, dbparams1 = visitExpression proj prevLambda initDbParam
                         dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
                         composeProjections tail lambda1 foundparams
@@ -602,7 +638,7 @@ module internal QueryExpressionTransformer =
                             // Whole entity plus operation columns. We need urgent table lookup.
                             let myLock = provider.GetLockObject()
                             let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
-                            let opcols = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat
+                            let opcols = projectionColumns |> Seq.collect(fun p -> p.Value)
                             let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
                             let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
                             let tmp = sel

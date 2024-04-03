@@ -27,16 +27,23 @@ module internal Oracle =
     let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) -> 
-            let types = 
-                try assembly.GetTypes() 
+            let types, err = 
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            match types |> Array.tryFind(fun t -> t.Name = name) with
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
+            match types |> Array.tryFind(fun t -> (not (t = null)) && t.Name = name) with
             | Some t -> t
-            | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
                                  Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
 
         | Choice2Of2(paths, errors) ->
@@ -765,6 +772,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS VARCHAR)" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "TRUNC(%s)" column
                     | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
@@ -975,7 +983,10 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 ~~(sprintf "DELETE FROM %s " baseTable.FullName)
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)

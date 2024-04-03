@@ -35,6 +35,8 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
         | false -> None
 
 let (|SeqValues|_|) (e:Expression) =
+    if e.Type.FullName = "System.String" then None // String is char[] but we don't want to hit that!
+    else
     let rec isEnumerable (ty : Type) = 
         ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
         |> (not << Seq.isEmpty)
@@ -46,7 +48,22 @@ let (|SeqValues|_|) (e:Expression) =
         // select x from xs where x in (select y from ys)
         // ...but instead we just execute the sub-query. Works when sub-query results are small.
 
-        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+        let values = 
+            match e.NodeType, e with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) when not(ce.Value = null) ->
+                ce.Value :?> System.Collections.IEnumerable
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                myVal :?> System.Collections.IEnumerable
+            | _ -> Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
         let mutable count = 0
@@ -155,6 +172,16 @@ let rec (|OptionalConvertOrTypeAs|) (e:Expression) =
         e.Arguments.[0]
     | _ -> e
 
+let (|OptionalCopyOfStruct|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = "Value" -> inner
+    | _ -> e
+
+let (|CopyOfStruct|_|) (membername:String) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = membername -> Some inner
+    | _ -> None
+
 let (|OptionalFSharpOptionValue|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
@@ -183,12 +210,27 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
+let (|FSharpIsNullMethod|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, (:? MethodCallExpression as e) ->
+        if e.Object = null && e.Method.Name = "IsNull" && e.Arguments.Count = 1 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+            Some (e.Arguments.[0])
+        else
+            None
+    | _ -> None
+
 let (|OptionIsSome|_|) : Expression -> _ = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
+        | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+        | MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[e]) when para = "copyOfStruct" && me.Member.Name = "IsNone" -> Some e
+        | CopyOfStruct "IsNone" exp -> Some exp
+        | FSharpIsNullMethod exp -> Some exp
         | _ -> None
+    | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+    | CopyOfStruct "IsSome" exp -> Some exp
     | _ -> None
 
 let (|OptionIsNone|_|) : Expression -> _ = function    
@@ -196,7 +238,12 @@ let (|OptionIsNone|_|) : Expression -> _ = function
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
+        | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+        | CopyOfStruct "IsSome" exp -> Some exp
         | _ -> None
+    | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+    | CopyOfStruct "IsNone" exp -> Some exp
+    | FSharpIsNullMethod exp -> Some exp
     | _ -> None
 
 let (|SqlCondOp|_|) (e:Expression) = 
@@ -253,6 +300,21 @@ let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;
 let intType (typ:Type) = 
     if typ <> null && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
     else typeof<int>
+
+let inline internal getRightFromOp (right:Expression) =
+    match right.NodeType, right with
+    | ExpressionType.Constant, (:? ConstantExpression as ce) -> ce.Value
+    | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+        let ceVal = (me.Expression :?> ConstantExpression).Value
+        let myVal = 
+            match me.Member with
+            | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                fieldInfo.GetValue ceVal
+            | :? PropertyInfo as propInfo when propInfo <> null ->
+                propInfo.GetValue(ceVal, null)
+            | _ -> ceVal
+        myVal
+    | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
 
 let rec (|SqlColumnGet|_|) (e:Expression) =  
     match e.NodeType, e with 
@@ -327,11 +389,15 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | "AddYears", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
                 | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
                 | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
+                | "AddDays", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
                 | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlCol(al2,col2)), col), typ)
                 | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
+                | "AddHours", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(float x), col), typ)
                 | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
+                | "AddMinutes", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
                 | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlCol(al2,col2)), col), typ)
                 | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
+                | "AddSeconds", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(float x), col), typ)
                 | _ -> None
             | _ -> None
     // These are canonical properties
@@ -416,7 +482,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | ExpressionType.Multiply -> "*"
             | ExpressionType.Divide -> "/"
             | ExpressionType.Modulo -> "%"
-            | _ -> failwith "Shouldn't hit"
+            | _ -> failwith ("Shouldn't hit " + op.ToString())
 
         if be.Left.Type = typeof<System.DateTime> || be.Right.Type = typeof<System.DateTime> || be.Left.Type = typeof<Option<System.DateTime>> || be.Right.Type = typeof<Option<System.DateTime>> then
             // DateTime math operations are not supported directly as they return .NET TimeSpan which is not the clear translation of SQL.
@@ -505,7 +571,12 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> 
             -> Some(alias, col, e.Type)
         | _ -> None
-
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
+                           (e.Type = typeof<System.Int32> || e.Type = typeof<Option<System.Int32>> ) ->
+        match e.Arguments.[0] with
+        | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> 
+            -> Some(alias, CanonicalOperation(CanonicalOp.CastInt, col), typ)
+        | _ -> None
     | _ -> None
 
 and (|SqlNegativeBooleanColumn|_|) (e:Expression) = 
@@ -519,11 +590,25 @@ and (|SqlNegativeBooleanColumn|_|) (e:Expression) =
 
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
-    let extractProperty op meth ti key =
+    let extractProperty op (meth:Expression) ti key =
         let invokation = 
-            // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
-            try Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-            with err -> None
+            match meth.NodeType, meth with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some ce.Value
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                Some myVal
+            | _ ->
+                // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
+                try
+                    Some(Expression.Lambda(meth).Compile().DynamicInvoke())
+                with err -> None
         match invokation with
         | None -> None
         | Some invokedResult -> 
@@ -604,6 +689,7 @@ and (|SqlSpecialOpArr|_|) = function
     | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.In, key, values)
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.NotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.In, key, values)
+    | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.In, key, values)
     | _ -> None
 
 and (|SqlSpecialOpArrQueryable|_|) = function
@@ -642,6 +728,7 @@ and (|SqlSpecialNegativeOpArr|_|) (e:Expression) =
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NotIn, key, values)
+        | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.NotIn, key, values)
         | _ -> None
     | _ -> None
 

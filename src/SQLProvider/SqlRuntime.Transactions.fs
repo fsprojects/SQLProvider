@@ -31,6 +31,17 @@ module internal TransactionUtils =
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
+    let toSystemDataIsolationLevel isolationLevel =
+        match isolationLevel with
+        | IsolationLevel.Serializable -> System.Data.IsolationLevel.Serializable
+        | IsolationLevel.RepeatableRead -> System.Data.IsolationLevel.RepeatableRead
+        | IsolationLevel.ReadCommitted -> System.Data.IsolationLevel.ReadCommitted
+        | IsolationLevel.ReadUncommitted -> System.Data.IsolationLevel.ReadUncommitted
+        | IsolationLevel.Snapshot -> System.Data.IsolationLevel.Snapshot
+        | IsolationLevel.Chaos -> System.Data.IsolationLevel.Chaos
+        | IsolationLevel.Unspecified -> System.Data.IsolationLevel.Unspecified
+        | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
+
     let fromSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
         | System.Transactions.IsolationLevel.Serializable -> IsolationLevel.Serializable

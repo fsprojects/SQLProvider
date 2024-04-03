@@ -76,11 +76,23 @@ module public QueryEvents =
       
       /// Use this to execute similar queries to test the result of the executed query.
       member x.ToRawSql() =
-        x.Parameters |> Seq.fold (fun (acc:string) (pName, pValue) -> 
+        x.Parameters
+        |> Seq.sortBy (fun (n,_) -> -1 * n.Length)
+        |> Seq.fold (fun (acc:StringBuilder) (pName, pValue) -> 
             match pValue with
             | :? String as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.Replace("'", "''"))))
-            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd hh:mm:ss"))))
-            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
+            | :? Guid as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString())))
+            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss"))))
+            | :? DateTimeOffset as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss zzz"))))
+            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) (StringBuilder x.Command)
+        |> string<StringBuilder>
+
+      member x.ToRawSqlWithParamInfo() =
+        let arr = x.Parameters |> Seq.toArray
+        if arr.Length = 0 then x.Command
+        else
+            let paramsString = arr |> Seq.fold (fun (sb:StringBuilder) (pName, pValue) -> sb.Append(sprintf "%s - %A; " pName pValue)) (StringBuilder())
+            sprintf "%s -- params opened: %s" (x.ToRawSql()) (paramsString.ToString())
 
    let private sqlEvent = new Event<SqlEventData>()
    
@@ -143,13 +155,23 @@ type MappedColumnAttribute(name: string) =
     inherit Attribute()
     member x.Name with get() = name
 
+type ResultSet = seq<(string * obj)[]>
+type ReturnSetType =
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
+type ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
-    let table = Table.FromFullName tableName
+
     let propertyChanged = Event<_,_>()
 
-    let data = Dictionary<string,obj>()
-    let aliasCache = new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural)
+    let data = Dictionary<string,obj>(columns.Count)
+    let mutable aliasCache = None
 
     let replaceFirst (text:string) (oldValue:string) (newValue) =
         let position = text.IndexOf oldValue
@@ -171,15 +193,17 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.HasColumn(key, ?comparison)= 
         let comparisonOption = defaultArg comparison StringComparison.InvariantCulture
         columns |> Seq.exists(fun kp -> (kp.Key |> SchemaProjections.buildFieldName).Equals(key, comparisonOption))
-    member __.Table= table
+    member __.Table= Table.FromFullName tableName
     member __.DataContext with get() = dc
 
     member __.GetColumn<'T>(key) : 'T =
         let defaultValue() =
             if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
-        if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> defaultValue()
+        | true, dataitem ->
+           match dataitem with
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
            // Postgres array types
@@ -191,16 +215,18 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                        (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
-        else defaultValue()
+
 
     member __.GetColumnOption<'T>(key) : Option<'T> =
-       if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> None
+        | true, dataitem ->
+           match dataitem with
            | null -> None
            | :? System.DBNull -> None
            | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> Some(unbox data)
-       else None
+
 
     member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
         keys |> List.choose(fun key -> 
@@ -236,23 +262,25 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.SetColumnOptionSilent(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then
+              data.[key] <- value
+          else data.Add(key,value)
       | None -> data.Remove key |> ignore
 
     member __.SetPkColumnOptionSilent(keys,value) =
-        keys |> List.iter(fun x -> 
-            match value with
-            | Some value ->
-                if not (data.ContainsKey x) then data.Add(x,value)
-                else data.[x] <- value
-            | None -> data.Remove x |> ignore)
+        match value with
+        | Some value ->
+            keys |> List.iter(fun x -> 
+                if data.ContainsKey x then data.[x] <- value
+                else data.Add(x,value))
+        | None ->
+            keys |> List.iter(fun x -> data.Remove x |> ignore)
 
     member e.SetColumnOption(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then data.[key] <- value
+          else data.Add(key,value)
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
@@ -261,7 +289,15 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        aliasCache.GetOrAdd(alias, fun alias ->
+
+        match aliasCache with
+        | Some x -> ()
+        | None ->
+            aliasCache <- Some (Dictionary<string,SqlEntity>(HashIdentity.Structural))
+
+        match aliasCache.Value.TryGetValue alias with
+        | true, entity -> entity
+        | false, _ ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
             let newEntity = SqlEntity(dc, tableName, columns)
             // attributes names cannot have a period in them unless they are an alias
@@ -301,7 +337,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
             |> Seq.choose pred
             |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
 
-            newEntity)
+            aliasCache.Value.Add(alias,newEntity)
+            newEntity
 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
         let typ = typeof<'a>
@@ -390,15 +427,6 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                                  override __.ShouldSerializeValue(_) = false })
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
-and ResultSet = seq<(string * obj)[]>
-and ReturnSetType =
-    | ScalarResultSet of string * obj
-    | ResultSet of string * ResultSet
-and ReturnValueType =
-    | Unit
-    | Scalar of string * obj
-    | SingleResultSet of string * ResultSet
-    | Set of seq<ReturnSetType>
 
 and ISqlDataContext =
     abstract ConnectionString           : string
@@ -421,8 +449,12 @@ and ISqlDataContext =
     abstract SqlOperationsInSelect      : SelectOperations
     abstract SaveContextSchema          : string -> unit
 
-// LinkData is for joins with SelectMany
-and LinkData =
+/// This is publically exposed and used in the runtime
+type IWithDataContext =
+    abstract DataContext : ISqlDataContext
+
+/// LinkData is for joins with SelectMany
+type LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : SqlColumnType list
       ForeignTable       : Table
@@ -433,18 +465,18 @@ and LinkData =
         member x.Rev() =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-// GroupData is for group-by projections
-and GroupData =
+/// GroupData is for group-by projections
+type GroupData =
     { PrimaryTable       : Table
       KeyColumns         : (alias * SqlColumnType) list
       AggregateColumns   : (alias * SqlColumnType) list
       Projection         : Expression option }
 
-and table = string
+type table = string
 
-and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
-and UnionType = NormalUnion | UnionAll | Intersect | Except
-and internal SqlExp =
+type SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
+type UnionType = NormalUnion | UnionAll | Intersect | Except
+type internal SqlExp =
     | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
@@ -490,7 +522,7 @@ and internal SqlExp =
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
 
-and internal SqlQuery =
+type internal SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
@@ -555,6 +587,7 @@ and internal SqlQuery =
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) ->
                     if q.Skip.IsSome then failwith "skip may only be specified once"
+                    elif amount = 0 then convert q rest
                     else convert { q with Skip = Some(amount) } rest
                 | Take(amount, rest) ->
                     if q.Union.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
@@ -574,7 +607,7 @@ and internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-and internal ISqlProvider =
+type internal ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
@@ -800,6 +833,33 @@ module internal CommonTasks =
                     | x -> x)
             parseFilters conditionList
 
+    /// deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
+    let inline sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
+
+    /// Check if we know primary column data type from cache.
+    /// This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.
+    let searchDataTypeFromCache (provider:ISqlProvider) con (sqlQuery:SqlQuery) (baseAlias:string) (baseTable:Table) (alias:string) (col:SqlColumnType) =
+        match col with
+        | KeyColumn name when not (String.IsNullOrEmpty alias) ->
+            if alias = baseAlias then
+                match provider.GetColumns(con,baseTable).ContainsKey name with
+                | true ->
+                    let col = provider.GetColumns(con,baseTable).[name]
+                    Some col.TypeMapping.DbType
+                | _ -> None
+            else
+                match sqlQuery.Aliases.ContainsKey alias with
+                | true ->
+                    let table = sqlQuery.Aliases.[alias]
+                    match provider.GetColumns(con,table).ContainsKey name with
+                    | true ->
+                        let col = provider.GetColumns(con,table).[name]
+                        Some col.TypeMapping.DbType
+                    | _ -> None
+                | false -> None
+        | _ -> None
+
+
 module public OfflineTools =
 
     /// Merges two ContexSchemaPath offline schema files into one target schema file.
@@ -836,3 +896,114 @@ module public OfflineTools =
                 IsOffline = s1.IsOffline || s2.IsOffline}
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
+
+    open System.Linq
+    open System.Collections
+
+    type MockQueryable<'T>(dc:ISqlDataContext, itms:IQueryable<'T>) = //itms:IQueryable<'T>) =
+        interface IQueryable<'T>
+        interface IQueryable with
+            member __.Provider = itms.Provider
+            member x.Expression =  itms.Expression
+            member __.ElementType = itms.ElementType
+        interface seq<'T> with
+             member __.GetEnumerator() = itms.GetEnumerator()
+        interface IEnumerable with
+             member x.GetEnumerator() = itms.GetEnumerator() :> IEnumerator
+        interface IWithDataContext with
+             member __.DataContext = dc
+
+    let internal makeColumns (dummydata: obj) =
+        let tableItem = (dummydata :?> seq<obj> |> Seq.head).GetType()
+
+        let columnNames =
+            tableItem.GetProperties()
+            |> Array.map(fun col -> col.Name, col.PropertyType.Name)
+
+        let cols = columnNames |> Array.map(fun (nam,typ) ->
+            let tempCol = { Name = nam
+                            TypeMapping = TypeMapping.Create(typ); IsPrimaryKey = false
+                            IsNullable = String.IsNullOrEmpty typ || typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption"
+                            IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = None }
+            nam, tempCol) |> ColumnLookup
+        columnNames, cols
+
+
+    let internal createMockEntitiesDc<'T when 'T :> SqlEntity> dc (tableName:string) (dummydata: obj) =
+        let columnNames, cols = makeColumns dummydata
+        let rowData = 
+            dummydata :?> seq<obj>
+            |> Seq.map(fun row ->
+                let entity = SqlEntity(dc, tableName, cols)
+                for (col, _) in columnNames do
+                    let colProp = row.GetType().GetProperty(col)
+                    let colData = if colProp = null then null else colProp.GetValue(row, null)
+                    let typ = if colData = null || (colData.GetType() = null) then "" else colData.GetType().Name
+                    if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
+                        let noneProp = colData.GetType().GetProperty("IsNone")
+                        let optIsNone =
+                            if noneProp = null then null
+                            elif noneProp.GetIndexParameters().Length = 0 then
+                                colData.GetType().GetProperty("IsNone").GetValue(colData, null)
+                            else
+                                ((colData.GetType().GetProperty "Value") = null) :> obj
+                        if (optIsNone = null) || (unbox<bool>optIsNone) = true then
+                            entity.SetColumnOptionSilent(col, None)
+                        else
+                            let optValProp = colData.GetType().GetProperty("Value")
+                            if optValProp = null then 
+                                entity.SetColumnOptionSilent(col, None)
+                            else
+                                let optVal = optValProp.GetValue(colData, null)
+                                entity.SetColumnOptionSilent(col, Some optVal)
+                    else
+                        entity.SetColumnSilent(col, colData)
+                entity :?> 'T)
+        MockQueryable(dc, rowData.AsQueryable()) :> IQueryable<'T>
+
+    /// This can be used for testing. Creates de-attached entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
+    let CreateMockEntities<'T when 'T :> SqlEntity> (tableName:string) (dummydata: obj) =
+        createMockEntitiesDc<'T> Unchecked.defaultof<ISqlDataContext> tableName dummydata
+
+    /// This can be used for testing. Creates fake DB-context entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext ["schema.MyTable1"; [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |] :> obj] |> Map.ofList
+    /// See project unit-test for more examples.
+    /// NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
+    /// Limitation of mockContext: You cannot Create new entities to the mock context.
+    let CreateMockSqlDataContext<'T> (dummydata: Map<string,obj>) =
+        let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
+        let x = { new ISqlDataContext with
+                    member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): obj = raise (System.NotImplementedException())
+                    member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): Async<SqlEntity> = raise (System.NotImplementedException())
+                    member this.ClearPendingChanges(): unit = pendingChanges.Clear()
+                    member this.CommandTimeout: Option<int> = None
+                    member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
+                    member this.CreateEntities(arg1: string): IQueryable<SqlEntity> =
+                        match dummydata.ContainsKey arg1 with
+                        | true -> let tableData = dummydata.[arg1] in createMockEntitiesDc this arg1 tableData
+                        | false -> failwith ("Add table to dummydata: " + arg1) 
+                    member this.CreateEntity(arg1: string): SqlEntity =
+                        match dummydata.ContainsKey arg1 with
+                        | true ->
+                            let tableData = dummydata.[arg1]
+                            let _, cols = makeColumns tableData
+                            new SqlEntity(this, arg1, cols)
+                        | false -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup)
+                    member this.CreateRelated(arg1: SqlEntity, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: RelationshipDirection): IQueryable<SqlEntity> = raise (System.NotImplementedException())
+                    member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
+                    member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
+                    member this.GetPrimaryKeyDefinition(arg1: string): string = ""
+                    member this.ReadEntities(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.IDataReader): SqlEntity array = raise (System.NotImplementedException())
+                    member this.ReadEntitiesAsync(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.Common.DbDataReader): Async<SqlEntity array> = raise (System.NotImplementedException())
+                    member __.SaveContextSchema(arg1: string): unit = ()
+                    member __.SqlOperationsInSelect = FSharp.Data.Sql.SelectOperations.DotNetSide
+                    member __.SubmitChangedEntity(arg1: SqlEntity): unit = pendingChanges.AddOrUpdate(arg1, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
+                    member __.SubmitPendingChanges(): unit = ()
+                    member __.SubmitPendingChangesAsync(): Async<unit> = async {return ()}
+                    member __.ConnectionString = ""
+               }
+        x :> obj |> unbox<'T>
+
+
+

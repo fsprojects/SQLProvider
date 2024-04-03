@@ -11,10 +11,6 @@ open FSharp.Data.Sql.Common.Utilities
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
-// this is publically exposed and used in the runtime
-type IWithDataContext =
-    abstract DataContext : ISqlDataContext
-
 type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box
@@ -55,10 +51,23 @@ module internal QueryImplementation =
         | MethodCall(None,MethodWithName("op_BangBang"), [inner]) -> (true,inner)
         | _ -> (false,e)
 
-    let parseQueryResults (projector:Delegate) (results:SqlEntity[]) (hasGroupBy:Option<_>) =
-        let args = projector.GetType().GenericTypeArguments
-        seq { 
-            if args.Length > 0 && hasGroupBy.IsSome then
+    let inline internal invokeEntitiesListAvoidingDynamicInvoke (results:IEnumerable<SqlEntity>) (projector:Delegate) =
+        let returnType = projector.Method.ReturnType
+        if returnType.IsClass then // Try to avoid the slow DynamicInvoke on baseic types
+            let invoker = projector :?> Func<SqlEntity, _> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+        else
+
+            if   returnType = typeof<Decimal> then let invoker = projector :?> Func<SqlEntity, Decimal> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif returnType = typeof<Int64> then let invoker = projector :?> Func<SqlEntity, Int64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif returnType = typeof<DateTime> then let invoker = projector :?> Func<SqlEntity, DateTime> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif returnType = typeof<Guid> then let invoker = projector :?> Func<SqlEntity, Guid> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif returnType = typeof<Int32> then let invoker = projector :?> Func<SqlEntity, Int32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif returnType = typeof<Boolean> then let invoker = projector :?> Func<SqlEntity, Boolean> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            else
+                seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
+
+    let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+                let args = projector.GetType().GenericTypeArguments
                 let keyType, keyConstructor, itemEntityType = 
                     if args.[0].Name.StartsWith("IGrouping") then
                         if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
@@ -180,11 +189,7 @@ module internal QueryImplementation =
                             keyConstructor.Value.[0].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6,kn7); tup7.Invoke(null, [|v1;v2;v3;v4;v5;v6;v7|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
-
-                for e in collected -> projector.DynamicInvoke(e) 
-            else
-                for e in results -> projector.DynamicInvoke(e) 
-        } |> Seq.cache :> System.Collections.IEnumerable
+                seq { for e in collected -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
 
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
@@ -195,13 +200,16 @@ module internal QueryImplementation =
         if dc.CommandTimeout.IsSome then
             cmd.CommandTimeout <- dc.CommandTimeout.Value
         for p in parameters do cmd.Parameters.Add p |> ignore
+        let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
         let columns = provider.GetColumns(con, baseTable)
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        let results = parseQueryResults projector results (sqlExp.hasGroupBy())
         if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-        results
+        if not isGroypBy then
+            invokeEntitiesListAvoidingDynamicInvoke results projector
+        else parseGroupByQueryResults projector results
+
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        async {
@@ -213,6 +221,7 @@ module internal QueryImplementation =
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
+           let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() |> Async.AwaitIAsyncResult |> Async.Ignore
@@ -221,9 +230,11 @@ module internal QueryImplementation =
                 con.Open()
            use! reader = cmd.ExecuteReaderAsync() |> Async.AwaitTask
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results = parseQueryResults projector results (sqlExp.hasGroupBy())
            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-           return results
+           return
+               if not isGroypBy then
+                    invokeEntitiesListAvoidingDynamicInvoke results projector
+               else parseGroupByQueryResults projector results
        }
 
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
@@ -940,7 +951,7 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in join"
+                                | _ -> failwithf "unsupported projection in join (%O)" projection
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "SelectMany"),
@@ -950,7 +961,7 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in select many"
+                                | _ -> failwithf "unsupported projection in select many (%O)" projection
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression projectionParams source 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
@@ -1156,7 +1167,7 @@ module internal QueryImplementation =
                 if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                 (Utilities.convertTypes res typeof<'T>) |> unbox
             | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-        | c -> failwithf "Supported only on SQLProvider dataase IQueryables. Was %s" (c.GetType().FullName)
+        | c -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (c.GetType().FullName)
 
 module Seq =
     /// Execute SQLProvider query to get the sum of elements.

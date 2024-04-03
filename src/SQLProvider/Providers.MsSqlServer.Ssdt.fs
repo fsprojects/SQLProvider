@@ -332,6 +332,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "CAST(%s AS DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -554,9 +555,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             if isDeleteScript then
                 ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
-            else 
+            else
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
@@ -588,13 +592,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "

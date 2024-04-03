@@ -27,7 +27,7 @@ module DataTable =
             match f row with
             | Some(key,item) -> cache.Add(key,item)
             | None -> ()
-        cache.Values |> Seq.map id |> Seq.toList
+        cache.Values |> Seq.toList
     
     let mapChoose (f:DataRow -> 'a option) (dt:DataTable) = 
         if dt <> null

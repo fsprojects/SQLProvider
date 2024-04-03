@@ -358,6 +358,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | ToUpper -> sprintf "UCase(%s)" column
                     | ToLower -> sprintf "LCase(%s)" column
                     | CastVarchar -> sprintf "CStr(%s)" column
+                    | CastInt -> sprintf "Val(%s)" column
                     // Date functions
                     | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\"))" column
                     | Year -> sprintf "Year(%s)" column
@@ -578,7 +579,10 @@ type internal MSAccessProvider(contextSchemaPath) =
                 ~~(sprintf "DELETE FROM %s[%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")))
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")  columns)
@@ -600,13 +604,13 @@ type internal MSAccessProvider(contextSchemaPath) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "

@@ -40,14 +40,23 @@ module PostgreSQL =
 
     let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
     let findType name = 
-        let types = 
-            try assembly.Value.GetTypes() 
+        let types, err = 
+            try assembly.Value.GetTypes(), None
             with | :? System.Reflection.ReflectionTypeLoadException as e ->
                 let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                 let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                 let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-        types |> Array.tryFind (fun t -> t.Name = name)
+                let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                if e.Types.Length = 0 then
+                    failwith errmsg
+                else e.Types, Some errmsg
+        match types |> Array.tryFind(fun t -> (not (t = null)) && t.Name = name) with
+        | Some t -> Some t
+        | None ->
+            match err with
+            | Some msg -> failwith msg
+            | None -> None
+
     let getType = findType >> Option.get
 
     let connectionType = lazy (getType "NpgsqlConnection")
@@ -902,6 +911,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
                     | CastVarchar -> sprintf "(%s::varchar)" column
+                    | CastInt -> sprintf "(%s::int)" column
                     // Date functions
                     | Date -> sprintf "DATE_TRUNC('day', %s)" column
                     | Year -> sprintf "DATE_PART('year', %s)" column
@@ -1115,7 +1125,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 ~~(sprintf "DELETE FROM \"%s\".\"%s\" " baseTable.Schema baseTable.Name)
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)

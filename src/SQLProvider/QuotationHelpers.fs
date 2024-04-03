@@ -37,7 +37,7 @@ module QuotationHelpers =
         let exprs = coerceValues (fun _ -> typ) (instance |> Array.map box)
         arrayType, Expr.NewArray(typ, exprs)
 
-    let createLetExpr varType instance body args = 
+    let inline internal createLetExpr varType instance body args = 
         let var = Var("instance", varType)  
         Expr.Let(var, instance, body args (Expr.Var(var)))
 

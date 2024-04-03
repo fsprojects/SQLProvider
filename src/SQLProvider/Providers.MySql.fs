@@ -23,17 +23,24 @@ module MySql =
 
     let findType name =
         match assembly.Value with
-        | Choice1Of2(assembly) -> 
-            let types = 
-                try assembly.GetTypes() 
+        | Choice1Of2(assembly) ->
+            let types, err =
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            match types |> Array.tryFind(fun t -> t.Name = name) with
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
+            match types |> Array.tryFind(fun t -> (not (t = null)) && t.Name = name) with
             | Some t -> t
-            | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
                                  Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
 
         | Choice2Of2(paths, errors) ->
@@ -681,6 +688,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS CHAR)" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "DATE(%s)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -906,7 +914,19 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 ~~(sprintf "DELETE FROM %s " basetable)
             else 
                 // SELECT
-                if sqlQuery.Distinct && sqlQuery.Count then ~~(sprintf "SELECT COUNT(DISTINCT %s) " (columns.Substring(0, columns.IndexOf(" as "))))
+                if sqlQuery.Distinct && sqlQuery.Count then
+                    let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+                    let distColumns =
+                        if colsAggrs.Length <= 2 then colsAggrs.[0]
+                        else
+                            let rec concats h1 tails =
+                                match tails with
+                                | [] -> h1
+                                | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
+
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            concats colsAggrs.[0] rest
+                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else  ~~(sprintf "SELECT %s " columns)
@@ -926,13 +946,13 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
