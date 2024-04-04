@@ -65,9 +65,9 @@ let (|SeqValues|_|) (e:Expression) =
                 let ceVal = (me.Expression :?> ConstantExpression).Value
                 let myVal = 
                     match me.Member with
-                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                    | :? FieldInfo as fieldInfo when not(isNull(fieldInfo)) ->
                         fieldInfo.GetValue ceVal
-                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                    | :? PropertyInfo as propInfo when not(isNull(propInfo)) ->
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 myVal :?> System.Collections.IEnumerable
@@ -639,9 +639,9 @@ and (|SimpleCondition|_|) exp =
                 let ceVal = (me.Expression :?> ConstantExpression).Value
                 let myVal = 
                     match me.Member with
-                    | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+                    | :? FieldInfo as fieldInfo when not(isNull(fieldInfo)) ->
                         fieldInfo.GetValue ceVal
-                    | :? PropertyInfo as propInfo when propInfo <> null ->
+                    | :? PropertyInfo as propInfo when not(isNull(propInfo)) ->
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 Some myVal
