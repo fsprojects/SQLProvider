@@ -1,3 +1,6 @@
+### 1.3.34 - 04.04.2024
+* Minor performance improvement
+
 ### 1.3.33 - 01.04.2024
 * Small memory footprint reduction
 
@@ -147,6 +150,11 @@
 ### 1.2.0 - 05.03.2021
 * Packaged from the .NET Standard branch (merged to master).
 * Removed support from .NET 3.5 and .NET 4.6.1: The least is .NET 4.7.2.
+
+### 1.1.102 - 03.04.2022
+* Service release due to NuGet downloads of old 1.1.101
+* Taken some of 1.3.x SQL and performance improvements and memory reductions to 1.1.x.
+* No dependencies updates, no still using old async, etc.
 
 ### 1.1.101 - 07.02.2021
 * Minor SSDT improvements
