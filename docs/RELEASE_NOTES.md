@@ -1,3 +1,6 @@
+### 1.3.35 - 09.04.2024
+* Support navigation property queries in mocks
+
 ### 1.3.34 - 04.04.2024
 * Minor performance improvement
 

@@ -988,8 +988,12 @@ module public OfflineTools =
     let CreateMockSqlDataContext<'T> (dummydata: Map<string,obj>) =
         let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
         let x = { new ISqlDataContext with
-                    member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): obj = raise (System.NotImplementedException())
-                    member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array): Threading.Tasks.Task<SqlEntity> = raise (System.NotImplementedException())
+                    member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
+                        // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
+                        SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup)
+                    member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
+                        // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
+                        task { return SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup) }
                     member this.ClearPendingChanges(): unit = pendingChanges.Clear()
                     member this.CommandTimeout: Option<int> = None
                     member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
@@ -1003,7 +1007,25 @@ module public OfflineTools =
                             let _, cols = makeColumns tableData
                             new SqlEntity(this, arg1, cols)
                         | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup)
-                    member this.CreateRelated(arg1: SqlEntity, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: RelationshipDirection): IQueryable<SqlEntity> = raise (System.NotImplementedException())
+                    member this.CreateRelated(inst: SqlEntity, arg2: string, pe: string, pk: string, fe: string, fk: string, direction: RelationshipDirection): IQueryable<SqlEntity> =
+                        if direction = RelationshipDirection.Children then
+                            match dummydata.TryGetValue fe with
+                            | true, tableData ->
+                                let related = createMockEntitiesDc this fe tableData
+                                match (inst.ColumnValues |> Map.ofSeq).TryGetValue pk with
+                                | true, relevant ->
+                                    related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
+                                | false, _ -> failwith ("Key not found: " + arg2 + " " + pk)
+                            | false, _ -> failwith ("Add table to dummydata: " + fe)
+                        else
+                            match dummydata.TryGetValue pe with
+                            | true, tableData ->
+                                    let related = createMockEntitiesDc this pe tableData
+                                    match (inst.ColumnValues |> Map.ofSeq).TryGetValue fk with
+                                    | true, relevant -> 
+                                        related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
+                                    | false, _ -> failwith ("Key not found: " + arg2 + " " + fk)
+                            | false, _ -> failwith ("Add table to dummydata: " + pe)
                     member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
                     member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
                     member this.GetPrimaryKeyDefinition(arg1: string): string = ""
