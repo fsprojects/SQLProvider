@@ -461,7 +461,7 @@ module internal Reflection =
             |> Array.filter (fun ra -> assemblyNames |> List.exists(fun (a:string) -> ra.Contains(a)))
             |> Array.toList
         
-        let resolutionPaths =
+        let resolutionPathsFiles =
             assemblyNames 
             |> List.collect (fun asm ->
                 if List.isEmpty resolutionPaths then
@@ -513,7 +513,7 @@ module internal Reflection =
             |> Seq.concat |> Seq.toList
 
         let allPaths =
-            (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
+            (assemblyNames @ resolutionPathsFiles @ referencedPaths @ currentPaths) 
             |> Seq.distinct |> Seq.toList
 
         let tryLoadFromMemory () =

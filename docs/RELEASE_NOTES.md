@@ -1,3 +1,6 @@
+### 1.3.36 - 19.04.2024
+* ResolutionPath assembly load fix, fix for #818
+
 ### 1.3.35 - 09.04.2024
 * Support navigation property queries in mocks
 
