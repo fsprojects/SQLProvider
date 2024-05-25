@@ -1,3 +1,6 @@
+### 1.3.37 - 25.05.2024
+* Initial support for DuckDB, PR #823
+
 ### 1.3.36 - 19.04.2024
 * ResolutionPath assembly load fix, fix for #818
 
