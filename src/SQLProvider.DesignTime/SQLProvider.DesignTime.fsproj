@@ -93,6 +93,9 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
       <Link>Providers.Firebird.fs</Link>
     </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs">
+        <Link>Providers.DuckDb.fs</Link>
+    </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.QueryExpression.fs">
       <Link>SqlRuntime.QueryExpression.fs</Link>
     </Compile>

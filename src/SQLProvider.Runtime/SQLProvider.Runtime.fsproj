@@ -66,6 +66,7 @@
     <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="Providers.Firebird.fs" />
+    <Compile Include="Providers.DuckDb.fs" />
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlRuntime.Async.fs" />

@@ -236,6 +236,7 @@ module internal Utilities =
         let prefix3 = "`" + alias + "`."
         let prefix4 = alias + "_"
         let prefix5 = alias.ToUpper() + "_"
+        let prefix6 = "\"" + alias + "\"."
         (fun (k:string,v) ->
             if k.StartsWith prefix then
                 let temp = replaceFirst k prefix ""
@@ -257,6 +258,11 @@ module internal Utilities =
             //this case for Firebird version<=2.1, all uppercase
             elif  k.StartsWith prefix5 then 
                 let temp = replaceFirst k prefix5 ""
+                Some(temp,v)
+            //this case is for DuckDb
+            elif k.StartsWith prefix6 then
+                let temp = replaceFirst k prefix6 ""
+                let temp = temp.Substring(1,temp.Length-2)
                 Some(temp,v)
             elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
                 Some(k,v)

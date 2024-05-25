@@ -26,6 +26,7 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(contextSchemaPath) :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
+        | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
     let internal initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) providerType =
@@ -75,7 +76,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     // the minimum base set of data available
                     prov.CreateTypeMappings(con)
                     prov.GetTables(con,caseSensitivity) |> ignore
-                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) && con.State <> ConnectionState.Closed then con.Close()
                 prov
         try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
