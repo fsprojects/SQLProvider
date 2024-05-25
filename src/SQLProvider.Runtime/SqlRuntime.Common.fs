@@ -27,6 +27,7 @@ type DatabaseProviderTypes =
     | FIREBIRD = 7
     | MSSQLSERVER_DYNAMIC = 8
     | MSSQLSERVER_SSDT = 9
+    | DUCKDB = 10
 
 [<Struct>]
 type RelationshipDirection = Children = 0 | Parents = 1

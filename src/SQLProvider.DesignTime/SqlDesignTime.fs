@@ -1039,7 +1039,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             ])
 
         match con with
-        | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+        | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) && con.State <> ConnectionState.Closed then con.Close()
         | None -> ()
         rootType
 

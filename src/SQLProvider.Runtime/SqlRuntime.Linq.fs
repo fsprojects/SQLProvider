@@ -258,7 +258,7 @@ module internal QueryImplementation =
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) && con.State <> ConnectionState.Closed then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
         if not isGroypBy then
             invokeEntitiesListAvoidingDynamicInvoke results projector
         else parseGroupByQueryResults projector results

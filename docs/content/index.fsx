@@ -32,6 +32,7 @@ The provider currently has explicit implementations for the following database v
 * MySQL
 * MsAccess
 * Firebird
+* DuckDB
 
 There is also an ODBC provider that will let you connect to any ODBC source with limited features. 
 
