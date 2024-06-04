@@ -628,7 +628,8 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                                    where rc.RDB$CONSTRAINT_TYPE='PRIMARY KEY')
                                                  THEN 'PRIMARY KEY'
                                                ELSE '' END AS KeyType,
-                                               c.RDB$DEFAULT_VALUE has_default
+                                               c.RDB$DEFAULT_VALUE has_default,
+                                               f.RDB$COMPUTED_BLR is_computed
                                   FROM rdb$relation_fields c
                                   inner join RDB$FIELDS f on f.RDB$FIELD_NAME=c.RDB$FIELD_SOURCE                                  
                                   
@@ -654,7 +655,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
                                   HasDefault = not(reader.IsDBNull 6)
-                                  IsComputed = false
+                                  IsComputed = not(reader.IsDBNull 7)
                                   TypeInfo = if String.IsNullOrEmpty(maxlen) then ValueSome dt else ValueSome (dt + "(" + maxlen + ")")}
                             if col.IsPrimaryKey then 
                                 schemaCache.PrimaryKeys.AddOrUpdate(table.Name, [col.Name], fun key old -> 
