@@ -270,7 +270,7 @@ module internal Oracle =
         |> Seq.toList
 
     let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
-        sprintf """select data_type, nullable, column_name, data_length, data_default from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
+        sprintf """select data_type, nullable, column_name, data_length, data_default, virtual_column from all_tab_columns where table_name = '%s' and owner = '%s'""" table.Name table.Schema
         |> read conn (fun row ->
                 let columnType : string = Sql.dbUnbox row.[0]
                 // Remove precision specification from the column type name (can appear in TIMESTAMP and INTERVAL)
@@ -294,7 +294,7 @@ module internal Oracle =
                       IsNullable = nullable
                       IsAutonumber = pkColumn
                       HasDefault = not (isNull row.[4])
-                      IsComputed = false
+                      IsComputed = (Sql.dbUnbox row.[5]) = "YES" && not (isNull row.[4])
                       TypeInfo = ValueSome typeinfo }
                 ))
         |> Seq.choose id
