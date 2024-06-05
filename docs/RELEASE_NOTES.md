@@ -1,3 +1,6 @@
+### 1.3.38 - 05.06.2024
+* Oracle, Postges and Firebird: Support computed columns, PR #824
+
 ### 1.3.37 - 25.05.2024
 * Initial support for DuckDB, PR #823
 
