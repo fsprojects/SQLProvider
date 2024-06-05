@@ -59,11 +59,14 @@ module MSSqlServerDynamic =
     let enumType =        lazy (
                             try findType "SqlDbType"
                             with | _ -> typeof<System.Data.SqlDbType>)
-    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+    let getSchemaMethod = lazy (connectionType.Force().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let getSchema name (args:string[]) (con:IDbConnection) =
-        if con.State <> ConnectionState.Open then con.Open()
-        let res = getSchemaMethod.Value.Invoke(con,[|name; args|]) :?> DataTable
+        try
+            if con.State <> ConnectionState.Open then con.Open()
+        with
+        | :? NullReferenceException -> ()
+        let res = getSchemaMethod.Force().Invoke(con,[|name; args|]) :?> DataTable
         con.Close()
         res
 
