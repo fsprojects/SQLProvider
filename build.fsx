@@ -1,3 +1,4 @@
+printfn "Building..."
 #r "paket: groupref build //"
 //#load "docs/CLI.fs"
 

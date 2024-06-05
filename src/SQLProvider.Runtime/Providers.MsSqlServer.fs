@@ -79,6 +79,20 @@ module MSSqlServer =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
+    let checkIfMsSqlAssemblyIsDesingOnly (assembly:System.Reflection.Assembly)=
+        try
+            let metaData =
+                assembly.GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
+            if not (isNull metaData) && metaData.Length > 0 then
+                let isNotRuntimeDll =
+                    metaData |> Array.map(fun x -> x :?> System.Reflection.AssemblyMetadataAttribute)
+                    |> Array.exists(fun c -> c.Key = "NotSupported" && c.Value = "True")
+                if isNotRuntimeDll then true
+                else false
+            else false
+        with
+        | _ -> false
+
     let createConnection connectionString =
         //try
             new SqlConnection(connectionString) :> IDbConnection

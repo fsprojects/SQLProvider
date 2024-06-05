@@ -17,7 +17,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
     <DefineConstants>$(DefineConstants);MICROSOFTSQL</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
