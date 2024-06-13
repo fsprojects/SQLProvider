@@ -144,6 +144,7 @@ FROM main.Customers as [cust]
 -- params @param1 - "UK"; @param2 - "Outside UK"
 ```
 
+If your query is a sub-query (a part of larger query), then operations are always executed on DatabaseSide.
 
 ## Supported Query Expression Keywords
 
@@ -423,6 +424,15 @@ let getOrders(futureOrders:bool, shipYears:int list) =
     result
 
 (**
+
+<details>
+  <summary>Technical details</summary>
+  
+  This is what happens behind the scenes:
+  
+![1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png "1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed")
+  
+</details>
 
 
 ### Don't select all the fields if you don't need them
