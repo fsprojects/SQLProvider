@@ -1403,7 +1403,9 @@ so it will still be simple.</p>
 <details>
   <summary>Technical details</summary>
 <p>This is what happens behind the scenes:</p>
-<p><img src="https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png" alt="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed" title="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed" /></p>
+<p><img src="https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png" alt="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL" title="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL" /></p>
+<p>The F# query syntax is LINQ Abstract Syntax Tree (AST), and SQLProvider does process those on querying.</p>
+<p><img src="https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/linq-ast.png" alt="Operations that can be done on .NET side vs. Operations translated to SQL" title="Operations that can be done on .NET side vs. Operations translated to SQL" /></p>
 </details>
 <h3><a name="Don-t-select-all-the-fields-if-you-don-t-need-them" class="anchor" href="#Don-t-select-all-the-fields-if-you-don-t-need-them">Don't select all the fields if you don't need them</a></h3>
 <p>In general you should select only columns you need
