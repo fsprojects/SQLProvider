@@ -430,8 +430,12 @@ let getOrders(futureOrders:bool, shipYears:int list) =
   
   This is what happens behind the scenes:
   
-![1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png "1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed")
+![1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png "1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL")
+
+  The F# query syntax is LINQ Abstract Syntax Tree (AST), and SQLProvider does process those on querying. 
   
+![Operations that can be done on .NET side vs. Operations translated to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/linq-ast.png "Operations that can be done on .NET side vs. Operations translated to SQL")
+
 </details>
 
 

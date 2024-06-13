@@ -97,6 +97,8 @@ because the LINQ-expression-tree has `ExpressionType.Call` named "Where" with so
 What happens then is parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern `Condition`). If the conditions are having `SqlColumnGet`s, a pattern that says that it's `SqlEntity` with method `GetColumn`, we know that it has to be part of SQL-clause. 
 
 We collect all the known patterns to `IWithSqlService`s field SqlExpression, being a type `SqlExp`, our non-complete known recursive model-tree of SQL clauses.
+  
+![Operations that can be done on .NET side vs. Operations translated to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/linq-ast.png "Operations that can be done on .NET side vs. Operations translated to SQL")
 
 ### Execution of the query
 
