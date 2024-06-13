@@ -344,6 +344,7 @@ The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
 <span class="k">FROM</span> main.Customers <span class="k">as</span> [cust]
 <span class="c">-- params @param1 - "UK"; @param2 - "Outside UK"</span>
 </code></pre></td></tr></table>
+<p>If your query is a sub-query (a part of larger query), then operations are always executed on DatabaseSide.</p>
 <h2><a name="Supported-Query-Expression-Keywords" class="anchor" href="#Supported-Query-Expression-Keywords">Supported Query Expression Keywords</a></h2>
 <table>
 <thead>
@@ -1399,6 +1400,11 @@ so it will still be simple.</p>
         <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs49', 214)" onmouseover="showTip(event, 'fs49', 214)" class="m">Array</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs101', 215)" onmouseover="showTip(event, 'fs101', 215)" class="id">executeQueryAsync</span>
     <span onmouseout="hideTip(event, 'fs95', 216)" onmouseover="showTip(event, 'fs95', 216)" class="d">result</span>
 </code></pre>
+<details>
+  <summary>Technical details</summary>
+<p>This is what happens behind the scenes:</p>
+<p><img src="https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png" alt="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed" title="1. Evaluate what we can on .NET side to short-circuit the SQL, 2. Gather AST and translate to SQL, 3. Optimize with Boolean algebra what is not needed" /></p>
+</details>
 <h3><a name="Don-t-select-all-the-fields-if-you-don-t-need-them" class="anchor" href="#Don-t-select-all-the-fields-if-you-don-t-need-them">Don't select all the fields if you don't need them</a></h3>
 <p>In general you should select only columns you need
 and not a whole object if you don't update its fields.</p>
