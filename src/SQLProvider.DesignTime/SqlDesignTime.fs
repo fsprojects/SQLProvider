@@ -1033,7 +1033,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 , invokeCode = invoker
                                 )
 
-                method.AddXmlDoc (String.concat "" xmlComments)
+                method.AddXmlDoc (String.Concat xmlComments)
 
                 yield method
             ])

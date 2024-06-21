@@ -176,7 +176,7 @@ type internal MSAccessProvider(contextSchemaPath) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OleDbConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
                 |> Seq.map(fun row ->row.["DESCRIPTION"].ToString()) |> Seq.toList
@@ -185,7 +185,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             | _ -> ""
 
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OleDbConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
                 |> Seq.map(fun row ->row.["DESCRIPTION"].ToString())
@@ -595,7 +595,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")

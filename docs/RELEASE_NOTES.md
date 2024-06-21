@@ -1,3 +1,6 @@
+### 1.3.39 - 21.06.2024
+* Small performance optimisations
+
 ### 1.3.38 - 05.06.2024
 * Oracle, Postges and Firebird: Support computed columns, PR #824
 

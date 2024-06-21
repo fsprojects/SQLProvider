@@ -193,7 +193,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1)
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1)
             let table = (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable()
             let view = (con:?>OdbcConnection).GetSchema("Views",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
             let desc = 
@@ -212,7 +212,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             | _ -> ""
 
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OdbcConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
                 |> Seq.map(fun row ->
@@ -624,7 +624,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 | [] -> h1
                                 | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
 
-                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
                             concats colsAggrs.[0] rest
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)

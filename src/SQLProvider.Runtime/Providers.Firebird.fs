@@ -555,8 +555,8 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseQuery = @"SELECT RDB$DESCRIPTION
                                 FROM RDB$RELATIONS
                                 WHERE RDB$RELATION_NAME = @table"
@@ -570,8 +570,8 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 if isNull comm then "" else comm
             else ""
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseQuery = @"SELECT RDB$DESCRIPTION 
                                 FROM RDB$RELATION_FIELDS
                                 WHERE RDB$RELATION_NAME = @table AND RDB$FIELD_NAME = @column"
@@ -1018,7 +1018,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                 | [] -> h1
                                 | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
 
-                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
                             concats colsAggrs.[0] rest
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)

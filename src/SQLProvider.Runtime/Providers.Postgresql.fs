@@ -664,8 +664,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 "")
         member __.GetColumnDescription(con,tableName,columnName) = 
             Sql.connect con (fun _ ->
-                let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-                let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+                let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
+                let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
                 use reader = 
                     Sql.executeSql PostgreSQL.createCommand (
                         sprintf """SELECT description
@@ -1169,7 +1169,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")

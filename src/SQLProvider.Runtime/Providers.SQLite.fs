@@ -494,7 +494,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let colName = reader.GetString(1)
                         let dtv = reader.GetString(2).ToLower()
                         let dtv = if String.IsNullOrWhiteSpace dtv then typeofColumn colName else dtv
-                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf("(")) else dtv
+                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf('(')) else dtv
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
@@ -859,7 +859,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")

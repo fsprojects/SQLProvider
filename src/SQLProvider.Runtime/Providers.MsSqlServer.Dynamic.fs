@@ -584,7 +584,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -604,7 +604,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -1087,7 +1087,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")

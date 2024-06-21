@@ -478,8 +478,8 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
     interface ISqlProvider with
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
-            let sn = tableName.Substring(0,tableName.LastIndexOf("."))
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1)
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
             let baseQuery = @"SELECT IFNULL(TABLE_COMMENT, '') AS TABLE_COMMENT
                                 FROM INFORMATION_SCHEMA.TABLES
                                 WHERE TABLE_SCHEMA = $schema AND TABLE_NAME = $table"
@@ -493,8 +493,8 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                 if isNull comm then "" else comm
             else ""
         member __.GetColumnDescription(con,tableName,columnName) =
-            let sn = tableName.Substring(0,tableName.LastIndexOf("."))
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1)
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
             let baseQuery = @"SELECT IFNULL(COLUMN_COMMENT, '') AS COLUMN_COMMENT
                                 FROM INFORMATION_SCHEMA.COLUMNS
                                 WHERE TABLE_SCHEMA = $schema AND TABLE_NAME = $table AND COLUMN_NAME = $column"
@@ -935,7 +935,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                                 | [] -> h1
                                 | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
 
-                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
                             concats colsAggrs.[0] rest
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
