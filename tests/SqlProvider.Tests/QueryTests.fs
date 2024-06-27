@@ -877,6 +877,18 @@ let ``simplest select query with groupBy aggregate``() =
     Assert.IsNotEmpty(qry)
 
 [<Test>]
+let ``simplest select query with groupBy aggregate via select``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for o in dc.Main.Orders do
+            groupBy o.OrderDate.Date into g
+            select (g.Key, g.Select(fun p -> if p.Freight > 1m then p.Freight else 0m).Sum())
+        } |> Seq.toArray
+
+    Assert.IsNotEmpty(qry)
+
+[<Test>]
 let ``simplest select query with groupBy aggregate temp total``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -2565,6 +2577,21 @@ let ``simple select with group-by ValueOption type query``() =
 
     let res = qry |> dict
     let trues = res.[true]
+
+    res |> Assert.IsNotEmpty
+
+[<Test>]
+let ``simple select with group-by count distinct type query``() =
+    let dcv = sqlValueOption.GetDataContext()
+    let qry = 
+        query {
+            for o in dcv.Main.Orders do
+            groupBy o.ShipCity.Value into g
+            select(g.Key, g.Select(fun x -> x.Freight.Value).Distinct().Count())
+        } |> Seq.toList
+
+    let res = qry |> dict
+    let custCount = res.["London"]
 
     res |> Assert.IsNotEmpty
 
