@@ -794,6 +794,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
     interface System.Linq.IGrouping<'key, 'SqlEntity> with
         member __.Key = keyval
     member __.AggregateCount<'T>(columnName) = this.fetchItem<'T> "COUNT" columnName
+    member __.AggregateCountDistinct<'T>(columnName) = this.fetchItem<'T> "COUNTD" columnName
     member __.AggregateSum<'T>(columnName) = 
         let x = this.fetchItem<'T> "SUM" columnName 
         x

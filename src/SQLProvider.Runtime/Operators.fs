@@ -50,6 +50,7 @@ type AggregateOperation = // Aggregate (column name if not default)
 | SumOp of sum: string
 | AvgOp of avg: string
 | CountOp of count: string
+| CountDistOp of countDist: string
 | StdDevOp of std: string
 | VarianceOp of var: string
 

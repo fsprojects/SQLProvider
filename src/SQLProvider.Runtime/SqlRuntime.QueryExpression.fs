@@ -18,6 +18,29 @@ module internal QueryExpressionTransformer =
         | _ -> failwith "never"
 
 
+    let rec directAggregate (exp:Expression) picker =
+        match exp.NodeType, exp with
+        | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
+            picker entity op
+        | ExpressionType.Quote, (:? UnaryExpression as ce) 
+        | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand picker
+        | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
+            match me2.Member with 
+            | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
+                                                                me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression) picker
+            | _ -> None
+        // This lamda could be parsed more if we would want to support
+        // more complex aggregate scenarios.
+        // Subtables
+        | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+            match o.NodeType, o with
+            | ExpressionType.Call, (:? MethodCallExpression as ce)
+                    when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression ) ->
+                let alias = (ce.Object :?> ParameterExpression).Name
+                picker alias (KeyColumn key)
+            | _ -> None
+        | _ -> None
+
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect =
         let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
@@ -122,19 +145,54 @@ module internal QueryExpressionTransformer =
             // On group-by aggregates we support currently only direct calls like .Count() or .Sum()
             // and direct parameter calls like .Sum(fun entity -> entity.UnitPrice)
             match e.NodeType, e with
-            | ExpressionType.Call, (:? MethodCallExpression as me) -> 
+            | ExpressionType.Call, (:? MethodCallExpression as me) ->
+
+                let checkInnerdSelect (m:MethodCallExpression) =
+                    if m.Arguments.Count > 0 && (m.Arguments.[0].Type.IsGenericType) then
+                        match m.Arguments.[0].NodeType, m.Arguments.[0] with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) ->
+                            if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select"
+                                then Some me2
+                                else None
+                        | _ -> None
+                    else None
+
+                let hasInnerDistinct =
+                    if me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) then
+                        match me.Arguments.[0].NodeType, me.Arguments.[0] with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) ->
+                            if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping") || (checkInnerdSelect me2).IsSome) && me2.Method.Name = "Distinct"
+                                then Some me2
+                                else None
+                        | _ -> None
+                    else None
+
+                let hasInnerdSelect =
+                    match hasInnerDistinct with
+                    | Some innerDist -> checkInnerdSelect innerDist
+                    | None -> checkInnerdSelect me
+
                 let isGrouping = 
                     me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) &&
-                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping"))
+                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping")) || hasInnerdSelect.IsSome
+
                 let isNumType (ty:Type) =
                     decimalTypes  |> Seq.exists(fun t -> t = ty) || integerTypes |> Seq.exists(fun t -> t = ty)
 
                 let op =
                     if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter ||
                                                     (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
-                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && me.Arguments.[0].Type.Name.StartsWith("IGrouping"))
-                                                 ) then
+                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && (me.Arguments.[0].Type.Name.StartsWith("IGrouping"))) ||
+                                                    (hasInnerDistinct.IsSome && (
+                                                         hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.Parameter ||
+                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.New && hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
+                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.MemberAccess && (hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("IGrouping")))
+                                                    )
+                                                 )) then
                         match me.Method.Name with
+                        | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp "", None)
                         | "Count" -> Some (CountOp "", None)
                         | "Sum" when isNumType me.Type -> Some (SumOp "", None)
                         | "Avg" | "Average" when (isNumType me.Type) -> Some (AvgOp "", None)
@@ -144,6 +202,41 @@ module internal QueryExpressionTransformer =
                         | "Variance" when isNumType me.Type -> Some (VarianceOp "", None)
                         | _ -> None
 
+                    elif me.Arguments.Count = 1 && me.Arguments.[0].NodeType = ExpressionType.Call && [|"Count"; "Sum"; "Avg"; "Min"; "Max"; "StdDev"; "Variance"|] |> Array.contains me.Method.Name then
+                        let firstArg =
+                            match hasInnerDistinct with
+                            | Some innerDist -> innerDist.Arguments.[0].NodeType, innerDist.Arguments.[0]
+                            | None -> me.Arguments.[0].NodeType, me.Arguments.[0]
+                        match firstArg with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) when me2.Arguments.Count = 2 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select" ->
+
+                            match me2.Arguments.[1] with
+                            | :? LambdaExpression as la ->
+
+                                let getOp al op =
+                                    let key = Utilities.getBaseColumnName op
+                                    let ops =
+                                        match op with
+                                        | CanonicalOperation _ -> Some (al,op)
+                                        | KeyColumn _
+                                        | GroupColumn _ -> None
+
+                                    match me.Method.Name with
+                                    | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp key, ops)
+                                    | "Count" -> Some (CountOp key, ops)
+                                    | "Sum" -> Some (SumOp key, ops)
+                                    | "Avg" | "Average" -> Some (AvgOp key, ops)
+                                    | "Min" -> Some (MinOp key, ops)
+                                    | "Max" -> Some (MaxOp key, ops)
+                                    | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, ops)
+                                    | "Variance" -> Some (VarianceOp key, ops)
+                                    | _ -> None
+
+                                directAggregate la.Body getOp
+                            | _ -> None
+                        | _ -> None
+
                     elif me.Arguments.Count = 2 then
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
@@ -151,6 +244,7 @@ module internal QueryExpressionTransformer =
                             let getOp al op =
                                 let key = Utilities.getBaseColumnName op
                                 match me.Method.Name with
+                                | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp key, Some (al,op))
                                 | "Count" -> Some (CountOp key, Some (al,op))
                                 | "Sum" -> Some (SumOp key, Some (al,op))
                                 | "Avg" | "Average" -> Some (AvgOp key, Some (al,op))
@@ -160,52 +254,37 @@ module internal QueryExpressionTransformer =
                                 | "Variance" -> Some (VarianceOp key, Some (al,op))
                                 | _ -> None
 
-                            let rec directAggregate (exp:Expression) =
-                                match exp.NodeType, exp with
-                                | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
-                                    getOp entity op
-                                | ExpressionType.Quote, (:? UnaryExpression as ce) 
-                                | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
-                                | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
-                                    match me2.Member with 
-                                    | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
-                                                                                     me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression)
-                                    | _ -> None
-                                // This lamda could be parsed more if we would want to support
-                                // more complex aggregate scenarios.
-                                // Subtables
-                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
-                                    match o.NodeType, o with
-                                    | ExpressionType.Call, (:? MethodCallExpression as ce)
-                                            when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression ) ->
-                                        let alias = (ce.Object :?> ParameterExpression).Name
-                                        getOp alias (KeyColumn key)
-                                    | _ -> None
-                                | _ -> None
-                            directAggregate la.Body
+                            directAggregate la.Body getOp
                         | _ -> None
                     else None
 
                 match isGrouping, op with
                 | true, Some (o, calcs) ->
-                    let methodname = "Aggregate"+me.Method.Name
+                    let methodname =
+                        if hasInnerDistinct.IsSome then "Aggregate"+me.Method.Name+"Distinct"
+                        else "Aggregate"+me.Method.Name
                     
                     let v = match o with 
-                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x | StdDevOp x | VarianceOp x 
+                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x | StdDevOp x | VarianceOp x | CountDistOp x
                             | KeyOp x -> x
                     //Count 1 is over all the items
                     let vf = if v = "" then None else Some v
+                    let paramArg =
+                        match hasInnerdSelect with
+                        | Some selParam -> selParam.Arguments.[0]
+                        | None -> me.Arguments.[0]
+                        
                     let ty =
                         let retType =
-                            if me.Arguments.[0].Type.GetGenericArguments().Length > 1 then
-                                me.Arguments.[0].Type.GetGenericArguments().[1]
+                            if paramArg.Type.GetGenericArguments().Length > 1 then
+                                paramArg.Type.GetGenericArguments().[1]
                             else typeof<SqlEntity>
-                        typedefof<GroupResultItems<_,_>>.MakeGenericType(me.Arguments.[0].Type.GetGenericArguments().[0], retType)
+                        typedefof<GroupResultItems<_,_>>.MakeGenericType(paramArg.Type.GetGenericArguments().[0], retType)
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(me.Method.ReturnType);
                     let replacementExpr =
-                        Expression.Call(Expression.Convert(me.Arguments.[0], ty), generic, aggregateColumn)
+                        Expression.Call(Expression.Convert(paramArg, ty), generic, aggregateColumn)
                     let res =
                         match calcs with
                         | None -> Some (("",GroupColumn(o,SqlColumnType.KeyColumn(v))), replacementExpr)
@@ -589,6 +668,7 @@ module internal QueryExpressionTransformer =
                                                 | KeyColumn c, (a,GroupColumn(VarianceOp "", KeyColumn "")) -> Some (a, GroupColumn(VarianceOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(KeyOp "", KeyColumn "")) -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(CountOp "", KeyColumn "")) -> Some (a, GroupColumn(CountOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(CountDistOp "", KeyColumn "")) -> Some (a, GroupColumn(CountDistOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(agg, KeyColumn g)) when g <> "" -> Some (op)
                                                 | KeyColumn c, (a,GroupColumn(_)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)
                                                 | KeyColumn c, (a,KeyColumn(c2)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)

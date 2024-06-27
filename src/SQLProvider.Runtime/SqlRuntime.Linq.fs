@@ -168,7 +168,7 @@ module internal QueryImplementation =
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
-                        let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
+                        let aggregates = [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         let entity =

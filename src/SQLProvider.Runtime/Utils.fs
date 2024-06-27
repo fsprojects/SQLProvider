@@ -183,11 +183,13 @@ module internal Utilities =
         | GroupColumn (MinOp key, KeyColumn _) -> sprintf "MIN(%s)" (colSprint key)
         | GroupColumn (MaxOp key, KeyColumn _) -> sprintf "MAX(%s)" (colSprint key)
         | GroupColumn (SumOp key, KeyColumn _) -> sprintf "SUM(%s)" (colSprint key)
+        | GroupColumn (CountDistOp key, KeyColumn _) -> sprintf "COUNT(DISTINCT %s)" (colSprint key)
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDDEV(%s)" (colSprint key)
         | GroupColumn (VarianceOp key, KeyColumn _) -> sprintf "VAR(%s)" (colSprint key)
         | GroupColumn (KeyOp key,_) -> colSprint key
         | GroupColumn (CountOp _,_) -> sprintf "COUNT(1)"
         // Nested aggregate operators, e.g. select(x*y) |> Seq.sum
+        | GroupColumn (CountDistOp _,x) -> sprintf "COUNT(DISTINCT %s)" (recursionBase x)
         | GroupColumn (AvgOp _,x) -> sprintf "AVG(%s)" (recursionBase x)
         | GroupColumn (MinOp _,x) -> sprintf "MIN(%s)" (recursionBase x)
         | GroupColumn (MaxOp _,x) -> sprintf "MAX(%s)" (recursionBase x)
@@ -202,6 +204,7 @@ module internal Utilities =
             aliasSprint (sprintf "%s_%O" (op.ToString().Replace(" ", "_")) subItm)
         | GroupColumn (KeyOp key,_) -> aliasSprint key
         | GroupColumn (CountOp key,_) -> aliasSprint (sprintf "COUNT_%s" key)
+        | GroupColumn (CountDistOp key,_) -> aliasSprint (sprintf "COUNTD_%s" key)
         | GroupColumn (AvgOp key,_) -> aliasSprint (sprintf "AVG_%s" key)
         | GroupColumn (MinOp key,_) -> aliasSprint (sprintf "MIN_%s" key)
         | GroupColumn (MaxOp key,_) -> aliasSprint (sprintf "MAX_%s" key)
