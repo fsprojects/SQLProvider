@@ -695,6 +695,11 @@ module internal QueryImplementation =
                     match exp with
                     | SqlColumnGet(sourceTi,sourceKey,_) -> [getAlias sourceTi, sourceKey]
                     | TupleSqlColumnsGet itms -> itms |> List.map(fun (ti,key,typ) -> getAlias ti, key)
+                    | SimpleCondition ((ti,key,op,None) as x) -> // Because you can do in F# but not in SQL: GroupBy (x.IsSome)
+                        let al = getAlias sourceTi
+                        let cond = And ([ti, key, op,None], None)
+                        let cop = CaseSqlPlain(cond, 1, 0)
+                        [al, CanonicalOperation(cop, KeyColumn "Key")]
                     | _ -> []
 
                 let data =  {

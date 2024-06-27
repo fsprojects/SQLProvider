@@ -2554,6 +2554,21 @@ let ``simple select with ValueOption type query``() =
     qry |> Assert.IsNotEmpty
 
 [<Test>]
+let ``simple select with group-by ValueOption type query``() =
+    let dcv = sqlValueOption.GetDataContext()
+    let qry = 
+        query {
+            for cust in dcv.Main.Customers do
+            groupBy cust.City.IsSome into g
+            select(g.Key, g.Count())
+        } |> Seq.toList
+
+    let res = qry |> dict
+    let trues = res.[true]
+
+    res |> Assert.IsNotEmpty
+
+[<Test>]
 let ``valueoption copyOfStruct test``() =
     let dcv = sqlValueOption.GetDataContext()
     let qry = 
