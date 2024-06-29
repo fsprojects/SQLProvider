@@ -29,16 +29,6 @@ module internal QueryExpressionTransformer =
             | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
                                                                 me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression) picker
             | _ -> None
-        // This lamda could be parsed more if we would want to support
-        // more complex aggregate scenarios.
-        // Subtables
-        | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
-            match o.NodeType, o with
-            | ExpressionType.Call, (:? MethodCallExpression as ce)
-                    when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression ) ->
-                let alias = (ce.Object :?> ParameterExpression).Name
-                picker alias (KeyColumn key)
-            | _ -> None
         | _ -> None
 
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect =

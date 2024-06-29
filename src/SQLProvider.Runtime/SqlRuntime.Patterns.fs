@@ -329,6 +329,18 @@ let (|SqlPlainColumnGet|_|) = function
         | _ -> None
     | _ -> None
 
+let (|SqlSubtableColumnGet|_|) = function
+    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+        match o.NodeType, o with
+        | ExpressionType.Call, (:? MethodCallExpression as ce)
+                when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && (ce.Object :? ParameterExpression)) ->
+            let par = ce.Object :?> ParameterExpression
+            if String.IsNullOrEmpty par.Name then None
+            else
+            Some(par.Name,KeyColumn key,meth.ReturnType) 
+        | _ -> None
+    | _ -> None
+
 let decimalTypes = [| typeof<decimal>; typeof<float32>; typeof<double>; typeof<float>;
                       typeof<Option<decimal>>; typeof<Option<float32>>; typeof<Option<double>>; typeof<Option<float>>;
                       typeof<ValueOption<decimal>>; typeof<ValueOption<float32>>; typeof<ValueOption<double>>; typeof<ValueOption<float>>;|]
@@ -618,6 +630,7 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> || typ = typeof<ValueOption<String>> 
             -> Some(alias, CanonicalOperation(CanonicalOp.CastInt, col), typ)
         | _ -> None
+    | _, SqlSubtableColumnGet(alias,key,typ) -> Some(alias, key, typ)
     | _ -> None
 
 and (|SqlNegativeBooleanColumn|_|) (e:Expression) = 

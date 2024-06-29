@@ -228,6 +228,7 @@ let ``outer join with inner join test``() =
 
     Assert.AreNotEqual(None,qry)
 
+[<Test>]
 let ``simple select two queries test``() =
     let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
     // Works also with: let dc = sql.GetDataContext(SelectOperations.DotNetSide)
@@ -746,6 +747,7 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
+[<Test>]
 let ``simple where before join test``() = 
     let dc = sql.GetDataContext()
 
@@ -762,6 +764,7 @@ let ``simple where before join test``() =
     Assert.LessOrEqual((fst qry.[0]), (fst qry.[1000]))
     CollectionAssert.Contains(qry, (10257L, 10257L))
 
+[<Test>]
 let ``simple where before join test2``() = 
     let dc = sql.GetDataContext()
 
@@ -777,6 +780,7 @@ let ``simple where before join test2``() =
     Assert.AreEqual(qry.Length, 46)
     Assert.LessOrEqual(qry.[0].ShipCity, qry.[40].ShipCity)
 
+[<Test>]
 let ``simple where before join test3``() = 
     let dc = sql.GetDataContext()
 
@@ -818,6 +822,7 @@ let ``simple select query with averageBy``() =
     Assert.Greater(27m, qry)
     Assert.Less(26m, qry)
 
+[<Test>]
 let ``simple select query with averageBy length``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -929,7 +934,7 @@ let ``simplest select query with groupBy constant with operation``() =
 
     Assert.AreEqual(qry, 24)
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with join groupBy constant``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1062,6 +1067,7 @@ let ``simple select query with groupBy having key``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
+[<Test>]
 let ``simple select query with groupBy having nested``() = 
     let dc = sql.GetDataContext()
     let subQry = 
@@ -1123,7 +1129,7 @@ let ``simple select query with groupBy complex operations``() =
     Assert.AreEqual(458.91m, qry.["Belgium", "Bruxelles"])
     Assert.AreEqual(2151.67m, qry.["UK", "London"])
 
-[<Test; Ignore("Not Supported")>]
+[<Test>]
 let ``simple select query with groupBy join complex operations``() = 
     let dc = sql.GetDataContext()
     let old = System.DateTime(1990,01,01)
@@ -1172,7 +1178,7 @@ let ``complex select query with groupValBy``() =
         } |> dict  
     Assert.IsNotEmpty(qry)
 
-[<Test;>]
+[<Test>]
 let ``simple if query``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1184,7 +1190,7 @@ let ``simple if query``() =
     CollectionAssert.Contains(qry, "London")
     CollectionAssert.DoesNotContain(qry, "Helsinki")
 
-[<Test;>]
+[<Test>]
 let ``simple select query with case``() = 
     // SELECT CASE WHEN ([cust].[Country] = @param1) THEN [cust].[City] ELSE @param2 END as [result] FROM main.Customers as [cust]
     let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
@@ -1198,7 +1204,7 @@ let ``simple select query with case``() =
     CollectionAssert.Contains(qry, "London")
     CollectionAssert.Contains(qry, "Outside UK")
 
-[<Test;>]
+[<Test>]
 let ``simple select query with case on client``() = 
     // SELECT [Customers].[Country] as 'Country',[Customers].[City] as 'City' FROM main.Customers as [Customers]
     let dc = sql.GetDataContext(SelectOperations.DotNetSide)
@@ -1212,7 +1218,7 @@ let ``simple select query with case on client``() =
     CollectionAssert.Contains(qry, "London")
     CollectionAssert.Contains(qry, "Outside UK")
 
-[<Test >]
+[<Test>]
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1225,7 +1231,7 @@ let ``simple select and sort query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
 
-[<Test >]
+[<Test>]
 let ``simple select and sort desc query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1307,7 +1313,7 @@ let ``simple sort query with then by desc query with lambda cast to IComparable`
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.AreEquivalent([|"Berlin"|], qry)
 
-[<Test >]
+[<Test>]
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1402,7 +1408,7 @@ let ``simple select query with groupBy and then join``() =
     let res = qry |> Seq.toList  
     Assert.IsNotEmpty(res)
 
-[<Test >]
+[<Test>]
 let ``simple select query with join multi columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1422,7 +1428,7 @@ let ``simple select query with join multi columns``() =
         |], qry.[0..3])
 
 
-[<Test >]
+[<Test>]
 let ``simple select query with join using relationships``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1466,7 +1472,7 @@ let ``simple select query with group join``() =
             "HANAR", 65L, 15
         |], qry.[0..7])
 
-[<Test >]
+[<Test>]
 let ``simple select query with multiple joins on relationships``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1490,7 +1496,7 @@ let ``simple select query with multiple joins on relationships``() =
             "HANAR", 65L, 15s
         |], qry.[0..7])
 
-[<Test; Ignore("Not Supported")>]
+[<Test; Ignore("Not Supported, but you can use (!!) operator for left join")>]
 let ``simple select query with left outer join``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1560,7 +1566,6 @@ let ``simple async sum with join and operations``() =
         } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
 
     Assert.That(qry2, Is.EqualTo(3454230.7769M).Within(0.1M))
-
 
 [<Test>]
 let ``simple async sum with operations 2``() = 
@@ -1787,8 +1792,7 @@ let ``simple select join and cross-join test``() =
         } 
     Assert.IsNotNull(qry) 
 
-
-[<Test >]
+[<Test>]
 let ``simple select nested query``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1808,7 +1812,7 @@ let ``simple select nested query``() =
     Assert.IsNotNull(qry)    
     CollectionAssert.Contains(qry, "Fuller")
 
-[<Test >]
+[<Test>]
 let ``simple select nested emp query``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1858,7 +1862,6 @@ let ``simple select nested query sort``() =
         } |> Seq.toList
     Assert.IsNotNull(qry)
 
-
 [<Test>]
 let ``simple select join twice to same table``() = 
     let dc = sql.GetDataContext()
@@ -1907,7 +1910,7 @@ let ``simple select query async2``() =
     let r = res |> Seq.toArray
     CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
 
-[<Test >]
+[<Test>]
 let ``simple select query async3``() =
     let dc = sql.GetDataContext() 
     let res = 
@@ -1927,7 +1930,7 @@ let ``simple select query async3``() =
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
-[<Test >]
+[<Test>]
 let ``simple select query with different return types options``() = 
     let dc = sqlOption.GetDataContext()
     let qry = 
@@ -1994,7 +1997,6 @@ let ``simple select with custom option types in where``() =
         }
     Assert.AreEqual("AROUT",qry)    
 
-
 [<Test>]
 let ``simple async sum with option operations``() = 
     let dc = sqlOption.GetDataContext()
@@ -2031,6 +2033,7 @@ let ``simple math operations query``() =
 
     Assert.AreEqual(44L, qry.Head)
 
+[<Test>]
 let ``simple math operations query2``() =
     let dc = sql.GetDataContext()
     let qry2 = 
@@ -2041,7 +2044,7 @@ let ``simple math operations query2``() =
         } |> Seq.toList
     CollectionAssert.IsEmpty qry2
 
-[<Test >]
+[<Test>]
 let ``simple canonical operation substing query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2056,7 +2059,7 @@ let ``simple canonical operation substing query``() =
     Assert.AreEqual(1, qry.Length)
     Assert.IsTrue(qry.Contains("ANATR"))
 
-[<Test >]
+[<Test>]
 let ``simple canonical operation inverted operations query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2070,7 +2073,7 @@ let ``simple canonical operation inverted operations query``() =
     Assert.AreEqual(13, qry.Length)
     CollectionAssert.Contains(qry, 10514L)
 
-[<Test >]
+[<Test>]
 let ``simple canonical operations query``() =
     let dc = sql.GetDataContext()
 
@@ -2453,7 +2456,7 @@ let ``simple select navigation properties``() =
     let oid = alfkiOrders |> Seq.head
     Assert.AreEqual(10643L,oid)
 
-
+[<Test>]
 let ``where join order shouldn't matter``() = 
     let dc = sql.GetDataContext()
 
@@ -2479,7 +2482,7 @@ let ``where join order shouldn't matter``() =
     CollectionAssert.Contains(qry1, (10372L, 10372L))
     CollectionAssert.Contains(qry2, (10372L, 10372L))
 
-[<Test;>]
+[<Test>]
 let ``simple select with subquery of subqueries``() =
     let dc = sql.GetDataContext()
     let subquery (subQueryIds:IQueryable<string>) = 
