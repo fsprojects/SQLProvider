@@ -119,7 +119,11 @@ module internal QueryImplementation =
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
 
+#if DEBUG
+    let parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+#else
     let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+#endif
                 let args = projector.GetType().GenericTypeArguments
                 let keyType, keyConstructor, itemEntityType = 
                     if args.[0].Name.StartsWith("IGrouping") then
@@ -137,7 +141,8 @@ module internal QueryImplementation =
                         match genOpt with
                         | None ->
                             // GroupValBy
-                            failwith "Not yet supported grouping operation"
+                            failwith ("Not yet supported grouping operation: " + projector.ToString())
+                            //None, None, args.[1]
                         | Some gen when gen.GenericTypeArguments.Length = 0 -> None, None, baseItmType
                         | Some gen ->
                             let kt = gen.GenericTypeArguments.[0]
