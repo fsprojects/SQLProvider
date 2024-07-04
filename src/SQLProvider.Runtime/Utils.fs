@@ -39,7 +39,11 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
+#if NETSTANDARD21
+                match Int32.TryParse (name.AsSpan 4) with
+#else
                 match Int32.TryParse (name.Substring 4) with
+#endif
                 | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
                 | _ -> Int32.MaxValue
             else Int32.MaxValue

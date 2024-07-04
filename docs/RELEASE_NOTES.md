@@ -1,3 +1,6 @@
+### 1.3.42 - 04.07.2024
+* Minor performance improvements
+
 ### 1.3.41 - 29.06.2024
 * More improvements on group-by queries support
 
