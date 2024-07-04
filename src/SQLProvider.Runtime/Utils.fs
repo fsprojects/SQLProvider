@@ -39,7 +39,7 @@ module internal Utilities =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
-                match Int32.TryParse (name.Remove(0, 4)) with
+                match Int32.TryParse (name.Substring 4) with
                 | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
                 | _ -> Int32.MaxValue
             else Int32.MaxValue
@@ -328,22 +328,22 @@ module ConfigHelpers =
 module internal SchemaProjections = 
     
     //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
-    let private sat f (c:voption<char>) = match c with ValueSome c when f c -> ValueSome c | _ -> ValueNone
     [<return: Struct>]
-    let private (|EOF|_|) c = match c with ValueSome _ -> ValueNone | _ -> ValueSome ()
+    let private (|LetterDigit|_|) = fun c -> if Char.IsLetterOrDigit c then ValueSome c else ValueNone
     [<return: Struct>]
-    let private (|LetterDigit|_|) = sat Char.IsLetterOrDigit
+    let private (|UpperC|_|) = fun c -> if Char.IsUpper c || Char.IsDigit c then ValueSome c else ValueNone
     [<return: Struct>]
-    let private (|Upper|_|) = sat (fun c -> Char.IsUpper c || Char.IsDigit c)
+    let private (|Upper|_|) = function ValueSome c when Char.IsUpper c || Char.IsDigit c -> ValueSome c | _ -> ValueNone
     [<return: Struct>]
-    let private (|Lower|_|) = sat (fun c -> Char.IsLower c || Char.IsDigit c)
-    
+    let private (|Lower|_|) = function ValueSome c when Char.IsLower c || Char.IsDigit c -> ValueSome c | _ -> ValueNone
+
     // --------------------------------------------------------------------------------------
 
-    let rec private restart (cs:inref<ReadOnlySpan<char>>) le i = 
-        match if i >= le then ValueNone else ValueSome cs.[i] with 
-        | EOF -> Seq.empty
-        | LetterDigit _ & Upper _ -> upperStart &cs le i (i + 1)
+    let rec private restart (cs:inref<ReadOnlySpan<char>>) le i =
+        if i >= le then Seq.empty
+        else
+        match cs.[i] with 
+        | LetterDigit _ & UpperC _ -> upperStart &cs le i (i + 1)
         | LetterDigit _ -> consume &cs le i false (i + 1)
         | _ -> restart &cs le (i + 1) 
       // Parsed first upper case letter, continue either all lower or all upper
@@ -360,10 +360,10 @@ module internal SchemaProjections =
             }
       // Consume are letters of the same kind (either all lower or all upper)
     and private consume (cs:inref<ReadOnlySpan<char>>) le from takeUpper i = 
-        match if i >= le then ValueNone else ValueSome cs.[i] with
-        | Lower _ when not takeUpper -> consume &cs le from takeUpper (i + 1)
-        | Upper _ when takeUpper -> consume &cs le from takeUpper (i + 1)
-        | Lower _ when takeUpper ->
+        match takeUpper, if i >= le then ValueNone else ValueSome cs.[i] with
+        | false, Lower _ -> consume &cs le from takeUpper (i + 1)
+        | true, Upper _ -> consume &cs le from takeUpper (i + 1)
+        | true, Lower _ ->
             let r1 = struct(from, (i - 1))
             let r2 = restart &cs le (i - 1)
             seq {
@@ -377,6 +377,14 @@ module internal SchemaProjections =
                 yield r1
                 yield! r2
             }
+
+    let rec forAll (sub:inref<ReadOnlySpan<char>>) i =
+        if i >= sub.Length then true
+        else
+        if Char.IsLetterOrDigit sub.[i] then
+            forAll &sub (i+1)
+        else false
+
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
     let nicePascalName (s:string) =
       let ss = s.AsSpan()
@@ -384,12 +392,11 @@ module internal SchemaProjections =
       if le = 1 then Char.ToUpperInvariant(ss.[0]).ToString() else
       // Starting to parse a new segment 
 
-        
       // Split string into segments and turn them to PascalCase
       let results = restart &ss le 0
       seq { for struct(i1, i2) in results do 
-              let sub = s.AsSpan(i1, i2 - i1) 
-              if Array.forall Char.IsLetterOrDigit (sub.ToArray()) then
+              let sub = s.AsSpan(i1, i2 - i1)
+              if forAll &sub 0 then
                 Char.ToUpperInvariant(sub.[0]).ToString() + sub.Slice(1).ToString().ToLowerInvariant() }
       |> String.Concat
     
