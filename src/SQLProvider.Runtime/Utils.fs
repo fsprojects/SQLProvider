@@ -398,7 +398,7 @@ module internal SchemaProjections =
 
       // Split string into segments and turn them to PascalCase
       let results = restart ss 0
-      seq { for struct(i1, i2) in results do 
+      seq { for i1, i2 in results do 
               let sub = s.AsSpan(i1, i2 - i1)
               if forall Char.IsLetterOrDigit sub then
                 Char.ToUpperInvariant(sub.[0]).ToString() + sub.Slice(1).ToString().ToLowerInvariant() }
