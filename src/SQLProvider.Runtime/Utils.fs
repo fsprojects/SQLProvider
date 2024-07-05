@@ -331,6 +331,13 @@ module ConfigHelpers =
 
 module internal SchemaProjections = 
     
+    let inline forall predicate (source : ReadOnlySpan<_>) =
+        let mutable state = true
+        let mutable e = source.GetEnumerator()
+        while state && e.MoveNext() do
+            state <- predicate e.Current
+        state
+
     //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
     [<return: Struct>]
     let private (|LetterDigit|_|) = fun c -> if Char.IsLetterOrDigit c then ValueSome c else ValueNone
@@ -343,51 +350,44 @@ module internal SchemaProjections =
 
     // --------------------------------------------------------------------------------------
 
-    let rec private restart (cs:inref<ReadOnlySpan<char>>) le i =
-        if i >= le then Seq.empty
+    let rec private restart (cs:ReadOnlySpan<char>) i =
+        if i >= cs.Length then Seq.empty
         else
         match cs.[i] with 
-        | LetterDigit _ & UpperC _ -> upperStart &cs le i (i + 1)
-        | LetterDigit _ -> consume &cs le i false (i + 1)
-        | _ -> restart &cs le (i + 1) 
+        | LetterDigit _ & UpperC _ -> upperStart cs i (i + 1)
+        | LetterDigit _ -> consume cs i false (i + 1)
+        | _ -> restart cs (i + 1) 
       // Parsed first upper case letter, continue either all lower or all upper
-    and private upperStart (cs:inref<ReadOnlySpan<char>>) le from i = 
-        match if i >= le then ValueNone else ValueSome cs.[i] with 
-        | Upper _ -> consume &cs le from true (i + 1) 
-        | Lower _ -> consume &cs le from false (i + 1) 
+    and private upperStart (cs:ReadOnlySpan<char>) from i = 
+        match if i >= cs.Length then ValueNone else ValueSome cs.[i] with 
+        | Upper _ -> consume cs from true (i + 1) 
+        | Lower _ -> consume cs from false (i + 1) 
         | _ ->
             let r1 = struct(from, i)
-            let r2 = restart &cs le (i + 1)
+            let r2 = restart cs (i + 1)
             seq {
                 yield r1
                 yield! r2
             }
       // Consume are letters of the same kind (either all lower or all upper)
-    and private consume (cs:inref<ReadOnlySpan<char>>) le from takeUpper i = 
-        match takeUpper, if i >= le then ValueNone else ValueSome cs.[i] with
-        | false, Lower _ -> consume &cs le from takeUpper (i + 1)
-        | true, Upper _ -> consume &cs le from takeUpper (i + 1)
+    and private consume (cs:ReadOnlySpan<char>) from takeUpper i = 
+        match takeUpper, if i >= cs.Length then ValueNone else ValueSome cs.[i] with
+        | false, Lower _ -> consume cs from takeUpper (i + 1)
+        | true, Upper _ -> consume cs from takeUpper (i + 1)
         | true, Lower _ ->
             let r1 = struct(from, (i - 1))
-            let r2 = restart &cs le (i - 1)
+            let r2 = restart cs (i - 1)
             seq {
                 yield r1
                 yield! r2
             }
         | _ ->
             let r1 = struct(from, i)
-            let r2 = restart &cs le i 
+            let r2 = restart cs i 
             seq {
                 yield r1
                 yield! r2
             }
-
-    let rec forAll (sub:inref<ReadOnlySpan<char>>) i =
-        if i >= sub.Length then true
-        else
-        if Char.IsLetterOrDigit sub.[i] then
-            forAll &sub (i+1)
-        else false
 
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
     let nicePascalName (s:string) =
@@ -397,10 +397,10 @@ module internal SchemaProjections =
       // Starting to parse a new segment 
 
       // Split string into segments and turn them to PascalCase
-      let results = restart &ss le 0
+      let results = restart ss 0
       seq { for struct(i1, i2) in results do 
               let sub = s.AsSpan(i1, i2 - i1)
-              if forAll &sub 0 then
+              if forall Char.IsLetterOrDigit sub then
                 Char.ToUpperInvariant(sub.[0]).ToString() + sub.Slice(1).ToString().ToLowerInvariant() }
       |> String.Concat
     
