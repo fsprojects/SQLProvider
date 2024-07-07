@@ -350,54 +350,47 @@ module internal SchemaProjections =
 
     // --------------------------------------------------------------------------------------
 
-    let rec private restart (cs:ReadOnlySpan<char>) i =
-        if i >= cs.Length then Seq.empty
-        else
-        match cs.[i] with 
-        | LetterDigit _ & UpperC _ -> upperStart cs i (i + 1)
-        | LetterDigit _ -> consume cs i false (i + 1)
-        | _ -> restart cs (i + 1) 
-      // Parsed first upper case letter, continue either all lower or all upper
-    and private upperStart (cs:ReadOnlySpan<char>) from i = 
-        match if i >= cs.Length then ValueNone else ValueSome cs.[i] with 
-        | Upper _ -> consume cs from true (i + 1) 
-        | Lower _ -> consume cs from false (i + 1) 
-        | _ ->
-            let r1 = struct(from, i)
-            let r2 = restart cs (i + 1)
-            seq {
-                yield r1
-                yield! r2
-            }
-      // Consume are letters of the same kind (either all lower or all upper)
-    and private consume (cs:ReadOnlySpan<char>) from takeUpper i = 
-        match takeUpper, if i >= cs.Length then ValueNone else ValueSome cs.[i] with
-        | false, Lower _ -> consume cs from takeUpper (i + 1)
-        | true, Upper _ -> consume cs from takeUpper (i + 1)
-        | true, Lower _ ->
-            let r1 = struct(from, (i - 1))
-            let r2 = restart cs (i - 1)
-            seq {
-                yield r1
-                yield! r2
-            }
-        | _ ->
-            let r1 = struct(from, i)
-            let r2 = restart cs i 
-            seq {
-                yield r1
-                yield! r2
-            }
-
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
     let nicePascalName (s:string) =
-      let ss = s.AsSpan()
-      let le = ss.Length
-      if le = 1 then Char.ToUpperInvariant(ss.[0]).ToString() else
+      let le = s.Length
+      if le = 1 then Char.ToUpperInvariant(s.[0]).ToString() else
       // Starting to parse a new segment 
 
+      let rec restart i =
+            if i >= le then Seq.empty
+            else
+            match s.[i] with 
+            | LetterDigit _ & UpperC _ -> upperStart i (i + 1)
+            | LetterDigit _ -> consume i false (i + 1)
+            | _ -> restart (i + 1) 
+          // Parsed first upper case letter, continue either all lower or all upper
+      and upperStart from i = 
+            match if i >= le then ValueNone else ValueSome s.[i] with 
+            | Upper _ -> consume from true (i + 1) 
+            | Lower _ -> consume from false (i + 1) 
+            | _ ->
+                seq {
+                    yield struct(from, i)
+                    yield! restart (i + 1)
+                }
+          // Consume are letters of the same kind (either all lower or all upper)
+      and consume from takeUpper i = 
+            match takeUpper, if i >= le then ValueNone else ValueSome s.[i] with
+            | false, Lower _ -> consume from takeUpper (i + 1)
+            | true, Upper _ -> consume from takeUpper (i + 1)
+            | true, Lower _ ->
+                seq {
+                    yield struct(from, (i - 1))
+                    yield! restart (i - 1)
+                }
+            | _ ->
+                seq {
+                    yield struct(from, i)
+                    yield! restart i
+                }
+
       // Split string into segments and turn them to PascalCase
-      let results = restart ss 0
+      let results = restart 0
       seq { for i1, i2 in results do 
               let sub = s.AsSpan(i1, i2 - i1)
               if forall Char.IsLetterOrDigit sub then
