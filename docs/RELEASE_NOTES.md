@@ -1,3 +1,6 @@
+### 1.3.43 - 08.07.2024
+* Fixed potential regression issue of 1.3.42
+
 ### 1.3.42 - 04.07.2024
 * Minor performance improvements
 
