@@ -30,6 +30,7 @@
     <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
     <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
     <FsDocsTheme>default</FsDocsTheme>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -71,6 +72,7 @@
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlRuntime.Async.fs" />
     <Compile Include="SqlRuntime.DataContext.fs" />
+    <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
