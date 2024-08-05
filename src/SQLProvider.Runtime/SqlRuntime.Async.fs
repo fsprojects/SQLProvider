@@ -36,14 +36,12 @@ module AsyncOperations =
                     | c -> return yieldseq en
         }
 
-    let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
-        task {
-            match findSqlService s with
-            | Some svc ->
-                return! executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
-            | None ->
-                return s :> Collections.IEnumerable
-        }
+    let inline private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
+        match findSqlService s with
+        | Some svc ->
+            executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
+        | None ->
+            task { return s :> Collections.IEnumerable }
 
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =
         fetchTakeN 1 s
@@ -60,19 +58,20 @@ module AsyncOperations =
             return res |> Seq.cast<'T> |> Seq.tryPick Some
         }
 
-    let inline private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
+    let inline private getExactlyOneAnd ([<InlineIfLambda>] onSuccess: 'TSource -> 'TTarget) ([<InlineIfLambda>] onTooMany: seq<'TSource> -> 'TTarget) ([<InlineIfLambda>] onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
         task {
             let! res = fetchTakeN 2 s
             let converted = res |> Seq.cast<'TSource>
-            match converted |> Seq.length with
-            | 0 ->
-                return onNone()
-            | 1 ->
-                return converted |> Seq.head |> onSuccess
-            | 2 ->
-                return converted |> onTooMany
-            | _ ->
-                return invalidOp "The function encountered an internal error. It tried to take two elements but got more elements."
+            return 
+                match converted |> Seq.length with
+                | 0 ->
+                    onNone()
+                | 1 ->
+                    converted |> Seq.head |> onSuccess
+                | 2 ->
+                    converted |> onTooMany
+                | _ ->
+                    invalidOp "The function encountered an internal error. It tried to take two elements but got more elements."
         }
 
     let getExactlyOneAsync (s:Linq.IQueryable<'T>)=
