@@ -128,7 +128,13 @@ Target.create "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target.create "Build" (fun _ ->
-    Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Release}) "SQLProvider.sln"
+    Fake.DotNet.DotNet.build (fun p -> 
+      {
+        p with 
+          Configuration = DotNet.BuildConfiguration.Release
+          MSBuildParams = { MSBuild.CliArguments.Create() with DisableInternalBinLog = true }
+    
+    }) "SQLProvider.sln"
 )
 
 Target.create "BuildTests" (fun _ ->
@@ -262,6 +268,7 @@ Target.create "RunTests" (fun _ ->
             Common =
                 p.Common
                 |> Fake.DotNet.DotNet.Options.withAdditionalArgs [||]
+            MSBuildParams = { MSBuild.CliArguments.Create() with DisableInternalBinLog = true }
             }) "SQLProvider.Tests.sln"
 
 (*
