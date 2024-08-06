@@ -416,7 +416,7 @@ Target.create "BuildDocs" ignore
 #else
   //=?> ("SourceLink", Pdbstr.tryFind().IsSome )
 #endif
-  =?> ("NuGet", not(Fake.Core.Environment.hasBuildParam "onlydocs"))
+  =?> ("NuGet", not(Fake.Core.Environment.hasEnvironVar "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
 
