@@ -25,7 +25,7 @@ group Build
     storage: packages
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
-    nuget FSharp.Core == 6.0.7
+    nuget FSharp.Core == 8.0.301
     nuget FSharp.Formatting >= 4.0.0
     nuget Nuget.CommandLine
     nuget RazorEngine
@@ -45,8 +45,13 @@ group Build
     nuget Fake.DotNet.MSBuild
     nuget Fake.DotNet.FSFormatting
     nuget Fake.DotNet.Testing.NUnit
+    nuget FSharp.Compiler.Service 43.8.301
     nuget System.Data.SqlClient
     nuget MSBuild.StructuredLogger
+    nuget Microsoft.Build 17.3.2
+    nuget Microsoft.Build.Framework 17.3.2
+    nuget Microsoft.Build.Tasks.Core 17.3.2
+    nuget Microsoft.Build.Utilities.Core 17.3.2
 
 group SourceFiles
     source https://api.nuget.org/v3/index.json

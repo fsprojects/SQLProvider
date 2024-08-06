@@ -31,6 +31,7 @@
     <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
     <FsDocsTheme>default</FsDocsTheme>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>

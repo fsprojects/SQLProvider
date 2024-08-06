@@ -11,6 +11,7 @@
     <AssemblyName>FSharp.Data.SqlProvider.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
     <OutputPath>..\..\bin\typeproviders\fsharp41\</OutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
