@@ -1,3 +1,7 @@
+### 1.4.0-alpha - 02.09.2024
+* F# dependency from 6.0.7 to 8.0.301
+* Build with .NET 8.0 compiler
+
 ### 1.3.43 - 08.07.2024
 * Fixed potential regression issue of 1.3.42
 

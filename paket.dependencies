@@ -2,7 +2,7 @@ version 8.1.0
 source https://api.nuget.org/v3/index.json
 storage: none
 
-nuget FSharp.Core == 6.0.7
+nuget FSharp.Core == 8.0.301
 nuget System.Data.SqlClient framework: net461, net472, net480, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
 nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Data.OleDb
@@ -17,7 +17,7 @@ nuget System.Reflection.TypeExtensions
 nuget System.Data.Common
 nuget System.Data.Odbc
 nuget Microsoft.Data.SQLite 2.0
-nuget Microsoft.Data.SqlClient framework: net6.0, netstandard2.1
+nuget Microsoft.Data.SqlClient framework: net8.0, net6.0, netstandard2.1
 
 group Build
 
@@ -72,10 +72,10 @@ group Docs
     nuget Fake.IO.FileSystem
     nuget FAKE.Core.Environment
     nuget Fake.DotNet.Cli
-    nuget FSharp.Formatting >= 4.0.0
+    nuget FSharp.Formatting prerelease
     nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
-	nuget FSharp.Compiler.Service 43.8.100
+	nuget FSharp.Compiler.Service 43.8.301
 
 group Tests
     source https://api.nuget.org/v3/index.json
@@ -83,7 +83,7 @@ group Tests
     storage: packages
 
     nuget MySql.Data < 7.0.0
-    nuget MySqlConnector 0.36.1
+    nuget MySqlConnector 2.3.1
     nuget Microsoft.NET.Test.Sdk
     nuget NUnit3TestAdapter
     nuget Newtonsoft.Json

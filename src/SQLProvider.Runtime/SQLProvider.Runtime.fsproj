@@ -5,7 +5,7 @@
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net6.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE</DefineConstants>
@@ -76,7 +76,7 @@
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -94,8 +94,14 @@
     <!--<MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net48" />-->
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" />
   </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
-      <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net6.0' ">
+        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
+      <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

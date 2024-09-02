@@ -9,7 +9,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-open System.Data.SqlClient
 
 type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) as this =
     // note we intentionally do not hang onto a connection object at any time,
