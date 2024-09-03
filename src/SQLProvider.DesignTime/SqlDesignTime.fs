@@ -132,8 +132,12 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             | None ->
                 let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
                 if ok then
-                    pars |> List.filter (fun p -> p.Direction = ParameterDirection.Output)
-                else []
+                    pars |> List.filter (fun p ->
+                        not (p.Name |> String.IsNullOrWhiteSpace)
+                        && (p.Direction = ParameterDirection.Output
+                        || p.Direction = ParameterDirection.InputOutput
+                        || p.Direction = ParameterDirection.ReturnValue))
+                 else []
 
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
