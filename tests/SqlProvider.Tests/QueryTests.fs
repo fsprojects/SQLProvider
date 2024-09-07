@@ -1928,6 +1928,72 @@ let ``simple select query async3``() =
     Assert.IsTrue(res > 0)
     ()
 
+[<Test>]
+let ``simple select query async4``() =
+    let dc = sql.GetDataContext() 
+    let res = 
+        task {
+            let asyncquery =
+                query {
+                    for cust in dc.Main.Customers do
+                    where (cust.City <> "")
+                    select cust
+                }
+
+            let! res = asyncquery |> Seq.headAsync
+            return res
+        } |> Async.AwaitTask |> Async.RunSynchronously
+    Assert.IsNotNull(res)
+    ()
+
+
+[<Test>]
+let ``simple select query async5``() =
+    let dc = sql.GetDataContext()
+    async {
+        let! city, country = 
+            task {
+                let asyncquery =
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "")
+                        select (cust.City, cust.Country)
+                    }
+
+                let! res = asyncquery |> Seq.headAsync
+                return res
+            } |> Async.AwaitTask
+        Assert.IsNotNull(city)
+        Assert.IsNotNull(country)
+     } |> Async.RunSynchronously
+    ()
+
+type CustomType = {
+    Location : String;
+    Country : String;
+}
+
+[<Test>]
+let ``simple select query async6``() =
+    let dc = sql.GetDataContext()
+    async {
+        let! customRec = 
+            task {
+                let asyncquery =
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "")
+                        select { Location = cust.City; Country = cust.Country }
+                    }
+
+                let! res = asyncquery |> Seq.headAsync
+                return res
+            } |> Async.AwaitTask
+        Assert.IsNotNull(customRec)
+        Assert.IsNotNull(customRec.Location)
+     } |> Async.RunSynchronously
+    ()
+
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
 [<Test>]
