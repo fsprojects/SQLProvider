@@ -747,6 +747,23 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
+[<Test; Ignore("Not supported")>]
+let ``subquery with 2 tables``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            join o in dc.Main.Orders on (od.OrderId=o.OrderId)
+            where (od.UnitPrice <> 0)
+        }
+
+    let qry2 =
+        qry.Select(fun (od, o) -> od.UnitPrice)
+    let qry2 = qry2 |> Seq.toList
+
+    Assert.IsNotEmpty(qry2)
+
 [<Test>]
 let ``simple where before join test``() = 
     let dc = sql.GetDataContext()
@@ -1230,6 +1247,23 @@ let ``simple select and sort query``() =
 
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
+
+[<Test>]
+let ``simple select and sort query2``() =
+    let dc = sql.GetDataContext()
+    let sortbyCity=true
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            sortBy (if sortbyCity then "1" else cust.Address)
+            thenBy (cust.City)
+            select cust.City
+        }
+    let qry = qry |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry    
+    CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
+
 
 [<Test>]
 let ``simple select and sort desc query``() =

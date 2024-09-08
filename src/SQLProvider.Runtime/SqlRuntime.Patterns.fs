@@ -103,7 +103,8 @@ let (|ConvertOrTypeAs|_|) (e:Expression) =
     | _ -> None
 
 
-let (|Constant|_|) (e:Expression) = 
+let (|Constant|_|) (exp:Expression) =
+    let e = ExpressionOptimizer.doReduction exp
     match e.NodeType, e with 
     | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
     | _ -> None
@@ -360,15 +361,17 @@ let inline internal getRightFromOp (right:Expression) =
         let ceVal = (me.Expression :?> ConstantExpression).Value
         let myVal = 
             match me.Member with
-            | :? FieldInfo as fieldInfo when fieldInfo <> null ->
+            | :? FieldInfo as fieldInfo when not(isNull fieldInfo) ->
                 fieldInfo.GetValue ceVal
-            | :? PropertyInfo as propInfo when propInfo <> null ->
+            | :? PropertyInfo as propInfo when not(isNull propInfo) ->
                 propInfo.GetValue(ceVal, null)
             | _ -> ceVal
         myVal
     | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
 
-let rec (|SqlColumnGet|_|) (e:Expression) =  
+let rec (|SqlColumnGet|_|) (ex:Expression) =
+
+    let e = ExpressionOptimizer.doReduction ex
     match e.NodeType, e with 
     | _, SqlPlainColumnGet(m, k, t) -> Some(m,k,t)
 

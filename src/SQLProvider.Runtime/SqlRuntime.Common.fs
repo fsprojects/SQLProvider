@@ -538,6 +538,21 @@ type internal SqlExp =
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
+        member this.hasSortBy() =
+            let rec isSortBy = function
+                | OrderBy(_) -> true
+                | BaseTable(_) -> false
+                | SelectMany(_,_,_,rest)
+                | FilterClause(_,rest)
+                | HavingClause(_,rest)
+                | Projection(_,rest)
+                | Distinct rest
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Union(_,_,_,rest)
+                | Count(rest) 
+                | AggregateOp(_,_,rest) -> isSortBy rest
+            isSortBy this
 
 type internal SqlQuery =
     { Filters       : Condition list
