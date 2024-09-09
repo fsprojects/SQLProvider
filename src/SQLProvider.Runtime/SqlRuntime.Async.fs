@@ -46,11 +46,11 @@ module AsyncOperations =
                 task {
                     let! res = executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
                     sourceRepl res
-                    return s :> Collections.IEnumerable
+                    return s.Take n :> Collections.IEnumerable
                 }
 
         | None, _ ->
-            task { return s.Take(n) :> Collections.IEnumerable }
+            task { return s.Take n :> Collections.IEnumerable }
 
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =
         fetchTakeN 1 s

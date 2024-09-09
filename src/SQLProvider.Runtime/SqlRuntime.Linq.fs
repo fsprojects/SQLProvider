@@ -70,19 +70,18 @@ module internal QueryImplementation =
             let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
             if isNull srcProp then None, None
             else
-            let src = srcProp.GetValue(enu)
+            let src = srcProp.GetValue enu
             match src with
-            | :? IWithSqlService as svc ->
+            | :? IWithSqlService as svc when not(isNull src) ->
                 //let srcItemType = srcProp.GetType().Fiel
                 let genArgs = src.GetType().GetGenericArguments()
                 if genArgs.Length <> 1 then None, None
                 else
                 Some svc, Some (fun (queryResultsourcePropertyReplacement : IEnumerable) ->
                                     let enu2 = queryResultsourcePropertyReplacement.GetEnumerator()
-                                    let srcType = genArgs.[0]
-                                    let tRes = typedefof<ResizeArray<_>>.MakeGenericType(srcType)
+                                    let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
                                     let arr = Activator.CreateInstance(tRes, [||])
-                                    let addMethod = arr.GetType().GetMethod("Add")
+                                    let addMethod = arr.GetType().GetMethod "Add"
                                     while enu2.MoveNext() do
                                         addMethod.Invoke(arr, [| enu2.Current |]) |> ignore
 
