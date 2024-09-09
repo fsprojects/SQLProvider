@@ -1,4 +1,4 @@
-### 1.3.44 - 09.09.2024
+### 1.3.45 - 09.09.2024
 * Fix cached return columns for function, PR#830
 * Support for more complex sortBys
 * More efficient async-head queries, PR#831
