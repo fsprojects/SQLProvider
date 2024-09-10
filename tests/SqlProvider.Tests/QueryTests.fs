@@ -2028,6 +2028,28 @@ let ``simple select query async6``() =
      } |> Async.RunSynchronously
     ()
 
+
+[<Test >] // Generates COUNT(DISTINCT CustomerId)
+let ``simple select with distinct count async``() =
+    async {
+        let dc = sql.GetDataContext()
+        let! res =
+            task {
+                let qry = 
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "Helsinki")
+                        distinct
+                        select(cust.City, cust.CustomerId, cust.)
+                    }
+                let! leng = qry |> Seq.lengthAsync
+                return leng
+            } |> Async.AwaitTask
+        Assert.AreEqual(90, res)
+     } |> Async.RunSynchronously
+    ()
+
+
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
 [<Test>]
