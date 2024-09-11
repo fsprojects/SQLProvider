@@ -47,7 +47,7 @@ group Build
     nuget Fake.DotNet.Testing.NUnit
     nuget FSharp.Compiler.Service 43.8.301
     nuget System.Data.SqlClient
-    nuget MSBuild.StructuredLogger 2.2.291
+    nuget MSBuild.StructuredLogger
 
 
 group SourceFiles

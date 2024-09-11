@@ -1,13 +1,49 @@
 printfn "Building..."
-#r "paket: groupref build //"
 //#load "docs/CLI.fs"
+
+#if FAKE
+#r "paket: groupref build //"
+#endif
+
 
 #r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 
 #if !FAKE
-#load "./.fake/build.fsx/intellisense.fsx"
-#r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
+//#load "./.fake/build.fsx/intellisense.fsx"
+//Versions should be compatible with paket.lock Build group:
+#r "nuget: Microsoft.SourceLink.GitHub, 8.0"
+//#r "./paket-files/build/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+#r "nuget: FSharp.Formatting, 21.0.0-beta-003"
+#r "nuget: Nuget.CommandLine"
+#r "nuget: RazorEngine"
+#r "nuget: Fake.IO.FileSystem"
+#r "nuget: Fake.Core.Target"
+#r "nuget: Fake.Core.ReleaseNotes"
+#r "nuget: FAKE.Core.Environment"
+#r "nuget: Fake.DotNet.Cli"
+#r "nuget: Fake.Core.Process"
+#r "nuget: Fake.DotNet.AssemblyInfoFile"
+#r "nuget: Fake.Tools.Git"
+#r "nuget: Fake.DotNet.Paket"
+#r "nuget: Fake.Api.GitHub"
+#r "nuget: Fake.BuildServer.AppVeyor"
+#r "nuget: Fake.BuildServer.Travis"
+#r "nuget: Fake.DotNet.MSBuild"
+#r "nuget: Fake.DotNet.FSFormatting"
+#r "nuget: Fake.DotNet.Testing.NUnit"
+#r "nuget: FSharp.Compiler.Service"
+#r "nuget: System.Data.SqlClient"
+#r "nuget: MSBuild.StructuredLogger, 2.2.337"
+// Boilerplate
+System.Environment.GetCommandLineArgs()
+|> Array.skip 2 // skip fsi.exe; build.fsx
+|> Array.toList
+|> Fake.Core.Context.FakeExecutionContext.Create false __SOURCE_FILE__
+|> Fake.Core.Context.RuntimeContext.Fake
+|> Fake.Core.Context.setExecutionContext
 #endif
+
+
 
 open Fake
 open Fake.SystemHelper
