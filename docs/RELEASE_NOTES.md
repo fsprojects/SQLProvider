@@ -2,6 +2,11 @@
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 
+### 1.3.45 - 09.09.2024
+* Fix cached return columns for function, PR#830
+* Support for more complex sortBys
+* More efficient async-head queries, PR#831
+
 ### 1.3.43 - 08.07.2024
 * Fixed potential regression issue of 1.3.42
 

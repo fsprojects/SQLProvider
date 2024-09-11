@@ -41,46 +41,55 @@ module internal QueryImplementation =
         abstract GetAsyncEnumerator : unit -> System.Threading.Tasks.Task<IEnumerator<'T>>
     type IAsyncEnumerable =
         abstract EvaluateQuery : unit -> System.Threading.Tasks.Task<unit>
-
+        
+    /// Try to detect if IQueryable is a database query.
+    /// It can be e.g. direct SQLProvider IWithSqlService (great)
+    /// or annoyingly a source inside a wrapper like WhereSelectEnumerableIterator, where it needs to be updated
     let findSqlService (iq:Linq.IQueryable<'T>) = 
         match iq with
-        | :? IWithSqlService as svc -> Some svc
+        | :? IWithSqlService as svc -> Some svc, None
         | :? System.Linq.EnumerableQuery as eq ->
             let enuProp = eq.GetType().GetProperty("Enumerable", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
             if isNull enuProp then
                 let expProp = eq.GetType().GetProperty("Expression", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-                if isNull expProp then None
+                if isNull expProp then None, None
                 else
                 let exp = expProp.GetValue(eq, null)
-                if isNull exp then None
+                if isNull exp then None, None
                 else
                 match exp with
                 | :? Expression as e ->
                     match e with
-                    | MethodCall(None, _, [Constant( :? IWithSqlService as svc, _)]) -> Some svc
-                    | _ -> None
-                | _ -> None
+                    | MethodCall(None, _, [Constant( :? IWithSqlService as svc, _)]) -> Some svc, None
+                    | _ -> None, None
+                | _ -> None, None
             else
             let enu = enuProp.GetValue(eq, null)
-            if isNull enu then None
+            if isNull enu then None, None
             else
             let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if isNull srcProp then None
+            if isNull srcProp then None, None
             else
-            let sval = srcProp.GetValue(enu)
-            match sval with
-            | null -> None
-            //| :? IQueryable<_> as qs ->
-            //    match findSqlService qs with
-            //    | None -> None
-            //    | Some innerSvc -> Some innerSvc
-            | _ -> None
-        | _ -> None
+            let src = srcProp.GetValue enu
+            match src with
+            | :? IWithSqlService as svc when not(isNull src) ->
+                //let srcItemType = srcProp.GetType().Fiel
+                let genArgs = src.GetType().GetGenericArguments()
+                if genArgs.Length <> 1 then None, None
+                else
+                Some svc, Some (fun (queryResultsourcePropertyReplacement : IEnumerable) ->
+                                    let enu2 = queryResultsourcePropertyReplacement.GetEnumerator()
+                                    let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
+                                    let arr = Activator.CreateInstance(tRes, [||])
+                                    let addMethod = arr.GetType().GetMethod "Add"
+                                    while enu2.MoveNext() do
+                                        addMethod.Invoke(arr, [| enu2.Current |]) |> ignore
 
-    let (|FoundSqlService|_|) (s:obj) = 
-        match s with
-        | :? Linq.IQueryable<obj> as iq -> findSqlService iq
-        | _ -> None
+                                    srcProp.SetValue(enu, (box arr))
+
+                                )
+            | _ -> None, None
+        | _ -> None, None
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     [<return: Struct>]
@@ -888,7 +897,6 @@ module internal QueryImplementation =
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
                         x :?> IQueryable<_>
-
                     | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (SqlColumnGet(entity,key,_)))) ]) ->
                         let alias =
                             match entity with
@@ -897,9 +905,9 @@ module internal QueryImplementation =
                             | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let ascending = meth.Name = "ThenBy"
+                        let gb = source.SqlExpression.hasGroupBy()
                         match source.SqlExpression with
                         | OrderBy(_) ->
-                            let gb = source.SqlExpression.hasGroupBy()
                             let sqlExpression =
                                match gb, key with
                                | Some gbv, GroupColumn(KeyOp(""), _) ->
@@ -908,8 +916,22 @@ module internal QueryImplementation =
                                | _ -> OrderBy(alias,key,ascending,source.SqlExpression)
                             let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression ; source.TupleIndex; |]
                             x :?> IQueryable<_>
-                        | _ -> failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
-
+                        | _ when source.SqlExpression.hasSortBy() ->  failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
+                        | _ -> // Then by alone works as OrderBy
+                            let sqlExpression =
+                                   match source.SqlExpression, gb, key with
+                                   | BaseTable("",entity),_,_ -> OrderBy("",key,ascending,BaseTable(alias,entity))
+                                   | _, Some gbv, GroupColumn(KeyOp(""), _) -> 
+                                        gbv |> snd |> List.fold(fun exprstate (al,itm) ->
+                                            OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
+                                   | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
+                            let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
+                            let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
+                            x :?> IQueryable<_>
+                    | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t))))])
+                    | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t)))) ]) ->
+                        let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) // Sort by constant can be ignored, except it changes the return type
+                        ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; source.SqlExpression ; source.TupleIndex; |] :?> IQueryable<_>
                     | MethodCall(None, (MethodWithName "Distinct" as meth), [ SourceWithQueryData source ]) ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Distinct(source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
@@ -1206,7 +1228,7 @@ module internal QueryImplementation =
     let getAgg<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : 'T =
 
         match findSqlService s with
-        | Some svc ->
+        | Some svc, wapper ->
 
             match svc.SqlExpression with
             | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
@@ -1239,7 +1261,7 @@ module internal QueryImplementation =
                 if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                 (Utilities.convertTypes res typeof<'T>) |> unbox
             | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-        | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+        | None, _ -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
 
 module Seq =
     /// Execute SQLProvider query to get the sum of elements.

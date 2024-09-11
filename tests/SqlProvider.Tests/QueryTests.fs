@@ -747,6 +747,23 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
+[<Test; Ignore("Not supported")>]
+let ``subquery with 2 tables``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            join o in dc.Main.Orders on (od.OrderId=o.OrderId)
+            where (od.UnitPrice <> 0)
+        }
+
+    let qry2 =
+        qry.Select(fun (od, o) -> od.UnitPrice)
+    let qry2 = qry2 |> Seq.toList
+
+    Assert.IsNotEmpty(qry2)
+
 [<Test>]
 let ``simple where before join test``() = 
     let dc = sql.GetDataContext()
@@ -1230,6 +1247,23 @@ let ``simple select and sort query``() =
 
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
+
+[<Test>]
+let ``simple select and sort query2``() =
+    let dc = sql.GetDataContext()
+    let sortbyCity=true
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            sortBy (if sortbyCity then "1" else cust.Address)
+            thenBy (cust.City)
+            select cust.City
+        }
+    let qry = qry |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry    
+    CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
+
 
 [<Test>]
 let ``simple select and sort desc query``() =
@@ -1927,6 +1961,94 @@ let ``simple select query async3``() =
         } |> Async.AwaitTask |> Async.RunSynchronously
     Assert.IsTrue(res > 0)
     ()
+
+[<Test>]
+let ``simple select query async4``() =
+    let dc = sql.GetDataContext() 
+    let res = 
+        task {
+            let asyncquery =
+                query {
+                    for cust in dc.Main.Customers do
+                    where (cust.City <> "")
+                    select cust
+                }
+
+            let! res = asyncquery |> Seq.headAsync
+            return res
+        } |> Async.AwaitTask |> Async.RunSynchronously
+    Assert.IsNotNull(res)
+    ()
+
+
+[<Test>]
+let ``simple select query async5``() =
+    let dc = sql.GetDataContext()
+    async {
+        let! city, country = 
+            task {
+                let asyncquery =
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "")
+                        select (cust.City, cust.Country)
+                    }
+
+                let! res = asyncquery |> Seq.headAsync
+                return res
+            } |> Async.AwaitTask
+        Assert.IsNotNull(city)
+        Assert.IsNotNull(country)
+     } |> Async.RunSynchronously
+    ()
+
+type CustomType = {
+    Location : String;
+    Country : String;
+}
+
+[<Test>]
+let ``simple select query async6``() =
+    let dc = sql.GetDataContext()
+    async {
+        let! customRec = 
+            task {
+                let asyncquery =
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "")
+                        select { Location = cust.City; Country = cust.Country }
+                    }
+
+                let! res = asyncquery |> Seq.headAsync
+                return res
+            } |> Async.AwaitTask
+        Assert.IsNotNull(customRec)
+        Assert.IsNotNull(customRec.Location)
+     } |> Async.RunSynchronously
+    ()
+
+
+[<Test >] // Generates COUNT(DISTINCT CustomerId)
+let ``simple select with distinct count async``() =
+    async {
+        let dc = sql.GetDataContext()
+        let! res =
+            task {
+                let qry = 
+                    query {
+                        for cust in dc.Main.Customers do
+                        where (cust.City <> "Helsinki")
+                        distinct
+                        select(cust.City, cust.CustomerId, cust.)
+                    }
+                let! leng = qry |> Seq.lengthAsync
+                return leng
+            } |> Async.AwaitTask
+        Assert.AreEqual(90, res)
+     } |> Async.RunSynchronously
+    ()
+
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 
