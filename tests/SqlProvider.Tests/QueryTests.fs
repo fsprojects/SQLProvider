@@ -755,7 +755,7 @@ let ``subquery with 2 tables``() =
         query {
             for od in dc.Main.OrderDetails do
             join o in dc.Main.Orders on (od.OrderId=o.OrderId)
-            where (od.UnitPrice <> 0)
+            where (od.UnitPrice <> 0m)
         }
 
     let qry2 =
@@ -2040,7 +2040,7 @@ let ``simple select with distinct count async``() =
                         for cust in dc.Main.Customers do
                         where (cust.City <> "Helsinki")
                         distinct
-                        select(cust.City, cust.CustomerId, cust.)
+                        select(cust.City, cust.CustomerId)
                     }
                 let! leng = qry |> Seq.lengthAsync
                 return leng
