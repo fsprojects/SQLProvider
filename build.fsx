@@ -4,6 +4,7 @@ printfn "Building..."
 #if FAKE
 #r "paket: groupref build //"
 #r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+open System.Data.SqlClient
 #endif
 
 
@@ -40,6 +41,8 @@ System.Environment.GetCommandLineArgs()
 |> Fake.Core.Context.FakeExecutionContext.Create false __SOURCE_FILE__
 |> Fake.Core.Context.RuntimeContext.Fake
 |> Fake.Core.Context.setExecutionContext
+
+open Microsoft.Data.SqlClient
 #endif
 
 
@@ -232,7 +235,7 @@ Target.create "SetupPostgreSQL" (fun _ ->
 
 let setupMssql url saPassword = 
   
-    let connBuilder = System.Data.SqlClient.SqlConnectionStringBuilder()    
+    let connBuilder = SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
@@ -242,9 +245,9 @@ let setupMssql url saPassword =
       // We wait up to 30 seconds for MSSQL to be initialized
       let rec runCmd' attempt = 
         try
-          use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
+          use conn = new SqlConnection(connBuilder.ConnectionString)
           conn.Open()
-          use cmd = new Data.SqlClient.SqlCommand(query, conn)
+          use cmd = new SqlCommand(query, conn)
           cmd.ExecuteNonQuery() |> ignore 
         with e -> 
           printfn "Connection attempt %i: %A" attempt e
