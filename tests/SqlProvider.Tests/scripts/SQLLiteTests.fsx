@@ -1,4 +1,4 @@
-﻿#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+﻿#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql

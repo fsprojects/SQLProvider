@@ -1,5 +1,5 @@
-#I @"../../../bin/net461"
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/net48"
+#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 #r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net461/System.Threading.Tasks.Extensions.dll"
 

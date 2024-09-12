@@ -1,6 +1,7 @@
 ### 1.4.0-alpha2 - 11.09.2024
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
+* .NET Framework 4.7.2 to 4.8
 
 ### 1.3.45 - 09.09.2024
 * Fix cached return columns for function, PR#830

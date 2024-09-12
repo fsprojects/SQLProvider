@@ -3,7 +3,7 @@ source https://api.nuget.org/v3/index.json
 storage: none
 
 nuget FSharp.Core == 8.0.301
-nuget System.Data.SqlClient framework: net461, net472, net480, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
+nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
 nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Data.OleDb
 nuget System.Runtime
@@ -79,7 +79,7 @@ group Docs
 
 group Tests
     source https://api.nuget.org/v3/index.json
-    frameworks: netcoreapp3.1, net472
+    frameworks: netcoreapp3.1, net472, net48
     storage: packages
 
     nuget MySql.Data < 7.0.0
@@ -88,7 +88,7 @@ group Tests
     nuget NUnit3TestAdapter
     nuget Newtonsoft.Json
     nuget Npgsql < 4.0
-    nuget NUnit
+    nuget NUnit 3.14.0
     nuget Oracle.ManagedDataAccess 12.2.1100
     nuget FirebirdSql.Data.FirebirdClient 5.12.1
     nuget System.Data.SQLite.Core 1.0.105.2

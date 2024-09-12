@@ -2,8 +2,8 @@
 #r "nuget: Microsoft.Data.SqlClient"
 
 // This is with classic FSI:
-#I @"../../../bin/net472"
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/net48"
+#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
 #I @"../../../bin/netstandard2.1"
 #r @"../../../bin/netstandard2.1/FSharp.Data.SqlProvider.dll"

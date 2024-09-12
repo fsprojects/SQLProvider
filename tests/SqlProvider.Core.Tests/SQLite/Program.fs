@@ -3,7 +3,7 @@
 #r "../../../packages/Microsoft.Data.Sqlite.Core/lib/netstandard2.0/Microsoft.Data.Sqlite.dll"
 #r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
 // On Non-Windows-machine, fsharpi is not running on Core:
-// #r "../../../bin/net472/FSharp.Data.SqlProvider.dll"
+// #r "../../../bin/net48/FSharp.Data.SqlProvider.dll"
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/temp"
 

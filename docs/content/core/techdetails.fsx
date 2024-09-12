@@ -19,7 +19,7 @@ Even though our test run will run modifications to the test databases, don't che
 We use Fake and Paket. You have to run `build.cmd` on Windows (or `sh ./build.sh` on Mac/Linux) before opening the solutions.
 
 The main source solution is `SQLProvider.sln`.
-The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\net472\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
+The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\net48\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
 
  - To debug design-time features you "Attach to process" the main solution debugger to another instance of Visual Studio running the tests solution.
  - To debug runtime you attach it to e.g. fsi.exe and run the code in interactive.
@@ -178,7 +178,7 @@ Debugging the design-time VS2022 is doable, but a bit more complex.
 This will mess your SQLProvider Nuget cache, so after done, delete the SQLProvider cache-folder and restore the package again.
 
 1. Open SQLProvider.sln (with Visual Studio 2022) and build it (in debug mode). Keep this open for now.
-2. Open explorer, it has made under bin-folder some folders, e.g. \net472 \net6.0 \netstandard2.0 \netstandard2.1 and \typeproviders
+2. Open explorer, it has made under bin-folder some folders, e.g. \net48 \net6.0 \netstandard2.0 \netstandard2.1 and \typeproviders
 3. Open another explorer, go to your location of Nuget cache, the version you are using e.g. `C:\Users\me\.nuget\packages\sqlprovider\1.3.30` 
 4. Replace the nuget cache \typeproviders folder with your fresh bin typeproviders folder.
 5. Replace the nuget cache \lib folder with other folders from your fresh bin folder.

@@ -5,8 +5,8 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <OutputType>Library</OutputType>
-    <TargetFramework>net472</TargetFramework>
-    <!--<TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>-->
+    <TargetFramework>net48</TargetFramework>
+    <!--<TargetFrameworks>net48;netcoreapp3.1</TargetFrameworks>-->
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyName>SqlProvider.Tests</AssemblyName>
 	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
@@ -48,7 +48,7 @@
     <ProjectReference Include="..\..\src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
