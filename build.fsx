@@ -3,10 +3,9 @@ printfn "Building..."
 
 #if FAKE
 #r "paket: groupref build //"
+#r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 #endif
 
-
-#r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 
 #if !FAKE
 //#load "./.fake/build.fsx/intellisense.fsx"
@@ -32,7 +31,7 @@ printfn "Building..."
 #r "nuget: Fake.DotNet.FSFormatting"
 #r "nuget: Fake.DotNet.Testing.NUnit"
 #r "nuget: FSharp.Compiler.Service"
-#r "nuget: System.Data.SqlClient"
+#r "nuget: Microsoft.Data.SqlClient"
 #r "nuget: MSBuild.StructuredLogger, 2.2.337"
 // Boilerplate
 System.Environment.GetCommandLineArgs()
