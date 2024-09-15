@@ -42,7 +42,7 @@ let ``Verify int annotation in vProductAndDescription Three``() =
         |> UnzipTests.extractModelXml
         |> DacpacParser.parseXml
 
-    let view = schema.Tables |> List.find (fun t -> t.Name = "vProductAndDescription")
-    let c = view.Columns |> List.find (fun c -> c.Name = "Three")
+    let view = schema.Tables |> Array.find (fun t -> t.Name = "vProductAndDescription")
+    let c = view.Columns |> Array.find (fun c -> c.Name = "Three")
     Assert.AreEqual("INT", c.DataType)
 
