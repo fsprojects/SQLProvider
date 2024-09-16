@@ -155,7 +155,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
-            match types |> Array.filter(fun t -> not (isNull t)) |> Array.tryFind f with
+            match types |> Array.filter(isNull >> not) |> Array.tryFind f with
             | Some t -> t
             | None ->
                 match err with
@@ -466,7 +466,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             ]
                 getItems tbls.Rows false @ getItems views.Rows true
             con.Close()
-            ret
+            ret |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -546,20 +546,20 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                           Name = string row.["TABLE_NAME"]
                           Type = ""}
 
-                    if not <| schemaCache.Relationships.ContainsKey pTable.FullName then schemaCache.Relationships.[pTable.FullName] <- ([],[])
-                    if not <| schemaCache.Relationships.ContainsKey fTable.FullName then schemaCache.Relationships.[fTable.FullName] <- ([],[])
+                    if not <| schemaCache.Relationships.ContainsKey pTable.FullName then schemaCache.Relationships.[pTable.FullName] <- ([||],[||])
+                    if not <| schemaCache.Relationships.ContainsKey fTable.FullName then schemaCache.Relationships.[fTable.FullName] <- ([||],[||])
 
                     let rel = { Name = string row.["CONSTRAINT_NAME"]; PrimaryTable= pTable.FullName; PrimaryKey=string row.["FKEY_TO_COLUMN"]
                                 ForeignTable=fTable.FullName; ForeignKey=string row.["FKEY_FROM_COLUMN"] }
 
                     let (c,p) = schemaCache.Relationships.[pTable.FullName]
-                    schemaCache.Relationships.[pTable.FullName] <- (rel::c,p)
+                    schemaCache.Relationships.[pTable.FullName] <- (Array.concat [| [|rel|]; c|],p)
                     let (c,p) = schemaCache.Relationships.[fTable.FullName]
-                    schemaCache.Relationships.[fTable.FullName] <- (c,rel::p)
+                    schemaCache.Relationships.[fTable.FullName] <- (c,Array.concat [|[|rel|];p|])
                 con.Close()
                 match schemaCache.Relationships.TryGetValue table.FullName with
                 | true,v -> v
-                | _ -> [],[]
+                | _ -> [||],[||]
           finally
             System.Threading.Monitor.Exit schemaCache.Relationships
 

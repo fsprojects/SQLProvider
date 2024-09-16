@@ -276,7 +276,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
                 let table ={ Schema = schema ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
                 yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ]
+                ] |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -328,7 +328,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     |> Map.ofList
                 schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
-        member __.GetRelationships(_,_) = ([],[]) // The ODBC type provider does not currently support GetRelationships operations.
+        member __.GetRelationships(_,_) = ([||],[||]) // The ODBC type provider does not currently support GetRelationships operations.
         member __.GetSprocs(_) = []
 
         member __.GetIndividualsQueryText(table,_) =

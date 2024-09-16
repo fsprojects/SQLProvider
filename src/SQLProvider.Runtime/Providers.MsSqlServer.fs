@@ -569,7 +569,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
                 yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ])
+                ] |> List.toArray)
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -692,7 +692,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value)
                                 PrimaryKey = reader.GetSqlString(6).Value
                                 ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value)
-                                ForeignKey=reader.GetSqlString(2).Value } ]
+                                ForeignKey=reader.GetSqlString(2).Value } ] |> List.toArray
                 reader.Dispose()
                 let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
                 use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
@@ -705,7 +705,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value);
                                 PrimaryKey = reader.GetSqlString(6).Value
                                 ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value);
-                                ForeignKey=reader.GetSqlString(2).Value } ]
+                                ForeignKey=reader.GetSqlString(2).Value } ] |> List.toArray
                 (children,parents))
             res)
 

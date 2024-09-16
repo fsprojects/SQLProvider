@@ -22,8 +22,24 @@ type internal SqlRuntimeInfo (config : TypeProviderConfig) =
         //| Choice2Of2(paths, errors) -> Assembly.GetExecutingAssembly()
     member __.RuntimeAssembly = runtimeAssembly
 
+type internal CacheKey =
+         (struct (  string *                    // ConnectionString URL
+                    string *                    // ConnectionString Name
+                    DatabaseProviderTypes *     // db vendor
+                    string *                    // Assembly resolution path for db connectors and custom types
+                    int *                       // Individuals Amount
+                    NullableColumnType *                      // Use option types?
+                    string *                    // Schema owner currently only used for oracle
+                    CaseSensitivityChange *     // Should we do ToUpper or ToLower when generating table names?
+                    string *                    // Table names list (Oracle and MSSQL Only)
+                    string *                    // Context schema path
+                    OdbcQuoteCharacter *       // Quote characters (Odbc only)
+                    SQLiteLibrary *            // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
+                    string *                   // SSDT Path
+                    string))                    //typeName
+
 module internal DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<_,Lazy<ProvidedTypeDefinition>>()
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<CacheKey,Lazy<ProvidedTypeDefinition>>()
 
 type internal ParameterValue =
   | UserProvided of string * string * Type
@@ -46,7 +62,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let rec createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) =
+    let rec createTypes(struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)) =
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -93,7 +109,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             lazy
                 match con with
                 | Some con -> prov.GetTables(con,caseSensitivity)
-                | None -> prov.GetSchemaCache().Tables |> Seq.map (fun kv -> kv.Value) |> Seq.toList
+                | None -> prov.GetSchemaCache().Tables |> Seq.map (fun kv -> kv.Value) |> Seq.toArray
 
         let tableColumns =
             lazy
@@ -114,7 +130,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                     let rel =
                                         match prov.GetSchemaCache().Relationships.TryGetValue(t.FullName) with
                                         | true,rel -> rel
-                                        | false,_ -> ([],[])
+                                        | false,_ -> ([||],[||])
                                     (cols,rel))]
 
         let sprocData =
@@ -147,7 +163,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let baseTypes =
             lazy
                 dict [ let tablesforced = tables.Force()
-                       if List.isEmpty tablesforced then
+                       if Array.isEmpty tablesforced then
                             let hint =
                                 match con with
                                 | Some con ->
@@ -296,11 +312,13 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             lazy
                 dict [ for table in tables.Force() do
                         let name = table.FullName
-                        let (et,_,_,_) = baseTypes.Force().[name]
-                        let ct = ProvidedTypeDefinition(table.FullName, Some typeof<obj>,isErased=true)
-                        ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
-                        let it = createIndividualsType table
-                        yield table.FullName,(ct,it) ]
+                        match baseTypes.Force().TryGetValue name with
+                        | true, (et,_,_,_) ->
+                            let ct = ProvidedTypeDefinition(name, Some typeof<obj>,isErased=true)
+                            ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
+                            let it = createIndividualsType table
+                            yield name,(ct,it)
+                        | false, _ -> ()]
 
         // add the attributes and relationships
         for KeyValue(key,(t,_,_,_)) in baseTypes.Force() do
@@ -353,38 +371,41 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 let relProps =
                     let getRelationshipName = Utilities.uniqueName()
                     let bts = baseTypes.Force()
+                    let ty = typedefof<System.Linq.IQueryable<_>>
                     [ for r in children do
-                       if bts.ContainsKey(r.ForeignTable) then
-                        let (tt,_,_,_) = bts.[r.ForeignTable]
-                        let ty = typedefof<System.Linq.IQueryable<_>>
-                        let ty = ty.MakeGenericType tt
-                        let constraintName = r.Name
-                        let niceName = getRelationshipName (sprintf "%s by %s" r.ForeignTable r.PrimaryKey)
-                        let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
-                            let pt = r.PrimaryTable
-                            let pk = r.PrimaryKey
-                            let ft = r.ForeignTable
-                            let fk = r.ForeignKey
-                            let a0 = args.[0]
-                            <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
-                        prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
-                        yield prop ] @
+                       match bts.TryGetValue r.ForeignTable with
+                       | true, (tt,_,_,_) ->
+                            let ty = ty.MakeGenericType tt
+                            let constraintName = r.Name
+                            let niceName = getRelationshipName (sprintf "%s by %s" r.ForeignTable r.PrimaryKey)
+                            let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
+                                let pt = r.PrimaryTable
+                                let pk = r.PrimaryKey
+                                let ft = r.ForeignTable
+                                let fk = r.ForeignKey
+                                let a0 = args.[0]
+                                <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
+                            prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
+                            yield prop
+                        | false, _ -> ()
+                            ] @
                     [ for r in parents do
-                       if bts.ContainsKey(r.PrimaryTable) then
-                        let (tt,_,_,_) = (bts.[r.PrimaryTable])
-                        let ty = typedefof<System.Linq.IQueryable<_>>
-                        let ty = ty.MakeGenericType tt
-                        let constraintName = r.Name
-                        let niceName = getRelationshipName (sprintf "%s by %s" r.PrimaryTable r.PrimaryKey)
-                        let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
-                            let pt = r.PrimaryTable
-                            let pk = r.PrimaryKey
-                            let ft = r.ForeignTable
-                            let fk = r.ForeignKey
-                            let a0 = args.[0]
-                            <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt, pk,ft, fk,RelationshipDirection.Parents) @@> )
-                        prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)
-                        yield prop ]
+                       match bts.TryGetValue r.PrimaryTable with
+                       | true, (tt,_,_,_) ->
+                            let ty = ty.MakeGenericType tt
+                            let constraintName = r.Name
+                            let niceName = getRelationshipName (sprintf "%s by %s" r.PrimaryTable r.PrimaryKey)
+                            let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
+                                let pt = r.PrimaryTable
+                                let pk = r.PrimaryKey
+                                let ft = r.ForeignTable
+                                let fk = r.ForeignKey
+                                let a0 = args.[0]
+                                <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt, pk,ft, fk,RelationshipDirection.Parents) @@> )
+                            prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)
+                            yield prop
+                       | false, _ -> ()
+                            ]
                 attProps @ relProps)
 
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (sproc:CompileTimeSprocDefinition) =
@@ -608,7 +629,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               Expr.NewArray(
                                       typeof<string*obj>,
                                       args
-                                      |> Seq.toList
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
@@ -630,7 +650,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               Expr.NewArray(
                                       typeof<string*obj>,
                                       args
-                                      |> Seq.toList
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
@@ -670,7 +689,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               Expr.NewArray(
                                       typeof<string*obj>,
                                       args
-                                      |> Seq.toList
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
@@ -702,7 +720,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               Expr.NewArray(
                                       typeof<string*obj>,
                                       args
-                                      |> Seq.toList
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
@@ -726,7 +743,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               Expr.NewArray(
                                       typeof<string*obj>,
                                       args
-                                      |> Seq.toList
                                       |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value minimalParameters.[i].Name
                                                                               Expr.Coerce(v, typeof<obj>) ] ))
                           <@@
@@ -1081,6 +1097,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     do paramSqlType.DefineStaticParameters([dbVendor;conString;connStringName;resolutionPath;individualsAmount;optionTypes;owner;caseSensitivity; tableNames; contextSchemaPath; odbcquote; sqliteLibrary; ssdtPath], fun typeName args ->
 
         let arguments =
+          struct (
             args.[1] :?> string,                    // ConnectionString URL
             args.[2] :?> string,                    // ConnectionString Name
             args.[0] :?> DatabaseProviderTypes,     // db vendor
@@ -1094,7 +1111,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[10] :?> OdbcQuoteCharacter,       // Quote characters (Odbc only)
             args.[11] :?> SQLiteLibrary,            // Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)
             args.[12] :?> string,                   // SSDT Path
-            typeName
+            typeName)
 
         let addCache args =
             lazy

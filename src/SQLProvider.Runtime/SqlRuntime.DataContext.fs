@@ -95,7 +95,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             | false ->
                 use con = provider.CreateConnection(connectionString)
                 provider.GetTables(con, caseSensitivity)
-                |> List.tryFind (fun t -> t.Name = tableName)
+                |> Array.tryFind (fun t -> t.Name = tableName)
                 |> Option.bind (fun t -> provider.GetPrimaryKey(t))
             | true ->
                 schemaCache.Tables.TryGetValue(tableName)

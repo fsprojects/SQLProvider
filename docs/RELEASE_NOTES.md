@@ -1,7 +1,11 @@
-### 1.4.0-alpha2 - 11.09.2024
+### 1.4.0-alpha3 - 16.09.2024
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
+
+### 1.3.46 - 16.09.2024
+* Ssdt performance optimisations, and some lists to arrays to reduce memory footprint, PR#832
+* May need refresh for saved SchemaCache due to list to array change.
 
 ### 1.3.45 - 09.09.2024
 * Fix cached return columns for function, PR#830

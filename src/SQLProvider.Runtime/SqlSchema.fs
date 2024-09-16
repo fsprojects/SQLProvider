@@ -102,6 +102,12 @@ type RunTimeSprocDefinition =
     { Name: SprocName
       Params: QueryParameter list }
 
+type CompileTimePackageDefinition =
+    { Name : string
+      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
+      Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
+    }
+
 [<System.Runtime.Serialization.KnownType("GetKnownTypes")>]
 type Sproc =
     | Root of string * Sproc
@@ -111,12 +117,6 @@ type Sproc =
     static member GetKnownTypes() =
         typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
-
-and CompileTimePackageDefinition =
-    { Name : string
-      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
-      Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
-    }
 
 [<Struct>]
 type Table =

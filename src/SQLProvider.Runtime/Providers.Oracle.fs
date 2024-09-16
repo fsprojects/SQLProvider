@@ -267,7 +267,7 @@ module internal Oracle =
             { Schema = Sql.dbUnbox row.[0];
               Name   = Sql.dbUnbox row.[1];
               Type   = Sql.dbUnbox row.[2] })
-        |> Seq.toList
+        |> Seq.toArray
 
     let getColumns (primaryKeys:IDictionary<_,_>) (table : Table) conn = 
         sprintf """select data_type, nullable, column_name, data_length, data_default, virtual_column from all_tab_cols where table_name = '%s' and owner = '%s'""" table.Name table.Schema
@@ -322,9 +322,9 @@ module internal Oracle =
                     | _, Some(fk) -> None
                     | _, None -> None
                 | false, _ -> None
-            )
+            ) |> Seq.toArray
         let children =
-            rels |> List.map (fun x ->
+            rels |> Array.map (fun x ->
                 { Name = x.Name
                   PrimaryTable = x.ForeignTable
                   PrimaryKey = x.ForeignKey
@@ -692,8 +692,8 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         member __.GetTables(con,_) =
                if schemaCache.Tables.IsEmpty then
                     Sql.connect con (Oracle.getTables tableNames)
-                    |> List.map (fun t -> schemaCache.Tables.GetOrAdd(t.FullName, t))
-               else schemaCache.Tables |> Seq.map (fun t -> t.Value) |> Seq.toList
+                    |> Array.map (fun t -> schemaCache.Tables.GetOrAdd(t.FullName, t))
+               else schemaCache.Tables |> Seq.map (fun t -> t.Value) |> Seq.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.Name with

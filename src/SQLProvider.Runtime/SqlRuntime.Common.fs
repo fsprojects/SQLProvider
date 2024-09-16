@@ -650,7 +650,7 @@ type internal ISqlProvider =
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
     /// Queries the information schema and returns a list of table information
-    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table list
+    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table array
     /// Queries table descriptions / comments for tooltip-info, table name to description
     abstract GetTableDescription  : IDbConnection * string -> string
     /// Queries the given table and returns a list of its columns
@@ -665,7 +665,7 @@ type internal ISqlProvider =
     /// Returns constraint information for a given table, returning two lists of relationships, where
     /// the first are relationships where the table is the primary entity, and the second where
     /// it is the foreign entity
-    abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list)
+    abstract GetRelationships : IDbConnection * Table -> (Relationship array * Relationship array)
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
     /// Returns the db vendor specific SQL  query to select the top x amount of rows from
@@ -694,7 +694,7 @@ and internal SchemaCache =
     { PrimaryKeys   : ConcurrentDictionary<string,string list>
       Tables        : ConcurrentDictionary<string,Table>
       Columns       : ConcurrentDictionary<string,ColumnLookup>
-      Relationships : ConcurrentDictionary<string,Relationship list * Relationship list>
+      Relationships : ConcurrentDictionary<string,Relationship array * Relationship array>
       Sprocs        : ResizeArray<Sproc>
       SprocsParams  : ConcurrentDictionary<string,QueryParameter list> //sproc name and params
       Packages      : ResizeArray<CompileTimeSprocDefinition>
@@ -705,7 +705,7 @@ and internal SchemaCache =
             PrimaryKeys = ConcurrentDictionary<string,string list>()
             Tables = ConcurrentDictionary<string,Table>()
             Columns = ConcurrentDictionary<string,ColumnLookup>()
-            Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>()
+            Relationships = ConcurrentDictionary<string,Relationship array * Relationship array>()
             Sprocs = ResizeArray()
             SprocsParams = ConcurrentDictionary<string,QueryParameter list>()
             Packages = ResizeArray()

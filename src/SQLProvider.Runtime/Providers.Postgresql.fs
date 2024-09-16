@@ -704,7 +704,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                               Type = (Sql.dbUnbox<string> reader.["table_type"]).ToLower() }
                 
                 yield schemaCache.Tables.GetOrAdd(table.FullName, table)
-                ]
+                ] |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -855,7 +855,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
-                    let children : Relationship list =
+                    let children : Relationship array =
                         [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
@@ -863,14 +863,14 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     PrimaryKey=reader.GetString(6)
                                     ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey=reader.GetString(2)
-                                  } ]
+                                  } ] |> List.toArray
                     reader.Dispose()
 
                     use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = @table" baseQuery) con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
-                    let parents : Relationship list =
+                    let parents : Relationship array =
                         [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
@@ -878,7 +878,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     PrimaryKey = reader.GetString(6)
                                     ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey = reader.GetString(2)
-                                  } ]
+                                  } ] |> List.toArray
                     schemaCache.Relationships.[table.FullName] <- (children,parents)
                     con.Close()
                     (children,parents)
