@@ -120,7 +120,7 @@ module RegexParsers =
         if m.Success then
             ValueSome { Column = colName
                         DataType = m.Groups.["DataType"].Captures.[0].Value
-                        Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
+                        Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
         else ValueNone
 
     /// Tries to find in-line commented type annotations in a view declaration.
@@ -130,7 +130,7 @@ module RegexParsers =
         |> Seq.map (fun m ->
             { Column = m.Groups.["Column"].Captures.[0].Value
               DataType = m.Groups.["DataType"].Captures.[0].Value
-              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
+              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
         )
         |> Seq.toArray
     
