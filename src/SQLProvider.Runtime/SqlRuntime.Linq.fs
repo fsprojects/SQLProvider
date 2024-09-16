@@ -77,9 +77,9 @@ module internal QueryImplementation =
                 let genArgs = src.GetType().GetGenericArguments()
                 if genArgs.Length <> 1 then None, None
                 else
+                let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
                 Some svc, Some (fun (queryResultsourcePropertyReplacement : IEnumerable) ->
                                     let enu2 = queryResultsourcePropertyReplacement.GetEnumerator()
-                                    let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
                                     let arr = Activator.CreateInstance(tRes, [||])
                                     let addMethod = arr.GetType().GetMethod "Add"
                                     while enu2.MoveNext() do
@@ -180,9 +180,9 @@ module internal QueryImplementation =
 
                 // do group-read
                 let collected = 
+                    let aggregates = [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
-                        let aggregates = [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         let entity =

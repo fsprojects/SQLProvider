@@ -222,7 +222,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
                                        schemaCache.Tables.GetOrAdd(table.FullName,table)
                                        )
-                |> List.ofSeq
+                |> Array.ofSeq
             tables
 
         member __.GetPrimaryKey(table) =
@@ -287,13 +287,13 @@ type internal MSAccessProvider(contextSchemaPath) =
                                                         let fktableName = sprintf "[%s].[%s]" table.Schema  (r.["FK_TABLE_NAME"].ToString())
                                                         let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString())
                                                         {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})
-                                |> List.ofSeq
+                                |> Array.ofSeq
             let parents  = rels |> Seq.filter (fun r -> r.["FK_TABLE_NAME"].ToString() = table.Name)
                                 |> Seq.map    (fun r -> let pktableName = sprintf "[%s].[%s]" table.Schema  (r.["PK_TABLE_NAME"].ToString())
                                                         let fktableName = table.FullName
                                                         let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString())
                                                         {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})
-                                |> List.ofSeq
+                                |> Array.ofSeq
             (children,parents))
 
         member __.GetSprocs(_) = []

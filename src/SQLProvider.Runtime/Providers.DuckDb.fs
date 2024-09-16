@@ -529,7 +529,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     use reader = com.ExecuteReader()
                     [ while reader.Read() do
                         let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
-                        yield schemaCache.Tables.GetOrAdd(table |> quotedTableName,table) ]
+                        yield schemaCache.Tables.GetOrAdd(table |> quotedTableName,table) ] |> List.toArray
                 executeSql DuckDb.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane (String.Join(",", dbName))) con)
 
         member __.GetPrimaryKey(table) =
@@ -615,13 +615,13 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "\"", "\""); PrimaryKey=reader.GetString(3)
-                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "\"", "\""); ForeignKey=reader.GetString(6) } ]
+                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "\"", "\""); ForeignKey=reader.GetString(6) } ] |> List.toArray
                 reader.Dispose()
                 //use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.REFERENCED_TABLE_NAME = $table" baseQuery))
                 //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 0), (DuckDb.ripQuotes table.Name))) |> ignore
                 //if con.State <> ConnectionState.Open then con.Open()
                 //use reader = com.ExecuteReader()
-                let parents = List.empty
+                let parents = Array.empty
                     //[ while reader.Read() do
                     //    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "\"", "\""); PrimaryKey=reader.GetString(3)
                     //            ForeignTable= Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "\"", "\""); ForeignKey=reader.GetString(6) } ]
