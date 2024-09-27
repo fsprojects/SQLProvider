@@ -1,4 +1,4 @@
-### 1.4.0-alpha3 - 16.09.2024
+### 1.4.0 - 27.09.2024
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
