@@ -456,17 +456,17 @@ type Guid =
   member GetHashCode: unit -&gt; int
   member ToByteArray: unit -&gt; byte array + 1 overload
   member ToString: unit -&gt; string + 2 overloads
-  member TryFormat: utf8Destination: Span&lt;byte&gt; * bytesWritten: byref&lt;int&gt; * ?format: ReadOnlySpan&lt;char&gt; -&gt; bool + 1 overload
+  member TryFormat: destination: Span&lt;char&gt; * charsWritten: byref&lt;int&gt; * ?format: ReadOnlySpan&lt;char&gt; -&gt; bool + 1 overload
   member TryWriteBytes: destination: Span&lt;byte&gt; -&gt; bool + 1 overload
   static member (&lt;) : left: Guid * right: Guid -&gt; bool
   static member (&lt;=) : left: Guid * right: Guid -&gt; bool
-  ...<br /><br />--------------------<br />Guid ()<br />Guid(b: byte array) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;, bigEndian: bool) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte array) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
+  ...<br /><em>&lt;summary&gt;Represents a globally unique identifier (GUID).&lt;/summary&gt;</em><br /><br />--------------------<br />Guid ()<br />Guid(b: byte array) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;, bigEndian: bool) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte array) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
 <div class="fsdocs-tip" id="fs36">Guid.NewGuid() : Guid</div>
 <div class="fsdocs-tip" id="fs37">val myGuidAsString: string</div>
 <div class="fsdocs-tip" id="fs38">Guid.ToString() : string<br />Guid.ToString(format: string) : string<br />Guid.ToString(format: string, provider: IFormatProvider) : string</div>
 <div class="fsdocs-tip" id="fs39">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
+  new: year: int * month: int * day: int -&gt; unit + 16 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
@@ -476,8 +476,8 @@ type DateTime =
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="fsdocs-tip" id="fs40">property DateTime.UtcNow: DateTime with get</div>
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs40">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs41">DateTime.ToString() : string<br />DateTime.ToString(format: string) : string<br />DateTime.ToString(provider: IFormatProvider) : string<br />DateTime.ToString(format: string, provider: IFormatProvider) : string</div>
 <div class="fsdocs-tip" id="fs42">val box: value: &#39;T -&gt; obj</div>
 <div class="fsdocs-tip" id="fs43">val longAgo: obj</div>

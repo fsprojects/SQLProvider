@@ -484,10 +484,10 @@ from Microsoft.FSharp.Collections</div>
   inherit IEnumerable
   member ElementType: Type
   member Expression: Expression
-  member Provider: IQueryProvider<br /><br />--------------------<br />type IQueryable&lt;&#39;T&gt; =
+  member Provider: IQueryProvider<br /><em>&lt;summary&gt;Provides functionality to evaluate queries against a specific data source wherein the type of the data is not specified.&lt;/summary&gt;</em><br /><br />--------------------<br />type IQueryable&lt;&#39;T&gt; =
   inherit IEnumerable&lt;&#39;T&gt;
   inherit IEnumerable
-  inherit IQueryable</div>
+  inherit IQueryable<br /><em>&lt;summary&gt;Provides functionality to evaluate queries against a specific data source wherein the type of the data is known.&lt;/summary&gt;<br />&lt;typeparam name=&quot;T&quot;&gt;The type of the data in the data source.&lt;/typeparam&gt;</em></div>
 <div class="fsdocs-tip" id="fs34">&#39;T</div>
 <div class="fsdocs-tip" id="fs35">val x: obj</div>
 <div class="fsdocs-tip" id="fs36">type CustomersEntity = SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>

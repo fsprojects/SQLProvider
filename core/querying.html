@@ -1616,7 +1616,7 @@ val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content
 <div class="fsdocs-tip" id="fs14">val sdate: DateTime</div>
 <div class="fsdocs-tip" id="fs15">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
+  new: year: int * month: int * day: int -&gt; unit + 16 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
@@ -1626,7 +1626,7 @@ type DateTime =
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs16">val customer: int</div>
 <div class="fsdocs-tip" id="fs17">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
   int</div>
@@ -1734,7 +1734,7 @@ from Microsoft.FSharp.Collections</div>
   member CopyTo: array: Array * index: int -&gt; unit + 1 overload
   member GetEnumerator: unit -&gt; IEnumerator
   member GetLength: dimension: int -&gt; int
-  ...</div>
+  ...<br /><em>&lt;summary&gt;Provides methods for creating, manipulating, searching, and sorting arrays, thereby serving as the base class for all arrays in the common language runtime.&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs50">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; array: &#39;T array -&gt; &#39;U array</div>
 <div class="fsdocs-tip" id="fs51">val i: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
 <div class="fsdocs-tip" id="fs52">property Common.SqlEntity.ColumnValues: (string * obj) seq with get</div>
@@ -1784,7 +1784,7 @@ from Microsoft.FSharp.Collections</div>
   member NextInt64: unit -&gt; int64 + 2 overloads
   member NextSingle: unit -&gt; float32
   member Shuffle&lt;&#39;T&gt; : values: Span&lt;&#39;T&gt; -&gt; unit + 1 overload
-  static member Shared: Random<br /><br />--------------------<br />Random() : Random<br />Random(Seed: int) : Random</div>
+  static member Shared: Random<br /><em>&lt;summary&gt;Represents a pseudo-random number generator, which is an algorithm that produces a sequence of numbers that meet certain statistical requirements for randomness.&lt;/summary&gt;</em><br /><br />--------------------<br />Random() : Random<br />Random(Seed: int) : Random</div>
 <div class="fsdocs-tip" id="fs69">Random.NextDouble() : float</div>
 <div class="fsdocs-tip" id="fs70">val c1: bool</div>
 <div class="fsdocs-tip" id="fs71">val c2: bool</div>
@@ -1808,15 +1808,15 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs87">val shipYears: int list</div>
 <div class="fsdocs-tip" id="fs88">type &#39;T list = List&lt;&#39;T&gt;</div>
 <div class="fsdocs-tip" id="fs89">val today: DateTime</div>
-<div class="fsdocs-tip" id="fs90">property DateTime.UtcNow: DateTime with get</div>
-<div class="fsdocs-tip" id="fs91">property DateTime.Date: DateTime with get</div>
+<div class="fsdocs-tip" id="fs90">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
+<div class="fsdocs-tip" id="fs91">property DateTime.Date: DateTime with get<br /><em>&lt;summary&gt;Gets the date component of this instance.&lt;/summary&gt;<br />&lt;returns&gt;A new object with the same date as this instance, and the time value set to 12:00:00 midnight (00:00:00).&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs92">val pastOrders: bool</div>
 <div class="fsdocs-tip" id="fs93">val noYearFilter: bool</div>
 <div class="fsdocs-tip" id="fs94">property List.IsEmpty: bool with get</div>
 <div class="fsdocs-tip" id="fs95">val result: Threading.Tasks.Task&lt;(int64 * decimal) array&gt;</div>
 <div class="fsdocs-tip" id="fs96">(extension) Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource) : bool<br />(extension) Collections.Generic.IEnumerable.Contains&lt;&#39;TSource&gt;(value: &#39;TSource, comparer: Collections.Generic.IEqualityComparer&lt;&#39;TSource&gt;) : bool</div>
 <div class="fsdocs-tip" id="fs97">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShippedDate: DateTime with get, set<br /><em>&lt;summary&gt;ShippedDate:   datetime&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs98">property DateTime.Year: int with get</div>
+<div class="fsdocs-tip" id="fs98">property DateTime.Year: int with get<br /><em>&lt;summary&gt;Gets the year component of the date represented by this instance.&lt;/summary&gt;<br />&lt;returns&gt;The year, between 1 and 9999.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs99">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderDate: DateTime with get, set<br /><em>&lt;summary&gt;OrderDate:   datetime&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs100">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderId: int64 with get, set<br /><em>&lt;summary&gt;OrderID:   integer&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs101">val executeQueryAsync: query: IQueryable&lt;&#39;a&gt; -&gt; Threading.Tasks.Task&lt;&#39;a array&gt;<br /><em>&lt;summary&gt;
