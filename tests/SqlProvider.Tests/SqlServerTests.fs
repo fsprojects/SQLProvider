@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#I @"../../bin/net472"
-#r @"../../bin/net472/FSharp.Data.SqlProvider.dll"
+#I @"../../bin/net48"
+#r @"../../bin/net48/FSharp.Data.SqlProvider.dll"
 #I @"../../packages/tests/Newtonsoft.Json/lib/net45"
 #r @"../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 

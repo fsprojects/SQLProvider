@@ -6,55 +6,64 @@
       "version": "3.1.1",
       "commands": [
         "sourcelink"
-      ]
+      ],
+      "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
       "version": "4.2.15",
       "commands": [
         "reportgenerator"
-      ]
+      ],
+      "rollForward": false
     },
     "paket": {
       "version": "8.1.0-alpha004",
       "commands": [
         "paket"
-      ]
-    },
-    "fake-cli": {
-      "version": "6.1.1",
-      "commands": [
-        "fake"
-      ]
+      ],
+      "rollForward": false
     },
     "fcswatch-cli": {
       "version": "0.7.14",
       "commands": [
         "fcswatch"
-      ]
+      ],
+      "rollForward": false
     },
     "fsharp-analyzers": {
       "version": "0.11.0",
       "commands": [
         "fsharp-analyzers"
-      ]
+      ],
+      "rollForward": false
     },
     "dotnet-serve": {
       "version": "1.10.128",
       "commands": [
         "dotnet-serve"
-      ]
+      ],
+      "rollForward": false
     },
     "fsdocs-tool": {
       "version": "20.0.0",
       "commands": [
         "fsdocs"
-      ]
+      ],
+      "rollForward": false
     },
     "dotnet-fsharplint": {
       "version": "0.24.2",
       "commands": [
         "dotnet-fsharplint"
-      ]
+      ],
+      "rollForward": false
+    },
+    "fake-cli": {
+      "version": "6.1.3",
+      "commands": [
+        "fake"
+      ],
+      "rollForward": false
     }
   }
 }

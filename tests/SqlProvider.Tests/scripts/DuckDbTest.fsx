@@ -4,8 +4,8 @@
 // Or if you are doing a project, not a script, reference you can reference them like usual and you should be fine...
 #r "nuget: DuckDB.NET.Data.Full"
 
-#I @"../../../bin/net472"
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/net48"
+#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
 
 // Note: In Windows you need to install first: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 

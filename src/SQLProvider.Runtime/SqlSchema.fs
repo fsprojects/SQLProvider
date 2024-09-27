@@ -2,7 +2,6 @@ namespace FSharp.Data.Sql.Schema
 
 open System
 open System.Data
-open System.Data.SqlClient
 open System.Text.RegularExpressions
 open FSharp.Data.Sql.Common.Utilities
 open System.Reflection

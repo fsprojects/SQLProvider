@@ -1,9 +1,8 @@
 #if INTERACTIVE
-#I @"../../bin/net472/"
-#I @"../../bin/net472/"
+#I @"../../bin/net48/"
 #r "FSharp.Data.SqlProvider.dll"
 #r @"System.Transactions.dll"
-#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#r @"../../packages/NUnit/lib/netstandard2.0/nunit.framework.dll"
 #else
 module CrudTests
 #endif

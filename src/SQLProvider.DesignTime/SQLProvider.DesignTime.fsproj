@@ -3,7 +3,7 @@
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net472;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net472;net48;net6.0;net8.0</TargetFrameworks>
     <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
@@ -127,15 +127,14 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" Condition="'$(TargetFramework)' == 'net472'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!--
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" Condition="'$(TargetFramework)' == 'net48'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>-->
+    </PackageReference>
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

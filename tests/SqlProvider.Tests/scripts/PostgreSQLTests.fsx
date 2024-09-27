@@ -1,5 +1,5 @@
 #if INTERACTIVE
-#r @"../../bin/net472/FSharp.Data.SqlProvider.dll"
+#r @"../../bin/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
 module PostgreSQLTests
