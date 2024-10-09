@@ -814,6 +814,8 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " %s " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c

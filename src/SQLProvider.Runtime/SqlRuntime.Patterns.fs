@@ -190,6 +190,8 @@ let rec (|OptionalConvertOrTypeAs|) (e:Expression) =
         e.Arguments.[0]
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
         e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when isNull e.Object && e.Method.Name = "ToString" && e.Arguments.Count = 1 ->
+        e.Arguments.[0]
     | _ -> e
 
 let (|OptionalCopyOfStruct|) (e:Expression) = 
@@ -612,6 +614,8 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
 
         match filter, ce.IfTrue, ce.IfFalse with
         | Condition.NotSupported(x), _, _ -> None
+        | Condition.ConstantTrue, OptionalConvertOrTypeAs(SqlColumnGet(alias,col,typ)), _ -> Some(alias, col, typ)
+        | Condition.ConstantFalse, _, OptionalConvertOrTypeAs(SqlColumnGet(alias,col,typ)) -> Some(alias, col, typ)
         | _, OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), Constant(c, ct)  -> Some(al2, CanonicalOperation(CanonicalOp.CaseSql(filter, SqlConstant(c)), col2), typ2)
         | _, OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), OptionalConvertOrTypeAs(SqlColumnGet(al3,col3,typ3)) -> Some(al2, CanonicalOperation(CanonicalOp.CaseSql(filter, SqlCol(al3,col3)), col2), typ2)
         | _, Constant(c, ct), OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) -> Some(al2, CanonicalOperation(CanonicalOp.CaseNotSql(filter, SqlConstant(c)), col2), typ2)

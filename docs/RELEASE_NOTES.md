@@ -1,7 +1,13 @@
+### 1.4.1 - 09.10.2024
+* Better ConditionalExpression with ConstantExpression evaluation
+
 ### 1.4.0 - 27.09.2024
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
+
+### 1.3.47 - 09.10.2024
+* Better ConditionalExpression with ConstantExpression evaluation
 
 ### 1.3.46 - 16.09.2024
 * Ssdt performance optimisations, and some lists to arrays to reduce memory footprint, PR#832

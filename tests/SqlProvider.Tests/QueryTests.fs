@@ -1264,6 +1264,25 @@ let ``simple select and sort query2``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
 
+[<Test>]
+let ``simple select and sort query3``() =
+    let dc = sql.GetDataContext()
+    let sortbyCity="asdf"
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            sortBy (
+                match sortbyCity with
+                | "a" -> (string) cust.Address
+                | "b" -> (string) cust.Address
+                | _ -> (string) cust.City)
+            select cust.City
+        }
+    let qry = qry |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry    
+    CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
+
 
 [<Test>]
 let ``simple select and sort desc query``() =
