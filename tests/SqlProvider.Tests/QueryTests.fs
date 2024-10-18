@@ -747,6 +747,23 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
+[<Test>]
+let ``subquery with 1 tables``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            where (od.UnitPrice <> 0m)
+        }
+
+    let qry2 =
+        qry.Select(fun od -> od.UnitPrice)
+    let qry2 = qry2 |> Seq.toList
+
+    Assert.IsNotEmpty(qry2)
+
+
 [<Test; Ignore("Not supported")>]
 let ``subquery with 2 tables``() = 
     let dc = sql.GetDataContext()
@@ -796,6 +813,23 @@ let ``simple where before join test2``() =
 
     Assert.AreEqual(qry.Length, 46)
     Assert.LessOrEqual(qry.[0].ShipCity, qry.[40].ShipCity)
+
+
+[<Test>]
+let ``simple navigation sum async``() = 
+    let dc = sql.GetDataContext()
+
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            for ord in od.``main.Orders by OrderID`` do
+            select (ord.Freight)
+        } |> Seq.sumAsync
+
+    let res = 
+        qry |> Async.AwaitTask |> Async.RunSynchronously
+
+    Assert.GreaterOrEqual(res, 0m)
 
 [<Test>]
 let ``simple where before join test3``() = 

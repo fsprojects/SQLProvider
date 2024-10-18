@@ -1,3 +1,6 @@
+### 1.3.48 - 18.10.2024
+* Fixed navigation propery parameter names on async aggregate operations
+
 ### 1.3.47 - 09.10.2024
 * Better ConditionalExpression with ConstantExpression evaluation
 

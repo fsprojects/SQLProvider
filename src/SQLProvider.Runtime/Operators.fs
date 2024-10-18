@@ -54,7 +54,6 @@ type AggregateOperation = // Aggregate (column name if not default)
 | StdDevOp of std: string
 | VarianceOp of var: string
 
-[<Struct>]
 type SelectOperations =
 | DotNetSide = 0
 | DatabaseSide = 1 
