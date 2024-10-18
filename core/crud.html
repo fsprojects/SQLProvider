@@ -535,17 +535,17 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs29">val now: DateTime</div>
 <div class="fsdocs-tip" id="fs30">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: year: int * month: int * day: int -&gt; unit + 10 overloads
+  new: year: int * month: int * day: int -&gt; unit + 16 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
+  member AddMicroseconds: value: float -&gt; DateTime
   member AddMilliseconds: value: float -&gt; DateTime
   member AddMinutes: value: float -&gt; DateTime
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  member AddYears: value: int -&gt; DateTime
-  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs31">property DateTime.Now: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the local time.&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current local date and time.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs32">val row: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
 <div class="fsdocs-tip" id="fs33">SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders.Create() : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity<br />SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders.Create(data: Collections.Generic.IEnumerable&lt;string * obj&gt;) : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity<br /><em>&lt;summary&gt;Item array of database columns: 
@@ -649,7 +649,8 @@ Calls Linq.QueryBuilder.ExactlyOneOrDefault</div>
 type OnConflict =
   | Throw
   | Update
-  | DoNothing</div>
+  | DoNothing
+  member Equals: OnConflict * IEqualityComparer -&gt; bool</div>
 <div class="fsdocs-tip" id="fs94">union case Common.OnConflict.Update: Common.OnConflict<br /><em>&lt;summary&gt;
  If the primary key already exists, updates the existing row&#39;s columns to match the new entity.
  Currently supported only on PostgreSQL 9.5+
@@ -679,7 +680,7 @@ type OnConflict =
 <div class="fsdocs-tip" id="fs106">union case CanonicalOp.Replace: SqlItemOrColumn * SqlItemOrColumn -&gt; CanonicalOp</div>
 <div class="fsdocs-tip" id="fs107">val box: value: &#39;T -&gt; obj</div>
 <div class="fsdocs-tip" id="fs108">val bdate: DateTime</div>
-<div class="fsdocs-tip" id="fs109">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
+<div class="fsdocs-tip" id="fs109">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
 <div class="fsdocs-tip" id="fs110">DateTime.AddYears(value: int) : DateTime</div>
 <div class="fsdocs-tip" id="fs111">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs112">val failwith: message: string -&gt; &#39;T</div>

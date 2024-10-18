@@ -384,6 +384,7 @@ type TransactionOptions =
     Timeout: TimeSpan
     IsolationLevel: IsolationLevel
   }
+  member Equals: TransactionOptions * IEqualityComparer -&gt; bool
   static member Default: TransactionOptions<br /><em>&lt;summary&gt;
  Corresponds to the System.Transactions.TransactionOptions.
 &lt;/summary&gt;</em></div>
