@@ -15,7 +15,6 @@ open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
-[<Struct>]
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
@@ -29,16 +28,13 @@ type DatabaseProviderTypes =
     | MSSQLSERVER_SSDT = 9
     | DUCKDB = 10
 
-[<Struct>]
 type RelationshipDirection = Children = 0 | Parents = 1
 
-[<Struct>]
 type CaseSensitivityChange =
     | ORIGINAL = 0
     | TOUPPER = 1
     | TOLOWER = 2
 
-[<Struct>]
 type NullableColumnType =
     /// Nullable types are just Unchecked default. (Old false.)
     | NO_OPTION = 0
@@ -47,7 +43,6 @@ type NullableColumnType =
     /// ValueOption is more performant.
     | VALUE_OPTION = 2
 
-[<Struct>]
 type OdbcQuoteCharacter =
     | DEFAULT_QUOTE = 0
     /// MySQL/Postgre style: `alias` 
@@ -61,7 +56,6 @@ type OdbcQuoteCharacter =
     /// Single quote: 'alias'
     | APHOSTROPHE = 5 
 
-[<Struct>]
 type SQLiteLibrary =
     // .NET Framework default
     | SystemDataSQLite = 0

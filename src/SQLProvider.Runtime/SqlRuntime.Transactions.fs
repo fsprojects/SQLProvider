@@ -3,7 +3,6 @@ namespace FSharp.Data.Sql.Transactions
 open System
 
 /// Corresponds to the System.Transactions.IsolationLevel.
-[<Struct>]
 type IsolationLevel =
     | Serializable = 0
     | RepeatableRead = 1
