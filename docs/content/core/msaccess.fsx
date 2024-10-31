@@ -10,8 +10,8 @@
 (**
 # SQL Provider for MSAccess
 
-MSAccess is based on System.Data.OleDb. For databases > Access 2007 (with 
-.accdb extension), use ACE drivers. For dbs < 2007 (with .mdb extension), 
+MSAccess is based on System.Data.OleDb. Use ACE drivers for databases > Access 2007 (with 
+.accdb extension). For databases < 2007 (with .mdb extension), 
 JET drivers can be used, although ACE will also work.
 
 [http://www.microsoft.com/download/en/confirmation.aspx?id=23734](http://www.microsoft.com/download/en/confirmation.aspx?id=23734)
@@ -20,7 +20,7 @@ JET drivers can be used, although ACE will also work.
 
 ### ConnectionString
 
-Basic connection string used to connect to PostgreSQL instance; typical 
+A connection string used to connect to Microsoft Access instance; typical 
 connection strings for the driver apply here. See
 (MSAccess Connection Strings Documentation) [] 
 for a complete list of connection string options.
@@ -41,7 +41,7 @@ let connectionString2 =
 ### ConnectionStringName
 
 Instead of storing the connection string in the source code / `fsx` script, you
-can store values in the `App.config` file.  This is the name of the
+can store values in the `App.config` file. This is the name of the
 connectionString key/value pair stored in App.config (TODO: confirm file name).
 *)
 
@@ -61,7 +61,7 @@ let dbVendor = FSharp.Data.Sql.Common.DatabaseProviderTypes.MSACCESS
 (**
 ### ResolutionPath
 
-Path to search for assemblies containing database vendor specific connections 
+Path to search for assemblies containing database vendor-specific connections 
 and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)

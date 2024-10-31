@@ -16,7 +16,7 @@ open System
 
 ### ConnectionString
 
-Basic connection string used to connect to MySQL instance; typical connection 
+A basic connection string used to connect to MySQL instance; typical connection 
 string parameters apply here.  See 
 [MySQL Connector/NET Connection Strings Documentation](https://dev.mysql.com/doc/connectors/en/connector-net-connections-string.html) 
 for a complete list of connection string options.
@@ -27,7 +27,7 @@ let connString  = "Server=localhost;Database=HR;User=root;Password=password"
 
 (**
 
-To deal with some MySQL data connection problems you might want to add some more parameters to connectionstring:
+To deal with some MySQL data connection problems, you might want to add some more parameters to connectionstring:
 `Auto Enlist=false; Convert Zero Datetime=true;`
 
 ### ConnectionStringName
@@ -52,7 +52,7 @@ let dbVendor    = Common.DatabaseProviderTypes.MYSQL
 (**
 ### Resolution Path
 
-Path to search for assemblies containing database vendor specific connections and custom types. Type the path where
+Path to search for assemblies containing database vendor-specific connections and custom types. Type the path where
 `Mysql.Data.dll` is stored. Both absolute and relative paths are supported.
 
 *)
@@ -122,7 +122,7 @@ let myUInt64 = 10UL
 
 ### System.Guid Serialization
 
-If you use string column to save a Guid to database, you may want to skip the hyphens ("-")
+If you use a string column to save a Guid to the database, you may want to skip the hyphens ("-")
 when serializing them:
 
 *)
@@ -131,7 +131,7 @@ let myGuid = System.Guid.NewGuid() //e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b
 let myGuidAsString = myGuid.ToString("N") // e.g. "b8fa7880ce4443158d60a160e5734c4b"
 
 (**
-The problem with this is that you should never forgot to use "N" in anywhere.
+The problem with this is that you should never forget to use "N" anywhere.
 
 ### System.DateTime Serialization
 
@@ -145,14 +145,14 @@ myEmp.SetColumn("BirthDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH\:mm\:ss") |
 
 (**
 
-Notice that if you use `.ToString("s")` there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
+Notice that if you use `.ToString("s")`, there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
 And comparing two datetimes as strings with "T" and without "T" will generate a problem with the time-part.
 
 
 If your DateTime columns are strings in the database, you can use `DateTime.Parse` in your where-queries:
 
 ```fsharp
-let longAgo = DateTime.UtcNow.AddYears(-5)
+let longAgoeTime.UtcNow.AddYears(-5)
 let myEmp = 
     query {
         for emp in ctx.Hr.Employees do
@@ -170,12 +170,12 @@ Check [General](general.html), [Static Parameters](parameters.html) and [Queryin
 
 # Support for MySqlConnector
 
-[MySqlConnector](https://github.com/mysql-net/MySqlConnector) is alternative driver to use instead of MySql.Data.dll.
-It has less features but a lot better performance than the official driver.
+[MySqlConnector](https://github.com/mysql-net/MySqlConnector) is an alternative driver to use instead of MySql.Data.dll.
+It has fewer features but a lot better performance than the official driver.
 
 You can use it with SQLProvider:
 Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead. (Get the latest from NuGet.)
-It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
+It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll,
 so copy those files also to your referencePath. You can get them from corresponding NuGet packages.
 
 If you want to use the drivers in parallel, you need two resolution paths:
@@ -183,7 +183,7 @@ If you want to use the drivers in parallel, you need two resolution paths:
 *)
 
 type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\mysqlConnectorPath", Owner = "HR">
-type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\MysqlDataPath", Owner = "HR">
+type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"creferencesOwner = "HR">
 
 (**
 
@@ -192,11 +192,11 @@ type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, R
 One complex query:
 
 ``` 
-MySql.Data.dll:     Real: 00:00:00.583, CPU: 00:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
+MySql.Data.dll:     Real: 00:00:00.583, C0:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
 MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0
 ```
 
-Lot of async queries:
+Lots of async queries:
 
 ```
 MySQL.Data.dll      Real: 00:00:01.425, CPU: 00:00:02.078, GC gen0: 16, gen1: 1, gen2: 0

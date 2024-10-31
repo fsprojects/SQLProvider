@@ -30,7 +30,7 @@ let dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER_SSDT
 The SsdtPath must point to a .dacpac file.
 
 #### Notes:
-* A .dacpac file is generated when an SSDT project is built, and can be found in the bin/Debug folder.
+* A .dacpac file is generated when an SSDT project is built and can be found in the bin/Debug folder.
 * For development, you can set the SsdtPath to point to the generated .dacpac file in the SSDT project Debug folder. (Using a `[<Literal>]` ssdtPath allows relative pathing).
 * For deployment, the SSDT provider will search for the .dacpac file in the entry assembly folder. 
 * Linking the generated .dacpac file to your project and setting it to `CopyToOutputDirectory` will ensure that it will exist in the assembly folder for deployment.
@@ -54,7 +54,7 @@ type DB = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, SsdtPat
 (**
 #### Reloading the schema
 
-It is helpful to keep the above Design Time Command commented out just below your SqlDataProvider type for refreshing the generated types after a schema change.
+Keeping the above Design Time Command commented out just below your SqlDataProvider type helps refresh the generated types after a schema change.
 *)
 
 (**
@@ -66,7 +66,7 @@ If FSharp.Data.Sql.Common.NullableColumnType.OPTION, F# option types will be use
 
 ### Table Names Filter
 
-The SSDT provider currently supports a simple comma delimited list of allowed table names (wildcards are not currently supported).
+The SSDT provider currently supports a simple comma-delimited list of allowed table names (wildcards are not currently supported).
 
 *)
 
@@ -91,14 +91,14 @@ let orderDetails =
 SQL Server Data Tools (SSDT) is a modern development tool for building SQL Server relational databases, databases in Azure SQL,
 Analysis Services (AS) data models, Integration Services (IS) packages, and Reporting Services (RS) reports.
 
-It allows you to easily compare and synchronize schema changes between your SQL Server database and the current state of your .sql scripts in source control.
+It allows you to quickly compare and synchronize schema changes between your SQL Server database and the current state of your .sql scripts in source control.
 Schemas can be synchronized bi-directionally (SSDT -> SQL Server or SQL Server -> SSDT).
 
 ### Advantages of using the SSDT provider
-The main advantage to using the SSDT provider is that it does not require a live connection to the database.
-This makes it easier to run on a build server without having to manually spin up a database instance.
+The main advantage of using the SSDT provider is that it does not require a live connection to the database.
+This makes running on a build server easier without manually spinning up a database instance.
 
-Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, so each branch can compile according its local schema snapshot.
+Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch so that each branch can compile according to its local schema snapshot.
 
 ### How to create an SSDT Project
 
@@ -109,14 +109,14 @@ SSDT Projects can be created in two ways:
 ## Known Issues
 
 ### Tables
-* User defined data types are not yet supported
+* User-defined data types are not yet supported
 * Computed table columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. (See Type Annotations below.)
 
 ### Views
 * Computed view columns will default to a data type of `System.Object` since the data type is not listed in the .dacpac file. (See Type Annotations below.)
 
 #### Type Annotations
-As a work-around for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.
+As a workaround for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.
 
 In the SalesOrderDetail.sql example table below, `[LineTotal]` is a computed column. Since the .dacpac file cannot determine the datatype for computed columns, the data type of the generated property will be defaulted to `obj`.
 As a workaround, an in-line type annotation `/* MONEY NOT NULL /*` can be added.
@@ -149,9 +149,9 @@ INNER JOIN dbo.Users on dboUsers.Id = dbo.TimeEntries.UserId
 ```
 
 ##### Notes:
-* If no null constraint is added after the column type, it will allow nulls by default.
+* If no null constraint is added after the column type, nulls will be allowed by default.
 * The annotations are case-insensitive.
-* Hovering over a generated view property will designate if the data type was derived from a type annotations (or if it needs one).
+* Hovering over a generated view property will designate if the data type was derived from a type annotation (or if it needs one).
 * Do not include length information in the type annotation. For example, use `varchar`, not `varchar(20)`.
 
 ### Functions

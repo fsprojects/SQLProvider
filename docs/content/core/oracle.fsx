@@ -12,7 +12,7 @@ let resolutionPath = "TODO"
 (**
 # SQL Provider for Oracle
 
-Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However although the managed version is recommended it should also work with previous versions of the native driver.
+Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found [here](http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html). However, although the managed version is recommended, it should also work with previous versions of the native driver.
 
 *)
 
@@ -27,6 +27,6 @@ let customers = ctx.Customers |> Seq.toArray
 
 (**
 
-Because Oracle databases can be huge, there is an optional constructor parameter `TableNames` that can be used as a filter.
+Because Oracle databases can be massive, an optional constructor parameter, `TableNames`, can be used as a filter.
 
 *)

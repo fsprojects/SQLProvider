@@ -12,7 +12,7 @@ let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..
 
 The SQL provider is an erasing type provider which enables you to instantly 
 connect to a variety of database sources in the IDE and explore them in a 
-type-safe manner, without the inconvenience of a code-generation step.
+type-safe manner without the inconvenience of a code-generation step.
 
 SQL Provider supports the following database types:
 
@@ -33,7 +33,7 @@ or by using an F# interactive script file.
 // when using the SQLProvider in a script file (.fsx), the file needs to be referenced
 // using F#'s `#r` command:
 #r "../../packages/SQLProvider.1.0.1/lib/net40/FSharp.Data.SqlProvider.dll"
-// whether referencing in a script, or added to project as an assembly
+// whether referencing in a script or added to a project as an assembly
 // reference, the library needs to be opened
 ```
 *)
@@ -42,13 +42,13 @@ open FSharp.Data.Sql
 (** 
 
 
-To use the type provider you must first create a type alias. 
+To use the type provider, you must first create a type alias. 
 
-In this declaration you are able to pass various pieces of information known 
+In this declaration, you can pass various pieces of information known 
 as static parameters to initialize properties such as the connection string 
 and database vendor type that you are connecting to. 
 
-In the following examples a SQLite database will be used.  You can read in 
+In the following examples, a SQLite database will be used.  You can read in 
 more detail about the available static parameters in other areas of the 
 documentation.
 *)
@@ -62,15 +62,15 @@ type sql  = SqlDataProvider<
             >
 
 (** 
-Now we have a type ``sql`` that represents the SQLite database provided in 
-the connectionString parameter.  In order to start exploring the database's 
+Now we have a type ``sql``representing the SQLite database provided in 
+the connectionString parameter.  To start exploring the database's 
 schema and reading its data, you create a *DataContext* value.
 *)
 
 let ctx = sql.GetDataContext()
 
 (**
-If you want to use non-literal connectionString at runtime (e.g. crypted production
+If you want to use non-literal connectionString at runtime (e.g. encrypted production
 passwords), you can pass your runtime connectionString parameter to GetDataContext:
 *)
 
@@ -101,7 +101,7 @@ let name = firstCustomer.ContactName
 Each property is correctly typed depending on the database column 
 definitions.  In this example, ``firstCustomer.ContactName`` is a string.
 
-Most of the databases support some kind of comments/descriptions/remarks to
+Most databases support some comments/descriptions/remarks to
 tables and columns for documentation purposes. These descriptions are fetched
 to tooltips for the tables and columns.
 *)
@@ -110,7 +110,7 @@ to tooltips for the tables and columns.
 ## Constraints and Relationships 
 
 A typical relational database will have many connected tables and views 
-through foreign key constraints.  The SQL provider is able to show you these 
+through foreign key constraints.  The SQL provider can show you these 
 constraints on entities.  They appear as properties named the same as the 
 constraint in the database.
 
@@ -121,14 +121,14 @@ the property in question.
 let orders = firstCustomer.``main.Orders by CustomerID`` |> Seq.toArray
 
 (**
-``orders`` now contains all the orders belonging to firstCustomer. You will 
+``orders`` now contain all the orders belonging to firstCustomer. You will 
 see the orders type is an array of ``[Main].[Orders]Entity`` indicating the 
 resulting entities are from the ``[main].[Orders]`` table in the database.
-If you hover over ``FK_Orders_0_0`` intellisense will display information 
-about the constraint in question including the names of the tables involved 
+If you hover over ``FK_Orders_0_0``, intellisense will display information 
+about the constraint in question, including the names of the tables involved 
 and the key names.
 
-Behind the scenes the SQL provider has automatically constructed and executed 
+Behind the scenes, the SQL provider has automatically constructed and executed 
 a relevant query using the entity's primary key.
 
 
@@ -161,7 +161,7 @@ let customersQueryAsync =
 The above example is identical to the query that was executed when 
 ``ctx.[main].[Customers] |> Seq.toArray`` was evaluated.
 
-You can extend this basic query include to filter criteria by introducing 
+You can extend this basic query to filter criteria by introducing 
 one or more *where* clauses
 *)
 
@@ -208,12 +208,12 @@ let explicitJoinQuery =
     |> Seq.toArray
 
 (**
-Both of these queries have identical results, the only difference is that one 
+These queries have identical results; the only difference is that one 
 requires explicit knowledge of which tables join where and how, and the other doesn't.
 You might have noticed the select expression has now changed to (customer, order). 
 As you may expect, this will return an array of tuples where the first item 
 is a ``[Main].[Customers]Entity`` and the second a ``[Main].[Orders]Entity``.
-Often you will not be interested in selecting entire entities from the database.
+Often, you will not be interested in selecting entire entities from the database.
 Changing the select expression to use the entities' properties will cause the 
 SQL provider to select only the columns you have asked for, which is an 
 important optimization.
@@ -229,8 +229,8 @@ let ordersQuery =
     |> Seq.toArray
 
 (**
-The results of this query will return the name, order date and ship address 
-only.  By doing this you no longer have access to entity types.
+The results of this query will return the name, order date and shipping address 
+only.  By doing this, you no longer have access to entity types.
 The SQL provider supports various other query keywords and features that you 
 can read about elsewhere in this documentation.
 
@@ -242,17 +242,17 @@ held within a table or view. You can then bind that data as an entity to a value
 
 let BERGS = ctx.Main.Customers.Individuals.BERGS
 (**
-Every table and view has an ``Individuals`` property. When you press dot on 
+Every table and view has an ``Individuals`` property. When you press the dot on 
 this property, intellisense will display a list of the data in that table, 
 using whatever the primary key is as the text for each one.
 In this case, the primary key for ``[main].[Customers]`` is a string, and I 
 have selected one named BERGS. You will see the resulting type is 
 ``[main].[Customers]Entity``.
 
-The primary key is not usually very useful for identifying data however, so 
-in addition to this you will see a series of properties named "As X" where X 
+The primary key is not usually very useful for identifying data, however, so 
+in addition to this, you will see a series of properties named "As X" where X 
 is the name of a column in the table.
-When you press . on one of these properties, the data is re-projected to you 
+When you press "." on one of these properties, the data is re-projected to you 
 using both the primary key and the text of the column you have selected.
 *)
 
@@ -268,9 +268,9 @@ e.g. to copy data between them.
 The connection itself is not stored and reused with an instance of the data context.
 The data context creates a connection when you execute a query or when you call 
 `SubmitUpdates()`. In terms of transactions, the data context object tracks (full)
-entities that were retrieved using it via queries or `Individuals` and manages their
+entities that were retrieved using it via queries or `Individuals` and manage their
 states. Upon calling `SubmitUpdates()`, all entities modified/created that belong to
-that data context are wrapped in a single transaction scope, and then a connection
+that data context are wrapped in a single transaction scope. Then a connection
 is created and thus enlisted into the transaction.
 
 
@@ -284,11 +284,11 @@ What does that entail?
 A.  Once SQLProvider gets a "mental model" of your database (the schema), 
     that is what is used for any intellisense/completion suggestions for the rest of your IDE session.
    
-    This is a fantastic feature, because it means that you're not assaulting your database with a 
+    This is a fantastic feature because it means you're not assaulting your database with a 
     new "What are you like?" query on EVERY SINGLE KEYSTROKE. 
 
-    But what if the database changes? SQLProvider will NOT see your change because it's source of truth is
-    that locally cached schema snapshot it took right when it started, and that snapshot will persist until
+    But what if the database changes? SQLProvider will NOT see your change because its source of truth is
+    that locally cached schema snapshot it took at right when it started, and that snapshot will persist until
     one of 2 things happens: 
     
     1.  A restart of your Editor/IDE. 
@@ -312,11 +312,11 @@ A.  Once SQLProvider gets a "mental model" of your database (the schema),
         and they actually show up as ``Design Time Commands`` in the completion. 
         
         Select that, and then "dot into" it afterwards, then under that is ClearDatabaseSchemaCache.
-        Then after that typing in a "." will actualy RUN the command, thereby clearing the cache. 
+        Then, after that typing in a "." will actually RUN the command, thereby clearing the cache. 
         
  B. LAZY evaluation means that where you save the database schema in your code matters. 
     Do not call the "Design Time Command" SaveContextSchema at the top of your code. FSharp is evaluated
-    top to bottom, and so if you call SaveContextSchema at the top, before you ask for specific columns in your code, 
+    from top to bottom, so if you call SaveContextSchema at the top before you ask for specific columns in your code, 
     you will not get a schema that reflects your needs.  
     
     sql.GetDataContext(cs).``Design Time Commands``.SaveContextSchema  // put a "." at the end to call the command at compile time.
@@ -325,16 +325,16 @@ A.  Once SQLProvider gets a "mental model" of your database (the schema),
 How fast is SQLProvider?
 ------------------------
 
-You may wonder does all this magic come with a huge performance cost. However, when working with databases, 
-your network connection to SQL-database is typically the bottle neck, not your processor speed.
-That's why SQLProvider does short-circuit and optimise your queries as much as possible.
+You may wonder if all this magic comes with a huge performance cost. However, when working with databases, 
+your network connection to SQL-database is typically the bottleneck, not your processor speed.
+That's why SQLProvider short-circuits and optimises your queries as much as possible.
 
-There is a performance-test project in this repo. This is a sample run:
+There is a performance-test project in this repo. Here is a sample run:
 
 - BenchmarkDotNet v0.13.12
 - .NET 8
 - Laptop, Intel i9 13th Gen on Windows 11
-- Microsoft SQL Sever on local computer
+- Microsoft SQL Server on local computer
 
 
 | Method                | rowsReturned | Mean     | Error     | StdDev    | Median   | Ratio | RatioSD | Gen0     | Gen1     | Gen2  | 

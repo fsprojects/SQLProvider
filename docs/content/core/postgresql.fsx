@@ -31,7 +31,7 @@ let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 ### ConnectionString
 
-Basic connection string used to connect to PostgreSQL instance; typical 
+A basic connection string used to connect to PostgreSQL instance; typical 
 connection strings for the driver apply here. See
 [PostgreSQL Connecting Strings Documentation](http://www.npgsql.org/doc/connection-string-parameters.html)
 for a complete list of connection string options.
@@ -54,7 +54,7 @@ let [<Literal>] connexStringName = "DefaultConnectionString"
 (**
 ### Resolution Path
 
-Path to search for assemblies containing database vendor specific connections 
+Path to search for assemblies containing database vendor-specific connections 
 and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
@@ -86,7 +86,7 @@ let [<Literal>] useOptTypes  = true
 ### Owner
 
 Indicates the schema or schemas to which SqlProvider will try to provide access to.
-Multiple schemas can be indicated, separated by commas or semicolons.
+Multiple schemas can be indicated and separated by commas or semicolons.
 Defaults to "public".
 
 *)
