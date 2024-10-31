@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to make a contribution
+    How to contribute
 
   </a>
 </li>             
@@ -252,33 +252,33 @@
 <p>That's a clear advantage on large-scale projects, where there are multiple developers and
 the SQL-queries grow more complex over time.</p>
 <ol>
-<li>Debugging. Faster to debug unit-test than spin the full environment again and again.</li>
-<li>Refactoring: To ensure what the original functionality is actually doing before you modify.</li>
+<li>Debugging. It is faster to debug the unit test than to spin the full environment again and again.</li>
+<li>Refactoring: To ensure what the original functionality is actually doing before you modify it.</li>
 </ol>
 <h2><a name="Why-to-unit-test" class="anchor" href="#Why-to-unit-test">Why to unit-test?</a></h2>
 <p>F# strong typing provides safety over raw SQL: Instead of your customer finding an issue, your code will not compile if the database shape is wrong,
-for example someone removed an important column.</p>
+for example, someone removed an important column.</p>
 <p>SQLProvider does parametrized SQL, you can watch the executed SQL, and you can even open the parameterized SQL parameters for easier debugging:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs4', 30)" onmouseover="showTip(event, 'fs4', 30)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 31)" onmouseover="showTip(event, 'fs5', 31)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 32)" onmouseover="showTip(event, 'fs6', 32)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 33)" onmouseover="showTip(event, 'fs9', 33)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 34)" onmouseover="showTip(event, 'fs20', 34)" class="m">QueryEvents</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 35)" onmouseover="showTip(event, 'fs21', 35)" class="id">SqlQueryEvent</span> 
 <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 36)" onmouseover="showTip(event, 'fs22', 36)" class="m">Event</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 37)" onmouseover="showTip(event, 'fs23', 37)" class="id">add</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs24', 38)" onmouseover="showTip(event, 'fs24', 38)" class="fn">e</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs25', 39)" onmouseover="showTip(event, 'fs25', 39)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 40)" onmouseover="showTip(event, 'fs26', 40)" class="rt">Console</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs27', 41)" onmouseover="showTip(event, 'fs27', 41)" class="id">WriteLine</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs24', 42)" onmouseover="showTip(event, 'fs24', 42)" class="fn">e</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 43)" onmouseover="showTip(event, 'fs28', 43)" class="id">ToRawSqlWithParamInfo</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span><span class="pn">)</span>
 </code></pre>
-<p>But unit-testing is good addition in scenarios where:</p>
+<p>But unit-testing is a good addition in scenarios where:</p>
 <ul>
 <li>Your database is very dynamic, and data is changing all the time</li>
-<li>You want to ensure the logic working over period of time</li>
+<li>You want to ensure the logic works over a period of time</li>
 <li>You have a big project where build-time takes long</li>
-<li>You want Continuous Integration, but your test-data or database is not stable.</li>
+<li>You want Continuous Integration, but your test-data or database is unstable.</li>
 </ul>
 <h2><a name="How" class="anchor" href="#How">How?</a></h2>
 <p>There are 2 helper functions to mock the database connection:</p>
 <ul>
-<li><code>FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities&lt;'T&gt;</code> - With this you can mock a single table.</li>
-<li><code>FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext&lt;'T&gt;</code> - With this you can mock a context with multiple tables</li>
+<li><code>FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities&lt;'T&gt;</code> - With this, you can mock a single table.</li>
+<li><code>FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext&lt;'T&gt;</code> - With this, you can mock a context with multiple tables</li>
 </ul>
-<p>You just feed an anonymous records like they would be database rows.
+<p>You just feed anonymous records like they would be database rows.
 You don't need to add all the columns, just the ones you use in your query.
 But you can add extra-columns for easier asserts.</p>
-<h3><a name="Example-executable-business-logic" class="anchor" href="#Example-executable-business-logic">Example, executable business logic</a></h3>
+<h3><a name="Example-executable-business-logic" class="anchor" href="#Example-executable-business-logic">Example: executable business logic</a></h3>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs25', 44)" onmouseover="showTip(event, 'fs25', 44)" class="id">System</span>
 
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs29', 45)" onmouseover="showTip(event, 'fs29', 45)" class="rt">OrderDateFilter</span> <span class="o">=</span>
@@ -315,7 +315,7 @@ But you can add extra-columns for easier asserts.</p>
     <span class="pn">}</span>
 </code></pre>
 <h3><a name="Example-unit-test-part" class="anchor" href="#Example-unit-test-part">Example, unit-test part</a></h3>
-<p>Note: CustomerID, not CustomerId. These are DB-field-names, not nice LINQ names.</p>
+<p>Note: CustomerID, not CustomerId. These are the database field-names, not the nice LINQ names.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="fn">``mock for unit-testing: datacontext``</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs36', 108)" onmouseover="showTip(event, 'fs36', 108)" class="k">task</span> <span class="pn">{</span>
         <span class="k">let</span> <span onmouseout="hideTip(event, 'fs65', 109)" onmouseover="showTip(event, 'fs65', 109)" class="fn">sampleDataMap</span> <span class="o">=</span>
@@ -345,17 +345,17 @@ But you can add extra-columns for easier asserts.</p>
         <span onmouseout="hideTip(event, 'fs19', 157)" onmouseover="showTip(event, 'fs19', 157)" class="fn">assert_contains</span> <span class="pn">(</span><span class="s">&quot;E143AB&quot;</span><span class="pn">,</span> <span class="n">50M</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs62', 158)" onmouseover="showTip(event, 'fs62', 158)" class="fn">res</span>
     <span class="pn">}</span>
 </code></pre>
-<p>CreateMockSqlDataContext takes a <code>Map&lt;string,obj&gt;</code> where the <code>string</code> is the table name as in database, and <code>obj</code> is an array of anonymous records.
-The mock is meant to help creating data-context objects to enable easier testing of your LINQ-logic, not to test SQLProvider itself.</p>
+<p>CreateMockSqlDataContext takes a <code>Map&lt;string,obj&gt;</code> where the <code>string</code> is the table name as in the database, and <code>obj</code> is an array of anonymous records.
+The mock is meant to help create data-context objects to enable easier testing of your LINQ-logic, not to test SQLProvider itself.</p>
 <p>There are some limitations with the SQLProvider mock a DB-context:</p>
 <ul>
 <li>The mock-context will not connect the DB, and you can't save entity modifications. SubmitUpdates() will do nothing.</li>
 <li>SQLProvider custom operators (like <code>x |=| xs</code> and <code>y %&lt;&gt; "A%"</code>) are not supported. So you have to use LINQ-ones (e.g. <code>xs.Contains x</code> and <code>not y.StartsWith "A"</code>) that do work in SQLProvider as well.</li>
 <li>You can call database-table <code>.Create</code> methods to create new instances (it doesn't connect the database). You can call update entity columns <code>x.Col &lt;- Some "hi"</code>, but it doesn't really do anything.</li>
 <li>You cannot call stored procedures.</li>
-<li>Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be clear error. If you mistyped anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.</li>
+<li>Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be a clear error. If you mistyped the anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.</li>
 </ul>
-<p>If you are running off-line solution like SSDT or ContextSchemaPath, you should be able to run also these unit-tests with your CI.</p>
+<p>If you are running an off-line solution like SSDT or ContextSchemaPath, you should be able to run also these unit-tests with your CI.</p>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
@@ -445,7 +445,7 @@ from Microsoft.FSharp.Control<br /><br />--------------------<br />type Event&lt
   static member Read: unit -&gt; int
   static member ReadKey: unit -&gt; ConsoleKeyInfo + 1 overload
   static member ReadLine: unit -&gt; string
-  ...<br /><em>&lt;summary&gt;Represents the standard input, output, and error streams for console applications. This class cannot be inherited.&lt;/summary&gt;</em></div>
+  ...</div>
 <div class="fsdocs-tip" id="fs27">System.Console.WriteLine() : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: uint64) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: uint32) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: string) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: float32) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: obj) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: int64) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: int) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: float) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />System.Console.WriteLine(value: decimal) : unit<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs28">member Common.QueryEvents.SqlEventData.ToRawSqlWithParamInfo: unit -&gt; string</div>
 <div class="fsdocs-tip" id="fs29">type OrderDateFilter =
@@ -470,7 +470,7 @@ from Microsoft.FSharp.Control<br /><br />--------------------<br />type Event&lt
 <div class="fsdocs-tip" id="fs34">val untilDate: DateTime</div>
 <div class="fsdocs-tip" id="fs35">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: year: int * month: int * day: int -&gt; unit + 16 overloads
+  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
@@ -480,7 +480,7 @@ type DateTime =
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs36">val task: TaskBuilder</div>
 <div class="fsdocs-tip" id="fs37">val ignoreOrderDate: bool</div>
 <div class="fsdocs-tip" id="fs38">val ignoreShippedDate: bool</div>
@@ -525,7 +525,7 @@ Calls Linq.QueryBuilder.Select</div>
   member CopyTo: array: Array * index: int -&gt; unit + 1 overload
   member GetEnumerator: unit -&gt; IEnumerator
   member GetLength: dimension: int -&gt; int
-  ...<br /><em>&lt;summary&gt;Provides methods for creating, manipulating, searching, and sorting arrays, thereby serving as the base class for all arrays in the common language runtime.&lt;/summary&gt;</em></div>
+  ...</div>
 <div class="fsdocs-tip" id="fs64">val executeQueryAsync: query: Linq.IQueryable&lt;&#39;a&gt; -&gt; Threading.Tasks.Task&lt;&#39;a array&gt;<br /><em>&lt;summary&gt;
  Execute SQLProvider query and release the OS thread while query is being executed.
 &lt;/summary&gt;</em></div>
@@ -557,7 +557,7 @@ from FSharp.Data.Sql.Common</div>
  NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
  Limitation of mockContext: You cannot Create new entities to the mock context.
 &lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs72">property Array.Length: int with get<br /><em>&lt;summary&gt;Gets the total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;.&lt;/summary&gt;<br />&lt;exception cref=&quot;T:System.OverflowException&quot;&gt;The array is multidimensional and contains more than &lt;see cref=&quot;F:System.Int32.MaxValue&quot;&gt;Int32.MaxValue&lt;/see&gt; elements.&lt;/exception&gt;<br />&lt;returns&gt;The total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;; zero if there are no elements in the array.&lt;/returns&gt;</em></div>
+<div class="fsdocs-tip" id="fs72">property Array.Length: int with get</div>
 
     </div>
 </main>
@@ -581,7 +581,7 @@ from FSharp.Data.Sql.Common</div>
   </li>
   <li class="level-3">
     <a href="#Example-executable-business-logic">
-      Example, executable business logic
+      Example: executable business logic
     </a>
   </li>
   <li class="level-3">

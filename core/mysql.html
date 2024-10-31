@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to make a contribution
+    How to contribute
 
   </a>
 </li>             
@@ -251,14 +251,14 @@
         <h1><a name="MySQL-Provider" class="anchor" href="#MySQL-Provider">MySQL Provider</a></h1>
 <h2><a name="Parameters" class="anchor" href="#Parameters">Parameters</a></h2>
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
-<p>Basic connection string used to connect to MySQL instance; typical connection
+<p>A basic connection string used to connect to MySQL instance; typical connection
 string parameters apply here.  See
 <a href="https://dev.mysql.com/doc/connectors/en/connector-net-connections-string.html">MySQL Connector/NET Connection Strings Documentation</a>
 for a complete list of connection string options.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="prop">connString</span>  <span class="o">=</span> <span class="s">&quot;Server=localhost;Database=HR;User=root;Password=password&quot;</span>
 </code></pre>
-<p>To deal with some MySQL data connection problems you might want to add some more parameters to connectionstring:
+<p>To deal with some MySQL data connection problems, you might want to add some more parameters to connectionstring:
 <code>Auto Enlist=false; Convert Zero Datetime=true;</code></p>
 <h3><a name="ConnectionStringName" class="anchor" href="#ConnectionStringName">ConnectionStringName</a></h3>
 <p>Instead of storing the connection string in the source code, you
@@ -273,7 +273,7 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).</
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="prop">dbVendor</span>    <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="id">MYSQL</span>
 </code></pre>
 <h3><a name="Resolution-Path" class="anchor" href="#Resolution-Path">Resolution Path</a></h3>
-<p>Path to search for assemblies containing database vendor specific connections and custom types. Type the path where
+<p>Path to search for assemblies containing database vendor-specific connections and custom types. Type the path where
 <code>Mysql.Data.dll</code> is stored. Both absolute and relative paths are supported.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 13)" onmouseover="showTip(event, 'fs5', 13)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 14)" onmouseover="showTip(event, 'fs12', 14)" class="prop">resPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../packages/tests/MySql.Data/lib/net45&quot;</span>
@@ -319,52 +319,63 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).</
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs33', 56)" onmouseover="showTip(event, 'fs33', 56)" class="id">myUInt64</span> <span class="o">=</span> <span class="n">10UL</span>
 </code></pre>
 <h3><a name="System-Guid-Serialization" class="anchor" href="#System-Guid-Serialization">System.Guid Serialization</a></h3>
-<p>If you use string column to save a Guid to database, you may want to skip the hyphens ("-")
+<p>If you use a string column to save a Guid to the database, you may want to skip the hyphens ("-")
 when serializing them:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs34', 57)" onmouseover="showTip(event, 'fs34', 57)" class="id">myGuid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 58)" onmouseover="showTip(event, 'fs4', 58)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 59)" onmouseover="showTip(event, 'fs35', 59)" class="vt">Guid</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 60)" onmouseover="showTip(event, 'fs36', 60)" class="id">NewGuid</span><span class="pn">(</span><span class="pn">)</span> <span class="c">//e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b</span>
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs37', 61)" onmouseover="showTip(event, 'fs37', 61)" class="id">myGuidAsString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs34', 62)" onmouseover="showTip(event, 'fs34', 62)" class="id">myGuid</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs38', 63)" onmouseover="showTip(event, 'fs38', 63)" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;N&quot;</span><span class="pn">)</span> <span class="c">// e.g. &quot;b8fa7880ce4443158d60a160e5734c4b&quot;</span>
 </code></pre>
-<p>The problem with this is that you should never forgot to use "N" in anywhere.</p>
+<p>The problem with this is that you should never forget to use "N" anywhere.</p>
 <h3><a name="System-DateTime-Serialization" class="anchor" href="#System-DateTime-Serialization">System.DateTime Serialization</a></h3>
 <p>Another problem with MySql.Data is that DateTime conversions may fail if your culture is
 not the expected one.</p>
 <p>So you may have to convert datetimes as strings instead of using just <code>myEmp.BirthDate &lt;- DateTime.UtcNow</code>:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs25', 64)" onmouseover="showTip(event, 'fs25', 64)" class="id">myEmp</span><span class="pn">.</span><span class="id">SetColumn</span><span class="pn">(</span><span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs39', 65)" onmouseover="showTip(event, 'fs39', 65)" class="id">DateTime</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs40', 66)" onmouseover="showTip(event, 'fs40', 66)" class="id">UtcNow</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 67)" onmouseover="showTip(event, 'fs41', 67)" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs42', 68)" onmouseover="showTip(event, 'fs42', 68)" class="id">box</span><span class="pn">)</span>
 </code></pre>
-<p>Notice that if you use <code>.ToString("s")</code> there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
+<p>Notice that if you use <code>.ToString("s")</code>, there will be "T" between date and time: "yyyy-MM-ddTHH\:mm\:ss".
 And comparing two datetimes as strings with "T" and without "T" will generate a problem with the time-part.</p>
 <p>If your DateTime columns are strings in the database, you can use <code>DateTime.Parse</code> in your where-queries:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs43', 69)" onmouseover="showTip(event, 'fs43', 69)" class="id">longAgo</span> <span class="o">=</span> <span class="id">DateTime</span><span class="pn">.</span><span class="id">UtcNow</span><span class="pn">.</span><span class="id">AddYears</span><span class="pn">(</span><span class="o">-</span><span class="n">5</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 70)" onmouseover="showTip(event, 'fs25', 70)" class="id">myEmp</span> <span class="o">=</span> 
-    <span onmouseout="hideTip(event, 'fs26', 71)" onmouseover="showTip(event, 'fs26', 71)" class="k">query</span> <span class="pn">{</span>
-        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs44', 72)" onmouseover="showTip(event, 'fs44', 72)" class="fn">emp</span> <span class="k">in</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs28', 73)" onmouseover="showTip(event, 'fs28', 73)" class="k">where</span> <span class="pn">(</span><span class="id">DateTime</span><span class="pn">.</span><span class="id">Parse</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs44', 74)" onmouseover="showTip(event, 'fs44', 74)" class="id">emp</span><span class="pn">.</span><span class="id">HireDate</span><span class="pn">)</span> <span class="o">&gt;</span> <span onmouseout="hideTip(event, 'fs43', 75)" onmouseover="showTip(event, 'fs43', 75)" class="id">longAgo</span><span class="pn">)</span>
-        <span onmouseout="hideTip(event, 'fs29', 76)" onmouseover="showTip(event, 'fs29', 76)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs44', 77)" onmouseover="showTip(event, 'fs44', 77)" class="fn">emp</span><span class="pn">)</span>
-    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs45', 78)" onmouseover="showTip(event, 'fs45', 78)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 79)" onmouseover="showTip(event, 'fs30', 79)" class="id">head</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="id">longAgoeTime</span><span class="pn">.</span><span class="id">UtcNow</span><span class="pn">.</span><span class="id">AddYears</span><span class="pn">(</span><span class="o">-</span><span class="n">5</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 69)" onmouseover="showTip(event, 'fs25', 69)" class="id">myEmp</span> <span class="o">=</span> 
+    <span onmouseout="hideTip(event, 'fs26', 70)" onmouseover="showTip(event, 'fs26', 70)" class="k">query</span> <span class="pn">{</span>
+        <span class="k">for</span> <span onmouseout="hideTip(event, 'fs43', 71)" onmouseover="showTip(event, 'fs43', 71)" class="fn">emp</span> <span class="k">in</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
+        <span onmouseout="hideTip(event, 'fs28', 72)" onmouseover="showTip(event, 'fs28', 72)" class="k">where</span> <span class="pn">(</span><span class="id">DateTime</span><span class="pn">.</span><span class="id">Parse</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs43', 73)" onmouseover="showTip(event, 'fs43', 73)" class="id">emp</span><span class="pn">.</span><span class="id">HireDate</span><span class="pn">)</span> <span class="o">&gt;</span> <span class="id">longAgo</span><span class="pn">)</span>
+        <span onmouseout="hideTip(event, 'fs29', 74)" onmouseover="showTip(event, 'fs29', 74)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs43', 75)" onmouseover="showTip(event, 'fs43', 75)" class="fn">emp</span><span class="pn">)</span>
+    <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs44', 76)" onmouseover="showTip(event, 'fs44', 76)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 77)" onmouseover="showTip(event, 'fs30', 77)" class="id">head</span>
 </code></pre>
 <p>You should be fine even with canonical functions like <code>DateTime.Parse(a.MeetStartTime).AddMinutes(10.)</code>.</p>
 <h2><a name="Caveats-Additional-Info" class="anchor" href="#Caveats-Additional-Info">Caveats / Additional Info</a></h2>
 <p>Check <a href="general.html">General</a>, <a href="parameters.html">Static Parameters</a> and <a href="querying.html">Querying</a> documentation.</p>
 <h1><a name="Support-for-MySqlConnector" class="anchor" href="#Support-for-MySqlConnector">Support for MySqlConnector</a></h1>
-<p><a href="https://github.com/mysql-net/MySqlConnector">MySqlConnector</a> is alternative driver to use instead of MySql.Data.dll.
-It has less features but a lot better performance than the official driver.</p>
+<p><a href="https://github.com/mysql-net/MySqlConnector">MySqlConnector</a> is an alternative driver to use instead of MySql.Data.dll.
+It has fewer features but a lot better performance than the official driver.</p>
 <p>You can use it with SQLProvider:
 Just remove MySql.Data.dll from your resolutionPath and insert there MySqlConnector.dll instead. (Get the latest from NuGet.)
-It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll
+It uses references to System.Buffers.dll, System.Runtime.InteropServices.RuntimeInformation.dll and System.Threading.Tasks.Extensions.dll,
 so copy those files also to your referencePath. You can get them from corresponding NuGet packages.</p>
 <p>If you want to use the drivers in parallel, you need two resolution paths:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs46', 80)" onmouseover="showTip(event, 'fs46', 80)" class="rt">HRFast</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 81)" onmouseover="showTip(event, 'fs18', 81)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs9', 82)" onmouseover="showTip(event, 'fs9', 82)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 83)" onmouseover="showTip(event, 'fs10', 83)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 84)" onmouseover="showTip(event, 'fs11', 84)" class="id">MYSQL</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs6', 85)" onmouseover="showTip(event, 'fs6', 85)" class="prop">connString</span><span class="pn">,</span> <span class="fn">ResolutionPath</span> <span class="o">=</span> <span class="s">@&quot;c:\mysqlConnectorPath&quot;</span><span class="pn">,</span> <span class="fn">Owner</span> <span class="o">=</span> <span class="s">&quot;HR&quot;</span><span class="pn">&gt;</span>
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs47', 86)" onmouseover="showTip(event, 'fs47', 86)" class="rt">HRProcs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 87)" onmouseover="showTip(event, 'fs18', 87)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs9', 88)" onmouseover="showTip(event, 'fs9', 88)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 89)" onmouseover="showTip(event, 'fs10', 89)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 90)" onmouseover="showTip(event, 'fs11', 90)" class="id">MYSQL</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs6', 91)" onmouseover="showTip(event, 'fs6', 91)" class="prop">connString</span><span class="pn">,</span> <span class="fn">ResolutionPath</span> <span class="o">=</span> <span class="s">@&quot;c:\MysqlDataPath&quot;</span><span class="pn">,</span> <span class="fn">Owner</span> <span class="o">=</span> <span class="s">&quot;HR&quot;</span><span class="pn">&gt;</span>
-</code></pre>
-<h3><a name="Example-performance-difference-from-our-unit-tests" class="anchor" href="#Example-performance-difference-from-our-unit-tests">Example performance difference from our unit tests</a></h3>
-<p>One complex query:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">MySql</span><span class="pn">.</span><span class="id">Data</span><span class="pn">.</span><span class="id">dll</span><span class="pn">:</span>     <span class="id">Real</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">00.583</span><span class="pn">,</span> <span class="id">CPU</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">00.484</span><span class="pn">,</span> <span class="id">GC</span> <span class="id">gen0</span><span class="pn">:</span> <span class="n">1</span><span class="pn">,</span> <span class="id">gen1</span><span class="pn">:</span> <span class="n">0</span><span class="pn">,</span> <span class="id">gen2</span><span class="pn">:</span> <span class="n">0</span>
-<span class="id">MySqlConnector</span><span class="pn">.</span><span class="id">dll</span><span class="pn">:</span> <span class="id">Real</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">00.173</span><span class="pn">,</span> <span class="id">CPU</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">00.093</span><span class="pn">,</span> <span class="id">GC</span> <span class="id">gen0</span><span class="pn">:</span> <span class="n">1</span><span class="pn">,</span> <span class="id">gen1</span><span class="pn">:</span> <span class="n">0</span><span class="pn">,</span> <span class="id">gen2</span><span class="pn">:</span> <span class="n">0</span>
-</code></pre>
-<p>Lot of async queries:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">MySQL</span><span class="pn">.</span><span class="id">Data</span><span class="pn">.</span><span class="id">dll</span>      <span class="id">Real</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">01.425</span><span class="pn">,</span> <span class="id">CPU</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">02.078</span><span class="pn">,</span> <span class="id">GC</span> <span class="id">gen0</span><span class="pn">:</span> <span class="n">16</span><span class="pn">,</span> <span class="id">gen1</span><span class="pn">:</span> <span class="n">1</span><span class="pn">,</span> <span class="id">gen2</span><span class="pn">:</span> <span class="n">0</span>
-<span class="id">MySqlConnector</span><span class="pn">.</span><span class="id">dll</span><span class="pn">:</span> <span class="id">Real</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">01.091</span><span class="pn">,</span> <span class="id">CPU</span><span class="pn">:</span> <span class="n">00</span><span class="pn">:</span><span class="n">00</span><span class="pn">:</span><span class="n">02.000</span><span class="pn">,</span> <span class="id">GC</span> <span class="id">gen0</span><span class="pn">:</span> <span class="n">14</span><span class="pn">,</span> <span class="id">gen1</span><span class="pn">:</span> <span class="n">1</span><span class="pn">,</span> <span class="id">gen2</span><span class="pn">:</span> <span class="n">0</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs45', 78)" onmouseover="showTip(event, 'fs45', 78)" class="rt">HRFast</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 79)" onmouseover="showTip(event, 'fs18', 79)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs9', 80)" onmouseover="showTip(event, 'fs9', 80)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 81)" onmouseover="showTip(event, 'fs10', 81)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 82)" onmouseover="showTip(event, 'fs11', 82)" class="id">MYSQL</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs6', 83)" onmouseover="showTip(event, 'fs6', 83)" class="prop">connString</span><span class="pn">,</span> <span class="fn">ResolutionPath</span> <span class="o">=</span> <span class="s">@&quot;c:\mysqlConnectorPath&quot;</span><span class="pn">,</span> <span class="fn">Owner</span> <span class="o">=</span> <span class="s">&quot;HR&quot;</span><span class="pn">&gt;</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs46', 84)" onmouseover="showTip(event, 'fs46', 84)" class="rt">HRProcs</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 85)" onmouseover="showTip(event, 'fs18', 85)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs9', 86)" onmouseover="showTip(event, 'fs9', 86)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 87)" onmouseover="showTip(event, 'fs10', 87)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 88)" onmouseover="showTip(event, 'fs11', 88)" class="id">MYSQL</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs6', 89)" onmouseover="showTip(event, 'fs6', 89)" class="prop">connString</span><span class="pn">,</span> <span class="id">ResolutionPath</span> <span class="o">=</span> <span class="s">@&quot;creferencesOwner = &quot;</span><span class="id">HR</span><span class="s">&quot;&gt;</span>
+
+<span class="s">(**</span>
+
+<span class="s">### Example performance difference from our unit tests</span>
+
+<span class="s">One complex query:</span>
+
+<span class="s">``` </span>
+<span class="s">MySql.Data.dll:     Real: 00:00:00.583, C0:00:00.484, GC gen0: 1, gen1: 0, gen2: 0</span>
+<span class="s">MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0</span>
+<span class="s">```</span>
+
+<span class="s">Lots of async queries:</span>
+
+<span class="s">```</span>
+<span class="s">MySQL.Data.dll      Real: 00:00:01.425, CPU: 00:00:02.078, GC gen0: 16, gen1: 1, gen2: 0</span>
+<span class="s">MySqlConnector.dll: Real: 00:00:01.091, CPU: 00:00:02.000, GC gen0: 14, gen1: 1, gen2: 0</span>
+<span class="s">```</span>
+
+<span class="s">*)</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
@@ -456,17 +467,17 @@ type Guid =
   member GetHashCode: unit -&gt; int
   member ToByteArray: unit -&gt; byte array + 1 overload
   member ToString: unit -&gt; string + 2 overloads
-  member TryFormat: destination: Span&lt;char&gt; * charsWritten: byref&lt;int&gt; * ?format: ReadOnlySpan&lt;char&gt; -&gt; bool + 1 overload
+  member TryFormat: utf8Destination: Span&lt;byte&gt; * bytesWritten: byref&lt;int&gt; * ?format: ReadOnlySpan&lt;char&gt; -&gt; bool + 1 overload
   member TryWriteBytes: destination: Span&lt;byte&gt; -&gt; bool + 1 overload
   static member (&lt;) : left: Guid * right: Guid -&gt; bool
   static member (&lt;=) : left: Guid * right: Guid -&gt; bool
-  ...<br /><em>&lt;summary&gt;Represents a globally unique identifier (GUID).&lt;/summary&gt;</em><br /><br />--------------------<br />Guid ()<br />Guid(b: byte array) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;, bigEndian: bool) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte array) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
+  ...<br /><br />--------------------<br />Guid ()<br />Guid(b: byte array) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;, bigEndian: bool) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte array) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
 <div class="fsdocs-tip" id="fs36">Guid.NewGuid() : Guid</div>
 <div class="fsdocs-tip" id="fs37">val myGuidAsString: string</div>
 <div class="fsdocs-tip" id="fs38">Guid.ToString() : string<br />Guid.ToString(format: string) : string<br />Guid.ToString(format: string, provider: IFormatProvider) : string</div>
 <div class="fsdocs-tip" id="fs39">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: year: int * month: int * day: int -&gt; unit + 16 overloads
+  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
@@ -476,17 +487,16 @@ type DateTime =
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="fsdocs-tip" id="fs40">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
+  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs40">property DateTime.UtcNow: DateTime with get</div>
 <div class="fsdocs-tip" id="fs41">DateTime.ToString() : string<br />DateTime.ToString(format: string) : string<br />DateTime.ToString(provider: IFormatProvider) : string<br />DateTime.ToString(format: string, provider: IFormatProvider) : string</div>
 <div class="fsdocs-tip" id="fs42">val box: value: &#39;T -&gt; obj</div>
-<div class="fsdocs-tip" id="fs43">val longAgo: obj</div>
-<div class="fsdocs-tip" id="fs44">val emp: obj</div>
-<div class="fsdocs-tip" id="fs45">module Seq
+<div class="fsdocs-tip" id="fs43">val emp: obj</div>
+<div class="fsdocs-tip" id="fs44">module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div class="fsdocs-tip" id="fs46">type HRFast = obj</div>
-<div class="fsdocs-tip" id="fs47">type HRProcs = obj</div>
+<div class="fsdocs-tip" id="fs45">type HRFast = obj</div>
+<div class="fsdocs-tip" id="fs46">type HRProcs = obj</div>
 
     </div>
 </main>
@@ -566,11 +576,6 @@ from Microsoft.FSharp.Collections</div>
   <li class="level-1">
     <a href="#Support-for-MySqlConnector">
       Support for MySqlConnector
-    </a>
-  </li>
-  <li class="level-3">
-    <a href="#Example-performance-difference-from-our-unit-tests">
-      Example performance difference from our unit tests
     </a>
   </li>
 </ul>
