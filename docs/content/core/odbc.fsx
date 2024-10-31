@@ -39,7 +39,7 @@ let ctx = db.GetDataContext()
 
 (**
 
-You don't need DSN for all data source, e.g. MS Access can be used directly
+You don't need DSN for all data sources, e.g. MS Access can be used directly
 through the database file with a connection string like:
 `@"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Northwind.mdb"`
 
@@ -77,11 +77,11 @@ let ctx2 = db2.GetDataContext()
 ### DTC Transactions
 
 SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
-that all the database operations will either success of fail at once, when you do
+that all the database operations will either succeed or fail at once; when you do
 `ctx.SubmitUpdates()`. 
 
 However, some ODBC-drivers (like MS-Access) don't support 
-DTC-transactions and will fail on constructor call. The transaction creation can be
+DTC-transactions and will fail on the constructor call. The transaction creation can be
 disabled in context creation:
 
 *)

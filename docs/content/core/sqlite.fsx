@@ -10,8 +10,7 @@ open FSharp.Data.Sql
 ## Parameters
 
 ### ConnectionString
-
-Basic connection string used to connect to the SQLite database.
+A basic connection string used to connect to the SQLite database.
 
 *)
 
@@ -24,7 +23,7 @@ let connectionString =
 (**
 ### ResolutionPath
 
-Path to search for database vendor speficic assemblies. Specify the path where `System.Data.SQLite.dll` is stored. 
+Path to search for database vendor-specific assemblies. Specify the path where `System.Data.SQLite.dll` is stored. 
 If you use the System.Data.SQLite NuGet package and target .NET 4.6, the path would be something like 
 `__SOURCE_DIRECTORY__ + @"\..\packages\System.Data.SQLite.Core.<version>\lib\net46"`. 
 Both absolute and relative paths are supported.
@@ -34,12 +33,12 @@ Note that `System.Data.SQLite.dll` will look for the native interop library:
 - on Windows: `SQLite.Interop.dll` in the `x64` and `x86` subdirectories of the resolution path.
 - on Linux: `libSQLite.Interop.so` in the resolution path directory.
 
-The interop libraries are not properly placed afer the System.Data.SQLite NuGet package is added, so you might have to 
+The interop libraries are not properly placed after the System.Data.SQLite NuGet package is added, so you might have to 
 manually copy the interop libraries:
 
 - on Windows: copy `x64` and `x86` subdirectories from SQLite build directory, which typically is 
  `<project root>\packages\System.Data.SQLite.Core.<version>\build\net46`.
-- on Linux: first build the `libSQLite.Interop.so` using `<srcDir>/Setup/compile-interop-assembly-release.sh` script from [System.Data.SQLite source distribution](https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki) `sqlite-netFx-source-1.x.xxx.x.zip`. And then copy it from `<srcDir>/bin/2013/Release/bin/`.
+- on Linux: first, build the `libSQLite.Interop.so` using `<srcDir>/Setup/compile-interop-assembly-release.sh` script from [System.Data.SQLite source distribution](https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki) `sqlite-netFx-source-1.x.xxx.x.zip`. And then copy it from `<srcDir>/bin/2013/Release/bin/`.
 
 If `System.Data.SQLite.dll` is in the location where NuGet places it by default, you don't have to submit
 the ResolutionPath parameter at all, but you still need to copy the interop libraries as described above.

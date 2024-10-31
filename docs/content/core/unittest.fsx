@@ -27,14 +27,14 @@ let assert_contains x y = ()
 That's a clear advantage on large-scale projects, where there are multiple developers and
 the SQL-queries grow more complex over time.
 
-1. Debugging. Faster to debug unit-test than spin the full environment again and again.
-2. Refactoring: To ensure what the original functionality is actually doing before you modify.
+1. Debugging. It is faster to debug the unit test than to spin the full environment again and again.
+2. Refactoring: To ensure what the original functionality is actually doing before you modify it.
 
 
 ## Why to unit-test?
 
 F# strong typing provides safety over raw SQL: Instead of your customer finding an issue, your code will not compile if the database shape is wrong,
-for example someone removed an important column.
+for example, someone removed an important column.
 
 SQLProvider does parametrized SQL, you can watch the executed SQL, and you can even open the parameterized SQL parameters for easier debugging:
 *)
@@ -42,27 +42,27 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent
 |> Event.add (fun e -> System.Console.WriteLine (e.ToRawSqlWithParamInfo()))
 (**
 
-But unit-testing is good addition in scenarios where:
+But unit-testing is a good addition in scenarios where:
 
 - Your database is very dynamic, and data is changing all the time
-- You want to ensure the logic working over period of time
+- You want to ensure the logic works over a period of time
 - You have a big project where build-time takes long
-- You want Continuous Integration, but your test-data or database is not stable.
+- You want Continuous Integration, but your test-data or database is unstable.
 
 
 ## How?
 
 There are 2 helper functions to mock the database connection:
 
-- `FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities<'T>` - With this you can mock a single table.
-- `FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext<'T>` - With this you can mock a context with multiple tables
+- `FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities<'T>` - With this, you can mock a single table.
+- `FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext<'T>` - With this, you can mock a context with multiple tables
 
-You just feed an anonymous records like they would be database rows. 
+You just feed anonymous records like they would be database rows. 
 You don't need to add all the columns, just the ones you use in your query.
 But you can add extra-columns for easier asserts.
 
 
-### Example, executable business logic
+### Example: executable business logic
 
 
 *)
@@ -106,7 +106,7 @@ let someProductionFunction (ctx:sql.dataContext) (orderType:OrderDateFilter) (un
 
 ### Example, unit-test part
 
-Note: CustomerID, not CustomerId. These are DB-field-names, not nice LINQ names.
+Note: CustomerID, not CustomerId. These are the database field-names, not the nice LINQ names.
 
 *)
 let ``mock for unit-testing: datacontext``() =
@@ -140,8 +140,8 @@ let ``mock for unit-testing: datacontext``() =
 
 (**
 
-CreateMockSqlDataContext takes a `Map<string,obj>` where the `string` is the table name as in database, and `obj` is an array of anonymous records.
-The mock is meant to help creating data-context objects to enable easier testing of your LINQ-logic, not to test SQLProvider itself.
+CreateMockSqlDataContext takes a `Map<string,obj>` where the `string` is the table name as in the database, and `obj` is an array of anonymous records.
+The mock is meant to help create data-context objects to enable easier testing of your LINQ-logic, not to test SQLProvider itself.
 
 There are some limitations with the SQLProvider mock a DB-context:
 
@@ -149,8 +149,8 @@ There are some limitations with the SQLProvider mock a DB-context:
 - SQLProvider custom operators (like `x |=| xs` and `y %<> "A%"`) are not supported. So you have to use LINQ-ones (e.g. `xs.Contains x` and `not y.StartsWith "A"`) that do work in SQLProvider as well.
 - You can call database-table `.Create` methods to create new instances (it doesn't connect the database). You can call update entity columns `x.Col <- Some "hi"`, but it doesn't really do anything.
 - You cannot call stored procedures.
-- Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be clear error. If you mistyped anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.
+- Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be a clear error. If you mistyped the anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.
 
-If you are running off-line solution like SSDT or ContextSchemaPath, you should be able to run also these unit-tests with your CI.
+If you are running an off-line solution like SSDT or ContextSchemaPath, you should be able to run also these unit-tests with your CI.
 
 *)

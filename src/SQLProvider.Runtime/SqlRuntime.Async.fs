@@ -134,7 +134,9 @@ module AsyncOperations =
                             match entity with
                             | "" when source.SqlExpression.HasAutoTupled() -> param
                             | "" -> ""
-                            | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                            | _ ->
+                                let al = FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                                if al.StartsWith("_") then al.TrimStart([|'_'|]) else al
                     let sqlExpression =
 
                         let opName =

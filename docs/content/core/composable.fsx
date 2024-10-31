@@ -21,19 +21,19 @@ let ctx = sql.GetDataContext()
 # Composable Queries
 
 ## Definition of Composable Queries
-Basicly composable methods are those that you can chain together to build the desired functionality out of smaller parts.
-By passing functions as parameters you are able to generate higher-order query operations.
-Therefore composable query means that you can do logics to compose just one database-SQL-query from multiple queryables.
+Composable methods are those you can chain to build the desired functionality out of smaller parts.
+By passing functions as parameters, you can generate higher-order query operations.
+Therefore, a composable query means you can do logics to compose just one database-SQL-query from multiple queryables.
 By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.
 
 One common anti-pattern is a trial to solve all the problems in the world by a single code. 
-So when you use this kind of features to achieve "common logics", keep in mind the software mainainability.
+So when you use this kind of feature to achieve "common logics", keep the software's maintainability in mind.
 One solution is to add a database view and query that from SQLProvider.
 
 ## Generate composable queries by using Linq IQueryable
 
-With composable queries you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
-To see how this works, let’s look at a simple query:
+With composable queries, you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
+To see how this works, let's look at a simple query:
 *)
 
 let query1 =
@@ -43,7 +43,7 @@ let query1 =
       select (customers)}
 
 (**
-The variable that is returned from the query is sometimes called a computation. If you write evaluate
+The variable that is returned from the query is sometimes called a computation. If you write to evaluate
 (e.g. a foreach loop or `|> Seq.toList`) and display the address field from the customers returned by this
 computation, you see the following output:
 
@@ -92,17 +92,17 @@ It allows you to take complex problems, break them into manageable pieces, and s
 
 ### Generate composable queries by using .NET LINQ functions with IQueryable.
 
-The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as en expression tree to some other context (like a database query).
-They are both lazy by nature, meaning they aren’t evaluated until you enumerate over the results.
+The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as an expression tree to some other context (like a database query).
+They are both lazy by nature, meaning they aren't evaluated until you enumerate the results.
 
-Here an example:
+Here is an example:
 
-First you have to add .NET LINQ:
+First, you have to add .NET LINQ:
 *)
 open System.Linq
 
 (**
-Then you can define a composable query outside the main query
+Then, you can define a composable query outside the main query
 *)
 
 type CustomersEntity = sql.dataContext.``main.CustomersEntity``
@@ -120,10 +120,10 @@ let companyNameFilter inUse =
     queryable
 
 (**
-(Let's asume that your inUse some complex data:
+(Let's assume that your inUse parameter is some complex data:
  E.g. Your sub-queries would come from other functions. Basic booleans you can just include to your where-clause)
 
-Then you can create the main query
+Then, you can create the main query
 *)
 let query1 =
     query {
@@ -141,10 +141,10 @@ let res = companyNameFilter true query1 |> Seq.toArray
 (**
 ### Generate composable queries by using FSharp.Linq.ComposableQuery
 
-The SQLProvider also supports composable queries by integrating following library FSharpLinqComposableQuery.
+The SQLProvider also supports composable queries by integrating the following library FSharpLinqComposableQuery.
 You can read more about that library here: [FSharp.Linq.ComposableQuery](http://fsprojects.github.io/FSharp.Linq.ComposableQuery)
 
-Because it is implemented in the SQLProvider you dont need to add FSharpComposableQuery in your script.
+Because it is implemented in the SQLProvider, you don't need to add FSharpComposableQuery in your script.
 
 Example for using FSharpComposableQuery
 *)
@@ -205,13 +205,13 @@ let qry =
 
 (**
 
-However this is not recommended as one of the SQLProvider's key benefits is strong typing.
+However, this is not recommended as one of the SQLProvider's key benefits is strong typing.
 
 ## Generate composable queries from quotations
 
 You can also construct composable queries using the F# quotation mechanism. For
 example, if you need to select a filter function at runtime, you could write the
-filters as quotations, and then include them into query like that:
+filters as quotations, and then include them in a query like this:
 
 *)
 
@@ -228,6 +228,6 @@ let employees =
 
 (**
 
-Quotations are AST representations which the Linq-to-SQL translator can use.
+Quotations are AST representations that the Linq-to-SQL translator can use.
 
 *)

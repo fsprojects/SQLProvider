@@ -58,7 +58,7 @@ Submit updates to the database
 ctx.SubmitUpdates()
 
 (**
-After updating your item (row) will have the Id property.
+After updating, your item (row) will have the Id property.
 
 
 
@@ -162,7 +162,7 @@ updateEmployee john
 updateEmployee' john
 
 
-(**Finally it is also possible to specify a seq of `string * obj` which is exactly the 
+(**Finally it is also possible to specify a seq of `string * obj`, which is precisely the 
 output of .ColumnValues:
 *)
 
@@ -179,7 +179,7 @@ ctx.SubmitUpdates() // no record is added
 
 (** 
 
-Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
+Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So, if you have query-operation before SubmitUpdates, you should create your own transaction to wrap these into the same transaction.
 
 SQLProvider also supports async database operations: 
 
@@ -216,7 +216,7 @@ ctx.SubmitUpdates()
 
 ### Delete-query for multiple items
 
-If you want to delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
+To delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
 
 *)
 
@@ -302,6 +302,6 @@ ctx.SubmitUpdates()
 
 (**
 
-SetColumn takes object, so you have more control over the type serialization.
+SetColumn takes an object, giving you more control over the type serialization.
 
 *)
