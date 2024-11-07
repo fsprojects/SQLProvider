@@ -109,22 +109,22 @@ module internal QueryImplementation =
 
         let isValueOption = (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1
         if isValueOption then
-            if   returnType = typeof<ValueOption<String>> then let invoker = projector :?> Func<SqlEntity, ValueOption<String>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<Decimal>> then let invoker = projector :?> Func<SqlEntity, ValueOption<Decimal>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<Int64>> then let invoker = projector :?> Func<SqlEntity, ValueOption<Int64>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<Int32>> then let invoker = projector :?> Func<SqlEntity, ValueOption<Int32>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<DateTime>> then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTime>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<Boolean>> then let invoker = projector :?> Func<SqlEntity, ValueOption<Boolean>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<ValueOption<Guid>> then let invoker = projector :?> Func<SqlEntity, ValueOption<Guid>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            if   Type.(=)(returnType, typeof<ValueOption<String>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<String>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Decimal>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Decimal>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int64>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int64>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int32>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int32>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<DateTime>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTime>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Boolean>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Boolean>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Guid>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Guid>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
         else
-            if   returnType = typeof<Decimal> then let invoker = projector :?> Func<SqlEntity, Decimal> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<Int64> then let invoker = projector :?> Func<SqlEntity, Int64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<DateTime> then let invoker = projector :?> Func<SqlEntity, DateTime> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<Guid> then let invoker = projector :?> Func<SqlEntity, Guid> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<Int32> then let invoker = projector :?> Func<SqlEntity, Int32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            elif returnType = typeof<Boolean> then let invoker = projector :?> Func<SqlEntity, Boolean> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            if   Type.(=)(returnType, typeof<Decimal>) then let invoker = projector :?> Func<SqlEntity, Decimal> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int64>) then let invoker = projector :?> Func<SqlEntity, Int64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<DateTime>) then let invoker = projector :?> Func<SqlEntity, DateTime> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Guid>) then let invoker = projector :?> Func<SqlEntity, Guid> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int32>) then let invoker = projector :?> Func<SqlEntity, Int32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Boolean>) then let invoker = projector :?> Func<SqlEntity, Boolean> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
 
@@ -140,7 +140,7 @@ module internal QueryImplementation =
                         else 
                             let kt = args.[0].GenericTypeArguments.[0]
                             let itmType = if args.[0].GenericTypeArguments.Length > 1 then args.[0].GenericTypeArguments.[1] else typeof<SqlEntity>
-                            if kt = typeof<obj> then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
                             else
                                 let tyo = typedefof<GroupResultItems<_,SqlEntity>>.MakeGenericType(kt, itmType)
                                 Some kt, Some (tyo.GetConstructors()), itmType
@@ -156,7 +156,7 @@ module internal QueryImplementation =
                         | Some gen ->
                             let kt = gen.GenericTypeArguments.[0]
                             let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
-                            if kt = typeof<obj> then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
                             else
                                 let tyo = typedefof<GroupResultItems<_,_>>.MakeGenericType(kt, itmType)
                                 Some kt, Some (tyo.GetConstructors()), itmType
@@ -186,18 +186,18 @@ module internal QueryImplementation =
                         let data = 
                             e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
                         let entity =
-                            if itemEntityType = typeof<SqlEntity> then box e
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity>> then
+                            if Type.(=)(itemEntityType, typeof<SqlEntity>) then box e
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_>(e, e))
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_,_>(e, e, e))
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_,_,_>(e, e, e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
                             else failwith ("Not supported grouping: " + itemEntityType.Name)
                             
@@ -210,7 +210,7 @@ module internal QueryImplementation =
                             | Some keyTypev ->
                                 let x = 
                                     let b = Utilities.convertTypes keyvalue keyTypev |> unbox
-                                    if b.GetType() = typeof<obj> then unbox b else b
+                                    if Type.(=)(b.GetType(), typeof<obj>) then unbox b else b
                                 keyConstructor.Value.[1].Invoke [|keyname; x; entity;|]
                             | None ->
                                 let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(keyvalue.GetType(), itemEntityType)
@@ -272,7 +272,7 @@ module internal QueryImplementation =
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) && con.State <> ConnectionState.Closed then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+        if (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) && con.State <> ConnectionState.Closed then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
         if not isGroypBy then
             invokeEntitiesListAvoidingDynamicInvoke results projector
         else parseGroupByQueryResults projector results
@@ -292,11 +292,11 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
                 con.Open()
            use! reader = cmd.ExecuteReaderAsync() 
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           if (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return
                if not isGroypBy then
                     invokeEntitiesListAvoidingDynamicInvoke results projector
@@ -315,7 +315,7 @@ module internal QueryImplementation =
        // ignore any generated projection and just expect a single integer back
        if con.State <> ConnectionState.Open then con.Open()
        let result = cmd.ExecuteScalar()
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       if (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        result
 
     let executeQueryScalarAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
@@ -332,10 +332,10 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
                 con.Open()
            let! executed = cmd.ExecuteScalarAsync()
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           if (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
 
@@ -366,10 +366,10 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync()
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
                 con.Open()
            let! executed = cmd.ExecuteScalarAsync()
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           if (Type.(<>)(provider.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
 
@@ -517,7 +517,7 @@ module internal QueryImplementation =
                         match traversable, sqlExprProj with
                         | :? LambdaExpression as le,
                                 Projection(MethodCall(None, MethodWithName("Select"), [a ; OptionalQuote(Lambda([pe], nexp) as lambda1)]),innerProj)
-                                when le.Parameters.Count = 1 && nexp.Type = le.Parameters.[0].Type ->
+                                when le.Parameters.Count = 1 && Type.(=)(nexp.Type, le.Parameters.[0].Type) ->
 
                             let visitor =
                                 { new ExpressionVisitor() with
@@ -536,7 +536,7 @@ module internal QueryImplementation =
                             let visited = visitor.Visit traversable
                             let opt = ExpressionOptimizer.visit visited
 
-                            if pe.Type = typeof<SqlEntity> then
+                            if Type.(=)(pe.Type, typeof<SqlEntity>) then
 
                                 Some opt
                             else
@@ -1061,7 +1061,7 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
-                        if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> && not(v1.Type.Name.StartsWith("IGrouping")) then
+                        if v1.Name.StartsWith "_arg" && Type.(<>)(v1.Type, typeof<SqlEntity>) && not(v1.Type.Name.StartsWith("IGrouping")) then
                             // this is the projection from a join - ignore
                             // causing the ignore here will give us wrong return tyoe to deal with in convertExpression lambda handling
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>

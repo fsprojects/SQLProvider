@@ -76,7 +76,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     // the minimum base set of data available
                     prov.CreateTypeMappings(con)
                     prov.GetTables(con,caseSensitivity) |> ignore
-                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) && con.State <> ConnectionState.Closed then con.Close()
+                    if (providerType <> DatabaseProviderTypes.MSACCESS && Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) && con.State <> ConnectionState.Closed then con.Close()
                 prov
         try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
@@ -163,7 +163,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                             entity.SetColumnSilent(name, data)
                     entity |> box
 
-            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
             entities
 
         member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
@@ -196,10 +196,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                                     let data = toEntityArray rs
                                     entity.SetColumnSilent(name, data)
 
-                            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
                             entity
                     | Choice2Of2 err ->
-                        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                        if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
                         raise err
 
             }
@@ -225,7 +225,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             let entity = (this :> ISqlDataContext).ReadEntities(table.FullName, columns, reader) |> Seq.exactlyOne
-            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
             entity
 
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =

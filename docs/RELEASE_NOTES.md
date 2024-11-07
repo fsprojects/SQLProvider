@@ -1,3 +1,10 @@
+
+
+
+
+### 1.3.49 - 18.10.2024
+* Performance optimization: Faster type-checks
+
 ### 1.3.48 - 18.10.2024
 * Fixed navigation propery parameter names on async aggregate operations
 

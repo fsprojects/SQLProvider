@@ -465,7 +465,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
                     let isUnit, asyncRet =
-                        if returnType = typeof<unit> then
+                        if Type.(=)(returnType, typeof<unit>) then
                             true, typeof<Task>
                         else
                             false, typedefof<Task<_>>.MakeGenericType([| returnType |])

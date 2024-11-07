@@ -205,7 +205,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     member __.GetColumn<'T>(key) : 'T =
         let defaultValue() =
-            if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
+            if Type.(=)(typeof<'T>, typeof<string>) then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
         match data.TryGetValue key with
         | false, _ -> defaultValue()
@@ -218,7 +218,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                 unbox arr
            // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
            | data when typeof<'T> <> data.GetType() && 
-                       typeof<'T> <> typeof<obj> &&
+                       Type.(<>)(typeof<'T>, typeof<obj>) &&
                        (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
@@ -230,7 +230,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            match dataitem with
            | null -> None
            | :? System.DBNull -> None
-           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> Some(unbox data)
 
     member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
@@ -240,7 +240,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
            match dataitem with
            | null -> ValueNone
            | :? System.DBNull -> ValueNone
-           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> ValueSome(unbox data)
 
     member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
