@@ -123,39 +123,39 @@ module internal Utilities =
             else convertTypes itm (returnType.GenericTypeArguments.[0])
         else
         match itm, returnType with
-        | :? string as s, t when t = typeof<String> -> s |> box
-        | :? string as s, t when t = typeof<Int32> && Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s, t when t = typeof<Decimal> && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s, t when t = typeof<Int64> && Int64.TryParse s |> fst -> Int64.Parse s |> box
-        | :? string as s, t when t = typeof<Single> && Single.TryParse s |> fst -> Single.Parse s |> box
-        | :? string as s, t when t = typeof<UInt32> && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
-        | :? string as s, t when t = typeof<Double> && Double.TryParse s |> fst -> Double.Parse s |> box
-        | :? string as s, t when t = typeof<UInt64> && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
-        | :? string as s, t when t = typeof<Int16> && Int16.TryParse s |> fst -> Int16.Parse s |> box
-        | :? string as s, t when t = typeof<UInt16> && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
-        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? string as s, t when t = typeof<Boolean> && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
-        | :? string as s, t when t = typeof<Byte> && Byte.TryParse s |> fst -> Byte.Parse s |> box
-        | :? string as s, t when t = typeof<SByte> && SByte.TryParse s |> fst -> SByte.Parse s |> box
-        | :? string as s, t when t = typeof<Char> && Char.TryParse s |> fst -> Char.Parse s |> box
-        | :? string as s, t when t = typeof<DateTimeOffset> && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
-        | :? string as s, t when t = typeof<TimeSpan> && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<String>) -> s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int32>) && Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Decimal>) && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int64>) && Int64.TryParse s |> fst -> Int64.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Single>) && Single.TryParse s |> fst -> Single.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt32>) && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Double>) && Double.TryParse s |> fst -> Double.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt64>) && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int16>) && Int16.TryParse s |> fst -> Int16.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt16>) && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<DateTime>) && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Boolean>) && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Byte>) && Byte.TryParse s |> fst -> Byte.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<SByte>) && SByte.TryParse s |> fst -> SByte.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
         | _ -> 
-            if returnType = typeof<String> then Convert.ToString itm |> box
-            elif returnType = typeof<Int32> then Convert.ToInt32 itm |> box
-            elif returnType = typeof<Decimal> then Convert.ToDecimal itm |> box
-            elif returnType = typeof<Int64> then Convert.ToInt64 itm |> box
-            elif returnType = typeof<Single> then Convert.ToSingle itm |> box
-            elif returnType = typeof<UInt32> then Convert.ToUInt32 itm |> box
-            elif returnType = typeof<Double> then Convert.ToDouble itm |> box
-            elif returnType = typeof<UInt64> then Convert.ToUInt64 itm |> box
-            elif returnType = typeof<Int16> then Convert.ToInt16 itm |> box
-            elif returnType = typeof<UInt16> then Convert.ToUInt16 itm |> box
-            elif returnType = typeof<DateTime> then Convert.ToDateTime itm |> box
-            elif returnType = typeof<Boolean> then Convert.ToBoolean itm |> box
-            elif returnType = typeof<Byte> then Convert.ToByte itm |> box
-            elif returnType = typeof<SByte> then Convert.ToSByte itm |> box
-            elif returnType = typeof<Char> then Convert.ToChar itm |> box
+            if Type.(=) (returnType, typeof<String>) then Convert.ToString itm |> box
+            elif Type.(=) (returnType, typeof<Int32>) then Convert.ToInt32 itm |> box
+            elif Type.(=) (returnType, typeof<Decimal>) then Convert.ToDecimal itm |> box
+            elif Type.(=) (returnType, typeof<Int64>) then Convert.ToInt64 itm |> box
+            elif Type.(=) (returnType, typeof<Single>) then Convert.ToSingle itm |> box
+            elif Type.(=) (returnType, typeof<UInt32>) then Convert.ToUInt32 itm |> box
+            elif Type.(=) (returnType, typeof<Double>) then Convert.ToDouble itm |> box
+            elif Type.(=) (returnType, typeof<UInt64>) then Convert.ToUInt64 itm |> box
+            elif Type.(=) (returnType, typeof<Int16>) then Convert.ToInt16 itm |> box
+            elif Type.(=) (returnType, typeof<UInt16>) then Convert.ToUInt16 itm |> box
+            elif Type.(=) (returnType, typeof<DateTime>) then Convert.ToDateTime itm |> box
+            elif Type.(=) (returnType, typeof<Boolean>) then Convert.ToBoolean itm |> box
+            elif Type.(=) (returnType, typeof<Byte>) then Convert.ToByte itm |> box
+            elif Type.(=) (returnType, typeof<SByte>) then Convert.ToSByte itm |> box
+            elif Type.(=) (returnType, typeof<Char>) then Convert.ToChar itm |> box
             else itm |> box
 
     /// Standard SQL. Provider spesific overloads can be done before this.

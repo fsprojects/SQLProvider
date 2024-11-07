@@ -35,7 +35,7 @@ module internal QueryExpressionTransformer =
         let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
                 OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) | KeyColumn(_) as coltyp),rtyp) as oper))) as exp]) when 
-                    (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
+                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
                 let resolved = Utilities.resolveTuplePropertyName entity tupleIndex
                 let al = if String.IsNullOrEmpty resolved then sourceAlias else resolved
                 Some ((al,coltyp,rtyp), exp, oper.Type)
@@ -46,7 +46,7 @@ module internal QueryExpressionTransformer =
 
         let (|SingleTable|MultipleTables|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when
-                    (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && aliasEntityDict.Count < 2 ->
+                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && aliasEntityDict.Count < 2 ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
@@ -75,7 +75,7 @@ module internal QueryExpressionTransformer =
         
         let (|SourceTupleGet|_|) (e:Expression) =
             match e with
-            | PropertyGet(Some(ParamWithName "tupledArg"), info) when info.PropertyType = typeof<SqlEntity> ->
+            | PropertyGet(Some(ParamWithName "tupledArg"), info) when Type.(=)(info.PropertyType, typeof<SqlEntity>) ->
                 let alias = Utilities.resolveTuplePropertyName (e :?> MemberExpression).Member.Name tupleIndex
                 match aliasEntityDict.TryGetValue alias with
                 | true, aliasVal ->
@@ -86,7 +86,7 @@ module internal QueryExpressionTransformer =
                     else None
             | MethodCall(Some(PropertyGet(Some(ParamWithName "tupledArg"),info) as getter),
                          (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
-                         [String key]) when info.PropertyType = typeof<SqlEntity> ->
+                         [String key]) when Type.(=)(info.PropertyType, typeof<SqlEntity>) ->
                 let alias = Utilities.resolveTuplePropertyName (getter :?> MemberExpression).Member.Name tupleIndex
                 match aliasEntityDict.TryGetValue alias with
                 | true, aliasVal ->
@@ -97,7 +97,7 @@ module internal QueryExpressionTransformer =
                     else None
             | eOther when eOther.NodeType.ToString().Contains("Parameter") && (eOther :? ParameterExpression) ->
                 let param = eOther :?> ParameterExpression
-                if param.Type = typeof<SqlEntity> then
+                if Type.(=)(param.Type, typeof<SqlEntity>) then
                     let alias = Utilities.resolveTuplePropertyName (param.Name) tupleIndex
                     match aliasEntityDict.TryGetValue alias with
                     | true, aliasVal ->
@@ -108,7 +108,7 @@ module internal QueryExpressionTransformer =
                         else None
                 else None
             | PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) 
-                    when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                    when nestedTuple.Name = "Item8" && Type.(=)(info.PropertyType, typeof<SqlEntity>) && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
                 // After 7 members tuple starts to nest Item:s.
                 let foundMember, name = Int32.TryParse((e :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
@@ -120,7 +120,7 @@ module internal QueryExpressionTransformer =
                 | false, _ -> None
             | MethodCall(Some(PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) as getter),
                          (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
-                         [String key]) when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                         [String key]) when nestedTuple.Name = "Item8" && Type.(=)(info.PropertyType, typeof<SqlEntity>) && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
                 let foundMember, name = Int32.TryParse((getter :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
                 else
@@ -169,7 +169,7 @@ module internal QueryExpressionTransformer =
                     (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping")) || hasInnerdSelect.IsSome
 
                 let isNumType (ty:Type) =
-                    decimalTypes  |> Seq.exists(fun t -> t = ty) || integerTypes |> Seq.exists(fun t -> t = ty)
+                    decimalTypes  |> Seq.exists(fun t -> Type.(=)(t, ty)) || integerTypes |> Seq.exists(fun t -> Type.(=)(t, ty))
 
                 let op =
                     if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter ||
@@ -350,7 +350,7 @@ module internal QueryExpressionTransformer =
                                 mi,Expression.Constant(key))))
 
             | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi),[String key]) 
-                    when p.Type = typeof<SqlEntity> ->
+                    when Type.(=)(p.Type, typeof<SqlEntity>) ->
 
                 let foundAlias = 
                     if aliasEntityDict.ContainsKey(pname) then ValueSome pname
@@ -402,7 +402,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.ArrayLength,        (:? UnaryExpression as e)       -> upcast Expression.ArrayLength(transform en e.Operand)
             | ExpressionType.Quote,              (:? UnaryExpression as e)       -> upcast Expression.Quote(transform en e.Operand)
             | ExpressionType.TypeAs,             (:? UnaryExpression as e)       -> upcast Expression.TypeAs(transform en e.Operand,e.Type)
-            | ExpressionType.Add,                (:? BinaryExpression as e)  when e.Left.Type = typeof<string> && e.Right.Type = typeof<string> -> 
+            | ExpressionType.Add,                (:? BinaryExpression as e)  when Type.(=) (e.Left.Type, typeof<string>) && Type.(=)(e.Right.Type, typeof<string>) -> 
                                                                              // http://stackoverflow.com/questions/7027384/the-binary-operator-add-is-not-defined-for-the-types-system-string-and-syste
                                                                              let concatMethod = typeof<string>.GetMethod("Concat", [| typeof<string>; typeof<string> |]); 
                                                                              upcast Expression.Add(transform en e.Left, transform en e.Right, concatMethod)
@@ -470,7 +470,7 @@ module internal QueryExpressionTransformer =
                                                                                         upcast transformed
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
                                                                                     if  exType.IsGenericType
-                                                                                        && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition()
+                                                                                        && Type.(=)(exType.GetGenericTypeDefinition(), typeof<Expression<obj>>.GetGenericTypeDefinition())
                                                                                         && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
                                                                                         upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
                                                                                     else
@@ -565,12 +565,12 @@ module internal QueryExpressionTransformer =
                         let callEntityType (exp:Expression) =
                             exp.NodeType = ExpressionType.Call &&
                             (not(isNull (exp :?> MethodCallExpression).Object)) && 
-                            (exp :?> MethodCallExpression).Object.Type = typeof<SqlEntity>
+                            Type.(=)((exp :?> MethodCallExpression).Object.Type, typeof<SqlEntity>)
                         
                         let rec tupleofentities (tupleType:Type) =
                             if (tupleType.Name.StartsWith("AnonymousObject") || tupleType.Name.StartsWith("Tuple")) then
                                 let ps = tupleType.GetGenericArguments()
-                                ps |> Seq.forall(fun t -> (not(isNull t)) && (t = typeof<SqlEntity> || (tupleofentities t))) 
+                                ps |> Seq.forall(fun t -> (not(isNull t)) && (Type.(=)(t, typeof<SqlEntity>) || (tupleofentities t))) 
                             else false
 
                         if e.NodeType = ExpressionType.New then

@@ -92,7 +92,7 @@ module PostgreSQL =
 
     let createCommandParameter (param:QueryParameter) value =
         let normalizedValue =
-            if not (isOptionValue value) then (if isNull value || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
+            if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- 

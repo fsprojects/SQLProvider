@@ -1,3 +1,6 @@
+### 1.4.2 - 07.11.2024
+* Performance optimization: Faster type-checks
+
 ### 1.4.1 - 18.10.2024
 * Fixed navigation propery parameter names on async aggregate operations
 * Better ConditionalExpression with ConstantExpression evaluation
@@ -6,6 +9,9 @@
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
+
+### 1.3.49 - 07.11.2024
+* Performance optimization: Faster type-checks
 
 ### 1.3.48 - 18.10.2024
 * Fixed navigation propery parameter names on async aggregate operations
