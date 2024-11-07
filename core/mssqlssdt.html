@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -260,7 +260,7 @@
 <p>The SsdtPath must point to a .dacpac file.</p>
 <h4><a name="Notes" class="anchor" href="#Notes">Notes:</a></h4>
 <ul>
-<li>A .dacpac file is generated when an SSDT project is built and can be found in the bin/Debug folder.</li>
+<li>A .dacpac file is generated when an SSDT project is built, and can be found in the bin/Debug folder.</li>
 <li>For development, you can set the SsdtPath to point to the generated .dacpac file in the SSDT project Debug folder. (Using a <code>[&lt;Literal&gt;]</code> ssdtPath allows relative pathing).</li>
 <li>For deployment, the SSDT provider will search for the .dacpac file in the entry assembly folder.</li>
 <li>Linking the generated .dacpac file to your project and setting it to <code>CopyToOutputDirectory</code> will ensure that it will exist in the assembly folder for deployment.</li>
@@ -275,12 +275,12 @@
 <span class="c">//DB.GetDataContext().``Design Time Commands``.ClearDatabaseSchemaCache</span>
 </code></pre>
 <h4><a name="Reloading-the-schema" class="anchor" href="#Reloading-the-schema">Reloading the schema</a></h4>
-<p>Keeping the above Design Time Command commented out just below your SqlDataProvider type helps refresh the generated types after a schema change.</p>
+<p>It is helpful to keep the above Design Time Command commented out just below your SqlDataProvider type for refreshing the generated types after a schema change.</p>
 <h2><a name="Optional-Parameters" class="anchor" href="#Optional-Parameters">Optional Parameters</a></h2>
 <h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
 <p>If FSharp.Data.Sql.Common.NullableColumnType.OPTION, F# option types will be used in place of nullable database columns. If NO_OPTION, you will always receive the default value of the column's type even if it is null in the database.</p>
 <h3><a name="Table-Names-Filter" class="anchor" href="#Table-Names-Filter">Table Names Filter</a></h3>
-<p>The SSDT provider currently supports a simple comma-delimited list of allowed table names (wildcards are not currently supported).</p>
+<p>The SSDT provider currently supports a simple comma delimited list of allowed table names (wildcards are not currently supported).</p>
 <h2><a name="AdventureWorks-Example" class="anchor" href="#AdventureWorks-Example">AdventureWorks Example</a></h2>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 18)" onmouseover="showTip(event, 'fs13', 18)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="rt">DB</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
@@ -294,12 +294,12 @@
 <h2><a name="What-is-SSDT" class="anchor" href="#What-is-SSDT">What is SSDT?</a></h2>
 <p>SQL Server Data Tools (SSDT) is a modern development tool for building SQL Server relational databases, databases in Azure SQL,
 Analysis Services (AS) data models, Integration Services (IS) packages, and Reporting Services (RS) reports.</p>
-<p>It allows you to quickly compare and synchronize schema changes between your SQL Server database and the current state of your .sql scripts in source control.
+<p>It allows you to easily compare and synchronize schema changes between your SQL Server database and the current state of your .sql scripts in source control.
 Schemas can be synchronized bi-directionally (SSDT -&gt; SQL Server or SQL Server -&gt; SSDT).</p>
 <h3><a name="Advantages-of-using-the-SSDT-provider" class="anchor" href="#Advantages-of-using-the-SSDT-provider">Advantages of using the SSDT provider</a></h3>
-<p>The main advantage of using the SSDT provider is that it does not require a live connection to the database.
-This makes running on a build server easier without manually spinning up a database instance.</p>
-<p>Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch so that each branch can compile according to its local schema snapshot.</p>
+<p>The main advantage to using the SSDT provider is that it does not require a live connection to the database.
+This makes it easier to run on a build server without having to manually spin up a database instance.</p>
+<p>Another advantage is that since your SSDT scripts are checked into your source control, you can easily have different schemas in each branch, so each branch can compile according its local schema snapshot.</p>
 <h3><a name="How-to-create-an-SSDT-Project" class="anchor" href="#How-to-create-an-SSDT-Project">How to create an SSDT Project</a></h3>
 <p>SSDT Projects can be created in two ways:
 * Visual Studio <a href="https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt?view=sql-server-ver15">SSDT</a>
@@ -307,7 +307,7 @@ This makes running on a build server easier without manually spinning up a datab
 <h2><a name="Known-Issues" class="anchor" href="#Known-Issues">Known Issues</a></h2>
 <h3><a name="Tables" class="anchor" href="#Tables">Tables</a></h3>
 <ul>
-<li>User-defined data types are not yet supported</li>
+<li>User defined data types are not yet supported</li>
 <li>Computed table columns will default to a data type of <code>System.Object</code> since the data type is not listed in the .dacpac file. (See Type Annotations below.)</li>
 </ul>
 <h3><a name="Views" class="anchor" href="#Views">Views</a></h3>
@@ -315,7 +315,7 @@ This makes running on a build server easier without manually spinning up a datab
 <li>Computed view columns will default to a data type of <code>System.Object</code> since the data type is not listed in the .dacpac file. (See Type Annotations below.)</li>
 </ul>
 <h4><a name="Type-Annotations" class="anchor" href="#Type-Annotations">Type Annotations</a></h4>
-<p>As a workaround for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.</p>
+<p>As a work-around for computed table and view columns having unresolved data types, the SSDT provider allows you to add type annotations directly to the table or view as in-line comments.</p>
 <p>In the SalesOrderDetail.sql example table below, <code>[LineTotal]</code> is a computed column. Since the .dacpac file cannot determine the datatype for computed columns, the data type of the generated property will be defaulted to <code>obj</code>.
 As a workaround, an in-line type annotation <code>/* MONEY NOT NULL /*</code> can be added.
 NOTE: for computed table columns, the comment annotation must be contained within the parentheses.</p>
@@ -342,9 +342,9 @@ Adding a type annotation within an in-line comment will inform the SSDT provider
 </code></pre></td></tr></table>
 <h5><a name="Notes-1" class="anchor" href="#Notes-1">Notes:</a></h5>
 <ul>
-<li>If no null constraint is added after the column type, nulls will be allowed by default.</li>
+<li>If no null constraint is added after the column type, it will allow nulls by default.</li>
 <li>The annotations are case-insensitive.</li>
-<li>Hovering over a generated view property will designate if the data type was derived from a type annotation (or if it needs one).</li>
+<li>Hovering over a generated view property will designate if the data type was derived from a type annotations (or if it needs one).</li>
 <li>Do not include length information in the type annotation. For example, use <code>varchar</code>, not <code>varchar(20)</code>.</li>
 </ul>
 <h3><a name="Functions" class="anchor" href="#Functions">Functions</a></h3>

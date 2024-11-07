@@ -67,7 +67,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -246,8 +246,8 @@
 <main>
     <div id="content">
         <h2><a name="Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db" class="anchor" href="#Adding-a-Mapper-using-dataContext-to-use-generated-types-from-db">Adding a Mapper using dataContext to use generated types from db</a></h2>
-<p>This mapper will ensure that you always sync your types with those you receive from your DB.</p>
-<p>First, add a Domain Model</p>
+<p>This mapper will get sure that you always sync your types with types you receive from your db.</p>
+<p>First add an Domain Model</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">System</span>
 
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="rt">Employee</span> <span class="o">=</span> <span class="pn">{</span>
@@ -278,8 +278,8 @@
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs36', 54)" onmouseover="showTip(event, 'fs36', 54)" class="id">qry</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs37', 55)" onmouseover="showTip(event, 'fs37', 55)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs38', 56)" onmouseover="showTip(event, 'fs38', 56)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs33', 57)" onmouseover="showTip(event, 'fs33', 57)" class="id">employees</span> <span class="k">do</span>
                   <span onmouseout="hideTip(event, 'fs39', 58)" onmouseover="showTip(event, 'fs39', 58)" class="k">select</span> <span onmouseout="hideTip(event, 'fs38', 59)" onmouseover="showTip(event, 'fs38', 59)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 60)" onmouseover="showTip(event, 'fs40', 60)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 61)" onmouseover="showTip(event, 'fs41', 61)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs42', 62)" onmouseover="showTip(event, 'fs42', 62)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs42', 63)" onmouseover="showTip(event, 'fs42', 63)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs43', 64)" onmouseover="showTip(event, 'fs43', 64)" class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs35', 65)" onmouseover="showTip(event, 'fs35', 65)" class="rt">Employee2</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
 </code></pre>
-<p>The target type can be a record (as in the example) or a class type with properties named as the source columns and with a parameterless setter.
-The target field name can also be different than the column name; in this case, it must be decorated with the MappedColumnAttribute custom attribute:</p>
+<p>The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
+The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 66)" onmouseover="showTip(event, 'fs4', 66)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 67)" onmouseover="showTip(event, 'fs5', 67)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 68)" onmouseover="showTip(event, 'fs6', 68)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 69)" onmouseover="showTip(event, 'fs9', 69)" class="id">Common</span>
 
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs44', 70)" onmouseover="showTip(event, 'fs44', 70)" class="rt">Employee3</span> <span class="o">=</span> <span class="pn">{</span>
@@ -292,7 +292,7 @@ The target field name can also be different than the column name; in this case, 
                 <span class="k">for</span> <span onmouseout="hideTip(event, 'fs38', 77)" onmouseover="showTip(event, 'fs38', 77)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs33', 78)" onmouseover="showTip(event, 'fs33', 78)" class="id">employees</span> <span class="k">do</span>
                 <span onmouseout="hideTip(event, 'fs39', 79)" onmouseover="showTip(event, 'fs39', 79)" class="k">select</span> <span onmouseout="hideTip(event, 'fs38', 80)" onmouseover="showTip(event, 'fs38', 80)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 81)" onmouseover="showTip(event, 'fs40', 81)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 82)" onmouseover="showTip(event, 'fs41', 82)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs42', 83)" onmouseover="showTip(event, 'fs42', 83)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs42', 84)" onmouseover="showTip(event, 'fs42', 84)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 85)" onmouseover="showTip(event, 'fs47', 85)" class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs44', 86)" onmouseover="showTip(event, 'fs44', 86)" class="rt">Employee3</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
 </code></pre>
-<p>Or alternatively, the ColumnValues from  SQLEntity can be used to create a map, with the
+<p>Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
 column as a key:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 87)" onmouseover="showTip(event, 'fs48', 87)" class="id">rows</span> <span class="o">=</span> 
         <span onmouseout="hideTip(event, 'fs37', 88)" onmouseover="showTip(event, 'fs37', 88)" class="k">query</span> <span class="pn">{</span> 
@@ -370,17 +370,17 @@ type CaseSensitivityChange =
 <div class="fsdocs-tip" id="fs19">Multiple items<br />val string: value: &#39;T -&gt; string<br /><br />--------------------<br />type string = String</div>
 <div class="fsdocs-tip" id="fs20">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
+  new: year: int * month: int * day: int -&gt; unit + 10 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
-  member AddMicroseconds: value: float -&gt; DateTime
   member AddMilliseconds: value: float -&gt; DateTime
   member AddMinutes: value: float -&gt; DateTime
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+  member AddYears: value: int -&gt; DateTime
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs21">val mapEmployee: dbRecord: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; Employee</div>
 <div class="fsdocs-tip" id="fs22">val dbRecord: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
 <div class="fsdocs-tip" id="fs23">type dataContext =

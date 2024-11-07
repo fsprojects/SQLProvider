@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -279,7 +279,7 @@
 <p>Submit updates to the database</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs17', 90)" onmouseover="showTip(event, 'fs17', 90)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 91)" onmouseover="showTip(event, 'fs48', 91)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
-<p>After updating, your item (row) will have the Id property.</p>
+<p>After updating your item (row) will have the Id property.</p>
 <p>You can also create with the longer ``Create(...)``(parameters)-method like this:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs49', 239)" onmouseover="showTip(event, 'fs49', 239)" class="id">emp</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 240)" onmouseover="showTip(event, 'fs17', 240)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 241)" onmouseover="showTip(event, 'fs20', 241)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 242)" onmouseover="showTip(event, 'fs23', 242)" class="prop">Employees</span><span class="pn">.</span><span class="id">``Create(FirstName, LastName)``</span><span class="pn">(</span><span class="s">&quot;Don&quot;</span><span class="pn">,</span> <span class="s">&quot;Syme&quot;</span><span class="pn">)</span>
 </code></pre>
@@ -364,7 +364,7 @@ assuming Id is unique</p>
 <span onmouseout="hideTip(event, 'fs66', 185)" onmouseover="showTip(event, 'fs66', 185)" class="fn">updateEmployee</span> <span onmouseout="hideTip(event, 'fs83', 186)" onmouseover="showTip(event, 'fs83', 186)" class="id">john</span>
 <span onmouseout="hideTip(event, 'fs80', 187)" onmouseover="showTip(event, 'fs80', 187)" class="fn">updateEmployee&#39;</span> <span onmouseout="hideTip(event, 'fs83', 188)" onmouseover="showTip(event, 'fs83', 188)" class="id">john</span>
 </code></pre>
-<p>Finally it is also possible to specify a seq of <code>string * obj</code>, which is precisely the
+<p>Finally it is also possible to specify a seq of <code>string * obj</code> which is exactly the
 output of .ColumnValues:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs22', 189)" onmouseover="showTip(event, 'fs22', 189)" class="id">employees</span> 
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs26', 190)" onmouseover="showTip(event, 'fs26', 190)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs84', 191)" onmouseover="showTip(event, 'fs84', 191)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs85', 192)" onmouseover="showTip(event, 'fs85', 192)" class="fn">x</span> <span class="k">-&gt;</span>
@@ -377,7 +377,7 @@ output of .ColumnValues:</p>
 <span onmouseout="hideTip(event, 'fs17', 203)" onmouseover="showTip(event, 'fs17', 203)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs89', 204)" onmouseover="showTip(event, 'fs89', 204)" class="id">GetUpdates</span><span class="pn">(</span><span class="pn">)</span> <span class="c">// Get the updates</span>
 <span onmouseout="hideTip(event, 'fs17', 205)" onmouseover="showTip(event, 'fs17', 205)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 206)" onmouseover="showTip(event, 'fs48', 206)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span> <span class="c">// no record is added</span>
 </code></pre>
-<p>Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So, if you have query-operation before SubmitUpdates, you should create your own transaction to wrap these into the same transaction.</p>
+<p>Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.</p>
 <p>SQLProvider also supports async database operations:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs17', 207)" onmouseover="showTip(event, 'fs17', 207)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs91', 208)" onmouseover="showTip(event, 'fs91', 208)" class="id">SubmitUpdatesAsync</span><span class="pn">(</span><span class="pn">)</span> <span class="c">// |&gt; Async.AwaitTask</span>
         
@@ -401,7 +401,7 @@ output of .ColumnValues:</p>
 <span onmouseout="hideTip(event, 'fs17', 230)" onmouseover="showTip(event, 'fs17', 230)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 231)" onmouseover="showTip(event, 'fs48', 231)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <h3><a name="Delete-query-for-multiple-items" class="anchor" href="#Delete-query-for-multiple-items">Delete-query for multiple items</a></h3>
-<p>To delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call <code>ctx.SubmitUpdates()</code>.</p>
+<p>If you want to delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call <code>ctx.SubmitUpdates()</code>.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs69', 232)" onmouseover="showTip(event, 'fs69', 232)" class="k">query</span> <span class="pn">{</span>
     <span class="k">for</span> <span onmouseout="hideTip(event, 'fs95', 233)" onmouseover="showTip(event, 'fs95', 233)" class="fn">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs17', 234)" onmouseover="showTip(event, 'fs17', 234)" class="id">ctx</span><span class="pn">.</span><span class="id">Dbo</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
     <span onmouseout="hideTip(event, 'fs71', 235)" onmouseover="showTip(event, 'fs71', 235)" class="k">where</span> <span class="pn">(</span><span class="o">..</span><span class="pn">.</span><span class="pn">)</span>
@@ -459,7 +459,7 @@ for example:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs49', 296)" onmouseover="showTip(event, 'fs49', 296)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs119', 297)" onmouseover="showTip(event, 'fs119', 297)" class="id">SetColumn</span><span class="pn">(</span><span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs30', 298)" onmouseover="showTip(event, 'fs30', 298)" class="vt">DateTime</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs111', 299)" onmouseover="showTip(event, 'fs111', 299)" class="id">UtcNow</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs113', 300)" onmouseover="showTip(event, 'fs113', 300)" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs107', 301)" onmouseover="showTip(event, 'fs107', 301)" class="fn">box</span><span class="pn">)</span>
 <span onmouseout="hideTip(event, 'fs17', 302)" onmouseover="showTip(event, 'fs17', 302)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 303)" onmouseover="showTip(event, 'fs48', 303)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
-<p>SetColumn takes an object, giving you more control over the type serialization.</p>
+<p>SetColumn takes object, so you have more control over the type serialization.</p>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
@@ -535,18 +535,18 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs29">val now: DateTime</div>
 <div class="fsdocs-tip" id="fs30">Multiple items<br />[&lt;Struct&gt;]
 type DateTime =
-  new: date: DateOnly * time: TimeOnly -&gt; unit + 16 overloads
+  new: year: int * month: int * day: int -&gt; unit + 10 overloads
   member Add: value: TimeSpan -&gt; DateTime
   member AddDays: value: float -&gt; DateTime
   member AddHours: value: float -&gt; DateTime
-  member AddMicroseconds: value: float -&gt; DateTime
   member AddMilliseconds: value: float -&gt; DateTime
   member AddMinutes: value: float -&gt; DateTime
   member AddMonths: months: int -&gt; DateTime
   member AddSeconds: value: float -&gt; DateTime
   member AddTicks: value: int64 -&gt; DateTime
-  ...<br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(date: DateOnly, time: TimeOnly, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="fsdocs-tip" id="fs31">property DateTime.Now: DateTime with get</div>
+  member AddYears: value: int -&gt; DateTime
+  ...<br /><em>&lt;summary&gt;Represents an instant in time, typically expressed as a date and time of day.&lt;/summary&gt;</em><br /><br />--------------------<br />DateTime ()<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(ticks: int64, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, calendar: Globalization.Calendar) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />DateTime(year: int, month: int, day: int, hour: int, minute: int, second: int, millisecond: int, kind: DateTimeKind) : DateTime<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs31">property DateTime.Now: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the local time.&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current local date and time.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs32">val row: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
 <div class="fsdocs-tip" id="fs33">SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders.Create() : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity<br />SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders.Create(data: Collections.Generic.IEnumerable&lt;string * obj&gt;) : SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity<br /><em>&lt;summary&gt;Item array of database columns: 
 &lt;/summary&gt;</em></div>
@@ -649,11 +649,7 @@ Calls Linq.QueryBuilder.ExactlyOneOrDefault</div>
 type OnConflict =
   | Throw
   | Update
-  | DoNothing
-  member Equals: OnConflict * IEqualityComparer -&gt; bool
-  member IsDoNothing: bool
-  member IsThrow: bool
-  member IsUpdate: bool</div>
+  | DoNothing</div>
 <div class="fsdocs-tip" id="fs94">union case Common.OnConflict.Update: Common.OnConflict<br /><em>&lt;summary&gt;
  If the primary key already exists, updates the existing row&#39;s columns to match the new entity.
  Currently supported only on PostgreSQL 9.5+
@@ -683,9 +679,9 @@ type OnConflict =
 <div class="fsdocs-tip" id="fs106">union case CanonicalOp.Replace: SqlItemOrColumn * SqlItemOrColumn -&gt; CanonicalOp</div>
 <div class="fsdocs-tip" id="fs107">val box: value: &#39;T -&gt; obj</div>
 <div class="fsdocs-tip" id="fs108">val bdate: DateTime</div>
-<div class="fsdocs-tip" id="fs109">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
+<div class="fsdocs-tip" id="fs109">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
 <div class="fsdocs-tip" id="fs110">DateTime.AddYears(value: int) : DateTime</div>
-<div class="fsdocs-tip" id="fs111">property DateTime.UtcNow: DateTime with get</div>
+<div class="fsdocs-tip" id="fs111">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
 <div class="fsdocs-tip" id="fs112">val failwith: message: string -&gt; &#39;T</div>
 <div class="fsdocs-tip" id="fs113">DateTime.ToString() : string<br />DateTime.ToString(format: string) : string<br />DateTime.ToString(provider: IFormatProvider) : string<br />DateTime.ToString(format: string, provider: IFormatProvider) : string</div>
 <div class="fsdocs-tip" id="fs114">val others: string * obj</div>
