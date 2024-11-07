@@ -477,66 +477,79 @@ That's why SQLProvider short-circuits and optimises your queries as much as poss
 <th align="right"><p>Mean</p></th>
 <th align="right"><p>Error</p></th>
 <th align="right"><p>StdDev</p></th>
-<th align="right"><p>Median</p></th>
 <th align="right"><p>Ratio</p></th>
 <th align="right"><p>RatioSD</p></th>
 <th align="right"><p>Gen0</p></th>
 <th align="right"><p>Gen1</p></th>
-<th align="right"><p>Gen2</p></th>
+<th align="right"><p>Allocated</p></th>
+<th align="right"><p>Alloc Ratio</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>25</strong></p></td>
-<td align="right"><p><strong>1.110 ms</strong></p></td>
-<td align="right"><p><strong>0.0222 ms</strong></p></td>
-<td align="right"><p><strong>0.0618 ms</strong></p></td>
-<td align="right"><p><strong>1.096 ms</strong></p></td>
+<td align="right"><p><strong>1.098 ms</strong></p></td>
+<td align="right"><p><strong>0.0218 ms</strong></p></td>
+<td align="right"><p><strong>0.0312 ms</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
 <td align="right"><p><strong>0.00</strong></p></td>
 <td align="right"><p><strong>27.3438</strong></p></td>
 <td align="right"><p><strong>11.7188</strong></p></td>
-<td align="right"><p><strong>0</strong></p></td>
+<td align="right"><p><strong>357.65 KB</strong></p></td>
+<td align="right"><p><strong>1.00</strong></p></td>
 </tr>
 <tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>25</p></td>
-<td align="right"><p>1.257 ms</p></td>
-<td align="right"><p>0.0460 ms</p></td>
-<td align="right"><p>0.1326 ms</p></td>
-<td align="right"><p>1.300 ms</p></td>
-<td align="right"><p>1.14</p></td>
-<td align="right"><p>0.13</p></td>
-<td align="right"><p>29.2969</p></td>
-<td align="right"><p>13.6719</p></td>
-<td align="right"><p>0</p></td>
+<td align="right"><p>1.123 ms</p></td>
+<td align="right"><p>0.0223 ms</p></td>
+<td align="right"><p>0.0435 ms</p></td>
+<td align="right"><p>1.03</p></td>
+<td align="right"><p>0.05</p></td>
+<td align="right"><p>27.3438</p></td>
+<td align="right"><p>11.7188</p></td>
+<td align="right"><p>358.94 KB</p></td>
+<td align="right"><p>1.00</p></td>
 </tr>
 <tr class="odd">
-<td><p><strong>FirstNamesToList</strong></p></td>
-<td><p><strong>2500</strong></p></td>
-<td align="right"><p><strong>2.845 ms</strong></p></td>
-<td align="right"><p><strong>0.0561 ms</strong></p></td>
-<td align="right"><p><strong>0.0709 ms</strong></p></td>
-<td align="right"><p><strong>2.829 ms</strong></p></td>
-<td align="right"><p><strong>1.00</strong></p></td>
-<td align="right"><p><strong>0.00</strong></p></td>
-<td align="right"><p><strong>234.3750</strong></p></td>
-<td align="right"><p><strong>179.6875</strong></p></td>
-<td align="right"><p><strong>0</strong></p></td>
+<td></td>
+<td></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
 </tr>
 <tr class="even">
+<td><p><strong>FirstNamesToList</strong></p></td>
+<td><p><strong>2500</strong></p></td>
+<td align="right"><p><strong>2.678 ms</strong></p></td>
+<td align="right"><p><strong>0.0531 ms</strong></p></td>
+<td align="right"><p><strong>0.1073 ms</strong></p></td>
+<td align="right"><p><strong>1.00</strong></p></td>
+<td align="right"><p><strong>0.00</strong></p></td>
+<td align="right"><p><strong>226.5625</strong></p></td>
+<td align="right"><p><strong>164.0625</strong></p></td>
+<td align="right"><p><strong>2812.34 KB</strong></p></td>
+<td align="right"><p><strong>1.00</strong></p></td>
+</tr>
+<tr class="odd">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>2500</p></td>
-<td align="right"><p>3.030 ms</p></td>
-<td align="right"><p>0.0820 ms</p></td>
-<td align="right"><p>0.2325 ms</p></td>
-<td align="right"><p>2.946 ms</p></td>
-<td align="right"><p>1.07</p></td>
-<td align="right"><p>0.09</p></td>
-<td align="right"><p>234.3750</p></td>
+<td align="right"><p>2.697 ms</p></td>
+<td align="right"><p>0.0608 ms</p></td>
+<td align="right"><p>0.1685 ms</p></td>
+<td align="right"><p>1.01</p></td>
+<td align="right"><p>0.06</p></td>
+<td align="right"><p>226.5625</p></td>
 <td align="right"><p>171.8750</p></td>
-<td align="right"><p>0</p></td>
+<td align="right"><p>2813.27 KB</p></td>
+<td align="right"><p>1.00</p></td>
 </tr>
 </tbody>
 </table>
