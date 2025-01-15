@@ -1,3 +1,6 @@
+### 1.4.3 - 15.01.2025
+* TypeProviders SDK update
+
 ### 1.4.2 - 07.11.2024
 * Performance optimization: Faster type-checks
 
@@ -10,7 +13,10 @@
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
 
-### 1.3.49 - 07.11.2024
+### 1.3.50 - 15.01.2025
+* TypeProviders SDK update
+
+### 1.3.49 - 18.10.2024
 * Performance optimization: Faster type-checks
 
 ### 1.3.48 - 18.10.2024
