@@ -1,6 +1,8 @@
 
 
 
+### 1.3.50 - 15.01.2025
+* TypeProviders SDK update
 
 ### 1.3.49 - 18.10.2024
 * Performance optimization: Faster type-checks
