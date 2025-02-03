@@ -101,6 +101,7 @@ let ``simple select with read only context``() =
 
     let dc2 = sql.GetReadOnlyDataContext()
     // dc2 doesn't contain SubmitUpdates()
+    // This helps you to segregate read and write operations
 
     let res = 
         query {
@@ -137,6 +138,17 @@ let ``simple select with read only context should contain the same types for eas
     CollectionAssert.IsNotEmpty c2
     let sameTypes = c1.[0].GetType() = c2.[0].GetType()
     Assert.IsTrue sameTypes
+
+    // Also can be passed as readonly
+    let dc3 = dc1.AsReadOnly()
+    let res2 = 
+        query {
+            for cust in dc3.Main.Customers do
+            take 1
+            select cust
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty res2
 
 [<Test; Ignore("Not Supported")>]
 let ``simple select with last``() =

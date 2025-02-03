@@ -931,11 +931,19 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
              ]
 
         serviceType.AddMembersDelayed( fun () -> addServiceTypeMembers false)
+        serviceType.AddXmlDoc("Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.")
         rootType.AddMembers [ serviceType ]
 
         let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
         readServiceType.AddMembersDelayed( fun () -> addServiceTypeMembers true)
+        readServiceType.AddXmlDoc("readDataContext to be used in schema exploration and querying. Like dataContext but not so easy to do accidental mutations of context state.")
         rootType.AddMembers [ readServiceType ]
+        serviceType.AddMemberDelayed(fun () ->
+                    let p = ProvidedMethod("AsReadOnly", [], readServiceType, invokeCode = fun args ->
+                        let a0 = args.[0]
+                        <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> )
+                    p.AddXmlDoc ("Context can be casted as readonly to use it when function takes a readonly parameter. Type corresponds to return of GetReadOnlyDataContext()")
+                    p :> MemberInfo)
 
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
         let resolutionFolder = config.ResolutionFolder
@@ -1078,7 +1086,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 )
 
                 method.AddXmlDoc (String.Concat xmlComments)
-
+                
                 yield method
 
                 let xmlComments2 =
