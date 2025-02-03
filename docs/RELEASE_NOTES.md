@@ -1,6 +1,9 @@
 
 
 
+### 1.3.51 - 15.01.2025
+* Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
+
 ### 1.3.50 - 15.01.2025
 * TypeProviders SDK update
 
