@@ -189,6 +189,7 @@ module Seq =
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
     let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<int> = function
         | :? IWithSqlService as source ->
+            if source.DataContext.IsReadOnly then failwith "Context is readonly" else
             task {
                 let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex
                 if res = box(DBNull.Value) then return Unchecked.defaultof<int> else

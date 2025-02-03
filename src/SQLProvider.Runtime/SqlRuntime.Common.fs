@@ -190,6 +190,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member val _State = Unchanged with get, set
 
     member e.Delete() =
+        if dc.IsReadOnly then failwith "Context is readonly" else
         e._State <- Delete
         dc.SubmitChangedEntity e
 
@@ -251,6 +252,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
 
     member private e.UpdateField key =
+        if dc.IsReadOnly then failwith "Context is readonly" else
         match e._State with
         | Modified fields ->
             e._State <- Modified (key::fields)
@@ -459,6 +461,8 @@ and ISqlDataContext =
     abstract SqlOperationsInSelect      : SelectOperations
     /// Save schema offline as Json
     abstract SaveContextSchema          : string -> unit
+    /// Context meant to be read operations only
+    abstract IsReadOnly                 : bool
 
 /// This is publically exposed and used in the runtime
 type IWithDataContext =
@@ -1048,6 +1052,7 @@ module public OfflineTools =
                     member _.SubmitPendingChanges(): unit = ()
                     member _.SubmitPendingChangesAsync(): Threading.Tasks.Task<unit> = task {return ()}
                     member _.ConnectionString = ""
+                    member _.IsReadOnly = false
                }
         x :> obj |> unbox<'T>
 

@@ -158,7 +158,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
         let transactionOptions = TransactionOptions.Default
-        let designTimeDc = lazy SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath)
+        let designTimeDc = lazy SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath, true)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -558,15 +558,16 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 |> Seq.map snd
             | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
 
-        serviceType.AddMembersDelayed( fun () ->
-            let schemaMap = System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
-            let getOrAddSchema name =
-                match schemaMap.TryGetValue name with
-                | true, pt -> pt
-                | false, _  ->
-                    let pt = ProvidedTypeDefinition(name + "Schema", Some typeof<obj>, isErased=true)
-                    schemaMap.Add(name, pt)
-                    pt
+        let schemaMap = System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
+        let getOrAddSchema name =
+            match schemaMap.TryGetValue name with
+            | true, pt -> pt
+            | false, _  ->
+                let pt = ProvidedTypeDefinition(name + "Schema", Some typeof<obj>, isErased=true)
+                schemaMap.Add(name, pt)
+                pt
+
+        let addServiceTypeMembers (isReadonly:bool) =
             [
               let containers =
                     let sprocs =
@@ -579,7 +580,14 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     generateTypeTree con Map.empty sprocs
               yield! containers |> Seq.cast<MemberInfo>
 
-              for (KeyValue(key,(entityType,desc,_,schema))) in baseTypes.Force() do
+              let tableTypes =
+                    if not isReadonly then
+                        baseTypes.Force()
+                    else
+                        // For now, fore easier code sharing, let's use the same types for readonly context.
+                        [] |> dict
+
+              for (KeyValue(key,(entityType,desc,_,schema))) in tableTypes do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
                 let schemaType = getOrAddSchema schema
@@ -608,6 +616,15 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         |> Array.map(fun c -> ProvidedParameter(c.Name,Type.GetType c.TypeMapping.ClrType))
                         |> Array.sortBy(fun p -> p.Name)
                         |> Array.toList
+
+                    if isReadonly then
+                        seq {
+                         let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                            let a0 = args.[0]
+                            <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                         individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                         } |> Seq.toList
+                    else
 
                     // Create: unit -> SqlEntity
                     let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
@@ -808,22 +825,23 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
               yield! containers |> Seq.map(fun p -> ProvidedProperty(p.Name.Replace("Container",""), p, getterCode = fun args ->
                 let a0 = args.[0]
                 <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
-              let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
-              submit.AddXmlDoc("<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
-              yield submit :> MemberInfo
-              let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task>, invokeCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
-              submitAsync.AddXmlDoc("<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
-              yield submitAsync :> MemberInfo
-              yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
-              yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
+              if not isReadonly then
+                 let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args ->
+                   let a0 = args.[0]
+                   <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
+                 submit.AddXmlDoc("<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
+                 yield submit :> MemberInfo
+                 let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task>, invokeCode = fun args ->
+                   let a0 = args.[0]
+                   <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
+                 submitAsync.AddXmlDoc("<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
+                 yield submitAsync :> MemberInfo
+                 yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
+                   let a0 = args.[0]
+                   <@@ ((%%a0 : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
+                 yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
+                   let a0 = args.[0]
+                   <@@ ((%%a0 : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>, invokeCode = fun args ->
                 let a0 = args.[0]
                 <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
@@ -910,9 +928,14 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
                         let a0 = args.[0]
                         <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
-             ])
+             ]
 
+        serviceType.AddMembersDelayed( fun () -> addServiceTypeMembers false)
         rootType.AddMembers [ serviceType ]
+
+        let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
+        readServiceType.AddMembersDelayed( fun () -> addServiceTypeMembers true)
+        rootType.AddMembers [ readServiceType ]
 
         let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
         let resolutionFolder = config.ResolutionFolder
@@ -1001,7 +1024,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 |]
 
                 // The code that gets actually executed
-                let invoker (args: Expr list) =
+                let invoker (isReadOnly:bool) (args: Expr list) =
 
                   let actualArgs =
                     [|
@@ -1026,7 +1049,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                     runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
                                     tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote,
                                     sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2],
-                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath)
+                                    commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath, isReadOnly=isReadOnly)
                     :> ISqlDataContext
                   @@>
 
@@ -1051,12 +1074,30 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 , parameters = providerParams
                                 , returnType = serviceType
                                 , isStatic = true
-                                , invokeCode = invoker
+                                , invokeCode = invoker false
                                 )
 
                 method.AddXmlDoc (String.Concat xmlComments)
 
                 yield method
+
+                let xmlComments2 =
+                  [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters, without direct access to modify data.</summary>"
+                      for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                  |]
+
+                let rmethod =
+                  ProvidedMethod( methodName = "GetReadOnlyDataContext"
+                                , parameters = providerParams
+                                , returnType = readServiceType
+                                , isStatic = true
+                                , invokeCode = invoker true
+                                )
+
+                rmethod.AddXmlDoc (String.Concat xmlComments2)
+
+                yield rmethod
+
             ])
 
         match con with

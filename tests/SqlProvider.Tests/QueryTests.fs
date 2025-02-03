@@ -96,6 +96,48 @@ let ``simple select with distinct avg``() =
         }
     Assert.AreEqual(91, qry)
 
+[<Test >]
+let ``simple select with read only context``() =
+
+    let dc2 = sql.GetReadOnlyDataContext()
+    // dc2 doesn't contain SubmitUpdates()
+
+    let res = 
+        query {
+            for cust in dc2.Main.Customers do
+            take 1
+            select cust
+        } |> Seq.head
+
+    try
+        // Trying to modify will throw an exception
+        res.City <- "modified"
+    with
+    | _ ->
+        Assert.True true
+
+[<Test >]
+let ``simple select with read only context should contain the same types for easier code share``() =
+    let getCust customers =
+        let res = 
+            query {
+                for cust in customers do
+                take 1
+                select cust
+            } |> Seq.toArray
+        res
+
+    let dc1 = sql.GetDataContext()
+    let dc2 = sql.GetReadOnlyDataContext()
+
+    let c1 = getCust dc1.Main.Customers
+    let c2 = getCust dc2.Main.Customers
+
+    CollectionAssert.IsNotEmpty c1
+    CollectionAssert.IsNotEmpty c2
+    let sameTypes = c1.[0].GetType() = c2.[0].GetType()
+    Assert.IsTrue sameTypes
+
 [<Test; Ignore("Not Supported")>]
 let ``simple select with last``() =
     let dc = sql.GetDataContext()
