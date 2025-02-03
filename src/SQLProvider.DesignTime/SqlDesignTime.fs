@@ -158,7 +158,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
         let transactionOptions = TransactionOptions.Default
-        let designTimeDc = SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath)
+        let designTimeDc = lazy SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
             lazy
@@ -226,6 +226,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                       // can't support any other types
                       | _, _ -> None
 
+                   let dcDone = designTimeDc.Force()
                    let entities =
                         prov.GetSchemaCache().Individuals.GetOrAdd((table.FullName+"_"+pkName), fun k ->
                             match con with
@@ -233,7 +234,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                                 use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                                 if con.State <> ConnectionState.Open then con.Open()
                                 use reader = com.ExecuteReader()
-                                let ret = (designTimeDc :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
+                                let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
                                 if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                                 let mapped = ret |> Array.choose(fun e ->
                                      match e.GetColumn pkName with
