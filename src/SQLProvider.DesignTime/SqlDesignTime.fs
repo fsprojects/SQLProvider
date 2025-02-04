@@ -40,6 +40,8 @@ type internal CacheKey =
 
 module internal DesignTimeCache =
     let cache = System.Collections.Concurrent.ConcurrentDictionary<CacheKey,Lazy<ProvidedTypeDefinition>>()
+    let schemaMap = System.Collections.Concurrent.ConcurrentDictionary<CacheKey*string, ProvidedTypeDefinition>()
+
 
 type internal ParameterValue =
   | UserProvided of string * string * Type
@@ -62,7 +64,336 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql"
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let rec createTypes(struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)) =
+
+    let getSprocReturnColumns con (prov:ISqlProvider) sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
+        match con with
+        | Some con ->
+            let returnParams = sprocDefinition.ReturnColumns con param
+            prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
+            returnParams
+        | None ->
+            let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
+            if ok then
+                pars |> List.filter (fun p ->
+                    not (p.Name |> String.IsNullOrWhiteSpace)
+                    && (p.Direction = ParameterDirection.Output
+                    || p.Direction = ParameterDirection.InputOutput
+                    || p.Direction = ParameterDirection.ReturnValue))
+                else []
+
+    let transactionOptions = TransactionOptions.Default
+
+    let createIndividualsType (con:IDbConnection option) (prov:ISqlProvider) (table:Table) (designTimeDc:Lazy<_>) dbVendor individualsAmount tableTypeDef =
+        let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", Some typeof<obj>, isErased=true)
+        let individualsTypes = ResizeArray<_>()
+        individualsTypes.Add t
+
+        t.AddXmlDocDelayed(fun _ -> sprintf "<summary>A sample of %s individuals from the SQL object as supplied in the static parameters</summary>" table.Name)
+        t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
+        t.AddMembersDelayed( fun _ ->
+            let columns =
+                match con with
+                | Some con -> prov.GetColumns(con,table)
+                | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
+            match prov.GetPrimaryKey table with
+            | Some pkName ->
+
+                let rec (|FixedType|_|) (o:obj) =
+                    match o, o.GetType().IsValueType with
+                    // watch out for normal strings
+                    | :? string, _ -> Some o
+                    // special case for guids as they are not a supported quotable constant in the TP mechanics,
+                    // but we can deal with them as strings.
+                    | :? Guid, _ -> Some (box (o.ToString()))
+                    // Postgres also supports arrays
+                    | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> Some (box arr)
+                    // value types in general work
+                    | _, true -> Some o
+                    // can't support any other types
+                    | _, _ -> None
+
+                let dcDone = designTimeDc.Force()
+                let entities =
+                    prov.GetSchemaCache().Individuals.GetOrAdd((table.FullName+"_"+pkName), fun k ->
+                        match con with
+                        | Some con ->
+                            use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
+                            if con.State <> ConnectionState.Open then con.Open()
+                            use reader = com.ExecuteReader()
+                            let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
+                            if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
+                            let mapped = ret |> Array.choose(fun e ->
+                                    match e.GetColumn pkName with
+                                    | FixedType pkValue -> Some (pkValue, e.ColumnValues |> dict)
+                                    | _ -> None)
+                            mapped
+                        | None -> [||]
+                    )
+                if Array.isEmpty entities then [] else
+                // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
+                // inside that type the individuals will be listed again but with the text for the relevant column as the name
+                // of the property and the primary key e.g. ``1, Dennis The Squirrel``
+                let buildFieldName = SchemaProjections.buildFieldName
+
+                let propertyMap =
+                    match con with
+                    | Some con -> prov.GetColumns(con,table)
+                    | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
+                    |> Seq.choose(fun col ->
+                    if col.Key = pkName then None else
+                    let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
+                    let ty = ProvidedTypeDefinition(name, Some typeof<obj>, isErased=true)
+                    ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
+                    individualsTypes.Add ty
+                    Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args ->
+                        let a0 = args.[0]
+                        <@@ ((%%a0 : obj) :?> ISqlDataContext)@@> ))))
+                    |> Map.ofSeq
+
+                let prettyPrint (value : obj) =
+                    let dirtyName =
+                        match value with
+                        | null -> "<null>"
+                        | :? Array as a -> (sprintf "%A" a)
+                        | x -> x.ToString()
+                    dirtyName.Replace("\r", "").Replace("\n", "").Replace("\t", "")
+
+                // on the main object create a property for each entity simply using the primary key
+                let props =
+                    entities
+                    |> Array.choose(fun (pkValue, columnValues) ->
+                        let tableName = table.FullName
+                        let getterCode (args : Expr list) =
+                            let a0 = args.[0]
+                            <@@ ((%%a0 : obj) :?> ISqlDataContext).GetIndividual(tableName, pkValue) @@>
+
+                        // this next bit is just side effect to populate the "As Column" types for the supported columns
+                        for colName, colValue in columnValues |> Seq.map(fun kvp -> kvp.Key, kvp.Value) do
+                            if colName <> pkName then
+                                let colDefinition, _ = propertyMap.[colName]
+                                colDefinition.AddMemberDelayed(fun() ->
+                                    ProvidedProperty( sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
+                                                    , tableTypeDef
+                                                    , getterCode = getterCode
+                                                    )
+                                )
+                        // return the primary key property
+                        Some <| ProvidedProperty(prettyPrint pkValue
+                                                , tableTypeDef
+                                                , getterCode = getterCode
+                                                )
+                        )
+                    |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
+
+                propertyMap
+                |> Map.toSeq
+                |> Seq.map (snd >> fst)
+                |> Seq.cast<MemberInfo>
+                |> Seq.append (props |> Seq.cast<MemberInfo>)
+                |> Seq.toList
+
+            | None -> [])
+        individualsTypes :> seq<_>
+
+    let createColumnProperty (con:IDbConnection option) (prov:ISqlProvider) useOptionTypes key (c:Column) =
+        let nullable = if c.IsNullable then useOptionTypes else NullableColumnType.NO_OPTION
+        let ty = Type.GetType c.TypeMapping.ClrType
+        let propTy = match nullable with
+                        | NullableColumnType.OPTION -> typedefof<option<_>>.MakeGenericType(ty)
+                        | NullableColumnType.VALUE_OPTION -> typedefof<ValueOption<_>>.MakeGenericType(ty)
+                        | _ -> ty
+        let name = c.Name
+        let prop =
+            ProvidedProperty(
+                SchemaProjections.buildFieldName(name),propTy,
+                getterCode = (fun (args:Expr list) ->
+                    let meth = match nullable with
+                                | NullableColumnType.OPTION -> typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
+                                | NullableColumnType.VALUE_OPTION -> typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
+                                | _ ->  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                    Expr.Call(args.[0],meth,[Expr.Value name])
+                ),
+                setterCode = (fun (args:Expr list) ->
+                    match nullable with
+                    | NullableColumnType.OPTION -> 
+                        let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
+                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
+                    | NullableColumnType.VALUE_OPTION -> 
+                        let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
+                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
+                    | _ ->
+                        let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
+                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
+                    )
+        let nfo = c.TypeInfo
+        let typeInfo = match nfo with ValueNone -> "" | ValueSome x -> x.ToString()
+        match con with
+        | Some con ->
+            prop.AddXmlDocDelayed(fun () ->
+                let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
+                let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
+        | None ->
+            prop.AddXmlDocDelayed(fun () -> sprintf "<summary>Offline mode. %s</summary>" typeInfo)
+            ()
+        prop
+
+    let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (prov:ISqlProvider) (sproc:CompileTimeSprocDefinition) =
+
+        let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
+                        |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
+
+        let rt = ProvidedTypeDefinition(sprocname, Some typeof<obj>, isErased=true)
+        let resultType = ProvidedTypeDefinition("Result", Some typeof<obj>, isErased=true)
+        resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
+        rt.AddMember resultType
+        container.AddMember(rt)
+
+        resultType.AddMembersDelayed(fun () ->
+                let sprocParameters =
+                    
+                    match con with
+                    | None ->
+                        match prov.GetSchemaCache().SprocsParams.TryGetValue sprocname with
+                        | true, x -> x
+                        | false, _ -> []
+                    | Some con ->
+                        (lazy 
+                            Sql.ensureOpen con
+                            let ps = sproc.Params con
+                            prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
+                            ps).Value
+
+                let parameters =
+                    sprocParameters
+                    |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+                    |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
+                let retCols = getSprocReturnColumns con prov sprocname sproc sprocParameters |> List.toArray
+                let runtimeSproc = {Name = sproc.Name; Params = sprocParameters} : RunTimeSprocDefinition
+                let returnType =
+                    match retCols.Length with
+                    | 0 -> typeof<Unit>
+                    | _ ->
+                            let rt = ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, isErased=true)
+                            rt.AddMember(ProvidedConstructor([], empty))
+                            retCols
+                            |> Array.iter(fun col ->
+                                let name = col.Name
+                                let ty = Type.GetType col.TypeMapping.ClrType
+                                let prop =
+                                    ProvidedProperty(
+                                        name,ty,
+                                        getterCode = (fun (args:Expr list) ->
+                                            let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                            Expr.Call(args.[0],meth,[Expr.Value name])),
+                                        setterCode = (fun (args:Expr list) ->
+                                            let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
+                                            Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
+                                rt.AddMember prop)
+                            resultType.AddMember(rt)
+                            rt :> Type
+                let retColsExpr =
+                    QuotationHelpers.arrayExpr retCols |> snd
+                let isUnit, asyncRet =
+                    if Type.(=)(returnType, typeof<unit>) then
+                        true, typeof<Task>
+                    else
+                        false, typedefof<Task<_>>.MakeGenericType([| returnType |])
+                [ProvidedMethod("Invoke", parameters, returnType, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
+                        let a0 = args.[0]
+                        let tail = args.Tail
+                        <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail)) @@>));
+                    ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
+                        let a0 = args.[0]
+                        let tail = args.Tail
+                        if isUnit then
+                            <@@ task {
+                                    let! r =
+                                        (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))
+                                    return ()
+                                } :> Task @@>
+                        else
+                            <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))  @@>
+                    ))]
+        )
+
+        let niceUniqueSprocName =
+            SchemaProjections.buildSprocName(sproc.Name.ProcName)
+            |> SchemaProjections.avoidNameClashBy (container.GetProperty >> (<>) null)
+
+        let p = ProvidedProperty(niceUniqueSprocName, resultType, getterCode = (fun args ->
+            let a0 = args.[0]
+            <@@ ((%%a0 : obj) :?>ISqlDataContext) @@>) )
+        let dbName = sproc.Name.DbName
+        p.AddXmlDocDelayed(fun _ -> sprintf "<summary>%s</summary>" dbName)
+        p
+
+
+    let rec walkSproc con (prov:ISqlProvider) (path:string list) (parent:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
+        match sproc with
+        | Root(typeName, next) ->
+            let path = (path @ [typeName])
+            match createdTypes.TryFind path with
+            | Some(typ) ->
+                walkSproc con prov path (Some typ) createdTypes next
+            | None ->
+                let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
+                typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
+                walkSproc con prov path (Some typ) (createdTypes.Add(path, typ)) next
+        | Package(typeName, packageDefn) ->
+            match parent with
+            | Some(parent) ->
+                let path = (path @ [typeName])
+                let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
+                parent.AddMember(typ)
+                parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args ->
+                    let a0 = args.[0]
+                    <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>))
+                typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
+                match con with
+                | Some co ->
+                    typ.AddMembersDelayed(fun () ->
+                        (lazy
+                            Sql.ensureOpen co
+                            let p = (packageDefn.Sprocs co)
+                            prov.GetSchemaCache().Packages.AddRange p
+                            p |> List.map (generateSprocMethod typ con prov)).Value)
+                | None ->
+                    typ.AddMembersDelayed(fun () ->
+                        prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con prov))
+                createdTypes.Add(path, typ)
+            | _ -> failwithf "Could not generate package path type undefined root or previous type"
+        | Sproc(sproc) ->
+                match parent with
+                | Some(parent) ->
+                    match con with
+                    | Some co ->
+                        parent.AddMemberDelayed(fun () ->
+                            (lazy
+                                Sql.ensureOpen co
+                                generateSprocMethod parent con prov sproc
+                            ).Value)
+                        createdTypes
+                    | None ->
+                        parent.AddMemberDelayed(fun () -> generateSprocMethod parent con prov sproc); createdTypes
+                | _ -> failwithf "Could not generate sproc undefined root or previous type"
+        | Empty -> createdTypes
+
+    let rec generateTypeTree con (prov:ISqlProvider) (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) =
+        match sprocs with
+        | [] ->
+            Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
+            |> Map.toSeq
+            |> Seq.map snd
+        | sproc::rest -> generateTypeTree con prov (walkSproc con prov [] None createdTypes sproc) rest
+
+    let getOrAddSchema (args:CacheKey) (name:string) =
+        DesignTimeCache.schemaMap.GetOrAdd((args,name), fun (a,nme) ->
+            let pt = ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true)
+            pt)
+
+    let rec createTypes(args) =
+        let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
         let resolutionPath =
             if String.IsNullOrWhiteSpace resolutionPath
             then config.ResolutionFolder
@@ -139,25 +470,8 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 | Some con -> prov.GetSprocs con
                 | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
-        let getSprocReturnColumns sprocname (sprocDefinition: CompileTimeSprocDefinition) param =
-            match con with
-            | Some con ->
-                let returnParams = sprocDefinition.ReturnColumns con param
-                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
-                returnParams
-            | None ->
-                let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
-                if ok then
-                    pars |> List.filter (fun p ->
-                        not (p.Name |> String.IsNullOrWhiteSpace)
-                        && (p.Direction = ParameterDirection.Output
-                        || p.Direction = ParameterDirection.InputOutput
-                        || p.Direction = ParameterDirection.ReturnValue))
-                 else []
-
         let getTableData name = tableColumns.Force().[name].Force()
         let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
-        let transactionOptions = TransactionOptions.Default
         let designTimeDc = lazy SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath, true)
         // first create all the types so we are able to recursively reference them in each other's definitions
         let baseTypes =
@@ -196,119 +510,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         t.AddXmlDoc desc
                         yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
 
-        let createIndividualsType (table:Table) =
-            let tableTypeDef,_,_,_ = baseTypes.Force().[table.FullName]
-            let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", Some typeof<obj>, isErased=true)
-            let individualsTypes = ResizeArray<_>()
-            individualsTypes.Add t
-
-            t.AddXmlDocDelayed(fun _ -> sprintf "<summary>A sample of %s individuals from the SQL object as supplied in the static parameters</summary>" table.Name)
-            t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
-            t.AddMembersDelayed( fun _ ->
-               let columns =
-                match con with
-                | Some con -> prov.GetColumns(con,table)
-                | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
-               match prov.GetPrimaryKey table with
-               | Some pkName ->
-
-                   let rec (|FixedType|_|) (o:obj) =
-                      match o, o.GetType().IsValueType with
-                      // watch out for normal strings
-                      | :? string, _ -> Some o
-                      // special case for guids as they are not a supported quotable constant in the TP mechanics,
-                      // but we can deal with them as strings.
-                      | :? Guid, _ -> Some (box (o.ToString()))
-                      // Postgres also supports arrays
-                      | :? Array as arr, _ when dbVendor = DatabaseProviderTypes.POSTGRESQL -> Some (box arr)
-                      // value types in general work
-                      | _, true -> Some o
-                      // can't support any other types
-                      | _, _ -> None
-
-                   let dcDone = designTimeDc.Force()
-                   let entities =
-                        prov.GetSchemaCache().Individuals.GetOrAdd((table.FullName+"_"+pkName), fun k ->
-                            match con with
-                            | Some con ->
-                                use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
-                                if con.State <> ConnectionState.Open then con.Open()
-                                use reader = com.ExecuteReader()
-                                let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
-                                if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
-                                let mapped = ret |> Array.choose(fun e ->
-                                     match e.GetColumn pkName with
-                                     | FixedType pkValue -> Some (pkValue, e.ColumnValues |> dict)
-                                     | _ -> None)
-                                mapped
-                            | None -> [||]
-                        )
-                   if Array.isEmpty entities then [] else
-                   // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
-                   // inside that type the individuals will be listed again but with the text for the relevant column as the name
-                   // of the property and the primary key e.g. ``1, Dennis The Squirrel``
-                   let buildFieldName = SchemaProjections.buildFieldName
-
-                   let propertyMap =
-                      match con with
-                      | Some con -> prov.GetColumns(con,table)
-                      | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
-                      |> Seq.choose(fun col ->
-                        if col.Key = pkName then None else
-                        let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
-                        let ty = ProvidedTypeDefinition(name, Some typeof<obj>, isErased=true)
-                        ty.AddMember(ProvidedConstructor([ProvidedParameter("sqlService", typeof<ISqlDataContext>)], empty))
-                        individualsTypes.Add ty
-                        Some(col.Key,(ty,ProvidedProperty(sprintf "As %s" (buildFieldName col.Key),ty, getterCode = fun args ->
-                            let a0 = args.[0]
-                            <@@ ((%%a0 : obj) :?> ISqlDataContext)@@> ))))
-                      |> Map.ofSeq
-
-                   let prettyPrint (value : obj) =
-                       let dirtyName =
-                           match value with
-                           | null -> "<null>"
-                           | :? Array as a -> (sprintf "%A" a)
-                           | x -> x.ToString()
-                       dirtyName.Replace("\r", "").Replace("\n", "").Replace("\t", "")
-
-                   // on the main object create a property for each entity simply using the primary key
-                   let props =
-                      entities
-                      |> Array.choose(fun (pkValue, columnValues) ->
-                            let tableName = table.FullName
-                            let getterCode (args : Expr list) =
-                                let a0 = args.[0]
-                                <@@ ((%%a0 : obj) :?> ISqlDataContext).GetIndividual(tableName, pkValue) @@>
-
-                            // this next bit is just side effect to populate the "As Column" types for the supported columns
-                            for colName, colValue in columnValues |> Seq.map(fun kvp -> kvp.Key, kvp.Value) do
-                                if colName <> pkName then
-                                    let colDefinition, _ = propertyMap.[colName]
-                                    colDefinition.AddMemberDelayed(fun() ->
-                                        ProvidedProperty( sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
-                                                        , tableTypeDef
-                                                        , getterCode = getterCode
-                                                        )
-                                    )
-                            // return the primary key property
-                            Some <| ProvidedProperty(prettyPrint pkValue
-                                                    , tableTypeDef
-                                                    , getterCode = getterCode
-                                                    )
-                         )
-                      |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
-
-                   propertyMap
-                   |> Map.toSeq
-                   |> Seq.map (snd >> fst)
-                   |> Seq.cast<MemberInfo>
-                   |> Seq.append (props |> Seq.cast<MemberInfo>)
-                   |> Seq.toList
-
-               | None -> [])
-            individualsTypes :> seq<_>
-
         let baseCollectionTypes =
             lazy
                 dict [ for table in tables.Force() do
@@ -317,7 +518,8 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         | true, (et,_,_,_) ->
                             let ct = ProvidedTypeDefinition(name, Some typeof<obj>,isErased=true)
                             ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
-                            let it = createIndividualsType table
+                            let tableTypeDef,_,_,_ = baseTypes.Force().[table.FullName]
+                            let it = createIndividualsType con prov table designTimeDc dbVendor individualsAmount tableTypeDef
                             yield name,(ct,it)
                         | false, _ -> ()]
 
@@ -326,49 +528,8 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             t.AddMembersDelayed(fun () ->
                 let (columns,(children,parents)) = getTableData key
                 let attProps =
-                    let createColumnProperty (c:Column) =
-                        let nullable = if c.IsNullable then useOptionTypes else NullableColumnType.NO_OPTION
-                        let ty = Type.GetType c.TypeMapping.ClrType
-                        let propTy = match nullable with
-                                     | NullableColumnType.OPTION -> typedefof<option<_>>.MakeGenericType(ty)
-                                     | NullableColumnType.VALUE_OPTION -> typedefof<ValueOption<_>>.MakeGenericType(ty)
-                                     | _ -> ty
-                        let name = c.Name
-                        let prop =
-                            ProvidedProperty(
-                                SchemaProjections.buildFieldName(name),propTy,
-                                getterCode = (fun (args:Expr list) ->
-                                    let meth = match nullable with
-                                               | NullableColumnType.OPTION -> typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
-                                               | NullableColumnType.VALUE_OPTION -> typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
-                                               | _ ->  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                                    Expr.Call(args.[0],meth,[Expr.Value name])
-                                ),
-                                setterCode = (fun (args:Expr list) ->
-                                    match nullable with
-                                    | NullableColumnType.OPTION -> 
-                                        let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
-                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
-                                    | NullableColumnType.VALUE_OPTION -> 
-                                        let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
-                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
-                                    | _ ->
-                                        let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
-                                        Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
-                                 )
-                        let nfo = c.TypeInfo
-                        let typeInfo = match nfo with ValueNone -> "" | ValueSome x -> x.ToString()
-                        match con with
-                        | Some con ->
-                            prop.AddXmlDocDelayed(fun () ->
-                                let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
-                                let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                                sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
-                        | None ->
-                            prop.AddXmlDocDelayed(fun () -> sprintf "<summary>Offline mode. %s</summary>" typeInfo)
-                            ()
-                        prop
-                    List.map createColumnProperty (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
+                    let createCols = createColumnProperty con prov useOptionTypes key 
+                    List.map createCols (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                 let relProps =
                     let getRelationshipName = Utilities.uniqueName()
                     let bts = baseTypes.Force()
@@ -409,188 +570,30 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                             ]
                 attProps @ relProps)
 
-        let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (sproc:CompileTimeSprocDefinition) =
-
-            let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
-                            |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
-
-            let rt = ProvidedTypeDefinition(sprocname, Some typeof<obj>, isErased=true)
-            let resultType = ProvidedTypeDefinition("Result", Some typeof<obj>, isErased=true)
-            resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-            rt.AddMember resultType
-            container.AddMember(rt)
-
-            resultType.AddMembersDelayed(fun () ->
-                    let sprocParameters =
-                        let cache = prov.GetSchemaCache()
-                        match con with
-                        | None ->
-                            match cache.SprocsParams.TryGetValue sprocname with
-                            | true, x -> x
-                            | false, _ -> []
-                        | Some con ->
-                            (lazy 
-                                Sql.ensureOpen con
-                                let ps = sproc.Params con
-                                cache.SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
-                                ps).Value
-
-                    let parameters =
-                        sprocParameters
-                        |> List.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
-                        |> List.map(fun p -> ProvidedParameter(p.Name,Type.GetType p.TypeMapping.ClrType))
-                    let retCols = getSprocReturnColumns sprocname sproc sprocParameters |> List.toArray
-                    let runtimeSproc = {Name = sproc.Name; Params = sprocParameters} : RunTimeSprocDefinition
-                    let returnType =
-                        match retCols.Length with
-                        | 0 -> typeof<Unit>
-                        | _ ->
-                              let rt = ProvidedTypeDefinition("SprocResult",Some typeof<SqlEntity>, isErased=true)
-                              rt.AddMember(ProvidedConstructor([], empty))
-                              retCols
-                              |> Array.iter(fun col ->
-                                  let name = col.Name
-                                  let ty = Type.GetType col.TypeMapping.ClrType
-                                  let prop =
-                                      ProvidedProperty(
-                                          name,ty,
-                                          getterCode = (fun (args:Expr list) ->
-                                              let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                                              Expr.Call(args.[0],meth,[Expr.Value name])),
-                                          setterCode = (fun (args:Expr list) ->
-                                              let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
-                                              Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
-                                  rt.AddMember prop)
-                              resultType.AddMember(rt)
-                              rt :> Type
-                    let retColsExpr =
-                        QuotationHelpers.arrayExpr retCols |> snd
-                    let isUnit, asyncRet =
-                        if Type.(=)(returnType, typeof<unit>) then
-                            true, typeof<Task>
-                        else
-                            false, typedefof<Task<_>>.MakeGenericType([| returnType |])
-                    [ProvidedMethod("Invoke", parameters, returnType, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
-                            let a0 = args.[0]
-                            let tail = args.Tail
-                            <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail)) @@>));
-                     ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
-                            let a0 = args.[0]
-                            let tail = args.Tail
-                            if isUnit then
-                                <@@ task {
-                                        let! r =
-                                            (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))
-                                        return ()
-                                    } :> Task @@>
-                            else
-                               <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))  @@>
-                        ))]
-            )
-
-            let niceUniqueSprocName =
-                SchemaProjections.buildSprocName(sproc.Name.ProcName)
-                |> SchemaProjections.avoidNameClashBy (container.GetProperty >> (<>) null)
-
-            let p = ProvidedProperty(niceUniqueSprocName, resultType, getterCode = (fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?>ISqlDataContext) @@>) )
-            let dbName = sproc.Name.DbName
-            p.AddXmlDocDelayed(fun _ -> sprintf "<summary>%s</summary>" dbName)
-            p
-
-
-        let rec walkSproc con (path:string list) (parent:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
-            match sproc with
-            | Root(typeName, next) ->
-                let path = (path @ [typeName])
-                match createdTypes.TryFind path with
-                | Some(typ) ->
-                    walkSproc con path (Some typ) createdTypes next
-                | None ->
-                    let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
-                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-                    walkSproc con path (Some typ) (createdTypes.Add(path, typ)) next
-            | Package(typeName, packageDefn) ->
-                match parent with
-                | Some(parent) ->
-                    let path = (path @ [typeName])
-                    let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
-                    parent.AddMember(typ)
-                    parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args ->
-                        let a0 = args.[0]
-                        <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>))
-                    typ.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
-                    match con with
-                    | Some co ->
-                        typ.AddMembersDelayed(fun () ->
-                            (lazy
-                                Sql.ensureOpen co
-                                let p = (packageDefn.Sprocs co)
-                                prov.GetSchemaCache().Packages.AddRange p
-                                p |> List.map (generateSprocMethod typ con)).Value)
-                    | None ->
-                        typ.AddMembersDelayed(fun () ->
-                        prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con))
-                    createdTypes.Add(path, typ)
-                | _ -> failwithf "Could not generate package path type undefined root or previous type"
-            | Sproc(sproc) ->
-                    match parent with
-                    | Some(parent) ->
-                        match con with
-                        | Some co ->
-                            parent.AddMemberDelayed(fun () ->
-                                (lazy
-                                    Sql.ensureOpen co
-                                    generateSprocMethod parent con sproc
-                                ).Value)
-                            createdTypes
-                        | None ->
-                            parent.AddMemberDelayed(fun () -> generateSprocMethod parent con sproc); createdTypes
-                    | _ -> failwithf "Could not generate sproc undefined root or previous type"
-            | Empty -> createdTypes
-
-        let rec generateTypeTree con (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) =
-            match sprocs with
-            | [] ->
-                Map.filter (fun (k:string list) _ -> match k with [_] -> true | _ -> false) createdTypes
-                |> Map.toSeq
-                |> Seq.map snd
-            | sproc::rest -> generateTypeTree con (walkSproc con [] None createdTypes sproc) rest
-
-        let schemaMap = System.Collections.Generic.Dictionary<string, ProvidedTypeDefinition>()
-        let getOrAddSchema name =
-            match schemaMap.TryGetValue name with
-            | true, pt -> pt
-            | false, _  ->
-                let pt = ProvidedTypeDefinition(name + "Schema", Some typeof<obj>, isErased=true)
-                schemaMap.Add(name, pt)
-                pt
+        let tableTypes = baseTypes.Force()
+        let containers =
+            let sprocs =
+                match con with
+                | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
+                | Some _ ->
+                    let sprocList = sprocData.Force()
+                    prov.GetSchemaCache().Sprocs.AddRange sprocList
+                    sprocList
+            generateTypeTree con prov Map.empty sprocs
 
         let addServiceTypeMembers (isReadonly:bool) =
             [
-              let containers =
-                    let sprocs =
-                        match con with
-                        | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
-                        | Some _ ->
-                            let sprocList = sprocData.Force()
-                            prov.GetSchemaCache().Sprocs.AddRange sprocList
-                            sprocList
-                    generateTypeTree con Map.empty sprocs
-              yield! containers |> Seq.cast<MemberInfo>
+              if not isReadonly then
+                  yield! containers |> Seq.cast<MemberInfo>
 
-              let tableTypes =
-                    if not isReadonly then
-                        baseTypes.Force()
-                    else
-                        // For now, fore easier code sharing, let's use the same types for readonly context.
-                        [] |> dict
+              let tableTypes = 
+                  if not isReadonly then tableTypes
+                  else [] |> dict
 
               for (KeyValue(key,(entityType,desc,_,schema))) in tableTypes do
                 // collection type, individuals type
                 let (ct,it) = baseCollectionTypes.Force().[key]
-                let schemaType = getOrAddSchema schema
+                let schemaType = getOrAddSchema args schema
 
                 ct.AddMembersDelayed( fun () ->
                     // creation methods.
@@ -815,17 +818,18 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
                     ()
                 schemaType.AddMember ct
-                schemaType.AddMember prop
+                if not (schemaType.DeclaredMembers |> Seq.exists(fun m -> m.Name = prop.Name)) then
+                    schemaType.AddMember prop
 
                 yield entityType :> MemberInfo
                 //yield ct         :> MemberInfo
                 //yield prop       :> MemberInfo
                 yield! Seq.cast<MemberInfo> it
 
-              yield! containers |> Seq.map(fun p -> ProvidedProperty(p.Name.Replace("Container",""), p, getterCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
               if not isReadonly then
+                 yield! containers |> Seq.map(fun p -> ProvidedProperty(p.Name.Replace("Container",""), p, getterCode = fun args ->
+                    let a0 = args.[0]
+                    <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
                  let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args ->
                    let a0 = args.[0]
                    <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
@@ -900,6 +904,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                               schemacache.Packages.Clear()
                               schemacache.Individuals.Clear()
                               DesignTimeCache.cache.Clear()
+                              DesignTimeCache.schemaMap.Clear()
                               this.Invalidate()
                               let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
                               saveInProcess <- false
@@ -923,21 +928,22 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
               yield designTime :> MemberInfo
 
              ] @ [
-                for KeyValue(name,pt) in schemaMap do
-                    yield pt :> MemberInfo
-                    yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
-                        let a0 = args.[0]
-                        <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
+                for KeyValue((cachedargs,name),pt) in DesignTimeCache.schemaMap do
+                    if args = cachedargs then
+                        yield pt :> MemberInfo
+                        yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
+                            let a0 = args.[0]
+                            <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
              ]
 
-        serviceType.AddMembersDelayed( fun () -> addServiceTypeMembers false)
+        serviceType.AddMembers(addServiceTypeMembers false)
         serviceType.AddXmlDoc("Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.")
         rootType.AddMembers [ serviceType ]
 
         let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
         readServiceType.AddMembersDelayed( fun () -> addServiceTypeMembers true)
         readServiceType.AddXmlDoc("readDataContext to be used in schema exploration and querying. Like dataContext but not so easy to do accidental mutations of context state.")
-        rootType.AddMembers [ readServiceType ]
+        rootType.AddMembersDelayed(fun () -> [ readServiceType ])
         serviceType.AddMemberDelayed(fun () ->
                     let p = ProvidedMethod("AsReadOnly", [], readServiceType, invokeCode = fun args ->
                         let a0 = args.[0]
@@ -1171,7 +1177,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 // cache after the time-out, causing one extra hit, but this is only a design-time cache
                 // and it will work well enough to deal with Visual Studio's multi-threading problems
                 async {
-                    do! Async.Sleep 30000
+                    do! Async.Sleep 60000
                     DesignTimeCache.cache.TryRemove args |> ignore
                 } |> Async.Start
                 types
@@ -1179,6 +1185,17 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         with
         | e ->
             let _ = DesignTimeCache.cache.TryRemove(arguments)
+            let _ =
+                lock mySaveLock (fun() ->
+                    let keysToClear = 
+                        DesignTimeCache.schemaMap.Keys
+                        |> Seq.toList
+                        |> List.filter(fun (a,k) -> a = arguments)
+                    keysToClear |> Seq.iter(fun ak ->
+                        let _ = DesignTimeCache.schemaMap.TryRemove ak
+                        ()
+                    )
+                )
             reraise()
     )
 

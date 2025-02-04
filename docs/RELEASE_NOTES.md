@@ -1,7 +1,10 @@
 
 
 
-### 1.3.51 - 15.01.2025
+### 1.3.52 - 04.02.2025
+* Design-time refactorings
+
+### 1.3.51 - 03.02.2025
 * Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
 
 ### 1.3.50 - 15.01.2025
