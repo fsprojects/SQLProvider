@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -251,7 +251,7 @@
         <h1><a name="NET-Standard-NET-Core-support" class="anchor" href="#NET-Standard-NET-Core-support">.NET Standard / .NET Core support</a></h1>
 <p>This is very initial / experimental, from version 1.1.18.</p>
 <p>Install e.g. with: <code>dotnet add package SQLProvider --version 1.1.18</code></p>
-<p>You will need some configuration for your project files; see the examples.
+<p>You will need some configuration to your project files, see the examples.
 - You need a path to fsc.
 - You need your database driver and dependency dlls to resolutionPath-folder.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Core</span> <span class="o">/</span> <span class="id">NetStandard</span><span class="pn">:</span>
@@ -277,34 +277,34 @@
 <h2><a name="Limitations" class="anchor" href="#Limitations">Limitations</a></h2>
 <p>You need your database connection driver to also support .NET Core.
 If your database connection driver has external dependencies, they have to be also present
-(e.g. a project prebuild-task to move them to the resolution path).</p>
-<p>The connection string can be passed as a hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> parameter on runtime, but fetching it automatically from the application configuration is not supported.</p>
+(e.g. a project prebuild-task to move them to resolution path).</p>
+<p>Connection string can be passed as hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> parameter on runtime, but fetching it automatically from the application configuration is not supported.</p>
 <p>The target frameworks are defined in the project file: <code>&lt;TargetFrameworks&gt;net461;netcoreapp2.0;netstandard2.0&lt;/TargetFrameworks&gt;</code>
-Corresponding files go to root bin paths, e.g.: \bin\netstandard2.0</p>
+Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0</p>
 <h4><a name="Microsoft-Sql-Server" class="anchor" href="#Microsoft-Sql-Server">Microsoft Sql Server</a></h4>
-<p>If you plan to run Microsoft SQL Server, you need a dependency on System.Data.SqlClient and a post-build task to
-copy the correct dll under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>
+<p>If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
+copy correct dll from under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>
 <h4><a name="MySql" class="anchor" href="#MySql">MySql</a></h4>
 <p>MySQL is using MySQLConnector.
-The alternative is to use the provided custom build of MySQL.Data.dll (6.10-rc) compiled from sources to .Net Standard 2.0.
+Alternative is to use provided custom build of MySQL.Data.dll (6.10-rc) compiled from sources to .Net Standard 2.0.
 As the official MySQL.Data.dll does not support .NET Standard 2.0. See: <a href="https://bugs.mysql.com/bug.php?id=88016">https://bugs.mysql.com/bug.php?id=88016</a></p>
 <h4><a name="SQLite" class="anchor" href="#SQLite">SQLite</a></h4>
-<p>SQLite is using Microsoft.Data.Sqlite library, which has a dependency on non-managed e_sqlite3.dll.
-Ensure that the correct platform-specific file is found in referencePath or the PATH environment variable.</p>
-<p>Due to the lack of Mono-support in Microsoft.Data.SQLite and Core-support in System.Data.SQLite, there is no
+<p>SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
+Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.</p>
+<p>Due to lack of Mono-support in Microsoft.Data.SQLite and Core-support in System.Data.SQLite, there is no
 common driver that could work on both environments. That's why build is not possible with Mac/Ubuntu.
-Microsoft.Data.Sqlite.Core.Backport could work, but it has not been tested.</p>
+Microsoft.Data.Sqlite.Core.Backport could maybe work, not tested.</p>
 <h4><a name="Non-Windows-environment-Mac-Ubuntu-Linux" class="anchor" href="#Non-Windows-environment-Mac-Ubuntu-Linux">Non-Windows environment (Mac / Ubuntu / Linux / ...)</a></h4>
-<p>On Windows, you can reference .NET Standard 2.0 dlls in FSharp interactive, but in Osx or Linux, you cannot, as Mono is not .NET Standard 2.0 compatible.</p>
+<p>On Windows you can reference .NET Standard 2.0 dlls in FSharp interactive but in Osx or Linux you cannot as Mono is not .NET Standard 2.0 compatible.</p>
 <p>Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.1 libraries.
-Typeprovider handles that on compilation, and after compiling, your assembly will be .NET Core compatible.
-However, your compilation resolutionPath reference assemblies have to be in the .Net 4.5.1 version, and your build folder
-has to have core references, e.g., via PackageReferences.</p>
-<p>On Ubuntu, you probably have to use sudo for both dotnet restore and dotnet build.
-If you forgot the sudo, try to remove the bin and obj folders and then rerun the restore.</p>
+Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
+But your compilation resolutionPath reference assemblies have to be .Net 4.5.1 version and your build folder
+have to have core references, e.g. via PackageReferences.</p>
+<p>On Ubuntu you probably have to use sudo for both dotnet restore and dotnet build.
+If you forgot the sudo, try to remove bin and obj folders and then run restore again.</p>
 <h2><a name="Some-Technical-Details" class="anchor" href="#Some-Technical-Details">Some Technical Details</a></h2>
 <p>.NET Standard solution is located at <code>/src/SQLProvider.Standard/SQLProvider.Standard.fsproj</code></p>
-<p>The following files are needed to the NuGet package, from the .NET Standard SDK:
+<p>The following files is needed to the NuGet package, from the .NET Standard SDK:
 netstandard.dll, System.Console.dll, System.IO.dll, System.Reflection.dll, System.Runtime.dll</p>
 <p>You can find net461 versions of them by default from (e.g. 2.0.0, can be also something else like 2.0.2):
 Win: <code>C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\</code>

@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -250,23 +250,23 @@
     <div id="content">
         <h1><a name="Composable-Queries" class="anchor" href="#Composable-Queries">Composable Queries</a></h1>
 <h2><a name="Definition-of-Composable-Queries" class="anchor" href="#Definition-of-Composable-Queries">Definition of Composable Queries</a></h2>
-<p>Composable methods are those you can chain to build the desired functionality out of smaller parts.
-By passing functions as parameters, you can generate higher-order query operations.
-Therefore, a composable query means you can do logics to compose just one database-SQL-query from multiple queryables.
+<p>Basicly composable methods are those that you can chain together to build the desired functionality out of smaller parts.
+By passing functions as parameters you are able to generate higher-order query operations.
+Therefore composable query means that you can do logics to compose just one database-SQL-query from multiple queryables.
 By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.</p>
 <p>One common anti-pattern is a trial to solve all the problems in the world by a single code.
-So when you use this kind of feature to achieve "common logics", keep the software's maintainability in mind.
+So when you use this kind of features to achieve "common logics", keep in mind the software mainainability.
 One solution is to add a database view and query that from SQLProvider.</p>
 <h2><a name="Generate-composable-queries-by-using-Linq-IQueryable" class="anchor" href="#Generate-composable-queries-by-using-Linq-IQueryable">Generate composable queries by using Linq IQueryable</a></h2>
-<p>With composable queries, you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
-To see how this works, let's look at a simple query:</p>
+<p>With composable queries you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
+To see how this works, let’s look at a simple query:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="id">query1</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs21', 27)" onmouseover="showTip(event, 'fs21', 27)" class="k">query</span> <span class="pn">{</span>
       <span class="k">for</span> <span onmouseout="hideTip(event, 'fs22', 28)" onmouseover="showTip(event, 'fs22', 28)" class="fn">customers</span>  <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 29)" onmouseover="showTip(event, 'fs18', 29)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="id">Customers</span> <span class="k">do</span>
       <span onmouseout="hideTip(event, 'fs25', 32)" onmouseover="showTip(event, 'fs25', 32)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 33)" onmouseover="showTip(event, 'fs22', 33)" class="fn">customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 34)" onmouseover="showTip(event, 'fs26', 34)" class="id">ContactTitle</span> <span class="o">=</span> <span class="s">&quot;USA&quot;</span><span class="pn">)</span>
       <span onmouseout="hideTip(event, 'fs27', 35)" onmouseover="showTip(event, 'fs27', 35)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs22', 36)" onmouseover="showTip(event, 'fs22', 36)" class="fn">customers</span><span class="pn">)</span><span class="pn">}</span>
 </code></pre>
-<p>The variable that is returned from the query is sometimes called a computation. If you write to evaluate
+<p>The variable that is returned from the query is sometimes called a computation. If you write evaluate
 (e.g. a foreach loop or <code>|&gt; Seq.toList</code>) and display the address field from the customers returned by this
 computation, you see the following output:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="id">GREAL</span><span class="pn">|</span><span class="id">Great</span> <span class="id">Lakes</span> <span class="id">Food</span> <span class="id">Market</span><span class="pn">|</span><span class="id">Howard</span> <span class="id">Snyder</span><span class="pn">|</span><span class="id">Marketing</span> <span class="id">Manager</span><span class="pn">|</span><span class="n">2732</span> <span class="id">Baker</span> <span class="id">Blvd</span><span class="pn">.</span><span class="o">|</span><span class="id">Eugene</span><span class="pn">|</span><span class="id">OR</span><span class="pn">|</span><span class="n">97403</span><span class="pn">|</span><span class="id">USA</span><span class="pn">|</span><span class="pn">(</span><span class="n">503</span><span class="pn">)</span> <span class="n">555</span><span class="o">-</span><span class="n">7555</span><span class="pn">|</span>
@@ -301,13 +301,13 @@ In other words, SQLProvider queries typically follow this pattern:</p>
 <p>This is a simple mechanism to understand, but it yields powerful results.
 It allows you to take complex problems, break them into manageable pieces, and solve them with code that is easy to understand and easy to maintain.</p>
 <h3><a name="Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable" class="anchor" href="#Generate-composable-queries-by-using-NET-LINQ-functions-with-IQueryable">Generate composable queries by using .NET LINQ functions with IQueryable.</a></h3>
-<p>The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as an expression tree to some other context (like a database query).
-They are both lazy by nature, meaning they aren't evaluated until you enumerate the results.</p>
-<p>Here is an example:</p>
-<p>First, you have to add .NET LINQ:</p>
+<p>The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as en expression tree to some other context (like a database query).
+They are both lazy by nature, meaning they aren’t evaluated until you enumerate over the results.</p>
+<p>Here an example:</p>
+<p>First you have to add .NET LINQ:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 57)" onmouseover="showTip(event, 'fs4', 57)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 58)" onmouseover="showTip(event, 'fs5', 58)" class="id">Linq</span>
 </code></pre>
-<p>Then, you can define a composable query outside the main query</p>
+<p>Then you can define a composable query outside the main query</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs36', 59)" onmouseover="showTip(event, 'fs36', 59)" class="rt">CustomersEntity</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 60)" onmouseover="showTip(event, 'fs9', 60)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 61)" onmouseover="showTip(event, 'fs37', 61)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.CustomersEntity``</span>
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 62)" onmouseover="showTip(event, 'fs38', 62)" class="fn">companyNameFilter</span> <span onmouseout="hideTip(event, 'fs39', 63)" onmouseover="showTip(event, 'fs39', 63)" class="fn">inUse</span> <span class="o">=</span>
@@ -322,9 +322,9 @@ They are both lazy by nature, meaning they aren't evaluated until you enumerate 
             <span onmouseout="hideTip(event, 'fs40', 88)" onmouseover="showTip(event, 'fs40', 88)" class="fn">myFilter2</span>
     <span onmouseout="hideTip(event, 'fs45', 89)" onmouseover="showTip(event, 'fs45', 89)" class="fn">queryable</span>
 </code></pre>
-<p>(Let's assume that your inUse parameter is some complex data:
+<p>(Let's asume that your inUse some complex data:
 E.g. Your sub-queries would come from other functions. Basic booleans you can just include to your where-clause)</p>
-<p>Then, you can create the main query</p>
+<p>Then you can create the main query</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 90)" onmouseover="showTip(event, 'fs20', 90)" class="id">query1</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs21', 91)" onmouseover="showTip(event, 'fs21', 91)" class="k">query</span> <span class="pn">{</span>
         <span class="k">for</span> <span onmouseout="hideTip(event, 'fs22', 92)" onmouseover="showTip(event, 'fs22', 92)" class="fn">customers</span>  <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 93)" onmouseover="showTip(event, 'fs18', 93)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 94)" onmouseover="showTip(event, 'fs23', 94)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 95)" onmouseover="showTip(event, 'fs24', 95)" class="id">Customers</span> <span class="k">do</span>
@@ -335,9 +335,9 @@ E.g. Your sub-queries would come from other functions. Basic booleans you can ju
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 101)" onmouseover="showTip(event, 'fs48', 101)" class="id">res</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs38', 102)" onmouseover="showTip(event, 'fs38', 102)" class="fn">companyNameFilter</span> <span class="k">true</span> <span onmouseout="hideTip(event, 'fs20', 103)" onmouseover="showTip(event, 'fs20', 103)" class="id">query1</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 104)" onmouseover="showTip(event, 'fs30', 104)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 105)" onmouseover="showTip(event, 'fs31', 105)" class="id">toArray</span>
 </code></pre>
 <h3><a name="Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery" class="anchor" href="#Generate-composable-queries-by-using-FSharp-Linq-ComposableQuery">Generate composable queries by using FSharp.Linq.ComposableQuery</a></h3>
-<p>The SQLProvider also supports composable queries by integrating the following library FSharpLinqComposableQuery.
+<p>The SQLProvider also supports composable queries by integrating following library FSharpLinqComposableQuery.
 You can read more about that library here: <a href="http://fsprojects.github.io/FSharp.Linq.ComposableQuery">FSharp.Linq.ComposableQuery</a></p>
-<p>Because it is implemented in the SQLProvider, you don't need to add FSharpComposableQuery in your script.</p>
+<p>Because it is implemented in the SQLProvider you dont need to add FSharpComposableQuery in your script.</p>
 <p>Example for using FSharpComposableQuery</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs49', 106)" onmouseover="showTip(event, 'fs49', 106)" class="id">qry1</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs21', 107)" onmouseover="showTip(event, 'fs21', 107)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs50', 108)" onmouseover="showTip(event, 'fs50', 108)" class="fn">u</span> <span class="k">in</span> <span class="id">dbContext</span><span class="pn">.</span><span class="id">Users</span> <span class="k">do</span>
@@ -383,11 +383,11 @@ So you can use non-strongly-typed columns like this:</p>
         <span onmouseout="hideTip(event, 'fs27', 174)" onmouseover="showTip(event, 'fs27', 174)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs64', 175)" onmouseover="showTip(event, 'fs64', 175)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs65', 176)" onmouseover="showTip(event, 'fs65', 176)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs66', 177)" onmouseover="showTip(event, 'fs66', 177)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span>
     <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 178)" onmouseover="showTip(event, 'fs30', 178)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs67', 179)" onmouseover="showTip(event, 'fs67', 179)" class="id">head</span>
 </code></pre>
-<p>However, this is not recommended as one of the SQLProvider's key benefits is strong typing.</p>
+<p>However this is not recommended as one of the SQLProvider's key benefits is strong typing.</p>
 <h2><a name="Generate-composable-queries-from-quotations" class="anchor" href="#Generate-composable-queries-from-quotations">Generate composable queries from quotations</a></h2>
 <p>You can also construct composable queries using the F# quotation mechanism. For
 example, if you need to select a filter function at runtime, you could write the
-filters as quotations, and then include them in a query like this:</p>
+filters as quotations, and then include them into query like that:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs68', 180)" onmouseover="showTip(event, 'fs68', 180)" class="id">johnFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs69', 181)" onmouseover="showTip(event, 'fs69', 181)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 182)" onmouseover="showTip(event, 'fs9', 182)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 183)" onmouseover="showTip(event, 'fs37', 183)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs69', 184)" onmouseover="showTip(event, 'fs69', 184)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 185)" onmouseover="showTip(event, 'fs70', 185)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;John&quot;</span> <span class="pn">@&gt;</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs71', 186)" onmouseover="showTip(event, 'fs71', 186)" class="id">pamFilter</span> <span class="o">=</span> <span class="pn">&lt;@</span> <span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs69', 187)" onmouseover="showTip(event, 'fs69', 187)" class="fn">employee</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs9', 188)" onmouseover="showTip(event, 'fs9', 188)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 189)" onmouseover="showTip(event, 'fs37', 189)" class="id">dataContext</span><span class="pn">.</span><span class="id">``main.EmployeesEntity``</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs69', 190)" onmouseover="showTip(event, 'fs69', 190)" class="fn">employee</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 191)" onmouseover="showTip(event, 'fs70', 191)" class="id">FirstName</span> <span class="o">=</span> <span class="s">&quot;Pam&quot;</span> <span class="pn">@&gt;</span>
 
@@ -399,7 +399,7 @@ filters as quotations, and then include them in a query like this:</p>
         <span onmouseout="hideTip(event, 'fs27', 204)" onmouseover="showTip(event, 'fs27', 204)" class="k">select</span> <span onmouseout="hideTip(event, 'fs74', 205)" onmouseover="showTip(event, 'fs74', 205)" class="fn">emp</span>
     <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 206)" onmouseover="showTip(event, 'fs30', 206)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 207)" onmouseover="showTip(event, 'fs31', 207)" class="id">toArray</span>
 </code></pre>
-<p>Quotations are AST representations that the Linq-to-SQL translator can use.</p>
+<p>Quotations are AST representations which the Linq-to-SQL translator can use.</p>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
