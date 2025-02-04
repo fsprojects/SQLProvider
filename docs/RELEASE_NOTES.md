@@ -1,3 +1,6 @@
+### 1.4.5 - 04.02.2025
+* Design-time refactorings
+
 ### 1.4.4 - 04.02.2025
 * Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
 
@@ -15,6 +18,9 @@
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
+
+### 1.3.52 - 04.02.2025
+* Design-time refactorings
 
 ### 1.3.51 - 04.02.2025
 * Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
