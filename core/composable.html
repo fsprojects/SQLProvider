@@ -462,8 +462,8 @@ type CaseSensitivityChange =
 <div class="fsdocs-tip" id="fs20">val query1: IQueryable&lt;SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity&gt;</div>
 <div class="fsdocs-tip" id="fs21">val query: Linq.QueryBuilder</div>
 <div class="fsdocs-tip" id="fs22">val customers: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
-<div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
-<div class="fsdocs-tip" id="fs24">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema with get</div>
+<div class="fsdocs-tip" id="fs24">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs25">custom operation: where (bool)
 
 Calls Linq.QueryBuilder.Where</div>
@@ -492,6 +492,7 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs35">val x: obj</div>
 <div class="fsdocs-tip" id="fs36">type CustomersEntity = SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="fsdocs-tip" id="fs37">type dataContext =
+  member AsReadOnly: unit -&gt; readDataContext
   member ClearUpdates: unit -&gt; List&lt;SqlEntity&gt;
   member CreateConnection: unit -&gt; IDbConnection
   member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
@@ -501,8 +502,7 @@ from Microsoft.FSharp.Collections</div>
   member ``Design Time Commands`` : DesignTimeCommands
   member Main: mainSchema
   member Pragma: Pragma
-  nested type DesignTimeCommands
-  ...</div>
+  ...<br /><em>Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.</em></div>
 <div class="fsdocs-tip" id="fs38">val companyNameFilter: inUse: bool -&gt; (IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;)</div>
 <div class="fsdocs-tip" id="fs39">val inUse: bool</div>
 <div class="fsdocs-tip" id="fs40">val myFilter2: x: IQueryable&lt;CustomersEntity&gt; -&gt; IQueryable&lt;CustomersEntity&gt;</div>
@@ -542,7 +542,7 @@ Calls Linq.QueryBuilder.Join</div>
 <div class="fsdocs-tip" id="fs72">val runtimeSelectedFilter: Quotations.Expr&lt;(SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity -&gt; bool)&gt;</div>
 <div class="fsdocs-tip" id="fs73">val employees: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity array</div>
 <div class="fsdocs-tip" id="fs74">val emp: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div class="fsdocs-tip" id="fs75">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs75">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
 
     </div>
 </main>
