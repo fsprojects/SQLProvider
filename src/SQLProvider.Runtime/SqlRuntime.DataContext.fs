@@ -54,8 +54,8 @@ module internal ProviderBuilder =
         Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
         param, entity, toEntityArray
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath) =
-    let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
+type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath, isReadOnly:bool) =
+    let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
 
@@ -88,6 +88,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
         member __.ConnectionString with get() = connectionString
         member __.CommandTimeout with get() = commandTimeout
         member __.CreateConnection() = provider.CreateConnection(connectionString)
+        member __.IsReadOnly = isReadOnly
 
         member __.GetPrimaryKeyDefinition(tableName) =
             let schemaCache = provider.GetSchemaCache()
@@ -104,11 +105,12 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     | false, _ -> None
             |> (fun x -> defaultArg x "")
 
-        member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
-        member __.ClearPendingChanges() = pendingChanges.Clear()
-        member __.GetPendingEntities() = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
+        member __.SubmitChangedEntity e = if isReadOnly then failwith "Context is readonly" else pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
+        member __.ClearPendingChanges() = if isReadOnly then failwith "Context is readonly" else pendingChanges.Clear()
+        member __.GetPendingEntities() = if isReadOnly then failwith "Context is readonly" else (CommonTasks.sortEntities pendingChanges) |> Seq.toList
 
         member __.SubmitPendingChanges() =
+            if isReadOnly then failwith "Context is readonly" else 
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
                 provider.ProcessUpdates(con, pendingChanges, transactionOptions, commandTimeout)
@@ -116,6 +118,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             )
 
         member __.SubmitPendingChangesAsync() =
+            if isReadOnly then failwith "Context is readonly" else 
             task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 let maxWait = DateTime.Now.AddSeconds(3.)
@@ -258,6 +261,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             }
 
         member this.CreateEntity(tableName) =
+            if isReadOnly then failwith "Context is readonly" else 
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
             new SqlEntity(this, tableName, columns)
