@@ -1,6 +1,14 @@
 
 
 
+
+
+
+
+### 1.3.53 - 07.02.2025
+* More design-time refactorings
+* Assembly loading improvement
+
 ### 1.3.52 - 04.02.2025
 * Design-time refactorings
 
