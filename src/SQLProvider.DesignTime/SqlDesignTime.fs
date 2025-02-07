@@ -936,27 +936,27 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                   serviceType.AddMember saveResponse
                   yield mOld :> MemberInfo
 
-              let clearCacheType = ProvidedTypeDefinition("ClearConnectionCache", Some typeof<obj>, isErased=true)
-              clearCacheType.AddMember(ProvidedConstructor([], empty))
-              clearCacheType.AddMembersDelayed(fun () ->
+                  let clearCacheType = ProvidedTypeDefinition("ClearConnectionCache", Some typeof<obj>, isErased=true)
+                  clearCacheType.AddMember(ProvidedConstructor([], empty))
+                  clearCacheType.AddMembersDelayed(fun () ->
 
-                    match con with
-                    | Some con when con.State <> ConnectionState.Closed -> con.Close()
-                    | _ -> ()
+                      match con with
+                      | Some con when con.State <> ConnectionState.Closed -> con.Close()
+                      | _ -> ()
 
-                    DesignTimeCache.cache.Clear()
-                    DesignTimeCache.schemaMap.Clear()
+                      DesignTimeCache.cache.Clear()
+                      DesignTimeCache.schemaMap.Clear()
 
-                    GC.Collect()
+                      GC.Collect()
 
-                    [ ProvidedProperty("Done",typeof<unit>, getterCode = empty) :> MemberInfo ]
-              )
-              clearCacheType.AddXmlDocComputed(fun () -> "Close possible design-time database connection and clear connection cache")
-              let clearC = ProvidedProperty("ClearConnection", (clearCacheType :> Type), getterCode = empty)
-              clearC.AddXmlDocComputed(fun () -> "You can try to use this to refresh your database connection if you changed your database schema.")
+                      [ ProvidedProperty("Done",typeof<unit>, getterCode = empty) :> MemberInfo ]
+                  )
+                  clearCacheType.AddXmlDocComputed(fun () -> "Close possible design-time database connection and clear connection cache")
+                  let clearC = ProvidedProperty("ClearConnection", (clearCacheType :> Type), getterCode = empty)
+                  clearC.AddXmlDocComputed(fun () -> "You can try to use this to refresh your database connection if you changed your database schema.")
 
-              designTimeCommandsContainer.AddMember clearC
-              serviceType.AddMember clearCacheType
+                  designTimeCommandsContainer.AddMember clearC
+                  serviceType.AddMember clearCacheType
 
                   serviceType.AddMember designTimeCommandsContainer
                   yield designTime :> MemberInfo

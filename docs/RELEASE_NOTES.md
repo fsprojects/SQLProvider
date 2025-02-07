@@ -1,3 +1,8 @@
+### 1.4.6 - 07.02.2025
+* More design-time refactorings
+* Assembly loading improvement
+* Postgres TimestampTz fix
+
 ### 1.4.5 - 04.02.2025
 * Design-time refactorings
 
