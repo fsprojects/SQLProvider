@@ -622,10 +622,12 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     if isReadonly then
                         seq {
-                         let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                            let a0 = args.[0]
-                            <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                         individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                            if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                                let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                    let a0 = args.[0]
+                                    <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                                individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                yield individuals :> MemberInfo
                          } |> Seq.toList
                     else
 
@@ -778,27 +780,28 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     // This genertes a template.
 
                     seq {
-                     let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                        let a0 = args.[0]
-                        <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                     individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
-                     yield individuals :> MemberInfo
-                     if normalParameters.Length > 0 then yield create2 :> MemberInfo
-                     if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
-                        create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                        yield create2old :> MemberInfo
-                     yield create3 :> MemberInfo
-                     yield create1 :> MemberInfo
-                     if normalParameters.Length > 0 then
-                        create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
-                        yield create4 :> MemberInfo
-                     if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
-                        create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
-                        yield create5 :> MemberInfo
-                     if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
-                        backwardCompatibilityOnly.Length <> minimalParameters.Length then
-                            create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                            yield create4old :> MemberInfo
+                        if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                            let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                let a0 = args.[0]
+                                <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                            individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                            yield individuals :> MemberInfo
+                        if normalParameters.Length > 0 then yield create2 :> MemberInfo
+                        if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
+                           create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                           yield create2old :> MemberInfo
+                        yield create3 :> MemberInfo
+                        yield create1 :> MemberInfo
+                        if normalParameters.Length > 0 then
+                           create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
+                           yield create4 :> MemberInfo
+                        if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
+                           create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
+                           yield create5 :> MemberInfo
+                        if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
+                           backwardCompatibilityOnly.Length <> minimalParameters.Length then
+                               create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                               yield create4old :> MemberInfo
 
                      } |> Seq.toList
                 )
