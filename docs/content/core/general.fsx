@@ -70,6 +70,14 @@ schema and reading its data, you create a *DataContext* value.
 let ctx = sql.GetDataContext()
 
 (**
+There is also a GetReadOnlyDataContext() if you want Command Query Separation (CQS),
+to segregate your read queries and your read+write transaction commands on the type level.
+The dataContext returned from that method is missing SubmitUpdates, so it doesn't 
+have a way to commit transactions. If you want to pass your normal dataContext
+to a method using read-only dataContext, you can do it via .AsReadOnly()
+which doesn't make your context immutable, it just gives you the compatible type.
+For convenience, they both share the same database entity types.
+
 If you want to use non-literal connectionString at runtime (e.g. encrypted production
 passwords), you can pass your runtime connectionString parameter to GetDataContext:
 *)

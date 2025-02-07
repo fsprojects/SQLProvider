@@ -392,6 +392,81 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             let pt = ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true)
             pt)
 
+    let createDesignTimeCommands (prov:ISqlProvider) contextSchemaPath recreate =
+        let designTimeCommandsContainer = ProvidedTypeDefinition("DesignTimeCommands", Some typeof<obj>, isErased=true)
+        let designTime = ProvidedProperty("Design Time Commands", designTimeCommandsContainer, getterCode = empty)
+        designTime.AddXmlDocDelayed(fun () -> "Developer's design time commands to TypeProvider.")
+
+
+        let saveResponse = ProvidedTypeDefinition("SaveContextResponse", Some typeof<obj>, isErased=true)
+        saveResponse.AddMember(ProvidedConstructor([], empty))
+        saveResponse.AddMembersDelayed(fun () ->
+            if not saveInProcess then
+                let result =
+                    if not(String.IsNullOrEmpty contextSchemaPath) then
+                        try
+                            lock mySaveLock (fun() ->
+                                saveInProcess <- true
+                                prov.GetSchemaCache().Save contextSchemaPath
+                                saveInProcess <- false
+                                "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
+                            )
+                        with
+                        | e -> "Save failed: " + e.Message
+                    else "ContextSchemaPath is not defined"
+                [ ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo ]
+            else []
+        )
+
+        let m = ProvidedProperty("SaveContextSchema", (saveResponse :> Type), getterCode = empty)
+        let mOld = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
+        m.AddXmlDocComputed(fun () ->
+            if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
+            else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema at design time."
+            )
+        let expirationMessage = "Expired, moved under: .``Design Time Commands``"
+        mOld.AddXmlDocComputed(fun () -> expirationMessage)
+        mOld.AddObsoleteAttribute expirationMessage
+
+        // ClearDatabaseSchemaCache only in online-mode
+        if String.IsNullOrEmpty contextSchemaPath then
+            let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
+            invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
+            invalidateActionResponse.AddMembersDelayed(fun () ->
+                if not saveInProcess then
+                    let result =
+                        lock mySaveLock (fun() ->
+                            saveInProcess <- true
+                            let schemacache = prov.GetSchemaCache()
+                            schemacache.PrimaryKeys.Clear()
+                            schemacache.Tables.Clear()
+                            schemacache.Columns.Clear()
+                            schemacache.Relationships.Clear()
+                            schemacache.Sprocs.Clear()
+                            schemacache.SprocsParams.Clear()
+                            schemacache.Packages.Clear()
+                            schemacache.Individuals.Clear()
+                            DesignTimeCache.cache.Clear()
+                            DesignTimeCache.schemaMap.Clear()
+                            this.Invalidate()
+                            let pf = recreate()
+                            saveInProcess <- false
+                            "Database schema cache cleared.")
+                    [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]
+                else []
+            )
+            let m2 = ProvidedProperty("ClearDatabaseSchemaCache", (invalidateActionResponse :> Type), getterCode = empty)
+            m2.AddXmlDocComputed(fun () ->
+                "This method can be used to refresh and detect recent database schema changes. " +
+                "Write dot after ClearDatabaseSchemaCache to invalidate and clear the schema cache. May take a while."
+                )
+            designTimeCommandsContainer.AddMember m2
+            designTimeCommandsContainer.AddMember m
+            designTimeCommandsContainer, saveResponse, mOld, designTime, Some invalidateActionResponse
+        else
+            designTimeCommandsContainer.AddMember m
+            designTimeCommandsContainer, saveResponse, mOld, designTime, None
+
     let rec createTypes(args) =
         let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
         let resolutionPath =
@@ -588,7 +663,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
               let tableTypes = 
                   if not isReadonly then tableTypes
-                  else [] |> dict
+                  else [] |> dict // Readonly shares the same schema and table types.
 
               for (KeyValue(key,(entityType,desc,_,schema))) in tableTypes do
                 // collection type, individuals type
@@ -622,10 +697,12 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
                     if isReadonly then
                         seq {
-                         let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                            let a0 = args.[0]
-                            <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                         individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                            if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                                let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                    let a0 = args.[0]
+                                    <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                                individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                yield individuals :> MemberInfo
                          } |> Seq.toList
                     else
 
@@ -778,27 +855,28 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     // This genertes a template.
 
                     seq {
-                     let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                        let a0 = args.[0]
-                        <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                     individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
-                     yield individuals :> MemberInfo
-                     if normalParameters.Length > 0 then yield create2 :> MemberInfo
-                     if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
-                        create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                        yield create2old :> MemberInfo
-                     yield create3 :> MemberInfo
-                     yield create1 :> MemberInfo
-                     if normalParameters.Length > 0 then
-                        create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
-                        yield create4 :> MemberInfo
-                     if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
-                        create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
-                        yield create5 :> MemberInfo
-                     if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
-                        backwardCompatibilityOnly.Length <> minimalParameters.Length then
-                            create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                            yield create4old :> MemberInfo
+                        if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                            let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                let a0 = args.[0]
+                                <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                            individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                            yield individuals :> MemberInfo
+                        if normalParameters.Length > 0 then yield create2 :> MemberInfo
+                        if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
+                           create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                           yield create2old :> MemberInfo
+                        yield create3 :> MemberInfo
+                        yield create1 :> MemberInfo
+                        if normalParameters.Length > 0 then
+                           create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
+                           yield create4 :> MemberInfo
+                        if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
+                           create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
+                           yield create5 :> MemberInfo
+                        if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
+                           backwardCompatibilityOnly.Length <> minimalParameters.Length then
+                               create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                               yield create4old :> MemberInfo
 
                      } |> Seq.toList
                 )
@@ -828,101 +906,35 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
               if not isReadonly then
                  yield! containers |> Seq.map(fun p -> ProvidedProperty(p.Name.Replace("Container",""), p, getterCode = fun args ->
-                    let a0 = args.[0]
-                    <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
+                      let a0 = args.[0]
+                      <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>)) |> Seq.cast<MemberInfo>
                  let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args ->
-                   let a0 = args.[0]
-                   <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
+                     let a0 = args.[0]
+                     <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
                  submit.AddXmlDoc("<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
                  yield submit :> MemberInfo
                  let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task>, invokeCode = fun args ->
-                   let a0 = args.[0]
-                   <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
+                     let a0 = args.[0]
+                     <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
                  submitAsync.AddXmlDoc("<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
                  yield submitAsync :> MemberInfo
                  yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
-                   let a0 = args.[0]
-                   <@@ ((%%a0 : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
+                     let a0 = args.[0]
+                     <@@ ((%%a0 : obj) :?> ISqlDataContext).GetPendingEntities() @@>)  :> MemberInfo
                  yield ProvidedMethod("ClearUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
-                   let a0 = args.[0]
-                   <@@ ((%%a0 : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
+                     let a0 = args.[0]
+                     <@@ ((%%a0 : obj) :?> ISqlDataContext).ClearPendingChanges() @@>)  :> MemberInfo
               yield ProvidedMethod("CreateConnection",[],typeof<IDbConnection>, invokeCode = fun args ->
-                let a0 = args.[0]
-                <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
+                  let a0 = args.[0]
+                  <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
 
-              let designTimeCommandsContainer = ProvidedTypeDefinition("DesignTimeCommands", Some typeof<obj>, isErased=true)
-              let designTime = ProvidedProperty("Design Time Commands", designTimeCommandsContainer, getterCode = empty)
-              designTime.AddXmlDocDelayed(fun () -> "Developer's design time commands to TypeProvider.")
+              if not isReadonly then
+                  let recreate = fun () -> createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)              
+                  let designTimeCommandsContainer, saveResponse, mOld, designTime, invalidateActionResponse =
+                        createDesignTimeCommands prov contextSchemaPath recreate
 
-
-              let saveResponse = ProvidedTypeDefinition("SaveContextResponse", Some typeof<obj>, isErased=true)
-              saveResponse.AddMember(ProvidedConstructor([], empty))
-              saveResponse.AddMembersDelayed(fun () ->
-                  if not saveInProcess then
-                      let result =
-                          if not(String.IsNullOrEmpty contextSchemaPath) then
-                              try
-                                  lock mySaveLock (fun() ->
-                                      saveInProcess <- true
-                                      prov.GetSchemaCache().Save contextSchemaPath
-                                      saveInProcess <- false
-                                      "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
-                                  )
-                              with
-                              | e -> "Save failed: " + e.Message
-                          else "ContextSchemaPath is not defined"
-                      [ ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo ]
-                  else []
-              )
-
-              let m = ProvidedProperty("SaveContextSchema", (saveResponse :> Type), getterCode = empty)
-              let mOld = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
-              m.AddXmlDocComputed(fun () ->
-                  if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
-                  else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema at design time."
-                  )
-              let expirationMessage = "Expired, moved under: .``Design Time Commands``"
-              mOld.AddXmlDocComputed(fun () -> expirationMessage)
-              mOld.AddObsoleteAttribute expirationMessage
-
-              // ClearDatabaseSchemaCache only in online-mode
-              if String.IsNullOrEmpty contextSchemaPath then
-                  let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
-                  invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
-                  invalidateActionResponse.AddMembersDelayed(fun () ->
-                      if not saveInProcess then
-                          let result =
-                            lock mySaveLock (fun() ->
-                              saveInProcess <- true
-                              let schemacache = prov.GetSchemaCache()
-                              schemacache.PrimaryKeys.Clear()
-                              schemacache.Tables.Clear()
-                              schemacache.Columns.Clear()
-                              schemacache.Relationships.Clear()
-                              schemacache.Sprocs.Clear()
-                              schemacache.SprocsParams.Clear()
-                              schemacache.Packages.Clear()
-                              schemacache.Individuals.Clear()
-                              DesignTimeCache.cache.Clear()
-                              DesignTimeCache.schemaMap.Clear()
-                              this.Invalidate()
-                              let pf = createTypes(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
-                              saveInProcess <- false
-                              "Database schema cache cleared.")
-                          [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]
-                      else []
-                  )
-                  let m2 = ProvidedProperty("ClearDatabaseSchemaCache", (invalidateActionResponse :> Type), getterCode = empty)
-                  m2.AddXmlDocComputed(fun () ->
-                      "This method can be used to refresh and detect recent database schema changes. " +
-                      "Write dot after ClearDatabaseSchemaCache to invalidate and clear the schema cache. May take a while."
-                      )
-                  serviceType.AddMember invalidateActionResponse
-                  designTimeCommandsContainer.AddMember m2
-
-              serviceType.AddMember saveResponse
-              designTimeCommandsContainer.AddMember m
-              yield mOld :> MemberInfo
+                  serviceType.AddMember saveResponse
+                  yield mOld :> MemberInfo
 
               let clearCacheType = ProvidedTypeDefinition("ClearConnectionCache", Some typeof<obj>, isErased=true)
               clearCacheType.AddMember(ProvidedConstructor([], empty))
@@ -946,8 +958,12 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
               designTimeCommandsContainer.AddMember clearC
               serviceType.AddMember clearCacheType
 
-              serviceType.AddMember designTimeCommandsContainer
-              yield designTime :> MemberInfo
+                  serviceType.AddMember designTimeCommandsContainer
+                  yield designTime :> MemberInfo
+
+                  match invalidateActionResponse with
+                  | Some r -> serviceType.AddMember r
+                  | None -> ()
 
              ] @ [
                 for KeyValue((cachedargs,name),pt) in DesignTimeCache.schemaMap do

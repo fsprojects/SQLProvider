@@ -598,22 +598,26 @@ module internal Reflection =
                 | None when not (isNull (Environment.GetEnvironmentVariable "USERPROFILE")) ->
                     // Final try: nuget cache
                     try 
-                        let currentPlatform = getPlatform(execAssembly.Force())
+                        let currentPlatform = getPlatform(execAssembly.Force()).Split(',').[0]
                         let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
                         if System.IO.Directory.Exists c then
                             let picked = 
-                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories) |> Array.tryPick(fun assemblyPath ->
-                                    let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
-                                    if tmpAssembly.FullName = args.Name then
-                                        let loadedPlatform = getPlatform(tmpAssembly)
-                                        match currentPlatform, loadedPlatform with
-                                        | x, y when (x = "" || y = "" || x.Split(',').[0] = y.Split(',').[0]) ->
-                                            // Ok...good to go. (Although, we could match better the target frameworks.)
-                                            //let tryLoad = loadFunc assemblyPath true
-                                            Some(tmpAssembly)
-                                        | _ -> None
-                                    else
-                                        None
+                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories)
+                                |> Array.sortByDescending(fun f -> f) // "runtime over lib"
+                                |> Array.tryPick(fun assemblyPath ->
+                                    try
+                                        let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
+                                        if tmpAssembly.FullName = args.Name then
+                                            let loadedPlatform = getPlatform(tmpAssembly)
+                                            match currentPlatform, loadedPlatform with
+                                            | x, y when (x = "" || y = "" || x = y.Split(',').[0]) ->
+                                                // Ok...good to go. (Although, we could match better the target frameworks.)
+                                                //let tryLoad = loadFunc assemblyPath true
+                                                Some(tmpAssembly)
+                                            | _ -> None
+                                        else
+                                            None
+                                    with _ -> None
                                 )
                             match picked with Some x -> x | None -> null
                         else null
