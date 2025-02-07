@@ -185,9 +185,11 @@ module PostgreSQL =
               "time without time zone"      , typemap<TimeSpan>                   ["Time"]
               "time with time zone",    (if isLegacyVersion.Value
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
-                                         else typemap<DateTimeOffset>             ["TimeTZ"])
+                                         else typemap<DateTimeOffset>             ["TimeTz"])
               "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
-              "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
+              "timestamp with time zone", (if isLegacyVersion.Value
+                                           then typemap<DateTime>                 ["TimestampTZ"]
+                                           else typemap<DateTimeOffset>           ["TimestampTz"])
               "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
               "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
             //"txid_snapshot"               , typemap<???>                        ["???"]
