@@ -38,7 +38,10 @@ module PostgreSQL =
                 failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s" 
                     assemblyNames Environment.NewLine resolutionPaths details
 
-    let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
+    let isLegacyVersion = lazy (
+            let av = assembly.Value.GetName().Version.Major
+            av < 3, av < 4
+        )
     let findType name = 
         let types, err = 
             try assembly.Value.GetTypes(), None
@@ -133,7 +136,7 @@ module PostgreSQL =
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
-              "bit",                    (if isLegacyVersion.Value
+              "bit",                    (if fst isLegacyVersion.Value
                                          then typemap<bool>                       ["Bit"]
                                          else typemap<BitArray>                   ["Bit"])
               "bit varying"                 , typemap<BitArray>                   ["Varbit"]
@@ -150,7 +153,7 @@ module PostgreSQL =
               "date"                        , typemap<DateTime>                   ["Date"]
               "double precision"            , typemap<double>                     ["Double"]
               "geometry"                    , namemap "IGeometry"                 ["Geometry"]
-              "hstore",                 (if isLegacyVersion.Value
+              "hstore",                 (if fst isLegacyVersion.Value
                                          then typemap<string>                     ["Hstore"]
                                          else typemap<IDictionary<string,string>> ["Hstore"])
               "inet"                        , typemap<IPAddress>                  ["Inet"]
@@ -167,7 +170,7 @@ module PostgreSQL =
               "name"                        , typemap<string>                     ["Name"]
               "numeric"                     , typemap<decimal>                    ["Numeric"]
               "oid"                         , typemap<uint32>                     ["Oid"]
-            //"oidvector",              (if isLegacyVersion.Value
+            //"oidvector",              (if fst isLegacyVersion.Value
             //                           then typemap<string>                     ["Oidvector"]
             //                           else typemap<uint32[]>                   ["Oidvector"])
               "path"                        , namemap "NpgsqlPath"                ["Path"]
@@ -183,13 +186,15 @@ module PostgreSQL =
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
               "time without time zone"      , typemap<TimeSpan>                   ["Time"]
-              "time with time zone",    (if isLegacyVersion.Value
+              "time with time zone",    (if fst isLegacyVersion.Value
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
+                                         elif snd isLegacyVersion.Value
+                                         then typemap<DateTimeOffset>             ["TimeTZ"]
                                          else typemap<DateTimeOffset>             ["TimeTz"])
               "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
-              "timestamp with time zone", (if isLegacyVersion.Value
+              "timestamp with time zone", (if snd isLegacyVersion.Value
                                            then typemap<DateTime>                 ["TimestampTZ"]
-                                           else typemap<DateTimeOffset>           ["TimestampTz"])
+                                           else typemap<DateTime>                 ["TimestampTz"]) //Couldn't be DateTimeOffset, see https://github.com/fsprojects/SQLProvider/issues/838#issuecomment-2643659936
               "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
               "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
             //"txid_snapshot"               , typemap<???>                        ["???"]
@@ -316,7 +321,7 @@ module PostgreSQL =
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | ValueSome "refcursor" ->
-                        if not isLegacyVersion.Value then
+                        if not (fst isLegacyVersion.Value) then
                             let cursorName = com.ExecuteScalar() |> unbox
                             com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
                             com.CommandType <- CommandType.Text
@@ -375,7 +380,7 @@ module PostgreSQL =
                         }
                     | ValueSome "refcursor" ->
                         task {
-                            if not isLegacyVersion.Value then
+                            if not (fst isLegacyVersion.Value) then
                                 let! cur = com.ExecuteScalarAsync()
                                 let cursorName = cur |> unbox
                                 com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
