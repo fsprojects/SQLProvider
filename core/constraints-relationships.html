@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to make a contribution
+    How to contribute
 
   </a>
 </li>             
@@ -250,12 +250,12 @@
     <div id="content">
         <h1><a name="Constraints-amp-Relationships" class="anchor" href="#Constraints-amp-Relationships">Constraints &amp; Relationships</a></h1>
 <p>A typical relational database will have many connected tables and views
-through foreign key constraints.  The SQL provider is able to show you these
+through foreign key constraints.  The SQL provider can show you these
 constraints on entities.  They appear as properties named the same as the
 constraint in the database.</p>
 <p>You can gain access to these child or parent entities by simply enumerating
 the property in question.</p>
-<p>While SQL provider automatically generates getters from foreign key relations, it doesn't have (yet) any automatic support for creating a properly ordered graph of related entities in a single transaction. However, SQL provider submits entities to a database in the same order they were created, which means that as long as you create entities in their dependency order, you won't get foreign key constraint violations.</p>
+<p>While SQL provider automatically generates getters from foreign-key relations, it doesn't have (yet) any automatic support for creating a properly ordered graph of related entities in a single transaction. However, SQL provider submits entities to a database in the same order they were created. As long as you create entities in their dependency order, you won't get foreign-key constraint violations.</p>
 
         
     </div>

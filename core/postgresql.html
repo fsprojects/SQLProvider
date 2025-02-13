@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to make a contribution
+    How to contribute
 
   </a>
 </li>             
@@ -256,7 +256,7 @@ use <code>Common.DatabaseProviderTypes.POSTGRESQL</code>.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 7)" onmouseover="showTip(event, 'fs2', 7)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="prop">dbVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">POSTGRESQL</span>
 </code></pre>
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
-<p>Basic connection string used to connect to PostgreSQL instance; typical
+<p>A basic connection string used to connect to PostgreSQL instance; typical
 connection strings for the driver apply here. See
 <a href="http://www.npgsql.org/doc/connection-string-parameters.html">PostgreSQL Connecting Strings Documentation</a>
 for a complete list of connection string options.</p>
@@ -270,7 +270,7 @@ connectionString key/value pair stored in App.config (TODO: confirm file name).<
 <span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 14)" onmouseover="showTip(event, 'fs2', 14)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="prop">connexStringName</span> <span class="o">=</span> <span class="s">&quot;DefaultConnectionString&quot;</span>
 </code></pre>
 <h3><a name="Resolution-Path" class="anchor" href="#Resolution-Path">Resolution Path</a></h3>
-<p>Path to search for assemblies containing database vendor specific connections
+<p>Path to search for assemblies containing database vendor-specific connections
 and custom types. Type the path where <code>Npgsql.Data.dll</code> is stored.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 16)" onmouseover="showTip(event, 'fs2', 16)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="prop">resPath</span> <span class="o">=</span> <span class="s">@&quot;C:\Projects\Libs\Npgsql&quot;</span>
 </code></pre>
@@ -287,7 +287,7 @@ if it is null in the database.</p>
 </code></pre>
 <h3><a name="Owner" class="anchor" href="#Owner">Owner</a></h3>
 <p>Indicates the schema or schemas to which SqlProvider will try to provide access to.
-Multiple schemas can be indicated, separated by commas or semicolons.
+Multiple schemas can be indicated and separated by commas or semicolons.
 Defaults to "public".</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 22)" onmouseover="showTip(event, 'fs2', 22)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs16', 23)" onmouseover="showTip(event, 'fs16', 23)" class="prop">owner</span> <span class="o">=</span> <span class="s">&quot;public, admin, references&quot;</span>
 
