@@ -109,6 +109,7 @@ Target.create "AssemblyInfo" (fun _ ->
 // Clean build results
 
 Target.create "Clean" (fun _ ->
+    !! "bin/" |> Shell.cleanDirs
     !! "**/**/bin/" |> Shell.cleanDirs
     !! "**/**/temp/" |> Shell.cleanDirs
     !! "**/**/obj/" |> Shell.cleanDirs

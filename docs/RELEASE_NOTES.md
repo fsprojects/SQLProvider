@@ -5,6 +5,10 @@
 
 
 
+
+### 1.3.54 - 13.02.2025
+* Dependency updates
+
 ### 1.3.53 - 07.02.2025
 * More design-time refactorings
 * Assembly loading improvement

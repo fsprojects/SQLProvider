@@ -11,6 +11,7 @@ System.Data.SqlClient
 System.Data.Common
 System.Data.Odbc
 System.Data.OleDb
+System.Memory
 Microsoft.Data.SqlClient framework: net6.0, netstandard2.1
 group SourceFiles
 File:ProvidedTypes.fsi
