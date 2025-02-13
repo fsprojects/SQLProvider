@@ -1,3 +1,6 @@
+### 1.4.8 - 13.02.2025
+* Dependency updates
+
 ### 1.4.7 - 07.02.2025
 * Postgres 8 TimestampTz fix part 2
 
@@ -26,6 +29,9 @@
 * F# dependency from 6.0.7 to 8.0.301
 * Build with .NET 8.0 compiler
 * .NET Framework 4.7.2 to 4.8
+
+### 1.3.54 - 13.02.2025
+* Dependency updates
 
 ### 1.3.53 - 07.02.2025
 * More design-time refactorings

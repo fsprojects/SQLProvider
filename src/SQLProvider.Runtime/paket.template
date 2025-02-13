@@ -41,3 +41,5 @@ references
 dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.5.5
+

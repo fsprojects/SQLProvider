@@ -18,6 +18,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Ssdt.DacpacParser
 
+#nowarn 0044
 module MSSqlServerSsdt =
 
     [<Literal>]

@@ -20,7 +20,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet, duckdb</PackageTags>
     <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
