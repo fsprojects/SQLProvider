@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -251,11 +251,11 @@
         <h1><a name="SQL-Provider-Static-Parameters" class="anchor" href="#SQL-Provider-Static-Parameters">SQL Provider Static Parameters</a></h1>
 <h2><a name="Global-parameters" class="anchor" href="#Global-parameters">Global parameters</a></h2>
 <p>These are the "common" parameters used by all SqlProviders.</p>
-<p>All static parameters must be known at compile time. For strings, this can be
+<p>All static parameters must be known at compile time, for strings this can be
 achieved by adding the <code>[&lt;Literal&gt;]</code> attribute if you are not passing it inline.</p>
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
 <p>This is the connection string commonly used to connect to a database server
-instance. Please review the documentation on your desired database type to learn
+instance.  See the documentation on your desired database type to find out
 more.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs4', 15)" onmouseover="showTip(event, 'fs4', 15)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="prop">sqliteConnectionString</span> <span class="o">=</span>
@@ -270,7 +270,7 @@ can store values in the <code>App.config</code> file:</p>
    <span class="o">connectionString</span><span class="k">="Valid Connection String;"</span> <span class="k">/&gt;</span>  
 <span class="k">&lt;/</span><span class="i">connectionStrings</span><span class="k">&gt;</span>
 </code></pre></td></tr></table>
-<p>Another usually easier option is to give a runtime connection string as a parameter for the <code>.GetDataContext(...)</code> method.</p>
+<p>Another, usually easier option is to give a runtime connection string as parameter for <code>.GetDataContext(...)</code> method.</p>
 <p>In your source file:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="id">connexStringName</span> <span class="o">=</span> <span class="s">&quot;MyConnectionString&quot;</span>
 </code></pre>
@@ -281,32 +281,32 @@ type the provider will be connecting to.</p>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="prop">dbVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 20)" onmouseover="showTip(event, 'fs9', 20)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 21)" onmouseover="showTip(event, 'fs10', 21)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 22)" onmouseover="showTip(event, 'fs11', 22)" class="id">SQLITE</span>
 </code></pre>
 <h3><a name="ResolutionPath" class="anchor" href="#ResolutionPath">ResolutionPath</a></h3>
-<p>A third-party driver is required when using database vendors other than SQL Server, Access and ODBC.
-This parameter should point to an absolute or relative directory where the
-relevant assemblies are located. Please review at the database vendor-specific page for more details.</p>
+<p>When using database vendors other than SQL Server, Access and ODBC, a third party driver
+is required. This parameter should point to an absolute or relative directory where the
+relevant assemblies are located. See the database vendor specific page for more details.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs4', 23)" onmouseover="showTip(event, 'fs4', 23)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 24)" onmouseover="showTip(event, 'fs15', 24)" class="prop">resolutionPath</span> <span class="o">=</span>
     <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;..\..\..\files\sqlite&quot;</span>
 </code></pre>
-<p>The resolution path(s) (as can be semicolon separated if any) should point to the
+<p>The resolution path(s) (as can be semicolon separated if many) should point the
 database driver files and their reference assemblies) that work on design-time.
-So, depending on your IDE, you probably want there .NET Standard 2.0 (or 2.1) versions
-and not the latest .NET runtime, even when you'd target your final product to the latest .NET.</p>
+So depending on your IDE you probably want there .NET Standard 2.0 (or 2.1) versions
+and not the latest .NET runtime, even when you target your final product to latest .NET.</p>
 <h4><a name="Note-on-NET-5-PublishSingleFile-and-ResolutionPath" class="anchor" href="#Note-on-NET-5-PublishSingleFile-and-ResolutionPath">Note on .NET 5 PublishSingleFile and ResolutionPath</a></h4>
 <p>If you are publishing your app using .NET 5's PublishSingleFile mode, the driver will
-be loaded from the bundle itself rather than from a separate file on the drive.
-The ResolutionPath parameter will not work for the published app, nor will the automatic
+be loaded from the bundle itself rather than from a separate file on the drive. As such,
+the ResolutionPath parameter will not work for the published app, nor will the automatic
 assembly resolution implemented within SQLProvider.</p>
-<p>SQLProvider attempts to load the assembly from the AppDomain in such a case. This means
+<p>SQLProvider attempts to load the assembly from the AppDomain in such case. This means
 that your driver's assembly must be loaded by your application for SQLProvider to find
-it. To do so, use the types of your driver before calling the <code>.GetDataContext(...)</code>
+it. To do so, simply use the types of your driver before calling the <code>.GetDataContext(...)</code>
 method, such as in this example, using MySqlConnector. The specific type you refer
 to does not matter.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs16', 25)" onmouseover="showTip(event, 'fs16', 25)" class="id">typeof</span><span class="pn">&lt;</span><span class="id">MySqlConnector</span><span class="pn">.</span><span class="id">Logging</span><span class="pn">.</span><span class="id">MySqlConnectorLogLevel</span><span class="pn">&gt;</span><span class="pn">.</span><span class="id">Assembly</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="fn">ignore</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 28)" onmouseover="showTip(event, 'fs7', 28)" class="id">sqlType</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <h3><a name="IndividualsAmount" class="anchor" href="#IndividualsAmount">IndividualsAmount</a></h3>
-<p>Number of instances to retrieve using the <a href="individuals.html">individuals</a> feature.
+<p>Number of instances to retrieve when using the <a href="individuals.html">individuals</a> feature.
 Default is 1000.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">indivAmt</span> <span class="o">=</span> <span class="n">500</span>
 </code></pre>
@@ -314,7 +314,7 @@ Default is 1000.</p>
 <p>If set to FSharp.Data.Sql.Common.NullableColumnType.OPTION, all nullable fields will be represented by F# option types.  If NO_OPTION, nullable
 fields will be represented by the default value of the column type - this is important because
 the provider will return 0 instead of null, which might cause problems in some scenarios.</p>
-<p>The third option is VALUE_OPTION, where nullable fields are represented by ValueOption struct.</p>
+<p>The third option is VALUE_OPTION where nullable fields are represented by ValueOption struct.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs4', 30)" onmouseover="showTip(event, 'fs4', 30)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="prop">useOptionTypes</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs1', 32)" onmouseover="showTip(event, 'fs1', 32)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 33)" onmouseover="showTip(event, 'fs2', 33)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 34)" onmouseover="showTip(event, 'fs3', 34)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 35)" onmouseover="showTip(event, 'fs9', 35)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 36)" onmouseover="showTip(event, 'fs21', 36)" class="en">NullableColumnType</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 37)" onmouseover="showTip(event, 'fs22', 37)" class="id">OPTION</span>
 </code></pre>
@@ -324,12 +324,12 @@ enables offline mode that can be useful when the database is unavailable or slow
 Schema information file can be generated by calling design-time method <code>SaveContextSchema</code> under <code>Design Time Commands</code>:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="id">ctx</span><span class="pn">.</span><span class="id">``Design Time Commands``</span><span class="pn">.</span><span class="id">SaveContextSchema</span>
 </code></pre>
-<p>This method doesn't affect runtime execution. Since SQLProvider loads schema information lazily,
-calling <code>SaveContextSchema</code> only saves the portion of the database schema sufficient to compile
-queries referenced in the scope of the current solution or script. Therefore, it is recommended that
-it be executed after the successful build of the whole solution. Type the method name with parentheses. If you then
-type a dot (.), you should see a tooltip with information about when the schema was last saved. Once the schema
-is saved, the outcome of the method execution is stored in memory so the file will not be overwritten.
+<p>This method doesn't affect runtime execution. Note that since SQLProvider loads schema information lazily,
+calling <code>SaveContextSchema</code> only saves the portion of the database schema that is sufficient to compile
+queries referenced in the scope of the current solution or script. Therefore it is recommended to execute
+it after the successful build of the whole solution. Type the method name with parentheses, if you then
+type a dot (.), you should see a tooltip with information when the schema was last saved. Once the schema
+is saved, the outcome of the method execution is stored in memory, so the file will not be overwritten.
 In case the database schema changes and the schema file must be updated, remove the outdated file, reload
 the solution and retype or uncomment a call to <code>SaveContextSchema</code> to regenerate the schema file.</p>
 <p>There is a tool method FSharp.Data.Sql.Common.OfflineTools.mergeCacheFiles to merge multiple files together.</p>
@@ -339,25 +339,25 @@ the solution and retype or uncomment a call to <code>SaveContextSchema</code> to
 </code></pre>
 <h2><a name="Platform-Considerations" class="anchor" href="#Platform-Considerations">Platform Considerations</a></h2>
 <h3><a name="MSSQL" class="anchor" href="#MSSQL">MSSQL</a></h3>
-<p>TableNames to filter the amount of tables.</p>
+<p>TableNames to filter amount of tables.</p>
 <h3><a name="Oracle" class="anchor" href="#Oracle">Oracle</a></h3>
-<p>TableNames to filter the number of tables and an Owner.</p>
+<p>TableNames to filter amount of tables, and Owner.</p>
 <h4><a name="Owner-Used-by-Oracle-MySQL-and-PostgreSQL" class="anchor" href="#Owner-Used-by-Oracle-MySQL-and-PostgreSQL">Owner (Used by Oracle, MySQL and PostgreSQL)</a></h4>
-<p>This has different meanings when running queries against different database vendors.</p>
-<p>For PostgreSQL, this sets the schema name to which the target tables belong. It can also be a list separated by spaces, newlines, commas or semicolons.</p>
-<p>For MySQL, this sets the database name (Or schema name, which is the same thing for MySQL). It can also be a list separated by spaces, newlines, commas or semicolons.</p>
+<p>This has different meanings when running queries against different database vendors</p>
+<p>For PostgreSQL, this sets the schema name where the target tables belong to. Can be also a list separated by spaces, newlines, commas or semicolons.</p>
+<p>For MySQL, this sets the database name (Or schema name, for MySQL, it's the same thing). Can be also a list separated by spaces, newlines, commas or semicolons.</p>
 <p>For Oracle, this sets the owner of the scheme.</p>
 <h3><a name="SQLite" class="anchor" href="#SQLite">SQLite</a></h3>
 <p>The additional <a href="sqlite.html#SQLiteLibrary">SQLiteLibrary parameter</a> can be used to specify
 which SQLite library to load.</p>
 <h3><a name="PostgreSQL" class="anchor" href="#PostgreSQL">PostgreSQL</a></h3>
-<p>There are no extra parameters.</p>
+<p>No extra parameters.</p>
 <h3><a name="MySQL" class="anchor" href="#MySQL">MySQL</a></h3>
-<p>There are no extra parameters.</p>
+<p>No extra parameters.</p>
 <h3><a name="ODBC" class="anchor" href="#ODBC">ODBC</a></h3>
-<p>There are no extra parameters.</p>
+<p>No extra parameters.</p>
 <h3><a name="Example" class="anchor" href="#Example">Example</a></h3>
-<p>It is recommended to use named static parameters in your type provider definition so</p>
+<p>It is recommended to use named static parameters in your type provider definition like so</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs24', 40)" onmouseover="showTip(event, 'fs24', 40)" class="rt">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 41)" onmouseover="showTip(event, 'fs8', 41)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
             <span class="fn">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 42)" onmouseover="showTip(event, 'fs12', 42)" class="prop">sqliteConnectionString</span><span class="pn">,</span>
             <span class="fn">DatabaseVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 43)" onmouseover="showTip(event, 'fs14', 43)" class="prop">dbVendor</span><span class="pn">,</span>
@@ -369,10 +369,10 @@ which SQLite library to load.</p>
 <p>Besides the static parameters the <code>.GetDataContext(...)</code> method has optional parameters:</p>
 <ul>
 <li>connectionString - The database connection string on runtime.</li>
-<li>resolutionPath - The location to look for dynamically loaded assemblies containing database vendor-specific connections and custom types</li>
+<li>resolutionPath - The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types</li>
 <li>transactionOptions - TransactionOptions for the transaction created on SubmitChanges.</li>
 <li>commandTimeout - SQL command timeout. Maximum time for single SQL-command in seconds.</li>
-<li>selectOperations - Execute select-clause operations in SQL database rather than .NET-side.</li>
+<li>selectOperations - Execute select-clause operations in SQL database rahter than .NET-side.</li>
 </ul>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>

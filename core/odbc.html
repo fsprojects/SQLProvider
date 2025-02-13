@@ -70,7 +70,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -260,7 +260,7 @@ and add your driver to DSN.</p>
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="rt">db</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 20)" onmouseover="showTip(event, 'fs12', 20)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs13', 21)" onmouseover="showTip(event, 'fs13', 21)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 22)" onmouseover="showTip(event, 'fs14', 22)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 23)" onmouseover="showTip(event, 'fs15', 23)" class="id">ODBC</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs10', 24)" onmouseover="showTip(event, 'fs10', 24)" class="prop">dnsConn</span><span class="pn">&gt;</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 25)" onmouseover="showTip(event, 'fs16', 25)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 26)" onmouseover="showTip(event, 'fs11', 26)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
-<p>You don't need DSN for all data sources, e.g. MS Access can be used directly
+<p>You don't need DSN for all data source, e.g. MS Access can be used directly
 through the database file with a connection string like:
 <code>@"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Northwind.mdb"</code></p>
 <h3><a name="Quote-Character" class="anchor" href="#Quote-Character">Quote Character</a></h3>
@@ -287,10 +287,10 @@ quote characters for SQL-clauses with optional parameter OdbcQuote.</p>
 </code></pre>
 <h3><a name="DTC-Transactions" class="anchor" href="#DTC-Transactions">DTC Transactions</a></h3>
 <p>SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
-that all the database operations will either succeed or fail at once; when you do
+that all the database operations will either success of fail at once, when you do
 <code>ctx.SubmitUpdates()</code>.</p>
 <p>However, some ODBC-drivers (like MS-Access) don't support
-DTC-transactions and will fail on the constructor call. The transaction creation can be
+DTC-transactions and will fail on constructor call. The transaction creation can be
 disabled in context creation:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 44)" onmouseover="showTip(event, 'fs22', 44)" class="id">ctx3</span> <span class="o">=</span> 
     <span onmouseout="hideTip(event, 'fs11', 45)" onmouseover="showTip(event, 'fs11', 45)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span>
@@ -384,7 +384,6 @@ type TransactionOptions =
     Timeout: TimeSpan
     IsolationLevel: IsolationLevel
   }
-  member Equals: TransactionOptions * IEqualityComparer -&gt; bool
   static member Default: TransactionOptions<br /><em>&lt;summary&gt;
  Corresponds to the System.Transactions.TransactionOptions.
 &lt;/summary&gt;</em></div>

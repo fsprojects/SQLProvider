@@ -67,7 +67,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
-    How to contribute
+    How to make a contribution
 
   </a>
 </li>             
@@ -245,11 +245,11 @@
 </aside>
 <main>
     <div id="content">
-        <p>To use the type provider, you must first create a type alias.</p>
-<p>In this declaration, you can pass various pieces of information known
+        <p>To use the type provider you must first create a type alias.</p>
+<p>In this declaration you are able to pass various pieces of information known
 as static parameters to initialize properties such as the connection string
 and database vendor type that you are connecting to.</p>
-<p>In the following examples, a SQLite database will be used.  You can read in
+<p>In the following examples a SQLite database will be used.  You can read in
 more detail about the available static parameters in other areas of the
 documentation.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="rt">sql</span>  <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
@@ -260,8 +260,8 @@ documentation.</p>
                 <span class="fn">CaseSensitivityChange</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 18)" onmouseover="showTip(event, 'fs9', 18)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="en">CaseSensitivityChange</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="id">ORIGINAL</span>
             <span class="pn">&gt;</span>
 </code></pre>
-<p>Now we have a type <code>sql</code>representing the SQLite database provided in
-the connectionString parameter.  To start exploring the database's
+<p>Now we have a type <code>sql</code> that represents the SQLite database provided in
+the connectionString parameter.  In order to start exploring the database's
 schema and reading its data, you create a <em>DataContext</em> value.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 22)" onmouseover="showTip(event, 'fs7', 22)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
@@ -272,7 +272,7 @@ have a way to commit transactions. If you want to pass your normal dataContext
 to a method using read-only dataContext, you can do it via .AsReadOnly()
 which doesn't make your context immutable, it just gives you the compatible type.
 For convenience, they both share the same database entity types.</p>
-<p>If you want to use non-literal connectionString at runtime (e.g. encrypted production
+<p>If you want to use non-literal connectionString at runtime (e.g. crypted production
 passwords), you can pass your runtime connectionString parameter to GetDataContext:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">connectionString2</span> <span class="o">=</span> <span class="s">&quot;(insert runtime connection here)&quot;</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">ctx2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 26)" onmouseover="showTip(event, 'fs7', 26)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 27)" onmouseover="showTip(event, 'fs17', 27)" class="id">GetDataContext</span> <span onmouseout="hideTip(event, 'fs18', 28)" onmouseover="showTip(event, 'fs18', 28)" class="id">connectionString2</span>
@@ -292,25 +292,25 @@ entities will contain properties relating to each column name from the table.</p
 </code></pre>
 <p>Each property is correctly typed depending on the database column
 definitions.  In this example, <code>firstCustomer.ContactName</code> is a string.</p>
-<p>Most databases support some comments/descriptions/remarks to
+<p>Most of the databases support some kind of comments/descriptions/remarks to
 tables and columns for documentation purposes. These descriptions are fetched
 to tooltips for the tables and columns.</p>
 <h2><a name="Constraints-and-Relationships" class="anchor" href="#Constraints-and-Relationships">Constraints and Relationships</a></h2>
 <p>A typical relational database will have many connected tables and views
-through foreign key constraints.  The SQL provider can show you these
+through foreign key constraints.  The SQL provider is able to show you these
 constraints on entities.  They appear as properties named the same as the
 constraint in the database.</p>
 <p>You can gain access to these child or parent entities by simply enumerating
 the property in question.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 40)" onmouseover="showTip(event, 'fs28', 40)" class="id">orders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 41)" onmouseover="showTip(event, 'fs25', 41)" class="id">firstCustomer</span><span class="pn">.</span><span class="id">``main.Orders by CustomerID``</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 42)" onmouseover="showTip(event, 'fs23', 42)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 43)" onmouseover="showTip(event, 'fs24', 43)" class="id">toArray</span>
 </code></pre>
-<p><code>orders</code> now contain all the orders belonging to firstCustomer. You will
+<p><code>orders</code> now contains all the orders belonging to firstCustomer. You will
 see the orders type is an array of <code>[Main].[Orders]Entity</code> indicating the
 resulting entities are from the <code>[main].[Orders]</code> table in the database.
-If you hover over <code>FK_Orders_0_0</code>, intellisense will display information
-about the constraint in question, including the names of the tables involved
+If you hover over <code>FK_Orders_0_0</code> intellisense will display information
+about the constraint in question including the names of the tables involved
 and the key names.</p>
-<p>Behind the scenes, the SQL provider has automatically constructed and executed
+<p>Behind the scenes the SQL provider has automatically constructed and executed
 a relevant query using the entity's primary key.</p>
 <h2><a name="Basic-Querying" class="anchor" href="#Basic-Querying">Basic Querying</a></h2>
 <p>The SQL provider supports LINQ queries using F#'s <em>query expression</em> syntax.</p>
@@ -331,7 +331,7 @@ a relevant query using the entity's primary key.</p>
 </code></pre>
 <p>The above example is identical to the query that was executed when
 <code>ctx.[main].[Customers] |&gt; Seq.toArray</code> was evaluated.</p>
-<p>You can extend this basic query to filter criteria by introducing
+<p>You can extend this basic query include to filter criteria by introducing
 one or more <em>where</em> clauses</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs35', 64)" onmouseover="showTip(event, 'fs35', 64)" class="id">filteredQuery</span> <span class="o">=</span> 
     <span onmouseout="hideTip(event, 'fs30', 65)" onmouseover="showTip(event, 'fs30', 65)" class="k">query</span> <span class="pn">{</span> 
@@ -371,12 +371,12 @@ property of an entity, or you can perform an explicit join.</p>
     <span class="pn">}</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 129)" onmouseover="showTip(event, 'fs23', 129)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 130)" onmouseover="showTip(event, 'fs24', 130)" class="id">toArray</span>
 </code></pre>
-<p>These queries have identical results; the only difference is that one
+<p>Both of these queries have identical results, the only difference is that one
 requires explicit knowledge of which tables join where and how, and the other doesn't.
 You might have noticed the select expression has now changed to (customer, order).
 As you may expect, this will return an array of tuples where the first item
 is a <code>[Main].[Customers]Entity</code> and the second a <code>[Main].[Orders]Entity</code>.
-Often, you will not be interested in selecting entire entities from the database.
+Often you will not be interested in selecting entire entities from the database.
 Changing the select expression to use the entities' properties will cause the
 SQL provider to select only the columns you have asked for, which is an
 important optimization.</p>
@@ -389,8 +389,8 @@ important optimization.</p>
     <span class="pn">}</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 149)" onmouseover="showTip(event, 'fs23', 149)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 150)" onmouseover="showTip(event, 'fs24', 150)" class="id">toArray</span>
 </code></pre>
-<p>The results of this query will return the name, order date and shipping address
-only.  By doing this, you no longer have access to entity types.
+<p>The results of this query will return the name, order date and ship address
+only.  By doing this you no longer have access to entity types.
 The SQL provider supports various other query keywords and features that you
 can read about elsewhere in this documentation.</p>
 <h2><a name="Individuals" class="anchor" href="#Individuals">Individuals</a></h2>
@@ -398,16 +398,16 @@ can read about elsewhere in this documentation.</p>
 held within a table or view. You can then bind that data as an entity to a value.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 151)" onmouseover="showTip(event, 'fs48', 151)" class="id">BERGS</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 152)" onmouseover="showTip(event, 'fs16', 152)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 153)" onmouseover="showTip(event, 'fs21', 153)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 154)" onmouseover="showTip(event, 'fs22', 154)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 155)" onmouseover="showTip(event, 'fs49', 155)" class="prop">Individuals</span><span class="pn">.</span><span class="id">BERGS</span>
 </code></pre>
-<p>Every table and view has an <code>Individuals</code> property. When you press the dot on
+<p>Every table and view has an <code>Individuals</code> property. When you press dot on
 this property, intellisense will display a list of the data in that table,
 using whatever the primary key is as the text for each one.
 In this case, the primary key for <code>[main].[Customers]</code> is a string, and I
 have selected one named BERGS. You will see the resulting type is
 <code>[main].[Customers]Entity</code>.</p>
-<p>The primary key is not usually very useful for identifying data, however, so
-in addition to this, you will see a series of properties named "As X" where X
+<p>The primary key is not usually very useful for identifying data however, so
+in addition to this you will see a series of properties named "As X" where X
 is the name of a column in the table.
-When you press "." on one of these properties, the data is re-projected to you
+When you press . on one of these properties, the data is re-projected to you
 using both the primary key and the text of the column you have selected.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 156)" onmouseover="showTip(event, 'fs50', 156)" class="id">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 157)" onmouseover="showTip(event, 'fs16', 157)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 158)" onmouseover="showTip(event, 'fs21', 158)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 159)" onmouseover="showTip(event, 'fs22', 159)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 160)" onmouseover="showTip(event, 'fs49', 160)" class="prop">Individuals</span><span class="pn">.</span><span class="id">``As ContactName``</span><span class="pn">.</span><span class="id">``BERGS, Christina Berglund``</span>
 </code></pre>
@@ -419,9 +419,9 @@ e.g. to copy data between them.</p>
 <p>The connection itself is not stored and reused with an instance of the data context.
 The data context creates a connection when you execute a query or when you call
 <code>SubmitUpdates()</code>. In terms of transactions, the data context object tracks (full)
-entities that were retrieved using it via queries or <code>Individuals</code> and manage their
+entities that were retrieved using it via queries or <code>Individuals</code> and manages their
 states. Upon calling <code>SubmitUpdates()</code>, all entities modified/created that belong to
-that data context are wrapped in a single transaction scope. Then a connection
+that data context are wrapped in a single transaction scope, and then a connection
 is created and thus enlisted into the transaction.</p>
 <p>*<em>#Important*</em>:
 The database schema (SQLProvider's understanding of the structure of tables, columns, names, types, etc of your database
@@ -429,11 +429,11 @@ The database schema (SQLProvider's understanding of the structure of tables, col
 <p>What does that entail?</p>
 <p>A.  Once SQLProvider gets a "mental model" of your database (the schema),
 that is what is used for any intellisense/completion suggestions for the rest of your IDE session.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">This</span> <span class="id">is</span> <span class="id">a</span> <span class="id">fantastic</span> <span class="id">feature</span> <span class="id">because</span> <span class="id">it</span> <span class="id">means</span> <span class="id">you&#39;re</span> <span class="id">not</span> <span class="id">assaulting</span> <span class="id">your</span> <span class="id">database</span> <span class="k">with</span> <span class="id">a</span> 
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">This</span> <span class="id">is</span> <span class="id">a</span> <span class="id">fantastic</span> <span class="id">feature</span><span class="pn">,</span> <span class="id">because</span> <span class="id">it</span> <span class="id">means</span> <span class="id">that</span> <span class="id">you&#39;re</span> <span class="id">not</span> <span class="id">assaulting</span> <span class="id">your</span> <span class="id">database</span> <span class="k">with</span> <span class="id">a</span> 
 <span class="k">new</span> <span class="s">&quot;What are you like?&quot;</span> <span onmouseout="hideTip(event, 'fs30', 161)" onmouseover="showTip(event, 'fs30', 161)" class="id">query</span> <span class="id">on</span> <span class="id">EVERY</span> <span class="id">SINGLE</span> <span class="id">KEYSTROKE</span><span class="pn">.</span> 
 
-<span class="id">But</span> <span class="id">what</span> <span class="k">if</span> <span class="id">the</span> <span class="id">database</span> <span class="id">changes</span><span class="o">?</span> <span class="id">SQLProvider</span> <span class="id">will</span> <span class="id">NOT</span> <span class="id">see</span> <span class="id">your</span> <span class="id">change</span> <span class="id">because</span> <span class="id">its</span> <span class="id">source</span> <span class="k">of</span> <span class="id">truth</span> <span class="id">is</span>
-<span class="id">that</span> <span class="id">locally</span> <span class="id">cached</span> <span class="id">schema</span> <span class="id">snapshot</span> <span class="id">it</span> <span class="id">took</span> <span class="id">at</span> <span class="id">right</span> <span class="k">when</span> <span class="id">it</span> <span class="id">started</span><span class="pn">,</span> <span class="k">and</span> <span class="id">that</span> <span class="id">snapshot</span> <span class="id">will</span> <span class="id">persist</span> <span class="id">until</span>
+<span class="id">But</span> <span class="id">what</span> <span class="k">if</span> <span class="id">the</span> <span class="id">database</span> <span class="id">changes</span><span class="o">?</span> <span class="id">SQLProvider</span> <span class="id">will</span> <span class="id">NOT</span> <span class="id">see</span> <span class="id">your</span> <span class="id">change</span> <span class="id">because</span> <span class="id">it&#39;s</span> <span class="id">source</span> <span class="k">of</span> <span class="id">truth</span> <span class="id">is</span>
+<span class="id">that</span> <span class="id">locally</span> <span class="id">cached</span> <span class="id">schema</span> <span class="id">snapshot</span> <span class="id">it</span> <span class="id">took</span> <span class="id">right</span> <span class="k">when</span> <span class="id">it</span> <span class="id">started</span><span class="pn">,</span> <span class="k">and</span> <span class="id">that</span> <span class="id">snapshot</span> <span class="id">will</span> <span class="id">persist</span> <span class="id">until</span>
 <span class="id">one</span> <span class="k">of</span> <span class="n">2</span> <span class="id">things</span> <span class="id">happens</span><span class="pn">:</span> 
 
 <span class="n">1.</span>  <span class="id">A</span> <span class="id">restart</span> <span class="k">of</span> <span class="id">your</span> <span class="id">Editor</span><span class="o">/</span><span class="id">IDE</span><span class="pn">.</span> 
@@ -457,24 +457,24 @@ that is what is used for any intellisense/completion suggestions for the rest of
     <span class="k">and</span> <span class="id">they</span> <span class="id">actually</span> <span class="id">show</span> <span class="id">up</span> <span class="k">as</span> <span class="id">``Design Time Commands``</span> <span class="k">in</span> <span class="id">the</span> <span class="id">completion</span><span class="pn">.</span> 
     
     <span class="id">Select</span> <span class="id">that</span><span class="pn">,</span> <span class="k">and</span> <span class="k">then</span> <span class="s">&quot;dot into&quot;</span> <span class="id">it</span> <span class="id">afterwards</span><span class="pn">,</span> <span class="k">then</span> <span class="id">under</span> <span class="id">that</span> <span class="id">is</span> <span class="id">ClearDatabaseSchemaCache</span><span class="pn">.</span>
-    <span class="id">Then</span><span class="pn">,</span> <span class="id">after</span> <span class="id">that</span> <span class="id">typing</span> <span class="k">in</span> <span class="id">a</span> <span class="s">&quot;.&quot;</span> <span class="id">will</span> <span class="id">actually</span> <span class="id">RUN</span> <span class="id">the</span> <span class="id">command</span><span class="pn">,</span> <span class="id">thereby</span> <span class="id">clearing</span> <span class="id">the</span> <span class="id">cache</span><span class="pn">.</span> 
+    <span class="id">Then</span> <span class="id">after</span> <span class="id">that</span> <span class="id">typing</span> <span class="k">in</span> <span class="id">a</span> <span class="s">&quot;.&quot;</span> <span class="id">will</span> <span class="id">actualy</span> <span class="id">RUN</span> <span class="id">the</span> <span class="id">command</span><span class="pn">,</span> <span class="id">thereby</span> <span class="id">clearing</span> <span class="id">the</span> <span class="id">cache</span><span class="pn">.</span> 
 </code></pre>
 <p>B. LAZY evaluation means that where you save the database schema in your code matters.
 Do not call the "Design Time Command" SaveContextSchema at the top of your code. FSharp is evaluated
-from top to bottom, so if you call SaveContextSchema at the top before you ask for specific columns in your code,
+top to bottom, and so if you call SaveContextSchema at the top, before you ask for specific columns in your code,
 you will not get a schema that reflects your needs.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="id">cs</span><span class="pn">)</span><span class="pn">.</span><span class="id">``Design Time Commands``</span><span class="pn">.</span><span class="id">SaveContextSchema</span>  <span class="c">// put a &quot;.&quot; at the end to call the command at compile time.</span>
 </code></pre>
 <h2><a name="How-fast-is-SQLProvider" class="anchor" href="#How-fast-is-SQLProvider">How fast is SQLProvider?</a></h2>
-<p>You may wonder if all this magic comes with a huge performance cost. However, when working with databases,
-your network connection to SQL-database is typically the bottleneck, not your processor speed.
-That's why SQLProvider short-circuits and optimises your queries as much as possible.</p>
-<p>There is a performance-test project in this repo. Here is a sample run:</p>
+<p>You may wonder does all this magic come with a huge performance cost. However, when working with databases,
+your network connection to SQL-database is typically the bottle neck, not your processor speed.
+That's why SQLProvider does short-circuit and optimise your queries as much as possible.</p>
+<p>There is a performance-test project in this repo. This is a sample run:</p>
 <ul>
 <li>BenchmarkDotNet v0.13.12</li>
 <li>.NET 8</li>
 <li>Laptop, Intel i9 13th Gen on Windows 11</li>
-<li>Microsoft SQL Server on local computer</li>
+<li>Microsoft SQL Sever on local computer</li>
 </ul>
 <table>
 <thead>
@@ -484,79 +484,66 @@ That's why SQLProvider short-circuits and optimises your queries as much as poss
 <th align="right"><p>Mean</p></th>
 <th align="right"><p>Error</p></th>
 <th align="right"><p>StdDev</p></th>
+<th align="right"><p>Median</p></th>
 <th align="right"><p>Ratio</p></th>
 <th align="right"><p>RatioSD</p></th>
 <th align="right"><p>Gen0</p></th>
 <th align="right"><p>Gen1</p></th>
-<th align="right"><p>Allocated</p></th>
-<th align="right"><p>Alloc Ratio</p></th>
+<th align="right"><p>Gen2</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>25</strong></p></td>
-<td align="right"><p><strong>1.098 ms</strong></p></td>
-<td align="right"><p><strong>0.0218 ms</strong></p></td>
-<td align="right"><p><strong>0.0312 ms</strong></p></td>
+<td align="right"><p><strong>1.110 ms</strong></p></td>
+<td align="right"><p><strong>0.0222 ms</strong></p></td>
+<td align="right"><p><strong>0.0618 ms</strong></p></td>
+<td align="right"><p><strong>1.096 ms</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
 <td align="right"><p><strong>0.00</strong></p></td>
 <td align="right"><p><strong>27.3438</strong></p></td>
 <td align="right"><p><strong>11.7188</strong></p></td>
-<td align="right"><p><strong>357.65 KB</strong></p></td>
-<td align="right"><p><strong>1.00</strong></p></td>
+<td align="right"><p><strong>0</strong></p></td>
 </tr>
 <tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>25</p></td>
-<td align="right"><p>1.123 ms</p></td>
-<td align="right"><p>0.0223 ms</p></td>
-<td align="right"><p>0.0435 ms</p></td>
-<td align="right"><p>1.03</p></td>
-<td align="right"><p>0.05</p></td>
-<td align="right"><p>27.3438</p></td>
-<td align="right"><p>11.7188</p></td>
-<td align="right"><p>358.94 KB</p></td>
-<td align="right"><p>1.00</p></td>
+<td align="right"><p>1.257 ms</p></td>
+<td align="right"><p>0.0460 ms</p></td>
+<td align="right"><p>0.1326 ms</p></td>
+<td align="right"><p>1.300 ms</p></td>
+<td align="right"><p>1.14</p></td>
+<td align="right"><p>0.13</p></td>
+<td align="right"><p>29.2969</p></td>
+<td align="right"><p>13.6719</p></td>
+<td align="right"><p>0</p></td>
 </tr>
 <tr class="odd">
-<td></td>
-<td></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-</tr>
-<tr class="even">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>2500</strong></p></td>
-<td align="right"><p><strong>2.678 ms</strong></p></td>
-<td align="right"><p><strong>0.0531 ms</strong></p></td>
-<td align="right"><p><strong>0.1073 ms</strong></p></td>
+<td align="right"><p><strong>2.845 ms</strong></p></td>
+<td align="right"><p><strong>0.0561 ms</strong></p></td>
+<td align="right"><p><strong>0.0709 ms</strong></p></td>
+<td align="right"><p><strong>2.829 ms</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
 <td align="right"><p><strong>0.00</strong></p></td>
-<td align="right"><p><strong>226.5625</strong></p></td>
-<td align="right"><p><strong>164.0625</strong></p></td>
-<td align="right"><p><strong>2812.34 KB</strong></p></td>
-<td align="right"><p><strong>1.00</strong></p></td>
+<td align="right"><p><strong>234.3750</strong></p></td>
+<td align="right"><p><strong>179.6875</strong></p></td>
+<td align="right"><p><strong>0</strong></p></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>2500</p></td>
-<td align="right"><p>2.697 ms</p></td>
-<td align="right"><p>0.0608 ms</p></td>
-<td align="right"><p>0.1685 ms</p></td>
-<td align="right"><p>1.01</p></td>
-<td align="right"><p>0.06</p></td>
-<td align="right"><p>226.5625</p></td>
+<td align="right"><p>3.030 ms</p></td>
+<td align="right"><p>0.0820 ms</p></td>
+<td align="right"><p>0.2325 ms</p></td>
+<td align="right"><p>2.946 ms</p></td>
+<td align="right"><p>1.07</p></td>
+<td align="right"><p>0.09</p></td>
+<td align="right"><p>234.3750</p></td>
 <td align="right"><p>171.8750</p></td>
-<td align="right"><p>2813.27 KB</p></td>
-<td align="right"><p>1.00</p></td>
+<td align="right"><p>0</p></td>
 </tr>
 </tbody>
 </table>
