@@ -48,6 +48,8 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
 
 SQL Server SSDT is based on the current release (160.20216.14) found [here](https://www.nuget.org/packages/Microsoft.SqlServer.Management.SqlParser/).
 
+By adding SQLProvider to your project, you will need a working database connection whenever you build your code. This requires changes to your CI and build procedure. A sample project addressing these problems can be found [here](https://github.com/jzsampaio/sample-sql-provider-ci).
+
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
