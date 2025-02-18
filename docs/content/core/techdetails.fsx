@@ -178,10 +178,10 @@ Debugging the design-time VS2022 is doable but a bit more complex.
 This will mess up your SQLProvider Nuget cache, so after done, delete the SQLProvider cache-folder and restore the package again.
 
 1. Open SQLProvider.sln (with Visual Studio 2022) and build it (in debug mode). Keep this open for now.
-2. Open Explorer, it has made under bin-folder some folders, e.g. \net48 \net6.0 \netstandard2.0 \netstandard2.1 and \typeproviders
-3. Open another explorer, go to your location of Nuget cache, the version you are using e.g. `C:\Users\me\.nuget\packages\sqlprovider\1.3.30` 
+2. Open Explorer, it has made under bin-folder some folders, e.g. \lib and \typeproviders (and under them per framework like \net48 \net6.0 \netstandard2.0 \netstandard2.1)
+3. Open another explorer, go to your location of Nuget cache, the version you are using e.g. `C:\Users\me\.nuget\packages\sqlprovider\1.4.8`
 4. Replace the Nuget cache \typeproviders folder with your fresh bin typeproviders folder.
-5. Replace the Nuget cache \lib folder with other folders from your fresh bin folder.
+5. Replace the Nuget cache \lib folder with your fresh bin lib folder.
 6. Open another instance of VS2022 to the start-screen, but don't open any project yet.
 7. Go back to your first instance of VS2022 with SQLProvider.sln. Add some breakpoints. Select from the top menu: Debug - Attach to Process...
 8. Select devenv.exe, which is another VS2022 instance.
