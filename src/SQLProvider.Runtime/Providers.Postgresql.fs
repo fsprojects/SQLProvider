@@ -640,7 +640,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " entity.Table.Schema entity.Table.Name)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
