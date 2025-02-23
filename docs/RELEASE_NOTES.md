@@ -1,3 +1,6 @@
+### 1.4.9 - 23.02.2025
+* PostgreSQL primary key uppercase fix, PR #842
+
 ### 1.4.8 - 13.02.2025
 * Dependency updates
 
