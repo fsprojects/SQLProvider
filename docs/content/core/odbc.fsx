@@ -1,7 +1,7 @@
 ﻿(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Microsoft.ACE.OLEDB.12.0;Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
@@ -24,16 +24,16 @@ open FSharp.Data.Sql
 
 ### DSN
 
-Configuring DSN on Windows ODBC Data Source Administrator server: 
-Control Panel -> Administrative Tools -> Data Sources (ODBC) 
-(or launch: c:\windows\syswow64\odbcad32.exe) 
+Configuring DSN on Windows ODBC Data Source Administrator server:
+Control Panel -> Administrative Tools -> Data Sources (ODBC)
+(or launch: c:\windows\syswow64\odbcad32.exe)
 and add your driver to DSN.
 
 *)
 
-open FSharp.Data.Sql 
-[<Literal>] 
-let dnsConn = @"DSN=foo" 
+open FSharp.Data.Sql
+[<Literal>]
+let dnsConn = @"DSN=foo"
 type db = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, dnsConn>
 let ctx = db.GetDataContext()
 
@@ -58,16 +58,16 @@ quote characters for SQL-clauses with optional parameter OdbcQuote.
 and the difference in executed SQL is:
 
 ```sql
-SELECT [CourseID], [CourseName] FROM [Course] as [q] 
-SELECT `CourseID`, `CourseName` FROM `Course` as `q` 
-SELECT  CourseID ,  CourseName  FROM  Course  as  q 
+SELECT [CourseID], [CourseName] FROM [Course] as [q]
+SELECT `CourseID`, `CourseName` FROM `Course` as `q`
+SELECT  CourseID ,  CourseName  FROM  Course  as  q
 SELECT "CourseID", "CourseName" FROM "Course" as "q"
 SELECT 'CourseID', 'CourseName' FROM 'Course' as 'q'
 ```
 
 *)
 
-[<Literal>] 
+[<Literal>]
 let quotechar = FSharp.Data.Sql.Common.OdbcQuoteCharacter.DEFAULT_QUOTE
 type db2 = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, dnsConn, OdbcQuote = quotechar>
 let ctx2 = db2.GetDataContext()
@@ -78,17 +78,17 @@ let ctx2 = db2.GetDataContext()
 
 SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
 that all the database operations will either succeed or fail at once; when you do
-`ctx.SubmitUpdates()`. 
+`ctx.SubmitUpdates()`.
 
-However, some ODBC-drivers (like MS-Access) don't support 
+However, some ODBC-drivers (like MS-Access) don't support
 DTC-transactions and will fail on the constructor call. The transaction creation can be
 disabled in context creation:
 
 *)
 
-let ctx3 = 
+let ctx3 =
     db.GetDataContext(
-        { Timeout = TimeSpan.MaxValue; 
+        { Timeout = TimeSpan.MaxValue;
           IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction
         }:FSharp.Data.Sql.Transactions.TransactionOptions)
 

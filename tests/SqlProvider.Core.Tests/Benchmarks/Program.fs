@@ -1,5 +1,5 @@
 
-//#r "../../../bin/net6.0/FSharp.Data.SqlProvider.dll"
+//#r "../../../bin/lib/net6.0/FSharp.Data.SqlProvider.dll"
 //#r "nuget: Microsoft.Data.SqlClient"
 //#r "nuget: BenchmarkDotNet"
 

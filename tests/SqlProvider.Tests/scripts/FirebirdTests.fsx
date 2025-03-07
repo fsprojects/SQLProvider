@@ -1,4 +1,4 @@
-#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
@@ -66,13 +66,13 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Dbo.Employees do
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let employeesFirstNameAsync = 
+let employeesFirstNameAsync =
     query {
         for emp in ctx.Dbo.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
@@ -80,7 +80,7 @@ let employeesFirstNameAsync =
 
 // Note that Employees-table and PhoneNumber should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Dbo.Employees do
             join d in ctx.Dbo.Departments on (emp.DepartmentId = d.DepartmentId)
@@ -99,13 +99,13 @@ let employeesJob =
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -121,14 +121,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Dbo.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -139,7 +139,7 @@ let countries =
 
 open System.Linq
 
-let nestedQueryTest = 
+let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -153,21 +153,21 @@ let nestedQueryTest =
 
 // Simple group-by test
 open System.Linq
-let qry = 
+let qry =
     query {
         for e in ctx.Dbo.Employees do
         groupBy e.DepartmentId into p
         select (p.Key, p.Sum(fun f -> f.Salary))
     } |> Seq.toList
-    
-let canoncicalOpTest = 
+
+let canoncicalOpTest =
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for job in ctx.Dbo.Jobs do
         join emp in ctx.Dbo.Employees on (job.JobId.Trim() + "x" = emp.JobId.Trim() + "x")
         where (
-            //floor(job.MaxSalary)+1m > 4m 
-            job.MaxSalary+1 > 4 
+            //floor(job.MaxSalary)+1m > 4m
+            job.MaxSalary+1 > 4
             && emp.Email.Length > 2
             && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
         )
@@ -187,8 +187,8 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Dbo.Regions.Create() 
+    | _ ->
+        let newRegion = ctx.Dbo.Regions.Create()
         newRegion.RegionName <- "Antartica"
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
@@ -202,13 +202,13 @@ ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
 //********************** Procedures **************************//
 //make sure to delete any conflicting record before trying to insert
-let historyItem = 
+let historyItem =
     query {
         for job in ctx.Dbo.JobHistory do
         where (job.EmployeeId = 101 && job.StartDate = DateTime(1993, 1, 13))
-        select job    
+        select job
         head
-    } 
+    }
 try historyItem.Delete() with | _ -> ignore ()
 ctx.SubmitUpdates()
 //insert using sproc
@@ -233,7 +233,7 @@ let locations_and_regions =
     [
 //      for e in results.ReturnValue do
 //        yield e.ColumnValues |> Seq.toList |> box
-//             
+//
       for e in results.ColumnValues do
         yield e// |> Seq.toList |> box
     ]
@@ -258,12 +258,12 @@ getemployees (new System.DateTime(1999,4,1))
 let rnd = new Random()
 open System.Threading
 
-let taskarray = 
+let taskarray =
    [1u..100u] |> Seq.map(fun itm ->
        let itm = rnd.Next(1, 300) |> int
        let t1 = Tasks.Task.Run(fun () ->
            let ctx1 = HR.GetDataContext()
-           let country1 = 
+           let country1 =
                query {
                    for c in ctx1.Dbo.Countries do
                    where (c.CountryId = "AR")
@@ -276,7 +276,7 @@ let taskarray =
        let t2 = Tasks.Task.Run(fun () ->
            let ctx2 = HR.GetDataContext()
            Console.WriteLine Thread.CurrentThread.ManagedThreadId
-           let country2 = 
+           let country2 =
                query {
                    for c in ctx2.Dbo.Countries do
                    where (c.CountryId = "BR")
@@ -296,6 +296,6 @@ ctx.GetUpdates()
 query {
     for count in ctx.Dbo.Countries do
     where (count.CountryName = "Andorra" || count.RegionId = 99934)
-} |> Seq.``delete all items from single table`` 
+} |> Seq.``delete all items from single table``
 |> Async.AwaitTask
 |> Async.RunSynchronously

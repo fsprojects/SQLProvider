@@ -1,7 +1,7 @@
 (*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
 #r "../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll"
 (*** hide ***)
@@ -33,14 +33,14 @@ type sqlType =
 
 These are the "common" parameters used by all SqlProviders.
 
-All static parameters must be known at compile time. For strings, this can be 
+All static parameters must be known at compile time. For strings, this can be
 achieved by adding the `[<Literal>]` attribute if you are not passing it inline.
 
 ### ConnectionString
 
-This is the connection string commonly used to connect to a database server 
-instance. Please review the documentation on your desired database type to learn 
-more. 
+This is the connection string commonly used to connect to a database server
+instance. Please review the documentation on your desired database type to learn
+more.
 *)
 
 [<Literal>]
@@ -54,10 +54,10 @@ Instead of storing the connection string in the source code / `fsx` script, you
 can store values in the `App.config` file:
 
 ```xml
-<connectionStrings>  
-  <add name="MyConnectionString"   
-   providerName="System.Data.ProviderName"   
-   connectionString="Valid Connection String;" />  
+<connectionStrings>
+  <add name="MyConnectionString"
+   providerName="System.Data.ProviderName"
+   connectionString="Valid Connection String;" />
 </connectionStrings>
 ```
 
@@ -81,7 +81,7 @@ let dbVendor = Common.DatabaseProviderTypes.SQLITE
 (**
 ### ResolutionPath
 
-A third-party driver is required when using database vendors other than SQL Server, Access and ODBC. 
+A third-party driver is required when using database vendors other than SQL Server, Access and ODBC.
 This parameter should point to an absolute or relative directory where the
 relevant assemblies are located. Please review at the database vendor-specific page for more details.
 *)
@@ -100,7 +100,7 @@ and not the latest .NET runtime, even when you'd target your final product to th
 #### Note on .NET 5 PublishSingleFile and ResolutionPath
 
 If you are publishing your app using .NET 5's PublishSingleFile mode, the driver will
-be loaded from the bundle itself rather than from a separate file on the drive. 
+be loaded from the bundle itself rather than from a separate file on the drive.
 The ResolutionPath parameter will not work for the published app, nor will the automatic
 assembly resolution implemented within SQLProvider.
 
@@ -150,10 +150,10 @@ ctx.``Design Time Commands``.SaveContextSchema
 
 This method doesn't affect runtime execution. Since SQLProvider loads schema information lazily,
 calling `SaveContextSchema` only saves the portion of the database schema sufficient to compile
-queries referenced in the scope of the current solution or script. Therefore, it is recommended that 
-it be executed after the successful build of the whole solution. Type the method name with parentheses. If you then 
-type a dot (.), you should see a tooltip with information about when the schema was last saved. Once the schema 
-is saved, the outcome of the method execution is stored in memory so the file will not be overwritten. 
+queries referenced in the scope of the current solution or script. Therefore, it is recommended that
+it be executed after the successful build of the whole solution. Type the method name with parentheses. If you then
+type a dot (.), you should see a tooltip with information about when the schema was last saved. Once the schema
+is saved, the outcome of the method execution is stored in memory so the file will not be overwritten.
 In case the database schema changes and the schema file must be updated, remove the outdated file, reload
 the solution and retype or uncomment a call to `SaveContextSchema` to regenerate the schema file.
 
@@ -231,5 +231,5 @@ Besides the static parameters the `.GetDataContext(...)` method has optional par
 * transactionOptions - TransactionOptions for the transaction created on SubmitChanges.
 * commandTimeout - SQL command timeout. Maximum time for single SQL-command in seconds.
 * selectOperations - Execute select-clause operations in SQL database rather than .NET-side.
-			  
+
 *)

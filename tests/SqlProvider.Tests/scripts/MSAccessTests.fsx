@@ -1,4 +1,4 @@
-#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 
 open System
 open System.Linq
@@ -24,21 +24,21 @@ let mattisOrderDetails =
             // or you can explicitly join on the fields you choose
             join od in ctx.Northwind.Orders on (c.CustomerId = od.CustomerId)
             //  the (!!) operator will perform an outer join on a relationship
-            //for prod in (!!) od.``FK_Order Details_Products`` do 
+            //for prod in (!!) od.``FK_Order Details_Products`` do
             // nullable columns can be represented as option types. The following generates IS NOT NULL
             where c.Country.IsSome
             // standard operators will work as expected; the following shows the like operator and IN operator
             where (c.ContactName.Value =% ("Matti%") && od.ShipCountry.Value |=| [|"Finland";"England"|] )
             sortBy od.ShippedDate.Value
             // arbitrarily complex projections are supported
-            select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) } 
+            select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) }
     |> Seq.toArray
 
 // Note that Orders and ShipName are having Description-field in Access, so they are displayed as XML-tooltips.
 
 /// Query with space in table name
 let orderDetail =
-    query { 
+    query {
         for c in ctx.Northwind.OrderDetails do
         select c
         head }
@@ -47,22 +47,22 @@ let orderDetail =
 //ctx.SubmitUpdates()
 
 // Simple group-by test
-let qry = 
+let qry =
     query {
         for od in ctx.Northwind.OrderDetails do
         groupBy od.ProductId into p
         select (p.Key, p.Sum(fun f -> f.UnitPrice), p.Sum(fun f -> f.Discount))
     } |> Seq.toList
-    
 
-/// CRUD Test. To use CRUD you have to have a primary key in your table. 
+
+/// CRUD Test. To use CRUD you have to have a primary key in your table.
 let crudops =
     let neworder = ctx.Northwind.Customers.``Create(CompanyName)``("FSharp.org")
     neworder.CustomerId <- Some "MyId"
     neworder.City <- Some "London"
     ctx.SubmitUpdates()
     let fetched =
-        query { 
+        query {
             for c in ctx.Northwind.Customers do
             where (c.CustomerId = Some "MyId")
             headOrDefault }
@@ -75,7 +75,7 @@ let asyncContainsQuery =
     let r =
         task {
             let! res =
-                query { 
+                query {
                     for c in ctx.Northwind.Customers do
                     where (contacts.Contains(c.ContactName.Value))
                     select (c.CustomerId.Value, c.ContactName.Value)
@@ -85,15 +85,15 @@ let asyncContainsQuery =
     r.Wait()
     r.Result
 
-let canoncicalOpTest = 
+let canoncicalOpTest =
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for cust in ctx.Northwind.Customers do
         join emp in ctx.Northwind.Employees on (cust.City.Value.Trim() + "x" = emp.City.Value.Trim() + "x")
         where (
             abs(emp.EmployeeId)+1 > 4
-            && cust.City.Value.Length > 1  
-            && cust.City.IsSome && cust.City.Value + "L" = "LondonL" 
+            && cust.City.Value.Length > 1
+            && cust.City.IsSome && cust.City.Value + "L" = "LondonL"
             && emp.BirthDate.Value.AddYears(3).Year + 1 > 1960
         )
         sortBy emp.BirthDate.Value.Day
@@ -105,6 +105,6 @@ let canoncicalOpTest =
 query {
     for c in ctx.Northwind.Customers do
     where (c.ContactName.Value = "Tuomas")
-} |> Seq.``delete all items from single table`` 
+} |> Seq.``delete all items from single table``
 |> Async.AwaitTask
 |> Async.RunSynchronously

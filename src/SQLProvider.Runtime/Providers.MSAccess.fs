@@ -174,6 +174,9 @@ type internal MSAccessProvider(contextSchemaPath) =
         cmd
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = false
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let t = tableName.Substring(tableName.LastIndexOf('.')+1) 

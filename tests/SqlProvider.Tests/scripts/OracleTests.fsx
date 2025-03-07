@@ -1,5 +1,5 @@
-﻿#I @"../../../bin/net48"
-#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
+﻿#I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../libs/Oracle.ManagedDataAccess.dll"
 
 open System
@@ -43,7 +43,7 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName, emp.Email)
@@ -51,7 +51,7 @@ let employeesFirstName =
 
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Hr.Employees do
             join d in ctx.Hr.Departments on (emp.DepartmentId = d.DepartmentId)
@@ -59,7 +59,7 @@ let salesNamedDavid =
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let employeesJob = 
+let employeesJob =
     query {
             for emp in ctx.Hr.Employees do
             for manager in emp.``HR.EMPLOYEES by MANAGER_ID`` do
@@ -80,7 +80,7 @@ let employeesJob =
 //            )
 //            select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
 //    } |> Seq.toList
-    
+
 
 
 //Can select from views
@@ -98,7 +98,7 @@ let topSales5ByCommission =
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -119,14 +119,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Hr.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -147,8 +147,8 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Hr.Regions.Create() 
+    | _ ->
+        let newRegion = ctx.Hr.Regions.Create()
         newRegion.RegionName <- "Antartica"
         newRegion.RegionId <- 5M
         ctx.SubmitUpdates()
@@ -192,7 +192,7 @@ let locations_and_regions =
     [
       for e in results.LOCATIONS do
         yield e.ColumnValues |> Seq.toList |> box
-              
+
       for e in results.REGIONS do
         yield e.MapTo<Region>() |> box
     ]

@@ -1,7 +1,7 @@
 (*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
@@ -16,9 +16,9 @@ open System
 
 ### ConnectionString
 
-A basic connection string used to connect to MySQL instance; typical connection 
-string parameters apply here.  See 
-[MySQL Connector/NET Connection Strings Documentation](https://dev.mysql.com/doc/connectors/en/connector-net-connections-string.html) 
+A basic connection string used to connect to MySQL instance; typical connection
+string parameters apply here.  See
+[MySQL Connector/NET Connection Strings Documentation](https://dev.mysql.com/doc/connectors/en/connector-net-connections-string.html)
 for a complete list of connection string options.
 
 *)
@@ -92,8 +92,8 @@ type sql = SqlDataProvider<
             >
 let ctx = sql.GetDataContext()
 
-let employees = 
-    ctx.Hr.Employees 
+let employees =
+    ctx.Hr.Employees
     |> Seq.map (fun e -> e.ColumnValues |> Seq.toList)
     |> Seq.toList
 
@@ -107,7 +107,7 @@ MySql.Data types are not always the ones you have used to in .NET, so here is a 
 
 *)
 
-let myEmp = 
+let myEmp =
     query {
         for jh in ctx.Hr.JobHistory do
         where (jh.Years > 10u)
@@ -135,7 +135,7 @@ The problem with this is that you should never forget to use "N" anywhere.
 
 ### System.DateTime Serialization
 
-Another problem with MySql.Data is that DateTime conversions may fail if your culture is 
+Another problem with MySql.Data is that DateTime conversions may fail if your culture is
 not the expected one.
 
 So you may have to convert datetimes as strings instead of using just `myEmp.BirthDate <- DateTime.UtcNow`:
@@ -153,7 +153,7 @@ If your DateTime columns are strings in the database, you can use `DateTime.Pars
 
 ```fsharp
 let longAgoeTime.UtcNow.AddYears(-5)
-let myEmp = 
+let myEmp =
     query {
         for emp in ctx.Hr.Employees do
         where (DateTime.Parse(emp.HireDate) > longAgo)
@@ -191,7 +191,7 @@ type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, R
 
 One complex query:
 
-``` 
+```
 MySql.Data.dll:     Real: 00:00:00.583, C0:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
 MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0
 ```

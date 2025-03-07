@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -26,7 +26,7 @@ By passing functions as parameters, you can generate higher-order query operatio
 Therefore, a composable query means you can do logics to compose just one database-SQL-query from multiple queryables.
 By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.
 
-One common anti-pattern is a trial to solve all the problems in the world by a single code. 
+One common anti-pattern is a trial to solve all the problems in the world by a single code.
 So when you use this kind of feature to achieve "common logics", keep the software's maintainability in mind.
 One solution is to add a database view and query that from SQLProvider.
 
@@ -115,7 +115,7 @@ let companyNameFilter inUse =
         match inUse with
         |true ->
             (fun iq -> iq.Where(fun (c:CustomersEntity) -> c.CompanyName = "The Big Cheese"))
-        |false -> 
+        |false ->
             myFilter2
     queryable
 
@@ -196,7 +196,7 @@ All the entities inherit from SqlEntity which has GetColumn-method.
 So you can use non-strongly-typed columns like this:
 
 *)
-let qry = 
+let qry =
     query {
         for x in query1 do
         where ((x.GetColumn<string> "CustomerId") = "ALFKI")
@@ -222,7 +222,7 @@ let runtimeSelectedFilter = if 1 = 1 then johnFilter else pamFilter
 let employees =
     query {
         for emp in ctx.Main.Employees do
-        where ((%runtimeSelectedFilter) emp) 
+        where ((%runtimeSelectedFilter) emp)
         select emp
     } |> Seq.toArray
 

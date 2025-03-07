@@ -476,6 +476,9 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         DuckDb.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
             let sn = tableName.Substring(0,tableName.LastIndexOf('.'))

@@ -230,6 +230,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 r |> List.toArray)
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = false
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
             tableName +

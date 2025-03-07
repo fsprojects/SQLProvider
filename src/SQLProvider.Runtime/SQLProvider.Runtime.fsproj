@@ -58,6 +58,9 @@
     <Compile Include="SqlRuntime.Transactions.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Ssdt.DacpacParser.fs" />
+    <Compile Include="SqlRuntime.QueryExpression.fs" />
+    <Compile Include="SqlRuntime.Linq.fs" />
+    <Compile Include="SqlRuntime.Async.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
     <Compile Include="Providers.MsSqlServer.Ssdt.fs" />
@@ -69,9 +72,6 @@
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="Providers.Firebird.fs" />
     <Compile Include="Providers.DuckDb.fs" />
-    <Compile Include="SqlRuntime.QueryExpression.fs" />
-    <Compile Include="SqlRuntime.Linq.fs" />
-    <Compile Include="SqlRuntime.Async.fs" />
     <Compile Include="SqlRuntime.DataContext.fs" />
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>

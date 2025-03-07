@@ -191,6 +191,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         cmd
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let t = tableName.Substring(tableName.LastIndexOf('.')+1)

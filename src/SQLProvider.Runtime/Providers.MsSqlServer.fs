@@ -510,6 +510,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 

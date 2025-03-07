@@ -363,6 +363,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | _ -> failwith "Unsupported pragma"
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = false
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = "" // SQLite doesn't support table descriptions/comments
         member __.GetColumnDescription(con,tableName,columnName) = "" // SQLite doesn't support column descriptions/comments

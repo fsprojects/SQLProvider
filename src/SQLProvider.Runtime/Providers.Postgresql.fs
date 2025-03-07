@@ -655,6 +655,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
               |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->

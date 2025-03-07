@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -20,7 +20,7 @@ open FSharp.Data.Sql
 let assert_equal x y = ()
 (*** hide ***)
 let assert_contains x y = ()
-(** 
+(**
 
 # SQLProvider allows you to unit-test your SQL-logic
 
@@ -38,7 +38,7 @@ for example, someone removed an important column.
 
 SQLProvider does parametrized SQL, you can watch the executed SQL, and you can even open the parameterized SQL parameters for easier debugging:
 *)
-FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent 
+FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent
 |> Event.add (fun e -> System.Console.WriteLine (e.ToRawSqlWithParamInfo()))
 (**
 
@@ -57,7 +57,7 @@ There are 2 helper functions to mock the database connection:
 - `FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities<'T>` - With this, you can mock a single table.
 - `FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext<'T>` - With this, you can mock a context with multiple tables
 
-You just feed anonymous records like they would be database rows. 
+You just feed anonymous records like they would be database rows.
 You don't need to add all the columns, just the ones you use in your query.
 But you can add extra-columns for easier asserts.
 
@@ -85,14 +85,14 @@ let someProductionFunction (ctx:sql.dataContext) (orderType:OrderDateFilter) (un
         let tomorrow = untilDate.AddDays(1.).Date
         let someLegacyCondition = 0 // we don't need this anymore
 
-        let itms = 
+        let itms =
             query {
                 for order in ctx.Main.Orders do
                 join cust in ctx.Main.Customers on (order.CustomerId = cust.CustomerId)
                 where ((cust.City = "London" || cust.City = "Paris" ) && (
                     (ignoreOrderDate || order.OrderDate < tomorrow) && (someLegacyCondition < 15)) &&
                     (ignoreShippedDate || order.ShippedDate < tomorrow) &&
-                    cust.CustomerId <> null && order.Freight > 10m 
+                    cust.CustomerId <> null && order.Freight > 10m
                 )
                 select (cust.PostalCode, order.Freight)
             }
@@ -113,7 +113,7 @@ let ``mock for unit-testing: datacontext``() =
     task {
         let sampleDataMap =
             [ "main.Customers",
-                [|  {| CustomerID = "1"; City = "Paris";  PostalCode = "75000";  Description = "This is good";    |} 
+                [|  {| CustomerID = "1"; City = "Paris";  PostalCode = "75000";  Description = "This is good";    |}
                     {| CustomerID = "2"; City = "London"; PostalCode = "E143AB"; Description = "This is good";    |}
                     {| CustomerID = "3"; City = "Espoo";  PostalCode = "02600";  Description = "Ignore this guy"; |}
                 |] :> obj
@@ -130,7 +130,7 @@ let ``mock for unit-testing: datacontext``() =
 
         let! res = someProductionFunction mockContext OrderDateFilter.OrderDate (DateTime(2024,02,04))
         //val res: (string * decimal) list =
-        //  [("75000", 22M); ("E143AB", 20M); ("E143AB", 50M)]        
+        //  [("75000", 22M); ("E143AB", 20M); ("E143AB", 50M)]
 
         assert_equal 3 res.Length
         assert_contains ("75000", 22M) res

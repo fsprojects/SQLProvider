@@ -1,5 +1,5 @@
-#I @"../../../bin/net48"
-#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
@@ -30,7 +30,7 @@ let connectionStringAccess = @"Driver={Microsoft Access Driver (*.mdb, *.accdb)}
 type dbOdbcAccess = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, connectionStringAccess, Owner="", UseOptionTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION, OdbcQuote=Common.OdbcQuoteCharacter.DOUBLE_QUOTES>
 
 // Sadly MS-Access ODBC driver doesn't support DTC at all.
-let odbcaContext = 
+let odbcaContext =
     dbOdbcAccess.GetDataContext(
         {Timeout = TimeSpan.MaxValue; IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction})
 
@@ -44,21 +44,21 @@ let mattisOrderDetails =
             // or you can explicitly join on the fields you choose
             join od in odbcaContext.Dbo.Orders on (c.CustomerId = od.CustomerId)
             //  the (!!) operator will perform an outer join on a relationship
-            //for prod in (!!) od.``FK_Order Details_Products`` do 
+            //for prod in (!!) od.``FK_Order Details_Products`` do
             // nullable columns can be represented as option types. The following generates IS NOT NULL
             where c.Country.IsSome
             // standard operators will work as expected; the following shows the like operator and IN operator
             where (c.ContactName.Value =% ("Matti%") && od.ShipCountry.Value |=| [|"Finland";"England"|] )
             sortBy od.ShippedDate.Value
             // arbitrarily complex projections are supported
-            select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) } 
+            select (c.ContactName, od.ShipAddress, od.ShipCountry, od.ShipName, od.ShippedDate.Value.Date) }
     |> Seq.toArray
 
 // Note that Orders and ShipName are having Description-field in Access, so they are displayed as XML-tooltips.
 
 /// Query with space in table name
 let orderDetail =
-    query { 
+    query {
         for c in odbcaContext.Dbo.OrderDetails do
         select (c)
         head
@@ -68,7 +68,7 @@ let orderDetail =
 //ctx.SubmitUpdates()
 
 
-/// CRUD Test. To use CRUD you have to have a primary key in your table. 
+/// CRUD Test. To use CRUD you have to have a primary key in your table.
 let crudops =
     let neworder = odbcaContext.Dbo.Customers.``Create()``()
     neworder.CompanyName <- Some "FSharp.org"
@@ -76,7 +76,7 @@ let crudops =
     neworder.City <- Some "London"
     odbcaContext.SubmitUpdates()
     let fetched =
-        query { 
+        query {
             for c in odbcaContext.Dbo.Customers do
             where (c.CustomerId = Some "MyId")
             headOrDefault }
@@ -89,17 +89,17 @@ let asyncContainsQuery =
     let r =
         task {
             let! res =
-                query { 
+                query {
                     for c in odbcaContext.Dbo.Customers do
                     where (contacts.Contains(c.ContactName.Value))
                     select (c.CustomerId.Value, c.ContactName.Value)
                 }|> Seq.executeQueryAsync
             return res |> Seq.toArray
-        } 
+        }
     r.Wait()
     r.Result
 
-let canoncicalOpTest = 
+let canoncicalOpTest =
     query {
         // Access doesn't support many ODBC functions.
         // Silly query not hitting indexes, so testing purposes only...
@@ -119,14 +119,14 @@ let canoncicalOpTest =
 // SQL Server connection
 // Database: http://pastebin.com/5W3PPVaD
 
-// Configuring DSN on Windows ODBC Data Source Administrator server: 
-// Control Panel -> Administrative Tools -> Data Sources (ODBC) 
-// (Launch: c:\windows\syswow64\odbcad32.exe) 
+// Configuring DSN on Windows ODBC Data Source Administrator server:
+// Control Panel -> Administrative Tools -> Data Sources (ODBC)
+// (Launch: c:\windows\syswow64\odbcad32.exe)
 // And add your driver to DSN.
 
-open FSharp.Data.Sql 
-[<Literal>] 
-let dnsConn = @"DSN=foo" 
+open FSharp.Data.Sql
+[<Literal>]
+let dnsConn = @"DSN=foo"
 type db = SqlDataProvider<Common.DatabaseProviderTypes.ODBC, dnsConn>
 let ctx = db.GetDataContext()
 

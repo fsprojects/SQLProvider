@@ -47,10 +47,12 @@ type internal ParameterValue =
   | UserProvided of string * string * Type
   | Default of Expr
 
+
 [<TypeProvider>]
 type public SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config, assemblyReplacementMap=["FSharp.Data.SqlProvider.DesignTime", "FSharp.Data.SqlProvider";
                                                                       "SQLProvider.DesignTime", "SQLProvider.Runtime"], addDefaultProbingLocation=true)
+
     let ns = "SQLProvider"
     let asm = Reflection.execAssembly.Force()
 
@@ -484,7 +486,8 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
         let rootType, prov, con =
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
-                let prov = ProviderBuilder.createProvider dbVendor resolutionPath config.ReferencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let referencedAssemblies = Array.append [|config.RuntimeAssembly|] config.ReferencedAssemblies
+                let prov = ProviderBuilder.providerFactory dbVendor resolutionPath referencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->

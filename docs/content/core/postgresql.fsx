@@ -1,7 +1,7 @@
 ﻿(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
 let connectionString =
     "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
@@ -31,7 +31,7 @@ let [<Literal>] dbVendor = Common.DatabaseProviderTypes.POSTGRESQL
 
 ### ConnectionString
 
-A basic connection string used to connect to PostgreSQL instance; typical 
+A basic connection string used to connect to PostgreSQL instance; typical
 connection strings for the driver apply here. See
 [PostgreSQL Connecting Strings Documentation](http://www.npgsql.org/doc/connection-string-parameters.html)
 for a complete list of connection string options.
@@ -54,7 +54,7 @@ let [<Literal>] connexStringName = "DefaultConnectionString"
 (**
 ### Resolution Path
 
-Path to search for assemblies containing database vendor-specific connections 
+Path to search for assemblies containing database vendor-specific connections
 and custom types. Type the path where `Npgsql.Data.dll` is stored.
 
 *)
@@ -74,8 +74,8 @@ let [<Literal>] indivAmount = 1000
 (**
 ### UseOptionTypes
 
-If true, F# option types will be used in place of nullable database columns.  
-If false, you will always receive the default value of the column's type, even 
+If true, F# option types will be used in place of nullable database columns.
+If false, you will always receive the default value of the column's type, even
 if it is null in the database.
 
 *)
@@ -98,7 +98,7 @@ type sql =
     SqlDataProvider<
         dbVendor,
         connString,
-        "",         //ConnectionNameString can be left empty 
+        "",         //ConnectionNameString can be left empty
         resPath,
         indivAmount,
         useOptTypes,

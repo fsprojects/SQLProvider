@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#I @"../../bin/net48"
-#r @"../../bin/net48/FSharp.Data.SqlProvider.dll"
+#I @"../../bin/lib/net48"
+#r @"../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #I @"../../packages/tests/Newtonsoft.Json/lib/net45"
 #r @"../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
@@ -42,10 +42,10 @@ type Employee = {
 //***************** API *****************//
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let ``test that existing overloads aren't broken`` (runtimeConnStr : string)= 
+let ``test that existing overloads aren't broken`` (runtimeConnStr : string)=
   let customConnStr = runtimeConnStr
   let customResPath = resolutionFolder + "////" // semantically neutral change
-  let customTransOpts = { FSharp.Data.Sql.Transactions.TransactionOptions.Default with IsolationLevel = FSharp.Data.Sql.Transactions.IsolationLevel.Chaos } 
+  let customTransOpts = { FSharp.Data.Sql.Transactions.TransactionOptions.Default with IsolationLevel = FSharp.Data.Sql.Transactions.IsolationLevel.Chaos }
   let customCmdTimeout = 999
   let customSelectOps = FSharp.Data.Sql.SelectOperations.DatabaseSide
   // execute no-ops to ensure no exceptions are thrown and that ctx isn't null
@@ -74,7 +74,7 @@ let ``test that existing overloads aren't broken`` (runtimeConnStr : string)=
 [<TestCase(connStr2017)>]
 let ``get individuals``  (runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
   let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 
   indv.FirstName + " " + indv.LastName + " " + indv.Email
@@ -86,26 +86,26 @@ let ``get individuals``  (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let employeesFirstName  (runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
   query {
       for emp in ctx.Dbo.Employees do
       select emp.FirstName
-  } 
-  |> Seq.toList 
+  }
+  |> Seq.toList
   |> Assert.IsNotEmpty
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesFirstNameAsync  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
     }
     |> Seq.executeQueryAsync
     |> Async.AwaitTask
-    |> Async.RunSynchronously 
+    |> Async.RunSynchronously
     |> Assert.IsNotEmpty
 
 // Note that Employees-table should have a Description-field in database, visible as XML-tooltip in your IDE.
@@ -116,28 +116,28 @@ let employeesFirstNameAsync  (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let employeesFirstNameEmptyList  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
         select emp
-    } 
-    |> Seq.toList 
+    }
+    |> Seq.toList
     |> Assert.IsEmpty
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let regionsEmptyTable  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
         for r in ctx.Dbo.Regions do
         select r
-    } 
+    }
     |> Seq.toList
     |> Assert.IsNotEmpty
 
-//let tableWithNoKey = 
+//let tableWithNoKey =
 //    query {
 //        for r in ctx.Dbo.Table1 do
 //        select r.Col
@@ -151,20 +151,20 @@ let regionsEmptyTable  (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let salesNamedDavid  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
             for emp in ctx.Dbo.Employees do
             join d in ctx.Dbo.Departments on (emp.DepartmentId = d.DepartmentId)
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
-            
+
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let employeesJob  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     let dbo = ctx.Dbo
     query {
             for emp in dbo.Employees do
@@ -172,21 +172,21 @@ let employeesJob  (runtimeConnStr) =
             join dept in dbo.Departments on (emp.DepartmentId = dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "Steve%")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName)
-    } 
+    }
     |> Seq.toList
     |> Assert.IsNotEmpty
 
 //Can map SQLEntities to a domain type
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
-let topSales5ByCommission(runtimeConnStr) = 
+let topSales5ByCommission(runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
     |> Assert.IsNotEmpty
@@ -195,22 +195,22 @@ let topSales5ByCommission(runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``test that paging works``  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
-    
+
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
         skip 2
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
-    |> Seq.toList 
+    |> Seq.toList
     |> Assert.IsNotEmpty
-    
+
 [<TestCase(connStr2017)>]
 let ``test that paging uses OFFSET insted of CTEs in MSSQL2017``  (runtimeConnStr) =
-    
-    let checkForPaging = Handler<Common.QueryEvents.SqlEventData>(fun _ sqlEventData -> 
+
+    let checkForPaging = Handler<Common.QueryEvents.SqlEventData>(fun _ sqlEventData ->
         let offsetString = sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" 2 5
         let usesOffset = sqlEventData.Command.Contains offsetString
         Assert.True usesOffset
@@ -220,10 +220,10 @@ let ``test that paging uses OFFSET insted of CTEs in MSSQL2017``  (runtimeConnSt
     FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.AddHandler checkForPaging
 
     ``test that paging works``(runtimeConnStr)
-    
+
     // remove
-    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.RemoveHandler checkForPaging    
-    
+    FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent.RemoveHandler checkForPaging
+
 open Newtonsoft.Json
 
 type OtherCountryInformation = {
@@ -240,14 +240,14 @@ type Country = {
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Can customise SQLEntity mapping`` (runtimeConnStr) =
-  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)  
+  let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
   query {
       for emp in ctx.Dbo.Countries do
       select emp
-  } 
-  |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+  }
+  |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                               match prop with
-                                              | "Other" -> 
+                                              | "Other" ->
                                                   if value <> null
                                                   then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                   else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -263,7 +263,7 @@ open System.Linq
 [<TestCase(connStr2017)>]
 let nestedQueryTest  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -281,22 +281,22 @@ let nestedQueryTest  (runtimeConnStr) =
 let ``simple math operations in query `` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
 
-    let itemOf90 = 
+    let itemOf90 =
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId - 85 = 5)
-            select p.DepartmentId 
-        } |> Seq.toList 
+            select p.DepartmentId
+        } |> Seq.toList
 
     itemOf90 |> Assert.IsNotEmpty
-    
-    let ``should be empty`` = 
+
+    let ``should be empty`` =
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
-            select p.DepartmentId 
+            select p.DepartmentId
         } |> Seq.toList
-    
+
     ``should be empty`` |> Assert.IsEmpty
 
 
@@ -304,14 +304,14 @@ let ``simple math operations in query `` (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let canoncicalOpTest  (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for job in ctx.Dbo.Jobs do
         join emp in ctx.Dbo.Employees on (job.JobId.Trim() + "z" = emp.JobId.Trim() + "z")
         where (
             floor(job.MaxSalary)+1m > 4m
-            && emp.Email.Length > 1  
+            && emp.Email.Length > 1
             && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
             && emp.HireDate.AddDays(1.).Subtract(emp.HireDate).Days = 1
         )
@@ -326,19 +326,19 @@ let canoncicalOpTest  (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``can successfully update records`` (runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
   let antarctica =
     let existingAntarctica =
         query {
             for reg in ctx.Dbo.Regions do
             where (reg.RegionId = 5)
             select reg
-        } |> Seq.toList   
+        } |> Seq.toList
 
     match existingAntarctica with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Dbo.Regions.Create() 
+    | _ ->
+        let newRegion = ctx.Dbo.Regions.Create()
         newRegion.RegionName <- "Antarctica"
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
@@ -347,7 +347,7 @@ let ``can successfully update records`` (runtimeConnStr) =
   antarctica.RegionName <- "ant"
   ctx.SubmitUpdates()
 
-  let newName = 
+  let newName =
     query {
             for reg in ctx.Dbo.Regions do
             where (reg.RegionId = 5)
@@ -359,14 +359,14 @@ let ``can successfully update records`` (runtimeConnStr) =
   Assert.True(nameWasUpdated) |> ignore
 
   antarctica.Delete()
-  ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously  
+  ctx.SubmitUpdatesAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
-  let newRecords = 
+  let newRecords =
     query {
         for reg in ctx.Dbo.Regions do
         where (reg.RegionId = 5)
         select reg
-    } |> Seq.toList   
+    } |> Seq.toList
 
   Assert.IsEmpty(newRecords) |> ignore
 
@@ -411,13 +411,13 @@ type Region = {
 [<TestCase(connStr2017)>]
 let ``Support for MARS procs`` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
-   
+
     let results = ctx.Procedures.GetLocationsAndRegions.Invoke()
     printfn "%A" results.ColumnValues
     [
       for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
-              
+
       for e in results.ResultSet_1 do
         yield e.MapTo<Region>() |> box
     ]
@@ -427,7 +427,7 @@ let ``Support for MARS procs`` (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``Support for sprocs that return ref cursors and has in parameters`` (runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
   let getemployees hireDate =
     let results = (ctx.Procedures.GetEmployeesStartingAfter.Invoke hireDate)
     [
@@ -437,13 +437,13 @@ let ``Support for sprocs that return ref cursors and has in parameters`` (runtim
 
   getemployees (new System.DateTime(1999,4,1))
   |> Assert.IsNotEmpty
-  
+
 
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
 let ``Distinct alias test`` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
+
     query {
         for emp in ctx.Dbo.Employees do
         sortBy (emp.FirstName)
@@ -454,8 +454,8 @@ let ``Distinct alias test`` (runtimeConnStr) =
 [<TestCase(connStr2017)>]
 let ``Standard deviation test`` (runtimeConnStr) =
     let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
- 
-    let salaryStdDev : float = 
+
+    let salaryStdDev : float =
       query {
           for emp in ctx.Dbo.Employees do
           select (float emp.Salary)
@@ -464,12 +464,12 @@ let ``Standard deviation test`` (runtimeConnStr) =
 
 
 //******************** Delete all test **********************//
-let ``Delte all tests``(runtimeConnStr) = 
+let ``Delte all tests``(runtimeConnStr) =
   let ctx = HR.GetDataContext(connectionString = runtimeConnStr)
   query {
       for c in ctx.Dbo.Employees do
       where (c.FirstName = "Tuomas")
-  } |> Seq.``delete all items from single table`` 
+  } |> Seq.``delete all items from single table``
   |> Async.AwaitTask |> Async.RunSynchronously
 
 #else

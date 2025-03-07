@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -76,8 +76,8 @@ type Employee3 = {
     [<MappedColumn("LastName")>] FamilyName:string
     }
 
-let qry2 = 
-          query { 
+let qry2 =
+          query {
                 for row in employees do
                 select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
 
@@ -87,8 +87,8 @@ Or alternatively, the ColumnValues from  SQLEntity can be used to create a map, 
 column as a key:
 *)
 
-let rows = 
-        query { 
+let rows =
+        query {
             for row in employees do
             select row} |> Seq.toArray
 

@@ -1,7 +1,7 @@
 (*** hide ***)
 //#I @"../../files/mssqlssdt/SSDT Project"
 (*** hide ***)
-#I "../../../bin/netstandard2.0"
+#I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
@@ -32,7 +32,7 @@ The SsdtPath must point to a .dacpac file.
 #### Notes:
 * A .dacpac file is generated when an SSDT project is built and can be found in the bin/Debug folder.
 * For development, you can set the SsdtPath to point to the generated .dacpac file in the SSDT project Debug folder. (Using a `[<Literal>]` ssdtPath allows relative pathing).
-* For deployment, the SSDT provider will search for the .dacpac file in the entry assembly folder. 
+* For deployment, the SSDT provider will search for the .dacpac file in the entry assembly folder.
 * Linking the generated .dacpac file to your project and setting it to `CopyToOutputDirectory` will ensure that it will exist in the assembly folder for deployment.
 
 
@@ -45,7 +45,7 @@ let ssdtPath = __SOURCE_DIRECTORY__ + @"/../../files/mssqlssdt/AdventureWorks_SS
 ## Example of the minimal required options for the SSDT provider:
 
 *)
- 
+
 type DB = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, SsdtPath = ssdtPath>
 
 // To reload schema: 1) uncomment the line below; 2) save; 3) recomment; 4) save again and wait.

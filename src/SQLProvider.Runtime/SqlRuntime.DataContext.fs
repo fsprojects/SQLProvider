@@ -13,8 +13,9 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    let inline createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath =
-        let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
+    /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
+    /// vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+    let mutable providerFactory = fun vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath ->
         match vendor with
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
         | DatabaseProviderTypes.MSSQLSERVER_DYNAMIC -> MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, referencedAssemblies, tableNames) :> ISqlProvider
@@ -27,11 +28,12 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+        | DatabaseProviderTypes.EXTERNAL 
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-    let internal initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) providerType =
+    let internal initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) hasStoredProcedures =
         
-        if (providerType <> DatabaseProviderTypes.SQLITE) then 
+        if hasStoredProcedures then 
             com.CommandType <- CommandType.StoredProcedure
 
         let columns =
@@ -54,7 +56,7 @@ module internal ProviderBuilder =
         Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
         param, entity, toEntityArray
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath, isReadOnly:bool) =
+type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
     let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
@@ -62,27 +64,27 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
     let provider =
         let addCache() =
             lazy
-                let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
+                let prov : ISqlProvider = ProviderBuilder.providerFactory providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 if not (prov.GetSchemaCache().IsOffline) then
                     use con =
-                        if providerType = DatabaseProviderTypes.MSSQLSERVER_SSDT then
-                            Stubs.connection
-                        else
+                        if prov.DesignConnection then
                             let con = prov.CreateConnection(connectionString)
                             con.Open()
                             con
+                        else
+                            Stubs.connection
                             
                     // create type mappings and also trigger the table info read so the provider has
                     // the minimum base set of data available
                     prov.CreateTypeMappings(con)
                     prov.GetTables(con,caseSensitivity) |> ignore
-                    if (providerType <> DatabaseProviderTypes.MSACCESS && Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) && con.State <> ConnectionState.Closed then con.Close()
+                    if prov.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close()
                 prov
         try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
             let x = providerCache.TryRemove typeName
             reraise()
-
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
@@ -150,7 +152,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use com = provider.CreateCommand(con, def.Name.DbName)
             if commandTimeout.IsSome then
                 com.CommandTimeout <- commandTimeout.Value
-            let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com providerType
+            let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com provider.StoredProcedures
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -166,7 +168,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                             entity.SetColumnSilent(name, data)
                     entity |> box
 
-            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
+            if provider.CloseConnectionAfterQuery then con.Close()
             entities
 
         member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
@@ -177,7 +179,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 use com = provider.CreateCommand(con, def.Name.DbName)
                 if commandTimeout.IsSome then
                     com.CommandTimeout <- commandTimeout.Value
-                let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com providerType
+                let param, entity, toEntityArray = ProviderBuilder.initCallSproc (this) def values con com provider.StoredProcedures
 
                 let! resOrErr =
                     provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
@@ -199,10 +201,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                                     let data = toEntityArray rs
                                     entity.SetColumnSilent(name, data)
 
-                            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
+                            if provider.CloseConnectionAfterQuery then con.Close()
                             entity
                     | Choice2Of2 err ->
-                        if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
+                        if provider.CloseConnectionAfterQuery then con.Close()
                         raise err
 
             }
@@ -228,7 +230,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             let entity = (this :> ISqlDataContext).ReadEntities(table.FullName, columns, reader) |> Seq.exactlyOne
-            if (Type.(<>)(providerType.GetType(), typeof<Providers.MSAccessProvider>)) then con.Close()
+            if provider.CloseConnectionAfterQuery then con.Close()
             entity
 
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =

@@ -1,5 +1,5 @@
-#I @"../../../bin/net48"
-#r @"../../../bin/net48/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 #r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net461/System.Threading.Tasks.Extensions.dll"
 
@@ -7,7 +7,7 @@ open System
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
 open Newtonsoft.Json
-        
+
 [<Literal>]
 let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
 
@@ -20,7 +20,7 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, Resolutio
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
-        
+
 type Employee = {
     EmployeeId : int32
     FirstName : string
@@ -37,13 +37,13 @@ indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName)
     } |> Seq.toList
 
-let employeesFirstNameAsync = 
+let employeesFirstNameAsync =
     query {
         for emp in ctx.Hr.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
@@ -51,7 +51,7 @@ let employeesFirstNameAsync =
 
 // Note that Employees-table and PhoneNumber should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Hr.Employees do
             join d in ctx.Hr.Departments on (emp.DepartmentId = d.DepartmentId)
@@ -70,13 +70,13 @@ let employeesJob =
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Hr.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -92,14 +92,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Hr.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -110,7 +110,7 @@ let countries =
 
 open System.Linq
 
-let nestedQueryTest = 
+let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Hr.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -124,14 +124,14 @@ let nestedQueryTest =
 
 // Simple group-by test
 open System.Linq
-let qry = 
+let qry =
     query {
         for e in ctx.Hr.Employees do
         groupBy e.DepartmentId into p
         select (p.Key, p.Sum(fun f -> f.Salary))
     } |> Seq.toList
-    
-let canoncicalOpTest = 
+
+let canoncicalOpTest =
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for job in ctx.Hr.Jobs do
@@ -149,7 +149,7 @@ let canoncicalOpTest =
 
 
 // Standard deviation test
-let stdDevTest = 
+let stdDevTest =
     query {
         for emp in ctx.Hr.Employees do
         select (float emp.Salary)
@@ -168,8 +168,8 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Hr.Regions.Create() 
+    | _ ->
+        let newRegion = ctx.Hr.Regions.Create()
         newRegion.RegionName <- "Antartica"
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
@@ -211,7 +211,7 @@ let locations_and_regions =
     [
 //      for e in results.ReturnValue do
 //        yield e.ColumnValues |> Seq.toList |> box
-//             
+//
       for e in results.ColumnValues do
         yield e// |> Seq.toList |> box
     ]
@@ -236,12 +236,12 @@ let fullName = ctx.Functions.EmpFullname.Invoke(100).ReturnValue
 let rnd = new Random()
 open System.Threading
 
-let taskarray = 
+let taskarray =
     [1u..100u] |> Seq.map(fun itm ->
         let itm = rnd.Next(1, 300)
         let t1 = Tasks.Task.Run(fun () ->
             let ctx1 = HR.GetDataContext()
-            let country1 = 
+            let country1 =
                 query {
                     for c in ctx1.Hr.Countries do
                     where (c.CountryId = "AR")
@@ -254,7 +254,7 @@ let taskarray =
         let t2 = Tasks.Task.Run(fun () ->
             let ctx2 = HR.GetDataContext()
             Console.WriteLine Thread.CurrentThread.ManagedThreadId
-            let country2 = 
+            let country2 =
                 query {
                     for c in ctx2.Hr.Countries do
                     where (c.CountryId = "BR")
@@ -274,7 +274,7 @@ ctx.GetUpdates()
 query {
     for count in ctx.Hr.Countries do
     where (count.CountryName = "Andorra" || count.RegionId = 99934)
-} |> Seq.``delete all items from single table`` 
+} |> Seq.``delete all items from single table``
 |> Async.AwaitTask
 |> Async.RunSynchronously
 
@@ -289,7 +289,7 @@ query {
 
 //******************** MySqlConnector **********************//
 
-// MySqlConnector is unofficial driver, a lot faster execution, better async. 
+// MySqlConnector is unofficial driver, a lot faster execution, better async.
 // Stored-procedures and function calls not supported.
 
 // NOTE: Needs also System.Threading.Tasks.Extensions.dll, System.Buffers.dll and System.Runtime.InteropServices.RuntimeInformation.dll to ResolutionPath
@@ -303,8 +303,8 @@ let connectorPath = __SOURCE_DIRECTORY__ + @"/../../../packages/tests/MySqlConne
 type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connStr, ResolutionPath = connectorPath, Owner = "HR">
 let ctx2 = HRFast.GetDataContext()
 
-let firstNameAsync = 
+let firstNameAsync =
     query {
         for emp in ctx2.Hr.Employees do
         select (emp.FirstName, emp.LastName, emp.PhoneNumber)
-    } |> Seq.executeQueryAsync 
+    } |> Seq.executeQueryAsync

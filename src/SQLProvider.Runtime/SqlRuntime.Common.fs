@@ -27,6 +27,7 @@ type DatabaseProviderTypes =
     | MSSQLSERVER_DYNAMIC = 8
     | MSSQLSERVER_SSDT = 9
     | DUCKDB = 10
+    | EXTERNAL = 11
 
 type RelationshipDirection = Children = 0 | Parents = 1
 
@@ -491,7 +492,7 @@ type table = string
 
 type SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of struct (alias * Table)
 type [<Struct>] UnionType = NormalUnion | UnionAll | Intersect | Except
-type internal SqlExp =
+type SqlExp =
     | BaseTable    of struct (alias * Table)                // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
@@ -552,7 +553,7 @@ type internal SqlExp =
                 | AggregateOp(_,_,rest) -> isSortBy rest
             isSortBy this
 
-type internal SqlQuery =
+type SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
@@ -637,7 +638,7 @@ type internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-type internal ISqlProvider =
+type ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
@@ -681,14 +682,20 @@ type internal ISqlProvider =
     /// the other parameters are the base table alias, the base table, and a dictionary containing
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<ProjectionParameter>> * bool * IDbConnection -> string * ResizeArray<IDbDataParameter>
-    ///Builds a command representing a call to a stored procedure
+    /// Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
-    ///Builds a command representing a call to a stored procedure, executing async
+    /// Builds a command representing a call to a stored procedure, executing async
     abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> System.Threading.Tasks.Task<ReturnValueType>
-    ///Provider specific lock to do provider specific locking
+    /// Provider specific lock to do provider specific locking
     abstract GetLockObject : unit -> obj
+    /// MS Access needs to keep connection open
+    abstract CloseConnectionAfterQuery : bool
+    /// SQLITE doesn't have command type of stored procedures
+    abstract StoredProcedures : bool
+    /// MSSDT doesn't do design-time connection
+    abstract DesignConnection : bool
 
-and internal SchemaCache =
+and SchemaCache =
     { PrimaryKeys   : ConcurrentDictionary<string,string list>
       Tables        : ConcurrentDictionary<string,Table>
       Columns       : ConcurrentDictionary<string,ColumnLookup>

@@ -64,39 +64,6 @@
     <Compile Include="..\SQLProvider.Runtime\Ssdt.DacpacParser.fs">
       <Link>Ssdt.DacpacParser.fs</Link>
     </Compile>    
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
-      <Link>Providers.MsSqlServer.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
-      <Link>Providers.MsSqlServer.Dynamic.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
-      <Link>Providers.MsSqlServer.Ssdt.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
-      <Link>Providers.MSAccess.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
-      <Link>Providers.MySql.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
-      <Link>Providers.Odbc.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
-      <Link>Providers.Oracle.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
-      <Link>Providers.Postgresql.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
-      <Link>Providers.SQLite.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
-      <Link>Providers.Firebird.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs">
-        <Link>Providers.DuckDb.fs</Link>
-    </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.QueryExpression.fs">
       <Link>SqlRuntime.QueryExpression.fs</Link>
     </Compile>
@@ -105,6 +72,39 @@
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Async.fs">
       <Link>SqlRuntime.Async.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
+        <Link>Providers.MsSqlServer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
+        <Link>Providers.MsSqlServer.Dynamic.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
+        <Link>Providers.MsSqlServer.Ssdt.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
+        <Link>Providers.MSAccess.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
+        <Link>Providers.MySql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
+        <Link>Providers.Odbc.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
+        <Link>Providers.Oracle.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
+        <Link>Providers.Postgresql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
+        <Link>Providers.SQLite.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
+        <Link>Providers.Firebird.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs">
+        <Link>Providers.DuckDb.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>

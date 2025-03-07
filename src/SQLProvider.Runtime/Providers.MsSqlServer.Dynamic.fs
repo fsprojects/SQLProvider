@@ -582,6 +582,9 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         MSSqlServerDynamic.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
