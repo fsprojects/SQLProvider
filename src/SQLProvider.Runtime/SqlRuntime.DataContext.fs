@@ -13,9 +13,7 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
-    /// vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
-    let mutable providerFactory = fun vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath ->
+    let providerFactory = fun vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath ->
         match vendor with
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
         | DatabaseProviderTypes.MSSQLSERVER_DYNAMIC -> MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, referencedAssemblies, tableNames) :> ISqlProvider
@@ -56,7 +54,7 @@ module internal ProviderBuilder =
         Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
         param, entity, toEntityArray
 
-type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
+type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) as this =
     let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
@@ -65,7 +63,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         let addCache() =
             lazy
                 let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
-                let prov : ISqlProvider = ProviderBuilder.providerFactory providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let prov : ISqlProvider = SqlDataContext.ProviderFactory providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 if not (prov.GetSchemaCache().IsOffline) then
                     use con =
                         if prov.DesignConnection then
@@ -85,6 +83,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         with | ex ->
             let x = providerCache.TryRemove typeName
             reraise()
+
+    /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
+    /// Parameters: vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+    static member val ProviderFactory = ProviderBuilder.providerFactory with get, set
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString

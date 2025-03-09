@@ -52,7 +52,6 @@ type internal ParameterValue =
 type public SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config, assemblyReplacementMap=["FSharp.Data.SqlProvider.DesignTime", "FSharp.Data.SqlProvider";
                                                                       "SQLProvider.DesignTime", "SQLProvider.Runtime"], addDefaultProbingLocation=true)
-
     let ns = "SQLProvider"
     let asm = Reflection.execAssembly.Force()
 
@@ -487,7 +486,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let rootType, prov, con =
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let referencedAssemblies = Array.append [|config.RuntimeAssembly|] config.ReferencedAssemblies
-                let prov = ProviderBuilder.providerFactory dbVendor resolutionPath referencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let prov : ISqlProvider = SqlDataContext.ProviderFactory dbVendor resolutionPath referencedAssemblies config.RuntimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 let con =
                     match dbVendor with
                     | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
@@ -1096,7 +1095,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     let cmdTimeout =
                       let argTimeout = %%actualArgs.[3]
                       if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
-
+                    
                     // **important**: contextSchemaPath is empty because we do not want
                     // to load the schema cache from (the developer's) local filesystem in production
                     SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor,
