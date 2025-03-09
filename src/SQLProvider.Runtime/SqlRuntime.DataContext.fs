@@ -185,7 +185,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
                      |> Async.AwaitTask
                      |> Async.Catch
-                     |> Async.StartAsTask
+                     |> Async.StartImmediateAsTask
                 return
                     match resOrErr with
                     | Choice1Of2 res ->

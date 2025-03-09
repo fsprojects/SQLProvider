@@ -103,7 +103,7 @@ module internal QueryImplementation =
 
     let inline internal invokeEntitiesListAvoidingDynamicInvoke (results:IEnumerable<SqlEntity>) (projector:Delegate) =
         let returnType = projector.Method.ReturnType
-        if returnType.IsClass then // Try to avoid the slow DynamicInvoke on baseic types
+        if returnType.IsClass then // Try to avoid the slow DynamicInvoke on basic types
             let invoker = projector :?> Func<SqlEntity, _> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
         else
 
