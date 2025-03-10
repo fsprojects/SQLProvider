@@ -58,13 +58,13 @@ type OdbcQuoteCharacter =
     | APHOSTROPHE = 5 
 
 type SQLiteLibrary =
-    // .NET Framework default
+    /// .NET Framework default
     | SystemDataSQLite = 0
-    // Mono version
+    /// Mono version
     | MonoDataSQLite = 1
-    // Auto-select by environment
+    /// Auto-select by environment
     | AutoSelect = 2
-    // Microsoft.Data.Sqlite. May support .NET Standard 2.0 contract in the future.
+    /// Microsoft.Data.Sqlite. May support .NET Standard 2.0 contract in the future.
     | MicrosoftDataSqlite = 3
 
 module public QueryEvents =
@@ -937,6 +937,7 @@ module public OfflineTools =
     open System.Collections
 
     type MockQueryable<'T>(dc:ISqlDataContext, itms:IQueryable<'T>) = //itms:IQueryable<'T>) =
+        interface FSharp.Data.Sql.Patterns.ISqlQueryable
         interface IQueryable<'T>
         interface IQueryable with
             member __.Provider = itms.Provider

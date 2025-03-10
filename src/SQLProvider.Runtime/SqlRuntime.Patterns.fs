@@ -6,6 +6,9 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 
+/// Marker interface
+type ISqlQueryable = interface end
+
 [<return: Struct>]
 let inline (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
 [<return: Struct>]
@@ -23,6 +26,26 @@ let (|NewExpr|_|) (e:Expression) =
         Some (e.Constructor, Seq.toList e.Arguments)
     | _ -> None
 
+let (|Constant|_|) (exp:Expression) =
+    let e = ExpressionOptimizer.doReduction exp
+    match e.NodeType, e with 
+    | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
+    | _ -> None
+
+let rec (|OptionalConvertOrTypeAs|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> 
+        match ue.Operand with OptionalConvertOrTypeAs(x) -> x
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
+        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
+        e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
+        e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when isNull e.Object && e.Method.Name = "ToString" && e.Arguments.Count = 1 ->
+        e.Arguments.[0]
+    | _ -> e
+
 let (|SeqValuesQueryable|_|) (e:Expression) =
     let rec isQueryable (ty : Type) = 
         ty.FindInterfaces((fun ty _ -> Type.(=)(ty, typeof<System.Linq.IQueryable>)), null)
@@ -33,15 +56,16 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
     | true ->
         match e.NodeType, e with
         | ExpressionType.Constant, (:? ConstantExpression as ce) ->
-            if ce.Value.GetType().Name = "SqlQueryable`1" then
-                let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
+            match ce.Value with
+            | :? ISqlQueryable ->
+                let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
                 Some values
-            else None
+            | _ -> None
         | _ ->
-            let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
-            match values.GetType().Name = "SqlQueryable`1" with
-            | true -> Some values
-            | false -> None
+            let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
+            match values with
+            | :? ISqlQueryable -> Some values
+            | _ -> None
 
 let (|SeqValues|_|) (e:Expression) =
     if e.Type.FullName = "System.String" then None // String is char[] but we don't want to hit that!
@@ -71,7 +95,8 @@ let (|SeqValues|_|) (e:Expression) =
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 myVal :?> System.Collections.IEnumerable
-            | _ -> Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+            | _ ->
+                (Expression.Lambda(e).Compile() :?> Func<System.Collections.IEnumerable>).Invoke()
 
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
@@ -100,13 +125,6 @@ let (|ConvertOrTypeAs|_|) (e:Expression) =
     match e.NodeType, e with 
     | ExpressionType.Convert, (:? UnaryExpression as ue ) 
     | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> Some ue.Operand
-    | _ -> None
-
-
-let (|Constant|_|) (exp:Expression) =
-    let e = ExpressionOptimizer.doReduction exp
-    match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
     | _ -> None
 
 [<return: Struct>]
@@ -178,20 +196,6 @@ let (|Lambda|_|) (e:Expression) =
 let inline (|OptionalQuote|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
-    | _ -> e
-
-let rec (|OptionalConvertOrTypeAs|) (e:Expression) = 
-    match e.NodeType, e with 
-    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
-    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> 
-        match ue.Operand with OptionalConvertOrTypeAs(x) -> x
-    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
-        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
-        e.Arguments.[0]
-    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
-        e.Arguments.[0]
-    | ExpressionType.Call, (:? MethodCallExpression as e) when isNull e.Object && e.Method.Name = "ToString" && e.Arguments.Count = 1 ->
-        e.Arguments.[0]
     | _ -> e
 
 let (|OptionalCopyOfStruct|) (e:Expression) = 

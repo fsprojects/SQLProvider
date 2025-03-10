@@ -378,6 +378,7 @@ module internal QueryImplementation =
         let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
             SqlQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
+        interface ISqlQueryable
         interface IQueryable<'T>
         interface IQueryable with
             member __.Provider = SqlQueryProvider.Provider
@@ -415,6 +416,7 @@ module internal QueryImplementation =
         let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
         static member Create(table,conString,provider) =
             SqlOrderedQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
+        interface ISqlQueryable
         interface IOrderedQueryable<'T>
         interface IQueryable<'T>
         interface IQueryable with
