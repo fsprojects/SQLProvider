@@ -315,7 +315,8 @@ type DatabaseProviderTypes =
   | FIREBIRD = 7
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
-  | DUCKDB = 10</div>
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
 <div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
 <div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
 type SQLiteLibrary =
@@ -323,7 +324,9 @@ type SQLiteLibrary =
   | MonoDataSQLite = 1
   | AutoSelect = 2
   | MicrosoftDataSqlite = 3</div>
-<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0</div>
+<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
 type CaseSensitivityChange =
   | ORIGINAL = 0

@@ -7,15 +7,15 @@
     <meta content="pezipink,colinbull,thorium" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="SQLProvider">
-    <meta property="og:title" content="SsdtColumn (SQLProvider)" />
+    <meta property="og:title" content="SchemaCache (SQLProvider)" />
     <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
-    <meta name="twitter:title" content="SsdtColumn (SQLProvider)">
+    <meta name="twitter:title" content="SchemaCache (SQLProvider)">
     
-    <title>SsdtColumn (SQLProvider) | SQLProvider</title>
+    <title>SchemaCache (SQLProvider) | SQLProvider</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -247,42 +247,27 @@
     <div id="content">
         <div>
   <h2>
-    SsdtColumn Type
+    SchemaCache Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt.html">
-        FSharp.Data.Sql.Ssdt
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common.html">
+        FSharp.Data.Sql.Common
       </a>
     </dt>
     <dt>
       Assembly: FSharp.Data.SqlProvider.dll
     </dt>
     <dt>
-      Parent Module: 
-      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser.html">
-        DacpacParser
-      </a>
-    </dt>
-    <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtcolumn.html">SsdtColumn</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtcolumn.html">SsdtColumn</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -315,19 +300,97 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '831', 831)" onmouseover="showTip(event, '831', 831)">
+              <code onmouseout="hideTip(event, '651', 651)" onmouseover="showTip(event, '651', 651)">
                 <p>
-                  <a id="AllowNulls">
-                    <a href="#AllowNulls">
-                      <code>AllowNulls</code>
+                  <a id="Columns">
+                    <a href="#Columns">
+                      <code>Columns</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="831">
+              <div class="fsdocs-tip" id="651">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>AllowNulls</code>
+                  <code>Columns</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '652', 652)" onmouseover="showTip(event, '652', 652)">
+                <p>
+                  <a id="Individuals">
+                    <a href="#Individuals">
+                      <code>Individuals</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="652">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Individuals</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><span>(<span>obj&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;obj</span>&gt;</span></span>)</span>&#32;array</span></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><span>(<span>obj&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;obj</span>&gt;</span></span>)</span>&#32;array</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '653', 653)" onmouseover="showTip(event, '653', 653)">
+                <p>
+                  <a id="IsOffline">
+                    <a href="#IsOffline">
+                      <code>IsOffline</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="653">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>IsOffline</code>
                   <br/>
                   <br/>
                   <span>
@@ -354,24 +417,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '832', 832)" onmouseover="showTip(event, '832', 832)">
+              <code onmouseout="hideTip(event, '654', 654)" onmouseover="showTip(event, '654', 654)">
                 <p>
-                  <a id="ComputedColumn">
-                    <a href="#ComputedColumn">
-                      <code>ComputedColumn</code>
+                  <a id="Packages">
+                    <a href="#Packages">
+                      <code>Packages</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="832">
+              <div class="fsdocs-tip" id="654">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ComputedColumn</code>
+                  <code>Packages</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>bool</code>
+                    <code><span>ResizeArray&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -384,7 +447,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>bool</code>
+                <code><span>ResizeArray&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -393,24 +456,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '833', 833)" onmouseover="showTip(event, '833', 833)">
+              <code onmouseout="hideTip(event, '655', 655)" onmouseover="showTip(event, '655', 655)">
                 <p>
-                  <a id="DataType">
-                    <a href="#DataType">
-                      <code>DataType</code>
+                  <a id="PrimaryKeys">
+                    <a href="#PrimaryKeys">
+                      <code>PrimaryKeys</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="833">
+              <div class="fsdocs-tip" id="655">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>DataType</code>
+                  <code>PrimaryKeys</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>string</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>string&#32;list</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -423,7 +486,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>string</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>string&#32;list</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -432,24 +495,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '834', 834)" onmouseover="showTip(event, '834', 834)">
+              <code onmouseout="hideTip(event, '656', 656)" onmouseover="showTip(event, '656', 656)">
                 <p>
-                  <a id="Description">
-                    <a href="#Description">
-                      <code>Description</code>
+                  <a id="Relationships">
+                    <a href="#Relationships">
+                      <code>Relationships</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="834">
+              <div class="fsdocs-tip" id="656">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Description</code>
+                  <code>Relationships</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>string</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-relationship.html">Relationship</a>&#32;array</span>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-relationship.html">Relationship</a>&#32;array</span></span>)</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -462,7 +525,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>string</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>(<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-relationship.html">Relationship</a>&#32;array</span>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-relationship.html">Relationship</a>&#32;array</span></span>)</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -471,24 +534,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '835', 835)" onmouseover="showTip(event, '835', 835)">
+              <code onmouseout="hideTip(event, '657', 657)" onmouseover="showTip(event, '657', 657)">
                 <p>
-                  <a id="FullName">
-                    <a href="#FullName">
-                      <code>FullName</code>
+                  <a id="Sprocs">
+                    <a href="#Sprocs">
+                      <code>Sprocs</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="835">
+              <div class="fsdocs-tip" id="657">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FullName</code>
+                  <code>Sprocs</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>string</code>
+                    <code><span>ResizeArray&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -501,7 +564,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>string</code>
+                <code><span>ResizeArray&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -510,24 +573,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '836', 836)" onmouseover="showTip(event, '836', 836)">
+              <code onmouseout="hideTip(event, '658', 658)" onmouseover="showTip(event, '658', 658)">
                 <p>
-                  <a id="HasDefault">
-                    <a href="#HasDefault">
-                      <code>HasDefault</code>
+                  <a id="SprocsParams">
+                    <a href="#SprocsParams">
+                      <code>SprocsParams</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="836">
+              <div class="fsdocs-tip" id="658">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>HasDefault</code>
+                  <code>SprocsParams</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>bool</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -540,7 +603,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>bool</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -549,24 +612,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '837', 837)" onmouseover="showTip(event, '837', 837)">
+              <code onmouseout="hideTip(event, '659', 659)" onmouseover="showTip(event, '659', 659)">
                 <p>
-                  <a id="IsIdentity">
-                    <a href="#IsIdentity">
-                      <code>IsIdentity</code>
+                  <a id="Tables">
+                    <a href="#Tables">
+                      <code>Tables</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="837">
+              <div class="fsdocs-tip" id="659">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>IsIdentity</code>
+                  <code>Tables</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>bool</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -579,46 +642,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '838', 838)" onmouseover="showTip(event, '838', 838)">
-                <p>
-                  <a id="Name">
-                    <a href="#Name">
-                      <code>Name</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="838">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Name</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>string</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>string</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -629,8 +653,252 @@
   </div>
   <div></div>
   <div></div>
-  <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '660', 660)" onmouseover="showTip(event, '660', 660)">
+                <p>
+                  <a id="Save">
+                    <a href="#Save">
+                      <code><span>this.Save</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="660">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Save</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filePath
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  filePath
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '661', 661)" onmouseover="showTip(event, '661', 661)">
+                <p>
+                  <a id="Empty">
+                    <a href="#Empty">
+                      <code><span>SchemaCache.Empty</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="661">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SchemaCache.Empty</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '662', 662)" onmouseover="showTip(event, '662', 662)">
+                <p>
+                  <a id="Load">
+                    <a href="#Load">
+                      <code><span>SchemaCache.Load<span><span>(<span>filePath</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="662">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SchemaCache.Load<span><span>(<span>filePath</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filePath
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  filePath
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '663', 663)" onmouseover="showTip(event, '663', 663)">
+                <p>
+                  <a id="LoadOrEmpty">
+                    <a href="#LoadOrEmpty">
+                      <code><span>SchemaCache.LoadOrEmpty<span><span>(<span>filePath</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="663">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SchemaCache.LoadOrEmpty<span><span>(<span>filePath</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        filePath
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  filePath
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-schemacache.html">SchemaCache</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>

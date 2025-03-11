@@ -253,9 +253,9 @@
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
 <p>A basic connection string used to connect to the SQLite database.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="prop">connectionString</span> <span class="o">=</span> 
-    <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span> 
-    <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;&quot;</span> <span class="o">+</span> 
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="prop">connectionString</span> <span class="o">=</span>
+    <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span>
+    <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;&quot;</span> <span class="o">+</span>
     <span class="s">&quot;Version=3;foreign keys=true&quot;</span>
 </code></pre>
 <h3><a name="ResolutionPath" class="anchor" href="#ResolutionPath">ResolutionPath</a></h3>
@@ -272,7 +272,7 @@ Both absolute and relative paths are supported.</p>
 manually copy the interop libraries:</p>
 <ul>
 <li>
-on Windows: copy <code>x64</code> and <code>x86</code> subdirectories from SQLite build directory, which typically is 
+on Windows: copy <code>x64</code> and <code>x86</code> subdirectories from SQLite build directory, which typically is
 <code>&lt;project root&gt;\packages\System.Data.SQLite.Core.&lt;version&gt;\build\net46</code>.
 </li>
 <li>on Linux: first, build the <code>libSQLite.Interop.so</code> using <code>&lt;srcDir&gt;/Setup/compile-interop-assembly-release.sh</code> script from <a href="https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki">System.Data.SQLite source distribution</a> <code>sqlite-netFx-source-1.x.xxx.x.zip</code>. And then copy it from <code>&lt;srcDir&gt;/bin/2013/Release/bin/</code>.</li>
@@ -294,15 +294,15 @@ namespace, which has the following members:</p>
 </ul>
 <h2><a name="Example" class="anchor" href="#Example">Example</a></h2>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="rt">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-                <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 13)" onmouseover="showTip(event, 'fs12', 13)" class="id">SQLITE</span><span class="pn">,</span> 
+                <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 13)" onmouseover="showTip(event, 'fs12', 13)" class="id">SQLITE</span><span class="pn">,</span>
                 <span class="fn">SQLiteLibrary</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 15)" onmouseover="showTip(event, 'fs13', 15)" class="en">SQLiteLibrary</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 16)" onmouseover="showTip(event, 'fs14', 16)" class="id">SystemDataSQLite</span><span class="pn">,</span>
-                <span class="fn">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="prop">connectionString</span><span class="pn">,</span> 
-                <span class="fn">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="prop">resolutionPath</span><span class="pn">,</span> 
+                <span class="fn">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="prop">connectionString</span><span class="pn">,</span>
+                <span class="fn">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="prop">resolutionPath</span><span class="pn">,</span>
                 <span class="fn">CaseSensitivityChange</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 19)" onmouseover="showTip(event, 'fs10', 19)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="en">CaseSensitivityChange</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">ORIGINAL</span><span class="pn">&gt;</span>
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 23)" onmouseover="showTip(event, 'fs8', 23)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">customers</span> <span class="o">=</span> 
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">customers</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">Customers</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="fn">c</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="id">ContactName</span><span class="pn">)</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 35)" onmouseover="showTip(event, 'fs26', 35)" class="id">toList</span>
@@ -354,7 +354,8 @@ type DatabaseProviderTypes =
   | FIREBIRD = 7
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
-  | DUCKDB = 10</div>
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
 <div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
 <div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
 type SQLiteLibrary =
@@ -362,7 +363,9 @@ type SQLiteLibrary =
   | MonoDataSQLite = 1
   | AutoSelect = 2
   | MicrosoftDataSqlite = 3</div>
-<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0</div>
+<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
 type CaseSensitivityChange =
   | ORIGINAL = 0

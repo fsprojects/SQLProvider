@@ -271,10 +271,10 @@ situation is that MS-SQL-server handles async well, and MySQL does not so.)</p>
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 30)" onmouseover="showTip(event, 'fs20', 30)" class="id">Threading</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 31)" onmouseover="showTip(event, 'fs21', 31)" class="id">Tasks</span>
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs5', 32)" onmouseover="showTip(event, 'fs5', 32)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 33)" onmouseover="showTip(event, 'fs6', 33)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 34)" onmouseover="showTip(event, 'fs7', 34)" class="id">Sql</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="rt">MyWebServer</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span> 
-    <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="fn">``Execute Business Logics``</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="fn">id</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs24', 37)" onmouseover="showTip(event, 'fs24', 37)" class="vt">Guid</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs25', 38)" onmouseover="showTip(event, 'fs25', 38)" class="d">Task</span><span class="pn">&lt;</span><span class="id">_</span><span class="pn">&gt;</span> <span class="o">=</span> 
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="rt">MyWebServer</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
+    <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="fn">``Execute Business Logics``</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="fn">id</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs24', 37)" onmouseover="showTip(event, 'fs24', 37)" class="vt">Guid</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs25', 38)" onmouseover="showTip(event, 'fs25', 38)" class="d">Task</span><span class="pn">&lt;</span><span class="id">_</span><span class="pn">&gt;</span> <span class="o">=</span>
         <span onmouseout="hideTip(event, 'fs26', 39)" onmouseover="showTip(event, 'fs26', 39)" class="k">async</span> <span class="pn">{</span>
-            <span class="k">use</span> <span onmouseout="hideTip(event, 'fs27', 40)" onmouseover="showTip(event, 'fs27', 40)" class="d">transaction</span> <span class="o">=</span> 
+            <span class="k">use</span> <span onmouseout="hideTip(event, 'fs27', 40)" onmouseover="showTip(event, 'fs27', 40)" class="d">transaction</span> <span class="o">=</span>
                 <span class="k">new</span> <span onmouseout="hideTip(event, 'fs19', 41)" onmouseover="showTip(event, 'fs19', 41)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 42)" onmouseover="showTip(event, 'fs28', 42)" class="id">Transactions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 43)" onmouseover="showTip(event, 'fs29', 43)" class="id">TransactionScope</span><span class="pn">(</span>
                 <span class="c">// .NET 4.5.1 fix for asynchronous transactions:</span>
                     <span onmouseout="hideTip(event, 'fs19', 44)" onmouseover="showTip(event, 'fs19', 44)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 45)" onmouseover="showTip(event, 'fs28', 45)" class="id">Transactions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 46)" onmouseover="showTip(event, 'fs30', 46)" class="en">TransactionScopeAsyncFlowOption</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 47)" onmouseover="showTip(event, 'fs31', 47)" class="id">Enabled</span>
@@ -380,7 +380,8 @@ type DatabaseProviderTypes =
   | FIREBIRD = 7
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
-  | DUCKDB = 10</div>
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
 <div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
 <div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
 type NullableColumnType =
@@ -402,7 +403,9 @@ type SQLiteLibrary =
   | MonoDataSQLite = 1
   | AutoSelect = 2
   | MicrosoftDataSqlite = 3</div>
-<div class="fsdocs-tip" id="fs18">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0</div>
+<div class="fsdocs-tip" id="fs18">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs19">namespace System</div>
 <div class="fsdocs-tip" id="fs20">namespace System.Threading</div>
 <div class="fsdocs-tip" id="fs21">namespace System.Threading.Tasks</div>

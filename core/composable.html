@@ -318,7 +318,7 @@ They are both lazy by nature, meaning they aren't evaluated until you enumerate 
         <span class="k">match</span> <span onmouseout="hideTip(event, 'fs39', 80)" onmouseover="showTip(event, 'fs39', 80)" class="fn">inUse</span> <span class="k">with</span>
         <span class="pn">|</span><span class="k">true</span> <span class="k">-&gt;</span>
             <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs46', 81)" onmouseover="showTip(event, 'fs46', 81)" class="fn">iq</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs46', 82)" onmouseover="showTip(event, 'fs46', 82)" class="fn">iq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs42', 83)" onmouseover="showTip(event, 'fs42', 83)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs47', 84)" onmouseover="showTip(event, 'fs47', 84)" class="fn">c</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs36', 85)" onmouseover="showTip(event, 'fs36', 85)" class="rt">CustomersEntity</span><span class="pn">)</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs47', 86)" onmouseover="showTip(event, 'fs47', 86)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 87)" onmouseover="showTip(event, 'fs29', 87)" class="id">CompanyName</span> <span class="o">=</span> <span class="s">&quot;The Big Cheese&quot;</span><span class="pn">)</span><span class="pn">)</span>
-        <span class="pn">|</span><span class="k">false</span> <span class="k">-&gt;</span> 
+        <span class="pn">|</span><span class="k">false</span> <span class="k">-&gt;</span>
             <span onmouseout="hideTip(event, 'fs40', 88)" onmouseover="showTip(event, 'fs40', 88)" class="fn">myFilter2</span>
     <span onmouseout="hideTip(event, 'fs45', 89)" onmouseover="showTip(event, 'fs45', 89)" class="fn">queryable</span>
 </code></pre>
@@ -376,7 +376,7 @@ This is done by not saying <code>|&gt; Seq.toArray</code> to the first query:</p
 <h3><a name="Using-non-strongly-typed-__-GetColumn-name" class="anchor" href="#Using-non-strongly-typed-__-GetColumn-name">Using non-strongly-typed __.GetColumn "name"</a></h3>
 <p>All the entities inherit from SqlEntity which has GetColumn-method.
 So you can use non-strongly-typed columns like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs63', 166)" onmouseover="showTip(event, 'fs63', 166)" class="id">qry</span> <span class="o">=</span> 
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs63', 166)" onmouseover="showTip(event, 'fs63', 166)" class="id">qry</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs21', 167)" onmouseover="showTip(event, 'fs21', 167)" class="k">query</span> <span class="pn">{</span>
         <span class="k">for</span> <span onmouseout="hideTip(event, 'fs64', 168)" onmouseover="showTip(event, 'fs64', 168)" class="fn">x</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs20', 169)" onmouseover="showTip(event, 'fs20', 169)" class="id">query1</span> <span class="k">do</span>
         <span onmouseout="hideTip(event, 'fs25', 170)" onmouseover="showTip(event, 'fs25', 170)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs64', 171)" onmouseover="showTip(event, 'fs64', 171)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs65', 172)" onmouseover="showTip(event, 'fs65', 172)" class="id">GetColumn</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs66', 173)" onmouseover="showTip(event, 'fs66', 173)" class="rt">string</span><span class="pn">&gt;</span> <span class="s">&quot;CustomerId&quot;</span><span class="pn">)</span> <span class="o">=</span> <span class="s">&quot;ALFKI&quot;</span><span class="pn">)</span>
@@ -395,7 +395,7 @@ filters as quotations, and then include them in a query like this:</p>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs73', 195)" onmouseover="showTip(event, 'fs73', 195)" class="id">employees</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs21', 196)" onmouseover="showTip(event, 'fs21', 196)" class="k">query</span> <span class="pn">{</span>
         <span class="k">for</span> <span onmouseout="hideTip(event, 'fs74', 197)" onmouseover="showTip(event, 'fs74', 197)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs18', 198)" onmouseover="showTip(event, 'fs18', 198)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 199)" onmouseover="showTip(event, 'fs23', 199)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs75', 200)" onmouseover="showTip(event, 'fs75', 200)" class="id">Employees</span> <span class="k">do</span>
-        <span onmouseout="hideTip(event, 'fs25', 201)" onmouseover="showTip(event, 'fs25', 201)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span class="o">%</span><span onmouseout="hideTip(event, 'fs72', 202)" onmouseover="showTip(event, 'fs72', 202)" class="id">runtimeSelectedFilter</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs74', 203)" onmouseover="showTip(event, 'fs74', 203)" class="fn">emp</span><span class="pn">)</span> 
+        <span onmouseout="hideTip(event, 'fs25', 201)" onmouseover="showTip(event, 'fs25', 201)" class="k">where</span> <span class="pn">(</span><span class="pn">(</span><span class="o">%</span><span onmouseout="hideTip(event, 'fs72', 202)" onmouseover="showTip(event, 'fs72', 202)" class="id">runtimeSelectedFilter</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs74', 203)" onmouseover="showTip(event, 'fs74', 203)" class="fn">emp</span><span class="pn">)</span>
         <span onmouseout="hideTip(event, 'fs27', 204)" onmouseover="showTip(event, 'fs27', 204)" class="k">select</span> <span onmouseout="hideTip(event, 'fs74', 205)" onmouseover="showTip(event, 'fs74', 205)" class="fn">emp</span>
     <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 206)" onmouseover="showTip(event, 'fs30', 206)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 207)" onmouseover="showTip(event, 'fs31', 207)" class="id">toArray</span>
 </code></pre>
@@ -442,7 +442,8 @@ type DatabaseProviderTypes =
   | FIREBIRD = 7
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
-  | DUCKDB = 10</div>
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
 <div class="fsdocs-tip" id="fs13">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
 <div class="fsdocs-tip" id="fs14">[&lt;Struct&gt;]
 type SQLiteLibrary =
@@ -450,7 +451,9 @@ type SQLiteLibrary =
   | MonoDataSQLite = 1
   | AutoSelect = 2
   | MicrosoftDataSqlite = 3</div>
-<div class="fsdocs-tip" id="fs15">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0</div>
+<div class="fsdocs-tip" id="fs15">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs16">[&lt;Struct&gt;]
 type CaseSensitivityChange =
   | ORIGINAL = 0

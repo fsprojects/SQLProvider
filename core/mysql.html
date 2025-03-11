@@ -299,15 +299,15 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).</
             <span class="pn">&gt;</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 32)" onmouseover="showTip(event, 'fs19', 32)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 33)" onmouseover="showTip(event, 'fs17', 33)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 34)" onmouseover="showTip(event, 'fs20', 34)" class="id">employees</span> <span class="o">=</span> 
-    <span onmouseout="hideTip(event, 'fs19', 35)" onmouseover="showTip(event, 'fs19', 35)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> 
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 34)" onmouseover="showTip(event, 'fs20', 34)" class="id">employees</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs19', 35)" onmouseover="showTip(event, 'fs19', 35)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs21', 36)" onmouseover="showTip(event, 'fs21', 36)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 37)" onmouseover="showTip(event, 'fs22', 37)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs23', 38)" onmouseover="showTip(event, 'fs23', 38)" class="fn">e</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs23', 39)" onmouseover="showTip(event, 'fs23', 39)" class="fn">e</span><span class="pn">.</span><span class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs21', 40)" onmouseover="showTip(event, 'fs21', 40)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 41)" onmouseover="showTip(event, 'fs24', 41)" class="id">toList</span><span class="pn">)</span>
     <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs21', 42)" onmouseover="showTip(event, 'fs21', 42)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 43)" onmouseover="showTip(event, 'fs24', 43)" class="id">toList</span>
 </code></pre>
 <h2><a name="Working-with-Type-mappings" class="anchor" href="#Working-with-Type-mappings">Working with Type-mappings</a></h2>
 <h3><a name="Basic-types" class="anchor" href="#Basic-types">Basic types</a></h3>
 <p>MySql.Data types are not always the ones you have used to in .NET, so here is a little help:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 44)" onmouseover="showTip(event, 'fs25', 44)" class="id">myEmp</span> <span class="o">=</span> 
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 44)" onmouseover="showTip(event, 'fs25', 44)" class="id">myEmp</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs26', 45)" onmouseover="showTip(event, 'fs26', 45)" class="k">query</span> <span class="pn">{</span>
         <span class="k">for</span> <span onmouseout="hideTip(event, 'fs27', 46)" onmouseover="showTip(event, 'fs27', 46)" class="fn">jh</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs19', 47)" onmouseover="showTip(event, 'fs19', 47)" class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">JobHistory</span> <span class="k">do</span>
         <span onmouseout="hideTip(event, 'fs28', 48)" onmouseover="showTip(event, 'fs28', 48)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs27', 49)" onmouseover="showTip(event, 'fs27', 49)" class="fn">jh</span><span class="pn">.</span><span class="id">Years</span> <span class="o">&gt;</span> <span class="n">10u</span><span class="pn">)</span>
@@ -336,7 +336,7 @@ not the expected one.</p>
 And comparing two datetimes as strings with "T" and without "T" will generate a problem with the time-part.</p>
 <p>If your DateTime columns are strings in the database, you can use <code>DateTime.Parse</code> in your where-queries:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="id">longAgoeTime</span><span class="pn">.</span><span class="id">UtcNow</span><span class="pn">.</span><span class="id">AddYears</span><span class="pn">(</span><span class="o">-</span><span class="n">5</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 69)" onmouseover="showTip(event, 'fs25', 69)" class="id">myEmp</span> <span class="o">=</span> 
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 69)" onmouseover="showTip(event, 'fs25', 69)" class="id">myEmp</span> <span class="o">=</span>
     <span onmouseout="hideTip(event, 'fs26', 70)" onmouseover="showTip(event, 'fs26', 70)" class="k">query</span> <span class="pn">{</span>
         <span class="k">for</span> <span onmouseout="hideTip(event, 'fs43', 71)" onmouseover="showTip(event, 'fs43', 71)" class="fn">emp</span> <span class="k">in</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Hr</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
         <span onmouseout="hideTip(event, 'fs28', 72)" onmouseover="showTip(event, 'fs28', 72)" class="k">where</span> <span class="pn">(</span><span class="id">DateTime</span><span class="pn">.</span><span class="id">Parse</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs43', 73)" onmouseover="showTip(event, 'fs43', 73)" class="id">emp</span><span class="pn">.</span><span class="id">HireDate</span><span class="pn">)</span> <span class="o">&gt;</span> <span class="id">longAgo</span><span class="pn">)</span>
@@ -363,7 +363,7 @@ so copy those files also to your referencePath. You can get them from correspond
 
 <span class="s">One complex query:</span>
 
-<span class="s">``` </span>
+<span class="s">```</span>
 <span class="s">MySql.Data.dll:     Real: 00:00:00.583, C0:00:00.484, GC gen0: 1, gen1: 0, gen2: 0</span>
 <span class="s">MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0</span>
 <span class="s">```</span>
@@ -403,7 +403,8 @@ type DatabaseProviderTypes =
   | FIREBIRD = 7
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
-  | DUCKDB = 10</div>
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
 <div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.MYSQL: Common.DatabaseProviderTypes = 3</div>
 <div class="fsdocs-tip" id="fs12">[&lt;Literal&gt;]
 val resPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../packages/tests/MySql.Data/lib/net45&quot;</div>

@@ -7,15 +7,15 @@
     <meta content="pezipink,colinbull,thorium" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="SQLProvider">
-    <meta property="og:title" content="DatabaseProviderTypes (SQLProvider)" />
+    <meta property="og:title" content="SqlQuery (SQLProvider)" />
     <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
-    <meta name="twitter:title" content="DatabaseProviderTypes (SQLProvider)">
+    <meta name="twitter:title" content="SqlQuery (SQLProvider)">
     
-    <title>DatabaseProviderTypes (SQLProvider) | SQLProvider</title>
+    <title>SqlQuery (SQLProvider) | SQLProvider</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -247,7 +247,7 @@
     <div id="content">
         <div>
   <h2>
-    DatabaseProviderTypes Type
+    SqlQuery Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -261,23 +261,13 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.enum">Enum</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a>&gt;</span></code>
       , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.iconvertible">IConvertible</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.ispanformattable">ISpanFormattable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
-    </dt>
-    <dt>
-      This is an enum type definition
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -310,28 +300,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '518', 518)" onmouseover="showTip(event, '518', 518)">
+              <code onmouseout="hideTip(event, '721', 721)" onmouseover="showTip(event, '721', 721)">
                 <p>
-                  <a id="DUCKDB">
-                    <a href="#DUCKDB">
-                      <code>DUCKDB</code>
+                  <a id="AggregateOp">
+                    <a href="#AggregateOp">
+                      <code>AggregateOp</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="518">
+              <div class="fsdocs-tip" id="721">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>DUCKDB</code>
+                  <code>AggregateOp</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -343,7 +330,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -352,28 +339,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '519', 519)" onmouseover="showTip(event, '519', 519)">
+              <code onmouseout="hideTip(event, '722', 722)" onmouseover="showTip(event, '722', 722)">
                 <p>
-                  <a id="EXTERNAL">
-                    <a href="#EXTERNAL">
-                      <code>EXTERNAL</code>
+                  <a id="Aliases">
+                    <a href="#Aliases">
+                      <code>Aliases</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="519">
+              <div class="fsdocs-tip" id="722">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>EXTERNAL</code>
+                  <code>Aliases</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>&gt;</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -385,7 +369,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -394,28 +378,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '520', 520)" onmouseover="showTip(event, '520', 520)">
+              <code onmouseout="hideTip(event, '723', 723)" onmouseover="showTip(event, '723', 723)">
                 <p>
-                  <a id="FIREBIRD">
-                    <a href="#FIREBIRD">
-                      <code>FIREBIRD</code>
+                  <a id="Count">
+                    <a href="#Count">
+                      <code>Count</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="520">
+              <div class="fsdocs-tip" id="723">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FIREBIRD</code>
+                  <code>Count</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code>bool</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -427,7 +408,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -436,28 +417,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '521', 521)" onmouseover="showTip(event, '521', 521)">
+              <code onmouseout="hideTip(event, '724', 724)" onmouseover="showTip(event, '724', 724)">
                 <p>
-                  <a id="MSACCESS">
-                    <a href="#MSACCESS">
-                      <code>MSACCESS</code>
+                  <a id="CrossJoins">
+                    <a href="#CrossJoins">
+                      <code>CrossJoins</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="521">
+              <div class="fsdocs-tip" id="724">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>MSACCESS</code>
+                  <code>CrossJoins</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>)</span>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -469,7 +447,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -478,28 +456,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '522', 522)" onmouseover="showTip(event, '522', 522)">
+              <code onmouseout="hideTip(event, '725', 725)" onmouseover="showTip(event, '725', 725)">
                 <p>
-                  <a id="MSSQLSERVER">
-                    <a href="#MSSQLSERVER">
-                      <code>MSSQLSERVER</code>
+                  <a id="Distinct">
+                    <a href="#Distinct">
+                      <code>Distinct</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="522">
+              <div class="fsdocs-tip" id="725">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>MSSQLSERVER</code>
+                  <code>Distinct</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code>bool</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -511,7 +486,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -520,28 +495,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '523', 523)" onmouseover="showTip(event, '523', 523)">
+              <code onmouseout="hideTip(event, '726', 726)" onmouseover="showTip(event, '726', 726)">
                 <p>
-                  <a id="MSSQLSERVER_DYNAMIC">
-                    <a href="#MSSQLSERVER_DYNAMIC">
-                      <code>MSSQLSERVER_DYNAMIC</code>
+                  <a id="Filters">
+                    <a href="#Filters">
+                      <code>Filters</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="523">
+              <div class="fsdocs-tip" id="726">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>MSSQLSERVER_DYNAMIC</code>
+                  <code>Filters</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -553,7 +525,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -562,28 +534,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '524', 524)" onmouseover="showTip(event, '524', 524)">
+              <code onmouseout="hideTip(event, '727', 727)" onmouseover="showTip(event, '727', 727)">
                 <p>
-                  <a id="MSSQLSERVER_SSDT">
-                    <a href="#MSSQLSERVER_SSDT">
-                      <code>MSSQLSERVER_SSDT</code>
+                  <a id="Grouping">
+                    <a href="#Grouping">
+                      <code>Grouping</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="524">
+              <div class="fsdocs-tip" id="727">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>MSSQLSERVER_SSDT</code>
+                  <code>Grouping</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><span>(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span>&#32;*&#32;<span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></span>)</span>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -595,7 +564,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><span>(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span>&#32;*&#32;<span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -604,28 +573,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '525', 525)" onmouseover="showTip(event, '525', 525)">
+              <code onmouseout="hideTip(event, '728', 728)" onmouseover="showTip(event, '728', 728)">
                 <p>
-                  <a id="MYSQL">
-                    <a href="#MYSQL">
-                      <code>MYSQL</code>
+                  <a id="HavingFilters">
+                    <a href="#HavingFilters">
+                      <code>HavingFilters</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="525">
+              <div class="fsdocs-tip" id="728">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>MYSQL</code>
+                  <code>HavingFilters</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -637,7 +603,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -646,28 +612,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '526', 526)" onmouseover="showTip(event, '526', 526)">
+              <code onmouseout="hideTip(event, '729', 729)" onmouseover="showTip(event, '729', 729)">
                 <p>
-                  <a id="ODBC">
-                    <a href="#ODBC">
-                      <code>ODBC</code>
+                  <a id="Links">
+                    <a href="#Links">
+                      <code>Links</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="526">
+              <div class="fsdocs-tip" id="729">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ODBC</code>
+                  <code>Links</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-linkdata.html">LinkData</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a></span>)</span>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -679,7 +642,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-linkdata.html">LinkData</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a></span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -688,28 +651,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '527', 527)" onmouseover="showTip(event, '527', 527)">
+              <code onmouseout="hideTip(event, '730', 730)" onmouseover="showTip(event, '730', 730)">
                 <p>
-                  <a id="ORACLE">
-                    <a href="#ORACLE">
-                      <code>ORACLE</code>
+                  <a id="Ordering">
+                    <a href="#Ordering">
+                      <code>Ordering</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="527">
+              <div class="fsdocs-tip" id="730">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ORACLE</code>
+                  <code>Ordering</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;bool</span>)</span>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -721,7 +681,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;bool</span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -730,28 +690,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '528', 528)" onmouseover="showTip(event, '528', 528)">
+              <code onmouseout="hideTip(event, '731', 731)" onmouseover="showTip(event, '731', 731)">
                 <p>
-                  <a id="POSTGRESQL">
-                    <a href="#POSTGRESQL">
-                      <code>POSTGRESQL</code>
+                  <a id="Projection">
+                    <a href="#Projection">
+                      <code>Projection</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="528">
+              <div class="fsdocs-tip" id="731">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>POSTGRESQL</code>
+                  <code>Projection</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>&#32;list</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -763,7 +720,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -772,28 +729,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '529', 529)" onmouseover="showTip(event, '529', 529)">
+              <code onmouseout="hideTip(event, '732', 732)" onmouseover="showTip(event, '732', 732)">
                 <p>
-                  <a id="SQLITE">
-                    <a href="#SQLITE">
-                      <code>SQLITE</code>
+                  <a id="Skip">
+                    <a href="#Skip">
+                      <code>Skip</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="529">
+              <div class="fsdocs-tip" id="732">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>SQLITE</code>
+                  <code>Skip</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    <code><span>int&#32;voption</span></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  static
                   <br/>
                 </div>
               </div>
@@ -805,7 +759,124 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                <code><span>int&#32;voption</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '733', 733)" onmouseover="showTip(event, '733', 733)">
+                <p>
+                  <a id="Take">
+                    <a href="#Take">
+                      <code>Take</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="733">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Take</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span>int&#32;voption</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span>int&#32;voption</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '734', 734)" onmouseover="showTip(event, '734', 734)">
+                <p>
+                  <a id="UltimateChild">
+                    <a href="#UltimateChild">
+                      <code>UltimateChild</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="734">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>UltimateChild</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><span>(<span>string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>)</span>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><span>(<span>string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></span>)</span>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '735', 735)" onmouseover="showTip(event, '735', 735)">
+                <p>
+                  <a id="Union">
+                    <a href="#Union">
+                      <code>Union</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="735">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Union</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html">UnionType</a>&#32;*&#32;string&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a>&#32;seq</span></span>)</span>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html">UnionType</a>&#32;*&#32;string&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a>&#32;seq</span></span>)</span>&#32;option</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -817,7 +888,141 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '736', 736)" onmouseover="showTip(event, '736', 736)">
+                <p>
+                  <a id="Empty">
+                    <a href="#Empty">
+                      <code><span>SqlQuery.Empty</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="736">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SqlQuery.Empty</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '737', 737)" onmouseover="showTip(event, '737', 737)">
+                <p>
+                  <a id="ofSqlExp">
+                    <a href="#ofSqlExp">
+                      <code><span>SqlQuery.ofSqlExp&#32;<span><span>(<span>exp,&#32;entityIndex</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="737">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SqlQuery.ofSqlExp&#32;<span><span>(<span>exp,&#32;entityIndex</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        exp
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html">SqlExp</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        entityIndex
+                      </b>
+                      :
+                      <code><span>ResizeArray&lt;string&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  exp
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html">SqlExp</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  entityIndex
+                </span>
+                :
+                <code><span>ResizeArray&lt;string&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>
