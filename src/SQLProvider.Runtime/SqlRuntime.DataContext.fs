@@ -54,7 +54,7 @@ module internal ProviderBuilder =
         Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
         param, entity, toEntityArray
 
-type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) as this =
+type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
     let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
