@@ -1,4 +1,4 @@
-### 1.4.11 - 12.03.2025
+### 1.4.12 - 12.03.2025
 * Some performance updates
 * Memory consumption reduced
 
