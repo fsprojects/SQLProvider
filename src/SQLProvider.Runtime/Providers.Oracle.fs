@@ -984,8 +984,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 

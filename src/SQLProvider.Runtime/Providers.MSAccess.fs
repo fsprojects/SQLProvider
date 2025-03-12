@@ -104,9 +104,10 @@ type internal MSAccessProvider(contextSchemaPath) =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         let pk =
-            if not(schemaCache.PrimaryKeys.ContainsKey entity.Table.FullName) then
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | false, _ ->
                 failwith("Can't update entity: Table doesn't have a primary key: " + entity.Table.FullName)
-            schemaCache.PrimaryKeys.[entity.Table.FullName]
+            | true, pkv -> pkv
         sb.Clear() |> ignore
 
         match pk with
@@ -581,8 +582,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 

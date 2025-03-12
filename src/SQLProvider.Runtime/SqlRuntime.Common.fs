@@ -219,7 +219,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
            | :? Array as arr -> 
                 unbox arr
            // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
-           | data when typeof<'T> <> data.GetType() && 
+           | data when Type.(<>)(typeof<'T>, data.GetType()) && 
                        Type.(<>)(typeof<'T>, typeof<obj>) &&
                        (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)

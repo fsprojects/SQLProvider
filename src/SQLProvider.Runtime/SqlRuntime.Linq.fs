@@ -178,13 +178,13 @@ module internal QueryImplementation =
                     tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3"), tup.GetMethod("makeTuple4"),
                     tup.GetMethod("makeTuple5"), tup.GetMethod("makeTuple6"), tup.GetMethod("makeTuple7")
 
+                let aggregates = Set.ofArray [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                 // do group-read
                 let collected = 
-                    let aggregates = [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
                         let data = 
-                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Set.exists (key.Contains) |> not)
                         let entity =
                             if Type.(=)(itemEntityType, typeof<SqlEntity>) then box e
                             elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity>>) then
