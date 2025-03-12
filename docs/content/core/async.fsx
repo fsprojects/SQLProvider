@@ -57,7 +57,7 @@ open FSharp.Data.Sql
 
 type MyWebServer() =
     member __.``Execute Business Logics`` (id : Guid) : Task<_> =
-        async {
+        task {
             use transaction =
                 new System.Transactions.TransactionScope(
                 // .NET 4.5.1 fix for asynchronous transactions:
@@ -79,7 +79,7 @@ type MyWebServer() =
 
             transaction.Complete()
             return "done!"
-        } |> Async.StartAsTask
+        } 
 
 (**
 

@@ -1,4 +1,15 @@
-﻿(**
+(*** hide ***)
+#I @"../../../bin/lib/netstandard2.0"
+#r "FSharp.Data.SqlProvider.dll"
+open System
+open FSharp.Data.Sql
+[<Literal>]
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3;foreign keys=true"
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite, ConnectionString = connectionString, ResolutionPath = resolutionPath,CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+
+(**
 
 ## Version control instructions
 
@@ -47,8 +58,10 @@ You have a source code like:
 
 *)
 
-type sql = SqlDataProvider<...params...>
+// type sql = SqlDataProvider<...params...>
+
 let dc = sql.GetDataContext()
+
 
 (**
 
@@ -61,12 +74,12 @@ What will first happen in the design-time, is that this will call `createTypes` 
 The entity-items themselves are rows in the database data, and they are modelled as dynamic sub-classes of `SqlEntity`, base-class in file [SqlRuntime.Common.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs) which can be thought of as a wrapper for `Dictionary<string,obj>` (a column name, and the value). SqlEntity is actually used for all kinds of result data, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as `SqlQueryable<SqlEntity>` or `SqlQueryable<'T>`, which is SQLProvider's class for `IQueryable<'T>` items.
 
 *)
-
-query {
-    for cust in dbc.Main.Customers do
+let qry = 
+ query {
+    for cust in dc.Main.Customers do
     where ("ALFKI" = cust.CustomerId)
     select cust
-} |> Seq.toArray
+ } |> Seq.toArray
 
 (**
 
@@ -138,11 +151,11 @@ WHERE (([cust].[CustomerID]= @param1))
 Now, if the select-clause had been complex:
 
 *)
-
-query {
+let qry2 = 
+ query {
     for emp in dc.Main.Employees do
     select (emp.BirthDate.DayOfYear + 3)
-} |> Seq.toArray
+ } |> Seq.toArray
 
 (**
 

@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
 #I "../../../bin/lib/netstandard2.0"
@@ -76,11 +76,11 @@ let [<Literal>] indivAmount = 1000
 
 If true, F# option types will be used in place of nullable database columns.
 If false, you will always receive the default value of the column's type, even
-if it is null in the database.
+if it is null in the database. You can also use VALUE_OPTION.
 
 *)
 
-let [<Literal>] useOptTypes  = true
+let [<Literal>] useOptTypes  = FSharp.Data.Sql.Common.NullableColumnType.OPTION
 
 (**
 ### Owner

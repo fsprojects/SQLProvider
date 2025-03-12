@@ -219,11 +219,13 @@ ctx.SubmitUpdates()
 To delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
 
 *)
+(*** hide ***)
+let conditions = true
 
 query {
-    for c in ctx.Dbo.Employees do
-    where (...)
-} |> Seq.``delete all items from single table``  |> Async.RunSynchronously
+    for c in ctx.Main.Employees do
+    where (conditions)
+} |> Seq.``delete all items from single table`` |> Async.AwaitTask |> Async.RunSynchronously
 
 (**
 

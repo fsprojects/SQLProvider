@@ -74,10 +74,16 @@ let resolutionPath = __SOURCE_DIRECTORY__
 Sets the count to load for each individual. See (individuals)[individuals.html]
 for further info.
 
+### UseOptionTypes
+
+If true, F# option types will be used in place of nullable database columns.
+If false, you will always receive the default value of the column's type, even
+if it is null in the database. You can also use VALUE_OPTION.
+
 *)
 
 [<Literal>]
-let useOptTypes = true
+let useOptTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION
 
 
 #r "FSharp.Data.SqlProvider.dll"

@@ -17,6 +17,9 @@ type sql  = SqlDataProvider<
             >
 (*** hide ***)
 let ctx = sql.GetDataContext()
+(*** hide ***)
+let xs = [].AsQueryable()
+
 (**
 # Composable Queries
 
@@ -148,6 +151,7 @@ Because it is implemented in the SQLProvider, you don't need to add FSharpCompos
 
 Example for using FSharpComposableQuery
 *)
+
 let qry1 =
     query { for u in dbContext.Users do
             select (u.Id, u.Name, u.Email)
