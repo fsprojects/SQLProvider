@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="FSharp.Data.SqlProvider">
-      <HintPath>..\..\..\bin\net6.0\FSharp.Data.SqlProvider.dll</HintPath>
+      <HintPath>..\..\..\bin\lib\net6.0\FSharp.Data.SqlProvider.dll</HintPath>
     </Reference>
   </ItemGroup>
 

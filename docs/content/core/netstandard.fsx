@@ -1,4 +1,4 @@
-﻿(**
+(**
 
 # .NET Standard / .NET Core support
 
@@ -48,7 +48,7 @@ If your database connection driver has external dependencies, they have to be al
 The connection string can be passed as a hard-coded static parameter (development) or `GetDataContext(connectionstring)` parameter on runtime, but fetching it automatically from the application configuration is not supported.
 
 The target frameworks are defined in the project file: `<TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks>`
-Corresponding files go to root bin paths, e.g.: \bin\netstandard2.0
+Corresponding files go to root bin paths, e.g.: \bin\lib\netstandard2.0
 
 #### Microsoft Sql Server
 
