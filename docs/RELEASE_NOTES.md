@@ -1,5 +1,6 @@
-### 1.4.10 - 13.03.2025
+### 1.4.11 - 12.03.2025
 * Some performance updates
+* Memory consumption reduced
 
 ### 1.4.9 - 23.02.2025
 * PostgreSQL primary key uppercase fix, PR #842

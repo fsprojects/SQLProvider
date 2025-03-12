@@ -598,9 +598,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         | ks -> 
             ~~(sprintf "UPDATE %s SET (%s) = (SELECT %s FROM DUAL) WHERE "
                 (entity.Table.FullName)
-                (String.Join(",", columns))
-                (String.Join(",", parameters |> Array.map (fun p -> p.ParameterName))))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
+                ((String.concat "," columns))
+                (String.concat "," (parameters |> Array.map (fun p -> p.ParameterName))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         parameters |> Array.iter (cmd.Parameters.Add >> ignore)
@@ -623,7 +623,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         pkValues |> List.iteri(fun i pkValue ->
@@ -927,7 +927,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             // build the select statment, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -974,7 +974,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s %s on "
                             joinType destTable.FullName destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

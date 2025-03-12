@@ -230,12 +230,15 @@ module internal Utilities =
         | :? String -> sprintf "'%s'" (value.ToString().Replace("'", ""))
         | _ -> value.ToString()
 
-    let replaceFirst (text:string) (oldValue:string) (newValue) =
+       
+    let inline replaceFirst (text:string) (oldValue:string) (newValue:string) =
         let position = text.IndexOf oldValue
         if position < 0 then
             text
         else
-            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+            //String.Concat(text.AsSpan(0, position), newValue.AsSpan(), text.AsSpan(position + oldValue.Length))
+            // ...would throw error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+            text.AsSpan(0, position).ToString() + newValue + text.AsSpan(position + oldValue.Length).ToString()
 
     let checkPred alias =
         let prefix = "[" + alias + "]."
@@ -247,7 +250,7 @@ module internal Utilities =
         (fun (k:string,v) ->
             if k.StartsWith prefix then
                 let temp = replaceFirst k prefix ""
-                let temp = temp.Substring(1,temp.Length-2)
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
                 Some(temp,v)
             // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
             elif  k.StartsWith prefix2 then
@@ -256,7 +259,7 @@ module internal Utilities =
             // this case is for MySQL and other vendors that use ` as whitespace qualifiers
             elif  k.StartsWith prefix3 then
                 let temp = replaceFirst k prefix3 ""
-                let temp = temp.Substring(1,temp.Length-2)
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
                 Some(temp,v)
             //this case for MSAccess, uses _ as whitespace qualifier
             elif  k.StartsWith prefix4 then
@@ -269,7 +272,7 @@ module internal Utilities =
             //this case is for DuckDb
             elif k.StartsWith prefix6 then
                 let temp = replaceFirst k prefix6 ""
-                let temp = temp.Substring(1,temp.Length-2)
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
                 Some(temp,v)
             elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
                 Some(k,v)
@@ -453,9 +456,9 @@ module internal Reflection =
 
     let listResolutionFullPaths (resolutionPathSemicoloned:string) =
         if resolutionPathSemicoloned.Contains ";" then
-            String.Join(";",
+            String.concat ";"
                 (resolutionPathSemicoloned.Split ';'
-                    |> Array.map (fun p -> p.Trim() |> System.IO.Path.GetFullPath)))
+                    |> Array.map (fun p -> p.Trim() |> System.IO.Path.GetFullPath))
         else
             System.IO.Path.GetFullPath (resolutionPathSemicoloned.Trim())
 
@@ -677,7 +680,7 @@ module internal Reflection =
                 Choice2Of2(folders, errors)
             else
                 let x = "" :: errors
-                let resPaths = String.Join(";", paths)
+                let resPaths = String.concat ";" paths
                 Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resPaths::errors))
 
 module Sql =

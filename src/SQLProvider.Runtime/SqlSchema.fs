@@ -85,9 +85,9 @@ type SprocName =
         member x.ToList() =
            if String.IsNullOrEmpty(x.PackageName) then [x.ProcName]
            else [x.PackageName; x.ProcName]
-        member x.DbName with get() = String.Join(".", x.ToList())
-        member x.FriendlyName with get() = String.Join(" ", x.ToList())
-        member x.FullName with get() = String.Join("_", x.ToList())
+        member x.DbName with get() = String.concat "." (x.ToList())
+        member x.FriendlyName with get() = String.concat " " (x.ToList())
+        member x.FullName with get() = String.concat "_" (x.ToList())
         override x.ToString() = x.FullName.ToString()
 
 type CompileTimeSprocDefinition =

@@ -93,8 +93,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;"
             entity.Table.Name
-            (String.Join(",", columnNames))
-            (String.Join(",", values |> Array.map(fun p -> p.ParameterName))))
+            (String.concat "," columnNames)
+            (String.concat "," (values |> Array.map(fun p -> p.ParameterName))))
         cmd.Parameters.AddRange(values)
         cmd.CommandText <- sb.ToString()
         cmd
@@ -137,8 +137,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         | ks -> 
             ~~(sprintf "UPDATE [%s] SET %s WHERE "
                 (entity.Table.Name.Replace("\"", ""))
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName )) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
 
         cmd.Parameters.AddRange(data |> Array.map snd)
         pkValues |> List.iteri(fun i pkValue ->
@@ -168,7 +168,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s] WHERE " (entity.Table.Name.Replace("\"", "")))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -522,7 +522,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             // build the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -570,7 +570,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s] as [%s] on "
                             joinType destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

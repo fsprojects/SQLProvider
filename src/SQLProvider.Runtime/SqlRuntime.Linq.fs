@@ -375,7 +375,7 @@ module internal QueryImplementation =
 
     type [<Struct>]SqlWhereType = NormalWhere | HavingWhere
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             SqlQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
         interface ISqlQueryable
@@ -385,8 +385,10 @@ module internal QueryImplementation =
             member x.Expression =  Expression.Constant(x,typeof<IQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
                 | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
@@ -402,7 +404,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
@@ -413,7 +418,7 @@ module internal QueryImplementation =
                 }
     
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             SqlOrderedQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
         interface ISqlQueryable
@@ -424,8 +429,10 @@ module internal QueryImplementation =
             member x.Expression =  Expression.Constant(x,typeof<IOrderedQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
                 | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
@@ -441,7 +448,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
@@ -453,10 +463,11 @@ module internal QueryImplementation =
 
     /// Structure to make it easier to return IGrouping from GroupBy
     and SqlGroupingQueryable<'TKey, 'TEntity>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             let res = SqlGroupingQueryable<'TKey, 'TEntity>(conString,provider,BaseTable("",table),ResizeArray<_>())
             res :> IQueryable<IGrouping<'TKey, 'TEntity>>
+        interface ISqlQueryable
         interface IQueryable<IGrouping<'TKey, 'TEntity>>
         interface IQueryable with
             member __.Provider = 
@@ -466,8 +477,13 @@ module internal QueryImplementation =
             member __.ElementType = 
                 typeof<IGrouping<'TKey, 'TEntity>>
         interface seq<IGrouping<'TKey, 'TEntity>> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then
+                    executeQuery dc provider sqlQuery tupleIndex
+                        |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                        |> fun res -> res.GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> 
                     executeQuery dc provider sqlQuery tupleIndex
                         |> Seq.cast<IGrouping<'TKey, 'TEntity>>
@@ -488,7 +504,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<IGrouping<'TKey, 'TEntity>> with

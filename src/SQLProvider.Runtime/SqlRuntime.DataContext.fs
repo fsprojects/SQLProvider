@@ -39,19 +39,19 @@ module internal ProviderBuilder =
             |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
             |> Map.ofList
 
-        let entity = SqlEntity(dc, def.Name.DbName, columns)
+        let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
 
         let toEntityArray rowSet =
             [|
                 for row in rowSet do
-                    let entity = SqlEntity(dc, def.Name.DbName, columns)
+                    let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
                     entity.SetData(row)
                     yield entity
             |]
 
         let param = def.Params |> List.toArray
 
-        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
+        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.concat ", " (values |> Seq.map (sprintf "%A")))) []
         param, entity, toEntityArray
 
 type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
@@ -237,7 +237,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
 
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =
             [| while reader.Read() do
-                 let e = SqlEntity(this, name, columns)
+                 let e = SqlEntity(this, name, columns, reader.FieldCount)
                  for i = 0 to reader.FieldCount - 1 do
                     match reader.GetValue(i) with
                     | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
@@ -253,7 +253,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     let! h = reader.ReadAsync()
                     hasNext <- h
                     if hasNext then
-                        let e = SqlEntity(this, name, columns)
+                        let e = SqlEntity(this, name, columns, reader.FieldCount)
                         for i = 0 to reader.FieldCount - 1 do
                             let! valu = reader.GetFieldValueAsync(i)
                             match valu with
@@ -268,7 +268,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             if isReadOnly then failwith "Context is readonly" else 
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
-            new SqlEntity(this, tableName, columns)
+            new SqlEntity(this, tableName, columns, columns.Count)
 
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
 

@@ -560,7 +560,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
@@ -648,7 +648,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             // build  the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat "," 
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -695,7 +695,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

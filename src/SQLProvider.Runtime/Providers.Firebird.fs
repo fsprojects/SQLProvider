@@ -509,8 +509,8 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         | ks -> 
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 (getTableNameForQuery entity.Table)
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ))))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName )))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
 
@@ -543,7 +543,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " (getTableNameForQuery entity.Table))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -851,7 +851,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = (String.concat "," (array |> Array.map (fun p -> p.ParameterName)))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
@@ -940,7 +940,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             // build the select statment, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).Name
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -987,7 +987,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %s as %s on "
                             joinType (getTableNameForQuery destTable) destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s" 
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

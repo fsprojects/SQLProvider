@@ -233,7 +233,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             prop.AddXmlDocDelayed(fun () ->
                 let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
                 let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                sprintf "<summary>%s %s %s</summary>" (String.Join(": ", [|name; details|])) separator typeInfo)
+                sprintf "<summary>%s %s %s</summary>" (String.concat ": " [|name; details|]) separator typeInfo)
         | None ->
             prop.AddXmlDocDelayed(fun () -> sprintf "<summary>Offline mode. %s</summary>" typeInfo)
             ()
@@ -773,7 +773,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                           @@>)
                     let desc3 =
                         let cols = requiredColumns |> Seq.map(fun c -> c.Name)
-                        "Item array of database columns: \r\n" + String.Join(",", cols)
+                        "Item array of database columns: \r\n" + (String.concat ","  cols)
                     create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
 
                     // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
@@ -781,7 +781,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = normalParameters |> Seq.map(fun c -> c.Name )
-                            "Create(" + String.Join(", ", cols) + ")"
+                            "Create(" + (String.concat ", " cols) + ")"
                         ProvidedMethod(template, normalParameters, entityType, invokeCode = fun args ->
                           let dc = args.Head
                           let args = args.Tail
@@ -812,7 +812,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                             backwardCompatibilityOnly.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = backwardCompatibilityOnly |> Seq.map(fun c -> c.Name )
-                            "Create(" + String.Join(", ", cols) + ")"
+                            "Create(" + (String.concat ", " cols) + ")"
                         ProvidedMethod(template, backwardCompatibilityOnly, entityType, invokeCode = fun args ->
                           let dc = args.Head
                           let args = args.Tail
@@ -835,7 +835,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                         if List.isEmpty minimalParameters || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
                         let template=
                             let cols = minimalParameters |> Seq.map(fun c -> c.Name )
-                            "Create(" + String.Join(", ", cols) + ")"
+                            "Create(" + (String.concat ", " cols) + ")"
                         ProvidedMethod(template, minimalParameters, entityType, invokeCode = fun args ->
                           let dc = args.Head
                           let args = args.Tail

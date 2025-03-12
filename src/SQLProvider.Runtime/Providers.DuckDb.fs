@@ -380,13 +380,13 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         | Throw -> ()
         | Update ->
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                (String.Join(",", columnNamesWithValues |> Array.map(fun (c,p) -> sprintf "\"%s\"=$%s" c p.ParameterName))))
+                ((String.concat "," (columnNamesWithValues |> Array.map(fun (c,p) -> sprintf "\"%s\"=$%s" c p.ParameterName)))))
         | DoNothing ->
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                (String.Join(",", columnNamesWithValues |> Array.map(fun (c,_) -> sprintf "\"%s\"=\"%s\"" c c))))
+                ((String.concat "," (columnNamesWithValues |> Array.map(fun (c,_) -> sprintf "\"%s\"=\"%s\"" c c)))))
 
         match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
-        | true, pk when pk.Length > 0 -> ~~ (" RETURNING (" + (String.Join(",", pk)) + ")")
+        | true, pk when pk.Length > 0 -> ~~ (" RETURNING (" + ((String.concat "," pk)) + ")")
         | true, _
         | false, _ -> ()
 
@@ -432,8 +432,8 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 (entity.Table |> quotedTableName)
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = $%s" c p.ParameterName ))))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = $pk%i" k i))) + ";")
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "\"%s\" = $%s" c p.ParameterName )))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = $pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
 
@@ -466,7 +466,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         | [] -> ()
         | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " (entity.Table |> quotedTableName))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = $id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = $id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -765,7 +765,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                                             | FSharp.Data.Sql.NotIn -> "TRUE" // anything is not in the empty set
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> "$" + p.ParameterName))
+                                            let text = (String.concat "," (array |> Array.map (fun p -> "$" + p.ParameterName)))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
@@ -856,7 +856,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
             // build the select statment, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k) |> quotedTableName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -904,7 +904,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

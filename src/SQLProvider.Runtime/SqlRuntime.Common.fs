@@ -181,11 +181,11 @@ type ReturnValueType =
     | Set of seq<ReturnSetType>
 
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
-type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
+type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColumnCount:int) =
 
     let propertyChanged = Event<_,_>()
 
-    let data = Dictionary<string,obj>(columns.Count)
+    let data = Dictionary<string,obj>(activeColumnCount)
     let mutable aliasCache = None
 
     member val _State = Unchanged with get, set
@@ -326,12 +326,16 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
         | true, entity -> entity
         | false, _ ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
-            let newEntity = SqlEntity(dc, tableName, columns)
+            let selectedColumns = 
+                e.ColumnValues
+                |> Seq.toArray
+                |> Array.choose (Utilities.checkPred alias)
+
+            let newEntity = SqlEntity(dc, tableName, columns, selectedColumns.Length)
             // attributes names cannot have a period in them unless they are an alias
 
-            e.ColumnValues
-            |> Seq.choose (Utilities.checkPred alias)
-            |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
+            selectedColumns
+            |> Array.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
 
             aliasCache.Value.Add(alias,newEntity)
             newEntity
@@ -371,7 +375,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     /// UPDATE: Updates the exising database entity with the values that this entity contains.
     /// INSERT: Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
     member __.CloneTo(secondContext, itemExistsAlready:bool) = 
-        let newItem = SqlEntity(secondContext, tableName, columns)
+        let newItem = SqlEntity(secondContext, tableName, columns, columns.Count)
         if itemExistsAlready then 
             newItem.SetData(data |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
             newItem._State <- Modified (data |> Seq.toList 
@@ -971,7 +975,7 @@ module public OfflineTools =
         let rowData = 
             dummydata :?> seq<obj>
             |> Seq.map(fun row ->
-                let entity = SqlEntity(dc, tableName, cols)
+                let entity = SqlEntity(dc, tableName, cols, cols.Count)
                 for (col, _) in columnNames do
                     let colProp = row.GetType().GetProperty(col)
                     let colData = if isNull colProp then null else colProp.GetValue(row, null)
@@ -1013,10 +1017,10 @@ module public OfflineTools =
         let x = { new ISqlDataContext with
                     member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
                         // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
-                        SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup)
+                        SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup, 0)
                     member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
                         // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
-                        task { return SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup) }
+                        task { return SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup, 0) }
                     member this.ClearPendingChanges(): unit = pendingChanges.Clear()
                     member this.CommandTimeout: Option<int> = None
                     member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
@@ -1028,8 +1032,8 @@ module public OfflineTools =
                         match dummydata.TryGetValue arg1 with
                         | true, tableData ->
                             let _, cols = makeColumns tableData
-                            new SqlEntity(this, arg1, cols)
-                        | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup)
+                            new SqlEntity(this, arg1, cols, cols.Count)
+                        | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup, 0)
                     member this.CreateRelated(inst: SqlEntity, arg2: string, pe: string, pk: string, fe: string, fk: string, direction: RelationshipDirection): IQueryable<SqlEntity> =
                         if direction = RelationshipDirection.Children then
                             match dummydata.TryGetValue fe with

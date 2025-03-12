@@ -148,7 +148,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         | [x] ->
             ~~(sprintf "UPDATE %c%s%c SET %s WHERE %s = ?;"
                 cOpen entity.Table.Name cClose
-                (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
+                (String.concat "," (data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
                 x)
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
@@ -539,7 +539,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -588,7 +588,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %c%s%c as %c%s%c on "
                             joinType cOpen destTable.Name cClose cOpen destAlias cClose)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

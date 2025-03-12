@@ -317,8 +317,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 entity.Table.FullName
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -349,7 +349,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | [] -> ()
         | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
     let pragmacheck (values:obj array) =
@@ -789,7 +789,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             // build the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -836,7 +836,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)

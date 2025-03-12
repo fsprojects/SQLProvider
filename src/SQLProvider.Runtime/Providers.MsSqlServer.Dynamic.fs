@@ -537,8 +537,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         | ks -> 
             ~~(sprintf "UPDATE [%s].[%s] SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) ))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
         data |> Array.map snd |> Array.iter(cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -572,7 +572,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s].[%s] WHERE " entity.Table.Schema entity.Table.Name)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -930,7 +930,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
@@ -1018,7 +1018,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             // build  the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -1065,7 +1065,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
