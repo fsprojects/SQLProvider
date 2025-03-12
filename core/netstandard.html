@@ -280,7 +280,7 @@ If your database connection driver has external dependencies, they have to be al
 (e.g. a project prebuild-task to move them to the resolution path).</p>
 <p>The connection string can be passed as a hard-coded static parameter (development) or <code>GetDataContext(connectionstring)</code> parameter on runtime, but fetching it automatically from the application configuration is not supported.</p>
 <p>The target frameworks are defined in the project file: <code>&lt;TargetFrameworks&gt;net461;netcoreapp2.0;netstandard2.0&lt;/TargetFrameworks&gt;</code>
-Corresponding files go to root bin paths, e.g.: \bin\netstandard2.0</p>
+Corresponding files go to root bin paths, e.g.: \bin\lib\netstandard2.0</p>
 <h4><a name="Microsoft-Sql-Server" class="anchor" href="#Microsoft-Sql-Server">Microsoft Sql Server</a></h4>
 <p>If you plan to run Microsoft SQL Server, you need a dependency on System.Data.SqlClient and a post-build task to
 copy the correct dll under <code>System.Data.SqlClient\runtimes\...\</code> to your execution folder.</p>

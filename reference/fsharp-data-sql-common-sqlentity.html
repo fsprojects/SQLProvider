@@ -306,7 +306,7 @@
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
-                      <code><span>SqlEntity<span><span>(<span>dc,&#32;tableName,&#32;columns</span>)</span></span></span></code>
+                      <code><span>SqlEntity<span><span>(<span>dc,&#32;tableName,&#32;columns,&#32;activeColumnCount</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
@@ -314,7 +314,7 @@
               <div class="fsdocs-tip" id="670">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SqlEntity<span><span>(<span>dc,&#32;tableName,&#32;columns</span>)</span></span></span></code>
+                  <code><span>SqlEntity<span><span>(<span>dc,&#32;tableName,&#32;columns,&#32;activeColumnCount</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -341,6 +341,14 @@
                       </b>
                       :
                       <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        activeColumnCount
+                      </b>
+                      :
+                      <code>int</code>
                     </span>
                     <br/>
                   </ul>
@@ -378,6 +386,14 @@
                 </span>
                 :
                 <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  activeColumnCount
+                </span>
+                :
+                <code>int</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -448,7 +464,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.Clone\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L389-389" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L393-393" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -526,7 +542,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SqlEntity.CloneTo\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L373-373" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L377-377" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1157,7 +1173,7 @@
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Common.SqlEntity.OnConflict\'/>')">
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L393-393" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L397-397" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">

@@ -273,7 +273,7 @@ situation is that MS-SQL-server handles async well, and MySQL does not so.)</p>
 
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="rt">MyWebServer</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
     <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="fn">``Execute Business Logics``</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="fn">id</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs24', 37)" onmouseover="showTip(event, 'fs24', 37)" class="vt">Guid</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs25', 38)" onmouseover="showTip(event, 'fs25', 38)" class="d">Task</span><span class="pn">&lt;</span><span class="id">_</span><span class="pn">&gt;</span> <span class="o">=</span>
-        <span onmouseout="hideTip(event, 'fs26', 39)" onmouseover="showTip(event, 'fs26', 39)" class="k">async</span> <span class="pn">{</span>
+        <span onmouseout="hideTip(event, 'fs26', 39)" onmouseover="showTip(event, 'fs26', 39)" class="k">task</span> <span class="pn">{</span>
             <span class="k">use</span> <span onmouseout="hideTip(event, 'fs27', 40)" onmouseover="showTip(event, 'fs27', 40)" class="d">transaction</span> <span class="o">=</span>
                 <span class="k">new</span> <span onmouseout="hideTip(event, 'fs19', 41)" onmouseover="showTip(event, 'fs19', 41)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 42)" onmouseover="showTip(event, 'fs28', 42)" class="id">Transactions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 43)" onmouseover="showTip(event, 'fs29', 43)" class="id">TransactionScope</span><span class="pn">(</span>
                 <span class="c">// .NET 4.5.1 fix for asynchronous transactions:</span>
@@ -295,7 +295,7 @@ situation is that MS-SQL-server handles async well, and MySQL does not so.)</p>
 
             <span onmouseout="hideTip(event, 'fs27', 76)" onmouseover="showTip(event, 'fs27', 76)" class="d">transaction</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 77)" onmouseover="showTip(event, 'fs49', 77)" class="id">Complete</span><span class="pn">(</span><span class="pn">)</span>
             <span class="k">return</span> <span class="s">&quot;done!&quot;</span>
-        <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs50', 78)" onmouseover="showTip(event, 'fs50', 78)" class="rt">Async</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs51', 79)" onmouseover="showTip(event, 'fs51', 79)" class="id">StartAsTask</span>
+        <span class="pn">}</span> 
 </code></pre>
 <p>The functions to work with asynchrony are:</p>
 <ul>
@@ -446,7 +446,7 @@ type Guid =
   member WaitAsync: cancellationToken: CancellationToken -&gt; Task&lt;&#39;TResult&gt; + 4 overloads
   member Result: &#39;TResult
   static member Factory: TaskFactory&lt;&#39;TResult&gt;<br /><em>&lt;summary&gt;Represents an asynchronous operation that can return a value.&lt;/summary&gt;<br />&lt;typeparam name=&quot;TResult&quot;&gt;The type of the result produced by this &lt;see cref=&quot;T:System.Threading.Tasks.Task`1&quot; /&gt;.&lt;/typeparam&gt;</em><br /><br />--------------------<br />Task(action: Action) : Task<br />Task(action: Action, cancellationToken: Threading.CancellationToken) : Task<br />Task(action: Action, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj) : Task<br />Task(action: Action, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, creationOptions: TaskCreationOptions) : Task<br />Task(action: Action&lt;obj&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task<br /><br />--------------------<br />Task(``function`` : Func&lt;&#39;TResult&gt;) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;&#39;TResult&gt;, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;<br />Task(``function`` : Func&lt;obj,&#39;TResult&gt;, state: obj, cancellationToken: Threading.CancellationToken, creationOptions: TaskCreationOptions) : Task&lt;&#39;TResult&gt;</div>
-<div class="fsdocs-tip" id="fs26">val async: AsyncBuilder</div>
+<div class="fsdocs-tip" id="fs26">val task: TaskBuilder</div>
 <div class="fsdocs-tip" id="fs27">val transaction: Transactions.TransactionScope</div>
 <div class="fsdocs-tip" id="fs28">namespace System.Transactions</div>
 <div class="fsdocs-tip" id="fs29">Multiple items<br />type TransactionScope =
@@ -501,19 +501,6 @@ type DateTime =
 <div class="fsdocs-tip" id="fs47">val box: value: &#39;T -&gt; obj</div>
 <div class="fsdocs-tip" id="fs48">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdatesAsync() : Task<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs49">Transactions.TransactionScope.Complete() : unit</div>
-<div class="fsdocs-tip" id="fs50">Multiple items<br />type Async =
-  static member AsBeginEnd: computation: (&#39;Arg -&gt; Async&lt;&#39;T&gt;) -&gt; (&#39;Arg * AsyncCallback * obj -&gt; IAsyncResult) * (IAsyncResult -&gt; &#39;T) * (IAsyncResult -&gt; unit)
-  static member AwaitEvent: event: IEvent&lt;&#39;Del,&#39;T&gt; * ?cancelAction: (unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; (requires delegate and &#39;Del :&gt; Delegate)
-  static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout: int -&gt; Async&lt;bool&gt;
-  static member AwaitTask: task: Task&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt; + 1 overload
-  static member AwaitWaitHandle: waitHandle: WaitHandle * ?millisecondsTimeout: int -&gt; Async&lt;bool&gt;
-  static member CancelDefaultToken: unit -&gt; unit
-  static member Catch: computation: Async&lt;&#39;T&gt; -&gt; Async&lt;Choice&lt;&#39;T,exn&gt;&gt;
-  static member Choice: computations: Async&lt;&#39;T option&gt; seq -&gt; Async&lt;&#39;T option&gt;
-  static member FromBeginEnd: beginAction: (AsyncCallback * obj -&gt; IAsyncResult) * endAction: (IAsyncResult -&gt; &#39;T) * ?cancelAction: (unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; + 3 overloads
-  static member FromContinuations: callback: ((&#39;T -&gt; unit) * (exn -&gt; unit) * (OperationCanceledException -&gt; unit) -&gt; unit) -&gt; Async&lt;&#39;T&gt;
-  ...<br /><br />--------------------<br />type Async&lt;&#39;T&gt;</div>
-<div class="fsdocs-tip" id="fs51">static member Async.StartAsTask: computation: Async&lt;&#39;T&gt; * ?taskCreationOptions: TaskCreationOptions * ?cancellationToken: Threading.CancellationToken -&gt; Task&lt;&#39;T&gt;</div>
 
     </div>
 </main>
