@@ -20,8 +20,8 @@ type TransactionOptions = {
     IsolationLevel : IsolationLevel
 }
 
-module internal TransactionUtils =
-    let toSystemTransactionsIsolationLevel isolationLevel =
+module TransactionUtils =
+    let internal toSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
         | IsolationLevel.Serializable -> System.Transactions.IsolationLevel.Serializable
         | IsolationLevel.RepeatableRead -> System.Transactions.IsolationLevel.RepeatableRead
@@ -32,7 +32,7 @@ module internal TransactionUtils =
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
-    let toSystemDataIsolationLevel isolationLevel =
+    let internal toSystemDataIsolationLevel isolationLevel =
         match isolationLevel with
         | IsolationLevel.Serializable -> System.Data.IsolationLevel.Serializable
         | IsolationLevel.RepeatableRead -> System.Data.IsolationLevel.RepeatableRead
@@ -43,7 +43,7 @@ module internal TransactionUtils =
         | IsolationLevel.Unspecified -> System.Data.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
-    let fromSystemTransactionsIsolationLevel isolationLevel =
+    let internal fromSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
         | System.Transactions.IsolationLevel.Serializable -> IsolationLevel.Serializable
         | System.Transactions.IsolationLevel.RepeatableRead -> IsolationLevel.RepeatableRead

@@ -1284,6 +1284,23 @@ module internal QueryImplementation =
             | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
         | None, _ -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
 
+module QueryFactory =
+    let createRelated(dc:ISqlDataContext,provider:ISqlProvider,inst:SqlEntity,pe,pk,fe,fk,direction) : System.Linq.IQueryable<SqlEntity> =
+            let parseKey k = KeyColumn k
+            if direction = RelationshipDirection.Children then
+                QueryImplementation.SqlQueryable<_>(dc,provider,
+                    FilterClause(
+                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
+                        BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
+            else
+                QueryImplementation.SqlQueryable<_>(dc,provider,
+                    FilterClause(
+                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
+                        BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
+
+    let createEntities(dc:ISqlDataContext,provider:ISqlProvider,table:string) : System.Linq.IQueryable<SqlEntity> =
+        QueryImplementation.SqlQueryable.Create(Table.FromFullName table,dc,provider)
+
 module Seq =
     /// Execute SQLProvider query to get the sum of elements.
     let sumQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Sum"

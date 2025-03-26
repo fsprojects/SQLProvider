@@ -13,7 +13,7 @@ module StandardExtensions =
             }
 #endif
 
-module internal Utilities = 
+module Utilities = 
     
     open System.IO
     open System.Collections.Concurrent
@@ -35,7 +35,7 @@ module internal Utilities =
         new TempFile(filename)
 #endif
 
-    let inline resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
+    let inline internal resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
@@ -73,7 +73,7 @@ module internal Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
-    let rec convertTypes (itm:obj) (returnType:Type) =
+    let rec internal convertTypes (itm:obj) (returnType:Type) =
         if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then None |> box
             else
@@ -231,7 +231,7 @@ module internal Utilities =
         | _ -> value.ToString()
 
        
-    let inline replaceFirst (text:string) (oldValue:string) (newValue:string) =
+    let inline internal replaceFirst (text:string) (oldValue:string) (newValue:string) =
         let position = text.IndexOf oldValue
         if position < 0 then
             text
@@ -240,7 +240,7 @@ module internal Utilities =
             // ...would throw error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
             text.AsSpan(0, position).ToString() + newValue + text.AsSpan(position + oldValue.Length).ToString()
 
-    let checkPred alias =
+    let internal checkPred alias =
         let prefix = "[" + alias + "]."
         let prefix2 = alias + "."
         let prefix3 = "`" + alias + "`."
@@ -332,9 +332,9 @@ module ConfigHelpers =
 #endif
             connectionString
 
-module internal SchemaProjections = 
+module SchemaProjections = 
     
-    let inline forall predicate (source : ReadOnlySpan<_>) =
+    let inline internal forall predicate (source : ReadOnlySpan<_>) =
         let mutable state = true
         let mutable e = source.GetEnumerator()
         while state && e.MoveNext() do
@@ -437,7 +437,7 @@ module internal SchemaProjections =
                      |> String.concat " or "
                      |> sprintf "and (%s)"
 
-module internal Reflection = 
+module Reflection = 
     
     open System.Reflection
     open System.IO

@@ -131,7 +131,7 @@ module public QueryEvents =
    let internal PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = 
       publishSqlQuery connStr qry (spc |> Seq.map(fun p -> p.ParameterName, p.Value))
 
-   let internal PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
+   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
       publishSqlQuery connStr qry [ for p in spc -> (p.ParameterName, p.Value) ]
 
    let internal PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
@@ -196,7 +196,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = propertyChanged.Trigger(e, PropertyChangedEventArgs(name))
-    member internal __.ColumnValuesWithDefinition = seq { for kvp in data -> kvp.Key, kvp.Value, columns.TryFind(kvp.Key) }
+    member __.ColumnValuesWithDefinition = seq { for kvp in data -> kvp.Key, kvp.Value, columns.TryFind(kvp.Key) }
 
     member __.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
     member __.HasColumn(key, ?comparison)= 
@@ -249,7 +249,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         keys |> List.choose(fun key -> 
             __.GetColumnOption<'T>(key)) 
 
-    member internal this.GetColumnOptionWithDefinition(key) =
+    member this.GetColumnOptionWithDefinition(key) =
         this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
 
     member private e.UpdateField key =
@@ -838,7 +838,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
         let i = x |> Seq.head
         GroupResultItems<'key, 'SqlEntity>("", v, i)
 
-module internal CommonTasks =
+module CommonTasks =
 
     let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
         entities |> Seq.map(fun e -> e.Key.Table)
@@ -898,6 +898,30 @@ module internal CommonTasks =
                 | false, _ -> ValueNone
         | _ -> ValueNone
 
+    let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) hasStoredProcedures =
+        
+        if hasStoredProcedures then 
+            com.CommandType <- CommandType.StoredProcedure
+
+        let columns =
+            def.Params
+            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
+            |> Map.ofList
+
+        let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
+
+        let toEntityArray rowSet =
+            [|
+                for row in rowSet do
+                    let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
+                    entity.SetData(row)
+                    yield entity
+            |]
+
+        let param = def.Params |> List.toArray
+
+        QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.concat ", " (values |> Seq.map (sprintf "%A")))) []
+        param, entity, toEntityArray
 
 module public OfflineTools =
 
@@ -1067,6 +1091,3 @@ module public OfflineTools =
                     member _.IsReadOnly = false
                }
         x :> obj |> unbox<'T>
-
-
-

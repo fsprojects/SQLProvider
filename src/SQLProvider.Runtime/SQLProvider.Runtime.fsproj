@@ -32,6 +32,7 @@
     <FsDocsTheme>default</FsDocsTheme>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DefineConstants>$(DefineConstants);COMMON</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
