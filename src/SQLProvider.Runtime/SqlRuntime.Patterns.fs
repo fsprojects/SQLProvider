@@ -14,6 +14,11 @@ let inline (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name th
 [<return: Struct>]
 let inline (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
 
+let inline (|MemberAccess|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.MemberAccess, ( :? MemberExpression as me) -> Some me
+    | _ -> None
+
 let (|MethodCall|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, (:? MethodCallExpression as e) -> 
@@ -154,9 +159,9 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         else
             Some(Some(ce.Value))
     | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
-        match ue.Operand with
-        | :? ConstantExpression as ce -> if isNull ce.Value then Some(None) else Some(Some(ce.Value))
-        | :? NewExpression as ne -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
+        match ue.Operand.NodeType, ue.Operand with
+        | ExpressionType.Constant, (:? ConstantExpression as ce) -> if isNull ce.Value then Some(None) else Some(Some(ce.Value))
+        | ExpressionType.New, (:? NewExpression as ne) -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
@@ -249,12 +254,12 @@ let (|OptionIsSome|_|) : Expression -> _ = function
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
-        | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+        | MemberAccess me when me.Member.Name = "IsNone" -> Some (me.Expression)
         | MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[e]) when para = "copyOfStruct" && me.Member.Name = "IsNone" -> Some e
         | CopyOfStruct "IsNone" exp -> Some exp
         | FSharpIsNullMethod exp -> Some exp
         | _ -> None
-    | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+    | MemberAccess me when me.Member.Name = "IsSome" -> Some (me.Expression)
     | CopyOfStruct "IsSome" exp -> Some exp
     | _ -> None
 
@@ -263,10 +268,10 @@ let (|OptionIsNone|_|) : Expression -> _ = function
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
-        | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+        | MemberAccess me when me.Member.Name = "IsSome" -> Some (me.Expression)
         | CopyOfStruct "IsSome" exp -> Some exp
         | _ -> None
-    | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+    | MemberAccess me when me.Member.Name = "IsNone" -> Some (me.Expression)
     | CopyOfStruct "IsNone" exp -> Some exp
     | FSharpIsNullMethod exp -> Some exp
     | _ -> None
@@ -316,13 +321,13 @@ let (|MethodCallOrFSharpWrap|_|) (e:Expression) =
 let (|SqlPlainColumnGet|_|) = function
     | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)| (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
         match o with
-        | :? MemberExpression as m  -> 
+        | MemberAccess m  -> 
             match m.Expression with
             | null -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) // Nested tuples:
-            | :? MemberExpression as x when x.Type.Name.StartsWith("AnonymousObject") && x.Member.Name = "Item8" ->
+            | MemberAccess x when x.Type.Name.StartsWith("AnonymousObject") && x.Member.Name = "Item8" ->
                 let rec findNested (expr:MemberExpression) depth = 
                     match expr.Expression with
-                    | :? MemberExpression as xx when xx.Type.Name.StartsWith("AnonymousObject") && xx.Member.Name = "Item8" ->
+                    | MemberAccess xx when xx.Type.Name.StartsWith("AnonymousObject") && xx.Member.Name = "Item8" ->
                         findNested xx (depth+7)
                     | _ -> depth
                 let isOk, memberName = Int32.TryParse(m.Member.Name.Replace("Item","")) 
@@ -373,6 +378,7 @@ let inline internal getRightFromOp (right:Expression) =
                 propInfo.GetValue(ceVal, null)
             | _ -> ceVal
         myVal
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> (Expression.Lambda(right).Compile() :?> Func<_>).Invoke() |> box
     | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
 
 let rec (|SqlColumnGet|_|) (ex:Expression) =
@@ -404,13 +410,13 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
             | _ -> None
         else 
             match e.Arguments.[0], e.Method.Name with
-            | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, ("Average" | "Avg") -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, ("StdDev" | "StDev" | "StandardDeviation") -> Some(m.Member.Name, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Variance" -> Some(m.Member.Name, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, ("Average" | "Avg") -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, ("StdDev" | "StDev" | "StandardDeviation") -> Some(m.Member.Name, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Variance" -> Some(m.Member.Name, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | _ -> None
 
     // These are canonical functions
@@ -669,6 +675,40 @@ and (|SimpleCondition|_|) exp =
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 Some myVal
+            | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> Some((Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int32>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int64>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Decimal>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Decimal>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTime>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTime>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Guid>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Guid>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Boolean>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Boolean>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Single>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Single>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int16>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt32>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt16>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt64>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Byte>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Byte>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Char>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTimeOffset>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<TimeSpan>) -> Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
+
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Decimal>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Decimal>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTime>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTime>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Guid>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Guid>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Boolean>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Boolean>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Single>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Single>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int16>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt32>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt16>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt64>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Byte>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Byte>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Char>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTimeOffset>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<TimeSpan>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
             | _ ->
                 // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
                 try

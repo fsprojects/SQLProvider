@@ -116,6 +116,16 @@ module internal QueryImplementation =
             elif Type.(=)(returnType, typeof<ValueOption<DateTime>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTime>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<ValueOption<Boolean>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Boolean>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<ValueOption<Guid>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Guid>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Single>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Single>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int16>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int16>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt32>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt32>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt16>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt16>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt64>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt64>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Byte>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Byte>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<SByte>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<SByte>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Char>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Char>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<DateTimeOffset>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTimeOffset>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<TimeSpan>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<TimeSpan>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
         else
@@ -125,6 +135,16 @@ module internal QueryImplementation =
             elif Type.(=)(returnType, typeof<Guid>) then let invoker = projector :?> Func<SqlEntity, Guid> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<Int32>) then let invoker = projector :?> Func<SqlEntity, Int32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<Boolean>) then let invoker = projector :?> Func<SqlEntity, Boolean> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Single>) then let invoker = projector :?> Func<SqlEntity, Single> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int16>) then let invoker = projector :?> Func<SqlEntity, Int16> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt32>) then let invoker = projector :?> Func<SqlEntity, UInt32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt16>) then let invoker = projector :?> Func<SqlEntity, UInt16> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt64>) then let invoker = projector :?> Func<SqlEntity, UInt64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Byte>) then let invoker = projector :?> Func<SqlEntity, Byte> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<SByte>) then let invoker = projector :?> Func<SqlEntity, SByte> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Char>) then let invoker = projector :?> Func<SqlEntity, Char> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<DateTimeOffset>) then let invoker = projector :?> Func<SqlEntity, DateTimeOffset> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<TimeSpan>) then let invoker = projector :?> Func<SqlEntity, TimeSpan> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
 

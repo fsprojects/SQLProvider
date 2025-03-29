@@ -732,6 +732,29 @@ let ``simple select where like query``() =
     CollectionAssert.Contains(qry, "FRANR")
 
 [<Test >]
+let ``simple select where like query2``() =
+    let dc = sql.GetDataContext()
+
+    let x = {| Test = "a" |}
+    let itm1 = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId.Contains x.Test && cust.CustomerId > (string x.Test) )
+            select cust
+        } |> Seq.head
+
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId.Contains itm1.CustomerId && int(cust.CustomerId) >= int(itm1.CustomerId))
+            select cust.CustomerId
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+    CollectionAssert.Contains(qry, "ALFKI")
+
+
+[<Test >]
 let ``simple select where query with operations in where``() =
     let dc = sql.GetDataContext()
     let qry = 
