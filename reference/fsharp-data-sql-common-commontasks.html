@@ -7,15 +7,15 @@
     <meta content="pezipink,colinbull,thorium" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="SQLProvider">
-    <meta property="og:title" content="CastTupleMaker<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> (SQLProvider)" />
+    <meta property="og:title" content="CommonTasks (SQLProvider)" />
     <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
-    <meta name="twitter:title" content="CastTupleMaker<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> (SQLProvider)">
+    <meta name="twitter:title" content="CommonTasks (SQLProvider)">
     
-    <title>CastTupleMaker<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> (SQLProvider) | SQLProvider</title>
+    <title>CommonTasks (SQLProvider) | SQLProvider</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -247,21 +247,17 @@
     <div id="content">
         <div>
   <h2>
-    CastTupleMaker<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> Type
+    CommonTasks Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-runtime.html">
-        FSharp.Data.Sql.Runtime
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common.html">
+        FSharp.Data.Sql.Common
       </a>
     </dt>
     <dt>
       Assembly: FSharp.Data.SqlProvider.dll
-    </dt>
-    <dt>
-      Base Type: 
-      <code>obj</code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -271,23 +267,15 @@
       </p>
     </div>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Static members
+      Functions and values
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Static member
+            Function or value
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -298,44 +286,234 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '788', 788)" onmouseover="showTip(event, '788', 788)">
+              <code onmouseout="hideTip(event, '52', 52)" onmouseover="showTip(event, '52', 52)">
                 <p>
-                  <a id="makeTuple2">
-                    <a href="#makeTuple2">
-                      <code><span>CastTupleMaker.makeTuple2&#32;<span><span>(<span>t1,&#32;t2</span>)</span></span></span></code>
+                  <a id="``ensure columns have been loaded``">
+                    <a href="#``ensure columns have been loaded``">
+                      <code><span>``ensurecolumnshavebeenloaded``&#32;<span>provider&#32;con&#32;entities</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="788">
+              <div class="fsdocs-tip" id="52">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple2&#32;<span><span>(<span>t1,&#32;t2</span>)</span></span></span></code>
+                  <code><span>``ensurecolumnshavebeenloaded``&#32;<span>provider&#32;con&#32;entities</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        t1
+                        provider
                       </b>
                       :
-                      <code>obj</code>
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t2
+                        con
                       </b>
                       :
-                      <code>obj</code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        entities
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></span>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  provider
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  entities
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '53', 53)" onmouseover="showTip(event, '53', 53)">
+                <p>
+                  <a id="checkKey">
+                    <a href="#checkKey">
+                      <code><span>checkKey&#32;<span>pkLookup&#32;id&#32;e</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="53">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>checkKey&#32;<span>pkLookup&#32;id&#32;e</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        pkLookup
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>string&#32;list</span></span>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        id
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        e
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  pkLookup
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span>string&#32;list</span></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  id
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  e
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '54', 54)" onmouseover="showTip(event, '54', 54)">
+                <p>
+                  <a id="initCallSproc">
+                    <a href="#initCallSproc">
+                      <code><span>initCallSproc&#32;<span>dc&#32;def&#32;values&#32;con&#32;com&#32;hasStoredProcedures</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="54">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>initCallSproc&#32;<span>dc&#32;def&#32;values&#32;con&#32;com&#32;hasStoredProcedures</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dc
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        def
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-runtimesprocdefinition.html">RunTimeSprocDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        values
+                      </b>
+                      :
+                      <code><span>obj&#32;array</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        com
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        hasStoredProcedures
+                      </b>
+                      :
+                      <code>bool</code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>obj</code>
+                    <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;array</span>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&#32;*&#32;<span>(<span>'a&#32;->&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>[]</span></span>)</span></span></code>
                   </span>
                   <br/>
                 </div>
@@ -346,18 +524,50 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  t1
+                  dc
                 </span>
                 :
-                <code>obj</code>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  t2
+                  def
                 </span>
                 :
-                <code>obj</code>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-runtimesprocdefinition.html">RunTimeSprocDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  values
+                </span>
+                :
+                <code><span>obj&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  com
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  hasStoredProcedures
+                </span>
+                :
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -366,7 +576,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code>obj</code>
+                <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;array</span>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&#32;*&#32;<span>(<span>'a&#32;->&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>[]</span></span>)</span></span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -375,52 +585,52 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '789', 789)" onmouseover="showTip(event, '789', 789)">
+              <code onmouseout="hideTip(event, '55', 55)" onmouseover="showTip(event, '55', 55)">
                 <p>
-                  <a id="makeTuple3">
-                    <a href="#makeTuple3">
-                      <code><span>CastTupleMaker.makeTuple3&#32;<span><span>(<span>t1,&#32;t2,&#32;t3</span>)</span></span></span></code>
+                  <a id="parseHaving">
+                    <a href="#parseHaving">
+                      <code><span>parseHaving&#32;<span>fieldNotation&#32;keys&#32;conditionList</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="789">
+              <div class="fsdocs-tip" id="55">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple3&#32;<span><span>(<span>t1,&#32;t2,&#32;t3</span>)</span></span></span></code>
+                  <code><span>parseHaving&#32;<span>fieldNotation&#32;keys&#32;conditionList</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        t1
+                        fieldNotation
                       </b>
                       :
-                      <code>obj</code>
+                      <code>'a</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t2
+                        keys
                       </b>
                       :
-                      <code>obj</code>
+                      <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t3
+                        conditionList
                       </b>
                       :
-                      <code>obj</code>
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>obj</code>
+                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
                   </span>
                   <br/>
                 </div>
@@ -431,26 +641,26 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  t1
+                  fieldNotation
                 </span>
                 :
-                <code>obj</code>
+                <code>'a</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  t2
+                  keys
                 </span>
                 :
-                <code>obj</code>
+                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  t3
+                  conditionList
                 </span>
                 :
-                <code>obj</code>
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -459,7 +669,7 @@
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code>obj</code>
+                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -468,60 +678,84 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '790', 790)" onmouseover="showTip(event, '790', 790)">
+              <code onmouseout="hideTip(event, '56', 56)" onmouseover="showTip(event, '56', 56)">
                 <p>
-                  <a id="makeTuple4">
-                    <a href="#makeTuple4">
-                      <code><span>CastTupleMaker.makeTuple4&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4</span>)</span></span></span></code>
+                  <a id="searchDataTypeFromCache">
+                    <a href="#searchDataTypeFromCache">
+                      <code><span>searchDataTypeFromCache&#32;<span>provider&#32;con&#32;sqlQuery&#32;baseAlias&#32;baseTable&#32;alias&#32;col</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="790">
+              <div class="fsdocs-tip" id="56">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple4&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4</span>)</span></span></span></code>
+                  <code><span>searchDataTypeFromCache&#32;<span>provider&#32;con&#32;sqlQuery&#32;baseAlias&#32;baseTable&#32;alias&#32;col</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        t1
+                        provider
                       </b>
                       :
-                      <code>obj</code>
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t2
+                        con
                       </b>
                       :
-                      <code>obj</code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t3
+                        sqlQuery
                       </b>
                       :
-                      <code>obj</code>
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        t4
+                        baseAlias
                       </b>
                       :
-                      <code>obj</code>
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        baseTable
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        alias
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        col
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>obj</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a>&#32;voption</span></code>
                   </span>
                   <br/>
                 </div>
@@ -529,477 +763,187 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t1
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t2
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t3
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t4
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.CommonTasks.searchDataTypeFromCache`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.searchDataTypeFromCache\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L885-885" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Check if we know primary column data type from cache.
+ This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    provider
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sqlQuery
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html">SqlQuery</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    baseAlias
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    baseTable
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    alias
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    col
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a>&#32;voption</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '791', 791)" onmouseover="showTip(event, '791', 791)">
+              <code onmouseout="hideTip(event, '57', 57)" onmouseover="showTip(event, '57', 57)">
                 <p>
-                  <a id="makeTuple5">
-                    <a href="#makeTuple5">
-                      <code><span>CastTupleMaker.makeTuple5&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5</span>)</span></span></span></code>
+                  <a id="sortEntities">
+                    <a href="#sortEntities">
+                      <code><span>sortEntities&#32;<span>entities</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="791">
+              <div class="fsdocs-tip" id="57">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple5&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5</span>)</span></span></span></code>
+                  <code><span>sortEntities&#32;<span>entities</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        t1
+                        entities
                       </b>
                       :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t2
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t3
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t4
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t5
-                      </b>
-                      :
-                      <code>obj</code>
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></span>&gt;</span></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>obj</code>
+                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&#32;seq</span></code>
                   </span>
+                  <br/>
+                  Modifiers: 
+                  inline
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t1
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t2
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t3
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t4
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t5
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '792', 792)" onmouseover="showTip(event, '792', 792)">
-                <p>
-                  <a id="makeTuple6">
-                    <a href="#makeTuple6">
-                      <code><span>CastTupleMaker.makeTuple6&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5,&#32;t6</span>)</span></span></span></code>
-                    </a>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.CommonTasks.sortEntities`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.sortEntities\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L881-881" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="792">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple6&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5,&#32;t6</span>)</span></span></span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        t1
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t2
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t3
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t4
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t5
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t6
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>obj</code>
-                  </span>
-                  <br/>
+                  <p class="fsdocs-summary">
+                     deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
+                  </p>
                 </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t1
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t2
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t3
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t4
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t5
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t6
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '793', 793)" onmouseover="showTip(event, '793', 793)">
-                <p>
-                  <a id="makeTuple7">
-                    <a href="#makeTuple7">
-                      <code><span>CastTupleMaker.makeTuple7&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5,&#32;t6,&#32;t7</span>)</span></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="793">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>CastTupleMaker.makeTuple7&#32;<span><span>(<span>t1,&#32;t2,&#32;t3,&#32;t4,&#32;t5,&#32;t6,&#32;t7</span>)</span></span></span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        t1
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t2
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t3
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t4
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t5
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t6
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        t7
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>obj</code>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    entities
                   </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t1
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t2
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t3
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t4
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t5
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t6
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  t7
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>,&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&#32;seq</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
 </div>
         
     </div>

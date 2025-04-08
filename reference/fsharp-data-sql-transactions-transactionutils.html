@@ -7,15 +7,15 @@
     <meta content="pezipink,colinbull,thorium" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="SQLProvider">
-    <meta property="og:title" content="ReturnSetType (SQLProvider)" />
+    <meta property="og:title" content="TransactionUtils (SQLProvider)" />
     <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
-    <meta name="twitter:title" content="ReturnSetType (SQLProvider)">
+    <meta name="twitter:title" content="TransactionUtils (SQLProvider)">
     
-    <title>ReturnSetType (SQLProvider) | SQLProvider</title>
+    <title>TransactionUtils (SQLProvider) | SQLProvider</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -247,27 +247,17 @@
     <div id="content">
         <div>
   <h2>
-    ReturnSetType Type
+    TransactionUtils Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common.html">
-        FSharp.Data.Sql.Common
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions.html">
+        FSharp.Data.Sql.Transactions
       </a>
     </dt>
     <dt>
       Assembly: FSharp.Data.SqlProvider.dll
-    </dt>
-    <dt>
-      Base Type: 
-      <code>obj</code>
-    </dt>
-    <dt>
-      All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnsettype.html">ReturnSetType</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -277,18 +267,15 @@
       </p>
     </div>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Union cases
+      Functions and values
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Union case
+            Function or value
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -299,40 +286,37 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '670', 670)" onmouseover="showTip(event, '670', 670)">
+              <code onmouseout="hideTip(event, '324', 324)" onmouseover="showTip(event, '324', 324)">
                 <p>
-                  <a id="ResultSet">
-                    <a href="#ResultSet">
-                      <code><span>ResultSet(<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-resultset.html">ResultSet</a></span>)</span></code>
+                  <a id="ensureTransaction">
+                    <a href="#ensureTransaction">
+                      <code><span>ensureTransaction&#32;<span>transactionOptions</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="670">
+              <div class="fsdocs-tip" id="324">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ResultSet(<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-resultset.html">ResultSet</a></span>)</span></code>
+                  <code><span>ensureTransaction&#32;<span>transactionOptions</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        Item1
+                        transactionOptions
                       </b>
                       :
-                      <code>string</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Item2
-                      </b>
-                      :
-                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-resultset.html">ResultSet</a></code>
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
                     </span>
                     <br/>
                   </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.transactions.transactionscope">TransactionScope</a></code>
+                  </span>
                   <br/>
                 </div>
               </div>
@@ -342,181 +326,19 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  Item1
+                  transactionOptions
                 </span>
                 :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item2
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-resultset.html">ResultSet</a></code>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '671', 671)" onmouseover="showTip(event, '671', 671)">
-                <p>
-                  <a id="ScalarResultSet">
-                    <a href="#ScalarResultSet">
-                      <code><span>ScalarResultSet(<span>string,&#32;obj</span>)</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="671">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>ScalarResultSet(<span>string,&#32;obj</span>)</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        Item1
-                      </b>
-                      :
-                      <code>string</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Item2
-                      </b>
-                      :
-                      <code>obj</code>
-                    </span>
-                    <br/>
-                  </ul>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item1
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item2
-                </span>
-                :
-                <code>obj</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '672', 672)" onmouseover="showTip(event, '672', 672)">
-                <p>
-                  <a id="IsResultSet">
-                    <a href="#IsResultSet">
-                      <code><span>this.IsResultSet</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="672">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsResultSet</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '673', 673)" onmouseover="showTip(event, '673', 673)">
-                <p>
-                  <a id="IsScalarResultSet">
-                    <a href="#IsScalarResultSet">
-                      <code><span>this.IsScalarResultSet</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="673">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsScalarResultSet</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.transactions.transactionscope">TransactionScope</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -525,6 +347,13 @@
       </tbody>
     </table>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div></div>
 </div>
         

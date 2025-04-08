@@ -7,15 +7,15 @@
     <meta content="pezipink,colinbull,thorium" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="SQLProvider">
-    <meta property="og:title" content="EntityState (SQLProvider)" />
+    <meta property="og:title" content="QueryFactory (SQLProvider)" />
     <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
-    <meta name="twitter:title" content="EntityState (SQLProvider)">
+    <meta name="twitter:title" content="QueryFactory (SQLProvider)">
     
-    <title>EntityState (SQLProvider) | SQLProvider</title>
+    <title>QueryFactory (SQLProvider) | SQLProvider</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -247,36 +247,17 @@
     <div id="content">
         <div>
   <h2>
-    EntityState Type
+    QueryFactory Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common.html">
-        FSharp.Data.Sql.Common
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-runtime.html">
+        FSharp.Data.Sql.Runtime
       </a>
     </dt>
     <dt>
       Assembly: FSharp.Data.SqlProvider.dll
-    </dt>
-    <dt>
-      Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
-    </dt>
-    <dt>
-      All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html">EntityState</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html">EntityState</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -286,18 +267,15 @@
       </p>
     </div>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div>
     <h3>
-      Union cases
+      Functions and values
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Union case
+            Function or value
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -308,131 +286,53 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
+              <code onmouseout="hideTip(event, '305', 305)" onmouseover="showTip(event, '305', 305)">
                 <p>
-                  <a id="Created">
-                    <a href="#Created">
-                      <code><span>Created</span></code>
+                  <a id="createEntities">
+                    <a href="#createEntities">
+                      <code><span>createEntities&#32;<span><span>(<span>dc,&#32;provider,&#32;table</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="565">
+              <div class="fsdocs-tip" id="305">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Created</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '566', 566)" onmouseover="showTip(event, '566', 566)">
-                <p>
-                  <a id="Delete">
-                    <a href="#Delete">
-                      <code><span>Delete</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="566">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Delete</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '567', 567)" onmouseover="showTip(event, '567', 567)">
-                <p>
-                  <a id="Deleted">
-                    <a href="#Deleted">
-                      <code><span>Deleted</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="567">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Deleted</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L156-156" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '568', 568)" onmouseover="showTip(event, '568', 568)">
-                <p>
-                  <a id="Modified">
-                    <a href="#Modified">
-                      <code><span>Modified&#32;<span>string&#32;list</span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="568">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Modified&#32;<span>string&#32;list</span></span></code>
+                  <code><span>createEntities&#32;<span><span>(<span>dc,&#32;provider,&#32;table</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        Item
+                        dc
                       </b>
                       :
-                      <code><span>string&#32;list</span></code>
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        provider
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code>string</code>
                     </span>
                     <br/>
                   </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&gt;</span></code>
+                  </span>
                   <br/>
                 </div>
               </div>
@@ -442,104 +342,35 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  Item
+                  dc
                 </span>
                 :
-                <code><span>string&#32;list</span></code>
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  provider
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  table
+                </span>
+                :
+                <code>string</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
-                <p>
-                  <a id="Unchanged">
-                    <a href="#Unchanged">
-                      <code><span>Unchanged</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="569">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Unchanged</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/SqlRuntime.Common.fs#L152-152" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div>
-    <h3>
-      Instance members
-    </h3>
-    <table class="table outer-list fsdocs-member-list">
-      <thead>
-        <tr>
-          <td class="fsdocs-member-list-header">
-            Instance member
-          </td>
-          <td class="fsdocs-member-list-header">
-            Description
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
-                <p>
-                  <a id="IsCreated">
-                    <a href="#IsCreated">
-                      <code><span>this.IsCreated</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="570">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsCreated</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code>bool</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -548,24 +379,92 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '571', 571)" onmouseover="showTip(event, '571', 571)">
+              <code onmouseout="hideTip(event, '306', 306)" onmouseover="showTip(event, '306', 306)">
                 <p>
-                  <a id="IsDelete">
-                    <a href="#IsDelete">
-                      <code><span>this.IsDelete</span></code>
+                  <a id="createRelated">
+                    <a href="#createRelated">
+                      <code><span>createRelated&#32;<span><span>(<span>dc,&#32;provider,&#32;inst,&#32;pe,&#32;pk,&#32;fe,&#32;fk,&#32;direction</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="571">
+              <div class="fsdocs-tip" id="306">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsDelete</span></code>
+                  <code><span>createRelated&#32;<span><span>(<span>dc,&#32;provider,&#32;inst,&#32;pe,&#32;pk,&#32;fe,&#32;fk,&#32;direction</span>)</span></span></span></code>
                   <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dc
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        provider
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        inst
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        pe
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        pk
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fe
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fk
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        direction
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-relationshipdirection.html">RelationshipDirection</a></code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code>bool</code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -573,129 +472,78 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dc
                 </span>
-                <code>bool</code>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html">ISqlDataContext</a></code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '572', 572)" onmouseover="showTip(event, '572', 572)">
-                <p>
-                  <a id="IsDeleted">
-                    <a href="#IsDeleted">
-                      <code><span>this.IsDeleted</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="572">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsDeleted</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  provider
                 </span>
-                <code>bool</code>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '573', 573)" onmouseover="showTip(event, '573', 573)">
-                <p>
-                  <a id="IsModified">
-                    <a href="#IsModified">
-                      <code><span>this.IsModified</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="573">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsModified</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  inst
                 </span>
-                <code>bool</code>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  pe
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  pk
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fe
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fk
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  direction
+                </span>
+                :
+                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-relationshipdirection.html">RelationshipDirection</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '574', 574)" onmouseover="showTip(event, '574', 574)">
-                <p>
-                  <a id="IsUnchanged">
-                    <a href="#IsUnchanged">
-                      <code><span>this.IsUnchanged</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="574">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsUnchanged</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
                   Returns: 
                 </span>
-                <code>bool</code>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a>&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -704,6 +552,13 @@
       </tbody>
     </table>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div></div>
 </div>
         
