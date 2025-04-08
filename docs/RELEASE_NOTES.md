@@ -1,3 +1,7 @@
+### 1.4.13 - 08.04.2025
+* SSDT: Initial support for SQL functions, PR #781
+* Expression.optimizer update
+
 ### 1.4.12 - 12.03.2025
 * Some performance updates
 * Memory consumption reduced

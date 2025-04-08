@@ -1502,7 +1502,7 @@ GITHUB
     src/ProvidedTypes.fs (23b588d06acb8e100402523abc1d4f3f06325b8a)
     src/ProvidedTypes.fsi (23b588d06acb8e100402523abc1d4f3f06325b8a)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (fe851fd1df3f925f2a95257bbb03513a4ecee0ba)
+    src/Code/ExpressionOptimizer.fs (afb825d1ffd94c5a60da016ccc2ab83dca29b1e7)
 GROUP Tests
 STORAGE: PACKAGES
 RESTRICTION: || (== net472) (== net48) (== netcoreapp3.1)
